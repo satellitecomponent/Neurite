@@ -1,0 +1,275 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Mandelbrott</title>
+  <style type="text/css">
+    html {
+        /* overflow:hidden; */
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+    }
+  </style>
+</head>
+
+<body>
+  <svg id="svg_bg" width="100%" height="1400">
+    <title>Mandelbrott level sets</title>
+  </svg>
+
+  <script type="application/javascript">
+    console.log("test");
+    class vec2{
+        constructor(x,y) {this.x = x;this.y = y;}
+        plus(o) {return new vec2(this.x+o.x,this.y+o.y);}
+        minus(o) {return new vec2(this.x-o.x,this.y-o.y);}
+        times(o) {return new vec2(this.x*o.x,this.y*o.y);}
+        div(o) {return new vec2(this.x/o.x,this.y/o.y);}
+        dot(o) {return this.x*o.x+this.y*o.y}
+        cross(o) {return this.x*o.y-this.y*o.x}
+        scale(s) {return new vec2(this.x*s,this.y*s);}
+        unscale(s) {return new vec2(this.x/s,this.y/s);}
+        normed(){return this.unscale(this.mag());}
+        mag2() {return this.dot(this);}
+        mag() {return Math.hypot(this.x,this.y);}
+        ang() {return Math.atan2(this.y,this.x);}
+        pang() {
+            if (this.x == 0 && this.y == 0) {return 0;}
+            let p = this.x/(Math.abs(this.x)+Math.abs(this.y));
+            return this.y<0?p-1:1-p;
+        }
+        map(f) {return new vec2(f(this.x),f(this.y));}
+        
+        cadd(o) {return this.plus(o);}
+        csub(o) {return this.minus(o);}
+        cneg(o) {return new vec2(-this.x,-this.y);}
+        cmult(o) {return new vec2(this.x*o.x-this.y*o.y,this.y*o.x+this.x*o.y);}
+        caamult(o) {
+            //angle averaging multiply?
+            let s = this.plus(o);
+            return s.scale(this.cmult(o).mag()/s.mag());
+        }
+        cconj() {return new vec2(this.x,-this.y);}
+        crecip() {
+            // 1/(a+bi) = (a-bi)/mag2
+            return this.cconj().unscale(this.mag2());
+        }
+        cdiv(o) {return this.cmult(o.crecip());}
+        cpow(o) {return this.clog().cmult(o).cexp();}
+        
+        cexp(){
+            let m = Math.exp(this.x);
+            let i = Math.sin(this.y);
+            let r = Math.cos(this.y);
+            return new vec2(m*r,m*i);
+        }
+        clog(){
+            let r = Math.log(this.mag2())/2;//no sqrt because log rules
+            let i = Math.atan2(this.y,this.x);
+            return new vec2(r,i);
+        }
+
+        str(){
+            return this.x+","+this.y;
+        }
+        sqrt(){
+            //https://www.johndcook.com/blog/2020/06/09/complex-square-root/
+            let l = this.mag();
+            let u = Math.sqrt((l+this.x)/2);
+            let v = Math.sign(this.y)*Math.sqrt((l-this.x)/2);
+            return new vec2(u,v);
+        }
+    }
+    
+    function mand_step(z,c){return z.cmult(z).cadd(c);}
+
+    function mand_unstep(z,c){return z.csub(c).sqrt();}
+    
+    
+    function mandelbrott_dist(iters,c,z){
+        if (z === undefined) { z = new vec2(0,0);}
+        let pz = z;
+        for (let i = 0; i < iters; i ++){
+            if (z.mag2() > 4){
+                let zm = z.mag();
+                let pzm = pz.mag();
+                return i + (2-pzm)/(zm-pzm);
+            }
+            pz = z;
+            z = mand_step(z,c);
+        }
+        return iters;
+    }
+    function mandelbrott_dist(iters,c,z){
+        let bailout = 1e8;//large so z^2+c -> z^2
+        if (z === undefined) { z = new vec2(0,0);}
+        let pz = z;
+        for (let i = 0; i < iters; i ++){
+            if (z.mag2() > bailout){
+                //pz^2 = z
+                //pz^(2^?) = b
+                //ln(pz)2^?=ln(b)
+                //ln(ln(pz))+ln(2)*?=ln(ln(b))
+                let g = Math.log2(Math.log(bailout));
+                let llz = Math.log2(Math.log2(z.mag2())/2);
+                return i-llz;
+            }
+            pz = z;
+            z = mand_step(z,c);
+        }
+        return iters;
+    }
+    function mandelbrott_grad(iters,c,z){
+        let bailout = 1e8;//large so z^2+c -> z^2
+        if (z === undefined) { z = new vec2(0,0);}
+        let dz = new vec2(1,0);
+        for (let i = 0; i < iters; i ++){
+            if (z.mag2() > bailout){
+                //pz^2 = z
+                //pz^(2^?) = b
+                //ln(pz)2^?=ln(b)
+                //ln(ln(pz))+ln(2)*?=ln(ln(b))
+                return dz;
+                let llz = Math.log2(Math.log2(z.mag2())/2);
+                return i-llz;
+            }
+            z = mand_step(z,c);
+            dz = dz.cmult(z.scale(2));
+        }
+        return new vec2(0,0);
+    }
+    function mandGrad(maxIters,c,z){
+        //return mandelbrott_grad(maxIters,c,z);
+        let e = 1e-10;
+        let d = mandelbrott_dist(maxIters,c,z);
+        return new vec2(
+            mandelbrott_dist(maxIters,c.plus(new vec2(e,0)),z)-d,
+            mandelbrott_dist(maxIters,c.plus(new vec2(0,e)),z)-d
+        ).unscale(e);
+        /*
+        let re = 1.00000001;
+        let e = 1e-100;
+        if (z === undefined) { z = c;}
+        let d = mandelbrott_dist(maxIters,c,z);
+        let f = (v) => (Math.abs(v)<e?v+e:v*re);
+        let fz = new vec2(f(z.x),f(z.y));
+        return new vec2(
+            mandelbrott_dist(maxIters,c,new vec2(fz.x,z.y))-d,
+            mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
+            ).div(fz.minus(z));*/
+    }
+    function* trace_circle(iters,z0,step){
+        if (step === undefined) { step = 0.5;}
+        let level = mandelbrott_dist(iters,z0);
+        let z = z0;
+        while (true){
+            yield z;
+            let vz = mandelbrott_dist(iters,z);
+            let gz = mandGrad(iters,z);
+            z = z.plus(gz.cmult(new vec2(level-vz,step).unscale(gz.mag2())));
+        }
+    }
+    function col(i){
+        return [128+127*Math.cos(i/2**.5),128+127*Math.cos(i/3**.5),128+127*Math.cos(i/5**.5)];
+    }
+    function scol(i){
+        let c = col(i);
+        return "RGB("+Math.round(c[0])+","+Math.round(c[1])+","+Math.round(c[2])+")";
+    }
+    
+    var svg = document.getElementById("svg_bg");
+
+    function outlineMand(start,step,iters){
+        iters = iters===undefined?256:iters;
+        step = step===undefined?0.1:step;
+        let a0 = start.pang();
+        let l = (v) => v.scale(200).plus(new vec2(800,600));
+        let path = "M "+l(start).str()+"\nL ";
+        let pz = start;
+        let maxlen = 1<<15;
+        let minD2 = 0.25/200/200;
+        for (let z of trace_circle(iters,start,step)){
+            //if (z.minus(pz).mag2() < minD2){ continue;}
+            if (z.pang() <= a0 && pz.pang() > a0){
+                break;
+            }
+            maxlen --;
+            if (maxlen <= 0){
+                break;
+            }
+            path += l(z).str()+" ";
+            pz = z;
+        }
+        return path;
+    }
+
+    function addPath(path,stroke,fill){
+        if (stroke === undefined) {stroke = "red"}
+        if (fill === undefined) {stroke = "none"}
+        let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+        pathn.setAttribute("fill",fill);
+        pathn.setAttribute("stroke",stroke);
+        pathn.setAttribute("d",path);
+        svg.appendChild(pathn);
+        return pathn;
+    }
+
+    function* iter(){
+        for (let x = 2; x > 0; x *= 1-1/64){
+            let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+            pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
+            pathn.setAttribute("stroke","none");
+            pathn.setAttribute("d","");
+            svg.appendChild(pathn);
+            let start = new vec2(x,0);
+            let a0 = start.pang();
+            let l = (v) => v.scale(200).plus(new vec2(800,600));
+            let path = "M "+l(start).str()+"\nL ";
+            let pz = start;
+            let maxlen = 1<<14;
+            let minD2 = 0.01/200/200;
+            for (let z of trace_circle(1024,start,0.1)){
+                
+                if (z.pang() <= a0 && pz.pang() > a0){
+                    break;
+                }
+                maxlen --;
+                if (maxlen <= 0){
+                    pathn.setAttribute("d",path+" z");
+                    yield;
+                    maxlen = 1<<15;
+                }
+                if (z.minus(pz).mag2() < minD2){ continue;}
+                path += l(z).str()+" ";
+                pz = z;
+            }
+            pathn.setAttribute("d",path+" z");
+            yield;
+        }
+    }
+    
+    var gen = iter();
+    function frame(){
+        gen.next();
+        setTimeout(frame,10);
+    }
+    frame();
+
+
+
+
+    
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
