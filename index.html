@@ -14,13 +14,70 @@
   </style>
 </head>
 
-<body>
-  <svg id="svg_bg" width="100%" height="1400">
+<body id="body">
+  <svg id="svg_bg" viewBox="-4 -4 8 8" width="100%" height="100%" top="0" left="0" position="fixed">
     <title>Mandelbrott level sets</title>
+    <a id="bg" />
+    <path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
+    <a id="edges"/>
   </svg>
 
+  
+  <a id="link" href="https://www.example.com">Test Link</a>
+  <svg id="svg_link" viewBox="0 0 240 80">
+    <title>link test</title>
+    <style>
+      .small {
+          font: italic 13px sans-serif;
+          fill: white;
+      }
+      .heavy {
+          font: bold 30px sans-serif;
+          fill: white;
+      }
+
+      /* Note that the color of the text is set with the    *
+       * fill property, the color property is for HTML only */
+      .Rrrrr {
+          font: italic 40px serif;
+          fill: red;
+      }
+    </style>
+
+    <text x="20" y="35" class="small">My</text>
+    <text x="40" y="35" class="heavy">cat</text>
+    <text x="55" y="55" class="small">is</text>
+    <a href="example.com">
+      <text x="65" y="55" class="Rrrrr">Grumpy!</text>
+    </a>
+  </svg>
+
+
+
+
+  <a id="nodes">
+    <!-- add stuff here -->
+
+    
+    <iframe id="inlineFrameExample"
+            title="Inline Frame Example"
+            width="150"
+            height="100"
+            src="https://m.media-amazon.com/images/M/MV5BOTY2NDY4OGUtYWE0Ni00NWZiLWI3NDktYmE2YWM3Njc3YmRkXkEyXkFqcGdeQXVyMTIxOTU1MjQ3._V1_.jpg">
+    </iframe>
+    <h6>Test</h6>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="red"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="orange"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="yellow"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="green"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="blue"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="purple"/></svg>
+    <p>HEllo</p>
+    
+  </a>
   <script type="application/javascript">
     console.log("test");
+    
     class vec2{
         constructor(x,y) {this.x = x;this.y = y;}
         plus(o) {return new vec2(this.x+o.x,this.y+o.y);}
@@ -82,7 +139,35 @@
             return new vec2(u,v);
         }
     }
+    var mousePos = new vec2(0,0);
+    var mousePath = "";
+
+    var zoom = new vec2(4,0);
+    var pan = new vec2(0,0);
     
+    function toZ(c){
+        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        return c.unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
+    }
+    function fromZ(z){
+        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s);
+    }
+    
+
+    
+    document.getElementById("body").addEventListener("mousemove", (event) =>{
+        mousePos.x = event.pageX;
+        mousePos.y = event.pageY;
+        mousePath = "";
+    }, false);
+    document.getElementById("body").addEventListener("mouseclick", (event) =>{
+        mousePos.x = event.pageX;
+        mousePos.y = event.pageY;
+        let p = toZ(mousePos);
+        zoom = zoom.unscale(2);
+        pan = p;
+    }, false);
     function mand_step(z,c){return z.cmult(z).cadd(c);}
 
     function mand_unstep(z,c){return z.csub(c).sqrt();}
@@ -148,17 +233,17 @@
             mandelbrott_dist(maxIters,c.plus(new vec2(e,0)),z)-d,
             mandelbrott_dist(maxIters,c.plus(new vec2(0,e)),z)-d
         ).unscale(e);
-        /*
-        let re = 1.00000001;
-        let e = 1e-100;
-        if (z === undefined) { z = c;}
-        let d = mandelbrott_dist(maxIters,c,z);
-        let f = (v) => (Math.abs(v)<e?v+e:v*re);
-        let fz = new vec2(f(z.x),f(z.y));
-        return new vec2(
-            mandelbrott_dist(maxIters,c,new vec2(fz.x,z.y))-d,
-            mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
-            ).div(fz.minus(z));*/
+        
+        //let re = 1.00000001;
+        //let e = 1e-100;
+        //if (z === undefined) { z = c;}
+        //let d = mandelbrott_dist(maxIters,c,z);
+        //let f = (v) => (Math.abs(v)<e?v+e:v*re);
+        //let fz = new vec2(f(z.x),f(z.y));
+        //return new vec2(
+        //    mandelbrott_dist(maxIters,c,new vec2(fz.x,z.y))-d,
+        //    mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
+        //    ).div(fz.minus(z)); 
     }
     function* trace_circle(iters,z0,step){
         if (step === undefined) { step = 0.5;}
@@ -172,7 +257,7 @@
         }
     }
     function col(i){
-        return [128+127*Math.cos(i/2**.5),128+127*Math.cos(i/3**.5),128+127*Math.cos(i/5**.5)];
+        return [128-127*Math.cos(i/2**.5),128-127*Math.cos(i/3**.5),128-127*Math.cos(i/5**.5)];
     }
     function scol(i){
         let c = col(i);
@@ -180,13 +265,17 @@
     }
     
     var svg = document.getElementById("svg_bg");
+    //let l = document.getElementById("link");
+    //l.style.position="absolute";
+    //l.style.left="100px";
+    //l.style.top="100px";
+    
 
     function outlineMand(start,step,iters){
         iters = iters===undefined?256:iters;
         step = step===undefined?0.1:step;
         let a0 = start.pang();
-        let l = (v) => v.scale(200).plus(new vec2(800,600));
-        let path = "M "+l(start).str()+"\nL ";
+        let path = "M "+start.str()+"\nL ";
         let pz = start;
         let maxlen = 1<<15;
         let minD2 = 0.25/200/200;
@@ -199,7 +288,7 @@
             if (maxlen <= 0){
                 break;
             }
-            path += l(z).str()+" ";
+            path += z.str()+" ";
             pz = z;
         }
         return path;
@@ -217,18 +306,18 @@
     }
 
     function* iter(){
-        for (let x = 2; x > 0; x *= 1-1/64){
+        for (let x = 8; x > 0.3; x *= 1-1/8){
             let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
             pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
             pathn.setAttribute("stroke","none");
             pathn.setAttribute("d","");
-            svg.appendChild(pathn);
+            svg.children[1].appendChild(pathn);
             let start = new vec2(x,0);
             let a0 = start.pang();
-            let l = (v) => v.scale(200).plus(new vec2(800,600));
+            let l = (m)=>m;
             let path = "M "+l(start).str()+"\nL ";
             let pz = start;
-            let maxlen = 1<<14;
+            let maxlen = 1<<12;
             let minD2 = 0.01/200/200;
             for (let z of trace_circle(1024,start,0.1)){
                 
@@ -239,7 +328,7 @@
                 if (maxlen <= 0){
                     pathn.setAttribute("d",path+" z");
                     yield;
-                    maxlen = 1<<15;
+                    maxlen = 1<<12;
                 }
                 if (z.minus(pz).mag2() < minD2){ continue;}
                 path += l(z).str()+" ";
@@ -249,16 +338,151 @@
             yield;
         }
     }
+    function put(e,p){
+        e.style.position="absolute";
+        p = fromZ(p);
+        p = p.minus(new vec2(e.scrollWidth,e.scrollHeight).scale(.5));
+        e.style.left = p.x+"px";
+        e.style.top = p.y+"px";
+        e.style.transform = "translateX(-50%) translateY(-50%)";
+        
+        //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
+        //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
+        //e.style['vertical-align']= 'middle';
+        //e.style['text-align']= 'center';
+        
+    }
+
+    class Node{
+        constructor(p,thing){
+            this.pos = (p !== undefined)?p: new vec2(0,0);
+            this.content = thing;
+            this.vel = new vec2(0,0);
+            this.force = new vec2(0,0);
+            this.edges = [];
+        }
+        step(dt){
+            if (dt === undefined || isNaN(dt)){
+                dt = 0;
+            }else{
+                if (dt > 1){
+                    dt = 1;
+                }
+            }
+            this.pos = this.pos.plus(this.vel.scale(dt/2));
+            this.vel = this.vel.plus(this.force.scale(dt));
+            this.pos = this.pos.plus(this.vel.scale(dt/2));
+            this.force = this.vel.scale(-Math.min(this.vel.mag()+.1,1/(dt+1e-300)));
+            put(this.content,this.pos);
+            let g = mandGrad(256,this.pos);
+            //g.y *= -1; //why?
+            this.force = this.force.plus(g.unscale((g.mag2()+1e-10)*300));
+            //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
+        }
+            
+    }
+    let htmlnodes = document.getElementById("nodes").children;
+    let htmledges =  document.getElementById("edges")
+    class Edge{
+        constructor(pts,length=0.6,strength=0.1,style={stroke:"red","stroke-width":"0.01"}){
+            this.pts = pts;
+            this.length = length;
+            this.strength = strength;
+            this.style = style;
+            this.html = document.createElementNS("http://www.w3.org/2000/svg","path");
+            for (const [key, value] of Object.entries(style)) {
+                this.html.setAttribute(key,value);
+            }
+            htmledges.appendChild(this.html);
+        }
+        draw(){
+            this.html.setAttribute("d","M "+this.pts.map((v)=>(v.pos.str())).join(" L "));
+        }
+        step(dt){
+            if (dt === undefined || isNaN(dt)){
+                dt = 0;
+            }else{
+                if (dt > 1){
+                    dt = 1;
+                }
+            }
+            let avg = this.pts.reduce((t,n,i,a)=>
+                {return t.plus(n.pos);},new vec2(0,0)).unscale(this.pts.length);
+            for (let n of this.pts){
+                let d = n.pos.minus(avg);
+                // f = -k(d-d0)d_hat
+                //   = -k(|d|-length)d/|d|
+                //   = -k(1-length/|d|)d
+                let f = d.scale(1-this.length/(d.mag()+1e-300));
+                n.force = n.force.plus(f.scale(-this.strength));
+            }
+            this.draw();
+        }
+    }
+
+    var nodes = [];
+    var edges = [];
+
+    for (let n of htmlnodes){
+        nodes.push(new Node(new vec2(Math.random()*40-20,Math.random()*40-20),n));
+    }
+    function connect(na,nb,length=0.2,linkStrength=0.1,linkStyle={stroke:"red","stroke-width":"0.01"}){
+        let edge = new Edge([na,nb],length,linkStrength,linkStyle); 
+        //na.edges.push(edge);
+        //nb.edges.push(edge);
+        edge.draw();
+        edges.push(edge);
+    }
+
+    function connectRandom(n){
+        for (let i = 0; i < n; i++){
+            let a = Math.floor(Math.random()*nodes.length);
+            let b = Math.floor(Math.random()*nodes.length);
+            connect(nodes[a],nodes[b]);
+        }
+    }
     
     var gen = iter();
+    
     function frame(){
         gen.next();
-        setTimeout(frame,10);
+        setTimeout(frame,100);
     }
     frame();
+    var mousePathPos;
+    var current_time = undefined;
+    function nodeStep(time){
+        if (mousePath == ""){
+            mousePathPos = toZ(mousePos);
+            mousePath = "M "+mousePathPos.str()+" L ";
+        }
+        for (let i = 0; i < 256; i++){
+            let g = mandGrad(256,mousePathPos);
+            mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
+            mousePath += mousePathPos.str()+" ";
 
+        }
 
+        document.getElementById("mousePath").setAttribute("d",mousePath);
+        if (current_time === undefined){
+            current_time = time;
+        }
+        let dt = time-current_time;
+        current_time = time;
+        for (let n of nodes){
+            n.step(dt);
+            let d = toZ(mousePos).minus(n.pos);
+            n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
+        }
+        for (let e of edges){
+            e.step(dt);
+        }
+        window.requestAnimationFrame(nodeStep);
+    }
+    nodeStep();
 
+    
+    connectRandom(10);
 
     
   </script>
