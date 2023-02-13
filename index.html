@@ -15,12 +15,14 @@
 </head>
 
 <body id="body">
-  <svg id="svg_bg" viewBox="-4 -4 8 8" width="100%" height="100%" top="0" left="0" position="fixed">
-    <title>Mandelbrott level sets</title>
-    <a id="bg" />
-    <path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
-    <a id="edges"/>
-  </svg>
+  <div ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
+    <svg id="svg_bg" viewBox="-4 -4 8 8" width="100%" height="100%" top="0" left="0" position="fixed">
+      <title>Mandelbrott level sets</title>
+      <a id="bg" />
+      <path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
+      <a id="edges"/>
+    </svg>
+  </div>
 
   
   <a id="link" href="https://www.example.com">Test Link</a>
@@ -72,11 +74,14 @@
     <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="green"/></svg>
     <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="blue"/></svg>
     <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="purple"/></svg>
+    
     <p>HEllo</p>
     
   </a>
   <script type="application/javascript">
     console.log("test");
+    document.body.style.overflow = 'hidden';
+    var svg = document.getElementById("svg_bg");
     
     class vec2{
         constructor(x,y) {this.x = x;this.y = y;}
@@ -96,8 +101,8 @@
             if (this.x == 0 && this.y == 0) {return 0;}
             let p = this.x/(Math.abs(this.x)+Math.abs(this.y));
             return this.y<0?p-1:1-p;
-        }
-        map(f) {return new vec2(f(this.x),f(this.y));}
+	}
+	map(f) {return new vec2(f(this.x),f(this.y));}
         
         cadd(o) {return this.plus(o);}
         csub(o) {return this.minus(o);}
@@ -142,19 +147,63 @@
     var mousePos = new vec2(0,0);
     var mousePath = "";
 
-    var zoom = new vec2(4,0);
+    var zoom = new vec2(4,0);//bigger is further out
     var pan = new vec2(0,0);
     
     function toZ(c){
         let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
         return c.unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
     }
+    function toDZ(c){
+        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        return c.unscale(s).scale(2).cmult(zoom);
+    }
     function fromZ(z){
         let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
         return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s);
     }
+    var SVGzoom = 8192;
+    var SVGpan = new vec2(0,0);
+    let recenterThreshold = 0.01;
+    let rezoomThreshold = 0.01;
+    function updateViewbox(){//todo fix when adding rotations
+	let lc = toSVG(toZ(new vec2(0,0)));
+	let d = zoom.mag()*2*SVGzoom;
+	let recalc = false;
+	if (d < Math.abs(recenterThreshold*lc.x) || d < Math.abs(recenterThreshold*lc.y)){
+	    let oldPan = SVGpan;
+	    SVGpan = pan.scale(1);
+	    lc = toSVG(toZ(new vec2(0,0)));
+	    console.log("recentering...");
+	    recalc = true;
+	}
+	if (d < rezoomThreshold || d > 8192/rezoomThreshold){
+	    SVGzoom *= 8192/d;
+	    console.log("rezooming...");
+	    recalc = true;
+	}
+	if (recalc){
+	    recalc_svg();
+	}
+	svg.setAttribute("viewBox",lc.x+" "+lc.y+" "+d+" "+d);
+	
+    }
+    function toSVG(coords){
+	return coords.minus(SVGpan).scale(SVGzoom);
+    }
     
-
+    function recalc_svg(){
+	//todo
+	//placeholder:
+	let node = svg.children[1];
+	while (node.firstChild) {
+	    node.removeChild(node.lastChild);
+	}
+    }
+    
+    
+    
+    
     
     document.getElementById("body").addEventListener("mousemove", (event) =>{
         mousePos.x = event.pageX;
@@ -164,14 +213,24 @@
     document.getElementById("body").addEventListener("mouseclick", (event) =>{
         mousePos.x = event.pageX;
         mousePos.y = event.pageY;
-        let p = toZ(mousePos);
+        /*let p = toZ(mousePos);
         zoom = zoom.unscale(2);
-        pan = p;
+        pan = p;*/
     }, false);
     function mand_step(z,c){return z.cmult(z).cadd(c);}
 
     function mand_unstep(z,c){return z.csub(c).sqrt();}
-    
+
+    function mand_i(z,iters=16){
+	let c = z;
+	for (let i = 0; i < iters; i ++){
+            if (z.mag2() > 4){
+		return i;
+            }
+            z = mand_step(z,c);
+        }
+	return (z.mag2() > 4)? iters:iters+1;
+    }
     
     function mandelbrott_dist(iters,c,z){
         if (z === undefined) { z = new vec2(0,0);}
@@ -264,7 +323,7 @@
         return "RGB("+Math.round(c[0])+","+Math.round(c[1])+","+Math.round(c[2])+")";
     }
     
-    var svg = document.getElementById("svg_bg");
+
     //let l = document.getElementById("link");
     //l.style.position="absolute";
     //l.style.left="100px";
@@ -275,7 +334,7 @@
         iters = iters===undefined?256:iters;
         step = step===undefined?0.1:step;
         let a0 = start.pang();
-        let path = "M "+start.str()+"\nL ";
+        let path = "M "+toSVG(start).str()+"\nL ";
         let pz = start;
         let maxlen = 1<<15;
         let minD2 = 0.25/200/200;
@@ -288,7 +347,7 @@
             if (maxlen <= 0){
                 break;
             }
-            path += z.str()+" ";
+            path += toSVG(z).str()+" ";
             pz = z;
         }
         return path;
@@ -308,14 +367,16 @@
     function* iter(){
         for (let x = 8; x > 0.3; x *= 1-1/8){
             let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
-            pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
-            pathn.setAttribute("stroke","none");
+            //pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
+	    pathn.setAttribute("fill","none");
+            pathn.setAttribute("stroke",scol(mandelbrott_dist(1024,new vec2(x,0))));
+	    pathn.setAttribute("stroke-width",""+(SVGzoom*0.01));
             pathn.setAttribute("d","");
             svg.children[1].appendChild(pathn);
             let start = new vec2(x,0);
             let a0 = start.pang();
             let l = (m)=>m;
-            let path = "M "+l(start).str()+"\nL ";
+            let path = "M "+toSVG(l(start)).str()+"\nL ";
             let pz = start;
             let maxlen = 1<<12;
             let minD2 = 0.01/200/200;
@@ -331,20 +392,20 @@
                     maxlen = 1<<12;
                 }
                 if (z.minus(pz).mag2() < minD2){ continue;}
-                path += l(z).str()+" ";
+                path += toSVG(l(z)).str()+" ";
                 pz = z;
             }
             pathn.setAttribute("d",path+" z");
             yield;
         }
     }
-    function put(e,p){
+    function put(e,p,s=1){
         e.style.position="absolute";
         p = fromZ(p);
         p = p.minus(new vec2(e.scrollWidth,e.scrollHeight).scale(.5));
         e.style.left = p.x+"px";
         e.style.top = p.y+"px";
-        e.style.transform = "translateX(-50%) translateY(-50%)";
+        e.style.transform = "scale("+s+","+s+") translateX(-50%) translateY(-50%)";
         
         //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
         //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
@@ -354,12 +415,14 @@
     }
 
     class Node{
-        constructor(p,thing){
+        constructor(p,thing,scale=1){
             this.pos = (p !== undefined)?p: new vec2(0,0);
+	    this.scale = scale;
             this.content = thing;
             this.vel = new vec2(0,0);
             this.force = new vec2(0,0);
             this.edges = [];
+	    this.followingMouse = 0;
         }
         step(dt){
             if (dt === undefined || isNaN(dt)){
@@ -372,16 +435,26 @@
             this.pos = this.pos.plus(this.vel.scale(dt/2));
             this.vel = this.vel.plus(this.force.scale(dt));
             this.pos = this.pos.plus(this.vel.scale(dt/2));
-            this.force = this.vel.scale(-Math.min(this.vel.mag()+.1,1/(dt+1e-300)));
-            put(this.content,this.pos);
+            this.force = this.vel.scale(-Math.min(this.vel.mag()+0.4,1/(dt+1e-300)));
+            put(this.content,this.pos,this.scale);
             let g = mandGrad(256,this.pos);
             //g.y *= -1; //why?
             this.force = this.force.plus(g.unscale((g.mag2()+1e-10)*300));
+	    let d = toZ(mousePos).minus(this.pos);
+	    this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
+	    if (this.followingMouse){
+		let zm = zoom.mag()/64;
+		this.pos = toZ(mousePos).minus(new vec2(-zm,-zm));
+		this.vel = new vec2(0,0);
+		this.force = new vec2(0,0);
+	    }
+	    
             //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
         }
             
     }
-    let htmlnodes = document.getElementById("nodes").children;
+    let htmlnodes_parent = document.getElementById("nodes");
+    let htmlnodes = htmlnodes_parent.children;
     let htmledges =  document.getElementById("edges")
     class Edge{
         constructor(pts,length=0.6,strength=0.1,style={stroke:"red","stroke-width":"0.01"}){
@@ -448,22 +521,28 @@
         gen.next();
         setTimeout(frame,100);
     }
-    frame();
+    //frame();
     var mousePathPos;
     var current_time = undefined;
     function nodeStep(time){
+	//zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
+	//pan = pan.scale(0.9).plus(pan_to.scale(0.1));
+	updateViewbox();
+	
         if (mousePath == ""){
             mousePathPos = toZ(mousePos);
-            mousePath = "M "+mousePathPos.str()+" L ";
+            mousePath = "M "+toSVG(mousePathPos).str()+" L ";
         }
-        for (let i = 0; i < 256; i++){
+        for (let i = 0; i < 2; i++){
             let g = mandGrad(256,mousePathPos);
             mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
-            mousePath += mousePathPos.str()+" ";
+            mousePath += toSVG(mousePathPos).str()+" ";
 
         }
 
         document.getElementById("mousePath").setAttribute("d",mousePath);
+	let width = zoom.mag()*0.005*SVGzoom;
+	document.getElementById("mousePath").setAttribute("stroke-width",width+"");
         if (current_time === undefined){
             current_time = time;
         }
@@ -472,11 +551,14 @@
         for (let n of nodes){
             n.step(dt);
             let d = toZ(mousePos).minus(n.pos);
-            n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
+            //n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
         }
         for (let e of edges){
             e.step(dt);
         }
+	for (let i = 0; i < 4; i++){
+	    render_hair(Math.random()*64);
+	}
         window.requestAnimationFrame(nodeStep);
     }
     nodeStep();
@@ -484,11 +566,159 @@
     
     connectRandom(10);
 
+
+
+
+    addEventListener("resize", (event) => {});
+    
+
+    addEventListener('wheel', (event) => {//todo: use scroll event or pinch-zoom event if exists
+	let dest = toZ(mousePos);
+	let amount = Math.exp(event.wheelDelta*0.001);
+	zoom = zoom.scale(amount);
+	pan = dest.scale(1-amount).plus(pan.scale(amount));
+	cancel(event);
+    });
+    let mouseDown = false;
+    let mouseDownPos = new vec2(0,0);
+    addEventListener("mousedown", (event) => {mouseDownPos = mousePos.scale(1);mouseDown = true;});
+    addEventListener("mouseup", (event) => {mouseDown = false;});
+    addEventListener("mousemove", (event) => {
+	if (mouseDown){
+	    let delta = mousePos.minus(mouseDownPos);
+	    pan = pan.minus(toDZ(delta));
+	    mouseDownPos = mousePos.scale(1);
+	}
+    });
+
+    //todo sshift click for node mode (Attach nodes to eachother)
+    //todo patches for zoom in
+
+    function render_hair(n){//todo make faster.
+	let iters = 256;
+	let maxLines = 256;
+	let pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+
+	for (let i = (1-Math.random()**2)*64; i > 1 ; i--){
+	    let gz = mandGrad(iters,pt)
+	    pt = pt.plus(gz.unscale(gz.mag2()*10+1));
+	    if (mand_i(pt,iters) > iters){
+		pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+	    }
+	}
+	if (mand_i(pt,iters) > iters){
+	    return;
+	}
+	//let level = mandelbrott_dist(256,pt);
+	//let width = 1/(level+5)**2;
+	//let width = 1/(mandGrad(256,pt).mag()**1.5+1);
+	let r = "M "+toSVG(pt).str() + " L ";
+	let length = 0;
+	let n0 = n;
+	for (let p of trace_circle(iters,pt,Math.random()>0.5?0.25:-0.25)){
+	    //console.log(p);
+	    r += toSVG(p).str()+" ";
+	    n -= 1;
+	    if (n < 0){
+		break
+	    }
+	    length += p.minus(pt).mag();
+	    pt = p;
+	}
+	let width = Math.min(length/n0,0.1);
+	let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+	pathn.setAttribute("fill","none");
+        pathn.setAttribute("stroke",scol(mandelbrott_dist(iters,pt)));
+	pathn.setAttribute("stroke-width",""+width*SVGzoom);
+        pathn.setAttribute("d",r);
+        svg.children[1].appendChild(pathn);
+	if (svg.children[1].children.length > maxLines){
+	    svg.children[1].removeChild(svg.children[1].children[0]);
+	}
+    }
+
+
+
+
+
+    function dropHandler(ev){
+	console.log(ev);
+
+	ev.preventDefault();
+	let files = [];
+	if (ev.dataTransfer.items) {
+	    // Use DataTransferItemList interface to access the file(s)
+	    [...ev.dataTransfer.items].forEach((item, i) => {
+		// If dropped items aren't files, reject them
+		if (item.kind === 'file') {
+		    const file = item.getAsFile();
+		    files.push(file);
+		    console.log(`… file[${i}].name = ${file.name}`);
+		}
+	    });
+	} else {
+	    // Use DataTransfer interface to access the file(s)
+	    [...ev.dataTransfer.files].forEach((file, i) => {
+		files.push(file)
+		console.log(`… file[${i}].name = ${file.name}`);
+	    });
+	}
+	console.log(files);
+	//https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
+	if (FileReader && files && files.length) {
+            let fr = new FileReader();
+	    let img = document.createElement('img');
+            fr.onload = function () {
+		img.src = fr.result;
+            }
+            fr.readAsDataURL(files[0]);
+	    let div = document.createElement('div');
+	    div.setAttribute("onclick","nodeclick("+nodes.length+");");
+	    div.appendChild(img)
+	    htmlnodes_parent.appendChild(div);
+	    let scale = zoom.mag()/4/16;
+	    nodes.push(new Node(toZ(mousePos),img,0.125));
+	}
+	
+	// Not supported
+	else {
+            // fallback -- perhaps submit the input to an iframe and temporarily store
+            // them on the server until the user's session ends.
+	    console.log("FileReader not supported or no files");
+	}
+    }
+
+    function dragOverHandler(ev) {
+	ev.preventDefault();
+    }
+    function nodeclick(id){
+	if (id < nodes.length){
+	    nodes[id].followingMouse = 1-nodes[id].followingMouse;
+	    if (event.stopPropagation) {
+		event.stopPropagation();   // W3C model
+	    } else {
+		event.cancelBubble = true; // IE model
+	    }
+	}
+    }
+
+    function cancel(event){
+	if (event.stopPropagation) {
+	    event.stopPropagation();   // W3C model
+	} else {
+	    event.cancelBubble = true; // IE model
+	}
+    }
+
+
+
+
+    
+
     
   </script>
 </body>
 </html>
-
 
 
 
