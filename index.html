@@ -144,6 +144,10 @@
             return new vec2(u,v);
         }
     }
+    function lerp(a,b,t){
+	return a*(1-t)+b*t;
+    }
+    
     var mousePos = new vec2(0,0);
     var mousePath = "";
 
@@ -161,6 +165,9 @@
     function fromZ(z){
         let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
         return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s);
+    }
+    function fromZtoUV(z){
+        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5));
     }
     var SVGzoom = 8192;
     var SVGpan = new vec2(0,0);
@@ -316,7 +323,10 @@
         }
     }
     function col(i){
-        return [128-127*Math.cos(i/2**.5),128-127*Math.cos(i/3**.5),128-127*Math.cos(i/5**.5)];
+	let r = nodeMode_v
+	let rgb = [128-127*Math.cos(i/2**.5),128-127*Math.cos(i/3**.5),128-127*Math.cos(i/5**.5)];
+	let y = 0.17697*rgb[0]+0.81240*rgb[1]+0.01063*rgb[2];
+        return [lerp(rgb[0],y,nodeMode_v),lerp(rgb[1],y,nodeMode_v),lerp(rgb[2],y,nodeMode_v)];
     }
     function scol(i){
         let c = col(i);
@@ -400,12 +410,17 @@
         }
     }
     function put(e,p,s=1){
+	let svgbb = svg.getBoundingClientRect();
         e.style.position="absolute";
-        p = fromZ(p);
-        p = p.minus(new vec2(e.scrollWidth,e.scrollHeight).scale(.5));
+	e.style.transform = "scale("+s+","+s+")";
+        p = fromZtoUV(p);
+	p.x = svgbb.left + svgbb.width*p.x;
+	p.y = svgbb.top + svgbb.height*p.y;
+	let bb = e.getBoundingClientRect();
+        p = p.minus(new vec2(bb.width,bb.height).scale(0.5/s));
         e.style.left = p.x+"px";
         e.style.top = p.y+"px";
-        e.style.transform = "scale("+s+","+s+") translateX(-50%) translateY(-50%)";
+
         
         //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
         //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
@@ -413,10 +428,12 @@
         //e.style['text-align']= 'center';
         
     }
-
+    var movingNode = undefined;
+    let prevNode = undefined;
     class Node{
         constructor(p,thing,scale=1){
             this.pos = (p !== undefined)?p: new vec2(0,0);
+	    this.mouseAnchor = new vec2(0,0);
 	    this.scale = scale;
             this.content = thing;
             this.vel = new vec2(0,0);
@@ -424,6 +441,9 @@
             this.edges = [];
 	    this.followingMouse = 0;
         }
+	draw(){
+	    put(this.content,this.pos,this.scale*(zoom.mag2()**-0.25));
+	}
         step(dt){
             if (dt === undefined || isNaN(dt)){
                 dt = 0;
@@ -432,26 +452,59 @@
                     dt = 1;
                 }
             }
-            this.pos = this.pos.plus(this.vel.scale(dt/2));
-            this.vel = this.vel.plus(this.force.scale(dt));
-            this.pos = this.pos.plus(this.vel.scale(dt/2));
-            this.force = this.vel.scale(-Math.min(this.vel.mag()+0.4,1/(dt+1e-300)));
-            put(this.content,this.pos,this.scale);
-            let g = mandGrad(256,this.pos);
-            //g.y *= -1; //why?
-            this.force = this.force.plus(g.unscale((g.mag2()+1e-10)*300));
-	    let d = toZ(mousePos).minus(this.pos);
-	    this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
-	    if (this.followingMouse){
-		let zm = zoom.mag()/64;
-		this.pos = toZ(mousePos).minus(new vec2(-zm,-zm));
+	    if (!this.followingMouse){	
+		this.pos = this.pos.plus(this.vel.scale(dt/2));
+		this.vel = this.vel.plus(this.force.scale(dt));
+		this.pos = this.pos.plus(this.vel.scale(dt/2));
+		this.force = this.vel.scale(-Math.min(this.vel.mag()+0.4,1/(dt+1e-300)));
+	    }else{
 		this.vel = new vec2(0,0);
 		this.force = new vec2(0,0);
 	    }
-	    
+            this.draw();
+            let g = mandGrad(256,this.pos);
+            //g.y *= -1; //why?
+            this.force = this.force.plus(g.unscale((g.mag2()+1e-10)*300));
+	    //let d = toZ(mousePos).minus(this.pos);
+	    //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
+	    if (this.followingMouse){
+		this.pos = toZ(mousePos).minus(this.mouseAnchor);
+	    }
             //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
         }
-            
+	onclick(event){
+	    if (nodeMode){
+		if (prevNode === undefined){
+		    prevNode = this;
+		}else{
+		    connect(this,prevNode);
+		    prevNode = undefined;
+		}
+	    }else{
+
+	    }
+	}
+	onmousedown(event){
+	    this.mouseAnchor = toZ(new vec2(event.clientX,event.clientY)).minus(this.pos);
+	    this.followingMouse = 1;
+	    movingNode = this;
+	    cancel(event);
+	}
+	onmouseup(event){
+	    this.followingMouse = 0;
+	    if (this === movingNode){
+		movingNode = undefined;
+	    }
+	    cancel(event);
+	}
+	onmousemove(event){
+	    /*if (this.followingMouse){
+		this.pos = this.pos.plus(toDZ(new vec2(event.movementX,event.movementY)));
+		this.draw()
+		cancel(event);
+	    }*/
+	}
+
     }
     let htmlnodes_parent = document.getElementById("nodes");
     let htmlnodes = htmlnodes_parent.children;
@@ -468,8 +521,15 @@
             }
             htmledges.appendChild(this.html);
         }
+	stress(){
+	    let avg = this.pts.reduce((t,n,i,a)=>
+                {return t.plus(n.pos);},new vec2(0,0)).unscale(this.pts.length);
+	    return this.pts.reduce((t,n,i,a)=>
+                {return t+n.pos.minus(avg).mag();},0)/(this.length+1);
+	}
         draw(){
-            this.html.setAttribute("d","M "+this.pts.map((v)=>(v.pos.str())).join(" L "));
+	    this.html.setAttribute("stroke-width",this.style['stroke-width']*SVGzoom*zoom.mag()/(0.5+this.stress()));
+            this.html.setAttribute("d","M "+this.pts.map((v)=>(toSVG(v.pos).str())).join(" L "));
         }
         step(dt){
             if (dt === undefined || isNaN(dt)){
@@ -495,15 +555,19 @@
 
     var nodes = [];
     var edges = [];
+    var nodeMode_v = 0;
+    var nodeMode = 0;
 
     for (let n of htmlnodes){
-        nodes.push(new Node(new vec2(Math.random()*40-20,Math.random()*40-20),n));
+	//n.setAttribute("onclick","nodeclick("+nodes.length+");");
+        let node = new Node(new vec2(Math.random()*40-20,Math.random()*40-20),n);
+	registernode(node);
     }
     function connect(na,nb,length=0.2,linkStrength=0.1,linkStyle={stroke:"red","stroke-width":"0.01"}){
         let edge = new Edge([na,nb],length,linkStrength,linkStyle); 
         //na.edges.push(edge);
         //nb.edges.push(edge);
-        edge.draw();
+        //edge.draw();
         edges.push(edge);
     }
 
@@ -524,6 +588,8 @@
     //frame();
     var mousePathPos;
     var current_time = undefined;
+    let regenAmount = 0;
+    let regenDebt = 0;
     function nodeStep(time){
 	//zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
 	//pan = pan.scale(0.9).plus(pan_to.scale(0.1));
@@ -548,6 +614,7 @@
         }
         let dt = time-current_time;
         current_time = time;
+	dt *= (1-nodeMode_v)**5;
         for (let n of nodes){
             n.step(dt);
             let d = toZ(mousePos).minus(n.pos);
@@ -556,9 +623,12 @@
         for (let e of edges){
             e.step(dt);
         }
-	for (let i = 0; i < 4; i++){
+	regenDebt = Math.min(16,regenDebt+lerp(4,regenAmount,Math.min(1,(nodeMode_v**5)*1.01)));
+	for (; regenDebt > 0; regenDebt --){
 	    render_hair(Math.random()*64);
 	}
+	regenAmount = 0;
+	nodeMode_v = lerp(nodeMode_v,nodeMode,0.025);
         window.requestAnimationFrame(nodeStep);
     }
     nodeStep();
@@ -571,9 +641,10 @@
 
     addEventListener("resize", (event) => {});
     
-
+    
     addEventListener('wheel', (event) => {//todo: use scroll event or pinch-zoom event if exists
 	let dest = toZ(mousePos);
+	regenAmount += Math.abs(event.wheelDelta);
 	let amount = Math.exp(event.wheelDelta*0.001);
 	zoom = zoom.scale(amount);
 	pan = dest.scale(1-amount).plus(pan.scale(amount));
@@ -581,34 +652,62 @@
     });
     let mouseDown = false;
     let mouseDownPos = new vec2(0,0);
-    addEventListener("mousedown", (event) => {mouseDownPos = mousePos.scale(1);mouseDown = true;});
-    addEventListener("mouseup", (event) => {mouseDown = false;});
+    addEventListener("mousedown", (event) => {
+	mouseDownPos = mousePos.scale(1);
+	mouseDown = true;
+	cancel(event);
+    });
+    addEventListener("mouseup", (event) => {
+	mouseDown = false;
+	if (movingNode !== undefined){
+	    movingNode.onmouseup(event);
+	}
+    });
     addEventListener("mousemove", (event) => {
 	if (mouseDown){
 	    let delta = mousePos.minus(mouseDownPos);
 	    pan = pan.minus(toDZ(delta));
+	    regenAmount += delta.mag()*0.25;
 	    mouseDownPos = mousePos.scale(1);
 	}
     });
+    addEventListener("keydown", (event) => {
+	console.log(event);
+	if (event.key === 'Shift'){
+	    nodeMode = 1-nodeMode;
+	}
+    })
+    /*addEventListener("keyup", (event) => {
+	console.log(event);
+	if (event.key === 'Shift'){
+	    nodeMode = 0;
+	}
+    })*/
+
 
     //todo sshift click for node mode (Attach nodes to eachother)
     //todo patches for zoom in
 
     function render_hair(n){//todo make faster.
 	let iters = 256;
-	let maxLines = 256;
-	let pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
-
-	for (let i = (1-Math.random()**2)*64; i > 1 ; i--){
-	    let gz = mandGrad(iters,pt)
-	    pt = pt.plus(gz.unscale(gz.mag2()*10+1));
-	    if (mand_i(pt,iters) > iters){
-		pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+	let maxLines = 512;
+	let tries = 16;
+	let pt;
+	do {
+	    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+	    for (let i = (1-Math.random()**2)*(tries*4); i > 1 ; i--){
+		let gz = mandGrad(iters,pt)
+		pt = pt.plus(gz.unscale(gz.mag2()*10+1));
+		if (mand_i(pt,iters) > iters){
+		    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+		}
 	    }
-	}
+	    tries--;
+	} while (tries > 0 && mand_i(pt,iters) > iters)
 	if (mand_i(pt,iters) > iters){
 	    return;
 	}
+
 	//let level = mandelbrott_dist(256,pt);
 	//let width = 1/(level+5)**2;
 	//let width = 1/(mandGrad(256,pt).mag()**1.5+1);
@@ -666,18 +765,21 @@
 	console.log(files);
 	//https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
 	if (FileReader && files && files.length) {
-            let fr = new FileReader();
-	    let img = document.createElement('img');
-            fr.onload = function () {
-		img.src = fr.result;
-            }
-            fr.readAsDataURL(files[0]);
-	    let div = document.createElement('div');
-	    div.setAttribute("onclick","nodeclick("+nodes.length+");");
-	    div.appendChild(img)
-	    htmlnodes_parent.appendChild(div);
-	    let scale = zoom.mag()/4/16;
-	    nodes.push(new Node(toZ(mousePos),img,0.125));
+	    for (let i = 0; i < files.length; i++){
+		let fr = new FileReader();
+		let img = document.createElement('img');
+		fr.onload = function () {
+		    img.src = fr.result;
+		}
+		fr.readAsDataURL(files[i]);
+		let div = document.createElement('div');
+		div.appendChild(img)
+		htmlnodes_parent.appendChild(div);
+		let scale = zoom.mag()/4/16;
+		let node = new Node(toZ(mousePos),img,0.125);
+		registernode(node);
+		node.followingMouse = 1;
+	    }
 	}
 	
 	// Not supported
@@ -687,20 +789,44 @@
 	    console.log("FileReader not supported or no files");
 	}
     }
-
+    function registernode(node){
+	let id = nodes.length;
+	let div = node.content;
+	/*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+	div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+	div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+	div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+	div.onclick = node.onclick.bind(node);
+	div.onmousedown = node.onmousedown.bind(node);
+	div.onmouseup = node.onmouseup.bind(node);
+	div.onmousemove = node.onmousemove.bind(node);
+	nodes.push(node);
+    }
+  
     function dragOverHandler(ev) {
 	ev.preventDefault();
     }
-    function nodeclick(id){
+    function nodemousedown(id){
 	if (id < nodes.length){
-	    nodes[id].followingMouse = 1-nodes[id].followingMouse;
-	    if (event.stopPropagation) {
-		event.stopPropagation();   // W3C model
-	    } else {
-		event.cancelBubble = true; // IE model
-	    }
+	    nodes[id].mousedown();
 	}
     }
+    function nodemouseup(id){
+	if (id < nodes.length){
+	    nodes[id].mouseup();
+	}
+    }
+    function nodemousemove(id){
+	if (id < nodes.length){
+	    nodes[id].mousemove();
+	}
+    }
+    function nodeclick(id){
+	if (id < nodes.length){
+	    nodes[id].mouseclick();
+	}
+    }
+
 
     function cancel(event){
 	if (event.stopPropagation) {
