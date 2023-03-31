@@ -127,7 +127,7 @@ input[type="range"] {
       <title>Mandelbrott level sets</title>
       <g id="viewmatrix">
 	<g id="bg" />
-	<path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
+	<path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.001"/>
 	<g id="edges"/>
       </g>
     </svg>
@@ -203,9 +203,9 @@ input[type="range"] {
     // let resdiv = res.children[0];
     // resdiv.innerHTML = "";
     // for (let n of ns){
-    //   let c = document.createElement("a")
+    //   let c = document.createElement("a");
     //   c.appendChild(document.createTextNode(n.uuid+""));
-    //   c.addEventListener("click",((event) => {
+    //   c.addEventListener("click",(function(event) {
     //     this.zoom_to_fit();
     //     autopilotSpeed = 0.1;
     //   }).bind(n));
@@ -755,6 +755,12 @@ input[type="range"] {
         //    mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
         //    ).div(fz.minus(z)); 
     }
+    function gradzr(f,z,epsilon=1e-6){
+        let r = f(z);
+        return new vec2(f(z.plus(new vec2(epsilon,0)))-r,f(z.plus(new vec2(0,epsilon)))-r).unscale(epsilon);
+    }
+    
+    
     function* trace_circle(iters,z0,step){
         if (step === undefined) { step = 0.5;}
         let level = mandelbrott_dist(iters,z0);
@@ -766,14 +772,26 @@ input[type="range"] {
             z = z.plus(gz.cmult(new vec2(level-vz,step).unscale(gz.mag2())));
         }
     }
-    function col(i){
-	let r = nodeMode_v
-	let rgb = [128-127*Math.cos(i/2**.5),128-127*Math.cos(i/3**.5),128-127*Math.cos(i/5**.5)];
-	let y = 0.17697*rgb[0]+0.81240*rgb[1]+0.01063*rgb[2];
-        return [lerp(rgb[0],y,nodeMode_v),lerp(rgb[1],y,nodeMode_v),lerp(rgb[2],y,nodeMode_v)];
+    function mcol(iters,z){
+        let i = mandelbrott_dist(iters,z);
+        if (i >= iters){
+            i = findInfimum(iters,z);
+            //i = findPeriod(z);
+            return scol(i.i*123+2,(1-nodeMode_v),128,32+(1-nodeMode_v)*48);
+        }else{
+            return scol(i);
+        }
     }
-    function scol(i){
-        let c = col(i);
+    function col(i,r=undefined,c=128,s=127){
+        if (r === undefined){
+	    r = nodeMode_v
+        }
+	let rgb = [c-s*Math.cos(i/2**.5),c-s*Math.cos(i/3**.5),c-s*Math.cos(i/5**.5)];
+	let y = 0.17697*rgb[0]+0.81240*rgb[1]+0.01063*rgb[2];
+        return [lerp(rgb[0],y,r),lerp(rgb[1],y,r),lerp(rgb[2],y,r)];
+    }
+    function scol(i,r=undefined,c=128,s=127){
+        c = col(i,r,c,s);
         return "RGB("+Math.round(c[0])+","+Math.round(c[1])+","+Math.round(c[2])+")";
     }
     
@@ -853,9 +871,9 @@ input[type="range"] {
             yield;
         }
     }
+    
 
-
-
+    
 
     
     function windowify(content,pos,scale,iscale){
@@ -1226,8 +1244,8 @@ input[type="range"] {
 	}
         draw(){
 	    //this.html.setAttribute("stroke-width",this.style['stroke-width']*SVGzoom*zoom.mag()/(0.5+this.stress())*(this.mouseIsOver?1.5:1.0));
-	    this.html.setAttribute("stroke",this.mouseIsOver?"white":this.style.stroke);
-	    this.html.setAttribute("fill",this.mouseIsOver?"white":this.style.fill);
+	    this.html.setAttribute("stroke",this.mouseIsOver?"lightskyblue":this.style.stroke);
+	    this.html.setAttribute("fill",this.mouseIsOver?"lightskyblue":this.style.fill);
 	    //this.html.setAttribute("d","M "+this.pts.map((v)=>(toSVG(v.pos).str())).join(" L "));
 	    let wscale = this.style['stroke-width']/(0.5+this.stress())*(this.mouseIsOver?1.5:1.0);
 	    let path = "M ";
@@ -1372,7 +1390,7 @@ input[type="range"] {
         }
     }
     
-    function connect(na,nb,length=0.2,linkStrength=0.1,linkStyle={stroke:"none","stroke-width":"0.005",fill:"gray",opacity:"0.5"}){
+    function connect(na,nb,length=0.2,linkStrength=0.1,linkStyle={stroke:"none","stroke-width":"0.005",fill:"lightcyan",opacity:"0.5"}){
         let edge = new Edge([na,nb],length,linkStrength,linkStyle);
 
 	na.addEdge(edge);
@@ -1414,8 +1432,14 @@ input[type="range"] {
 	    mousePath = "M "+toSVG(mousePathPos).str()+" L ";
         }
         for (let i = 0; i < 2; i++){
-	    let g = mandGrad(settings.iterations,mousePathPos);
-	    mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
+	    //let g = mandGrad(settings.iterations,mousePathPos);
+	    //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
+            
+            mousePathPos = mand_step(mousePathPos,toZ(mousePos));
+
+            //let p = findPeriod(mousePathPos);
+            //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
+            
 	    mousePath += toSVG(mousePathPos).str()+" ";
 	    
          
@@ -1425,7 +1449,7 @@ input[type="range"] {
 	}else{
             svg_mousePath.setAttribute("d",mousePath);
 	}   
-	let width = zoom.mag()*0.005*SVGzoom;
+	let width = zoom.mag()*0.0005*SVGzoom;
 	svg_mousePath.setAttribute("stroke-width",width+"");
         if (current_time === undefined){
             current_time = time;
@@ -1626,45 +1650,81 @@ input[type="range"] {
     function render_hair(n){//todo make faster.
 	let iters = settings.iterations;
 	let maxLines = settings.maxLines;
-	let tries = 16;
+	let tries = 1;
 	let pt;
 	do {
 	    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
 	    for (let i = (1-Math.random()**2)*(tries*4); i > 1 ; i--){
 		let gz = mandGrad(iters,pt)
 		pt = pt.plus(gz.unscale(gz.mag2()*10+1));
-		if (mand_i(pt,iters) > iters){
-		    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
-		}
+		//if (mand_i(pt,iters) > iters){
+		//    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+		//}
 	    }
 	    tries--;
 	} while (tries > 0 && mand_i(pt,iters) > iters)
-	if (mand_i(pt,iters) > iters || pt.mag2()>8){
+	/*if (mand_i(pt,iters) > iters || pt.mag2()>8){
 	    return;
-	}
+	}*/
 
 	//let level = mandelbrott_dist(256,pt);
 	//let width = 1/(level+5)**2;
 	//let width = 1/(mandGrad(256,pt).mag()**1.5+1);
+
         
 	let r = "M "+toSVG(pt).str() + " "+settings.renderDChar+" ";
 	let length = 0;
 	let n0 = n;
-	for (let p of trace_circle(iters,pt,Math.random()>0.5?settings.renderStepSize:-settings.renderStepSize)){
-	    //console.log(p);
-            //if ((n&3) == 0)
+        let opt = pt;
+        if (mand_i(pt,iters) > iters){
+            //interior coloring
+            /*let p = findPeriod(pt,pt,1e-12,iters);
+            for (; n > 0; n--){
+                let npt = mand_iter_n(p,pt,pt);
+                let delta = npt.minus(pt);
+                delta = delta.cpow(new vec2(0.5,0));
+                npt = pt.plus(delta.scale(0.1));
+                if (mand_i(npt,iters)<=iters){
+                    break;
+                }
+                r += toSVG(npt).str()+" ";
+                length += npt.minus(pt).mag();
+                pt = npt;
+            }*/
+            let p = findInfimum(iters,pt);
+            for (;n > 0; n--){
+                let delta = gradzr( ((z)=>(mand_iter_n(p.i,z,z).mag2())) ,pt, 1e-5);
+                delta = delta.unscale(delta.mag()+1e-300).scale(zoom.mag()*.1);
+                //debugger
+                npt = pt.plus(delta.scale(-settings.renderStepSize));
+                if (mand_i(npt,iters)<=iters){
+                    break;
+                }
+                r += toSVG(npt).str()+" ";
+                length += npt.minus(pt).mag();
+                pt = npt;
+            }
+
+            
+            length /= 4;
+        }else{
+	    for (let p of trace_circle(iters,pt,Math.random()>0.5?settings.renderStepSize:-settings.renderStepSize)){
+	        //console.log(p);
+                //if ((n&3) == 0)
 	        r += toSVG(p).str()+" ";
-	    n -= 1;
-	    if (n < 0){
-		break;
+	        n -= 1;
+	        if (n < 0){
+		    break;
+	        }
+	        length += p.minus(pt).mag();
+	        pt = p;
 	    }
-	    length += p.minus(pt).mag();
-	    pt = p;
-	}
+            color = scol(mandelbrott_dist(iters,pt));
+        }
 	let width = Math.min(settings.renderWidthMult*length/n0,0.1);
 	let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
 	pathn.setAttribute("fill","none");
-        pathn.setAttribute("stroke",scol(mandelbrott_dist(iters,pt)));
+        pathn.setAttribute("stroke",mcol(iters,opt));
 	pathn.setAttribute("stroke-width",""+width*SVGzoom);
         pathn.setAttribute("d",r);
         svg_bg.appendChild(pathn);
@@ -1859,6 +1919,63 @@ input[type="range"] {
 	node.draw();
 	node.mouseAnchor = toDZ(new vec2(0,-node.content.offsetHeight/2+6));
     });
+
+    function gcd(a,b){
+        if (b === 0){
+            return a;
+        }
+        return gcd(b,a%b);
+    }
+    
+    function findPeriod(c,z=new vec2(0,0),epsilon2 = 1e-7,maxiters=256){
+        let zf = mand_step(z,c);
+        let i = 1;
+        let p = 0;
+        for (; i < maxiters; i++){
+            if (zf.minus(z).mag2() <= epsilon2){
+                p = i;
+                break
+            }
+            zf = mand_step(zf,c);
+            zf = mand_step(zf,c);
+            z = mand_step(z,c);
+        }
+        for (; i < maxiters; i++){
+            if (zf.minus(z).mag2() <= epsilon2){
+                p = gcd(p,i);
+            }
+            zf = mand_step(zf,c);
+            zf = mand_step(zf,c);
+            z = mand_step(z,c);
+        }
+        return p;
+    }
+
+    function mand_iter_n(n,c,z=new vec2(0,0)){
+        for (let i = 0; i < n; i++){
+            z = mand_step(z,c);
+        }
+        return z;
+    }
+
+    function findInfimum(iters,z,c=undefined){
+        if (c === undefined){
+            c = z;
+        }
+        let besti = 0;
+        let bestz = z;
+        let bestd = z.mag2();
+        for (let i = 1; i <= iters; i++){
+            z = mand_step(z,c);
+            let d = z.mag2();
+            if (d < bestd){
+                bestd = d;
+                besti = i;
+                bestz = z;
+            }
+        }
+        return {i:besti,z:bestz};
+    }
 
     
   </script>
