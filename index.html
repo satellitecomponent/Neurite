@@ -11,22 +11,30 @@
         padding: 0;
         background-color: #000000;
     }
+* {
+    font-family: "Open Sans", sans-serif;
+}
+.search_matched{
+    outline-style: double;
+    outline-color: red;
+    outline-width: 10px;
+}
+.search_nomatch{
+    outline-style: hidden;
+    outline-color: blue;
+    outline-width: 0px;
+}
+/* Dropdown menu styles */
 
-    .search_matched{
-        outline-style: double;
-        outline-color: red;
-        outline-width: 10px;
-    }
-    .search_nomatch{
-        outline-style: hidden;
-        outline-color: blue;
-        outline-width: 0px;
-    }
-    /* Dropdown menu styles */
 .dropdown {
   position: absolute;
   top: 20px;
   right: 20px;
+}
+
+.searchdropdown {
+  display: inline-block;
+  margin-left: 20px;
 }
 
 .menu-button {
@@ -81,7 +89,7 @@
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: #f1f1f1;
+  background: rgba(60, 59, 66, 0.93);
   border-radius: 8px;
   overflow: hidden;
   display: none;
@@ -95,18 +103,29 @@
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
+    -webkit-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    
 }
 
 .submenu {
   padding: 10px;
+  color: #bbb
 }
 
 .submenu a {
   display: block;
-  color: #333;
+  color: #bbb;
   text-decoration: none;
   padding: 5px;
 }
+
+.submenu a.selected:before {
+  content: "\2713";
+  color: #bbb;
+  margin-right: 5px;
+  }
 
 .submenu a:hover {
   background-color: #ddd;
@@ -117,23 +136,109 @@ input[type="range"] {
   margin: 0 auto;
   width: 200px;
 }
+
+input[type="text" i] {
+    padding: 1px 2px;
+    background-color: #222226;
+    color: #bbb;
+}
+
+.submenu-btn {
+  display: flex;
+  align-content:flex-start;
+  border: none;
+  background-color: transparent;
+  color: #bbb;
+  cursor: pointer;
+  padding: 5px;
+  font-size: medium;
+ 
+  
+}
+
+.Searchbar {
+  background-color: #222226;
+  color: #bbb;
+}
+
+.gradient-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+.gradient-preview {
+  width: 250px;
+  height: 100px;
+  margin-top: 5px;
+}
+
+.color-inputs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.color-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+}
+
+.color-picker {
+  width: 50px;
+  height: 50px;
+  background-color: #8882;
+  color: #bbb
+}
+
+.delete-btn {
+  margin-top: 5px;
+  background-color: #8882;
+  color: #bbb
+}
+
+.add-btn {
+  margin-top: 10px;
+  background-color: #8882;
+  display: flex;
+  justify-content: center !important;
+  width: auto;
+  color: #bbb;
+}
+
+.search_matched{
+    outline-style: double;
+    outline-color: red;
+    outline-width: 10px;
+}
+.search_nomatch{
+    outline-style: hidden;
+    outline-color: blue;
+    outline-width: 0px;
+}
+
   </style>
 </head>
 
 <body id="body">
 
   <div ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
-    <svg id="svg_bg" viewBox="-128 -128 256 256" width="100%" height="100%" top="0" left="0" position="fixed">
-      <title>Mandelbrott level sets</title>
+    <svg id="svg_bg" viewBox="-128 -128 256 256" width="100%" height="100vh" top="0" left="0" position="fixed">
+      <title>Mandelbrot</title>
       <g id="viewmatrix">
 	<g id="bg" />
-	<path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.001"/>
+	<path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
 	<g id="edges"/>
       </g>
     </svg>
   </div>
   
-  <svg id="debug_layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="position: absolute; left:0px; top:0px; display:none; visibility:hidden;">
+  <svg id="debug_layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100vh" style="position: absolute; left:0px; top:0px; display:none; visibility:hidden;">
     <style>
       .white {
           font: 12px sans-serif;
@@ -150,38 +255,57 @@ input[type="range"] {
     <div class="menu-icon"></div>
   </div>
   <div class="dropdown-content">
-    <div>
-      <div class="submenu">
-        <a id="save-button">Save net</a>
-        <input id="save-or-load" type="text" placeholder="save data..."/>
-        <a id="load-button">Load net</a>
+      <div style="display: none;" id="search-results">
+          <div class="submenu">
+
+          </div>
       </div>
-    </div>
-    <div>
+      <div>
       <div class="submenu">
-        <a id="save-button">Save net</a>
-        <input id="save-or-load" type="text" placeholder="save data..."/>
-        <a id="load-button">Load net</a>
-      </div>
-      <div class="submenu">
-        <div id="quality_value">Quality</div>
-        <input id="quality" type="range" min="0" max="100" value="0">
-        <div id="length_value">Length</div>
-        <input id="length" type="range" min="0" max="100" value="50">
-        <div id="fps">fps:?? (is javascript enabled?)</div>
-        z<sup id="exponent_value">2</sup>+c
-        <input id="exponent" type="range" min="1" max="8" value="2">
+          <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
+          <a id="save-button">Save</a>
+          <input id="save-or-load" type="text" placeholder="save data..." />
+          <a id="load-button">Load</a>
+          <a id="clear-button">Clear</a>
+          <div id="clear-sure" style="display:none">
+              <a id="clear-unsure-button">no</a>
+              <a id="clear-sure-button">yes</a>
+          </div>
       </div>
       <div class="submenu">
-        <a href="#">Button 2</a>
-        <a href="#">Submenu 2</a>
-        <a id="clear-button">clear</a>
-        <div id="clear-sure" style="display:none">
-          <a id="clear-unsure-button">no</a>
-          <a id="clear-sure-button">yes</a>
-        </div>
+          <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
+          <div id="quality_value">Quality</div>
+          <input id="quality" type="range" min="0" max="100" value="0">
+          <div id="length_value">Length</div>
+          <input id="length" type="range" min="0" max="100" value="50">
+          z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
+          <input id="exponent" type="range" min="1" max="8" value="2">
       </div>
-    </div>
+      <div class="submenu">
+        <button class="submenu-btn">Color Selection</button>
+        <div id="gradient-selector" style="display: none;">
+             <div class="gradient-preview"></div>
+             <div class="color-inputs">
+                 <div class="color-input">
+                     <input type="color" class="color-picker" value="#ff0000" />
+                     <button class="delete-btn">-</button>
+                 </div>
+             </div>
+            <button class="add-btn">Add Color</button>
+            </div>
+          <div class="submenu">
+              <a href="#"></a>
+
+              <label>
+                  NodeMode (Shift)
+                  <input type="checkbox" />
+
+              </label>
+
+          </div>
+          </div>
+
+      </div>
   </div>
 </div>
   <script>
@@ -199,22 +323,32 @@ input[type="range"] {
         cancel(e);
     });
 
+      let inp = document.getElementById("Searchbar")
+      inp.addEventListener("input", function () {
+          let res = document.getElementById("search-results")
+          if (inp.value) {
+              res.style.display = "block";
+              let ns = (searchNodesBy((n) => [...n.searchStrings()].join().toLowerCase().includes(inp.value.toLowerCase())))
+              let resdiv = res.children[0];
+              resdiv.innerHTML = "";
+              for (let n of ns) {
+                  let c = document.createElement("a")
+                  c.appendChild(document.createTextNode(n.uuid + ""));
+                  c.addEventListener("click", (function (event) {
+                      this.zoom_to_fit();
+                      autopilotSpeed = 0.1;
+                  }).bind(n));
+                  resdiv.appendChild(c);
+              }        
+          } else {
+              res.style.display = "none"
+              clearSearch();
+          }
+      
 
-    // let resdiv = res.children[0];
-    // resdiv.innerHTML = "";
-    // for (let n of ns){
-    //   let c = document.createElement("a");
-    //   c.appendChild(document.createTextNode(n.uuid+""));
-    //   c.addEventListener("click",(function(event) {
-    //     this.zoom_to_fit();
-    //     autopilotSpeed = 0.1;
-    //   }).bind(n));
-    //   resdiv.appendChild(c);
-    // }
-    
-    
-    
-    
+      });
+
+
     document.getElementById("save-button").addEventListener("click", function() {
         let s = document.getElementById("nodes").innerHTML;
         //navigator.clipboard.writeText(s);
@@ -224,18 +358,33 @@ input[type="range"] {
     document.getElementById("load-button").addEventListener("click", function() {
         loadnet(document.getElementById("save-or-load").value,true);
     });
+      // Get all the menu items
+      const menuItems = document.querySelectorAll(".menu-item");
+
+      // Add a click event listener to each menu item
+    menuItems.forEach(function (item) {
+        item.addEventListener("click", function () {
+            // Remove the "selected" class from all the menu items
+            // menuItems.forEach(function(item) {
+            //   item.classList.remove("selected");
+            // });
+
+            // Add the "selected" class to the clicked menu item
+            item.classList.add("selected");
+        });
+    });
     document.getElementById("clear-button").addEventListener("click", function() {
         document.getElementById("clear-sure").setAttribute("style","display:block");
         document.getElementById("clear-button").text = "Are you sure?";
     });
     document.getElementById("clear-unsure-button").addEventListener("click", function() {
         document.getElementById("clear-sure").setAttribute("style","display:none");
-        document.getElementById("clear-button").text = "Clear net";
+        document.getElementById("clear-button").text = "clear";
     });
     document.getElementById("clear-sure-button").addEventListener("click", function() {
         clearnet();
         document.getElementById("clear-sure").setAttribute("style","display:none");
-        document.getElementById("clear-button").text = "Clear net";
+        document.getElementById("clear-button").text = "clear";
     });
     function getQuality(){
         let v = document.getElementById("quality").value/100;
@@ -262,6 +411,91 @@ input[type="range"] {
         }
         document.getElementById("exponent_value").textContent = v;
     })
+      const submenuBtn = document.querySelector('.submenu-btn');
+      const gradientSelector = document.getElementById('gradient-selector');
+
+      submenuBtn.addEventListener('click', () => {
+          gradientSelector.style.display = (gradientSelector.style.display === 'none') ? 'block' : 'none';
+      });
+
+      const gradientPreview = document.querySelector('.gradient-preview');
+      const colorInputs = document.querySelector('.color-inputs');
+      const addBtn = document.querySelector('.add-btn');
+      const deleteBtns = document.querySelectorAll('.delete-btn');
+
+      let isDragging = false;
+      let draggedColorInput = null;
+
+      function updateGradient() {
+          const colors = [];
+          const colorPickers = document.querySelectorAll('.color-picker');
+          colorPickers.forEach(colorPicker => {
+              colors.push(colorPicker.value);
+          });
+          gradientPreview.style.backgroundImage = `linear-gradient(to right, ${colors.join(', ')})`;
+          const colorInputsArray = Array.from(colorInputs.children);
+          colorInputsArray.forEach((colorInput, index) => {
+              const percentage = `${(index / (colorInputsArray.length - 1)) * 100}%`;
+              colorInput.style.left = percentage;
+          });
+      }
+
+      function addColorInput(color) {
+          const colorInput = document.createElement('div');
+          colorInput.classList.add('color-input');
+          const colorPicker = document.createElement('input');
+          colorPicker.type = 'color';
+          colorPicker.classList.add('color-picker');
+          colorPicker.value = color || '#ff0000';
+          colorPicker.addEventListener('input', updateGradient);
+          colorPicker.addEventListener('mousedown', (event) => {
+              isDragging = true;
+              draggedColorInput = colorInput;
+          });
+          colorPicker.addEventListener('mousemove', (event) => {
+              if (isDragging && draggedColorInput === colorInput) {
+                  const position = event.clientX - colorInputs.getBoundingClientRect().left;
+                  const percentage = `${(position / colorInputs.offsetWidth) * 100}%`;
+                  colorInput.style.left = percentage;
+                  updateGradient();
+              }
+          });
+          colorPicker.addEventListener('mouseup', (event) => {
+              isDragging = false;
+              draggedColorInput = null;
+          });
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerText = '-';
+          deleteBtn.classList.add('delete-btn');
+          deleteBtn.addEventListener('click', () => {
+              colorInput.remove();
+              updateGradient();
+          });
+          colorInput.appendChild(colorPicker);
+          colorInput.appendChild(deleteBtn);
+          colorInputs.appendChild(colorInput);
+          updateGradient();
+      }
+
+      addBtn.addEventListener('click', () => {
+          const colorPicker = document.createElement('input');
+          colorPicker.type = 'color';
+          colorPicker.click();
+          colorPicker.addEventListener('change', () => {
+              addColorInput(colorPicker.value);
+          });
+      });
+
+      deleteBtns.forEach(deleteBtn => {
+          deleteBtn.addEventListener('click', () => {
+              const colorInput = deleteBtn.parentNode;
+              colorInput.remove();
+              updateGradient();
+          });
+      });
+
+      updateGradient();
+
     </script>
 
 
@@ -556,18 +790,24 @@ input[type="range"] {
         settings.renderSteps /= f;
     }
     setRenderLength(getLength());
-    
+    function windowScaleAndOffset(){
+        let svgbb = svg.getBoundingClientRect();
+        let s = Math.min(svgbb.width,svgbb.height);//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        let off = svgbb.width < svgbb.height? svgbb.right : svgbb.bottom;
+	return {s:s,o:new vec2(- (off-svgbb.right)/2,- (off-svgbb.bottom)/2)}
+    }
+        
     function toZ(c){
-        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
-        return c.unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
+        let {s,o} = windowScaleAndOffset();
+        return c.minus(o).unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
     }
     function toDZ(c){
-        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        let {s,o} = windowScaleAndOffset();
         return c.unscale(s).scale(2).cmult(zoom);
     }
     function fromZ(z){
-        let s = window.innerWidth;//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
-        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s);
+        let {s,o} = windowScaleAndOffset();
+        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s).plus(o);
     }
     function fromZtoUV(z){
         return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5));
@@ -973,8 +1213,10 @@ input[type="range"] {
 	}else{
 	    e.style.display = "initial";
 	}
-	p.x = svgbb.left + svgbb.width*p.x;
-	p.y = svgbb.top + svgbb.height*p.y;
+        let w = Math.min(svgbb.width,svgbb.height);
+        let off = svgbb.width < svgbb.height? svgbb.right : svgbb.bottom;
+	p.x = w*p.x - (off-svgbb.right)/2;
+	p.y = w*p.y - (off-svgbb.bottom)/2;
 	let bb = e.getBoundingClientRect();
         p = p.minus(new vec2(bb.width,bb.height).scale(0.5/s));
         e.style.left = p.x+"px";
