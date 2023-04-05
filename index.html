@@ -230,8 +230,9 @@ input[type="text" i] {
 }
 
 .textnode{
-    background-color: #222226;
-  </style>
+          background-color: #222226;
+         }
+    </style>
 </head>
 
 <body id="body">
@@ -245,6 +246,13 @@ input[type="text" i] {
 	<g id="edges"/>
       </g>
     </svg>
+  </div>
+  <div id="coordinates" style="background-color: RGB(70,70,70);background-color: RGB(0,0,0,0.3);color:RGB(170,170,170); position: absolute; display: initial; left: 0px; top: 0px;">
+    pan:
+    <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50"/>
+    <br/>
+    zoom:
+    <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28"/>
   </div>
 
   <script>
@@ -346,9 +354,10 @@ input[type="text" i] {
       </div>
       <div>
         <input type="text" id="node-tag" value="#node:" />
-	  <label for="node-tag">Node tag:</label>
-	  <input type="text" id="ref-tag" value="#ref:" />
-        <label for="ref-tag">Reference tag:</label>
+	<label for="node-tag">Node tag.</label>
+        <br/>
+	<input type="text" id="ref-tag" value="#ref:" />
+        <label for="ref-tag">Reference tag.</label>
         
         <br />
         <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
@@ -648,7 +657,12 @@ input[type="text" i] {
                   c.appendChild(document.createTextNode(n.uuid + ""));
                   c.addEventListener("click", (function (event) {
                       this.zoom_to();
-                      autopilotSpeed = 0.1;
+                      autopilotSpeed = settings.autopilotSpeed;
+                  }).bind(n));
+                  c.addEventListener("dblclick", (function (event) {
+                      this.zoom_to();
+                      skipAutopilot();
+                      autopilotSpeed = settings.autopilotSpeed;
                   }).bind(n));
                   resdiv.appendChild(c);
               }        
@@ -807,7 +821,6 @@ input[type="text" i] {
       });
 
       updateGradient();
-
     </script>
 
 
@@ -992,6 +1005,9 @@ input[type="text" i] {
         hasNaN(){
 	    return isNaN(this.x) || isNaN(this.y);
 	}
+        isFinite(){
+	    return isFinite(this.x) && isFinite(this.y);
+	}
         cexp(){
             let m = Math.exp(this.x);
             let i = Math.sin(this.y);
@@ -1017,6 +1033,9 @@ input[type="text" i] {
 	lerpto(o,t){
 	    return new vec2(lerp(this.x,o.x,t),lerp(this.y,o.y,t));
 	}
+        ctostring(){
+            return (""+this.y).startsWith("-")? this.x+"-i"+(-this.y):this.x+"+i"+this.y;
+        }
     }
     function lerp(a,b,t){
 	return a*(1-t)+b*t;
@@ -1029,9 +1048,14 @@ input[type="text" i] {
     var pan = new vec2(0,0);
 
     var zoomTo = new vec2(4,0);
-    var panTo = new vec2(4,0);
+    var panTo = new vec2(0,0);
     var autopilotReferenceFrame = undefined;
     var autopilotSpeed = 0;
+
+    function skipAutopilot(){
+        zoom = zoomTo
+        pan = autopilotReferenceFrame?autopilotReferenceFrame.pos.plus(panTo):panTo;
+    }
     
     var settings = {zoomSpeed:0.001,
 		    panSpeed:1,
@@ -1055,10 +1079,13 @@ input[type="text" i] {
                     //autopilotRF_Pscale:1,
                     autopilotRF_Iscale:0.5,
                     //autopilotRF_Dscale:0.1,
+                    autopilotSpeed:0.1,
+                    autopilotMaxSpeed:0.1,
                    
                     buttonGraphics:{hover:["RGB(100,100,100)","RGB(200,200,255)"],
                                     click:["RGB(70,70,70)","RGB(100,100,100)"],
                                     initial:["none","RGB(170,170,170)"]},
+                    maxDist:1,
 		   }
     function setRenderQuality(n){
         let q = 1/n;
@@ -1455,7 +1482,7 @@ e.onmouseleave();
         ui(fs,(()=>{
             node.zoom_to_fit();
             zoomTo = zoomTo.scale(1.0625);
-            autopilotSpeed=0.1;
+            autopilotSpeed=settings.autoPilotSpeed;
         }));
         ui(col,(()=>{}),"stroke");
 	
@@ -1990,6 +2017,31 @@ e.onmouseleave();
         gen.next();
         setTimeout(frame,100);
     }
+    const panInput = document.getElementById("pan");
+    const zoomInput = document.getElementById("zoom");
+    let coordsLive = true;
+    const coords = document.getElementById("coordinates");
+    panInput.addEventListener("input",(e)=>{
+        const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)\s*,?\s*([+-]?i?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
+        const m = panInput.value.match(r);
+        coordsLive = false;
+        if (m === null) return;
+        pan = new vec2(parseFloat(m[0]),parseFloat(m[6].replace(/[iI]/,"")));
+    });
+    zoomInput.addEventListener("input",(e)=>{
+        const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
+        const m = zoomInput.value.match(r);
+        coordsLive = false;
+        if (m === null) return;
+        const z = parseFloat(m);
+        if (z !== 0){
+            zoom = zoom.scale(z/zoom.mag());
+        }
+    });
+    for (const k of ["paste","mousemove","mousedown","dblclick","click"]){
+        panInput.addEventListener(k,(e)=>{cancel(e);})
+        zoomInput.addEventListener(k,(e)=>{cancel(e);})
+    }
     //frame();
     var mousePathPos;
     var current_time = undefined;
@@ -1999,20 +2051,37 @@ e.onmouseleave();
     let panToI = new vec2(0,0);
     let panToI_prev = undefined;
     function nodeStep(time){
-        zoom = zoom.scale(1-autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
+        let autopilot_travelDist = 0;
+        let newPan = pan;
         if (autopilotReferenceFrame && autopilotSpeed !== 0){
             if (panToI_prev === undefined){
                 panToI_prev = autopilotReferenceFrame.pos.scale(1);
             }
             panToI = panToI.scale(1-settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
-            pan = pan.scale(1-autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
+            newPan = pan.scale(1-autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
             panToI_prev = autopilotReferenceFrame.pos.scale(1);
         }else{
-            pan = pan.scale(1-autopilotSpeed).plus(panTo.scale(autopilotSpeed));
+            newPan = pan.scale(1-autopilotSpeed).plus(panTo.scale(autopilotSpeed));        
             panToI_prev = undefined;
         }
+        autopilot_travelDist = pan.minus(newPan).mag()/zoom.mag();
+        if (autopilot_travelDist > settings.autopilotMaxSpeed){
+            newPan = pan.plus(newPan.minus(pan).scale(settings.autopilotMaxSpeed/autopilot_travelDist));
+            const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed/autopilot_travelDist+1e-300)/10)*2;
+            zoom = zoom.scale(1-speedCoeff*autopilotSpeed);
+            //*Math.log(autopilot_travelDist/settings.autopilotMaxSpeed));
+        }else{
+            zoom = zoom.scale(1-autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
+        }
+        pan = newPan;
 	//zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
 	//pan = pan.scale(0.9).plus(pan_to.scale(0.1));
+        if (coordsLive){
+            panInput.value = pan.ctostring();
+            zoomInput.value = zoom.mag()+"";
+        }
+        //const inpColor = scol(Math.log(zoom.mag()),undefined,64,128);
+        //coords.style.color = inpColor;
 	updateViewbox();
         if (mousePath == ""){
 	    mousePathPos = toZ(mousePos);
@@ -2026,7 +2095,7 @@ e.onmouseleave();
 
             //let p = findPeriod(mousePathPos);
             //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
-            if (!toSVG(mousePathPos).hasNaN())
+            if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60)
 	        mousePath += toSVG(mousePathPos).str()+" ";
 	    
          
@@ -2044,7 +2113,8 @@ e.onmouseleave();
         let dt = time-current_time;
         current_time = time;
         if (dt > 0){
-            avgfps = avgfps*.99 + 0.01*1000/dt;
+            const alpha = Math.exp(-1*dt/1000);
+            avgfps = avgfps*alpha + (1-alpha)*1000/dt;
         }
         document.getElementById("debug_layer").children[1].textContent = "fps:"+avgfps;
         document.getElementById("fps").textContent = "avg fps:"+Math.round(avgfps*100)/100; 
@@ -2078,8 +2148,8 @@ e.onmouseleave();
     
 
     addEventListener('wheel', (event) => {
-        autopilotSpeed = 0;
         if (event.getModifierState(settings.rotateModifier)){
+            autopilotSpeed = 0;coordsLive = true;
             let amount = event.wheelDelta*settings.rotateModifierSpeed;
             let p = toZ(new vec2(event.pageX,event.pageY));
             let zc = p.minus(pan);
@@ -2094,6 +2164,7 @@ e.onmouseleave();
             return;
         }
 	if (settings.scroll === "zoom"){
+            autopilotSpeed = 0;coordsLive = true;
 	    let dest = toZ(mousePos);
 	    regenAmount += Math.abs(event.wheelDelta);
 	    let amount = Math.exp(event.wheelDelta*settings.zoomSpeed);
@@ -2101,6 +2172,7 @@ e.onmouseleave();
 	    pan = dest.scale(1-amount).plus(pan.scale(amount));
 	    cancel(event);
 	}else if (settings.scroll === "pan"){
+            autopilotSpeed = 0;coordsLive = true;
 	    let dest = toZ(mousePos);
 	    let dp;
 	    let amount;
@@ -2135,7 +2207,7 @@ e.onmouseleave();
     });
     addEventListener("mousemove", (event) => {
 	if (mouseDown){
-            autopilotSpeed = 0
+            autopilotSpeed = 0; coordsLive = true;
 	    let delta = mousePos.minus(mouseDownPos);
 	    pan = pan.minus(toDZ(delta));
 	    regenAmount += delta.mag()*0.25;
@@ -2311,7 +2383,7 @@ e.onmouseleave();
                 if (mand_i(npt,iters)<=iters){
                     break;
                 }
-                if (toSVG(npt).hasNaN()) break;
+                if (!toSVG(npt).isFinite()) break;
                 r += toSVG(npt).str()+" "; na += 1;
                 length += npt.minus(pt).mag();
                 pt = npt;
@@ -2320,10 +2392,11 @@ e.onmouseleave();
             
             length /= 4;
         }else{
-	    for (let p of trace_circle(iters,pt,Math.random()>0.5?settings.renderStepSize:-settings.renderStepSize)){
+            if (mandelbrott_dist(iters,pt) < settings.maxDist) return;
+            for (let p of trace_circle(iters,pt,Math.random()>0.5?settings.renderStepSize:-settings.renderStepSize)){
 	        //console.log(p);
                 //if ((n&3) == 0)
-                if (toSVG(p).hasNaN()) break;
+                if (!toSVG(p).isFinite()) break;
 	        r += toSVG(p).str()+" "; na += 1;
 	        n -= 1;
 	        if (n < 0){
@@ -2519,7 +2592,7 @@ e.onmouseleave();
             div.appendChild(content);
             htmlnodes_parent.appendChild(div);
         }
-	nodes.push(node);
+        registernode(node)
         return node;
     }
 
@@ -2603,11 +2676,3 @@ e.onmouseleave();
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
