@@ -11,10 +11,13 @@
         padding: 0;
         background-color: #000000;
     }
-    .window{
-        border: medium solid RGB(100,100,100);
-        background-color: RGB(100,100,100);
-    }
+    .window {
+            border: none;
+            background-color: rgba(60, 59, 66, 0.93);
+            -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.2),; /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+            -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.2),; /* Firefox 3.5 - 3.6 */
+            box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.2),; /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+        }
 * {
     font-family: "Open Sans", sans-serif;
 }
@@ -107,9 +110,9 @@
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-    -webkit-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-    -moz-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-    box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -webkit-box-shadow:  0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow:  0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow:  0px 0px 30px 10px rgba(21, 21, 27, 0.44);
     
 }
 
@@ -226,7 +229,10 @@ input[type="text" i] {
     outline-width: 0px;
 }
 
-  </style>
+.textnode{
+          background-color: #222226;
+         }
+    </style>
 </head>
 
 <body id="body">
@@ -347,22 +353,15 @@ input[type="text" i] {
         </div>
       </div>
       <div>
-        <label for="node-tag">Node tag:</label>
         <input type="text" id="node-tag" value="#node:" />
-        <label for="ref-tag">Reference tag:</label>
-        <input type="text" id="ref-tag" value="#ref:" />
+	<label for="node-tag">Node tag.</label>
+        <br/>
+	<input type="text" id="ref-tag" value="#ref:" />
+        <label for="ref-tag">Reference tag.</label>
+        
         <br />
-        <textarea id="note-input" rows="10" cols="50"></textarea>
-        <table id="node-table">
-          <thead>
-            <tr>
-              <th>Header</th>
-              <th>Plain Text</th>
-              <th>References</th>
-            </tr>
-          </thead>
-          <tbody id="node-table-body"></tbody>
-        </table>
+        <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
+        
       </div>
       </div>
       <script>
@@ -416,8 +415,8 @@ input[type="text" i] {
                 let currentNodeTitle = '';
                 
                 for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i]; 
-        
+                    const line = lines[i];
+                    
                     if (line.startsWith(nodeTag)) {
                         currentNodeTitle = line.substr(nodeTag.length).trim();
                         if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
@@ -822,7 +821,6 @@ input[type="text" i] {
       });
 
       updateGradient();
-
     </script>
 
 
@@ -1478,6 +1476,7 @@ input[type="text" i] {
                     cb(ev);
                 }
             }
+e.onmouseleave();
         }
         ui(del,node.remove.bind(node));
         ui(fs,(()=>{
@@ -2242,6 +2241,7 @@ input[type="text" i] {
         n.onmousedown = cancel;
 	n.setAttribute("type","text");
 	n.setAttribute("size","10");
+      n.setAttribute("style","background-color: #222226; color: #bbb;");
 	let node = addNodeAtNaturalScale([t,document.createElement("br"),n]);
         if (sx !== undefined){
             x = (new vec2(sx,sy)).cmult(zoom).plus(pan);y=x.y;x=x.x;
@@ -2527,7 +2527,7 @@ input[type="text" i] {
 	// Not supported
 	else {
             // fallback -- perhaps submit the input to an iframe and temporarily store
-            // them on the server until the user's session ends.           '
+            // them on the server until the user's session ends.
 	    console.log("FileReader not supported or no files");
 	}
     }
@@ -2676,11 +2676,3 @@ input[type="text" i] {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
