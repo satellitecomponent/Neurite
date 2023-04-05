@@ -873,7 +873,7 @@ input[type="text" i] {
     <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="purple"/></svg>
 
 
-    -->
+    </a-->
   <div id="elements" style="display:none; visibility:hidden;">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 2.125" height="16pt">
     <g id="button-delete" transform="scale(0.125 0.125) translate(1 1)">
@@ -1043,7 +1043,7 @@ input[type="text" i] {
 		    gestureRotateSpeed:Math.PI/180,
 		    scroll:('GestureEvent' in window)?"pan":"zoom",
 		    maxLines:512,
-		    nodeModeKey:"CapsLock",
+		    nodeModeKey:"Shift",//"CapsLock",
 		    nodeModeTrigger:"down",//"toggle"
                     renderStepSize:1,//0.25,
                     renderWidthMult:0.25,//1,
@@ -1061,7 +1061,7 @@ input[type="text" i] {
                    
                     buttonGraphics:{hover:["RGB(100,100,100)","RGB(200,200,255)"],
                                     click:["RGB(70,70,70)","RGB(100,100,100)"],
-                                    initial:["RGB(100,100,100)","RGB(170,170,170)"]},
+                                    initial:["none","RGB(170,170,170)"]},
 		   }
     function setRenderQuality(n){
         let q = 1/n;
@@ -1314,7 +1314,7 @@ input[type="text" i] {
         if (r === undefined){
 	    r = nodeMode_v
         }
-	let rgb = [c-s*Math.cos(i/2**.5),c-s*Math.cos(i/3**.5),c-s*Math.cos(i/5**.5)];
+	let rgb = [c-s*Math.cos(i/2**.9),c-s*Math.cos(i/3**.9),c-s*Math.cos(i/5**.9)];
 	let y = 0.17697*rgb[0]+0.81240*rgb[1]+0.01063*rgb[2];
         return [lerp(rgb[0],y,r),lerp(rgb[1],y,r),lerp(rgb[2],y,r)];
     }
@@ -2287,6 +2287,7 @@ input[type="text" i] {
 	let n0 = n;
         let opt = pt;
         let na = 0;
+        let opacity=1;
         if (mand_i(pt,iters) > iters){
             //interior coloring
             /*let p = findPeriod(pt,pt,1e-12,iters);
@@ -2316,7 +2317,7 @@ input[type="text" i] {
                 length += npt.minus(pt).mag();
                 pt = npt;
             }
-
+            opacity = 0.1;
             
             length /= 4;
         }else{
@@ -2340,6 +2341,7 @@ input[type="text" i] {
 	pathn.setAttribute("fill","none");
         pathn.setAttribute("stroke",mcol(iters,opt));
 	pathn.setAttribute("stroke-width",""+width*SVGzoom);
+        pathn.setAttribute("stroke-opacity",""+opacity);
         pathn.setAttribute("d",r);
         svg_bg.appendChild(pathn);
 	if (svg_bg.children.length > maxLines){
