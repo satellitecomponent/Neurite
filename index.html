@@ -1,0 +1,2614 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Mandelbrott</title>
+  <style type="text/css">
+    html {
+        /* overflow:hidden; */
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+    }
+    .window{
+        border: medium solid RGB(100,100,100);
+        background-color: RGB(100,100,100);
+    }
+* {
+    font-family: "Open Sans", sans-serif;
+}
+.search_matched{
+    outline-style: double;
+    outline-color: red;
+    outline-width: 10px;
+}
+.search_nomatch{
+    outline-style: hidden;
+    outline-color: blue;
+    outline-width: 0px;
+}
+/* Dropdown menu styles */
+
+.dropdown {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.searchdropdown {
+  display: inline-block;
+  margin-left: 20px;
+}
+
+.menu-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.menu-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 2px;
+  background-color: #bbb;
+  transition: all 0.3s ease-in-out;
+}
+
+.menu-icon::before,
+.menu-icon::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background-color: #bbb;
+  transition: all 0.3s ease-in-out;
+}
+
+.menu-icon::before {
+  top: -6px;
+}
+
+.menu-icon::after {
+  bottom: -6px;
+}
+
+.menu-button.open .menu-icon {
+  background-color: transparent;
+}
+
+.menu-button.open .menu-icon::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menu-button.open .menu-icon::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(60, 59, 66, 0.93);
+  border-radius: 8px;
+  overflow: hidden;
+  display: none;
+  z-index: 1;
+}
+
+.dropdown-content.open {
+    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    -webkit-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: inset 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    
+}
+
+.submenu {
+  padding: 10px;
+  color: #bbb
+}
+
+.submenu a {
+  display: block;
+  color: #bbb;
+  text-decoration: none;
+  padding: 5px;
+}
+
+.submenu a.selected:before {
+  content: "\2713";
+  color: #bbb;
+  margin-right: 5px;
+  }
+
+.submenu a:hover {
+  background-color: #ddd;
+}
+
+input[type="range"] {
+  display: block;
+  margin: 0 auto;
+  width: 200px;
+}
+
+input[type="text" i] {
+    padding: 1px 2px;
+    background-color: #222226;
+    color: #bbb;
+}
+
+.submenu-btn {
+  display: flex;
+  align-content:flex-start;
+  border: none;
+  background-color: transparent;
+  color: #bbb;
+  cursor: pointer;
+  padding: 5px;
+  font-size: medium;
+ 
+  
+}
+
+.Searchbar {
+  background-color: #222226;
+  color: #bbb;
+}
+
+.gradient-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+.gradient-preview {
+  width: 250px;
+  height: 100px;
+  margin-top: 5px;
+}
+
+.color-inputs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.color-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+}
+
+.color-picker {
+  width: 50px;
+  height: 50px;
+  background-color: #8882;
+  color: #bbb
+}
+
+.delete-btn {
+  margin-top: 5px;
+  background-color: #8882;
+  color: #bbb
+}
+
+.add-btn {
+  margin-top: 10px;
+  background-color: #8882;
+  display: flex;
+  justify-content: center !important;
+  width: auto;
+  color: #bbb;
+}
+
+.search_matched{
+    outline-style: double;
+    outline-color: red;
+    outline-width: 10px;
+}
+.search_nomatch{
+    outline-style: hidden;
+    outline-color: blue;
+    outline-width: 0px;
+}
+
+  </style>
+</head>
+
+<body id="body">
+
+  <div ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
+    <svg id="svg_bg" viewBox="-128 -128 256 256" width="100%" height="100vh" top="0" left="0" position="fixed">
+      <title>Mandelbrot</title>
+      <g id="viewmatrix">
+	<g id="bg" />
+	<path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01"/>
+	<g id="edges"/>
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
+    // this is a direct translation to code of the spec
+    if(!RegExp.escape){
+        RegExp.escape = (S) => {
+            // 1. let str be ToString(S).
+            // 2. ReturnIfAbrupt(str).
+            let str = String(S);
+            // 3. Let cpList be a List containing in order the code
+            // points as defined in 6.1.4 of str, starting at the first element of str.
+            let cpList = Array.from(str[Symbol.iterator]());
+            // 4. let cuList be a new List
+            let cuList = [];
+            // 5. For each code point c in cpList in List order, do:
+            for(let c of cpList){
+                // i. If c is a SyntaxCharacter then do:
+                if("^$\\.*+?()[]{}|".indexOf(c) !== -1){
+                    // a. Append "\" to cuList.
+                    cuList.push("\\");
+                }
+                // Append c to cpList.
+                cuList.push(c);
+            }
+            //6. Let L be a String whose elements are, in order, the elements of cuList.
+            let L = cuList.join("");
+            // 7. Return L.
+            return L;
+        };
+    }
+  </script>
+  
+  <svg id="debug_layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100vh" style="position: absolute; left:0px; top:0px; display:none; visibility:hidden;">
+    <style>
+      .white {
+          font: 12px sans-serif;
+          fill: white;
+      }
+    </style>
+    <text x="0" y="0" class="white">fps:</text>
+  </svg>
+
+
+
+  <div class="dropdown">
+  <div class="menu-button">
+    <div class="menu-icon"></div>
+  </div>
+  <div class="dropdown-content">
+      <div style="display: none;" id="search-results">
+          <div class="submenu">
+
+          </div>
+      </div>
+      <div>
+      <div class="submenu">
+          <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
+          <a id="save-button">Save</a>
+          <input id="save-or-load" type="text" placeholder="save data..." />
+          <a id="load-button">Load</a>
+          <a id="clear-button">Clear</a>
+          <div id="clear-sure" style="display:none">
+              <a id="clear-unsure-button">no</a>
+              <a id="clear-sure-button">yes</a>
+          </div>
+      </div>
+      <div class="submenu">
+          <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
+          <div id="quality_value">Quality</div>
+          <input id="quality" type="range" min="0" max="100" value="0">
+          <div id="length_value">Length</div>
+          <input id="length" type="range" min="0" max="100" value="50">
+          z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
+          <input id="exponent" type="range" min="1" max="8" value="2">
+      </div>
+      <div class="submenu">
+        <button class="submenu-btn">Color Selection</button>
+        <div id="gradient-selector" style="display: none;">
+          <div class="gradient-preview"></div>
+          <div class="color-inputs">
+            <div class="color-input">
+              <input type="color" class="color-picker" value="#ff0000" />
+              <button class="delete-btn">-</button>
+            </div>
+          </div>
+          <button class="add-btn">Add Color</button>
+        </div>
+        <div class="submenu">
+          <a href="#"></a>
+          
+          <label>
+                  NodeMode (Shift)
+                  <input type="checkbox" />
+                  
+          </label>
+          
+        </div>
+      </div>
+      <div>
+        <label for="node-tag">Node tag:</label>
+        <input type="text" id="node-tag" value="#node:" />
+        <label for="ref-tag">Reference tag:</label>
+        <input type="text" id="ref-tag" value="#ref:" />
+        <br />
+        <textarea id="note-input" rows="10" cols="50"></textarea>
+        <table id="node-table">
+          <thead>
+            <tr>
+              <th>Header</th>
+              <th>Plain Text</th>
+              <th>References</th>
+            </tr>
+          </thead>
+          <tbody id="node-table-body"></tbody>
+        </table>
+      </div>
+      </div>
+      <script>
+        {
+            const nodeTableBody = document.getElementById('node-table-body');
+            const nodeTagInput = document.getElementById('node-tag');
+            const refTagInput = document.getElementById('ref-tag');
+            const noteInput = document.getElementById('note-input');
+            const nodes = {};
+            const nodeLines = {};
+            
+            function nodeRE(name=undefined,tag_prefix=undefined){
+                if (tag_prefix === undefined){
+                    tag_prefix = nodeTagInput.value;
+                }
+                if (name === undefined){
+                    return new RegExp("(\\n|^)"+RegExp.escape(tag_prefix));
+                }
+                return new RegExp("(\\n|^)"+RegExp.escape(tag_prefix)+"[\t ]*"+RegExp.escape(name)+"[\t ]*(\n|$)");
+            }
+
+            function renameNode(from,to){
+                //(\n|^)(((#node:)[\t ]*from[\t ]*)|((#ref:)([^,\n]+,)*[\t ]*from[\t ]*(,[^,\n]+)*))(?=(\n|$))
+                //$1$4$6$7 to$8$9
+                const fe = RegExp.escape(from);
+                const nodeRE = "("+RegExp.escape(nodeTagInput.value)+")[\\t ]*"+fe+"[\\t ]*";
+                const refRE = "("+RegExp.escape(refTagInput.value)+")([^,\\n]+,)*[\\t ]*"+fe+"[\\t ]*(,[^,\\n]+)*";
+                const tag = "(("+nodeRE+")|("+refRE+"))";
+                const re = new RegExp("(\n|^)"+tag+"(?=(\n|$))","g");
+                const replacer = (match,p1,p2,p3,p4,p5,p6,p7,p8,p9,offset,string,groups)=>{
+                    return p1+(p4?p4+" ":"")+(p6?p6+" ":"")+(p7||"")+to+(p8||"");
+                }
+                return (s)=>s.replace(re,replacer);
+            }
+
+            function processInput() {
+                const nodeTag = nodeTagInput.value;
+                const refTag = refTagInput.value;
+                
+                for (const key in nodes) {
+                    if (nodes[key].nodeObject.removed){
+                        delete nodes[key];
+                    }else{
+                        nodes[key].plainText = '';
+                        nodes[key].ref = '';
+                        nodes[key].live = false;
+                    }
+                }
+                
+                const lines = noteInput.value.split('\n');
+                let currentNodeTitle = '';
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    if (line.startsWith(nodeTag)) {
+                        currentNodeTitle = line.substr(nodeTag.length).trim();
+                        if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
+                            if (nodeLines[i] && !nodeLines[i].nodeObject.removed){
+                                const node = nodes[currentNodeTitle] = nodeLines[i];
+                                if (nodes[node.title] === node){
+                                    delete nodes[node.title];
+                                }
+                                node.title = currentNodeTitle;
+                                node.live = true;
+                                node.nodeObject.content.children[0].children[1].value = currentNodeTitle;
+                            }else{
+                                const node = nodeLines[i] = nodes[currentNodeTitle] = {
+                                    title: currentNodeTitle,
+                                    plainText: '',
+                                    ref: '',
+                                    live: true,
+                                    nodeObject: createTextNode(currentNodeTitle, '',0,0),
+                                    edges: new Map(),
+                                    lineNum:i,
+                                };
+                                node.nodeObject.content.children[0].children[1].addEventListener('input', (e)=>{
+                                    const name = node.title;
+                                    let newName = node.nodeObject.content.children[0].children[1].value.trim();
+                                    newName = newName.replace(",","");
+                                    if (newName === node.title){
+                                        return;
+                                    }
+                                    delete nodes[name];
+                                    if (nodes[newName]){
+                                        let count = 2;
+                                        while (nodes[newName+"("+count+")"]){
+                                            count ++;
+                                        }
+                                        newName += "("+count+")";
+                                        node.nodeObject.content.children[0].children[1].value = newName;
+                                    }
+                                    nodes[newName] = node;
+                                    node.title = newName;
+                                    const f = renameNode(name,node.nodeObject.content.children[0].children[1].value);
+                                    noteInput.value = f(noteInput.value);
+                                });
+                                node.nodeObject.content.children[0].children[3].addEventListener('input', (e)=>{
+                                    const body = node.nodeObject.content.children[0].children[3].value;
+                                    //just replace between #node: [name] and the next tag
+                                    const name = node.title;
+                                    const nt = RegExp.escape(nodeTagInput.value);
+                                    const start = "((\\n|^)"+nt+"[\\t ]*"+RegExp.escape(name)+"[\\t ]*(\\n|$))";
+                                    const rt = RegExp.escape(refTagInput.value);
+                                    const end = "(?=((\\n"+nt+")|(\\n"+rt+")|$))";
+                                    
+                                    const re = new RegExp(start+"((?=(("+nt+")|("+rt+")|$))|(([^]*?)"+end+"))");
+                                    
+                                    noteInput.value = noteInput.value.replace(re,(match,p1,p2,p3,p4,p5,p6,p7,offset,string,groups)=>{
+                                        p1 = p1||"";
+                                        if (!p1.endsWith("\n")){
+                                            p1 += "\n";
+                                        }
+                                        if (p5 !== undefined){
+                                            return p1+body+"\n";
+                                        }
+                                        return p1+body;
+                                    });
+                                });
+                            }
+                        }else{
+                            nodes[currentNodeTitle].plainText = "";
+                            nodes[currentNodeTitle].nodeObject.content.children[0].children[3].value = nodes[currentNodeTitle].plainText;
+                            if (nodeLines[nodes[currentNodeTitle].lineNum] === nodes[currentNodeTitle]){
+                                delete nodeLines[nodes[currentNodeTitle].lineNum];
+                            }
+                            nodes[currentNodeTitle].live = true;
+                            nodes[currentNodeTitle].lineNum = i;
+                            nodeLines[i] = nodes[currentNodeTitle];
+                        }
+                    } else if (line.startsWith(refTag)) {
+                        if (currentNodeTitle !== '') {
+                            const references = line.substr(refTag.length).split(',').map(ref => ref.trim());
+                            /*let refHtml = '';
+                            
+                            for (let j = 0; j < references.length; j++) {
+                                const reference = references[j];
+                                
+                                if (nodes[reference]) {
+                                    refHtml += `<a href="#node:${reference}">${reference}</a>`;
+                                } else {
+                                    refHtml += reference;
+                                }
+                                
+                                if (j < references.length - 1) {
+                                    refHtml += ', ';
+                                }
+                            }
+                            
+                            nodes[currentNodeTitle].ref = refHtml;
+                            */
+                            // Update edges
+                            nodes[currentNodeTitle].plainText = line;
+                            const thisNode = nodes[currentNodeTitle];
+                            references.forEach(reference => {
+                                if (nodes[reference]) {
+                                    if (!thisNode.edges.has(reference)){
+                                        thisNode.edges.set(reference,connect(thisNode.nodeObject, nodes[reference].nodeObject));
+                                    }
+                                }
+                            });
+                            const refset = new Set(references);
+                            for (const ref of thisNode.edges.keys()){
+                                if (!refset.has(ref)){
+                                    thisNode.edges.get(ref).remove();
+                                    thisNode.edges.delete(ref);
+                                }
+                            }
+                        }
+                    } else {
+                        if (currentNodeTitle !== '') {
+                            if (nodes[currentNodeTitle].plainText !== '') {
+                                nodes[currentNodeTitle].plainText += '\n';
+                            }
+                            nodes[currentNodeTitle].plainText += line;
+                            nodes[currentNodeTitle].nodeObject.content.children[0].children[3].value = nodes[currentNodeTitle].plainText;
+                        }
+                    }
+                }
+                {
+                    const dels = [];
+                    for (const k in nodes){
+                        if (!nodes[k].live){
+                            nodes[k].nodeObject.remove();
+                            dels.push(k);
+                        }
+                    }
+                    for (const k of dels){
+                        delete nodes[k];
+                    }
+                }
+                {
+                    const dels = [];
+                    for (const k in nodeLines){
+                        if (!nodeLines[k].live){
+                            nodeLines[k].nodeObject.remove();
+                            dels.push(k);
+                        }
+                    }
+                    for (const k of dels){
+                        delete nodeLines[k];
+                    }
+                }
+                
+                //updateTable();
+            }
+            
+            document.getElementById('note-input').addEventListener('input', processInput);
+            nodeTagInput.addEventListener('input', processInput);
+            refTagInput.addEventListener('input', processInput);
+            
+            function updateTable() {
+                nodeTableBody.innerHTML = '';
+                
+                for (const nodeTitle in nodes) {
+                    const node = nodes[nodeTitle];
+                    
+                    const row = document.createElement('tr');
+                    const headerCell = document.createElement('td');
+                    const plainTextCell = document.createElement('td');
+                    const refCell = document.createElement('td');
+                    
+                    headerCell.textContent = node.title;
+                    row.appendChild(headerCell);
+                    plainTextCell.textContent = node.nodeObject.content.children[0].children[3].value.trim();
+                    refCell.innerHTML = node.ref.trim();
+                    row.appendChild(plainTextCell);
+                    row.appendChild(refCell);
+
+                    nodeTableBody.appendChild(row);
+                }
+            }
+            
+            //processInput();
+        }
+              
+      </script>
+</div>
+</div>
+  
+  <script>
+    // Get the menu button and dropdown content elements
+    const menuButton = document.querySelector(".menu-button");
+    const dropdownContent = document.querySelector(".dropdown-content");
+
+
+    dropdownContent.addEventListener("paste",function (e){
+        cancel(e);
+    });
+    dropdownContent.addEventListener("wheel",function (e){
+        cancel(e);
+    });
+    dropdownContent.addEventListener("dblclick",function (e){
+        cancel(e);
+    });
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+    
+    
+    // Add an event listener to the menu button
+    menuButton.addEventListener("click", function() {
+        // Toggle the "open" class on the menu button and dropdown content
+        menuButton.classList.toggle("open");
+        dropdownContent.classList.toggle("open");
+    });
+    dropdownContent.addEventListener("mousedown",(e)=>{
+        cancel(e);
+    });
+
+      let inp = document.getElementById("Searchbar")
+      inp.addEventListener("input", function () {
+          let res = document.getElementById("search-results")
+          if (inp.value) {
+              res.style.display = "block";
+              let ns = (searchNodesBy((n) => [...n.searchStrings()].join().toLowerCase().includes(inp.value.toLowerCase())))
+              let resdiv = res.children[0];
+              resdiv.innerHTML = "";
+              for (let n of ns) {
+                  let c = document.createElement("a")
+                  c.appendChild(document.createTextNode(n.uuid + ""));
+                  c.addEventListener("click", (function (event) {
+                      this.zoom_to();
+                      autopilotSpeed = 0.1;
+                  }).bind(n));
+                  resdiv.appendChild(c);
+              }        
+          } else {
+              res.style.display = "none"
+              clearSearch();
+          }
+      
+
+      });
+
+
+    document.getElementById("save-button").addEventListener("click", function() {
+        let s = document.getElementById("nodes").innerHTML;
+        //navigator.clipboard.writeText(s);
+        //console.log("save",s);
+        document.getElementById("save-or-load").value =s;
+    });
+    document.getElementById("load-button").addEventListener("click", function() {
+        loadnet(document.getElementById("save-or-load").value,true);
+    });
+      // Get all the menu items
+      const menuItems = document.querySelectorAll(".menu-item");
+
+      // Add a click event listener to each menu item
+    menuItems.forEach(function (item) {
+        item.addEventListener("click", function () {
+            // Remove the "selected" class from all the menu items
+            // menuItems.forEach(function(item) {
+            //   item.classList.remove("selected");
+            // });
+
+            // Add the "selected" class to the clicked menu item
+            item.classList.add("selected");
+        });
+    });
+    document.getElementById("clear-button").addEventListener("click", function() {
+        document.getElementById("clear-sure").setAttribute("style","display:block");
+        document.getElementById("clear-button").text = "Are you sure?";
+    });
+    document.getElementById("clear-unsure-button").addEventListener("click", function() {
+        document.getElementById("clear-sure").setAttribute("style","display:none");
+        document.getElementById("clear-button").text = "clear";
+    });
+    document.getElementById("clear-sure-button").addEventListener("click", function() {
+        clearnet();
+        document.getElementById("clear-sure").setAttribute("style","display:none");
+        document.getElementById("clear-button").text = "clear";
+    });
+    function getQuality(){
+        let v = document.getElementById("quality").value/100;
+        return 2**(v*4);
+    }
+    document.getElementById("quality").addEventListener("input",(e)=>{
+        let v = getQuality();
+        setRenderQuality(v);
+        document.getElementById("quality_value").textContent = "Quality:"+(Math.round(v*100)/100);
+    });
+    function getLength(){
+        let v = document.getElementById("length").value/100;
+        return 2**(v*8);
+    }
+    document.getElementById("length").addEventListener("input",(e)=>{
+        let v = getLength();
+        setRenderLength(v);
+        document.getElementById("length_value").textContent = "Length:"+(Math.round(v*100)/100);
+    });
+    document.getElementById("exponent").addEventListener("input",(e)=>{
+        let v = e.target.value*1;
+        mand_step = (z,c) => {
+            return z.ipow(v).cadd(c);
+        }
+        document.getElementById("exponent_value").textContent = v;
+    })
+      const submenuBtn = document.querySelector('.submenu-btn');
+      const gradientSelector = document.getElementById('gradient-selector');
+
+      submenuBtn.addEventListener('click', () => {
+          gradientSelector.style.display = (gradientSelector.style.display === 'none') ? 'block' : 'none';
+      });
+
+      const gradientPreview = document.querySelector('.gradient-preview');
+      const colorInputs = document.querySelector('.color-inputs');
+      const addBtn = document.querySelector('.add-btn');
+      const deleteBtns = document.querySelectorAll('.delete-btn');
+
+      let isDragging = false;
+      let draggedColorInput = null;
+
+      function updateGradient() {
+          const colors = [];
+          const colorPickers = document.querySelectorAll('.color-picker');
+          colorPickers.forEach(colorPicker => {
+              colors.push(colorPicker.value);
+          });
+          gradientPreview.style.backgroundImage = `linear-gradient(to right, ${colors.join(', ')})`;
+          const colorInputsArray = Array.from(colorInputs.children);
+          colorInputsArray.forEach((colorInput, index) => {
+              const percentage = `${(index / (colorInputsArray.length - 1)) * 100}%`;
+              colorInput.style.left = percentage;
+          });
+      }
+
+      function addColorInput(color) {
+          const colorInput = document.createElement('div');
+          colorInput.classList.add('color-input');
+          const colorPicker = document.createElement('input');
+          colorPicker.type = 'color';
+          colorPicker.classList.add('color-picker');
+          colorPicker.value = color || '#ff0000';
+          colorPicker.addEventListener('input', updateGradient);
+          colorPicker.addEventListener('mousedown', (event) => {
+              isDragging = true;
+              draggedColorInput = colorInput;
+          });
+          colorPicker.addEventListener('mousemove', (event) => {
+              if (isDragging && draggedColorInput === colorInput) {
+                  const position = event.clientX - colorInputs.getBoundingClientRect().left;
+                  const percentage = `${(position / colorInputs.offsetWidth) * 100}%`;
+                  colorInput.style.left = percentage;
+                  updateGradient();
+              }
+          });
+          colorPicker.addEventListener('mouseup', (event) => {
+              isDragging = false;
+              draggedColorInput = null;
+          });
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerText = '-';
+          deleteBtn.classList.add('delete-btn');
+          deleteBtn.addEventListener('click', () => {
+              colorInput.remove();
+              updateGradient();
+          });
+          colorInput.appendChild(colorPicker);
+          colorInput.appendChild(deleteBtn);
+          colorInputs.appendChild(colorInput);
+          updateGradient();
+      }
+
+      addBtn.addEventListener('click', () => {
+          const colorPicker = document.createElement('input');
+          colorPicker.type = 'color';
+          colorPicker.click();
+          colorPicker.addEventListener('change', () => {
+              addColorInput(colorPicker.value);
+          });
+      });
+
+      deleteBtns.forEach(deleteBtn => {
+          deleteBtn.addEventListener('click', () => {
+              const colorInput = deleteBtn.parentNode;
+              colorInput.remove();
+              updateGradient();
+          });
+      });
+
+      updateGradient();
+
+    </script>
+
+
+  
+
+  
+  <a id="link" href="https://www.example.com">Test Link</a>
+  <svg id="svg_link" viewBox="0 0 240 80">
+    <title>link test</title>
+    <style>
+      .small {
+          font: italic 13px sans-serif;
+          fill: white;
+      }
+      .heavy {
+          font: bold 30px sans-serif;
+          fill: white;
+      }
+
+      /* Note that the color of the text is set with the    *
+       * fill property, the color property is for HTML only */
+      .Rrrrr {
+          font: italic 40px serif;
+          fill: red;
+      }
+    </style>
+
+    <text x="20" y="35" class="small">My</text>
+    <text x="40" y="35" class="heavy">cat</text>
+    <text x="55" y="55" class="small">is</text>
+    <a href="example.com">
+      <text x="65" y="55" class="Rrrrr">Grumpy!</text>
+    </a>
+  </svg>
+
+
+
+
+  <a id="nodes">
+    <!-- add stuff here -->
+  </a>
+    <!--iframe id="inlineFrameExample"
+            title="Inline Frame Example"
+            width="150"
+            height="100"
+            src="https://m.media-amazon.com/images/M/MV5BOTY2NDY4OGUtYWE0Ni00NWZiLWI3NDktYmE2YWM3Njc3YmRkXkEyXkFqcGdeQXVyMTIxOTU1MjQ3._V1_.jpg">
+    </iframe>
+
+    <iframe id="inlineFrameExample"
+            title="Inline Frame Example"
+            width="768"
+            height="512"
+            src="https://xkcd.com">
+    </iframe>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="red"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="orange"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="yellow"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="green"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="blue"/></svg>
+    <svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="purple"/></svg>
+
+
+    </a-->
+  <div id="elements" style="display:none; visibility:hidden;">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 2.125" height="16pt">
+    <g id="button-delete" transform="scale(0.125 0.125) translate(1 1)">
+    <rect x="0" y="0" width="16" height="16" fill="RGB(100,100,100)" stroke="none"/>
+    <path d="M 1,1 l 3,0 4,4 4,-4 3,0
+	     0,3 -4,4 4,4 0,3
+	     -3,0 -4,-4 -4,4 -3,0
+	     0,-3 4,-4 -4,-4 0,-3 z" fill="RGB(170,170,170)" stroke="none"/>
+    </g>
+
+    <g id="button-fullscreen" transform="scale(0.125 0.125) translate(21 1)">
+    <rect x="0" y="0" width="16" height="16" fill="RGB(100,100,100)" stroke="none"/>
+    <path d="M  1, 1 l 3,0 1.5,1.5 -3,0 0,3 -1.5,-1.5 0,-3 z
+	     M 15, 1 l -3,0 -1.5,1.5 3,0 0,3 1.5,-1.5 0,-3 z
+	     M 15,15 l -3,0 -1.5,-1.5 3,0 0,-3 1.5,1.5 0,3 z
+	     M  1,15 l 3,0 1.5,-1.5 -3,0 0,-3 -1.5,1.5 0,3 z
+	     M  4, 4 l 2,0 1,1 -2,0 0,2 -1,-1 0,-2 z
+	     M 12, 4 l -2,0 -1,1 2,0 0,2 1,-1 0,-2 z
+	     M 12,12 l -2,0 -1,-1 2,0 0,-2 1,1 0,2 z
+	     M  4,12 l 2,0 1,-1 -2,0 0,-2 -1,1 0,2 z
+	     " fill="RGB(170,170,170)" stroke="none"/>
+    </g>
+    
+    <g id="button-collapse" transform="scale(0.125 0.125) translate(41 1)">
+      <rect x="0" y="0" width="16" height="16" fill="RGB(100,100,100)" stroke="none"/>
+      <circle cx="8" cy="8" r="5.375" stroke="RGB(170,170,170)" stroke-width="2.75" fill="none"/>
+    </g>
+
+  </svg>
+   
+    
+    
+  </div>
+  <script type="application/javascript">
+    console.log("test");
+    document.body.style.overflow = 'hidden';
+    var svg = document.getElementById("svg_bg");
+    let svg_bg = svg.getElementById("bg");
+    let svg_viewmat = svg.getElementById("viewmatrix");
+    let svg_mousePath = svg.getElementById("mousePath");
+    var svg_viewbox_size = 65536;
+    let time = () => (current_time === undefined)?0:current_time;
+    class vec2{
+        constructor(x,y) {
+            if (typeof x === "object"){
+                y = x.y;
+                x = x.x;
+            }
+            this.x = x;this.y = y;}
+        plus(o) {return new vec2(this.x+o.x,this.y+o.y);}
+        minus(o) {return new vec2(this.x-o.x,this.y-o.y);}
+        times(o) {return new vec2(this.x*o.x,this.y*o.y);}
+        div(o) {return new vec2(this.x/o.x,this.y/o.y);}
+        dot(o) {return this.x*o.x+this.y*o.y}
+        rot(a){
+            let c = Math.cos(a);
+            let s = Math.sin(a);
+            return new vec2(this.x*c-this.y*s,this.x*s+this.y*c);
+        }
+	rot90() {return new vec2(this.y,-this.x);}
+	unrot90() {return new vec2(-this.y,this.x);}
+        cross(o) {return this.x*o.y-this.y*o.x}
+        scale(s) {return new vec2(this.x*s,this.y*s);}
+        unscale(s) {return new vec2(this.x/s,this.y/s);}
+        normed(s=1){return this.scale(s/this.mag());}
+	mag2() {return this.dot(this);}
+        mag() {return Math.hypot(this.x,this.y);}
+        ang() {return Math.atan2(this.y,this.x);}
+        pang() {
+            if (this.x == 0 && this.y == 0) {return 0;}
+            let p = this.x/(Math.abs(this.x)+Math.abs(this.y));
+            return this.y<0?p-1:1-p;
+	}
+	map(f) {return new vec2(f(this.x),f(this.y));}
+        
+        cadd(o) {return this.plus(o);}
+        csub(o) {return this.minus(o);}
+        cneg(o) {return new vec2(-this.x,-this.y);}
+        cmult(o) {return new vec2(this.x*o.x-this.y*o.y,this.y*o.x+this.x*o.y);}
+        caamult(o) {
+            //angle averaging multiply?
+            let s = this.plus(o);
+            return s.scale(this.cmult(o).mag()/s.mag());
+        }
+        cconj() {return new vec2(this.x,-this.y);}
+        crecip() {
+            // 1/(a+bi) = (a-bi)/mag2
+            return this.cconj().unscale(this.mag2());
+        }
+        cdiv(o) {return this.cmult(o.crecip());}
+        cpow(o) {
+	    let l = this.clog();
+	    if (typeof o === "number"){
+		l = l.scale(o);
+	    }else{
+		l = l.cmult(o);
+	    }
+	    if (l.hasNaN()){
+		return new vec2(0,0);
+	    }
+	    return l.cexp();}
+        ipow(n){
+            if (n < 0){
+                return this.crecip().ipow(-n);
+            }
+            if (n == 0){
+                return new vec2(1,0);
+            }
+            if (n == 1){
+                return this;
+            }
+            let c = this.ipow(n>>1);
+            c = c.cmult(c);
+            if (n & 1){
+                return c.cmult(this);
+            }
+            return c;
+        }
+        hasNaN(){
+	    return isNaN(this.x) || isNaN(this.y);
+	}
+        cexp(){
+            let m = Math.exp(this.x);
+            let i = Math.sin(this.y);
+            let r = Math.cos(this.y);
+            return new vec2(m*r,m*i);
+        }
+        clog(){
+            let r = Math.log(this.mag2())/2;//no sqrt because log rules
+            let i = Math.atan2(this.y,this.x);
+            return new vec2(r,i);
+        }
+
+        str(){
+            return this.x+","+this.y;
+        }
+        sqrt(){
+            //https://www.johndcook.com/blog/2020/06/09/complex-square-root/
+            let l = this.mag();
+            let u = Math.sqrt((l+this.x)/2);
+            let v = Math.sign(this.y)*Math.sqrt((l-this.x)/2);
+            return new vec2(u,v);
+        }
+	lerpto(o,t){
+	    return new vec2(lerp(this.x,o.x,t),lerp(this.y,o.y,t));
+	}
+    }
+    function lerp(a,b,t){
+	return a*(1-t)+b*t;
+    }
+    
+    var mousePos = new vec2(0,0);
+    var mousePath = "";
+
+    var zoom = new vec2(4,0);//bigger is further out
+    var pan = new vec2(0,0);
+
+    var zoomTo = new vec2(4,0);
+    var panTo = new vec2(4,0);
+    var autopilotReferenceFrame = undefined;
+    var autopilotSpeed = 0;
+    
+    var settings = {zoomSpeed:0.001,
+		    panSpeed:1,
+		    zoomContentExp:0.5,
+		    gestureZoomSpeed:0.01,
+		    gestureRotateSpeed:Math.PI/180,
+		    scroll:('GestureEvent' in window)?"pan":"zoom",
+		    maxLines:512,
+		    nodeModeKey:"Shift",//"CapsLock",
+		    nodeModeTrigger:"down",//"toggle"
+                    renderStepSize:1,//0.25,
+                    renderWidthMult:0.25,//1,
+                    renderSteps:16,//64,
+                    renderDChar:"L",
+         
+                    rotateModifier:"Alt",
+                    rotateModifierSpeed:Math.PI/180/8,
+                    
+                    iterations:256,
+
+                    //autopilotRF_Pscale:1,
+                    autopilotRF_Iscale:0.5,
+                    //autopilotRF_Dscale:0.1,
+                   
+                    buttonGraphics:{hover:["RGB(100,100,100)","RGB(200,200,255)"],
+                                    click:["RGB(70,70,70)","RGB(100,100,100)"],
+                                    initial:["none","RGB(170,170,170)"]},
+		   }
+    function setRenderQuality(n){
+        let q = 1/n;
+        let f = settings.renderStepSize / q;
+        settings.renderStepSize = q;
+        settings.renderWidthMult *= f;
+        settings.renderSteps *= f;
+    }
+    setRenderQuality(getQuality());
+    function setRenderLength(l){
+        let f = settings.renderStepSize * settings.renderSteps / l;
+        //settings.renderStepSize /= f;
+        //settings.renderWidthMult *= f;
+        settings.renderSteps /= f;
+    }
+    setRenderLength(getLength());
+    function windowScaleAndOffset(){
+        let svgbb = svg.getBoundingClientRect();
+        let s = Math.min(svgbb.width,svgbb.height);//Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+        let off = svgbb.width < svgbb.height? svgbb.right : svgbb.bottom;
+	return {s:s,o:new vec2(- (off-svgbb.right)/2,- (off-svgbb.bottom)/2)}
+    }
+        
+    function toZ(c){
+        let {s,o} = windowScaleAndOffset();
+        return c.minus(o).unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
+    }
+    function toDZ(c){
+        let {s,o} = windowScaleAndOffset();
+        return c.unscale(s).scale(2).cmult(zoom);
+    }
+    function fromZ(z){
+        let {s,o} = windowScaleAndOffset();
+        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5)).scale(s).plus(o);
+    }
+    function fromZtoUV(z){
+        return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5,.5));
+    }
+    var SVGzoom = 8192;
+    var SVGpan = new vec2(0,0);
+    let recenterThreshold = 0.01;
+    let rezoomThreshold = 0.1;
+    let rezoomFactor = 8192;
+    let old_rotation = 0;
+    function updateViewbox(){
+	//let lc = toSVG(toZ(new vec2(0,0)));
+	let zm = zoom.mag();
+	let lc = toSVG(new vec2(-zm,-zm).plus(pan));
+	let d = zm*2*SVGzoom;
+	let r = zoom.ang();
+	//let rotCenter = fromZ(pan);// = {let s = window.innerWidth; return new vec2(.5*s,.5*s);}
+	
+	let recalc = false;
+	if (d < Math.abs(recenterThreshold*lc.x) || d < Math.abs(recenterThreshold*lc.y)){
+	    let oldPan = SVGpan;
+	    SVGpan = pan.scale(1);
+	    lc = toSVG(toZ(new vec2(0,0)));
+	    console.log("recentering...");
+	    recalc = true;
+	}
+	if (d < rezoomThreshold || d > rezoomFactor/rezoomThreshold){
+	    SVGzoom *= rezoomFactor/d;
+	    console.log("rezooming...");
+	    recalc = true;
+	}
+	if (recalc){
+	    recalc_svg();
+	}
+	
+	let c = toSVG(pan);//center of rotation
+	//where it ends up if you do the rotation about SVGpan
+	let rc = c.cmult(zoom.unscale(zm).cconj());
+	//
+	lc = lc.plus(rc.minus(c));
+	
+	svg.setAttribute("viewBox",lc.x+" "+lc.y+" "+d+" "+d);
+	
+	
+	if (r !== old_rotation){
+	    old_rotation = r;
+	    svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+")");
+	    //svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+" "+c.x+" "+c.y+")");
+	}
+	
+	
+	return
+	
+	// the below has the issue of low-res svg when changing the matrix in firefox
+	svg.setAttribute("viewBox",(-svg_viewbox_size/2)+" "+(-svg_viewbox_size/2)+" "+svg_viewbox_size+" "+svg_viewbox_size);
+	// z = bal(uv)*zoom+pan
+	// svg = (z-svgpan)*svgzoom
+	// want matrix to go svg -> bal(uv)*65536
+	// bal(uv)*65536 = 65536*(z-pan)/zoom = 65536*(svg/svgzoom-svgpan-pan)/zoom
+	// d/dsvg = 65536/svgzoom/zoom
+	// f(0) = -65536*(svgpan+pan)/zoom
+	let t = zoom.crecip().scale(svg_viewbox_size/SVGzoom/2);
+	let p = pan.minus(SVGpan).scale(-svg_viewbox_size/2).cdiv(zoom);
+	
+	svg_viewmat.setAttribute("transform","matrix("+t.x+" "+(t.y)+" "+(-t.y)+" "+(t.x)+" "+(p.x)+" "+(p.y)+")");
+	//svg_bg.setAttribute("transform","matrix("+z.x+" "+(-z.y)+" "+(z.y)+" "+(z.x)+" "+SVGpan.x+" "+SVGpan.y+")");
+
+    }
+    function toSVG(coords){
+	return coords.minus(SVGpan).scale(SVGzoom);
+    }
+    
+    function recalc_svg(){
+	//todo
+	//placeholder:
+	let node = svg_bg;
+	while (node.firstChild) {
+	    node.removeChild(node.lastChild);
+	}
+    }
+    
+    
+    
+    
+    
+    document.getElementById("body").addEventListener("mousemove", (event) =>{
+        mousePos.x = event.pageX;
+        mousePos.y = event.pageY;
+        mousePath = "";
+    }, false);
+    document.getElementById("body").addEventListener("mouseclick", (event) =>{
+        mousePos.x = event.pageX;
+        mousePos.y = event.pageY;
+        /*let p = toZ(mousePos);
+        zoom = zoom.unscale(2);
+        pan = p;*/
+    }, false);
+    function mand_step(z,c){return z.cmult(z).cadd(c);}
+    //function mand_step(z,c){return z.cpow(new vec2(time()/8/120/10+1,0)).cadd(c);}
+    //function mand_step(z,c){return z.cmult(z).cadd(z.x==0&&z.y==0?c:c.cdiv(z));}
+    //function mand_step(z,c){return z.cmult(z).cadd(c).map(Math.abs);}
+    
+    function mand_unstep(z,c){return z.csub(c).sqrt();}
+
+    function mand_i(z,iters=16){
+	let c = z;
+	for (let i = 0; i < iters; i ++){
+            if (z.mag2() > 4){
+		return i;
+            }
+            z = mand_step(z,c);
+        }
+	return (z.mag2() > 4)? iters:iters+1;
+    }
+    
+    function mandelbrott_dist(iters,c,z){
+        if (z === undefined) { z = new vec2(0,0);}
+        let pz = z;
+        for (let i = 0; i < iters; i ++){
+            if (z.mag2() > 4){
+                let zm = z.mag();
+                let pzm = pz.mag();
+                return i + (2-pzm)/(zm-pzm);
+            }
+            pz = z;
+            z = mand_step(z,c);
+        }
+        return iters;
+    }
+    function mandelbrott_dist(iters,c,z){
+        let bailout = 1e8;//large so z^2+c -> z^2
+        if (z === undefined) { z = new vec2(0,0);}
+        let pz = z;
+        for (let i = 0; i < iters; i ++){
+            if (z.mag2() > bailout){
+                //pz^2 = z
+                //pz^(2^?) = b
+                //ln(pz)2^?=ln(b)
+                //ln(ln(pz))+ln(2)*?=ln(ln(b))
+                let g = Math.log2(Math.log(bailout));
+                let llz = Math.log2(Math.log2(z.mag2())/2);
+                return i-llz;
+            }
+            pz = z;
+            z = mand_step(z,c);
+        }
+        return iters;
+    }
+    function mandelbrott_grad(iters,c,z){
+        let bailout = 1e8;//large so z^2+c -> z^2
+        if (z === undefined) { z = new vec2(0,0);}
+        let dz = new vec2(1,0);
+        for (let i = 0; i < iters; i ++){ 
+            if (z.mag2() > bailout){
+                //pz^2 = z
+                //pz^(2^?) = b
+                //ln(pz)2^?=ln(b)
+                //ln(ln(pz))+ln(2)*?=ln(ln(b))
+                return dz;
+                let llz = Math.log2(Math.log2(z.mag2())/2);
+                return i-llz;
+            }
+            z = mand_step(z,c);
+            dz = dz.cmult(z.scale(2));
+        }
+        return new vec2(0,0);
+    }
+    function mandGrad(maxIters,c,z){
+        //return mandelbrott_grad(maxIters,c,z);
+        let e = 1e-10;
+        let d = mandelbrott_dist(maxIters,c,z);
+        return new vec2(
+            mandelbrott_dist(maxIters,c.plus(new vec2(e,0)),z)-d,
+            mandelbrott_dist(maxIters,c.plus(new vec2(0,e)),z)-d
+        ).unscale(e);
+        
+        //let re = 1.00000001;
+        //let e = 1e-100;
+        //if (z === undefined) { z = c;}
+        //let d = mandelbrott_dist(maxIters,c,z);
+        //let f = (v) => (Math.abs(v)<e?v+e:v*re);
+        //let fz = new vec2(f(z.x),f(z.y));
+        //return new vec2(
+        //    mandelbrott_dist(maxIters,c,new vec2(fz.x,z.y))-d,
+        //    mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
+        //    ).div(fz.minus(z)); 
+    }
+    function gradzr(f,z,epsilon=1e-6){
+        let r = f(z);
+        return new vec2(f(z.plus(new vec2(epsilon,0)))-r,f(z.plus(new vec2(0,epsilon)))-r).unscale(epsilon);
+    }
+    
+    
+    function* trace_circle(iters,z0,step){
+        if (step === undefined) { step = 0.5;}
+        let level = mandelbrott_dist(iters,z0);
+        let z = z0;
+        while (true){
+            yield z;
+            let vz = mandelbrott_dist(iters,z);
+            let gz = mandGrad(iters,z);
+            z = z.plus(gz.cmult(new vec2(level-vz,step).unscale(gz.mag2())));
+        }
+    }
+    function mcol(iters,z){
+        let i = mandelbrott_dist(iters,z);
+        if (i >= iters){
+            i = findInfimum(iters,z);
+            //i = findPeriod(z);
+            return scol(i.i*123+2,(1-nodeMode_v),128,32+(1-nodeMode_v)*48);
+        }else{
+            return scol(i);
+        }
+    }
+    function col(i,r=undefined,c=128,s=127){
+        if (r === undefined){
+	    r = nodeMode_v
+        }
+	let rgb = [c-s*Math.cos(i/2**.9),c-s*Math.cos(i/3**.9),c-s*Math.cos(i/5**.9)];
+	let y = 0.17697*rgb[0]+0.81240*rgb[1]+0.01063*rgb[2];
+        return [lerp(rgb[0],y,r),lerp(rgb[1],y,r),lerp(rgb[2],y,r)];
+    }
+    function scol(i,r=undefined,c=128,s=127){
+        c = col(i,r,c,s);
+        return "RGB("+Math.round(c[0])+","+Math.round(c[1])+","+Math.round(c[2])+")";
+    }
+    
+
+    //let l = document.getElementById("link");
+    //l.style.position="absolute";
+    //l.style.left="100px";
+    //l.style.top="100px";
+    
+
+    function outlineMand(start,step,iters){
+        iters = iters===undefined?256:iters;
+        step = step===undefined?0.1:step;
+        let a0 = start.pang();
+        let path = "M "+toSVG(start).str()+"\nL ";
+        let pz = start;
+        let maxlen = 1<<15;
+        let minD2 = 0.25/200/200;
+        for (let z of trace_circle(iters,start,step)){
+            //if (z.minus(pz).mag2() < minD2){ continue;}
+            if (z.pang() <= a0 && pz.pang() > a0){
+                break;
+            }
+            maxlen --;
+            if (maxlen <= 0){
+                break;
+            }
+            path += toSVG(z).str()+" ";
+            pz = z;
+        }
+        return path;
+    }
+
+    function addPath(path,stroke,fill){
+        if (stroke === undefined) {stroke = "red"}
+        if (fill === undefined) {stroke = "none"}
+        let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+        pathn.setAttribute("fill",fill);
+        pathn.setAttribute("stroke",stroke);
+        pathn.setAttribute("d",path);
+        svg.appendChild(pathn);
+        return pathn;
+    }
+
+    function* iter(){
+        for (let x = 8; x > 0.3; x *= 1-1/8){
+            let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+            //pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
+	    pathn.setAttribute("fill","none");
+            pathn.setAttribute("stroke",scol(mandelbrott_dist(1024,new vec2(x,0))));
+	    pathn.setAttribute("stroke-width",""+(SVGzoom*0.01));
+            pathn.setAttribute("d","");
+            svg.children[1].appendChild(pathn);
+            let start = new vec2(x,0);
+            let a0 = start.pang();
+            let l = (m)=>m;
+            let path = "M "+toSVG(l(start)).str()+"\nL ";
+            let pz = start;
+            let maxlen = 1<<12;
+            let minD2 = 0.01/200/200;
+            for (let z of trace_circle(1024,start,0.1)){
+                
+                if (z.pang() <= a0 && pz.pang() > a0){
+                    break;
+                }
+                maxlen --;
+                if (maxlen <= 0){
+                    pathn.setAttribute("d",path+" z");
+                    yield;
+                    maxlen = 1<<12;
+                }
+                if (z.minus(pz).mag2() < minD2){ continue;}
+                path += toSVG(l(z)).str()+" ";
+                pz = z;
+            }
+            pathn.setAttribute("d",path+" z");
+            yield;
+        }
+    }
+    
+
+    
+
+    
+    function windowify(content,pos,scale,iscale){
+	let odiv = document.createElement('div');
+	let div = document.createElement('div');
+	let buttons = document.getElementById("elements").children[0];
+	let w = buttons.cloneNode(true);
+	div.appendChild(w);
+	odiv.appendChild(div);
+	for (let c of content){
+	    div.appendChild(c);
+	}
+        odiv.setAttribute("data-init","window");
+	div.setAttribute("class","window");
+	let node = new Node(pos,odiv,scale,iscale);
+        return rewindowify(node);
+    }        
+    function rewindowify(node){
+        node.push_extra("window");
+        let w = node.content;
+
+        
+	let del = w.querySelector("#button-delete");
+	let fs = w.querySelector("#button-fullscreen");
+	let col = w.querySelector("#button-collapse");
+
+        function set(e,v,s="fill"){
+            e.children[0].setAttribute("fill",settings.buttonGraphics[v][0]);
+            e.children[1].setAttribute(s,settings.buttonGraphics[v][1]);
+        }
+        function ui(e,cb=(()=>{}),s="fill"){
+            e.onmouseenter = (ev)=>{
+                set(e,"hover",s);
+            }
+            e.onmouseleave = (ev)=>{
+                set(e,"initial",s);
+                e.ready=false;
+            }
+            e.onmousedown = (ev)=>{
+                set(e,"click",s);
+                e.ready=true;
+                cancel(ev);
+            }
+            e.onmouseup = (ev)=>{
+                set(e,"initial",s);
+                cancel(ev);
+                if (e.ready){
+                    cb(ev);
+                }
+            }
+        }
+        ui(del,node.remove.bind(node));
+        ui(fs,(()=>{
+            node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.0625);
+            autopilotSpeed=0.1;
+        }));
+        ui(col,(()=>{}),"stroke");
+	
+	return node;
+    }
+
+
+
+
+
+    
+    function put(e,p,s=1){
+	let svgbb = svg.getBoundingClientRect();
+        e.style.position="absolute";
+	e.style.transform = "scale("+s+","+s+")";
+        p = fromZtoUV(p);
+	if (p.minus(new vec2(0.5,0.5)).mag2() > 16){
+	    e.style.display = "none";
+	}else{
+	    e.style.display = "initial";
+	}
+        let w = Math.min(svgbb.width,svgbb.height);
+        let off = svgbb.width < svgbb.height? svgbb.right : svgbb.bottom;
+	p.x = w*p.x - (off-svgbb.right)/2;
+	p.y = w*p.y - (off-svgbb.bottom)/2;
+	let bb = e.getBoundingClientRect();
+        p = p.minus(new vec2(bb.width,bb.height).scale(0.5/s));
+        e.style.left = p.x+"px";
+        e.style.top = p.y+"px";
+
+        
+        //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
+        //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
+        //e.style['vertical-align']= 'middle';
+        //e.style['text-align']= 'center';
+        
+    }
+
+    const NodeExtensions = {
+        "window":(node,a)=>{
+            rewindowify(node);
+        },
+        "textarea":(node,o)=>{
+            let e = node.content;
+            for (let w of o.p){
+                e = e.children[w];
+            }
+            let p = o.p;
+            e.value = o.v;
+            node.push_extra_cb((n)=>{
+                return {f:"textarea",a:{p:p,v:e.value}};
+            });
+        },
+    }
+
+    
+    var movingNode = undefined;
+    let prevNode = undefined;
+    var NodeUUID = 0;
+    var nodeMap = {};
+    function nextUUID(){
+	while (nodeMap[NodeUUID] !== undefined){
+	    NodeUUID++;
+	}
+	return NodeUUID;
+    }
+    class Node{
+        constructor(p,thing,scale=1,intrinsicScale = 1){
+	    this.anchor = new vec2(0,0);
+	    this.anchorForce = 0;
+	    this.mouseAnchor = new vec2(0,0);
+	    this.edges = [];
+	    this.init = (nodeMap)=>{};
+	    if (p === undefined){
+		let n = thing;
+                let o = JSON.parse(n.dataset.node_json)
+                for (const k of ['anchor','mouseAnchor','vel','pos','force']){
+                    o[k] = new vec2(o[k]);
+                }
+                for (const k in o){
+                    this[k] = o[k];
+                }
+                this.save_extras = [];
+                this.content = thing;
+                if (n.dataset.node_extras){
+                    o = JSON.parse(n.dataset.node_extras);
+                    for (const e of o){
+                        NodeExtensions[e.f](this,e.a);
+                    }
+                }
+                this.attach();
+                this.content.setAttribute("data-uuid",this.uuid);
+                if (n.dataset.edges !== undefined){
+                    let es = JSON.parse(n.dataset.edges);
+                    this.init = ((nodeMap)=>{
+                        for (let e of es){
+                            edgeFromJSON(e,nodeMap);
+                        }
+                    }).bind(this);
+                }
+                return;
+	    }else{
+		this.uuid = nextUUID();
+	    }
+	    this.uuid = ""+this.uuid;
+	    
+            this.pos = p;
+	    this.scale = scale;
+	    this.intrinsicScale = intrinsicScale;
+	    
+            this.content = thing;
+	    
+            this.vel = new vec2(0,0);
+            this.force = new vec2(0,0);
+	    this.followingMouse = 0;
+
+            this.removed=false;
+            
+	    this.content.setAttribute("data-uuid",this.uuid);
+	    this.attach();
+            this.save_extras = [];
+	}
+	attach(){
+	    let div = this.content;
+	    let node = this;
+	    div.onclick = node.onclick.bind(node);
+	    div.ondblclick = node.ondblclick.bind(node);
+	    div.onmousedown = node.onmousedown.bind(node);
+	    div.onmouseup = node.onmouseup.bind(node);
+	    div.onmousemove = node.onmousemove.bind(node);
+	    div.onwheel = node.onwheel.bind(node);
+        }
+        json(){
+            return JSON.stringify(this,(k,v)=>{
+                if (k==="content" || k === "edges" || k === "save_extras"){
+                    return undefined;
+                }
+                return v;
+            });
+        }
+        push_extra_cb(f){this.save_extras.push(f);}
+        push_extra(func_name,args=undefined){
+            this.save_extras.push({f:func_name,a:args});
+        }
+	draw(){
+	    put(this.content,this.pos,this.intrinsicScale*this.scale*(zoom.mag2()**-settings.zoomContentExp));
+            this.content.setAttribute("data-node_json",this.json());
+            let se = [];
+            for (let e of this.save_extras){
+                se.push(typeof e === "function"? e(this): e);
+            }
+            this.content.setAttribute("data-node_extras",JSON.stringify(se));
+            
+	    //this.content.setAttribute("data-vy",this.vel.y);
+	    //this.content.setAttribute("data-x",this.pos.x);
+	    
+	}
+        zoom_to_fit(margin=1){
+            let bb = this.content.getBoundingClientRect();
+            let svgbb = svg.getBoundingClientRect();
+            let so = windowScaleAndOffset();
+            let aspect = svgbb.width/svgbb.height;
+            let scale = bb.height*aspect > bb.width? svgbb.height/(margin*bb.height): svgbb.width/(margin*bb.width);
+            this.zoom_by(1/scale);
+        }
+        zoom_by(s=1){
+            panTo = new vec2(0,0);//this.pos;
+            let gz = ((s)**(-1/settings.zoomContentExp));
+            zoomTo = zoom.unscale(gz**0.5);
+            autopilotReferenceFrame = this;
+            panToI = new vec2(0,0);
+        }
+        zoom_to(s=1){
+            panTo = new vec2(0,0);//this.pos;
+            let gz = zoom.mag2()*((this.scale*s)**(-1/settings.zoomContentExp));
+            zoomTo = zoom.unscale(gz**0.5);
+            autopilotReferenceFrame = this;
+            panToI = new vec2(0,0);
+        }
+        
+	addEdge(edge){
+	    this.edges.push(edge);
+	    this.updateEdgeData();
+	}
+	updateEdgeData(){
+	    let es = JSON.stringify(this.edges.map((e)=>e.dataObj()));
+	    this.content.setAttribute("data-edges",es);
+	}
+	    
+	    
+        step(dt){
+            if (dt === undefined || isNaN(dt)){
+                dt = 0;
+            }else{
+                if (dt > 1){
+                    dt = 1;
+                }
+            }
+	    if (!this.followingMouse){	
+		this.pos = this.pos.plus(this.vel.scale(dt/2));
+		this.vel = this.vel.plus(this.force.scale(dt));
+		this.pos = this.pos.plus(this.vel.scale(dt/2));
+		this.force = this.vel.scale(-Math.min(this.vel.mag()+0.4+this.anchorForce,1/(dt+1e-300)));
+	    }else{
+		this.vel = new vec2(0,0);
+		this.force = new vec2(0,0);
+	    }
+            let g = mandGrad(settings.iterations,this.pos);
+            //g.y *= -1; //why?
+            this.force = this.force.plus(g.unscale((g.mag2()+1e-10)*300));
+	    this.force = this.force.plus(this.anchor.minus(this.pos).scale(this.anchorForce));
+	    //let d = toZ(mousePos).minus(this.pos);
+	    //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
+	    if (this.followingMouse){
+		let p = toZ(mousePos).minus(this.mouseAnchor);
+		this.vel = p.minus(this.pos).unscale(nodeMode?1:dt);
+		this.pos = p;
+		this.anchor = this.pos;
+	    }
+            //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
+	    this.draw();
+        }
+        searchStrings(){
+            function* search(e){
+                yield e.textContent;
+                if (e.value)
+                    yield e.value;
+                for (let c of e.children){
+                    yield * search(c);
+                }
+            }
+            return search(this.content);
+        }
+	onclick(event){
+
+	}
+	ondblclick(event){
+	    //console.log(this,event);
+	    this.anchor = this.pos;
+	    this.anchorForce = 1-this.anchorForce;
+	    cancel(event);
+	}
+	onmousedown(event){
+	    this.mouseAnchor = toZ(new vec2(event.clientX,event.clientY)).minus(this.pos);
+	    this.followingMouse = 1;
+	    movingNode = this;
+	    if (nodeMode){
+		if (prevNode === undefined){
+		    prevNode = this;
+		}else{
+		    connect(this,prevNode,this.pos.minus(prevNode.pos).mag()/2);
+		    prevNode = undefined;
+		}
+	    }else{
+
+	    }
+	    cancel(event);
+	}
+	onmouseup(event){
+	    this.followingMouse = 0;
+	    if (this === movingNode){
+		movingNode = undefined;
+	    }
+	    cancel(event);
+	}
+	onmousemove(event){
+	    if (this.followingMouse){
+		prevNode = undefined;
+	    }
+	    /*if (this.followingMouse){
+		this.pos = this.pos.plus(toDZ(new vec2(event.movementX,event.movementY)));
+		this.draw()
+		//cancel(event);
+	    }*/
+	}
+	onwheel(event){
+	    if (nodeMode){
+		let amount = Math.exp(event.wheelDelta*-settings.zoomSpeed);
+		this.scale *= amount
+		this.pos = this.pos.lerpto(toZ(mousePos),1-amount);
+		cancel(event);
+	    }
+	}
+	remove(){
+            let dels = [];
+            for (let n of nodes){
+                for (let e of n.edges){
+                    if (e.pts.includes(this)){
+                        dels.push(e);
+                    }
+                }
+            }
+            for (let e of dels){
+                e.remove();
+            }
+            
+	    let index = nodes.indexOf(this);
+	    if (index !== -1) {
+		nodes.splice(index, 1);
+	    }
+	    if (nodeMap[this.uuid] === this){
+		delete nodeMap[this.uuid];
+            }
+            
+            this.removed = true;
+	    this.content.remove();
+	}
+
+    }
+    let htmlnodes_parent = document.getElementById("nodes");
+    let htmlnodes = htmlnodes_parent.children;
+    let htmledges = document.getElementById("edges");
+    function edgeFromJSON(o,nodeMap){
+	let pts = o.p.map((k)=>nodeMap[k]);
+	if (pts.includes(undefined)){
+	    console.warn("missing keys",o,nodeMap);
+	}
+	let e = new Edge(pts,o.l,o.s,o.g);
+	pts[0].addEdge(e);
+	edges.push(e);
+	return e
+    }
+    class Edge{
+        constructor(pts,length=0.6,strength=0.1,style={stroke:"red","stroke-width":"0.01",fill:"red"}){
+            this.pts = pts;
+            this.length = length;
+            this.strength = strength;
+            this.style = style;
+            this.html = document.createElementNS("http://www.w3.org/2000/svg","path");
+            for (const [key, value] of Object.entries(style)) {
+                this.html.setAttribute(key,value);
+            }
+            htmledges.appendChild(this.html);
+	    this.attach();
+        }
+	dataObj(){
+	    let o = {};
+	    o.l=this.length;
+	    o.s=this.strength;
+	    o.g=this.style;
+	    o.p=this.pts.map((n)=>n.uuid);
+	    return o;
+	}
+	attach(){
+	    this.html.onwheel = this.onwheel.bind(this);
+	    this.html.onmouseover = this.onmouseover.bind(this);
+	    this.html.onmouseout = this.onmouseout.bind(this);
+	    this.html.ondblclick = this.ondblclick.bind(this);
+	}
+	stress(){
+	    let avg = this.center();
+	    return this.pts.reduce((t,n,i,a)=>
+                {return t+n.pos.minus(avg).mag()-this.length;},0)/(this.length+1);
+	}
+	center(){
+	    return this.pts.reduce((t,n,i,a)=>
+                {return t.plus(n.pos);},new vec2(0,0)).unscale(this.pts.length);
+	}
+        draw(){
+	    //this.html.setAttribute("stroke-width",this.style['stroke-width']*SVGzoom*zoom.mag()/(0.5+this.stress())*(this.mouseIsOver?1.5:1.0));
+	    this.html.setAttribute("stroke",this.mouseIsOver?"lightskyblue":this.style.stroke);
+	    this.html.setAttribute("fill",this.mouseIsOver?"lightskyblue":this.style.fill);
+	    //this.html.setAttribute("d","M "+this.pts.map((v)=>(toSVG(v.pos).str())).join(" L "));
+	    let wscale = this.style['stroke-width']/(0.5+this.stress())*(this.mouseIsOver?1.5:1.0);
+	    let path = "M ";
+	    let c = this.center();
+	    for (let n of this.pts){
+		let r = n.scale*wscale;
+		let left = n.pos.minus(c).rot90().normed(r);
+		path += toSVG(n.pos.minus(left)).str();
+		path += " L ";
+		path += toSVG(left.plus(n.pos)).str()+" ";
+		//path += " Q ";
+		//path += toSVG(c).str()+ " ";
+	    }
+	    path += " "+toSVG(this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale*wscale))).str() + "z";
+
+
+	    this.html.setAttribute("d",path);
+        }
+        step(dt){
+            if (dt === undefined || isNaN(dt)){
+                dt = 0;
+            }else{
+                if (dt > 1){
+                    dt = 1;
+                }
+            }
+            let avg = this.center();
+            for (let n of this.pts){
+                let d = n.pos.minus(avg);
+                // f = -k(d-d0)d_hat
+                //   = -k(|d|-length)d/|d|
+                //   = -k(1-length/|d|)d
+                let f = d.scale(1-this.length/(d.mag()+1e-300));
+                n.force = n.force.plus(f.scale(-this.strength));
+            }
+            this.draw();
+        }
+	onwheel(event){
+	    if (nodeMode){
+		let amount = Math.exp(event.wheelDelta*-settings.zoomSpeed);
+		this.length *= amount;
+		let avg = this.center();
+		for (let n of this.pts){
+		    n.pos = n.pos.minus(avg).scale(amount).plus(avg);
+		}
+		if (this.pts[0] !== undefined){
+		    this.pts[0].updateEdgeData();
+		}
+		cancel(event);
+	    }
+	}
+	onmouseover(event){
+	    this.mouseIsOver = true;
+	}
+	onmouseout(event){
+	    this.mouseIsOver = false;
+	}
+	ondblclick(event){
+	    if (nodeMode){
+		this.remove();
+		cancel(event);
+	    }
+	}
+	remove(){
+	    let index = edges.indexOf(this);
+	    if (index !== -1) {
+		edges.splice(index, 1);
+	    }
+	    index = this.pts[0].edges.indexOf(this);
+	    if (index !== -1) {
+		this.pts[0].edges.splice(index, 1);
+		this.pts[0].updateEdgeData();
+	    }
+	    this.html.remove();
+	}
+    }
+
+    var nodes = [];
+    var edges = [];
+    var nodeMode_v = 0;
+    var nodeMode = 0;
+
+        
+    
+    for (let n of htmlnodes){
+	//n.setAttribute("onclick","nodeclick("+nodes.length+");");
+	console.log(n);
+        let node = new Node(undefined,n);
+	registernode(node);
+        //if (n.dataset.init === "window")
+        //    rewindowify(node);
+    }
+    for (let n of nodes){
+	n.init(nodeMap);//2 pass for connections
+    }
+    function clearnet(){
+        while (edges.length > 0){
+            edges[edges.length-1].remove();
+        }
+        while (nodes.length > 0){
+            nodes[nodes.length-1].remove();
+        }
+    }
+    function loadnet(text,clobber){
+        if (clobber){
+            clearnet();
+        }
+        let d = document.createElement("div");
+        d.innerHTML = text;
+        let newNodes = [];
+        for (let n of d.children){
+            let node = new Node(undefined,n);
+            newNodes.push(node);
+	    registernode(node);
+            if (n.dataset.init === "window")
+                rewindowify(node);
+        }
+        for (let n of newNodes){
+            htmlnodes_parent.appendChild(n.content);
+	    n.init(nodeMap);//2 pass for connections
+        }
+        
+        
+    }
+
+    function searchNodesBy(f){
+        let matched = [];
+        for (let n of nodes){
+            if (f(n)){
+                n.content.classList.add("search_matched");
+                n.content.classList.remove("search_nomatch");
+                matched.push(n);
+            }else{
+                n.content.classList.remove("search_matched");
+                n.content.classList.add("search_nomatch");
+            }
+        }
+        return matched;
+    }
+    function clearSearch(){
+        for (let n of nodes){
+            n.content.classList.remove("search_matched");
+            n.content.classList.remove("search_nomatch");
+        }
+    }
+    
+    function connect(na,nb,length=0.2,linkStrength=0.1,linkStyle={stroke:"none","stroke-width":"0.005",fill:"lightcyan",opacity:"0.5"}){
+        let edge = new Edge([na,nb],length,linkStrength,linkStyle);
+
+	na.addEdge(edge);
+        //nb.edges.push(edge);
+        //edge.draw();
+
+	
+        edges.push(edge);
+        return edge;
+    }
+
+    function connectRandom(n){
+        for (let i = 0; i < n; i++){
+            let a = Math.floor(Math.random()*nodes.length);
+            let b = Math.floor(Math.random()*nodes.length);
+            connect(nodes[a],nodes[b]);
+        }
+    }
+    
+    var gen = iter();
+    
+    function frame(){
+        gen.next();
+        setTimeout(frame,100);
+    }
+    //frame();
+    var mousePathPos;
+    var current_time = undefined;
+    let regenAmount = 0;
+    let regenDebt = 0;
+    let avgfps = 0;
+    let panToI = new vec2(0,0);
+    let panToI_prev = undefined;
+    function nodeStep(time){
+        zoom = zoom.scale(1-autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
+        if (autopilotReferenceFrame && autopilotSpeed !== 0){
+            if (panToI_prev === undefined){
+                panToI_prev = autopilotReferenceFrame.pos.scale(1);
+            }
+            panToI = panToI.scale(1-settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
+            pan = pan.scale(1-autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
+            panToI_prev = autopilotReferenceFrame.pos.scale(1);
+        }else{
+            pan = pan.scale(1-autopilotSpeed).plus(panTo.scale(autopilotSpeed));
+            panToI_prev = undefined;
+        }
+	//zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
+	//pan = pan.scale(0.9).plus(pan_to.scale(0.1));
+	updateViewbox();
+        if (mousePath == ""){
+	    mousePathPos = toZ(mousePos);
+	    mousePath = "M "+toSVG(mousePathPos).str()+" L ";
+        }
+        for (let i = 0; i < 2; i++){
+	    //let g = mandGrad(settings.iterations,mousePathPos);
+	    //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
+            
+            mousePathPos = mand_step(mousePathPos,toZ(mousePos));
+
+            //let p = findPeriod(mousePathPos);
+            //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
+            if (!toSVG(mousePathPos).hasNaN())
+	        mousePath += toSVG(mousePathPos).str()+" ";
+	    
+         
+	}
+	if (nodeMode && prevNode !== undefined){
+	    svg_mousePath.setAttribute("d","M "+toSVG(prevNode.pos).str()+" L "+toSVG(toZ(mousePos)).str());
+	}else{
+            svg_mousePath.setAttribute("d",mousePath);
+	}   
+	let width = zoom.mag()*0.0005*SVGzoom;
+	svg_mousePath.setAttribute("stroke-width",width+"");
+        if (current_time === undefined){
+            current_time = time;
+        }
+        let dt = time-current_time;
+        current_time = time;
+        if (dt > 0){
+            avgfps = avgfps*.99 + 0.01*1000/dt;
+        }
+        document.getElementById("debug_layer").children[1].textContent = "fps:"+avgfps;
+        document.getElementById("fps").textContent = "avg fps:"+Math.round(avgfps*100)/100; 
+        
+	dt *= (1-nodeMode_v)**5;
+        for (let n of nodes){
+            n.step(dt);
+            let d = toZ(mousePos).minus(n.pos);
+            //n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
+        }
+        for (let e of edges){
+            e.step(dt);
+        }
+	regenDebt = Math.min(16,regenDebt+lerp(4,regenAmount,Math.min(1,(nodeMode_v**5)*1.01)));
+	for (; regenDebt > 0; regenDebt --){
+	    render_hair(Math.random()*settings.renderSteps);
+	}
+	regenAmount = 0;
+	nodeMode_v = lerp(nodeMode_v,nodeMode,0.125);
+        window.requestAnimationFrame(nodeStep);
+    }
+    nodeStep();
+
+    
+    //connectRandom(10);
+
+
+
+
+    addEventListener("resize", (event) => {});
+    
+
+    addEventListener('wheel', (event) => {
+        autopilotSpeed = 0;
+        if (event.getModifierState(settings.rotateModifier)){
+            let amount = event.wheelDelta*settings.rotateModifierSpeed;
+            let p = toZ(new vec2(event.pageX,event.pageY));
+            let zc = p.minus(pan);
+            // p = zoom*center+pan = zoom'*center+pan'
+            // zoom' = zoom*rot
+            // pan' = pan + (zoom*center-zoom*rot*center)
+            //      = pan + (1-rot) * zoom*center
+            let r = new vec2(Math.cos(amount),Math.sin(amount));
+            zoom = zoom.cmult(r);
+            pan = pan.plus(zc.cmult(new vec2(1,0).minus(r)));
+            cancel(event);
+            return;
+        }
+	if (settings.scroll === "zoom"){
+	    let dest = toZ(mousePos);
+	    regenAmount += Math.abs(event.wheelDelta);
+	    let amount = Math.exp(event.wheelDelta*settings.zoomSpeed);
+	    zoom = zoom.scale(amount);
+	    pan = dest.scale(1-amount).plus(pan.scale(amount));
+	    cancel(event);
+	}else if (settings.scroll === "pan"){
+	    let dest = toZ(mousePos);
+	    let dp;
+	    let amount;
+	    if (event.ctrlKey){
+		dp = new vec2(0,0);
+		amount = event.deltaY*settings.zoomSpeed;
+	    }else{
+		dp = toDZ(new vec2(event.deltaX,event.deltaY).scale(settings.panSpeed));
+		amount = event.deltaZ*settings.zoomSpeed;
+	    }
+	    regenAmount += Math.hypot(event.deltaX,event.deltaY,event.deltaZ);
+	    amount = Math.exp(amount)
+	    zoom = zoom.scale(amount);
+            pan = dest.scale(1-amount).plus(pan.scale(amount)).plus(dp);
+	    cancel(event);
+	    event.preventDefault();
+	}
+    });
+    let mouseDown = false;
+    let mouseDownPos = new vec2(0,0);
+    addEventListener("mousedown", (event) => {
+        autopilotSpeed = 0;
+	mouseDownPos = mousePos.scale(1);
+	mouseDown = true;
+	cancel(event);
+    });
+    addEventListener("mouseup", (event) => {
+	mouseDown = false;
+	if (movingNode !== undefined){
+	    movingNode.onmouseup(event);
+	}
+    });
+    addEventListener("mousemove", (event) => {
+	if (mouseDown){
+            autopilotSpeed = 0
+	    let delta = mousePos.minus(mouseDownPos);
+	    pan = pan.minus(toDZ(delta));
+	    regenAmount += delta.mag()*0.25;
+	    mouseDownPos = mousePos.scale(1);
+	}
+    });
+    addEventListener("keydown", (event) => {
+	//console.log(event);
+	if (event.key === settings.nodeModeKey){
+	    if (settings.nodeModeTrigger==="down"){
+		if (settings.nodeModeKey === "CapsLock"){
+		    nodeMode = event.getModifierState("CapsLock");
+		}else{
+		    nodeMode = 1;
+		}
+	    }else if (settings.nodeModeTrigger==="toggle"){
+		nodeMode = 1-nodeMode;
+	    }
+	}else if (event.key === "Escape"){
+	    for (let n of nodes){
+		n.followingMouse = 0;
+	    }
+	}
+    });
+    function createTextNode(name='',text='',sx=undefined,sy=undefined,x=undefined,y=undefined){
+        let t = document.createElement("input");
+	t.setAttribute("type","text");
+	t.setAttribute("value",name);
+	t.setAttribute("style","color:RGB(170,170,170); background:none; border:none; transform:translateY(-25%)");
+        let n = document.createElement("textarea");
+        n.onmousedown = cancel;
+	n.setAttribute("type","text");
+	n.setAttribute("size","10");
+	let node = addNodeAtNaturalScale([t,document.createElement("br"),n]);
+        if (sx !== undefined){
+            x = (new vec2(sx,sy)).cmult(zoom).plus(pan);y=x.y;x=x.x;
+        }if (x !== undefined){
+            node.pos.x = x;
+        }if (y !== undefined){
+            node.pos.y = y;
+        }
+        node.push_extra_cb((node)=>{
+            return {f:"textarea",a:{p:[0,1],v:t.value}};
+        })
+        node.push_extra_cb((node)=>{
+            return {f:"textarea",a:{p:[0,3],v:n.value}};
+        })
+        return node;
+    }
+    addEventListener("dblclick", (event) => {
+	if (nodeMode){
+	    if (prevNode){
+		prevNode = undefined;
+	    }else{
+		//addNodeAtNaturalScale()
+		//let n = document.createElementNS("http://www.w3.org/2000/svg","svg");
+		//n.addChild(
+		//<svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="blue"/></svg>
+	        createTextNode();
+	    }
+	}
+	cancel(event);
+    });
+
+    var gestureStartParams = {rotation:0,x:0,y:0,scale:0,zoom:new vec2(),pan:new vec2()};
+    addEventListener("gesturestart" ,(e) =>{
+	e.preventDefault();
+	//console.log(e);
+	gestureStartParams.rotation = e.rotation;
+	gestureStartParams.scale = e.scale;
+	gestureStartParams.x = e.pageX;
+	gestureStartParams.y = e.pageY;
+	gestureStartParams.zoom = zoom;
+	gestureStartParams.pan = pan;
+	
+    });
+    addEventListener("gesturechange" ,(e) =>{
+	e.preventDefault();
+	//console.log(e);
+	let d_theta = e.rotation-gestureStartParams.rotation;
+	let d_scale = e.scale;
+	let r = -e.rotation*settings.gestureRotateSpeed;
+	pan = gestureStartParams.pan;
+	zoom = gestureStartParams.zoom;
+	let r_center = toZ(new vec2(e.pageX,e.pageY)); 
+	let s = 0;
+	zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r),Math.sin(r)));
+	if (e.scale !== 0){
+	    let s = 1/e.scale;
+	    zoom = zoom.scale(s);
+	    regenAmount += Math.abs(Math.log(s))*settings.maxLines;
+	}
+	let dest = r_center;
+	let amount = s;
+	let dp = r_center.minus(gestureStartParams.pan);
+	pan = gestureStartParams.pan.plus(
+	    dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
+	//pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
+	
+    });
+    addEventListener("gestureend" ,(e) =>{
+	e.preventDefault();
+    });
+
+    
+    addEventListener("keyup", (event) => {
+	//console.log(event);
+	if (event.key === settings.nodeModeKey){
+	    if (settings.nodeModeTrigger==="down"){
+		nodeMode = 0;
+		cancel(event);
+	    }
+	}
+    });
+
+
+    //todo sshift click for node mode (Attach nodes to eachother)
+    //todo patches for zoom in
+
+    function render_hair(n){//todo make faster.
+	let iters = settings.iterations;
+	let maxLines = settings.maxLines;
+	let tries = 1;
+	let pt;
+	do {
+	    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+	    for (let i = (1-Math.random()**2)*(tries*4); i > 1 ; i--){
+		let gz = mandGrad(iters,pt)
+		pt = pt.plus(gz.unscale(gz.mag2()*10+1));
+		//if (mand_i(pt,iters) > iters){
+		//    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+		//}
+	    }
+	    tries--;
+	} while (tries > 0 && mand_i(pt,iters) > iters)
+	/*if (mand_i(pt,iters) > iters || pt.mag2()>8){
+	    return;
+	}*/
+
+	//let level = mandelbrott_dist(256,pt);
+	//let width = 1/(level+5)**2;
+	//let width = 1/(mandGrad(256,pt).mag()**1.5+1);
+
+        
+	let r = "M "+toSVG(pt).str() + " "+settings.renderDChar+" ";
+	let length = 0;
+	let n0 = n;
+        let opt = pt;
+        let na = 0;
+        let opacity=1;
+        if (mand_i(pt,iters) > iters){
+            //interior coloring
+            /*let p = findPeriod(pt,pt,1e-12,iters);
+            for (; n > 0; n--){
+                let npt = mand_iter_n(p,pt,pt);
+                let delta = npt.minus(pt);
+                delta = delta.cpow(new vec2(0.5,0));
+                npt = pt.plus(delta.scale(0.1));
+                if (mand_i(npt,iters)<=iters){
+                    break;
+                }
+                r += toSVG(npt).str()+" ";
+                length += npt.minus(pt).mag();
+                pt = npt;
+            }*/
+            let p = findInfimum(iters,pt);
+            for (;n > 0; n--){
+                let delta = gradzr( ((z)=>(mand_iter_n(p.i,z,z).mag2())) ,pt, 1e-5);
+                delta = delta.unscale(delta.mag()+1e-300).scale(zoom.mag()*.1);
+                //debugger
+                npt = pt.plus(delta.scale(-settings.renderStepSize));
+                if (mand_i(npt,iters)<=iters){
+                    break;
+                }
+                if (toSVG(npt).hasNaN()) break;
+                r += toSVG(npt).str()+" "; na += 1;
+                length += npt.minus(pt).mag();
+                pt = npt;
+            }
+            opacity = 0.1;
+            
+            length /= 4;
+        }else{
+	    for (let p of trace_circle(iters,pt,Math.random()>0.5?settings.renderStepSize:-settings.renderStepSize)){
+	        //console.log(p);
+                //if ((n&3) == 0)
+                if (toSVG(p).hasNaN()) break;
+	        r += toSVG(p).str()+" "; na += 1;
+	        n -= 1;
+	        if (n < 0){
+		    break;
+	        }
+	        length += p.minus(pt).mag();
+	        pt = p;
+	    }
+            color = scol(mandelbrott_dist(iters,pt));
+        }
+        if (na === 0) return;
+	let width = Math.min(settings.renderWidthMult*length/n0,0.1);
+	let pathn = document.createElementNS("http://www.w3.org/2000/svg","path");
+	pathn.setAttribute("fill","none");
+        pathn.setAttribute("stroke",mcol(iters,opt));
+	pathn.setAttribute("stroke-width",""+width*SVGzoom);
+        pathn.setAttribute("stroke-opacity",""+opacity);
+        pathn.setAttribute("d",r);
+        svg_bg.appendChild(pathn);
+	if (svg_bg.children.length > maxLines){
+	    svg_bg.removeChild(svg_bg.children[0]);
+        }
+    }
+
+
+
+
+
+    function dropHandler(ev){
+	console.log(ev);
+
+	ev.preventDefault();
+	let files = [];
+	if (ev.dataTransfer.items) {
+	    // Use DataTransferItemList interface to access the file(s)
+	    [...ev.dataTransfer.items].forEach((item, i) => {
+		// If dropped items aren't files, reject them
+		if (item.kind === 'file') {
+		    const file = item.getAsFile();
+		    files.push(file);
+		    console.log(`… file[${i}].name = ${file.name}`);
+		}
+	    });
+	} else {
+	    // Use DataTransfer interface to access the file(s)
+	    [...ev.dataTransfer.files].forEach((file, i) => {
+		files.push(file)
+		console.log(`… file[${i}].name = ${file.name}`);
+	    });
+	}
+	console.log(files);
+	//https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
+	if (FileReader && files && files.length) {
+	    for (let i = 0; i < files.length; i++){
+	    
+		let baseType = files[i].type.split("/")[0];
+		let url = URL.createObjectURL(files[i]);
+		let img;
+		let content = [];
+		//let title = document.createElement('font');
+		let t = document.createElement("input");
+		t.setAttribute("type","text");
+		t.setAttribute("value",files[i].name);
+		t.setAttribute("style","color:RGB(170,170,170); background:none; border:none; transform:translateY(-25%)");
+		//title.appendChild(t);//document.createTextNode(files[i].name));
+		//title.setAttribute("color","aaaaaa");
+		let title = t;
+		let add = function (scale){
+		    let node = windowify(content,toZ(mousePos),(zoom.mag2()**settings.zoomContentExp),scale);
+                    node.push_extra_cb((node)=>{
+                        return {f:"textarea",a:{p:[0,1],v:title.value}};
+                    })
+		    htmlnodes_parent.appendChild(node.content);
+		    registernode(node);
+		    node.followingMouse = 1;
+		    node.draw();
+		    node.mouseAnchor = toDZ(new vec2(0,-node.content.offsetHeight/2+6));
+		}
+		console.log("loading "+baseType);
+	        switch (baseType) {
+		case "image":
+		    img = document.createElement('img');
+		    img.ondragstart=(e) => false;
+		    content = [title,document.createElement("br"),
+			       img];
+		    img.style = "display: block";
+		    img.onload = function() {
+			let s = 512/Math.hypot(img.naturalWidth,img.naturalHeight);
+			//img.style.transform = "scale("+s+","+s+")";
+			img.width = img.naturalWidth*s;
+			img.height = img.naturalHeight*s;
+			add(1);
+			URL.revokeObjectURL(img.src);
+		    }
+		    break;
+		case "audio":
+		    img = new Audio();
+		    img.setAttribute("controls","");
+		    //let c = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		    //c.setAttribute("viewBox","0 0 128 64");
+		    //let name = document.createElementNS("http://www.w3.org/2000/svg","text");
+		    //name.setAttribute("x","0");name.setAttribute("y","0");
+		    //name.appendChild(document.createTextNode(files[i].name));
+		    //c.appendChild(name);
+		    img.style = "display: block";
+		    content = [title,document.createElement("br"),
+			       img];
+		    add(1);
+		    //div.appendChild(c);
+		    break;
+		case "video":
+		    img = document.createElement('video');
+		    img.style = "display: block";
+		    img.setAttribute("controls","");
+		    content = [title,document.createElement("br"),
+			       img];
+		    add(1);
+		    break;
+		default:
+		    break;
+		}
+		img.src = url;
+
+
+	    }
+	}
+	
+	// Not supported
+	else {
+            // fallback -- perhaps submit the input to an iframe and temporarily store
+            // them on the server until the user's session ends.
+	    console.log("FileReader not supported or no files");
+	}
+    }
+
+    
+    function registernode(node){
+	let id = nodes.length;
+	let div = node.content;
+	/*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+	div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+	div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+	div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+	nodes.push(node);
+	nodeMap[node.uuid] = node;
+    }
+  
+    function dragOverHandler(ev) {
+	ev.preventDefault();
+    }
+    function nodemousedown(id){
+	if (id < nodes.length){
+	    nodes[id].mousedown();
+	}
+    }
+    function nodemouseup(id){
+	if (id < nodes.length){
+	    nodes[id].mouseup();
+	}
+    }
+    function nodemousemove(id){
+	if (id < nodes.length){
+	    nodes[id].mousemove();
+	}
+    }
+    function nodeclick(id){
+	if (id < nodes.length){
+	    nodes[id].mouseclick();
+	}
+    }
+
+
+    function cancel(event){
+	if (event.stopPropagation) {
+	    event.stopPropagation();   // W3C model
+	} else {
+	    event.cancelBubble = true; // IE model
+	}
+    }
+
+    function addNodeAtNaturalScale(content,scale=1,nscale_mult=1,window_it=true){
+        let node;
+        if (window_it){
+            let pos = toZ(mousePos)
+            if (!Array.isArray(content)){
+                content = [content];
+            }
+            node = windowify(content,pos,nscale_mult*(zoom.mag2()**settings.zoomContentExp),scale);
+            htmlnodes_parent.appendChild(node.content);
+        }else{
+	    let div = document.createElement('div');
+	    node = new Node(toZ(mousePos),div,nscale_mult*(zoom.mag2()**settings.zoomContentExp),scale);
+            div.appendChild(content);
+            htmlnodes_parent.appendChild(div);
+        }
+	nodes.push(node);
+        return node;
+    }
+
+
+    addEventListener("paste", (event) => {
+	console.log(event);
+	let cd = (event.clipboardData || window.clipboardData);
+	//console.log("text",cd.getData("text"));
+	let content = document.createElement("div");
+	content.innerHTML = cd.getData("text");
+        let t = document.createElement("input");
+	t.setAttribute("type","text");
+	t.setAttribute("value","untitled");
+	t.setAttribute("style","color:RGB(170,170,170); background:none; border:none; transform:translateY(-25%)");
+	let node = windowify([t,document.createElement("br"),content],toZ(mousePos),(zoom.mag2()**settings.zoomContentExp),1);
+	htmlnodes_parent.appendChild(node.content);
+	registernode(node);
+	node.followingMouse = 1;
+	node.draw();
+	node.mouseAnchor = toDZ(new vec2(0,-node.content.offsetHeight/2+6));
+    });
+
+    function gcd(a,b){
+        if (b === 0){
+            return a;
+        }
+        return gcd(b,a%b);
+    }
+    
+    function findPeriod(c,z=new vec2(0,0),epsilon2 = 1e-7,maxiters=256){
+        let zf = mand_step(z,c);
+        let i = 1;
+        let p = 0;
+        for (; i < maxiters; i++){
+            if (zf.minus(z).mag2() <= epsilon2){
+                p = i;
+                break
+            }
+            zf = mand_step(zf,c);
+            zf = mand_step(zf,c);
+            z = mand_step(z,c);
+        }
+        for (; i < maxiters; i++){
+            if (zf.minus(z).mag2() <= epsilon2){
+                p = gcd(p,i);
+            }
+            zf = mand_step(zf,c);
+            zf = mand_step(zf,c);
+            z = mand_step(z,c);
+        }
+        return p;
+    }
+
+    function mand_iter_n(n,c,z=new vec2(0,0)){
+        for (let i = 0; i < n; i++){
+            z = mand_step(z,c);
+        }
+        return z;
+    }
+
+    function findInfimum(iters,z,c=undefined){
+        if (c === undefined){
+            c = z;
+        }
+        let besti = 0;
+        let bestz = z;
+        let bestd = z.mag2();
+        for (let i = 1; i <= iters; i++){
+            z = mand_step(z,c);
+            let d = z.mag2();
+            if (d < bestd){
+                bestd = d;
+                besti = i;
+                bestz = z;
+            }
+        }
+        return {i:besti,z:bestz};
+    }
+
+    
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
