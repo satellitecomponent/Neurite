@@ -92,7 +92,9 @@ The app is a recursive environment to generate ideas. As we are the middle of a 
 - auto embed formats
 - customm equations for the fractal
 - drawing-tool
+- drag handles
 - user feeback/bug fixes
+- pdf.js
 
 
 If you are a developer who is intereested in contributing to this project, I would love to get in contact!
