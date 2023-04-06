@@ -8,7 +8,7 @@ Fractal-MindMap adds a new dimension of organization to the internet...
 ...the fractal dimension....
 
 
-- -  How-to Fractal-MindMap  - -
+-  How-to Fractal-MindMap 
 
 CLICK AND DRAG to move around the fractal.
 SCROLL WHEEL, or PINCH on touchpad zooms.
@@ -20,7 +20,7 @@ Files can be dragged and dropped into the fractal from your local files, or embe
 
 DOUBLE CLICK on a window to 'anchor' it in place.
 
-- - Toggle 'Node-Mode' by holding shift. - -
+- Toggle 'Node-Mode' by holding shift.
 
 'Node-Mode' allows for windows to be connected together.
 To link two windows, hold shift, click on the first window, then click on the second window you would like to connecct.
@@ -29,13 +29,13 @@ While holding shift to enable 'Node-Mode', SCROLL or PINCH on a window to resize
 
 Opening the menu bar in the top right of the screen gives access to further controls.
 
-- - Search - -
+- Search
 
 Type into the search bar to locate windows which contain that text.
 A list of search results will display to the left of the menu. Currently, found windows are listed as numbers.
 Clicking on a search result will zoom your view window to where the window is positioned and scalled within the Mandelbrot set (fractal)
 
-- - Saving - -
+- Saving 
 
 Saving is still being improved.
 
@@ -46,7 +46,7 @@ That copied text can then be saved in a text file.
 To reload the text windows and their connections...
 take the text you got from the save button and paste it back into the textbox, replacing any text that was already there.
 
-- - Zettelkasten - -
+- Zettelkasten
 
 You can use the textbox at the bottom of the menu to generrate nodes and connections purely via text input.
 the #node: and #ref: tags can be modified to any character desired
