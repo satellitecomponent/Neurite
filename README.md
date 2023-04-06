@@ -2,7 +2,7 @@
 
 https://satellitecomponent.github.io/Dendrite/
 
-!epilepsy warning! flashing lights & colors 
+!epilepsy warning! zooming flashing lights & colors 
 
 software in early alpha
 
