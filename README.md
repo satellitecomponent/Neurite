@@ -1,4 +1,7 @@
 # Fractal-MindMap
+
+https://satellitecomponent.github.io/FractalMindMap/
+
 !epilepsy warning! flashing lights & colors -software in alpha...there are many further iterations to develop-
 
 
@@ -8,15 +11,15 @@ Fractal-MindMap adds a new dimension of organization to the internet...
 ...the fractal dimension....
 
 
--  How-to Fractal-MindMap 
+# How-to Fractal-MindMap 
 
 CLICK AND DRAG to move around the fractal.
 SCROLL WHEEL, or PINCH on touchpad zooms.
 
 Fractal-MindMap embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
 
-Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal.
-(to-add, support embed conversion from normal link formats)
+Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
+(to-add soon!, support embed conversion from normal link formats)
 
 DOUBLE CLICK on a window to 'anchor' it in place.
 
@@ -48,9 +51,11 @@ take the text you got from the save button and paste it back into the textbox, r
 
 - Zettelkasten
 
-You can use the textbox at the bottom of the menu to generrate nodes and connections purely via text input.
-the #node: and #ref: tags can be modified to any character desired
-Format like this... 
+You can use the textbox at the bottom of the menu to create text windows and connections purely via text input.
+the #node: and #ref: tags can be modified to any desired character or word.
+
+
+Format the Zettelkasten like this... 
 
 #node: title 1
 
@@ -63,4 +68,15 @@ ref: title 1
 
 this formatting will create two connected text windows within the fractal graph viewer. 
 
-All of these features are still in alpha. Refreshing the page will reset your graph from the start.
+All of these features are still in alpha. Refreshing the page will reset your graph over.
+
+
+#The Future
+
+- ai api integration
+- deeper zoom
+- working color selection
+- customizability/accessability
+- auto embed formats
+- customm equations
+- user feeback/bug fixes
