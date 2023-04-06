@@ -47,7 +47,7 @@ then triple clicking the text box below the save button and copying its entire c
 That copied text can then be saved in a text file. 
 
 To reload the text windows and their connections...
-take the text you got from the save button and paste it back into the textbox, replacing any text that was already there.
+...take the text you got from the save button and paste it back into the textbox, making sure to replace any text that was already there.
 
 - Zettelkasten
 
@@ -66,7 +66,7 @@ type plain text
 plain text
 ref: title 1
 
-this formatting will create two connected text windows within the fractal graph viewer. 
+the above formatting will create two connected text windows within the fractal graph viewer. 
 
 All of these features are still in alpha. Refreshing the page will reset your graph over.
 
