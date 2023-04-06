@@ -4,14 +4,14 @@ https://satellitecomponent.github.io/Dendrite/
 
 !epilepsy warning! zooming flashing lights & colors 
 
-software in early alpha
-
 
 Dendrite opens up a new dimension of organization... 
 
 
 ...the fractal dimension....
 
+
+software in early alpha, we are looking to grow our team!
 join our discord!
 https://discord.gg/hnY8UpeE22
 
