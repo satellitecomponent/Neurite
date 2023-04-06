@@ -5,6 +5,8 @@ https://satellitecomponent.github.io/Dendrite/
 !epilepsy warning! flashing lights & colors 
 
 software in early alpha
+join our discord!
+https://discord.gg/hnY8UpeE22
 
 
 Dendrite opens up a new dimension of organization... 
