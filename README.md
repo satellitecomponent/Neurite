@@ -12,7 +12,7 @@ Dendrite opens up a new dimension of organization...
 
 
 software in early alpha, we are looking to grow our team!
-join our discord!
+join us on discord!
 https://discord.gg/hnY8UpeE22
 
 # How-to use Dendrite (a fractal mind-map)
