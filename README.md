@@ -1,2 +1,7 @@
 # FractalMindMap
-A tool for navigating and cataloguing data within the Mandelbrot set.
+
+!epilepsy warning! --- 
+
+FractalMindMap adds a new dimension to file visualization.
+
+
