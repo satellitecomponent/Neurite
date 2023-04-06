@@ -11,7 +11,7 @@ Dendrite opens up a new dimension of organization...
 ...the fractal dimension....
 
 
-software in early alpha, we are looking to grow our team!
+this is an open-source software in early alpha, we are looking to grow our team!
 
 join us on discord!
 https://discord.gg/hnY8UpeE22
