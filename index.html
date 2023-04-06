@@ -248,13 +248,6 @@ input[type="text" i] {
       </g>
     </svg>
   </div>
-  <div id="coordinates" style="background-color: RGB(70,70,70);background-color: RGB(0,0,0,0.3);color:RGB(170,170,170); position: absolute; display: initial; left: 0px; top: 0px;">
-    pan:
-    <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50"/>
-    <br/>
-    zoom:
-    <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28"/>
-  </div>
 
   <script>
     //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
@@ -300,77 +293,58 @@ input[type="text" i] {
 
 
   <div class="dropdown">
-  <div class="menu-button">
-    <div class="menu-icon"></div>
-  </div>
-  <div class="dropdown-content">
-      <div style="display: none;" id="search-results">
-          <div class="submenu">
+        <div class="menu-button">
+            <div class="menu-icon"></div>
+        </div>
+        <div class="dropdown-content">
+            <div style="display: none;" id="search-results">
+                <div class="submenu">
 
-          </div>
-      </div>
-      <div>
-      <div class="submenu">
-          <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
-          <a id="save-button">Save</a>
-          <input id="save-or-load" type="text" placeholder="save data..." />
-          <a id="load-button">Load</a>
-          <a id="clear-button">Clear</a>
-          <div id="clear-sure" style="display:none">
-              <a id="clear-unsure-button">no</a>
-              <a id="clear-sure-button">yes</a>
-          </div>
-      </div>
-      <div class="submenu">
-          <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
-          <div id="quality_value">Quality</div>
-          <input id="quality" type="range" min="0" max="100" value="0">
-          <div id="length_value">Length</div>
-          <input id="length" type="range" min="0" max="100" value="50">
-          z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
-          <input id="exponent" type="range" min="1" max="8" value="2">
-      </div>
-      <div class="submenu">
-        <button class="submenu-btn">Color Selection</button>
-        <div id="gradient-selector" style="display: none;">
-          <div class="gradient-preview"></div>
-          <div class="color-inputs">
-            <div class="color-input">
-              <input type="color" class="color-picker" value="#ff0000" />
-              <button class="delete-btn">-</button>
+                </div>
             </div>
-          </div>
-          <button class="add-btn">Add Color</button>
-        </div>
-        <div class="submenu">
-          <a href="#"></a>
-          
-          <label>
-                  NodeMode (Shift)
-                  <input type="checkbox" />
-                  
-          </label>
-		
-	  <label>
-                  Show Orbit
-                  <input type="checkbox" />
-                  
-          </label>
-          
-        </div>
-      </div>
-      <div>
-        <input type="text" id="node-tag" value="#node:" />
-	<label for="node-tag">Node tag.</label>
-        <br/>
-	<input type="text" id="ref-tag" value="#ref:" />
-        <label for="ref-tag">Reference tag.</label>
-        
-        <br />
-        <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
-        
-      </div>
-      </div>
+            <div>
+                <div class="submenu">
+                    <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
+                    <a id="save-button">Save</a>
+                    <input id="save-or-load" type="text" placeholder="save data..." />
+                    <a id="load-button">Load</a>
+                    <a id="clear-button">Clear</a>
+                    <div id="clear-sure" style="display:none">
+                        <a id="clear-unsure-button">no</a>
+                        <a id="clear-sure-button">yes</a>
+                    </div>
+                </div>
+                <div class="submenu">
+                    <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
+                    <div id="quality_value">Quality</div>
+                    <input id="quality" type="range" min="0" max="100" value="0">
+                    <div id="length_value">Length</div>
+                    <input id="length" type="range" min="0" max="100" value="50">
+                    z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
+                    <input id="exponent" type="range" min="1" max="8" value="2">
+
+                    <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
+                        pan:
+                        <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50" />
+                        <br />
+                        zoom:
+                        <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28" />
+                    </div>
+                    <br />
+                </br>
+                
+                
+                    <input type="text" id="node-tag" value="#node:" />
+                    <label for="node-tag">Node tag.</label>
+                    <br />
+                    <input type="text" id="ref-tag" value="#ref:" />
+                    <label for="ref-tag">Reference tag.</label>
+
+                    <br />
+                    <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
+
+                </div>
+            </div>
       <script>
         {
             const nodeTableBody = document.getElementById('node-table-body');
