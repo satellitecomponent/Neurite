@@ -1,27 +1,29 @@
-# Fractal-MindMap
+# Dendrite
 
-https://satellitecomponent.github.io/FractalMindMap/
+https://satellitecomponent.github.io/Dendrite/
 
-!epilepsy warning! flashing lights & colors -software in alpha...there are many further iterations to develop-
+!epilepsy warning! flashing lights & colors 
+
+software in early alpha
 
 
-Fractal-MindMap adds a new dimension of organization to the internet... 
+Dendrite opens up a new dimension of organization... 
 
 
 ...the fractal dimension....
 
 
-# How-to Fractal-MindMap 
+# How-to use Dendrite (a fractal mind-map)
 
 CLICK AND DRAG to move around the fractal.
 SCROLL WHEEL, or PINCH on touchpad zooms.
 
-Fractal-MindMap embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
+Dendrite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
-(to-add soon!, support embed conversion from normal link formats)
+(to-add soon, support embed conversion from normal link formats)
 
-DOUBLE CLICK on a window to 'anchor' it in place.
+DOUBLE CLICK on a window to 'anchor' the window in place.
 
 - Toggle 'Node-Mode' by holding shift.
 
@@ -51,11 +53,12 @@ To reload the text windows and their connections...
 
 - Zettelkasten
 
+A zettlekasten ('slip box' in German) is a note-taking approach popularized by Niklas Luhmann. His note identification technique is credited as the tool which enabled his prolific scientific output. 
+
 You can use the textbox at the bottom of the menu to create text windows and connections purely via text input.
 the #node: and #ref: tags can be modified to any desired character or word.
 
-
-Format the Zettelkasten like this... 
+Format text in the Zettelkasten like this... 
 
 #node: title 1
 
@@ -67,16 +70,21 @@ plain text
 ref: title 1
 
 the above formatting will create two connected text windows within the fractal graph viewer. 
+If you update a note within the fractal it will also updtae the Zettelkasten. (currently works for nodes first created within the Zettelkasten)
 
 All of these features are still in alpha. Refreshing the page will reset your graph over.
 
 
-#The Future
+#The Future of Dendrite
 
-- ai api integration
+- ai api integration!
 - deeper zoom
 - working color selection
 - customizability/accessability
 - auto embed formats
-- customm equations
+- customm equations for the fractal
 - user feeback/bug fixes
+
+
+If you are a developer who is intereested in contributing to this project, I would love to get in contact!
+Dendrite is currently a team of 2... 
