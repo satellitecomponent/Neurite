@@ -21,7 +21,8 @@ SCROLL WHEEL, or PINCH on touchpad zooms.
 Dendrite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
-(to-add soon, support embed conversion from normal link formats)
+
+(to be added soon, embed link conversion from normal link formats)
 
 DOUBLE CLICK on a window to 'anchor' the window in place.
 
@@ -42,11 +43,11 @@ Clicking on a search result will zoom your view window to where the window is po
 
 - Saving 
 
-Saving is still being improved.
+Saving is still being improved. There are ways to save your text mappings; however, other conetnt currently has to be reinserted.
 
-Currently, text windows and the connections between windows can be saved by pressing save, 
+Text windows and the connections between windows can be saved by pressing save, 
 then triple clicking the text box below the save button and copying its entire content.
-That copied text can then be saved in a text file. 
+That copied text can then be saved in a text file and repasted in to Dendrite!
 
 To reload the text windows and their connections...
 ...take the text you got from the save button and paste it back into the textbox, making sure to replace any text that was already there.
@@ -88,3 +89,9 @@ All of these features are still in alpha. Refreshing the page will reset your gr
 
 If you are a developer who is intereested in contributing to this project, I would love to get in contact!
 Dendrite is currently a team of 2... 
+
+contact us at
+contactdendrite@gmail.com
+
+or visit out discord
+https://discord.gg/hnY8UpeE22
