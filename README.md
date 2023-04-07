@@ -20,6 +20,7 @@ https://discord.gg/hnY8UpeE22
 
 CLICK AND DRAG to move around the fractal.
 SCROLL WHEEL, or PINCH on touchpad zooms.
+SHIFT + SCROLL on a window to re-scale. (make sure you hover on the tab. this is can be difficult right now)
 
 Dendrite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. (this includes any ai chatbot where the i-frame is not blocked) If you're having trouble, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
 
