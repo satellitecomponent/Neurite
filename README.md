@@ -25,6 +25,7 @@ SCROLL WHEEL, or PINCH on touchpad zooms.
 SHIFT + SCROLL on a window to re-scale. (make sure you hover on the tab. this is can be difficult with videos and pdfs right now)
 
 ALT + SCROLL to rotate
+
 Dendrite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. (this includes any ai chatbot where the i-frame is not blocked) If you're having trouble, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
@@ -103,7 +104,6 @@ The app is a recursive environment to generate ideas. As we are the middle of a 
 
 
 If you are a developer who is intereested in contributing to this project, I would love to get in contact!
-Dendrite is currently a team of 2... 
 
 contact us at
 contactdendrite@gmail.com
