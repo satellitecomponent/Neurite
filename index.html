@@ -2429,13 +2429,18 @@ e.onmouseleave();
     //todo sshift click for node mode (Attach nodes to eachother)
     //todo patches for zoom in
 
+    function random_screen_pt_z(){
+        let svgbb = svg.getBoundingClientRect();
+        return toZ(new vec2(Math.random()*svgbb.width,Math.random()*svgbb.height));
+    }
+    
     function render_hair(n){//todo make faster.
 	let iters = settings.iterations;
 	let maxLines = settings.maxLines;
 	let tries = 1;
 	let pt;
 	do {
-	    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+	    pt = random_screen_pt_z();
 	    for (let i = (1-Math.random()**2)*(tries*4); i > 1 ; i--){
 		let gz = mandGrad(iters,pt)
 		pt = pt.plus(gz.unscale(gz.mag2()*10+1));
