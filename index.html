@@ -1086,6 +1086,7 @@ input[type="text" i] {
                                     click:["RGB(70,70,70)","RGB(100,100,100)"],
                                     initial:["none","RGB(170,170,170)"]},
                     maxDist:1,
+                    orbitStepRate:2,
 		   }
     function setRenderQuality(n){
         let q = 1/n;
@@ -1112,6 +1113,10 @@ input[type="text" i] {
     function toZ(c){
         let {s,o} = windowScaleAndOffset();
         return c.minus(o).unscale(s).minus(new vec2(.5,.5)).scale(2).cmult(zoom).cadd(pan);
+    }
+    function toS(c){
+        let {s,o} = windowScaleAndOffset();
+        return c.unscale(s).scale(2);
     }
     function toDZ(c){
         let {s,o} = windowScaleAndOffset();
@@ -2087,7 +2092,7 @@ e.onmouseleave();
 	    mousePathPos = toZ(mousePos);
 	    mousePath = "M "+toSVG(mousePathPos).str()+" L ";
         }
-        for (let i = 0; i < 2; i++){
+        for (let i = 0; i < settings.orbitStepRate; i++){
 	    //let g = mandGrad(settings.iterations,mousePathPos);
 	    //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
             
@@ -2273,6 +2278,100 @@ e.onmouseleave();
 	cancel(event);
     });
 
+    let touches = new Map();
+    
+    addEventListener("touchstart", (ev)=>{
+        //pan = pan.plus(new vec2(0,1))
+        for (let i = 0; i < ev.changedTouches.length;i++){
+            const touch = ev.changedTouches.item(i);
+            touches.set(touch.identifier,{prev:touch,now:touch});
+        }
+    }, false);
+    addEventListener("touchcancel", (ev)=>{
+        for (let i = 0; i < ev.changedTouches.length;i++){
+            const touch = ev.changedTouches.item(i);
+            touches.delete(touch.identifier);
+        }
+    }, false);
+    addEventListener("touchend", (ev)=>{
+        //pan = pan.plus(new vec2(0,-1))
+        switch (touches.size){
+        case 2: //tap to zoom
+            if (ev.changedTouches.length == 1){
+                const id = ev.changedTouches.item(0).identifier;
+                const t = touches.get(id);
+                if (t && t.prev == t.now){//hasn't moved
+                    const ts = [...touches.keys()];
+                    const other = touches.get(ts[0] === id? ts[1] : ts[0])
+                    const {s,o} = windowScaleAndOffset();
+                    const amount = Math.exp(-(other.now.clientY-t.now.clientY)/s);
+                    const dest = toZ(new vec2(other.now.clientX,other.now.clientY));
+                    zoom = zoom.scale(amount);
+                    pan = dest.scale(1-amount).plus(pan.scale(amount));
+                }
+            }
+            break;
+
+        }
+        for (let i = 0; i < ev.changedTouches.length;i++){
+            const touch = ev.changedTouches.item(i);
+            touches.delete(touch.identifier);
+        }
+    }, false);
+    addEventListener("touchmove", (ev)=>{
+        for (let i = 0; i < ev.changedTouches.length;i++){
+            const touch = ev.changedTouches.item(i);
+            touches.set(touch.identifier, {prev:touches.get(touch.identifier)?.now,now:touch});
+        }
+        switch (touches.size){
+        case 1:
+            autopilotSpeed = 0; coordsLive = true;
+            const t = [...touches.values()][0];
+            pan = pan.plus(toDZ(new vec2(t.prev.clientX,t.prev.clientY).minus(new vec2(t.now.clientX,t.now.clientY))));
+            cancel(ev);
+            break;
+        case 2:
+            /*
+            const pts = [...touches.values()];
+            const p1p = toS(new vec2(pts[0].prev.clientX,pts[0].prev.clientY));
+            const p2p = toS(new vec2(pts[1].prev.clientX,pts[1].prev.clientY));
+            const p1n = toS(new vec2(pts[0].now.clientX,pts[0].now.clientY));
+            const p2n = toS(new vec2(pts[1].now.clientX,pts[1].now.clientY));
+            //want to find new zoom,pan such that 
+            // old toZ(p1p) = new toZ(p1n)
+            // old toZ(p2p) = new toZ(p2n)
+            //
+            //  toZ(x) ≈ x*zoom + pan
+            //
+            // so, we want zoom' pan' s.t.
+            //  p1p*zoom + pan = p1n*zoom' + pan'
+            //  p2p*zoom + pan = p2n*zoom' + pan'
+            //
+            //  (p2p-p1p) * zoom = (p2n-p1n) * zoom'
+            //  (p1p+p2p)*zoom + 2pan = (p1p+p2p)*zoom' + 2pan'
+            //
+            //  zoom' = zoom * (p2p-p1p)/(p2n-p1n)
+            //  pan' = pan + (p1p+p2p)*zoom/2 - (p1p+p2p)*zoom'/2
+            //       = pan + (p1p+p2p)*(zoom - zoom')/2
+            const nzoom = zoom.cmult( p2p.minus(p1p).cdiv( p2n.minus(p1n)));
+            pan = pan.plus(p2p.plus(p1p).cmult(zoom.minus(nzoom)).scale(0.5));
+            zoom = nzoom;
+
+
+            ev.preventDefault();
+            cancel(ev);
+            break;
+            */
+        default:
+            break;
+        }
+        
+        
+    }, false);
+    
+    
+
+    
     var gestureStartParams = {rotation:0,x:0,y:0,scale:0,zoom:new vec2(),pan:new vec2()};
     addEventListener("gesturestart" ,(e) =>{
 	e.preventDefault();
@@ -2324,6 +2423,8 @@ e.onmouseleave();
 	}
     });
 
+    
+    
 
     //todo sshift click for node mode (Attach nodes to eachother)
     //todo patches for zoom in
