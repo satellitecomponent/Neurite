@@ -20,6 +20,7 @@
         }
 * {
     font-family: "Open Sans", sans-serif;
+    color: #bbb;
 }
 .search_matched{
     outline-style: double;
@@ -247,13 +248,6 @@ input[type="text" i] {
       </g>
     </svg>
   </div>
-  <div id="coordinates" style="background-color: RGB(70,70,70);background-color: RGB(0,0,0,0.3);color:RGB(170,170,170); position: absolute; display: initial; left: 0px; top: 0px;">
-    pan:
-    <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50"/>
-    <br/>
-    zoom:
-    <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28"/>
-  </div>
 
   <script>
     //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
@@ -299,71 +293,58 @@ input[type="text" i] {
 
 
   <div class="dropdown">
-  <div class="menu-button">
-    <div class="menu-icon"></div>
-  </div>
-  <div class="dropdown-content">
-      <div style="display: none;" id="search-results">
-          <div class="submenu">
+        <div class="menu-button">
+            <div class="menu-icon"></div>
+        </div>
+        <div class="dropdown-content">
+            <div style="display: none;" id="search-results">
+                <div class="submenu">
 
-          </div>
-      </div>
-      <div>
-      <div class="submenu">
-          <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
-          <a id="save-button">Save</a>
-          <input id="save-or-load" type="text" placeholder="save data..." />
-          <a id="load-button">Load</a>
-          <a id="clear-button">Clear</a>
-          <div id="clear-sure" style="display:none">
-              <a id="clear-unsure-button">no</a>
-              <a id="clear-sure-button">yes</a>
-          </div>
-      </div>
-      <div class="submenu">
-          <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
-          <div id="quality_value">Quality</div>
-          <input id="quality" type="range" min="0" max="100" value="0">
-          <div id="length_value">Length</div>
-          <input id="length" type="range" min="0" max="100" value="50">
-          z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
-          <input id="exponent" type="range" min="1" max="8" value="2">
-      </div>
-      <div class="submenu">
-        <button class="submenu-btn">Color Selection</button>
-        <div id="gradient-selector" style="display: none;">
-          <div class="gradient-preview"></div>
-          <div class="color-inputs">
-            <div class="color-input">
-              <input type="color" class="color-picker" value="#ff0000" />
-              <button class="delete-btn">-</button>
+                </div>
             </div>
-          </div>
-          <button class="add-btn">Add Color</button>
-        </div>
-        <div class="submenu">
-          <a href="#"></a>
-          
-          <label>
-                  NodeMode (Shift)
-                  <input type="checkbox" />
-                  
-          </label>
-          
-        </div>
-      </div>
-      <div>
-        <input type="text" id="node-tag" value="#node:" />
-	<label for="node-tag">Node tag.</label>
-        <br/>
-	<input type="text" id="ref-tag" value="#ref:" />
-        <label for="ref-tag">Reference tag.</label>
-        
-        <br />
-        <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
-        
-      </div>
-      </div>
+            <div>
+                <div class="submenu">
+                    <input id="Searchbar" class="Searchbar" placeholder="search nodes..." />
+                    <a id="save-button">Save</a>
+                    <input id="save-or-load" type="text" placeholder="save data..." />
+                    <a id="load-button">Load</a>
+                    <a id="clear-button">Clear</a>
+                    <div id="clear-sure" style="display:none">
+                        <a id="clear-unsure-button">no</a>
+                        <a id="clear-sure-button">yes</a>
+                    </div>
+                </div>
+                <div class="submenu">
+                    <div id="fps" style="display:flex; justify-content:flex-end;">fps:?? (is javascript enabled?)</div>
+                    <div id="quality_value">Quality</div>
+                    <input id="quality" type="range" min="0" max="100" value="0">
+                    <div id="length_value">Length</div>
+                    <input id="length" type="range" min="0" max="100" value="50">
+                    z <sup id="exponent_value" style="color: powderblue">2</sup> +  c
+                    <input id="exponent" type="range" min="1" max="8" value="2">
+
+                    <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
+                        pan:
+                        <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50" />
+                        <br />
+                        zoom:
+                        <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28" />
+                    </div>
+                    <br />
+                </br>
+                
+                
+                    <input type="text" id="node-tag" value="#node:" />
+                    <label for="node-tag">Node tag.</label>
+                    <br />
+                    <input type="text" id="ref-tag" value="#ref:" />
+                    <label for="ref-tag">Reference tag.</label>
+
+                    <br />
+                    <textarea id="note-input" class="textnode" rows="10" cols="50"></textarea>
+
+                </div>
+            </div>
       <script>
         {
             const nodeTableBody = document.getElementById('node-table-body');
@@ -861,6 +842,7 @@ input[type="text" i] {
 
   <a id="nodes">
     <!-- add stuff here -->
+	  <div data-init="window" data-uuid="0" style="position: absolute; transform: scale(1.16183, 1.16183); display: initial; left: 807.133px; top: 133.703px;" data-node_json="{&quot;anchor&quot;:{&quot;x&quot;:2.7510335524627423,&quot;y&quot;:0.30700372282595634},&quot;anchorForce&quot;:1,&quot;mouseAnchor&quot;:{&quot;x&quot;:1.1498004149119683,&quot;y&quot;:-2.284452858773352},&quot;uuid&quot;:&quot;0&quot;,&quot;pos&quot;:{&quot;x&quot;:2.7422816457563433,&quot;y&quot;:0.3061800095727231},&quot;scale&quot;:3.9999999999999947,&quot;intrinsicScale&quot;:1,&quot;vel&quot;:{&quot;x&quot;:-5.803303647182456e-8,&quot;y&quot;:1.71748216342164e-8},&quot;force&quot;:{&quot;x&quot;:4.4848178504253156e-8,&quot;y&quot;:-1.0395455884992799e-8},&quot;followingMouse&quot;:0,&quot;removed&quot;:false}" data-node_extras="[{&quot;f&quot;:&quot;window&quot;},{&quot;f&quot;:&quot;textarea&quot;,&quot;a&quot;:{&quot;p&quot;:[0,1],&quot;v&quot;:&quot;Dendrite&quot;}},{&quot;f&quot;:&quot;textarea&quot;,&quot;a&quot;:{&quot;p&quot;:[0,3],&quot;v&quot;:&quot;\nCLICK AND DRAG to move around\n\nSCROLL to zoom\n\nALT + SCROLL to rotate\n\nDOUBLE CLICK on window to anchor in place\n\nHold SHIFT to enter 'node mode'\n\nSHIFT + DOUBLE CLICK to create a text box\n\nSHIFT + SCROLL to resize tabs\n\nSHIFT + CLICK on two windows to connect\n\nSHIFT + DOUBLE CLICK connections to delete\n\nCTRL V to paste in an i-frame embed link\n\nhttps://github.com/satellitecomponent\nmore information on github\n\n&quot;}}]" data-edges="[{&quot;l&quot;:0,&quot;s&quot;:0.1,&quot;g&quot;:{&quot;stroke&quot;:&quot;none&quot;,&quot;stroke-width&quot;:&quot;0.005&quot;,&quot;fill&quot;:&quot;lightcyan&quot;,&quot;opacity&quot;:&quot;0.5&quot;},&quot;p&quot;:[&quot;0&quot;,&quot;0&quot;]},{&quot;l&quot;:0,&quot;s&quot;:0.1,&quot;g&quot;:{&quot;stroke&quot;:&quot;none&quot;,&quot;stroke-width&quot;:&quot;0.005&quot;,&quot;fill&quot;:&quot;lightcyan&quot;,&quot;opacity&quot;:&quot;0.5&quot;},&quot;p&quot;:[&quot;0&quot;,&quot;0&quot;]}]" class=""><div class="window"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 2.125" height="16pt">    <g id="button-delete" transform="scale(0.125 0.125) translate(1 1)">    <rect x="0" y="0" width="16" height="16" fill="none" stroke="none"></rect>    <path d="M 1,1 l 3,0 4,4 4,-4 3,0	     0,3 -4,4 4,4 0,3	     -3,0 -4,-4 -4,4 -3,0	     0,-3 4,-4 -4,-4 0,-3 z" fill="RGB(170,170,170)" stroke="none"></path>    </g>    <g id="button-fullscreen" transform="scale(0.125 0.125) translate(21 1)">    <rect x="0" y="0" width="16" height="16" fill="none" stroke="none"></rect>    <path d="M  1, 1 l 3,0 1.5,1.5 -3,0 0,3 -1.5,-1.5 0,-3 z	     M 15, 1 l -3,0 -1.5,1.5 3,0 0,3 1.5,-1.5 0,-3 z	     M 15,15 l -3,0 -1.5,-1.5 3,0 0,-3 1.5,1.5 0,3 z	     M  1,15 l 3,0 1.5,-1.5 -3,0 0,-3 -1.5,1.5 0,3 z	     M  4, 4 l 2,0 1,1 -2,0 0,2 -1,-1 0,-2 z	     M 12, 4 l -2,0 -1,1 2,0 0,2 1,-1 0,-2 z	     M 12,12 l -2,0 -1,-1 2,0 0,-2 1,1 0,2 z	     M  4,12 l 2,0 1,-1 -2,0 0,-2 -1,1 0,2 z	     " fill="RGB(170,170,170)" stroke="none"></path>    </g>        <g id="button-collapse" transform="scale(0.125 0.125) translate(41 1)">      <rect x="0" y="0" width="16" height="16" fill="none" stroke="none"></rect>      <circle cx="8" cy="8" r="5.375" stroke="RGB(170,170,170)" stroke-width="2.75" fill="none"></circle>    </g>  </svg><input type="text" value="" style="color:RGB(170,170,170); background:none; border:none; transform:translateY(-25%)"><br><textarea type="text" size="10" style="background-color: rgb(34, 34, 38); color: rgb(187, 187, 187); width: 296px; height: 410px;"></textarea></div></div>    
   </a>
     <!--iframe id="inlineFrameExample"
             title="Inline Frame Example"
@@ -1072,7 +1054,7 @@ input[type="text" i] {
                     renderDChar:"L",
          
                     rotateModifier:"Alt",
-                    rotateModifierSpeed:Math.PI/180/8,
+                    rotateModifierSpeed:Math.PI/180/36,
                     
                     iterations:256,
 
@@ -1085,8 +1067,10 @@ input[type="text" i] {
                     buttonGraphics:{hover:["RGB(100,100,100)","RGB(200,200,255)"],
                                     click:["RGB(70,70,70)","RGB(100,100,100)"],
                                     initial:["none","RGB(170,170,170)"]},
-                    maxDist:1,
+
+                    maxDist:4,
                     orbitStepRate:2,
+
 		   }
     function setRenderQuality(n){
         let q = 1/n;
