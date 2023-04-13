@@ -69,11 +69,11 @@ the #node: and #ref: tags can be modified to any desired character or word.
 
 Format text in the Zettelkasten like this... 
 
-#node: title 1
+node: title 1
 
 type plain text
 
-#node: title 2
+node: title 2
 
 plain text
 ref: title 1
@@ -96,7 +96,7 @@ The app is a recursive environment to generate ideas. As we are the middle of a 
 - working color selection
 - customizability/accessability
 - auto embed formats
-- customm equations for the fractal
+- custom equations for the fractal
 - drawing-tool
 - drag handles
 - user feeback/bug fixes
