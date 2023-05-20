@@ -88,7 +88,7 @@ All of these features are still in alpha. Refreshing the page will reset your gr
 
 Dendrite is just getting started. 
 
-The app is a recursive environment to generate ideas. As we are the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary. I believe that Dendrite can serve as an open-source playground for the future of data.
+The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary. I believe that Dendrite can serve as an open-source playground for the future of data.
 
 - ai integration
 - deeper zoom
