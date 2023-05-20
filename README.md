@@ -84,7 +84,7 @@ If you update a note within the fractal it will also updtae the Zettelkasten. (c
 All of these features are still in alpha. Refreshing the page will reset your graph over.
 
 
-#The Future of Dendrite
+The Future of Dendrite
 
 Dendrite is just getting started. 
 
