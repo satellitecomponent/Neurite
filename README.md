@@ -44,7 +44,8 @@ The Ai currently has the following capabilities...
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
-Setting up the Wikipedia localhost requires python
+Setting up the Wikipedia localhost requires python.
+
 The Wolfram server and web scrape server require python and node.js
 (more info on setting up servers in the README for each server.)
 You can still use Neurite without any servers running, but Wolfram, Wiki, and Webpage extractions will not work.
