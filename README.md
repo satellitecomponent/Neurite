@@ -18,30 +18,37 @@ https://discord.gg/hnY8UpeE22
 
 # How-to use Neurite
 
-CLICK AND DRAG to move around the fractal.
-
-SCROLL WHEEL, or PINCH on touchpad zooms.
-
-SHIFT + SCROLL on a window to re-scale. (make sure you hover on the tab. this is can be difficult with videos and pdfs right now)
-
-ALT + SCROLL to rotate
-
-Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. If you're having trouble finding an embed link, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
+Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
-(to be added soon, embed link conversion from normal link formats)
+- Ai Driven Note Taking with embeddings.
+Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
 
-DOUBLE CLICK on a window to 'anchor' the window in place.
+To use the ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
 
-- Toggle 'Node-Mode' by holding shift.
+The Ai's responses are formatted to produce notes and connection within the fractal mind map.
+This form of prompting leads to an emergent graph structure that represents the Ai's memory.
 
-'Node-Mode' allows for windows to be connected together.
-To link two windows, hold shift, click on the first window, then click on the second window you would like to connecct.
+The Ai currently has the following capabilities... 
 
-While holding shift to enable 'Node-Mode', SCROLL or PINCH on a window to resize it.
+1. Auto Mode
+2. Node based memory retrieval that allows for long term conversation context.
+3. HTML/JS and In-browser Python (pyodide) environment for directly rendering GPT's code output.
+4. Web Search (requires google programmable search api key and search engine id)
+(to search without an API key, send a url within the prompt input and the webpage will display without going through Google.)
+5. Webpage and PDF text extraction. (requires setting up the 'scrape' local-host server found in the repo)
+6. Wikipedia Summaries (Requires setting up the 'wiki-server' found in the repo)
+7. Wolfram Alpha Results. (Requires an API key and setting up the 'wolfram-server' in the repo)
 
-Opening the menu bar in the top right of the screen gives access to further controls.
+All API keys can be input through the Ai tab of the menu dropdown.
+
+Setting up the Wikipedia localhost requires python
+The Wolfram server and web scrape server require python and node.js
+(more info on setting up servers in the README for each server.)
+You can still use Neurite without any servers running, but Wolfram, Wiki, and Webpage extractions will not work.
+
+In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai which allows it to answer questions about Neurite.
 
 - Search
 
@@ -51,38 +58,19 @@ Clicking on a search result will zoom your view window to where the window is po
 
 - Saving 
 
-Saving is still being improved. There are ways to save your text mappings; however, other conetnt currently has to be reinserted.
+Saving is still being improved. There are ways to save your text mappings; however, other content (images, videos, webpages) will currently have to be re-inserted.
 
-Text windows and the connections between windows can be saved by pressing save, 
-then triple clicking the text box below the save button and copying its entire content.
-That copied text can then be saved in a text file and repasted in to Dendrite!
+Text windows and the connections between windows can be saved in the settings tab by pressing save...
+...then triple clicking the text box below the save button and copying its entire content.
+That copied text can then be saved in a text file and repasted back in to Neurite.
 
 To reload the text windows and their connections...
-...take the text you got from the save button and paste it back into the textbox, making sure to replace any text that was already there.
+...repaste stored text from the save input and paste it back into the save input, making sure to replace any text that was already there. Then, click Load, and the text-nodes will be restored from your save-file.
 
 - Zettelkasten
 
 A zettlekasten ('slip box' in German) is a note-taking approach popularized by Niklas Luhmann. His note identification technique is credited as the tool which enabled his prolific scientific output. 
-
-You can use the textbox at the bottom of the menu to create text windows and connections purely via text input.
-the #node: and #ref: tags can be modified to any desired character or word.
-
-Format text in the Zettelkasten like this... 
-
-node: title 1
-
-type plain text
-
-node: title 2
-
-plain text
-ref: title 1
-
-the above formatting will create two connected text windows within the fractal graph viewer. 
-If you update a note within the fractal it will also updtae the Zettelkasten. (currently works for nodes first created within the Zettelkasten)
-
-All of these features are still in alpha. Refreshing the page will reset your graph over.
-
+Many great thinkers have utilized this form of note-taking. Now, LLMs can too. 
 
 # The Future of Neurite
 
