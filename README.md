@@ -1,6 +1,6 @@
-# Fractal-GPT
+# Neurite
 
-https://satellitecomponent.github.io/FractalGPT/
+https://satellitecomponent.github.io/Neurite/
 
 !epilepsy warning! zooming flashing lights & colors 
 
@@ -16,7 +16,7 @@ this is an open-source software in early alpha, we are looking to grow our team!
 join us on discord!
 https://discord.gg/hnY8UpeE22
 
-# How-to use Fractal-GPT
+# How-to use Neurite
 
 CLICK AND DRAG to move around the fractal.
 
@@ -26,7 +26,7 @@ SHIFT + SCROLL on a window to re-scale. (make sure you hover on the tab. this is
 
 ALT + SCROLL to rotate
 
-FractalGPT embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. If you're having trouble finding an embed link, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
+Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. If you're having trouble finding an embed link, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
@@ -84,9 +84,8 @@ If you update a note within the fractal it will also updtae the Zettelkasten. (c
 All of these features are still in alpha. Refreshing the page will reset your graph over.
 
 
-The Future of Fractal-GPT
+# The Future of Neurite
 
-Fractal-GPT is just getting started. 
 
 The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary.
 
