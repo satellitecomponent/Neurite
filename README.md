@@ -26,7 +26,7 @@ Files can be dragged and dropped into the fractal from your local files, or embe
 
 Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
 
-To use the ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
+To use the Ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
 
 The Ai's responses are formatted to produce notes and connection within the fractal mind map.
 This form of prompting leads to an emergent graph structure that represents the Ai's memory.
