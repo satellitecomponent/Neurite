@@ -1,11 +1,11 @@
-# Dendrite
+# Fractal-GPT
 
-https://satellitecomponent.github.io/Dendrite/
+https://satellitecomponent.github.io/FractalGPT/
 
 !epilepsy warning! zooming flashing lights & colors 
 
 
-Dendrite opens up a new dimension of organization... 
+FractalGPT opens up a new dimension of organization... 
 
 
 ...the fractal dimension....
@@ -16,7 +16,7 @@ this is an open-source software in early alpha, we are looking to grow our team!
 join us on discord!
 https://discord.gg/hnY8UpeE22
 
-# How-to use Dendrite (a fractal mind-map)
+# How-to use Fractal-GPT
 
 CLICK AND DRAG to move around the fractal.
 
@@ -26,7 +26,7 @@ SHIFT + SCROLL on a window to re-scale. (make sure you hover on the tab. this is
 
 ALT + SCROLL to rotate
 
-Dendrite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. If you're having trouble finding an embed link, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
+FractalGPT embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set. If you're having trouble finding an embed link, give chat-gpt the link you want to embed and ask it to convert the link to an iframe
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
@@ -84,23 +84,20 @@ If you update a note within the fractal it will also updtae the Zettelkasten. (c
 All of these features are still in alpha. Refreshing the page will reset your graph over.
 
 
-The Future of Dendrite
+The Future of Fractal-GPT
 
-Dendrite is just getting started. 
+Fractal-GPT is just getting started. 
 
-The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary. I believe that Dendrite can serve as an open-source playground for the future of data.
+The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary.
 
-- ai integration
 - deeper zoom
 - markdown/textediting
-- working color selection
+- color selection
 - customizability/accessability
 - auto embed formats
 - custom equations for the fractal
 - drawing-tool
-- drag handles
 - user feeback/bug fixes
-- pdf.js
 
 
 If you are a developer who is intereested in contributing to this project, I would love to get in contact!
