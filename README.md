@@ -2,7 +2,7 @@
 
 https://satellitecomponent.github.io/Neurite/
 
-!epilepsy warning! zooming flashing lights & colors 
+WARNING: Neurite contains zooming, flashing lights, and colors which may not be suitable for people with photosensitive epilepsy.
 
 
 Neurite opens up a new dimension of organization... 
@@ -26,10 +26,9 @@ Files can be dragged and dropped into the fractal from your local files, or embe
 
 Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
 
-To use the Ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
+To interact with the Ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
 
-The Ai's responses are formatted to produce notes and connection within the fractal mind map.
-This form of prompting leads to an emergent graph structure that represents the Ai's memory.
+The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
 
 The Ai currently has the following capabilities... 
 
@@ -44,36 +43,16 @@ The Ai currently has the following capabilities...
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
-Setting up the Wikipedia localhost requires python.
-
-The Wolfram server and web scrape server require python and node.js
-(more info on setting up servers in the README for each server.)
-
-You can still use Neurite without any servers running, but Wolfram, Wiki, and Webpage extractions will not work.
+# Local Server Setup
+- To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
+- Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 
 In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai which allows it to answer questions about Neurite.
 
-- Search
-
-Type into the search bar to locate windows which contain that text.
-A list of search results will display to the left of the menu. Currently, found windows are listed as numbers.
-Clicking on a search result will zoom your view window to where the window is positioned and scalled within the Mandelbrot set (fractal)
-
-- Saving 
-
-Saving is still being improved. There are ways to save your text mappings; however, other content (images, videos, webpages) will currently have to be re-inserted.
-
-Text windows and the connections between windows can be saved in the settings tab by pressing save...
-...then triple clicking the text box below the save button and copying its entire content.
-That copied text can then be saved in a text file and repasted back in to Neurite.
-
-To reload the text windows and their connections...
-...repaste stored text from the save input and paste it back into the save input, making sure to replace any text that was already there. Then, click Load, and the text-nodes will be restored from your save-file.
-
-- Zettelkasten
-
-A zettlekasten ('slip box' in German) is a note-taking approach popularized by Niklas Luhmann. His note identification technique is credited as the tool which enabled his prolific scientific output. 
-Many great thinkers have utilized this form of note-taking. Now, LLMs can too. 
+# User Guide
+- Search: Enter a search query to locate windows containing that text. A list of search results will display to the left of the menu. Click on a search result to zoom your view window to where the window is positioned and scaled within the Mandelbrot set (fractal).
+- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Settings tab. Non-textual content currently needs to be re-inserted. Read more in our 'Saving Guide' section.
+- Zettelkasten: The Zettelkasten method is a powerful note-taking tool. Learn more about how we've incorporated it into Neurite.
 
 # The Future of Neurite
 
