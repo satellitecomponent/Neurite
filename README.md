@@ -22,7 +22,7 @@ Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto 
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
-#FractalGPT
+# FractalGPT
 
 - Ai Driven Note Taking with embeddings.
 
