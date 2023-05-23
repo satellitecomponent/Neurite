@@ -1,12 +1,12 @@
-Python Wiki Server
+# Python Wiki Server
 Overview
 This is a Python server which interacts with Wikipedia's API to fetch summaries and categories of articles related to a keyword. This server is meant to be run locally and serves as a helper for the Neurite application.
 
-Getting Started
+# Getting Started
 Requirements
 Python 3.6 or above
 Pip (Python Package Installer), usually installed with Python
-Installing Dependencies
+# Installing Dependencies
 All the Python library dependencies are listed in the requirements.txt file. To install these dependencies, navigate to the directory containing requirements.txt file and run the following command:
 
 
@@ -18,7 +18,7 @@ To start the server, navigate to the directory containing the app.py file (or wh
 python app.py
 The server will start running on localhost:5000.
 
-Usage
+# Usage
 Once the server is running, it can accept GET requests at the endpoint /wikipedia_summaries. The request parameters include:
 
 keyword: The keyword to search on Wikipedia.
