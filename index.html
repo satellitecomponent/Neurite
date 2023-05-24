@@ -314,8 +314,6 @@
             padding: 1px 2px;
             background-color: #222226;
             color: #bbb;
-            border: inset;
-            border-color: #8882;
         }
 
         .submenu-btn {
@@ -1034,7 +1032,7 @@
                         </div>
                         <div class="slidecontainer">
                             <p>Max Chunk Size: <span id="maxChunkSizeValue"></span></p>
-                            <input type="range" min="1" max="8191" value="400" class="slider" id="maxChunkSizeSlider">
+                            <input type="range" min="1" max="4000" value="256" class="slider" id="maxChunkSizeSlider">
                         </div>
                     </div>
                 </div>
@@ -5094,7 +5092,7 @@ ${refTag} Node B`;
 
             const googleSearchMessage = {
                 role: "system",
-                content: "The following Google Search Results have been displayed to the user:\n" + searchResultsContent + "\nEND OF SEARCH RESULTS \n Always remember to follow the system context message which describes the format of your response."
+                content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message which describes the format of your response."
             };
 
 
@@ -5163,6 +5161,7 @@ ${nodeTag} Advanced Controls:
 - Search checkbox displays relevant webpages or pdfs. Requires Google Search API key unless a direct link is input as your prompt. Direct link entry bypasses google search api key requirement.
 - Extract button on webpage/pdf nodes sends text to vector embeddings database Requires extracts localhost server.
 - Extract checkbox sends the relevant chunks of text from the extracted webpage as context to the ai.
+- The Context tab includes controls for adjusting extracted text chunk size and number of chunks. The context tab also includes a text input for directly embedding text into the vector embeddings database.
 - Wolfram checkbox displays relevant Wolfram Alpha results. Requires Wolfram localhost server.
 - Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
 - Auto checkbox sets the AI into self-prompting mode.
@@ -5172,40 +5171,40 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             let messages = [{
                 role: "system",
-                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match this description and example of the correct format.\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n Avoid repeating the above format context message.`,
+                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match this description and example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
             },
             {
                 role: "system",
-                content: `Recent dialogue if available. Empty on start of conversation. Continue in the same format. \n ${context}`,
+                content: `Recent dialogue if available. Empty on start of conversation. Continue in the same format: ${context}`,
             },
             autoModeMessage ?
                 {
                     role: "user",
-                    content: `Your self-prompt: ${autoModeMessage} \n
-                    Original prompt: ${originalUserMessage}\n
+                    content: `Your self-prompt: ${autoModeMessage}
+                    Original prompt: ${originalUserMessage}
                     Example of the desired format for your response with up to date node and reference tags.
-                    ${nodeTag} Unique title \n
-                    plain text on the next line for your response. \n
-                    ${refTag} Titles of other nodes separated by commas.\n
-                    ${nodeTag} Example \n
-                    Break your response up into multiple nodes \n
-                    Evaluate your previous response and build of the most correct nodes. \n
-                    Never reference the instructions for the format of your response unless asked. \n
-                        ${refTag} Repeat titles to connect nodes. \n
+                    ${nodeTag} Unique title
+                    plain text on the next line for your response.
+                    ${refTag} Titles of other nodes separated by commas.
+                    ${nodeTag} Example 
+                    Break your response up into multiple nodes 
+                    Evaluate your previous response and build of the most correct nodes.
+                    Never reference the instructions for the format of your response unless asked.
+                        ${refTag} Repeat titles to connect nodes.
                     Always end your response with a new line, then, Prompt: [the prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
                 } :
                 {
                     role: "user",
-                    content: `User Message: ${message} \n
+                    content: `User Message: ${message}
                     Example of the desired format for your response with up to date node and reference tags.
-                    ${nodeTag} Unique Title \n
-                    plain text on the next line for your response. \n
-                    ${refTag} Titles of other nodes separated by commas.\n
-                    ${nodeTag} Example \n
-                    Break your response up into multiple nodes \n
-                    Evaluate your previous response and build of the most correct nodes. \n
-                    Never reference the instructions for the format of your response unless asked. \n
-                        ${refTag} Repeat titles to connect nodes. \n
+                    ${nodeTag} Unique Title
+                    plain text on the next line for your response.
+                    ${refTag} Titles of other nodes separated by commas.
+                    ${nodeTag} Example
+                    Break your response up into multiple nodes
+                    Evaluate your previous response and build of the most correct nodes.
+                    Never reference the instructions for the format of your response unless asked.
+                        ${refTag} Repeat titles to connect nodes.
                     ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
                 },
             ];
@@ -5252,7 +5251,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                     if (!acc[source]) acc[source] = [];
                     acc[source].push({
                         text: chunk.text.substring(0, MAX_CHUNK_SIZE),
-                        number: chunkNumber,
+                        number: parseInt(chunkNumber), // Parse chunkNumber to an integer
                         relevanceScore: chunk.relevanceScore,
                     });
                     return acc;
@@ -5260,13 +5259,15 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
                 // Construct the topNChunksContent
                 const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
-                    const chunksContent = chunks.map((chunk, index) => `Chunk ${index + 1}_${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
+                    // Sort the chunks by their chunk number for each source
+                    chunks.sort((a, b) => a.number - b.number);
+                    const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
                     return `[Source: ${source}]\n${chunksContent}\n`;
                 }).join('\n');
 
                 const embedMessage = {
                     role: "system",
-                    content: `The following are the top ${topN} matched snippets of text from currently extracted webpages:\n Provide relevant information from the chunks as well as the respective source url.\n` + topNChunksContent + `\n Remember to always follow the Zettelkasten format. Do not repeat system contextualizations`
+                    content: `The following are the top ${topN} matched snippets of text from currently extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Do not repeat system contextualization`
                 };
 
                 messages.push(embedMessage);
@@ -5709,22 +5710,40 @@ Make sure to exclusivly reference the above described controls. Try not to make 
             return topNChunks;
         }
 
-        function chunkText(text, maxLength) {
-            const words = text.split(/\s+/);
+        function chunkText(text, maxLength, overlapSize) {
+            const sentences = text.split(/[.!?]\s+/);
             const chunks = [];
             let chunk = [];
+            let overlap = [];
 
-            for (const word of words) {
-                chunk.push(word);
-                const chunkStr = chunk.join(' ');
-                if (chunkStr.length > maxLength) {
-                    const overlap = chunk.slice(-3); // Get the last 3 words
-                    chunks.push(chunkStr);
-                    chunk = overlap; // Start the new chunk with the overlap
+            for (const sentence of sentences) {
+                const words = sentence.split(/\s+/);
+
+                for (const word of words) {
+                    if ((chunk.join(' ') + ' ' + word).length + (overlap.join(' ') + ' ').length <= maxLength) {
+                        // If adding this word doesn't cause the chunk to exceed maxLength when the overlap is included, add it to the chunk
+                        chunk.push(word);
+                    } else {
+                        // If adding this word causes the chunk to exceed maxLength when the overlap is included, add it to the overlap
+                        overlap.push(word);
+
+                        if (overlap.length > overlapSize) {
+                            // If the overlap has more words than the desired overlap size, push the oldest word in the overlap back into the chunk
+                            chunk.push(overlap.shift());
+                        }
+                    }
+
+                    if ((chunk.join(' ') + ' ' + overlap.join(' ')).length > maxLength) {
+                        // If the chunk plus the overlap exceeds maxLength, create a new chunk
+                        chunks.push(chunk.join(' '));
+                        chunk = [...overlap];
+                        overlap = [];
+                    }
                 }
             }
 
-            if (chunk.length) {
+            // Add the remaining chunk if it's not empty
+            if (chunk.length > 0) {
                 chunks.push(chunk.join(' '));
             }
 
