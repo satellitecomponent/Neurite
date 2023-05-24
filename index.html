@@ -494,6 +494,7 @@
         .tabs {
             display: flex;
             justify-content: flex-start;
+            padding-right: 47px;
         }
 
         .tabcontent {
@@ -666,6 +667,80 @@
             top: 0;
             left: 0;
         }
+
+        .extract-textarea {
+            background-color: #222226;
+            width: 261px;
+            z-index: -1;
+            border: inset;
+            border-color: #8882;
+            resize: vertical;
+            /* only allows the height to be resizable */
+        }
+
+            .extract-textarea::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .extract-textarea::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .extract-textarea::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .extract-textarea::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+        }
+
+        .extract-button {
+            /* your styles here */
+        }
+
+        .scrollable-list {
+            height: 100px; /* Adjust this value based on how tall you want your list to be */
+            width: 261px;
+            overflow-y: auto;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+
+            .scrollable-list::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .scrollable-list::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .scrollable-list::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .scrollable-list::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+        /* Existing CSS */
+        .selected {
+            background-color: #bbb; /* Or any other color */
+            color: #222226;
+        }
+
+        /* New CSS */
+        #key-list p:hover {
+            background-color: #bbb; /* Or any other color */
+            color: #222226;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 
@@ -739,6 +814,7 @@
                 <div class="tabs">
                     <button class="tablink" onclick="openTab('tab1', this)">Notes</button>
                     <button class="tablink" onclick="openTab('tab4', this)">Ai</button>
+                    <button class="tablink" onclick="openTab('tabExtract', this)">Context</button>
                     <button class="tablink" onclick="openTab('tab2', this)">Settings</button>
                     <button class="tablink" onclick="openTab('tab3', this)">?</button>
                 </div>
@@ -824,10 +900,10 @@
                         <br />
                         <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
                             pan:
-                            <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="50" />
+                            <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
                             <br />
                             zoom:
-                            <input id="zoom" type="text" value="1" style="background:none; border:none;" size="28" />
+                            <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
                             <br />
                             <br />
                             <div id="fps" style="display:flex; justify-content:flex-start;">fps:?? (is javascript enabled?)</div>
@@ -932,7 +1008,25 @@
                         <label id="model-temperature-label" for="model-temperature">Model Temperature: 0.1</label>
                         <input type="range" id="model-temperature" name="model-temperature" class="slider" min="0" max="1" step="0.1" value="0.1" onchange="updateLabel()">
                         <br />
-                        <p>Webpage Extraction</p>
+                        <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
+                    </div>
+                </div>
+                <div id="tabExtract" class="tabcontent">
+                    <!-- Extract tab content here -->
+                    <div class="submenu">
+                        <label for="inputKeyExtract">Key:</label><br>
+                        <input type="text" id="inputKeyExtract" name="inputKeyExtract"><br>
+                        <label for="inputTextExtract">Text:</label><br>
+                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten"></textarea><br>
+                        <div class="button-container">
+                            <button id="chunkAndStoreButton" class="linkbuttons">Store Chunks</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons">Deleted Key(s)</button>
+                        </div>
+                        <strong><p style="font-weight: bold;">Stored Keys</p></strong>
+                        <div id="key-list" class="scrollable-list">
+                            <!-- Stored keys will be dynamically added here -->
+                        </div>
+                        <br />
                         <div>
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
                             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
@@ -942,8 +1036,6 @@
                             <p>Max Chunk Size: <span id="maxChunkSizeValue"></span></p>
                             <input type="range" min="1" max="8191" value="400" class="slider" id="maxChunkSizeSlider">
                         </div>
-                        <br />
-                        <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
                     </div>
                 </div>
             </div>
@@ -5174,7 +5266,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
                 const embedMessage = {
                     role: "system",
-                    content: `The following are the top ${topN} matched snippets of text from currently extracted webpages:\n Provide relevant information from the chunks as well as the respective source url.\n` + topNChunksContent + `\n Remember your system context message which describes the required format of your response.`
+                    content: `The following are the top ${topN} matched snippets of text from currently extracted webpages:\n Provide relevant information from the chunks as well as the respective source url.\n` + topNChunksContent + `\n Remember to always follow the Zettelkasten format. Do not repeat system contextualizations`
                 };
 
                 messages.push(embedMessage);
@@ -5351,23 +5443,149 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
         const CORS_PROXY = "http://localhost:4000/proxy";
 
+        async function fetchAndDisplayAllKeys() {
+            try {
+                const response = await fetch('http://localhost:4000/get-keys');
+                if (!response.ok) {
+                    console.error(`Failed to fetch keys:`, response.statusText);
+                    return;
+                }
+
+
+                const keys = await response.json();
+                const keyList = document.getElementById("key-list");
+                // Clear existing keys
+                keyList.innerHTML = "";
+
+                for (let key of keys) {
+                    // Create a new paragraph for the key
+                    var listItem = document.createElement("p");
+
+                    // Set the text of the paragraph to the key
+                    listItem.textContent = key;
+
+                    // Add the paragraph to the list
+                    keyList.appendChild(listItem);
+
+                    // Add a click event listener to the paragraph
+                    // Make use of closures to capture each listItem instance separately
+                    (function (listItem) {
+                        listItem.addEventListener("click", (event) => {
+                            event.stopPropagation();
+                            listItem.classList.toggle("selected");
+                        });
+                    })(listItem);
+                }
+            } catch (error) {
+                console.error(`Failed to fetch keys:`, error);
+            }
+        }
+
+        window.onload = function () {
+            fetchAndDisplayAllKeys();
+        }
+
+        document.getElementById('chunkAndStoreButton').addEventListener('click', chunkAndStoreInputExtract);
+
+        async function deleteSelectedKeys() {
+            // Get all selected keys
+            const selectedKeys = Array.from(document.getElementsByClassName("selected")).map(el => el.textContent);
+
+            // Send a request to the server to delete the chunks for each key
+            for (let key of selectedKeys) {
+                const response = await fetch(`http://localhost:4000/delete-chunks?key=${encodeURIComponent(key)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    console.error(`Failed to delete chunks for key ${key}:`, response.statusText);
+                }
+            }
+
+            // Refresh the key list
+            fetchAndDisplayAllKeys();
+        }
+
+        async function chunkAndStoreInputExtract() {
+            const chunkAndStoreButton = document.getElementById('chunkAndStoreButton');
+            let dotCount = 0;
+
+            // Start the dot animation
+            const dotInterval = setInterval(() => {
+                dotCount = (dotCount + 1) % 4; // Cycle dotCount between 0 and 3
+                chunkAndStoreButton.textContent = "Chunking Input" + ".".repeat(dotCount);
+            }, 500); // Update every 500 milliseconds
+
+            try {
+                // Get the input text from the textarea
+                const inputText = document.getElementById('inputTextExtract').value;
+
+                if (!inputText) {
+                    alert("Please enter some text into the textarea");
+                    return;
+                }
+
+                // Chunk the input text
+                const chunkedText = chunkText(inputText, MAX_CHUNK_SIZE);
+
+                // Fetch the embeddings for the chunks
+                const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
+
+                // Get the key from the input field, or use the first sentence of the input text if no key was provided
+                let key = document.getElementById('inputKeyExtract').value;
+                if (!key) {
+                    // Extract the first sentence from the input text
+                    // This regex matches everything up to the first period, question mark, or exclamation mark
+                    const firstSentenceMatch = inputText.match(/[^.!?]+[.!?]/);
+                    key = firstSentenceMatch ? firstSentenceMatch[0] : inputText;
+                }
+
+                // Store the chunks and their embeddings in the database
+                const success = await storeEmbeddingsAndChunksInDatabase(key, chunkedText, chunkedEmbeddings);
+
+                chunkAndStoreButton.textContent = success ? "Store Chunks" : "Chunking Failed";
+
+            } catch (error) {
+                console.error(`Failed to chunk and store input:`, error);
+                chunkAndStoreButton.textContent = "Chunking Failed";
+            } finally {
+                // Stop the dot animation
+                clearInterval(dotInterval);
+            }
+        }
 
         async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
             console.log(`Storing embeddings and text chunks for key: ${key}`);
 
-            for (let i = 0; i < chunks.length; i++) {
-                const chunkKey = `${key}_chunk_${i}`;
-                await fetch('http://localhost:4000/store-embedding-and-text', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        key: chunkKey,
-                        embedding: embeddings[i],
-                        text: chunks[i]
-                    }),
-                });
+            try {
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunkKey = `${key}_chunk_${i}`;
+                    const response = await fetch('http://localhost:4000/store-embedding-and-text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            key: chunkKey,
+                            embedding: embeddings[i],
+                            text: chunks[i]
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
+                    }
+                }
+
+                // If no errors, refresh the key list
+                await fetchAndDisplayAllKeys();
+
+                // If no errors, return true to indicate success
+                return true;
+            } catch (error) {
+                console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
+                // Optional: throw the error to make it clear an error occurred
+                throw error;
             }
         }
 
@@ -5494,19 +5712,20 @@ Make sure to exclusivly reference the above described controls. Try not to make 
         function chunkText(text, maxLength) {
             const words = text.split(/\s+/);
             const chunks = [];
-            let chunk = '';
+            let chunk = [];
 
             for (const word of words) {
-                if ((chunk + word).length <= maxLength) {
-                    chunk += ' ' + word;
-                } else {
-                    chunks.push(chunk.trim());
-                    chunk = word;
+                chunk.push(word);
+                const chunkStr = chunk.join(' ');
+                if (chunkStr.length > maxLength) {
+                    const overlap = chunk.slice(-3); // Get the last 3 words
+                    chunks.push(chunkStr);
+                    chunk = overlap; // Start the new chunk with the overlap
                 }
             }
 
-            if (chunk) {
-                chunks.push(chunk.trim());
+            if (chunk.length) {
+                chunks.push(chunk.join(' '));
             }
 
             return chunks;
@@ -5767,7 +5986,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             return node;
         }
-
+        
         function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
             const resizeObserver = new ResizeObserver((entries) => {
                 for (let entry of entries) {
