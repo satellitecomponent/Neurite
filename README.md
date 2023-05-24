@@ -22,6 +22,8 @@ Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto 
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
+# FractalGPT
+
 - Ai Driven Note Taking with embeddings.
 
 Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
@@ -51,8 +53,8 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai whi
 
 # User Guide
 - Search: Enter a search query to locate windows containing that text. A list of search results will display to the left of the menu. Click on a search result to zoom your view window to where the window is positioned and scaled within the Mandelbrot set (fractal).
-- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Settings tab. Non-textual content currently needs to be re-inserted. Read more in our 'Saving Guide' section.
-- Zettelkasten: The Zettelkasten method is a powerful note-taking tool. Learn more about how we've incorporated it into Neurite.
+- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Settings tab. Non-textual content currently needs to be re-inserted.
+- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The ai follows this format to create and connect its responses together. This allows for a tree of thought reasoning process within the Mandelbrot set.
 
 # The Future of Neurite
 
