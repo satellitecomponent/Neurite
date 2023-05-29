@@ -249,6 +249,7 @@ app.get('/get-keys', (req, res) => {
 
 // Delete all chunks for a key
 app.delete('/delete-chunks', (req, res) => {
+    // The key should be provided as a query parameter
     const key = req.query.key;
 
     // Delete all rows where the key starts with the provided key followed by "_chunk_"
@@ -262,7 +263,7 @@ app.delete('/delete-chunks', (req, res) => {
     });
 });
 
-
+// Start the server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
