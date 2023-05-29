@@ -224,6 +224,44 @@ app.get('/fetch-all', (req, res) => {
         }
     });
 });
+// Define endpoint to fetch all keys
+app.get('/get-keys', (req, res) => {
+    db.all('SELECT key FROM embeddings', [], (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            res.status(500).send('Error fetching keys');
+        } else {
+            // Initialize an empty set to store distinct keys
+            const distinctKeys = new Set();
+
+            rows.forEach(row => {
+                // Split the key on '_chunk_' and take the first part as the overall key
+                const overallKey = row.key.split('_chunk_')[0];
+                distinctKeys.add(overallKey);
+            });
+
+            // Convert the set of distinct keys back to an array
+            const keys = Array.from(distinctKeys);
+            res.json(keys);
+        }
+    });
+});
+
+// Delete all chunks for a key
+app.delete('/delete-chunks', (req, res) => {
+    // The key should be provided as a query parameter
+    const key = req.query.key;
+
+    // Delete all rows where the key starts with the provided key followed by "_chunk_"
+    db.run('DELETE FROM embeddings WHERE key LIKE ?', [`${key}_chunk_%`], function (err) {
+        if (err) {
+            console.error(err.message);
+            res.status(500).send('Error deleting chunks');
+        } else {
+            res.send(`Deleted ${this.changes} chunks`);
+        }
+    });
+});
 
 // Start the server
 const PORT = process.env.PORT || 4000;
