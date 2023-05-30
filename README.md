@@ -18,7 +18,7 @@ https://discord.gg/hnY8UpeE22
 
 # How-to use Neurite
 
-Neurite embeddeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
+Neurite embeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
 
 Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
 
