@@ -1018,7 +1018,7 @@
                         <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten"></textarea><br>
                         <div class="button-container">
                             <button id="chunkAndStoreButton" class="linkbuttons">Store Chunks</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons">Deleted Key(s)</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons">Delete Key(s)</button>
                         </div>
                         <strong><p style="font-weight: bold;">Stored Keys</p></strong>
                         <div id="key-list" class="scrollable-list">
@@ -1033,6 +1033,11 @@
                         <div class="slidecontainer">
                             <p>Max Chunk Size: <span id="maxChunkSizeValue"></span></p>
                             <input type="range" min="1" max="4000" value="256" class="slider" id="maxChunkSizeSlider">
+                        </div>
+                        <div>
+                            <label for="overlapSize">Overlap Size:</label>
+                            <span id="overlapSizeDisplay">10</span>
+                            <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
                         </div>
                     </div>
                 </div>
@@ -5171,7 +5176,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             let messages = [{
                 role: "system",
-                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match this description and example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
+                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
             },
             {
                 role: "system",
@@ -5218,7 +5223,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
             if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
                 messages.splice(1, 0, {
                     role: "system",
-                    content: `These nodes have been retrieved from your memory which is a fractal mind map \nConent: = what node says/plain text\n.${topMatchedNodesContent}`,
+                    content: `These nodes have been retrieved from your memory which is a fractal mind map \nContent: = what node says/plain text\n.${topMatchedNodesContent}`,
                 });
             }
 
@@ -5240,8 +5245,6 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             if (embedCheckbox && embedCheckbox.checked) {
                 const aiSuggestedSearch = await constructSearchQuery(message);
-
-                // Replace topN = 5; with the slider value
                 const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
 
                 // Group the chunks by their source (stripping the chunk number from the key)
@@ -5360,7 +5363,6 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             recentcontext = getLastPromptsAndResponses(1, 200);
 
-            // Rest of your code, if user's input is not a URL
             const queryContext = [{
                 role: "system",
                 content: `The following recent conversation may provide further context for generating your search query. \n ${recentcontext},`
@@ -5527,7 +5529,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                 }
 
                 // Chunk the input text
-                const chunkedText = chunkText(inputText, MAX_CHUNK_SIZE);
+                const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE, overlapSize);
 
                 // Fetch the embeddings for the chunks
                 const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
@@ -5585,7 +5587,6 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                 return true;
             } catch (error) {
                 console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
-                // Optional: throw the error to make it clear an error occurred
                 throw error;
             }
         }
@@ -5609,7 +5610,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                     return null;
                 }
 
-                const chunkedText = chunkText(text, MAX_CHUNK_SIZE);
+                const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE, overlapSize);
                 const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
 
                 // Store the chunked embeddings and text in the database
@@ -5710,6 +5711,13 @@ Make sure to exclusivly reference the above described controls. Try not to make 
             return topNChunks;
         }
 
+        let overlapSize = document.getElementById('overlapSizeSlider').value; 
+
+        document.getElementById('overlapSizeSlider').addEventListener('input', function (e) {
+            overlapSize = Number(e.target.value); 
+            document.getElementById('overlapSizeDisplay').textContent = overlapSize;
+        });
+
         function chunkText(text, maxLength, overlapSize) {
             const sentences = text.split(/[.!?]\s+/);
             const chunks = [];
@@ -5720,24 +5728,16 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                 const words = sentence.split(/\s+/);
 
                 for (const word of words) {
-                    if ((chunk.join(' ') + ' ' + word).length + (overlap.join(' ') + ' ').length <= maxLength) {
-                        // If adding this word doesn't cause the chunk to exceed maxLength when the overlap is included, add it to the chunk
+                    // Add word to chunk as long as it doesn't exceed maxLength
+                    if ((chunk.join(' ') + ' ' + word).length <= maxLength) {
                         chunk.push(word);
-                    } else {
-                        // If adding this word causes the chunk to exceed maxLength when the overlap is included, add it to the overlap
-                        overlap.push(word);
-
-                        if (overlap.length > overlapSize) {
-                            // If the overlap has more words than the desired overlap size, push the oldest word in the overlap back into the chunk
-                            chunk.push(overlap.shift());
-                        }
                     }
 
-                    if ((chunk.join(' ') + ' ' + overlap.join(' ')).length > maxLength) {
-                        // If the chunk plus the overlap exceeds maxLength, create a new chunk
+                    // Check if chunk size is maxLength and add it to chunks
+                    if (chunk.join(' ').length === maxLength) {
                         chunks.push(chunk.join(' '));
-                        chunk = [...overlap];
-                        overlap = [];
+                        overlap = chunk.slice(-overlapSize);  // get the last 'overlapSize' words from chunk
+                        chunk = overlap;  // start next chunk with the overlap from current chunk
                     }
                 }
             }
@@ -5749,6 +5749,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
             return chunks;
         }
+
 
         async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-002") {
             const API_KEY = document.getElementById("api-key-input").value;
@@ -5888,7 +5889,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                             console.log('Extracted text:', extractedText);
 
                             // Chunk the extracted text
-                            const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE);
+                            const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE, overlapSize);
 
                             // Fetch embeddings for the chunked text
                             const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
