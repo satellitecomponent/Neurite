@@ -2303,7 +2303,6 @@ if (!RegExp.escape) {
 
 
 
-
         function dropHandler(ev) {
             console.log(ev);
 
@@ -2331,7 +2330,20 @@ if (!RegExp.escape) {
             if (FileReader && files && files.length) {
                 for (let i = 0; i < files.length; i++) {
 
-                    let baseType = files[i].type.split("/")[0];
+                    let reader = new FileReader();
+
+                    let baseType;
+                    if (files[i].type) {
+                        baseType = files[i].type.split("/")[0];
+                    } else if (files[i].name.toLowerCase().endsWith(".txt")) {
+                        baseType = "text";
+                    } else if (files[i].name.toLowerCase().endsWith(".md")) {
+                        baseType = "markdown";
+                    } else {
+                        console.log("Unhandled file type:", files[i]);
+                        baseType = "unknown";
+                    }
+
                     let url = URL.createObjectURL(files[i]);
                     let img;
                     let content = [];
@@ -2370,6 +2382,7 @@ if (!RegExp.escape) {
                                 add(1);
                                 URL.revokeObjectURL(img.src);
                             }
+                            img.src = url;
                             break;
                         case "audio":
                             img = new Audio();
@@ -2386,6 +2399,7 @@ if (!RegExp.escape) {
                             ];
                             add(1);
                             //div.appendChild(c);
+                            img.src = url;
                             break;
                         case "video":
                             img = document.createElement('video');
@@ -2395,13 +2409,42 @@ if (!RegExp.escape) {
                                 img
                             ];
                             add(1);
+                            img.src = url;
                             break;
-                        default:
+                        case "text":
+                            reader.onload = function (e) {
+                                let text = e.target.result;
+                                let node = createTextNode(files[i].name, '');
+                                node.content.children[0].children[1].children[0].value = text; // set the content of the textarea
+                                htmlnodes_parent.appendChild(node.content);
+                            }
+                            reader.readAsText(files[i]);
+                            break;
+                        case "markdown":
+                            let mdReader = new FileReader();
+                            mdReader.onload = function (e) {
+                                let mdText = e.target.result;
+                                let htmlContent = marked.parse(mdText, { mangle: false, headerIds: false });
+                                let node = createTextNode(files[i].name, '');
+
+                                let htmlContainer = document.createElement('div');
+                                htmlContainer.innerHTML = htmlContent;
+                                htmlContainer.style.maxWidth = '100%';
+                                htmlContainer.style.overflow = 'auto';
+                                htmlContainer.style.height = 'fit-content';
+                                htmlContainer.style.backgroundColor = '#222226'; // Set background color
+
+                                // Check if there is a textarea being appended, if there is remove it.
+                                if (node.content.children[0].children[1].getElementsByTagName('textarea').length > 0) {
+                                    node.content.children[0].children[1].removeChild(node.content.children[0].children[1].getElementsByTagName('textarea')[0]);
+                                }
+
+                                node.content.children[0].children[1].appendChild(htmlContainer);
+                                htmlnodes_parent.appendChild(node.content);
+                            }
+                            mdReader.readAsText(files[i]);
                             break;
                     }
-                    img.src = url;
-
-
                 }
             }
 
