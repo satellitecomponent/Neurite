@@ -436,6 +436,7 @@
 
                 #prompt-form button[type="submit"]:hover {
                     background-color: #45a049;
+                    color: #222226;
                 }
 
         #api-key-input {

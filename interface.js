@@ -1488,30 +1488,29 @@ if (!RegExp.escape) {
             }
         });
 
-        function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
-            stroke: "none",
-            "stroke-width": "0.005",
-            fill: "lightcyan",
-            opacity: "0.5"
-        }) {
-            let edge = new Edge([na, nb], length, linkStrength, linkStyle);
+function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
+    stroke: "none",
+    "stroke-width": "0.005",
+    fill: "lightcyan",
+    opacity: "0.5"
+}) {
+    let edge = new Edge([na, nb], length, linkStrength, linkStyle);
 
-            na.addEdge(edge);
-            //nb.edges.push(edge);
-            //edge.draw();
+    na.edges.push(edge);
+    nb.edges.push(edge); // Don't forget to add the edge to nodeB too
 
+    edges.push(edge);
+    return edge;
+}
 
-            edges.push(edge);
-            return edge;
-        }
-
-        function connectRandom(n) {
-            for (let i = 0; i < n; i++) {
-                let a = Math.floor(Math.random() * nodes.length);
-                let b = Math.floor(Math.random() * nodes.length);
-                connect(nodes[a], nodes[b]);
-            }
-        }
+function connectRandom(n) {
+    for (let i = 0; i < n; i++) {
+        let a = Math.floor(Math.random() * nodes.length);
+        let b = Math.floor(Math.random() * nodes.length);
+        // Ensures both nodes have the connection
+        connect(nodes[a], nodes[b]);
+    }
+}
 
         var gen = iter();
 

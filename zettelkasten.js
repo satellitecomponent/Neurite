@@ -1,5 +1,6 @@
         var nodeTagInput;
         var refTagInput;
+        let llmNodeCreated = false;
         {
 
             const nodeTableBody = document.getElementById('node-table-body');
@@ -140,13 +141,79 @@
                             }
                         } else {
                             nodes[currentNodeTitle].plainText = "";
-                            nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0].value = nodes[currentNodeTitle].plainText;
+                            nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0].value = nodes[currentNodeTitle].plainText; //144
                             if (nodeLines[nodes[currentNodeTitle].lineNum] === nodes[currentNodeTitle]) {
                                 delete nodeLines[nodes[currentNodeTitle].lineNum];
                             }
                             nodes[currentNodeTitle].live = true;
                             nodes[currentNodeTitle].lineNum = i;
                             nodeLines[i] = nodes[currentNodeTitle];
+                        }
+                    } else if (line.startsWith("LLM:")) {
+                        let llmNodeTitle = line.substr("LLM:".length).trim();
+
+                        // If llmNodeTitle is empty after trimming, set it to "Untitled"
+                        if (llmNodeTitle === "") {
+                            llmNodeTitle = "Untitled";
+                        }
+
+                        if (!nodes[llmNodeTitle] || nodes[llmNodeTitle].nodeObject.removed) {
+                            let node;
+                            if (nodeLines[i] && !nodeLines[i].nodeObject.removed) {
+                                node = nodes[llmNodeTitle] = nodeLines[i];
+                                if (nodes[node.title] === node) {
+                                    delete nodes[node.title];
+                                }
+                                node.title = llmNodeTitle;
+                                node.live = true;
+                                node.nodeObject.content.children[0].children[0].children[1].value = llmNodeTitle;
+                            } else {
+                                node = nodeLines[i] = nodes[llmNodeTitle] = {
+                                    title: llmNodeTitle,
+                                    nodeObject: createLLMNode(llmNodeTitle, (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8),
+                                    edges: new Map(),
+                                    lineNum: i,
+                                    live: true,
+                                    plainText: '',  // Initialize plainText
+                                    isLLM: true,  // Mark it as LLM node
+                                };
+
+                                node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', (e) => {
+                                    const oldName = node.title;
+                                    let newName = node.nodeObject.content.children[0].children[0].children[1].value.trim();
+                                    newName = newName.replace(",", "");
+                                    if (newName === node.title) {
+                                        return;
+                                    }
+                                    delete nodes[oldName];
+                                    if (nodes[newName]) {
+                                        let count = 2;
+                                        while (nodes[newName + "(" + count + ")"]) {
+                                            count++;
+                                        }
+                                        newName += "(" + count + ")";
+                                        node.nodeObject.content.children[0].children[0].children[1].value = newName;
+                                    }
+                                    nodes[newName] = node;
+                                    node.title = newName;
+                                    const f = renameNode(oldName, newName);
+                                    noteInput.value = f(noteInput.value);
+                                });
+                            }
+                        } else {
+                            nodes[llmNodeTitle].live = true;
+                            nodes[llmNodeTitle].lineNum = i;
+                            if (nodeLines[nodes[llmNodeTitle].lineNum] === nodes[llmNodeTitle]) {
+                                delete nodeLines[nodes[llmNodeTitle].lineNum];
+                            }
+                            nodeLines[i] = nodes[llmNodeTitle];
+                        }
+                        currentNodeTitle = llmNodeTitle;  // Update currentNodeTitle at the end
+                    } else if (currentNodeTitle.startsWith("LLM:") && nodes[currentNodeTitle].isLLM) {
+                        if (line.startsWith("node:") || line.startsWith("ref:")) {
+                            currentNodeTitle = '';
+                        } else {
+                            nodes[currentNodeTitle].nodeObject.promptTextArea.value += line.trim();
                         }
                     } else if (line.startsWith(refTag)) {
                         if (currentNodeTitle !== '') {
@@ -169,15 +236,24 @@
                         }
                     } else {
                         if (currentNodeTitle !== '') {
-                            if (nodes[currentNodeTitle].plainText !== '') {
-                                nodes[currentNodeTitle].plainText += '\n';
-                            }
-                            nodes[currentNodeTitle].plainText += line;
-                            const targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
-                            targetTextarea.value = nodes[currentNodeTitle].plainText;
+                            // If the line doesn't start with "LLM:", "ref:", or "node:"
+                            if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
+                                if (nodes[currentNodeTitle].plainText !== '') {
+                                    nodes[currentNodeTitle].plainText += '\n';
+                                }
+                                nodes[currentNodeTitle].plainText += line;
 
-                            // Manually call the adjustTextareaHeight function to adjust the textarea height
-                            adjustTextareaHeight(targetTextarea);
+                                let targetTextarea;
+                                if (nodes[currentNodeTitle].isLLM) {
+                                    targetTextarea = nodes[currentNodeTitle].nodeObject.promptTextArea;
+                                } else {
+                                    targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
+                                }
+                                targetTextarea.value = nodes[currentNodeTitle].plainText;
+
+                                // Manually call the adjustTextareaHeight function to adjust the textarea height
+                                adjustTextareaHeight(targetTextarea);
+                            }
                         }
                     }
                 } {
@@ -236,21 +312,22 @@
             //processInput();
         }
 
-        function connectDistance(na, nb, linkStrength = .1, linkStyle = {
-            stroke: "none",
-            "stroke-width": "0.005",
-            fill: "lightcyan",
-            opacity: "0.5"
-        }) {
-            // Calculate the distance between the two nodes
-            const dx = nb.pos.x - na.pos.x;
-            const dy = nb.pos.y - na.pos.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+function connectDistance(na, nb, linkStrength = .1, linkStyle = {
+    stroke: "none",
+    "stroke-width": "0.005",
+    fill: "lightcyan",
+    opacity: "0.5"
+}) {
+    // Calculate the distance between the two nodes
+    const dx = nb.pos.x - na.pos.x;
+    const dy = nb.pos.y - na.pos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-            let edge = new Edge([na, nb], distance, linkStrength, linkStyle);
+    let edge = new Edge([na, nb], distance, linkStrength, linkStyle);
 
-            na.addEdge(edge);
+    na.edges.push(edge);
+    nb.edges.push(edge); // Don't forget to add the edge to nodeB too
 
-            edges.push(edge);
-            return edge;
-        }
+    edges.push(edge);
+    return edge;
+}

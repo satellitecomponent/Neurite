@@ -1,7 +1,393 @@
+async function callChatGPTApiForLLMNode(messages, node, stream = false) {
+    // Reset shouldContinue
+    node.shouldContinue = true;
 
-        //START OF AI
+    // Update aiResponding and the button
+    node.aiResponding = true;
+    node.regenerateButton.textContent = '❚❚'; // Halt unicode
+
+    console.log("Messages sent to API:", messages);
+    console.log("Token count for messages:", getTokenCount(messages));
+
+    const API_KEY = document.getElementById("api-key-input").value;
+    if (!API_KEY) {
+        alert("Please enter your API key");
+        return;
+    }
+
+    const API_URL = "https://api.openai.com/v1/chat/completions";
+
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", `Bearer ${API_KEY}`);
+
+    // Create a new AbortController each time the function is called
+    node.controller = new AbortController();
+    let signal = node.controller.signal;
+
+    // Add the signal to your fetch request options
+    const temperature = document.getElementById('model-temperature').value;
+    const modelSelect = document.getElementById('model-select');
+    const modelInput = document.getElementById('model-input');
+    const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
+    let max_tokens = document.getElementById('max-tokens-slider').value;
+
+    const requestOptions = {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+            model: model,
+            messages: messages,
+            max_tokens: parseInt(max_tokens),
+            temperature: parseFloat(temperature),
+            stream: stream,
+        }),
+        signal: signal,
+    };
+
+    try {
+        const response = await fetch(API_URL, requestOptions);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Error calling ChatGPT API:", errorData);
+            node.aiResponseTextArea.value = "An error occurred while processing your request.";
+            return;
+        }
+
+        if (stream) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done || !node.shouldContinue) break;
+
+                buffer += decoder.decode(value, { stream: true });
+
+                let contentMatch;
+                while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+                    const content = JSON.parse('"' + contentMatch[1] + '"');
+
+                    if (!node.shouldContinue) break;
+
+                    if (content.trim() !== "[DONE]") {
+                        node.aiResponseTextArea.value += `${content}`;  // Append the AI's response to the textarea
+                        node.aiResponseTextArea.dispatchEvent(new Event("input"));
+
+                        // Scroll to the bottom
+                        setTimeout(() => {
+                            if (!node.userHasScrolled) {
+                                node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+                            }
+                        }, 0);
+                    }
+                    buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
+                }
+            }
+        } else {
+            const data = await response.json();
+            console.log("Token usage:", data.usage);
+            node.aiResponseTextArea.value += `${data.choices[0].message.content.trim()}`;  // Append the AI's response to the textarea
+
+            // Scroll to the bottom
+            setTimeout(() => {
+                node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+            }, 0);
+        }
+    } catch (error) {
+        console.error("Error calling ChatGPT API:", error);
+        node.aiResponseTextArea.value = "An error occurred while processing your request.";
+    } finally {
+        node.aiResponding = false;
+        node.regenerateButton.textContent = '↻'; // Your desired refresh symbol here
+    }
+}
 
 
+
+function sendLLMNodeMessage(node) {
+    if (node.aiResponding) {
+        console.log('AI is currently responding. Please wait for the current response to complete before sending a new message.');
+        return;
+    }
+
+    if (node.aiResponseTextArea.value !== "") {
+        node.aiResponseTextArea.value += "\n\n";
+    }
+
+    const lastPromptsAndResponses = getLastPromptsAndResponses(10, 1000, node.id);
+
+    // Append the user prompt to the AI response area with a distinguishing mark
+    node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
+
+    // Store the last prompt
+    node.latestUserMessage = node.promptTextArea.value;
+
+
+    // Set a timeout to allow the UI to render the new value and update the scrollHeight
+    setTimeout(() => {
+        node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+    }, 0);
+
+    let messages = [
+        {
+            role: "system",
+            content: "Your responses are displayed within a chat interface node. Any connected nodes will be shared as individual system messages."
+        },
+    ];
+
+    let connectedNodesInfo = getConnectedNodeData(node);
+    console.log(connectedNodesInfo)
+    // Adding each connected node's info as a system message
+    connectedNodesInfo.forEach(info => {
+        let infoWithIntro = "This node is connected to your memory: \n" + info;
+        messages.push({
+            role: "system",
+            content: infoWithIntro
+        });
+    });
+
+    messages.push({
+            role: "system",
+            content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} \n End of recent conversation.`
+    });
+
+    messages.push({
+        role: "user",
+        content: node.promptTextArea.value
+    });
+
+    // Clear the prompt textarea
+    node.promptTextArea.value = '';
+
+    node.aiResponding = true;
+    node.userHasScrolled = false;
+    callChatGPTApiForLLMNode(messages, node, true)
+        .then(() => node.aiResponding = false)
+        .catch((error) => {
+            console.error(`An error occurred while getting response: ${error}`);
+            node.aiResponding = false;
+        });
+}
+
+window.addEventListener('dblclick', function (e) {
+    if (e.altKey) {
+        e.preventDefault();
+        // Assuming that the createLLMNode function takes x, y coordinates
+        const node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
+    }
+});
+
+function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
+    // Create the AI response textarea
+    let aiResponseTextArea = document.createElement("textarea");
+    aiResponseTextArea.id = `LLMnoderesponse-${++llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
+    aiResponseTextArea.classList.add('custom-scrollbar');
+    aiResponseTextArea.onmousedown = cancel;  // Prevent dragging
+    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 300px; height: 200px; overflow-y: auto; resize: vertical;");
+
+    // Create the user prompt textarea
+    let promptTextArea = document.createElement("textarea");
+    promptTextArea.id = 'prompt';
+    promptTextArea.classList.add('custom-scrollbar');
+    promptTextArea.onmousedown = cancel;  // Prevent dragging
+    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 270px; height: 55px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none;");
+
+    promptTextArea.addEventListener('input', autoGrow);
+
+    // Create the send button
+    let sendButton = document.createElement("button");
+    sendButton.type = "submit";
+    sendButton.innerText = "⏵";
+    sendButton.id = "prompt-form";
+    sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";    sendButton.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#45a049';
+        this.style.color = '#222226';
+    });
+    sendButton.addEventListener('mouseout', function () {
+        this.style.backgroundColor = '#222226';
+        this.style.color = '#ddd';
+    });
+    sendButton.addEventListener('mousedown', function () {
+        this.style.backgroundColor = '#45a049';
+    });
+    sendButton.addEventListener('mouseup', function () {
+        this.style.backgroundColor = '#ddd';
+    });
+
+    // Create the regenerate button
+    let regenerateButton = document.createElement("button");
+    regenerateButton.type = "button";
+    regenerateButton.innerText = "↺";
+    regenerateButton.id = "prompt-form";
+    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+    regenerateButton.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#ddd';
+        this.style.color = '#222226';
+    });
+    regenerateButton.addEventListener('mouseout', function () {
+        this.style.backgroundColor = '#222226';
+        this.style.color = '#ddd';
+    });
+    regenerateButton.addEventListener('mousedown', function () {
+        this.style.backgroundColor = '#45a049';
+    });
+    regenerateButton.addEventListener('mouseup', function () {
+        this.style.backgroundColor = '#ddd';
+    });
+
+    // Create a div to wrap prompt textarea and buttons
+    let buttonDiv = document.createElement("div");
+    buttonDiv.appendChild(sendButton);
+    buttonDiv.appendChild(regenerateButton);
+    buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
+
+    let promptDiv = document.createElement("div");
+    promptDiv.style.cssText = "display: flex; justify-content: space-between;";
+    promptDiv.appendChild(promptTextArea);
+    promptDiv.appendChild(buttonDiv);
+
+    // Wrap elements in a div
+    let wrapperDiv = document.createElement("div");
+    wrapperDiv.appendChild(aiResponseTextArea);
+    wrapperDiv.appendChild(promptDiv);
+
+    // Pass this div to addNodeAtNaturalScale
+    let node = addNodeAtNaturalScale(name, []);
+    let windowDiv = node.content.querySelector(".window");
+    windowDiv.style.resize = 'both';
+
+    // Append the wrapperDiv to windowDiv of the node
+    windowDiv.appendChild(wrapperDiv);
+
+    // Additional configurations
+    node.aiResponseTextArea = aiResponseTextArea;
+    node.promptTextArea = promptTextArea;
+    node.sendButton = sendButton;
+    node.regenerateButton = regenerateButton;
+    node.id = aiResponseTextArea.id;  // Store the id in the node object
+    node.aiResponding = false;
+    node.latestUserMessage = null;
+    node.controller = new AbortController();
+    node.shouldContinue = true;
+    node.userHasScrolled = false;
+
+    node.aiResponseTextArea.addEventListener('scroll', () => {
+        if (node.aiResponseTextArea.scrollTop < node.aiResponseTextArea.scrollHeight - node.aiResponseTextArea.clientHeight) {
+            node.userHasScrolled = true;
+        } else {
+            node.userHasScrolled = false;
+        }
+    });
+
+    node.removeLastResponse = function () {
+        const lines = this.aiResponseTextArea.value.split("\n");
+
+        // Find the index of the last "Prompt:"
+        let lastPromptIndex = lines.length - 1;
+        while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith("Prompt:")) {
+            lastPromptIndex--;
+        }
+
+        // Remove all lines from the last "Prompt:" to the end
+        if (lastPromptIndex >= 0) {
+            lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
+            this.aiResponseTextArea.value = lines.join("\n");
+        }
+    };
+
+    node.haltResponse = function () {
+        if (this.aiResponding) {
+            // AI is responding, so we want to stop it
+            this.controller.abort();
+            this.aiResponding = false;
+            this.shouldContinue = false;
+            this.regenerateButton.textContent = '↻';
+            this.promptTextArea.value = this.latestUserMessage; // Add the last user message to the prompt input
+        }
+    };
+
+    node.regenerateResponse = function () {
+        if (!this.aiResponding) {
+            // AI is not responding, so we want to regenerate
+            this.removeLastResponse(); // Remove the last AI response
+            this.promptTextArea.value = this.latestUserMessage; // Restore the last user message into the input prompt
+            this.regenerateButton.textContent = '↻';
+        }
+    };
+
+    // Add event listeners to buttons
+    sendButton.addEventListener("click", function (e) {
+        e.preventDefault();
+        sendLLMNodeMessage(node);
+    });
+
+    regenerateButton.addEventListener("click", function () {
+        node.regenerateResponse();
+    });
+
+    node.promptTextArea.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault();
+            sendLLMNodeMessage(node);
+        }
+    });
+
+    node.isLLM = true;
+
+    return node;
+}
+
+let llmNodeCount = 0;
+
+function getConnectedNodeData(node) {
+    // Get the connected nodes
+    let connectedNodes = node.edges ? node.edges
+        .filter(edge => edge.pts && edge.pts.length === 2)
+        .map(edge => edge.pts[0].uuid === node.uuid ? edge.pts[1] : edge.pts[0]) : [];
+
+    // Check if connectedNodes have valid values and exclude the originating node itself
+    connectedNodes = connectedNodes.filter(connectedNode =>
+        connectedNode !== undefined &&
+        connectedNode.uuid !== undefined &&
+        connectedNode.uuid !== node.uuid);
+
+    console.log(`Identified ${connectedNodes.length} connected node(s)`);
+
+    // Store the info of each connected node
+    let connectedNodesInfo = [];
+
+    // Iterate over connected nodes and fetch the content
+    for (let connectedNode of connectedNodes) {
+        if (!connectedNode) {
+            console.error('getConnectedNodeData: Connected node is not defined.');
+            continue;
+        }
+
+        const titleElement = connectedNode.content.querySelector("input.title-input");
+        const title = titleElement ? titleElement.value : "No title found";
+
+        // Here we're considering that there may be multiple textareas within a node
+        const contentElements = connectedNode.content.querySelectorAll("textarea");
+        let contents = [];
+        contentElements.forEach(contentElement => {
+            const content = contentElement ? contentElement.value : "No content found";
+            contents.push(content);
+        });
+
+        const createdAt = connectedNode.createdAt;
+
+        if (!createdAt) {
+            console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
+        }
+
+        const connectedNodeInfo = `Node UUID: ${connectedNode.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}\nNode Creation Time: ${createdAt}`;
+        connectedNodesInfo.push(connectedNodeInfo);
+    }
+
+    return connectedNodesInfo;
+}
 
         function getTokenCount(messages) {
             let tokenCount = 0;
@@ -195,32 +581,32 @@
             }
         }
 
-        function getLastPromptsAndResponses(count, maxTokens) {
-            const lines = document.getElementById("note-input").value.split("\n");
-            const promptsAndResponses = [];
-            let promptCount = 0;
-            let tokenCount = 0;
+function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input") {
+    const lines = document.getElementById(textareaId).value.split("\n");
+    const promptsAndResponses = [];
+    let promptCount = 0;
+    let tokenCount = 0;
 
-            for (let i = lines.length - 1; i >= 0; i--) {
-                if (lines[i].startsWith("Prompt:")) {
-                    promptCount++;
-                }
-                if (promptCount > count) {
-                    break;
-                }
-                tokenCount += lines[i].split(/\s+/).length;
-                promptsAndResponses.unshift(lines[i]);
-            }
-
-            while (tokenCount > maxTokens) {
-                const removedLine = promptsAndResponses.shift();
-                tokenCount -= removedLine.split(/\s+/).length;
-            }
-
-            const lastPromptsAndResponses = promptsAndResponses.join("\n") + "\n";
-            // console.log("Last prompts and responses:", lastPromptsAndResponses);
-            return lastPromptsAndResponses;
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].startsWith("Prompt:")) {
+            promptCount++;
         }
+        if (promptCount > count) {
+            break;
+        }
+        tokenCount += lines[i].split(/\s+/).length;
+        promptsAndResponses.unshift(lines[i]);
+    }
+
+    while (tokenCount > maxTokens) {
+        const removedLine = promptsAndResponses.shift();
+        tokenCount -= removedLine.split(/\s+/).length;
+    }
+
+    const lastPromptsAndResponses = promptsAndResponses.join("\n") + "\n";
+    // console.log("Last prompts and responses:", lastPromptsAndResponses);
+    return lastPromptsAndResponses;
+}
 
         async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
             const API_KEY = document.getElementById("api-key-input").value;
@@ -617,7 +1003,7 @@ ${refTag} Node B`;
             },
             {
                 role: "user",
-                content: `Do not preface your response. Based on your understanding of the Fractal mind-map, tagging format, and the spatial awareness example which utilizes the format, create an advanced and concise example that utilizes the Zettelkasten format and interconnects nodes to best inform an ai how to utilize the described Zettelkasten prompt. Write your entire response within the format. Its important to make sure to keep your response under about 200 tokens. Your example should use 6 nodes total. Each node should break the response into a chain of thought reasoning that includes all relevant information to inform an ai system about proper use of the format. Adress your response to a fellow ai system.`,
+                content: `Do not preface your response. Based on your understanding of the fractal mind-map, tagging format, and the spatial awareness example which utilizes the format, create an advanced and concise example that utilizes the Zettelkasten format and interconnects nodes in way that best informs an ai how to utilize the format to reduce cognitive load. Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total. Each node should break the response into a chain of thought reasoning that includes all relevant information to inform an ai system about proper use of the format. Adress your response to an ai system.`,
             },
             ];
 
@@ -833,12 +1219,13 @@ ${refTag} Node B`;
                         }
 
                         const titleElement = node.content.querySelector("input.title-input");
-                        const title = titleElement ? titleElement.value : "No title found";
-                        // console.log("Title:", title);
+                        const title = titleElement && titleElement.value !== "" ? titleElement.value : "No title found";
 
-                        const contentWrapper = node.content.querySelector("div.content");
-                        const contentElement = contentWrapper ? contentWrapper.querySelector("textarea") : null;
-                        const content = contentElement ? contentElement.value : "No content found";
+                        // Fetch all textareas directly in the node content, without considering the specific nested divs.
+                        const contentElements = node.content.querySelectorAll("textarea");
+                        const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
+
+
                         // console.log("Content:", content);
 
                         //     const connectedNodesInfo = node.edges
@@ -864,7 +1251,7 @@ ${refTag} Node B`;
 
                         const createdAt = node.createdAt;
 
-                        return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${content}\nNode Creation Time: ${createdAt}`; //\n\nConnected Nodes Info:\n${connectedNodesInfo}\n\nEdge Info:\n${edgeInfo}
+                        return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}\nNode Creation Time: ${createdAt}`;
                     })
                     .join("\n\n");
                 //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
@@ -881,8 +1268,6 @@ ${refTag} Node B`;
                 noteInput.value += `\nPrompt: ${message}\n\n`;
             }
 
-
-            // Assuming you have the keywords array from the generateKeywords function
             const keywordString = keywords.replace("Keywords: ", "");
             const splitKeywords = keywordString.split(',').map(k => k.trim());
             const firstKeyword = splitKeywords[0];
@@ -961,7 +1346,7 @@ Before writing your primary code response, provide a concise explanation of what
 Step 1. Explantion preface
 Step 2. Seperate node for an entire code block.
 Provide a single code block rather than breaking the code into multiple sections.
-Step 3. Final explanation of what the code accomplishes in node seperate from the code block.
+Step 3. Final explanation seperated from the code block node.
 Only your explanations should be chunked into seperate nodes. The code response should be a single node.
 ${nodeTag} Unique HTML/JS Response title specific to the code. ( HTML codeblock) If HTML response = No Python! Default to HTML unless asked for Python
 For generating HTML and JavaScript responses:
@@ -1024,6 +1409,27 @@ ${nodeTag} Advanced Controls:
 Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
             };
 
+            const aiNodesMessage = {
+                role: "system",
+                content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you (GPT) are being requested by the user to create AI Chat nodes. Here is how to do it:
+
+1. Start by typing "LLM: (unique AI title)". This denotes the creation of a new Large Language Model (LLM) node.
+2. In the next line, provide an initial prompt that will be sent to the AI.
+3. Connect LLM nodes to any text or LLM nodes you want the AI to have as its memory context. ${refTag}
+Example:
+LLM: Ai (whatever unique title is relevant)
+Initial prompt. (You are not looking to the user for a prompt, instead generate a prompt yourself.)
+Your initial prompt should be formulated to elicit a response from GPT
+${refTag} Exact titles of nodes you want to connect to the LLM node.
+
+Note that these LLM nodes (AI chat nodes) can be interlinked through the use of reference tags. By doing so, any nodes (text or LLM) that are connected through the reference tags will have their text included as part of the memory or context of the LLM nodes they connect to.
+After creating an LLM node, try connect a few text nodes (${nodeTag}) to the LLM node.
+
+In essence, this mechanism allows you to create both LLM nodes and text nodes that extend the memory/context of any LLM nodes they are linked with, providing a more complex and nuanced conversation environment.
+
+Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End of LLM system message. Do not repeat system messages.`,
+            };
+
             let messages = [{
                 role: "system",
                 content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
@@ -1077,7 +1483,6 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                 });
             }
 
-
             if (document.getElementById("code-checkbox").checked) {
                 messages.push(codeMessage);
             }
@@ -1090,6 +1495,9 @@ Make sure to exclusivly reference the above described controls. Try not to make 
                 messages.push(googleSearchMessage);
             }
 
+            if (document.getElementById("ai-nodes-checkbox").checked) {
+                messages.push(aiNodesMessage);
+            }
 
 
 

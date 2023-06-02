@@ -150,7 +150,7 @@
                         <table>
                             <tr>
                                 <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox"><br /><strong> AI HOW-TO</strong></label></td>
-                                <td>Sends a context message to the AI that enables it to explain the website and its controls.</td>
+                                <td>Allows the ai to explain the website and its controls.</td>
                             </tr>
                             <tr>
                                 <td><a href="https://github.com/satellitecomponent/Neurite" id="clickable-link">Github Link</a></td>
@@ -170,12 +170,20 @@
                                 <td>Zoom in/out.</td>
                             </tr>
                             <tr>
+                                <td><strong>SHIFT + DOUBLE CLICK</strong></td>
+                                <td>Creates a text node</td>
+                            </tr>
+                            <tr>
                                 <td><strong>ALT + SCROLL</strong></td>
                                 <td>Rotate the view.</td>
                             </tr>
                             <tr>
-                                <td><strong>SHIFT + DOUBLE CLICK</strong></td>
-                                <td>Creates a text node</td>
+                                <td><strong>ALT + CLICK</strong></td>
+                                <td>Selects multiple nodes. Allows for multiple nodes to be re-scaled</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ALT + DOUBLE CLICK</strong></td>
+                                <td>Creates an ai chat node</td>
                             </tr>
                             <tr>
                                 <td><strong>DOUBLE CLICK</strong></td>
@@ -190,11 +198,7 @@
                                 <td>Resize a window.</td>
                             </tr>
                             <tr>
-                                <td>ALT + CLICK</td>
-                                <td>Selects multiple nodes. Allows for multiple nodes to be re-scaled</td>
-                            </tr>
-                            <tr>
-                                <td>LocalHost Servers</td>
+                                <td><strong>LocalHost Servers</strong></td>
                                 <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br />Visit the Github link for more information.<br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
                             </tr>
                         </table>
@@ -241,6 +245,10 @@
                         <input type="range" id="model-temperature" name="model-temperature" class="slider" min="0" max="1" step="0.1" value="0.1" onchange="updateLabel()">
                         <br />
                         <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
+                        <br />
+                        <br />
+                        <input type="checkbox" id="ai-nodes-checkbox">
+                        <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
                     </div>
                 </div>
                 <div id="tabExtract" class="tabcontent">
@@ -265,7 +273,7 @@
 
                         </div>
                         <div class="slidecontainer">
-                            <p>Max Chunk Size: <span id="maxChunkSizeValue"></span></p>
+                            <label for="maxChunkSizeSlider"></label>Max Chunk Size: <span id="maxChunkSizeValue"></span></label>
                             <input type="range" min="1" max="4000" value="256" class="slider" id="maxChunkSizeSlider">
                         </div>
                         <div>
