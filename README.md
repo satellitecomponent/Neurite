@@ -16,8 +16,7 @@ this is an open-source software in early alpha, we are looking to grow our team!
 join us on discord!
 https://discord.gg/hnY8UpeE22
 
-![Wolfram](https://github.com/satellitecomponent/Neurite/assets/129367899/7a72d90c-7022-4413-84de-1841253d0f2e)
-
+<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/0c988328-3d18-4813-b27b-4eb60f835bbe" width="700">
 
 # How-to use Neurite
 
