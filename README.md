@@ -16,6 +16,9 @@ this is an open-source software in early alpha, we are looking to grow our team!
 join us on discord!
 https://discord.gg/hnY8UpeE22
 
+![Wolfram](https://github.com/satellitecomponent/Neurite/assets/129367899/7a72d90c-7022-4413-84de-1841253d0f2e)
+
+
 # How-to use Neurite
 
 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Be sure the links are embeddable!
