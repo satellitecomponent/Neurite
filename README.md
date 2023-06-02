@@ -45,6 +45,10 @@ The Ai currently has the following capabilities...
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
+We have recently included an Ai node funcitonality.
+Alt + Double click creates a node with a more traditional ai chat interface. (you can create multiple)
+The Ai node will retain the context for any other text or Ai nodes that are connected to it.
+
 # Local Server Setup
 - To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
@@ -61,8 +65,8 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai whi
 
 The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary.
 
+- VR
 - deeper zoom
-- markdown/textediting
 - color selection
 - customizability/accessability
 - auto embed formats
