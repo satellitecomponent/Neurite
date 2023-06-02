@@ -1,5 +1,5 @@
 # Neurite
-
+Available here.
 https://satellitecomponent.github.io/Neurite/
 
 WARNING: Neurite contains zooming, flashing lights, and colors which may not be suitable for people with photosensitive epilepsy.
