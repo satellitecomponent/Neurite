@@ -22,7 +22,7 @@ Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame c
 
 # FractalGPT
 
-- Ai Driven Note Taking with embeddings.
+- Ai Driven Note Taking.
 
 Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
 
@@ -31,7 +31,7 @@ To interact with the Ai, you will need an OpenAi API key. (More LLM models to be
 The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
 Breaking up the ai's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
 The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory.
-The Mandelbrot set acts as the terrain for mind-map to grow into an interconnected tapestry of throught.
+The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of throught.
 
 
 The Ai currently has the following capabilities... 
