@@ -1,5 +1,5 @@
 # Neurite
-
+Available here.
 https://satellitecomponent.github.io/Neurite/
 
 WARNING: Neurite contains zooming, flashing lights, and colors which may not be suitable for people with photosensitive epilepsy.
@@ -16,21 +16,25 @@ this is an open-source software in early alpha, we are looking to grow our team!
 join us on discord!
 https://discord.gg/hnY8UpeE22
 
+<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/0c988328-3d18-4813-b27b-4eb60f835bbe" width="700">
+
 # How-to use Neurite
 
-Neurite embeds text, photos, audio, video, pdfs, or any i-frame content onto a rendering of the Mandelbrot set.
-
-Files can be dragged and dropped into the fractal from your local files, or embed links can be copied and pasted onto the fractal. (Make sure its an embed link)
+Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Be sure the links are embeddable!
 
 # FractalGPT
 
-- Ai Driven Note Taking with embeddings.
+- Ai Driven Note Taking.
 
 Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
 
 To interact with the Ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
 
 The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
+Breaking up the ai's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
+The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory.
+The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of throught.
+
 
 The Ai currently has the following capabilities... 
 
@@ -65,8 +69,10 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai whi
 
 The app is a recursive environment to generate ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will be become ever more necessary.
 
+- Local LLM
 - VR
 - deeper zoom
+- improved fractal integration
 - color selection
 - customizability/accessability
 - auto embed formats
