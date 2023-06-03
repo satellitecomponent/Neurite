@@ -226,3 +226,7 @@
             document.getElementById("exponent_value").textContent = v;
         })
         const submenuBtn = document.querySelector('.submenu-btn');
+
+document.getElementById('node-count-slider').addEventListener('input', function () {
+    document.getElementById('node-slider-label').innerText = 'Top ' + this.value + ' nodes';
+});

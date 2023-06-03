@@ -116,19 +116,13 @@ function sendLLMNodeMessage(node) {
         node.aiResponseTextArea.value += "\n\n";
     }
 
-    const lastPromptsAndResponses = getLastPromptsAndResponses(10, 1000, node.id);
+    const maxTokensSlider = document.getElementById('max-tokens-slider');
 
     // Append the user prompt to the AI response area with a distinguishing mark
     node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
 
     // Store the last prompt
     node.latestUserMessage = node.promptTextArea.value;
-
-
-    // Set a timeout to allow the UI to render the new value and update the scrollHeight
-    setTimeout(() => {
-        node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
-    }, 0);
 
     let messages = [
         {
@@ -148,9 +142,21 @@ function sendLLMNodeMessage(node) {
         });
     });
 
+    // calculate the total token count of all messages
+    let totalTokenCount = getTokenCount(messages);
+
+    // calculate remaining tokens
+    const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+
+    const maxContextSize = document.getElementById('max-context-size-slider').value;
+    const contextSize = Math.min(remainingTokens, maxContextSize);
+
+    // Update the value of getLastPromptsAndResponses
+    const lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
+
     messages.push({
-            role: "system",
-            content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} \n End of recent conversation.`
+        role: "system",
+        content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} \n End of recent conversation.`
     });
 
     messages.push({
@@ -160,6 +166,11 @@ function sendLLMNodeMessage(node) {
 
     // Clear the prompt textarea
     node.promptTextArea.value = '';
+
+    // Set a timeout to allow the UI to render the new value and update the scrollHeight
+    setTimeout(() => {
+        node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+    }, 0);
 
     node.aiResponding = true;
     node.userHasScrolled = false;
@@ -401,6 +412,44 @@ function getConnectedNodeData(node) {
             return tokenCount;
         }
 
+const maxContextSizeSlider = document.getElementById("max-context-size-slider");
+const maxContextSizeDisplay = document.getElementById("max-context-size-display");
+
+// Display the default slider value
+maxContextSizeDisplay.innerHTML = maxContextSizeSlider.value;
+
+// Update the current slider value (each time you drag the slider handle)
+maxContextSizeSlider.oninput = function () {
+    maxContextSizeDisplay.innerHTML = this.value;
+}
+
+function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input") {
+    const lines = document.getElementById(textareaId).value.split("\n");
+    const promptsAndResponses = [];
+    let promptCount = 0;
+    let tokenCount = 0;
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].startsWith("Prompt:")) {
+            promptCount++;
+        }
+        if (promptCount > count) {
+            break;
+        }
+        tokenCount += lines[i].split(/\s+/).length;
+        promptsAndResponses.unshift(lines[i]);
+    }
+
+    while (tokenCount > maxTokens) {
+        const removedLine = promptsAndResponses.shift();
+        tokenCount -= removedLine.split(/\s+/).length;
+    }
+
+    const lastPromptsAndResponses = promptsAndResponses.join("\n") + "\n";
+    // console.log("Last prompts and responses:", lastPromptsAndResponses);
+    return lastPromptsAndResponses;
+}
+
         let aiResponding = false;
         let latestUserMessage = null;
         let controller = new AbortController();
@@ -581,32 +630,6 @@ function getConnectedNodeData(node) {
             }
         }
 
-function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input") {
-    const lines = document.getElementById(textareaId).value.split("\n");
-    const promptsAndResponses = [];
-    let promptCount = 0;
-    let tokenCount = 0;
-
-    for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].startsWith("Prompt:")) {
-            promptCount++;
-        }
-        if (promptCount > count) {
-            break;
-        }
-        tokenCount += lines[i].split(/\s+/).length;
-        promptsAndResponses.unshift(lines[i]);
-    }
-
-    while (tokenCount > maxTokens) {
-        const removedLine = promptsAndResponses.shift();
-        tokenCount -= removedLine.split(/\s+/).length;
-    }
-
-    const lastPromptsAndResponses = promptsAndResponses.join("\n") + "\n";
-    // console.log("Last prompts and responses:", lastPromptsAndResponses);
-    return lastPromptsAndResponses;
-}
 
         async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
             const API_KEY = document.getElementById("api-key-input").value;
@@ -698,6 +721,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
         }
 
         async function embeddedSearch(searchTerm) {
+            const maxNodes = document.getElementById('node-count-slider').value;
             let keywords = searchTerm.toLowerCase().split(/,\s*/);
 
             const nodes = getNodeText();
@@ -710,7 +734,13 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
 
             const fetchNodeEmbedding = async (node) => {
                 const cachedEmbedding = nodeCache.get(node.uuid);
-                return cachedEmbedding ? cachedEmbedding : await fetchEmbeddings(node.content.innerText);
+                if (cachedEmbedding) {
+                    return cachedEmbedding;
+                } else {
+                    const embedding = await fetchEmbeddings(node.content.innerText);
+                    nodeCache.set(node.uuid, embedding);
+                    return embedding;
+                }
             };
 
             const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
@@ -752,7 +782,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
             }
 
             matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
-            return matched.map(m => m.node);
+            return matched.slice(0, maxNodes).map(m => m.node);
         }
 
 
@@ -779,7 +809,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
 
         async function generateKeywords(message, count) {
             // Get last prompts and responses
-            const lastPromptsAndResponses = getLastPromptsAndResponses(1, 400);
+            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 300);
 
             // Prepare the messages array
             const messages = [
@@ -920,9 +950,101 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
             return summaries;
         }
 
+const nodeTag = document.getElementById("node-tag").value;
+const refTag = document.getElementById("ref-tag").value;
 
-        const nodeTag = document.getElementById("node-tag").value;
-        const refTag = document.getElementById("ref-tag").value;
+const codeMessage = {
+    role: "system",
+    content: `Code Checkbox = true signifies that your response should include either Html/js or Python code that will be handled by Pyodide in the browser. Users can render plain text within each node as HTML in an iframe or Python in Pyodide. The instructions below guide your response:
+${nodeTag}Unique Explanation Title (always use a unique title for each node rather than repeating these example titles)
+Before writing your primary code response, provide a concise explanation of what you will accomplish with the code. Either html/js or Python
+Step 1. Explantion preface
+Step 2. Seperate node for an entire code block.
+Provide a single code block rather than breaking the code into multiple sections.
+Step 3. Final explanation seperated from the code block node.
+Only your explanations should be chunked into seperate nodes. The code response should be a single node.
+${nodeTag} Unique HTML/JS Response title specific to the code. ( HTML codeblock) If HTML response = No Python! Default to HTML unless asked for Python
+For generating HTML and JavaScript responses:
+- Structure your HTML correctly with appropriate head and body tags.
+- The HTML will render in an iframe... Be sure to set the canvas size in the HTML as opposed to the JS.
+- Enclose any JavaScript within a script tag rather than an external file.
+- Be aware that more complex JavaScript code, particularly involving async operations or requestAnimationFrame, might not work as expected in the iframe environment. If your script involves such operations, consider alternatives or workarounds like using setInterval or wrapping your code in a 'DOMContentLoaded' event.
+- Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context.
+- Always remember to properly close HTML tags and handle potential JavaScript exceptions to avoid unexpected behavior or script failure.
+- If your HTML/JS response includes CSS, be sure to encapsulate it properly within style tags in the head section.
+
+ensure seperation of your code from your explanation using a unique title for each node.
+
+${nodeTag} Unique Python Response title specific to the code. Assume the user is asking for Python code that outputs to Pyodide unless they specify to strictly write Python code that runs outside of Pyodide.
+For generating Python responses in a Pyodide environment:
+
+Always write code that will display correctly in Pyodide.
+- The available libraries in the current Pyodide session are numpy, pandas, matplotlib, scipy, py, sympy, networkx. Stick to these libraries.
+- When your Python code generates a visual output like plots or graphs, do NOT use plt.show(). Instead, save the figure to an in-memory binary stream, convert the image into a base64 string, and return this base64 string as an HTML img tag.
+- Always use base64 and io to convert images into a base64 string for display.
+- File operations and system calls are unsupported in Pyodide. Avoid using them.
+- Handle potential exceptions by wrapping your code in try/except blocks due to Pyodide's limitations.
+- Pyodide captures the last expression in the Python code, not what's printed to the console. Therefore, DO NOT rely on print statements to display results. Make sure to RETURN the result as the last expression in your Python code.
+- For non-visual outputs, convert them into a string and Pyodide will include this directly within an HTML paragraph tag. If you're working with more complex data, convert it to a JSON string or an HTML table before returning it.
+- Always label your code blocks with 'python' to clearly indicate that it's Python code. This will help others understand the context.
+Remember: The key is to return the result, not print it. Pyodide can only capture the returned result.
+${nodeTag} Unique Explanation Node (always use a unique title for each node rather than repeating these example titles)
+Provide a clear explanation of the Python or HTML code and its output. Align the explanation with the Python code steps and avoid repetition. Ensure that your entire response, including code and explanation, is self-contained and does not rely on external files or data unless they are created within the code itself.`
+};
+
+const instructionsMessage = {
+    role: "system",
+    content: `The How-to checkbox is on. Please explain the fractal mind map implementation:
+${nodeTag} Essential Controls:
+- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Alt + Click to resize multiple nodes.
+- Shift + Double Click within Mandelbrot set rendering to create a text node.
+- Hold shift for 'Node Mode', freezing time for node interaction.
+- Shift + Scroll on a window's edge to resize.
+- Shift + click on two nodes to link; Shift + Double Click on links to delete.
+- Double Click a node to anchor/unanchor.
+- Drag and drop multimedia files into the fractal to create nodes.
+- Embed iframes by pasting links.
+
+${nodeTag} Zettelkasten:
+- Type notes in main text area using ${nodeTag} and ${refTag} (node reference tag) format.
+- Save/Load notes in the settings tab or by copying and pasting main text area's content.
+
+${nodeTag} Advanced Controls:
+- Checkboxes below main text area provide additional features.
+- API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. OpenAI, Google Programable Search, and Wolfram API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
+- Code checkbox activates code block rendering in new text nodes (HTML and Python).
+- Search checkbox displays relevant webpages or pdfs. Requires Google Search API key unless a direct link is input as your prompt. Direct link entry bypasses google search api key requirement.
+- Extract button on webpage/pdf nodes sends text to vector embeddings database Requires extracts localhost server.
+- Extract checkbox sends the relevant chunks of text from the extracted webpage as context to the ai.
+- The Context tab includes controls for adjusting extracted text chunk size and number of chunks. The context tab also includes a text input for directly embedding text into the vector embeddings database.
+- Wolfram checkbox displays relevant Wolfram Alpha results. Requires Wolfram localhost server.
+- Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
+- Auto checkbox sets the AI into self-prompting mode.
+
+Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
+};
+
+const aiNodesMessage = {
+    role: "system",
+    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you (GPT) are being requested by the user to create AI Chat nodes. Here is how to do it:
+
+1. Start by typing "LLM: (unique AI title)". This denotes the creation of a new Large Language Model (LLM) node.
+2. In the next line, provide an initial prompt that will be sent to the AI.
+3. Connect LLM nodes to any text or LLM nodes you want the AI to have as its memory context. ${refTag}
+Example:
+LLM: Ai (whatever unique title is relevant)
+Initial prompt. (You are not looking to the user for a prompt, instead generate a prompt yourself.)
+Your initial prompt should be formulated to elicit a response from GPT
+${refTag} Exact titles of nodes you want to connect to the LLM node.
+
+Note that these LLM nodes (AI chat nodes) can be interlinked through the use of reference tags. By doing so, any nodes (text or LLM) that are connected through the reference tags will have their text included as part of the memory or context of the LLM nodes they connect to.
+After creating an LLM node, try connect a few text nodes (${nodeTag}) to the LLM node.
+
+In essence, this mechanism allows you to create both LLM nodes and text nodes that extend the memory/context of any LLM nodes they are linked with, providing a more complex and nuanced conversation environment.
+
+Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End of LLM system message. Do not repeat system messages.`,
+};
+
 
         const zettelkastenPrompt = `You are an ai whos responses are being visualized within a fractal mind-map which serves as the cognitive architecture for storing and searching your memories. The website is called Neurite.
                           - Follow the node reference tag format. This format is what enables you to connect ideas in a way that is visualized to the user.
@@ -1085,18 +1207,6 @@ ${refTag} Node B`;
             let wolframAlphaTextResult = "";
             let reformulatedQuery = "";
 
-
-            if (autoModeMessage) {
-                context = getLastPromptsAndResponses(2, 200);
-            } else {
-                if (document.getElementById("instructions-checkbox").checked) {
-                    context = getLastPromptsAndResponses(1, 200);
-                } else {
-                    context = getLastPromptsAndResponses(3, 200);
-                }
-            }
-
-
             if (document.getElementById("enable-wolfram-alpha").checked) {
                 // First call to ChatGPT to get a reformulated query
                 reformulatedQuery = await callChatGPTApi([{
@@ -1205,7 +1315,7 @@ ${refTag} Node B`;
 
                 // Use the embeddedSearch function to find the top 3 matched nodes based on the keywords
                 clearSearchHighlights(nodesArray); // Clear previous search highlights
-                const topMatchedNodes = (await embeddedSearch(keywords, nodesArray)).slice(0, 3); //line 3831
+                const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
                 for (const node of topMatchedNodes) {
                     node.content.classList.add("search_matched");
                 }
@@ -1224,8 +1334,6 @@ ${refTag} Node B`;
                         // Fetch all textareas directly in the node content, without considering the specific nested divs.
                         const contentElements = node.content.querySelectorAll("textarea");
                         const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
-
-
                         // console.log("Content:", content);
 
                         //     const connectedNodesInfo = node.edges
@@ -1248,7 +1356,6 @@ ${refTag} Node B`;
                         //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
                         //               }
                         //           }).join("\n");
-
                         const createdAt = node.createdAt;
 
                         return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}\nNode Creation Time: ${createdAt}`;
@@ -1261,11 +1368,6 @@ ${refTag} Node B`;
             // Check if the last character in the note-input is not a newline, and add one if needed
             if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
                 noteInput.value += "\n";
-            }
-
-            // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
-            if (!autoModeMessage || (isFirstMessage && autoModeMessage)) {
-                noteInput.value += `\nPrompt: ${message}\n\n`;
             }
 
             const keywordString = keywords.replace("Keywords: ", "");
@@ -1338,105 +1440,10 @@ ${refTag} Node B`;
 
             const embedCheckbox = document.getElementById("embed-checkbox");
 
-            const codeMessage = {
-                role: "system",
-                content: `The "Code Checkbox = true" signifies that your response should include either Html/js or Python code that will be handled by Pyodide in the browser. Users can render plain text within each node as HTML in an iframe or Python in Pyodide. The instructions below guide your response:
-${nodeTag}Unique Explanation Title (always use a unique title for each node rather than repeating these example titles)
-Before writing your primary code response, provide a concise explanation of what you will accomplish with the code. Either html/js or Python
-Step 1. Explantion preface
-Step 2. Seperate node for an entire code block.
-Provide a single code block rather than breaking the code into multiple sections.
-Step 3. Final explanation seperated from the code block node.
-Only your explanations should be chunked into seperate nodes. The code response should be a single node.
-${nodeTag} Unique HTML/JS Response title specific to the code. ( HTML codeblock) If HTML response = No Python! Default to HTML unless asked for Python
-For generating HTML and JavaScript responses:
-- Structure your HTML correctly with appropriate head and body tags.
-- The HTML will render in an iframe... Be sure to set the canvas size in the HTML as opposed to the JS.
-- Enclose any JavaScript within a script tag rather than an external file.
-- Be aware that more complex JavaScript code, particularly involving async operations or requestAnimationFrame, might not work as expected in the iframe environment. If your script involves such operations, consider alternatives or workarounds like using setInterval or wrapping your code in a 'DOMContentLoaded' event.
-- Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context.
-- Always remember to properly close HTML tags and handle potential JavaScript exceptions to avoid unexpected behavior or script failure.
-- If your HTML/JS response includes CSS, be sure to encapsulate it properly within style tags in the head section.
-
-ensure seperation of your code from your explanation using a unique title for each node.
-
-${nodeTag} Unique Python Response title specific to the code. Assume the user is asking for Python code that outputs to Pyodide unless they specify to strictly write Python code that runs outside of Pyodide.
-For generating Python responses in a Pyodide environment:
-
-Always write code that will display correctly in Pyodide.
-- The available libraries in the current Pyodide session are numpy, pandas, matplotlib, scipy, py, sympy, networkx. Stick to these libraries.
-- When your Python code generates a visual output like plots or graphs, do NOT use plt.show(). Instead, save the figure to an in-memory binary stream, convert the image into a base64 string, and return this base64 string as an HTML img tag.
-- Always use base64 and io to convert images into a base64 string for display.
-- File operations and system calls are unsupported in Pyodide. Avoid using them.
-- Handle potential exceptions by wrapping your code in try/except blocks due to Pyodide's limitations.
-- Pyodide captures the last expression in the Python code, not what's printed to the console. Therefore, DO NOT rely on print statements to display results. Make sure to RETURN the result as the last expression in your Python code.
-- For non-visual outputs, convert them into a string and Pyodide will include this directly within an HTML paragraph tag. If you're working with more complex data, convert it to a JSON string or an HTML table before returning it.
-- Always label your code blocks with 'python' to clearly indicate that it's Python code. This will help others understand the context.
-Remember: The key is to return the result, not print it. Pyodide can only capture the returned result.
-${nodeTag} Unique Explanation Node (always use a unique title for each node rather than repeating these example titles)
-Provide a clear explanation of the Python or HTML code and its output. Align the explanation with the Python code steps and avoid repetition. Ensure that your entire response, including code and explanation, is self-contained and does not rely on external files or data unless they are created within the code itself.`
-            };
-
-            const instructionsMessage = {
-                role: "system",
-                content: `The How-to checkbox is on. Please explain the fractal mind map implementation:
-${nodeTag} Essential Controls:
-- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Alt + Click to resize multiple nodes.
-- Shift + Double Click within Mandelbrot set rendering to create a text node.
-- Hold shift for 'Node Mode', freezing time for node interaction.
-- Shift + Scroll on a window's edge to resize.
-- Shift + click on two nodes to link; Shift + Double Click on links to delete.
-- Double Click a node to anchor/unanchor.
-- Drag and drop multimedia files into the fractal to create nodes.
-- Embed iframes by pasting links.
-
-${nodeTag} Zettelkasten:
-- Type notes in main text area using ${nodeTag} and ${refTag} (node reference tag) format.
-- Save/Load notes in the settings tab or by copying and pasting main text area's content.
-
-${nodeTag} Advanced Controls:
-- Checkboxes below main text area provide additional features.
-- API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. OpenAI, Google Programable Search, and Wolfram API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
-- Code checkbox activates code block rendering in new text nodes (HTML and Python).
-- Search checkbox displays relevant webpages or pdfs. Requires Google Search API key unless a direct link is input as your prompt. Direct link entry bypasses google search api key requirement.
-- Extract button on webpage/pdf nodes sends text to vector embeddings database Requires extracts localhost server.
-- Extract checkbox sends the relevant chunks of text from the extracted webpage as context to the ai.
-- The Context tab includes controls for adjusting extracted text chunk size and number of chunks. The context tab also includes a text input for directly embedding text into the vector embeddings database.
-- Wolfram checkbox displays relevant Wolfram Alpha results. Requires Wolfram localhost server.
-- Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
-- Auto checkbox sets the AI into self-prompting mode.
-
-Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
-            };
-
-            const aiNodesMessage = {
-                role: "system",
-                content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you (GPT) are being requested by the user to create AI Chat nodes. Here is how to do it:
-
-1. Start by typing "LLM: (unique AI title)". This denotes the creation of a new Large Language Model (LLM) node.
-2. In the next line, provide an initial prompt that will be sent to the AI.
-3. Connect LLM nodes to any text or LLM nodes you want the AI to have as its memory context. ${refTag}
-Example:
-LLM: Ai (whatever unique title is relevant)
-Initial prompt. (You are not looking to the user for a prompt, instead generate a prompt yourself.)
-Your initial prompt should be formulated to elicit a response from GPT
-${refTag} Exact titles of nodes you want to connect to the LLM node.
-
-Note that these LLM nodes (AI chat nodes) can be interlinked through the use of reference tags. By doing so, any nodes (text or LLM) that are connected through the reference tags will have their text included as part of the memory or context of the LLM nodes they connect to.
-After creating an LLM node, try connect a few text nodes (${nodeTag}) to the LLM node.
-
-In essence, this mechanism allows you to create both LLM nodes and text nodes that extend the memory/context of any LLM nodes they are linked with, providing a more complex and nuanced conversation environment.
-
-Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End of LLM system message. Do not repeat system messages.`,
-            };
 
             let messages = [{
                 role: "system",
                 content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
-            },
-            {
-                role: "system",
-                content: `Recent dialogue if available. Empty on start of conversation. Continue in the same format: ${context}`,
             },
             autoModeMessage ?
                 {
@@ -1499,6 +1506,31 @@ Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End 
                 messages.push(aiNodesMessage);
             }
 
+            // Calculate total tokens used so far
+            let totalTokenCount = getTokenCount(messages);
+
+            // calculate remaining tokens
+            const maxTokensSlider = document.getElementById('max-tokens-slider');
+            const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+            const maxContextSize = document.getElementById('max-context-size-slider').value;
+            const contextSize = Math.min(remainingTokens, maxContextSize);
+
+            // Update the value of getLastPromptsAndResponses
+            if (autoModeMessage) {
+                context = getLastPromptsAndResponses(2, contextSize);
+            } else {
+                if (document.getElementById("instructions-checkbox").checked) {
+                    context = getLastPromptsAndResponses(1, contextSize);
+                } else {
+                    context = getLastPromptsAndResponses(3, contextSize);
+                }
+            }
+
+            // Add the recent dialogue message
+            messages.splice(1, 0, {
+                role: "system",
+                content: `Recent dialogue if max token count permits. Empty on start of conversation. Continue in the same format: ${context}`,
+            });
 
 
             if (embedCheckbox && embedCheckbox.checked) {
@@ -1563,6 +1595,11 @@ Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End 
                     alert('Failed to fetch search results. Please ensure you have entered your Google Programmable Search API key and search engine ID in the Ai tab.');
                     return null;
                 }
+            }
+
+            // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
+            if (!autoModeMessage || (isFirstMessage && autoModeMessage)) {
+                noteInput.value += `\nPrompt: ${message}\n\n`;
             }
 
             const stream = true;

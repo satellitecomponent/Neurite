@@ -244,6 +244,12 @@
                         <label id="model-temperature-label" for="model-temperature">Model Temperature: 0.1</label>
                         <input type="range" id="model-temperature" name="model-temperature" class="slider" min="0" max="1" step="0.1" value="0.1" onchange="updateLabel()">
                         <br />
+                        <label for="max-context-size-slider">Max Context Size:</label>
+                        <span id="max-context-size-display">32000</span>
+                        <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="1000">
+                        <label id="node-slider-label">Top 3 nodes</label>
+                        <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
+                        <br />
                         <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
                         <br />
                         <br />
