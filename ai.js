@@ -156,7 +156,7 @@ function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "system",
-        content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} \n End of recent conversation.`
+        content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} End of recent conversation.`
     });
 
     messages.push({
@@ -950,6 +950,16 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
             return summaries;
         }
 
+const wolframmessage = `"Your role is to generate Wolfram Alpha compatible code, template, or a plain queries based on the current user message. Only include valid search queries with no preface or explanation.
+Create a search which is most probable to return a result from Wolfram. Make sure you are generating Wolfram code which is most specific to the current user message.
+The generated code should be, focused, and capable of returning relevant and accurate information via Wolfram query.
+Your goal is to provide the most relevant Wolfram code that directly addresses the user's inquiry. Remember, the user cannot see your responses, you are interacting with Wolfram Alpha.
+Make sure you response only includes content that can be directly searched in Wolfram Alpha without preface, labeling, or further explanation. (This is because we directly send your query to Alpha)
+Provide a single line of Wolfram Alpha compatible code without any additional explanation or context. If you're unsure about what the user wants, provide your own example as a general alternative that is likely to return a result from Wolfram.
+Your response should only includes a search to Wolfram Alpha witouth any extra tags or explanation.
+If the user has already input valid wolfram code, just reprint their exact code with no other addendum. If the user is vague, make sure you response still includes a valid Wolfram query.
+All your of your output should simulate a query to Wolfram Alpha with no other explnation attatched. Any response other than valid Wolfram Code will produce an error.`
+
 const nodeTag = document.getElementById("node-tag").value;
 const refTag = document.getElementById("ref-tag").value;
 
@@ -1189,6 +1199,89 @@ ${refTag} Node B`;
             }
         }
 
+async function fetchWolfram(message) {
+    let wolframAlphaResult = "not-enabled";
+    let wolframAlphaTextResult = "";
+    let reformulatedQuery = "";
+
+    reformulatedQuery = await callChatGPTApi([
+        {
+            role: "system",
+            content: `${wolframmessage}` 
+        },
+        {
+            role: "user",
+            content: `${message} Wolfram Query`,
+        }
+    ]);
+
+    console.log("Reformulated query:", reformulatedQuery);
+
+    // Call Wolfram Alpha API with the reformulated query
+    const apiKey = document.getElementById("wolframApiKey").value;
+
+    const response = await fetch("http://localhost:3000", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            query: reformulatedQuery,
+            apiKey: apiKey
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error with Wolfram Alpha API call:", errorData.error);
+        console.error("Full error object:", errorData);
+        alert("An error occurred when making a request the Wolfram Alpha. Please ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
+        return;
+    }
+
+    const data = await response.json();
+    console.log("Wolfram Alpha data:", data); // Debugging data object
+
+    if (!data.pods) {
+        return;
+    }
+
+    const table = document.createElement("table");
+    table.style = "width: 100%; border-collapse: collapse;";
+
+    for (const pod of data.pods) {
+        const row = document.createElement("tr");
+
+        const titleCell = document.createElement("td");
+        titleCell.textContent = pod.title;
+        titleCell.style = "padding: 10px; background-color: #222226;";
+
+        const imageCell = document.createElement("td");
+        imageCell.style = "padding: 10px; text-align: center; background-color: white";
+
+        for (let i = 0; i < pod.images.length; i++) {
+            const imageUrl = pod.images[i];
+            const plaintext = pod.plaintexts[i];
+
+            // Adding plaintext to wolframAlphaTextResult
+            wolframAlphaTextResult += `${pod.title}: ${plaintext}\n`;
+
+            const img = document.createElement("img");
+            img.alt = `${reformulatedQuery} - ${pod.title}`;
+            img.style = "display: block; margin: auto; border: none;";
+            img.src = imageUrl;
+
+            imageCell.appendChild(img);
+        }
+
+        row.appendChild(titleCell);
+        row.appendChild(imageCell);
+        table.appendChild(row);
+    }
+
+
+    return { table, wolframAlphaTextResult, reformulatedQuery };
+}
 
         async function sendMessage(event, autoModeMessage = null) {
             const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
@@ -1200,97 +1293,6 @@ ${refTag} Node B`;
             document.getElementById("prompt").value = ''; // Clear the textarea
             latestUserMessage = message;
 
-
-
-
-            let wolframAlphaResult = "not-enabled";
-            let wolframAlphaTextResult = "";
-            let reformulatedQuery = "";
-
-            if (document.getElementById("enable-wolfram-alpha").checked) {
-                // First call to ChatGPT to get a reformulated query
-                reformulatedQuery = await callChatGPTApi([{
-                    role: "system",
-                    content: "Your role is to generate Wolfram Alpha compatible code, template, or a plain queries based on the current user message. Only include valid search queries with no preface or explanation. Create a search which is most probable to return a result from Wolfram. Make sure you are generating Wolfram code which is most specific to the current user message. The generated code should be specific, focused, and capable of returning relevant and accurate information to answer the user's question via a Wolfram Alpha query. Your goal is to provide the most relevant Wolfram code that directly addresses the user's inquiry. Remember, the user cannot see your responses, you are interacting with Wolfram Alpha. Make sure you response only includes content that can be directly searched in Wolfram Alpha without preface, labeling, or further explanation. Some examples include: D[x^3, x] for the derivative of x^3, N[Pi, 10] for the numerical value of Pi to 10 decimal places, or Integrate[Sin[x], x] for the integral of sin(x) dx. Provide a single line of Wolfram Alpha compatible code without any additional explanation or context. If you're unsure about the user query, provide your own example as a general alternative that is likely to return a result from Wolfram. Ensure that the code you generate is the most relevant and accurate for addressing the user's specific question. Make sure you response only includes a search to Wolfram Alpha witouth any extra tags or explanation. If the user has already input valid wolfram code, just reprint their exact code with no other addendum. If the user is vague, make sure you response still includes a valid Wolfram query. All your of your output should simulate a query to Wolfram Alpha with no other explnation attatched. Any response other than valid Wolfram Code will produce an error."
-                },
-                {
-                    role: "user",
-                    content: `${message} Wolfram Query`,
-                }
-                ]);
-                console.log("Reformulated query:", reformulatedQuery);
-
-                // Call Wolfram Alpha API with the reformulated query
-                const apiKey = document.getElementById("wolframApiKey").value;
-
-                const response = await fetch("http://localhost:3000", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        query: reformulatedQuery,
-                        apiKey: apiKey
-                    }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("Wolfram Alpha data:", data); // Debugging data object
-
-                    if (data.pods) {
-                        const table = document.createElement("table");
-                        table.style = "width: 100%; border-collapse: collapse;";
-
-                        for (const pod of data.pods) {
-                            const row = document.createElement("tr");
-
-                            const titleCell = document.createElement("td");
-                            titleCell.textContent = pod.title;
-                            titleCell.style = "padding: 10px; background-color: #222226;";
-
-                            const imageCell = document.createElement("td");
-                            imageCell.style = "padding: 10px; text-align: center; background-color: white";
-
-                            for (let i = 0; i < pod.images.length; i++) {
-                                const imageUrl = pod.images[i];
-                                const plaintext = pod.plaintexts[i];
-
-                                // Adding plaintext to wolframAlphaTextResult
-                                wolframAlphaTextResult += `${pod.title}: ${plaintext}\n`;
-
-                                const img = document.createElement("img");
-                                img.alt = `${reformulatedQuery} - ${pod.title}`;
-                                img.style = "display: block; margin: auto; border: none;";
-                                img.src = imageUrl;
-
-                                imageCell.appendChild(img);
-                            }
-
-                            row.appendChild(titleCell);
-                            row.appendChild(imageCell);
-                            table.appendChild(row);
-                        }
-
-                        let content = [table];
-                        let scale = 1; // You can adjust the scale as needed
-
-                        let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-                        htmlnodes_parent.appendChild(node.content);
-                        registernode(node);
-                        node.followingMouse = 1;
-                        node.draw();
-                        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-                    }
-                } else {
-                    const errorData = await response.json();
-                    console.error("Error with Wolfram Alpha API call:", errorData.error);
-                    console.error("Full error object:", errorData);
-                    alert("An error occurred when making a request the Wolfram Alpha. Please ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
-                }
-            } else {
-                console.log("Wolfram Alpha is not enabled");
-            }
 
             if (isAutoModeEnabled && originalUserMessage === null) {
                 originalUserMessage = message;
@@ -1566,36 +1568,36 @@ ${refTag} Node B`;
                 messages.push(embedMessage);
             }
 
+            let wolframData;
+
             if (document.getElementById("enable-wolfram-alpha").checked) {
+                wolframData = await fetchWolfram(message);
+            }
+
+            if (wolframData) {
+                const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
+
+                let content = [table];
+                let scale = 1; // You can adjust the scale as needed
+
+                let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
+                htmlnodes_parent.appendChild(node.content);
+                registernode(node);
+                node.followingMouse = 1;
+                node.draw();
+                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+
                 const wolframAlphaMessage = {
                     role: "system",
                     content: `Wolfram Alpha Result: ${wolframAlphaTextResult}`
                 };
+
                 console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
                 messages.push(wolframAlphaMessage);
             }
 
-            async function performSearch(searchQuery) {
-                // Get the API Key and Search Engine ID from local storage
-                const apiKey = localStorage.getItem('googleApiKey');
-                const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-                const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchQuery)}`;
 
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-
-                    return data;
-                } catch (error) {
-                    console.error('Error fetching search results:', error);
-                    alert('Failed to fetch search results. Please ensure you have entered your Google Programmable Search API key and search engine ID in the Ai tab.');
-                    return null;
-                }
-            }
 
             // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
             if (!autoModeMessage || (isFirstMessage && autoModeMessage)) {
@@ -1642,7 +1644,31 @@ ${refTag} Node B`;
 
             return false;
         }
+
+    //ENDOFAI
+
         // console.log("Sending context to AI:", messages);
+async function performSearch(searchQuery) {
+    // Get the API Key and Search Engine ID from local storage
+    const apiKey = localStorage.getItem('googleApiKey');
+    const searchEngineId = localStorage.getItem('googleSearchEngineId');
+
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchQuery)}`;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching search results:', error);
+        alert('Failed to fetch search results. Please ensure you have entered your Google Programmable Search API key and search engine ID in the Ai tab.');
+        return null;
+    }
+}
 
         async function constructSearchQuery(userMessage) {
             const embedCheckbox = document.getElementById("embed-checkbox");
@@ -1656,7 +1682,7 @@ ${refTag} Node B`;
                 return null; // Return null to indicate that no further processing is necessary
             }
 
-            recentcontext = getLastPromptsAndResponses(1, 200);
+            recentcontext = getLastPromptsAndResponses(2, 200);
 
             const queryContext = [{
                 role: "system",
@@ -1677,7 +1703,7 @@ ${refTag} Node B`;
         }
 
 
-        //ENDOFAI
+    
 
 
         async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
