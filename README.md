@@ -80,6 +80,7 @@ Neurite is a recursive environment for generating ideas. As we are in the middle
 - custom equations for the fractal
 - drawing-tool
 - user feeback/bug fixes
+
 🚧
 
 If you are a developer who is intereested in contributing to this project, I would love to get in contact!
