@@ -1850,7 +1850,7 @@ async function performSearch(searchQuery) {
                 }
 
                 // Chunk the input text
-                const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE, overlapSize);
+                const chunkedText = chunkText(inputText, MAX_CHUNK_SIZE, overlapSize);
 
                 // Fetch the embeddings for the chunks
                 const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
@@ -1870,7 +1870,7 @@ async function performSearch(searchQuery) {
                 chunkAndStoreButton.textContent = success ? "Store Chunks" : "Chunking Failed";
 
             } catch (error) {
-                console.error(`Failed to chunk and store input:`, error);
+                console.error(`Failed to chunk and store input:`, error); //1872
                 chunkAndStoreButton.textContent = "Chunking Failed";
             } finally {
                 // Stop the dot animation
