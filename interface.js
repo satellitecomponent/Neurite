@@ -214,6 +214,36 @@ if (!RegExp.escape) {
             pan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo;
         }
 
+let opacitySlider = document.getElementById('opacity');
+opacitySlider.addEventListener('input', function () {
+    let innerCheckbox = document.getElementById('innerCheckbox');
+    let outerCheckbox = document.getElementById('outerCheckbox');
+
+    if (!innerCheckbox.checked) {
+        settings.innerOpacity = opacitySlider.value / 100;
+    }
+
+    if (!outerCheckbox.checked) {
+        settings.outerOpacity = opacitySlider.value / 100;
+    }
+});
+innerCheckbox.addEventListener('click', function () {
+    if (innerCheckbox.checked) {
+        settings.innerOpacity = opacitySlider.value / 100;
+    } else {
+        settings.innerOpacity = opacitySlider.value / 1000;  // reset to current slider value
+    }
+});
+
+outerCheckbox.addEventListener('click', function () {
+    if (outerCheckbox.checked) {
+        settings.outerOpacity = opacitySlider.value / 100;
+    } else {
+        settings.outerOpacity = opacitySlider.value / 100;  // reset to current slider value
+    }
+});
+
+
         var settings = {
             zoomSpeed: 0.001,
             panSpeed: 1,
@@ -228,6 +258,8 @@ if (!RegExp.escape) {
             renderWidthMult: 0.25, //1,
             renderSteps: 16, //64,
             renderDChar: "L",
+            opacity: 1,
+
 
             rotateModifier: "Alt",
             rotateModifierSpeed: Math.PI / 180 / 36,
@@ -249,6 +281,8 @@ if (!RegExp.escape) {
             maxDist: 4,
             orbitStepRate: 2,
 
+            innerOpacity: 1,
+            outerOpacity: 1
         }
 
         function setRenderQuality(n) {
@@ -680,6 +714,16 @@ if (!RegExp.escape) {
                 }
             });
 
+            let dropdown = document.querySelector('.dropdown');
+
+            div.addEventListener('mousedown', function () {
+                dropdown.classList.add('no-select');
+            });
+
+            div.addEventListener('mouseup', function () {
+                dropdown.classList.remove('no-select');
+            });
+
             // Add the title input to the header container
             let titleInput = document.createElement('input');
             titleInput.setAttribute('type', 'text');
@@ -696,12 +740,15 @@ if (!RegExp.escape) {
             resizeHandle.className = 'resize-handle';
             resizeContainer.appendChild(resizeHandle);
 
+
             let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
             setResizeEventListeners(resizeHandle, node);
             observeContentResize(innerContent, div);
             div.win = node;
             return rewindowify(node);
-        }
+}
+
+
 
         function setResizeEventListeners(resizeHandle, node) {
             const inverse2DMatrix = (matrix) => {
@@ -2217,6 +2264,8 @@ function connectRandom(n) {
             return toZ(new vec2(Math.random() * svgbb.width, Math.random() * svgbb.height));
         }
 
+
+
         function render_hair(n) { //todo make faster.
             let iters = settings.iterations;
             let maxLines = settings.maxLines;
@@ -2247,7 +2296,8 @@ function connectRandom(n) {
             let n0 = n;
             let opt = pt;
             let na = 0;
-            let opacity = 1;
+            let opacity = settings.outerOpacity;
+
             if (mand_i(pt, iters) > iters) {
                 //interior coloring
                 /*let p = findPeriod(pt,pt,1e-12,iters);
@@ -2278,7 +2328,7 @@ function connectRandom(n) {
                     length += npt.minus(pt).mag();
                     pt = npt;
                 }
-                opacity = 0.1;
+                opacity = settings.innerOpacity / 10;
 
                 length /= 4;
             } else {

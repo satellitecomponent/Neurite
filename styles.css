@@ -69,7 +69,9 @@
             pointer-events: none;
             z-index: 5;
         }
-
+.no-select {
+    user-select: none;
+}
         .title-input {
             color: #bbb;
             background: none !important;
