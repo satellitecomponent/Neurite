@@ -311,7 +311,6 @@
 
             //processInput();
         }
-
 function connectDistance(na, nb, linkStrength = .1, linkStyle = {
     stroke: "none",
     "stroke-width": "0.005",
@@ -323,10 +322,15 @@ function connectDistance(na, nb, linkStrength = .1, linkStyle = {
     const dy = nb.pos.y - na.pos.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
+    // Check if edge already exists
+    if (na.edges.some(edge => edge.pts.includes(nb)) && nb.edges.some(edge => edge.pts.includes(na))) {
+        return;
+    }
+
     let edge = new Edge([na, nb], distance, linkStrength, linkStyle);
 
     na.edges.push(edge);
-    nb.edges.push(edge); // Don't forget to add the edge to nodeB too
+    nb.edges.push(edge);
 
     edges.push(edge);
     return edge;

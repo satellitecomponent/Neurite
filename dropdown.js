@@ -57,7 +57,7 @@
             const textarea = event.target;
             // Temporarily make the height 'auto' so the scrollHeight is not affected by the current height
             textarea.style.height = 'auto';
-            let maxHeight = 200; // your desired maximum height
+            let maxHeight = 200;
             if (textarea.scrollHeight < maxHeight) {
                 textarea.style.height = textarea.scrollHeight + 'px';
                 textarea.style.overflowY = 'hidden';
@@ -161,7 +161,8 @@
 
 
 
-        document.getElementById("save-button").addEventListener("click", function () {
+    document.getElementById("save-button").addEventListener("click", function () {
+     nodes.map((n) => n.updateEdgeData());
             let s = document.getElementById("nodes").innerHTML;
             //navigator.clipboard.writeText(s);
             //console.log("save",s);

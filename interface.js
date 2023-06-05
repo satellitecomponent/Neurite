@@ -697,7 +697,6 @@ if (!RegExp.escape) {
             resizeContainer.appendChild(resizeHandle);
 
             let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
-            div.win = node; // Add this line to store the node object in the div element
             setResizeEventListeners(resizeHandle, node);
             observeContentResize(innerContent, div);
             div.win = node;
@@ -937,89 +936,89 @@ if (!RegExp.escape) {
             }
             return NodeUUID;
         }
-class Node {
-    constructor(p, thing, scale = 1, intrinsicScale = 1) {
-        this.anchor = new vec2(0, 0);
-        this.anchorForce = 0;
-        this.mouseAnchor = new vec2(0, 0);
-        this.edges = [];
-        this.init = (nodeMap) => { };
-        if (p === undefined) {
-            let n = thing;
-            let o = JSON.parse(n.dataset.node_json)
-            for (const k of ['anchor', 'mouseAnchor', 'vel', 'pos', 'force']) {
+        class Node {
+            constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
+            this.anchor = new vec2(0, 0);
+            this.anchorForce = 0;
+            this.mouseAnchor = new vec2(0, 0);
+            this.edges = [];
+            this.init = (nodeMap) => {};
+            if (p === undefined) {
+              let n = thing;
+              let o = JSON.parse(n.dataset.node_json)
+              for (const k of ['anchor', 'mouseAnchor', 'vel', 'pos', 'force']) {
                 o[k] = new vec2(o[k]);
-            }
-            for (const k in o) {
+              }
+              for (const k in o) {
                 this[k] = o[k];
-            }
-            this.save_extras = [];
-            this.content = thing;
-            if (n.dataset.node_extras) {
+              }
+              this.save_extras = [];
+              this.content = thing;
+              if (n.dataset.node_extras) {
                 o = JSON.parse(n.dataset.node_extras);
                 for (const e of o) {
-                    NodeExtensions[e.f](this, e.a);
+                  NodeExtensions[e.f](this, e.a);
                 }
+              }
+              this.attach();
+                this.content.setAttribute("data-uuid", this.uuid);
+                if (n.dataset.edges !== undefined && createEdges) {
+                    let es = JSON.parse(n.dataset.edges);
+                    this.init = ((nodeMap) => {
+                        for (let e of es) {
+                            edgeFromJSON(e, nodeMap);
+                        }
+                    }).bind(this);
+                }
+                return;
+            } else {
+              this.uuid = nextUUID();
             }
-            this.attach();
+            this.uuid = "" + this.uuid;
+
+            this.pos = p;
+            this.scale = scale;
+            this.intrinsicScale = intrinsicScale;
+
+            this.content = thing;
+
+            this.vel = new vec2(0, 0);
+            this.force = new vec2(0, 0);
+            this.followingMouse = 0;
+
+            this.removed = false;
+
             this.content.setAttribute("data-uuid", this.uuid);
-            if (n.dataset.edges !== undefined) {
-                let es = JSON.parse(n.dataset.edges);
-                this.init = ((nodeMap) => {
-                    for (let e of es) {
-                        edgeFromJSON(e, nodeMap);
-                    }
-                }).bind(this);
-            }
-            return;
-        } else {
-            this.uuid = nextUUID();
-        }
-        this.uuid = "" + this.uuid;
-
-        this.pos = p;
-        this.scale = scale;
-        this.intrinsicScale = intrinsicScale;
-
-        this.content = thing;
-
-        this.vel = new vec2(0, 0);
-        this.force = new vec2(0, 0);
-        this.followingMouse = 0;
-
-        this.removed = false;
-
-        this.content.setAttribute("data-uuid", this.uuid);
-        this.attach();
-        this.save_extras = [];
-    }
-    attach() {
-        let div = this.content;
-        let node = this;
-        div.onclick = node.onclick.bind(node);
-        div.ondblclick = node.ondblclick.bind(node);
-        div.onmousedown = node.onmousedown.bind(node);
-        div.onmouseup = node.onmouseup.bind(node);
-        div.onmousemove = node.onmousemove.bind(node);
-        div.onwheel = node.onwheel.bind(node);
-    }
-    json() {
-        return JSON.stringify(this, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras") {
+            this.attach();
+            this.save_extras = [];
+          }
+          attach() {
+            let div = this.content;
+            let node = this;
+            div.onclick = node.onclick.bind(node);
+            div.ondblclick = node.ondblclick.bind(node);
+            div.onmousedown = node.onmousedown.bind(node);
+            div.onmouseup = node.onmouseup.bind(node);
+            div.onmousemove = node.onmousemove.bind(node);
+            div.onwheel = node.onwheel.bind(node);
+          }
+          json() {
+            return JSON.stringify(this, (k, v) => {
+              if (k === "content" || k === "edges" || k === "save_extras") {
                 return undefined;
-            }
-            return v;
-        });
-    }
-    push_extra_cb(f) {
-        this.save_extras.push(f);
-    }
-    push_extra(func_name, args = undefined) {
-        this.save_extras.push({
-            f: func_name,
-            a: args
-        });
-    }
+              }
+              return v;
+            });
+          }
+          push_extra_cb(f) {
+            this.save_extras.push(f);
+          }
+          push_extra(func_name, args = undefined) {
+            this.save_extras.push({
+              f: func_name,
+              a: args
+            });
+          }
             draw() {
                 put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
 
@@ -1062,10 +1061,10 @@ class Node {
                 this.edges.push(edge);
                 this.updateEdgeData();
             }
-            updateEdgeData() {
-                let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
-                this.content.setAttribute("data-edges", es);
-            }
+updateEdgeData() {
+  let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+  this.content.setAttribute("data-edges", es);
+}
 
 
             step(dt) {
@@ -1228,9 +1227,11 @@ function edgeFromJSON(o, nodeMap) {
         console.warn("missing keys", o, nodeMap);
     }
     let e = new Edge(pts, o.l, o.s, o.g);
-    pts[0].addEdge(e);
+    for (let pt of pts) { // add edge to all points
+        pt.addEdge(e);
+    }
     edges.push(e);
-    return e
+    return e;
 }
         class Edge {
             constructor(pts, length = 0.6, strength = 0.1, style = {
@@ -1386,15 +1387,11 @@ function edgeFromJSON(o, nodeMap) {
 
 
 for (let n of htmlnodes) {
-    //n.setAttribute("onclick","nodeclick("+nodes.length+");");
-    console.log(n);
-    let node = new Node(undefined, n);
+    let node = new Node(undefined, n, true);  // Indicate edge creation with `true`
     registernode(node);
-    //if (n.dataset.init === "window")
-    //    rewindowify(node);
 }
 for (let n of nodes) {
-    n.init(nodeMap); //2 pass for connections
+    n.init(nodeMap);
 }
 
 function clearnet() {
@@ -1406,7 +1403,7 @@ function clearnet() {
     }
 }
 
-function loadnet(text, clobber) {
+function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
     }
@@ -1414,7 +1411,7 @@ function loadnet(text, clobber) {
     d.innerHTML = text;
     let newNodes = [];
     for (let n of d.children) {
-        let node = new Node(undefined, n);
+        let node = new Node(undefined, n, true, undefined, createEdges);
         newNodes.push(node);
         registernode(node);
         if (n.dataset.init === "window")
@@ -1422,8 +1419,11 @@ function loadnet(text, clobber) {
     }
     for (let n of newNodes) {
         htmlnodes_parent.appendChild(n.content);
+    }
+    for (let n of newNodes) {
         n.init(nodeMap); //2 pass for connections
-
+    }
+    for (let n of newNodes) {
         // Restore the title
         let titleInput = n.content.querySelector('.title-input');
         if (titleInput) {
@@ -1502,10 +1502,15 @@ function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     fill: "lightcyan",
     opacity: "0.5"
 }) {
+    // Check if edge already exists
+    if (na.edges.some(edge => edge.pts.includes(nb)) && nb.edges.some(edge => edge.pts.includes(na))) {
+        return;
+    }
+
     let edge = new Edge([na, nb], length, linkStrength, linkStyle);
 
     na.edges.push(edge);
-    nb.edges.push(edge); // Don't forget to add the edge to nodeB too
+    nb.edges.push(edge);
 
     edges.push(edge);
     return edge;
