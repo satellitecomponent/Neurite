@@ -50,7 +50,7 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error("Error calling ChatGPT API:", errorData);
-            node.aiResponseTextArea.value = "An error occurred while processing your request.";
+            node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
             return;
         }
 
@@ -97,11 +97,30 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         }
     } catch (error) {
         console.error("Error calling ChatGPT API:", error);
-        node.aiResponseTextArea.value = "An error occurred while processing your request.";
+        node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
     } finally {
         node.aiResponding = false;
         node.regenerateButton.textContent = '↻'; // Your desired refresh symbol here
     }
+}
+
+function trimToTokenCount(inputText, maxTokens) {
+    let tokens = inputText.match(/[\w]+|[^\s\w]/g);
+    let trimmedText = '';
+    let currentTokenCount = 0;
+
+    if (tokens !== null) {
+        for (let token of tokens) {
+            currentTokenCount += 1;
+            if (currentTokenCount <= maxTokens) {
+                trimmedText += token + ' ';
+            } else {
+                break;
+            }
+        }
+    }
+
+    return trimmedText;
 }
 
 
@@ -117,6 +136,7 @@ function sendLLMNodeMessage(node) {
     }
 
     const maxTokensSlider = document.getElementById('max-tokens-slider');
+    let contextSize = 0;
 
     // Append the user prompt to the AI response area with a distinguishing mark
     node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
@@ -132,24 +152,43 @@ function sendLLMNodeMessage(node) {
     ];
 
     let connectedNodesInfo = getConnectedNodeData(node);
-    console.log(connectedNodesInfo)
-    // Adding each connected node's info as a system message
-    connectedNodesInfo.forEach(info => {
-        let infoWithIntro = "This node is connected to your memory: \n" + info;
-        messages.push({
-            role: "system",
-            content: infoWithIntro
-        });
-    });
 
-    // calculate the total token count of all messages
     let totalTokenCount = getTokenCount(messages);
-
-    // calculate remaining tokens
-    const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
 
     const maxContextSize = document.getElementById('max-context-size-slider').value;
-    const contextSize = Math.min(remainingTokens, maxContextSize);
+
+    connectedNodesInfo.forEach(info => {
+        let infoWithIntro = "This node is connected to your memory: \n" + info;
+        let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
+        if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
+            remainingTokens -= infoTokenCount;
+            totalTokenCount += infoTokenCount;
+            messages.push({
+                role: "system",
+                content: infoWithIntro
+            });
+        } else {
+            let trimmedInfo = trimToTokenCount(infoWithIntro, Math.min(remainingTokens, maxContextSize - totalTokenCount));
+            let trimmedInfoTokenCount = getTokenCount([{ content: trimmedInfo }]);
+            remainingTokens -= trimmedInfoTokenCount;
+            totalTokenCount += trimmedInfoTokenCount;
+            messages.push({
+                role: "system",
+                content: trimmedInfo
+            });
+            messages.push({
+                role: "system",
+                content: "The previous message was trimmed due to token limits."
+            });
+        }
+    });
+
+    totalTokenCount = getTokenCount(messages);
+    remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+
+    // calculate contextSize again
+    contextSize = Math.min(remainingTokens, maxContextSize);
 
     // Update the value of getLastPromptsAndResponses
     const lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
