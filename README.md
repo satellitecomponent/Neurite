@@ -22,7 +22,7 @@ join us on discord!
 
 📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Be sure the links are embeddable!
 
-# FractalGPT 🚀
+# FractalGPT
 
 - Ai Driven Note Taking.
 
