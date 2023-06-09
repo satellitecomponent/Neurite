@@ -89,5 +89,5 @@ If you are a developer who is intereested in contributing to this project, I wou
 contact us at
 contactdendrite@gmail.com
 
-or visit out discord
+or visit our discord
 🔗 https://discord.gg/hnY8UpeE22
