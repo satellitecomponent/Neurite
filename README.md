@@ -5,7 +5,7 @@ Available here.
 WARNING: Neurite contains zooming, flashing lights, and colors which may not be suitable for people with photosensitive epilepsy.
 
 
-💡 Neurite opens up a new dimension of organization... 
+💡 Neurite unleashes a new dimension of digital interfacing... 
 
 
 ...the fractal dimension....
@@ -22,18 +22,19 @@ join us on discord!
 
 📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Be sure the links are embeddable!
 
-# FractalGPT
+# FractalGPT 🕸️🕷️
 
-- Ai Driven Note Taking.
+- Not your typical chat interface.
 
-Neurite has evolved into an advanced cognitive architecture for Large Language Models that runs directly in the browser.
+Mind mapping extends the memory capablities of LLMs to enable advanced interaction between human and ai, as well as between ai and ai.
 
-To interact with the Ai, you will need an OpenAi API key. (More LLM models to be supported in the future)
+To interact with the ai, you will need an OpenAi API key. (webLLM support to be released in the coming days.)
 
-The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
-Breaking up the ai's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
-The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory.
-The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of throught.
+- The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
+- Breaking up the ai's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
+- Mind mapping combined with a fractal interface levels up chain of thought or tree of though reasoning into a fractal dimensional web of thought.
+- The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for notes)
+- The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry.
 
 
 The Ai currently has the following capabilities... 
@@ -49,9 +50,9 @@ The Ai currently has the following capabilities...
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
-We have recently included an Ai node funcitonality.
+We have recently included an ai node funcitonality.
 Alt + Double click creates a node with a more traditional ai chat interface. (you can create multiple)
-The Ai node will retain the context for any other text or Ai nodes that are connected to it.
+The ai node will retain the context for any other text or ai nodes that are connected to it.
 
 # Local Server Setup
 - To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
@@ -73,7 +74,7 @@ Neurite is a recursive environment for generating ideas. As we are in the middle
 - Local LLM
 - VR
 - deeper zoom
-- improved fractal integration
+- improved fractal integration/visualization
 - color selection
 - customizability/accessability
 - auto embed formats
