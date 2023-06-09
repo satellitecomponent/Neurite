@@ -32,7 +32,7 @@ To interact with the ai, you will need an OpenAi API key. (webLLM support to be 
 
 - The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
 - Breaking up the ai's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
-- Mind mapping combined with a fractal interface levels up chain of thought or tree of though reasoning into a fractal dimensional web of thought.
+- Mind mapping combined with a fractal interface levels up chain of thought reasoning into a fractal web of thought.
 - The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for notes)
 - The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry.
 
