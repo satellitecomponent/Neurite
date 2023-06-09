@@ -40,9 +40,9 @@ To interact with the ai, you will need an OpenAi API key. (webLLM support to be 
 The Ai currently has the following capabilities... 
 
 1. Auto Mode
-2. Node based memory retrieval that allows for long term conversation context.
+2. Node based memory combined with vector embed retrieval for long term conversation memory.
 3. HTML/JS and In-browser Python (pyodide) environment for directly rendering GPT's code output.
-4. Web Search (requires google programmable search api key and search engine id)
+4. Web Search (requires Google programmable search api key and search engine id)
 (to search without an API key, send a url within the prompt input and the webpage will display without going through Google.)
 5. Webpage and PDF text extraction. (requires setting up the 'scrape' local-host server found in the repo)
 6. Wikipedia Summaries (Requires setting up the 'wiki-server' found in the repo)
@@ -52,7 +52,7 @@ All API keys can be input through the Ai tab of the menu dropdown.
 
 We have recently included an ai node funcitonality.
 Alt + Double click creates a node with a more traditional ai chat interface. (you can create multiple)
-The ai node will retain the context for any other text or ai nodes that are connected to it.
+The ai node will retain the context for any other text or ai nodes that are connected to it. This means the ability to connect multiple chat interfaces together.
 
 # Local Server Setup
 - To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
