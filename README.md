@@ -84,7 +84,7 @@ Neurite is a recursive environment for generating ideas. As we are in the middle
 
 🚧
 
-If you are a developer who is intereested in contributing to this project, I would love to get in contact!
+If you are a developer who is interested in contributing to this project,
 
 contact us at
 contactdendrite@gmail.com
