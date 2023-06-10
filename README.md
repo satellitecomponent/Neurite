@@ -26,7 +26,7 @@ join us on discord!
 
 - Not your typical chat interface.
 
-Mind mapping extends the memory capablities of LLMs to enable advanced interaction between human and ai, as well as between ai and ai.
+Mind mapping extends the memory capabilities of LLMs to enable advanced interaction between human and ai, as well as between ai and ai.
 
 To interact with the ai, you will need an OpenAi API key. (webLLM support to be released in the coming days.)
 
@@ -50,7 +50,7 @@ The Ai currently has the following capabilities...
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
-We have recently included an ai node funcitonality.
+We have recently included an ai node functionality.
 Alt + Double click creates a node with a more traditional ai chat interface. (you can create multiple)
 The ai node will retain the context for any other text or ai nodes that are connected to it. This means the ability to connect multiple chat interfaces together.
 
@@ -68,7 +68,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the ai whi
 # The Future of Neurite
 
 
-Neurite is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI developement, new tools to visualize and organize information will become ever more necessary.
+Neurite is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information will become ever more necessary.
 
 🚧
 - Local LLM
@@ -76,11 +76,11 @@ Neurite is a recursive environment for generating ideas. As we are in the middle
 - deeper zoom
 - improved fractal integration/visualization
 - color selection
-- customizability/accessability
+- customizability/accessibility
 - auto embed formats
 - custom equations for the fractal
 - drawing-tool
-- user feeback/bug fixes
+- user feedback/bug fixes
 
 🚧
 
