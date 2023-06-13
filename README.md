@@ -55,6 +55,9 @@ We have recently included an AI node functionality.
 Alt + Double click creates a node with a more traditional AI chat interface. (you can create multiple)
 The AI node will retain context from any other text or AI nodes that are connected to it. This means the ability to connect multiple chat interfaces together.
 
+![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
+- This diagram represents how the AI's response incorperates note-taking to extend its memory context for each user prompt.
+
 # Local Server Setup
 - To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
