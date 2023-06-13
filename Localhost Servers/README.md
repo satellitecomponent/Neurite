@@ -1,6 +1,6 @@
 This project includes a script that spawns multiple servers based on their respective start commands. This enables you to manage and run multiple servers in different directories from a central location.
 
-Servers
+
 Currently, the script is configured to run the following servers:
 
 A Node.js server for web scraping located in the webscrape directory
