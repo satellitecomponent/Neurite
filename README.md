@@ -59,8 +59,9 @@ The AI node will retain context from any other text or AI nodes that are connect
 - This diagram represents how the AI's response incorperates note-taking to extend its memory context for each user prompt.
 
 # Local Server Setup
-- To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. You can find more info on setting up servers in the README for each server.
+- To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. The readme in the Locahost Servers folder explains how to run them all at once.
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
+- All servers can be run with one command. Dowload the Locahost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run node start_servers.js. This will run all of the servers at once. The servers work with our Github pages host of Neurite, or any other way you locally access the interface.
 
 In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI that allows it to answer questions about Neurite.
 
