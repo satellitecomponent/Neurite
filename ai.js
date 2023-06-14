@@ -1097,7 +1097,7 @@ Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End 
 };
 
 
-        const zettelkastenPrompt = `You are an ai whos responses are being visualized within a fractal mind-map which serves as the cognitive architecture for storing and searching your memories. The website is called Neurite.
+        const zettelkastenPrompt = `System message to Ai. You are an ai whos responses are being visualized within a fractal mind-map which serves as the cognitive architecture for storing and searching your memories. The website is called Neurite.
                           - Follow the node reference tag format. This format is what enables you to connect ideas in a way that is visualized to the user.
 Use the below style guidelines to format your response. Do not include the following instructions in your response to the user:
 Remember, always use the format below to style your responses.
@@ -1678,12 +1678,20 @@ async function fetchWolfram(message) {
                 if (!isZettelkastenPromptSent && summarizedZettelkastenPrompt === "" && shouldContinue) {
                     // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
                     isZettelkastenPromptSent = true;
-                    // Generate the summarizedZettelkastenPrompt after the main AI call has completed
-                    summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt(zettelkastenPrompt);
+
+                    // Try to get summarizedZettelkastenPrompt from local storage
+                    summarizedZettelkastenPrompt = localStorage.getItem('summarizedZettelkastenPrompt');
+
+                    if (!summarizedZettelkastenPrompt) {
+                        // If it's not in the local storage, generate it and save in local storage for future use
+                        summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt(zettelkastenPrompt);
+                        localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
+                    }
                 }
+
+                return false;
             }
 
-            return false;
         }
 
     //ENDOFAI

@@ -1,8 +1,28 @@
-        function updateLabel() {
-            const temperature = document.getElementById('model-temperature').value;
-            document.getElementById('model-temperature-label').innerText = 'Model Temperature: ' + temperature;
-        }
+document.querySelectorAll('input[type=range]').forEach(function (slider) {
+    function setSliderBackground(slider) {
+        const min = slider.min ? parseFloat(slider.min) : 0;
+        const max = slider.max ? parseFloat(slider.max) : 100;
+        const value = slider.value ? parseFloat(slider.value) : 0;
+        const percentage = (value - min) / (max - min) * 100;
+        slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #222226 ${percentage}%, #222226 100%)`;
+    }
 
+    // Set the background color split initially
+    setSliderBackground(slider);
+
+    // Update background color split when the slider value changes
+    slider.addEventListener('input', function () {
+        setSliderBackground(slider);
+    });
+});
+
+
+document.getElementById('model-temperature').addEventListener('input', updateLabel);
+
+function updateLabel() {
+    const temperature = document.getElementById('model-temperature').value;
+    document.getElementById('model-temperature-label').innerText = 'Model Temperature: ' + temperature;
+}
         // Load any saved keys from local storage
         document.getElementById('googleApiKey').value = localStorage.getItem('googleApiKey') || '';
         document.getElementById('googleSearchEngineId').value = localStorage.getItem('googleSearchEngineId') || '';
