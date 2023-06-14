@@ -989,7 +989,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
             return summaries;
         }
 
-const wolframmessage = `"Your role is to generate Wolfram Alpha compatible code, template, or a plain queries based on the current user message. Only include valid search queries with no preface or explanation.
+const wolframmessage = `"Your role is to generate Wolfram Alpha compatible code, template, or query based on the current user message. Only include valid search queries with no preface or explanation.
 Create a search which is most probable to return a result from Wolfram. Make sure you are generating Wolfram code which is most specific to the current user message.
 The generated code should be, focused, and capable of returning relevant and accurate information via Wolfram query.
 Your goal is to provide the most relevant Wolfram code that directly addresses the user's inquiry. Remember, the user cannot see your responses, you are interacting with Wolfram Alpha.
@@ -1010,6 +1010,7 @@ Before writing your primary code response, provide a concise explanation of what
 Step 1. Explantion preface
 Step 2. Seperate node for an entire code block.
 Provide a single code block rather than breaking the code into multiple sections.
+This means keeping script tags within the same html file.
 Step 3. Final explanation seperated from the code block node.
 Only your explanations should be chunked into seperate nodes. The code response should be a single node.
 ${nodeTag} Unique HTML/JS Response title specific to the code. ( HTML codeblock) If HTML response = No Python! Default to HTML unless asked for Python
@@ -1018,7 +1019,7 @@ For generating HTML and JavaScript responses:
 - The HTML will render in an iframe... Be sure to set the canvas size in the HTML as opposed to the JS.
 - Enclose any JavaScript within a script tag rather than an external file.
 - Be aware that more complex JavaScript code, particularly involving async operations or requestAnimationFrame, might not work as expected in the iframe environment. If your script involves such operations, consider alternatives or workarounds like using setInterval or wrapping your code in a 'DOMContentLoaded' event.
-- Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context.
+- Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context. This means keeping script tags within the html.
 - Always remember to properly close HTML tags and handle potential JavaScript exceptions to avoid unexpected behavior or script failure.
 - If your HTML/JS response includes CSS, be sure to encapsulate it properly within style tags in the head section.
 
@@ -1069,6 +1070,7 @@ ${nodeTag} Advanced Controls:
 - Wolfram checkbox displays relevant Wolfram Alpha results. Requires Wolfram localhost server.
 - Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
 - Auto checkbox sets the AI into self-prompting mode.
+- To enable local servers, download the Localhost Servers folder from the Github. Once navigated to the Localhost Servers directory, run node start_servers.js
 
 Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
 };
