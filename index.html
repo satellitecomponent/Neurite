@@ -241,12 +241,15 @@
                         <div>
                             <label for="model-select">Choose a model:</label>
                             <select id="model-select" class="model-selector" onchange="checkOtherModel(this)">
-                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
+                                <option value="gpt-3.5-turbo-0613">gpt-3.5-turbo-0613</option>
+                                <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-turbo-16k-0613</option>
+                                <option value="gpt-4">gpt-4</option>
+                                <option value="gpt-4-0613">gpt-4-0613</option>
                                 <option value="other">Other...</option>
                             </select>
                             <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
-                            <input id="model-input" style="display: none;" placeholder="Enter model name">
                         </div>
                         <label for="max-tokens-slider">Max Tokens: <span id="max-tokens-display">2000</span></label>
                         <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="1" max="32000" value="2000">
