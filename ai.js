@@ -2088,35 +2088,49 @@ async function performSearch(searchQuery) {
             document.getElementById('overlapSizeDisplay').textContent = overlapSize;
         });
 
-        function chunkText(text, maxLength, overlapSize) {
-            const sentences = text.split(/[.!?]\s+/);
-            const chunks = [];
-            let chunk = [];
-            let overlap = [];
+function chunkText(text, maxLength, overlapSize) {
+    const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g);  // Modified regex to preserve punctuation and spaces
+    const chunks = [];
+    let chunkWords = [];
+    let chunkLength = 0;
 
-            for (const sentence of sentences) {
-                const words = sentence.split(/\s+/);
+    for (const sentence of sentences) {
+        const words = sentence.split(/\s+/);
 
-                for (const word of words) {
-                    // Check if adding new word exceeds maxLength
-                    if ((chunk.join(' ') + ' ' + word).length > maxLength) {
-                        // If it does, finalize the current chunk and prepare for the next
-                        chunks.push(chunk.join(' '));
-                        overlap = chunk.slice(-overlapSize);
-                        chunk = overlap;
-                    }
-                    // Add the word to the current chunk
-                    chunk.push(word);
-                }
+        for (const word of words) {
+            // Add 1 for the space if not the first word in the chunk
+            const wordLengthWithSpace = chunkLength === 0 ? word.length : word.length + 1;
+
+            // Check if single word exceeds maxLength
+            if (word.length > maxLength) {
+                throw new Error(`Word length exceeds maxLength: ${word}`);
             }
 
-            // Add the remaining chunk if it's not empty
-            if (chunk.length > 0) {
-                chunks.push(chunk.join(' '));
+            // Check if adding new word exceeds maxLength
+            if (chunkLength + wordLengthWithSpace > maxLength) {
+                chunks.push(chunkWords.join(' '));
+                chunkWords = chunkWords.slice(-overlapSize);
+                chunkLength = chunkWords.join(' ').length;
             }
 
-            return chunks;
+            // Add the word to the current chunk
+            if (chunkLength > 0) {
+                chunkWords.push(' ' + word);
+                chunkLength += wordLengthWithSpace;
+            } else {
+                chunkWords.push(word);
+                chunkLength += word.length;
+            }
         }
+    }
+
+    // Add the remaining chunk if it's not empty
+    if (chunkWords.length > 0) {
+        chunks.push(chunkWords.join(' '));
+    }
+
+    return chunks;
+}
 
 
         async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-002") {
