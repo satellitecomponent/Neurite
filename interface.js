@@ -989,6 +989,7 @@ outerCheckbox.addEventListener('click', function () {
             this.anchorForce = 0;
             this.mouseAnchor = new vec2(0, 0);
             this.edges = [];
+            this.createdAt = new Date().toISOString();
             this.init = (nodeMap) => {};
             if (p === undefined) {
               let n = thing;

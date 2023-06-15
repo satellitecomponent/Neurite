@@ -229,7 +229,9 @@
                             const refset = new Set(references);
                             for (const ref of thisNode.edges.keys()) {
                                 if (!refset.has(ref)) {
-                                    thisNode.edges.get(ref).remove();
+                                    if (nodes[ref] && nodes[ref].nodeObject) {
+                                        nodes[ref].nodeObject.remove();
+                                    }
                                     thisNode.edges.delete(ref);
                                 }
                             }
@@ -260,18 +262,24 @@
                     const dels = [];
                     for (const k in nodes) {
                         if (!nodes[k].live) {
-                            nodes[k].nodeObject.remove();
+                            if (nodes[k].nodeObject) {
+                                nodes[k].nodeObject.remove();
+                            }
                             dels.push(k);
                         }
                     }
                     for (const k of dels) {
                         delete nodes[k];
                     }
-                } {
+                }
+
+                {
                     const dels = [];
                     for (const k in nodeLines) {
                         if (!nodeLines[k].live) {
-                            nodeLines[k].nodeObject.remove();
+                            if (nodeLines[k].nodeObject) {
+                                nodeLines[k].nodeObject.remove();
+                            }
                             dels.push(k);
                         }
                     }

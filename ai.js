@@ -1098,8 +1098,8 @@ Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End 
 
 
         const zettelkastenPrompt = `System message to Ai. You are an ai whos responses are being visualized within a fractal mind-map which serves as the cognitive architecture for storing and searching your memories. The website is called Neurite.
-                          - Follow the node reference tag format. This format is what enables you to connect ideas in a way that is visualized to the user.
-Use the below style guidelines to format your response. Do not include the following instructions in your response to the user:
+- Follow the node reference tag format. This format is what enables you to connect ideas in a way that is visualized to the user.
+- Use the below style guidelines to format your response. Do not include the following instructions in your response to the user:
 Remember, always use the format below to style your responses.
 
                                 Prompt: Create a single node which describes how to create nodes.
@@ -1108,7 +1108,7 @@ Remember, always use the format below to style your responses.
                                 ${nodeTag} (insert a unique, relevant, and descriptive node title)
                                    - Write the plain text response below the node title in any style
                                    - Provide a clear, concise, and explanation of a key idea, then move on to defining the references for that idea, then move on to creating new nodes. This will result in your response breaking up into multiple nodes.
-                                   - Instaed of replying with single node to represent your thought, break your response up into multiple connected nodes that represent your chain of thought.
+                                   - Instaed of replying with single node to represent your thought, break your response up into multiple connected nodes that represent your tapestry of thought.
                                    - for example, you can represent a dialogue by having the titles for each node represent a character, and the plain text could be an instance of their dialogue.
 
                                 ${refTag} (to connect nodes, print the exact titles of nodes to connect to this node seperated by commas)
@@ -1132,7 +1132,7 @@ Remember, always use the format below to style your responses.
                                 You can say anything here relevant to the user memssage. Make sure not to overfill the plain text. Instead, chunk you ideas into relevant node structures.
                                 ${refTag} title2, title 1 //take note of how circles could be made in the same way.
 
-                                Efficiently condense the most salient ideas into a response that contructs a chain of-thought reasoning within the node reference tag format described above. This is a system prompt`;
+                                Efficiently condense the most salient ideas into a response that contructs a tapestry of thought reasoning within the node reference tag format described above. This is a system prompt`;
 
 
         const spatialAwarenessExample = `${nodeTag} Central Node
@@ -1176,7 +1176,7 @@ ${refTag} Node B`;
             },
             {
                 role: "user",
-                content: `Do not preface your response. Based on your understanding of the fractal mind-map, tagging format, and the spatial awareness example which utilizes the format, create an advanced and concise example that utilizes the Zettelkasten format and interconnects nodes in way that best informs an ai how to utilize the format to reduce cognitive load. Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total. Each node should break the response into a chain of thought reasoning that includes all relevant information to inform an ai system about proper use of the format. Adress your response to an ai system.`,
+                content: `Do not preface your response. Based on your understanding of the fractal mind-map, tagging format, and the spatial awareness example which utilizes the format, create an advanced and concise example that utilizes the Zettelkasten format and interconnects nodes in way that best informs an ai how to utilize the format to reduce cognitive load. Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total. Each node should break the response into an iterative tapestry of thought reasoning that includes all relevant information to inform an ai system about proper use of the format. Address your response to an ai system.`,
             },
             ];
 
@@ -1401,7 +1401,7 @@ async function fetchWolfram(message) {
                         //           }).join("\n");
                         const createdAt = node.createdAt;
 
-                        return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}\nNode Creation Time: ${createdAt}`;
+                        return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}Node Creation Time: ${createdAt}`;
                     })
                     .join("\n\n");
                 //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
