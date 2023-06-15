@@ -2098,17 +2098,15 @@ async function performSearch(searchQuery) {
                 const words = sentence.split(/\s+/);
 
                 for (const word of words) {
-                    // Add word to chunk as long as it doesn't exceed maxLength
-                    if ((chunk.join(' ') + ' ' + word).length <= maxLength) {
-                        chunk.push(word);
-                    }
-
-                    // Check if chunk size is maxLength and add it to chunks
-                    if (chunk.join(' ').length === maxLength) {
+                    // Check if adding new word exceeds maxLength
+                    if ((chunk.join(' ') + ' ' + word).length > maxLength) {
+                        // If it does, finalize the current chunk and prepare for the next
                         chunks.push(chunk.join(' '));
-                        overlap = chunk.slice(-overlapSize);  // get the last 'overlapSize' words from chunk
-                        chunk = overlap;  // start next chunk with the overlap from current chunk
+                        overlap = chunk.slice(-overlapSize);
+                        chunk = overlap;
                     }
+                    // Add the word to the current chunk
+                    chunk.push(word);
                 }
             }
 
