@@ -1910,6 +1910,10 @@ function connectRandom(n) {
             if (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked) {
                 let checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
+                checkbox.id = "customCheckbox"; // Add an id for reference
+
+                let label = document.createElement("label");
+                label.htmlFor = "customCheckbox"; // Bind label to the checkbox
                 checkbox.onchange = async function () {
                     if (this.checked) {
                         n.style.display = "none";
@@ -1966,7 +1970,7 @@ function connectRandom(n) {
                         }
                     }
                 };
-                elements.push(checkbox);
+                elements.push(checkbox, label);
             }
             let node = addNodeAtNaturalScale(name, elements);
 

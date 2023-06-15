@@ -69,8 +69,9 @@
                             </div>
                         </form>
                         <br />
+                        <div>
                         <textarea id="note-input" class="zettelkasten" rows="10" cols="50"></textarea>
-                        <br />
+                        </div>
                         <div class="checkboxarray">
                             <div>
                                 <input type="checkbox" id="google-search-checkbox" name="enable-search">
@@ -116,6 +117,9 @@
                             <a id="clear-sure-button">yes</a>
                         </div>
                         <br />
+                        <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
+                        <br />
+                        <br />
                         <input type="text" id="node-tag" class="tags" value="node:" />
                         <label for="node-tag"></label>
                         <br />
@@ -124,7 +128,7 @@
                         <br />
                         <br />
                         <div id="quality_value">Quality</div>
-                        <input id="quality" type="range" min="0" max="100" value="0">
+                        <input id="quality" type="range" min="0" max="100" value="10">
                         <div id="length_value">Length</div>
                         <input id="length" type="range" min="0" max="100" value="50">
                         z <sup id="exponent_value" style="color: powderblue">2</sup> + c
@@ -216,30 +220,34 @@
                 <div id="tab4" class="tabcontent">
                     <!-- Fourth tab content here -->
                     <div class="submenu">
-                        <div>
-                            <label for="api-key-input">OpenAI API Key:</label>
-                            <input type="password" id="api-key-input">
-                        </div>
+                        <div class="api-container">
+                            <div class="api-inputs">
+                                <div>
+                                    <label for="api-key-input">OpenAI API Key:</label>
+                                    <input type="password" id="api-key-input">
+                                </div>
+                                <div class="google-key-input">
+                                    <label for="googleApiKey">Google API Key:</label>
+                                    <input type="password" id="googleApiKey">
+                                </div>
+                                <div class="google-key-input">
+                                    <label for="googleSearchEngineId">Search Engine ID:</label>
+                                    <input type="password" id="googleSearchEngineId">
+                                </div>
+                                <div class="wolfram-key-input">
+                                    <label for="wolframApiKey">Wolfram API Key:</label>
+                                    <input type="password" id="wolframApiKey">
+                                </div>
+                            </div>
 
-                        <div class="google-key-input">
-                            <label for="googleApiKey">Google API Key:</label>
-                            <input type="password" id="googleApiKey">
-                        </div>
-                        <div class="google-key-input">
-                            <label for="googleSearchEngineId">Search Engine ID:</label>
-                            <input type="password" id="googleSearchEngineId">
-                        </div>
-                        <div class="wolfram-key-input">
-                            <label for="wolframApiKey">Wolfram API Key:</label>
-                            <input type="password" id="wolframApiKey">
+                            <div class="api-buttons">
+                                <button class="key-button" onclick="saveKeys()">Save Keys</button>
+                                <button class="key-button" onclick="clearKeys()">Clear Keys</button>
+                            </div>
                         </div>
                         <br />
-                        <button class="key-button" onclick="saveKeys()">Save Keys</button>
-                        <button class="key-button" onclick="clearKeys()">Clear Keys</button>
-                        <br />
-                        <br />
-                        <div>
-                            <label for="model-select">Choose a model:</label>
+                        <div style="display: flex; justify-content: flex-end; align-items: center;">
+                            <label for="model-select" style="margin-right: 10px;">Select Model:</label>
                             <select id="model-select" class="model-selector" onchange="checkOtherModel(this)">
                                 <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                                 <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
@@ -251,6 +259,7 @@
                             </select>
                             <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
                         </div>
+                        <br />
                         <label for="max-tokens-slider">Max Tokens: <span id="max-tokens-display">2000</span></label>
                         <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="1" max="32000" value="2000">
                         <label id="model-temperature-label" for="model-temperature">Model Temperature: 0.1</label>

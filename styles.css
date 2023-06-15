@@ -478,6 +478,8 @@
             flex-wrap: wrap;
             justify-content: space-between;
             width: 300px;
+            margin-top: 5px;
+            margin-bottom: -6px;
             /* adjust this as needed */
         }
 
@@ -626,6 +628,7 @@ td:nth-child(1) {
             background-color: #222226;
             border: inset;
             border-color: #8882;
+            width: 160px;
         }
 
         .model-input {
@@ -840,3 +843,22 @@ input[type=range] {
     input[type=range]::-moz-range-thumb:hover {
         background: #aaa; 
     }
+.api-container {
+    display: flex;
+}
+
+.api-inputs {
+    flex-grow: 1;
+}
+
+.api-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin-left: -80px; 
+}
+
+.key-button {
+    margin-bottom: 10px; /* Optional: Add some margin between the buttons */
+}

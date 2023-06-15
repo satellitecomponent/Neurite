@@ -1,3 +1,9 @@
+
+document.getElementById("clearLocalStorage").onclick = function () {
+    localStorage.clear();
+    alert('Local storage has been cleared.');
+}
+
 document.querySelectorAll('input[type=range]').forEach(function (slider) {
     function setSliderBackground(slider) {
         const min = slider.min ? parseFloat(slider.min) : 0;
