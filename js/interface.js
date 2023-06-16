@@ -1297,6 +1297,8 @@ function edgeFromJSON(o, nodeMap) {
                 }
                 htmledges.appendChild(this.html);
                 this.attach();
+
+                this.maxWidth = 0.05;
             }
             scaleEdge(amount) {
                 this.length *= amount;
@@ -1330,7 +1332,9 @@ function edgeFromJSON(o, nodeMap) {
                 this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
                 this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
-                let wscale = this.style['stroke-width'] / (0.5 + this.stress()) * (this.mouseIsOver ? 1.5 : 1.0);
+                const stressValue = Math.max(this.stress(), 0.01); // Make sure stressValue never goes below 0.01
+                let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
+                wscale = Math.min(wscale, this.maxWidth);
                 let path = "M ";
                 let c = this.center();
                 let validPath = true;
