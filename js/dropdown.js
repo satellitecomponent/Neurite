@@ -15,11 +15,12 @@ myCodeMirror.on("blur", function () {
     myCodeMirror.getWrapperElement().style.userSelect = "none";
 });
 myCodeMirror.display.wrapper.style.backgroundColor = '#222226';
-myCodeMirror.display.wrapper.style.width = '262px';
+myCodeMirror.display.wrapper.style.width = '265px';
 myCodeMirror.display.wrapper.style.height = '250px';
 myCodeMirror.display.wrapper.style.borderStyle = 'inset';
 myCodeMirror.display.wrapper.style.borderColor = '#8882';
 myCodeMirror.display.wrapper.style.fontSize = '15px';
+myCodeMirror.getWrapperElement().style.resize = "vertical";
 var nodeInput = document.getElementById('node-tag');
 var refInput = document.getElementById('ref-tag');
 
@@ -192,22 +193,33 @@ myCodeMirror.on("mousedown", function (cm, event) {
                 event.preventDefault();
 
                 const title = cm.getRange(from, to);
-
                 if (!title) {
                     return; // title could not be extracted
                 }
 
-                const nodeLineNo = nodeTitleToLineMap[title]; // Use the map to find the line number
-
-                // Manually calculate the position to scroll to
-                if (typeof nodeLineNo === "number") {
-                    const scrollInfo = cm.getScrollInfo();
-                    const halfHeight = scrollInfo.clientHeight / 2;
-                    const coords = cm.charCoords({ line: nodeLineNo, ch: 0 }, "local");
-
-                    // Set the scroll position of the editor
-                    cm.scrollTo(null, coords.top - halfHeight);
+                // Get the line number of the node from the map
+                const nodeLineNo = nodeTitleToLineMap[title];
+                if (typeof nodeLineNo !== "number") {
+                    return; // the line number could not be found
                 }
+
+                // Calculate the position to scroll to
+                const scrollInfo = cm.getScrollInfo();
+                const halfHeight = scrollInfo.clientHeight / 2;
+                const coords = cm.charCoords({ line: nodeLineNo, ch: 0 }, "local");
+
+                // Set the scroll position of the editor
+                cm.scrollTo(null, coords.top - halfHeight);
+
+                // Get the node by the title
+                const node = getNodeByTitle(title);
+                if (!node) {
+                    return; // the node could not be found
+                }
+
+                // Zoom to the node
+                node.zoom_to();
+                autopilotSpeed = settings.autopilotSpeed;
 
                 break; // Exit the loop once a title is found
             }
@@ -226,7 +238,8 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
         // Check if the click is on a line that starts with 'node:'
         const lineText = cm.getLine(pos.line);
-        if (lineText.startsWith('node:')) {
+        const nodeInputValue = nodeInput.value;  // add ':' at the end
+        if (lineText.startsWith(nodeInputValue)) {
             // If the click is on the 'node:' line but not within the marked text, set the cursor position
             cm.setCursor(pos);
         }
@@ -241,6 +254,16 @@ highlightNodeTitles();
 
 //END OF CODEMIRROR
 
+
+function getNodeByTitle(title) {
+    for (let n of nodes) {
+        let nodeTitle = n.content.getAttribute('data-title');
+        if (nodeTitle === title) {
+            return n;
+        }
+    }
+    return null;
+}
 
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
