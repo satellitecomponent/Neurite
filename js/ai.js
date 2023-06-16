@@ -644,10 +644,11 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
                                 if (content.trim() !== "[DONE]") {
                                     const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
                                     if (shouldContinue) {
-                                        noteInput.value += content;
+                                        myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
                                     }
-                                    if (isScrolledToBottom) {
+                                    if (isScrolledToBottom && !userScrolledUp) {
                                         noteInput.scrollTop = noteInput.scrollHeight;
+                                        myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
                                     }
                                     noteInput.dispatchEvent(new Event("input"));
                                 }
@@ -1410,7 +1411,7 @@ async function fetchWolfram(message) {
 
             // Check if the last character in the note-input is not a newline, and add one if needed
             if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
-                noteInput.value += "\n";
+                myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
             }
 
             const keywordString = keywords.replace("Keywords: ", "");
@@ -1642,7 +1643,7 @@ async function fetchWolfram(message) {
 
             // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
             if (!autoModeMessage || (isFirstMessage && autoModeMessage)) {
-                noteInput.value += `\nPrompt: ${message}\n\n`;
+                myCodeMirror.replaceRange(`\nPrompt: ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
             }
 
             const stream = true;
@@ -1656,9 +1657,9 @@ async function fetchWolfram(message) {
                 if (aiResponse) {
                     const noteInput = document.getElementById("note-input");
                     if (noteInput.value[noteInput.value.length - 1] !== '\n') {
-                        noteInput.value += "\n";
+                        myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
                     }
-                    noteInput.value += aiResponse + "\n";
+                    myCodeMirror.replaceRange(aiResponse + "\n", CodeMirror.Pos(myCodeMirror.lastLine()));
                 } else {
                     console.error('AI response was undefined');
                 }
@@ -1689,8 +1690,9 @@ async function fetchWolfram(message) {
                     }
                 }
 
-                return false;
+                
             }
+            return false;
 
         }
 

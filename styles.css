@@ -862,3 +862,47 @@ input[type=range] {
 .key-button {
     margin-bottom: 10px; /* Optional: Add some margin between the buttons */
 }
+
+.CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
+    background-color: #222226 !important;
+    width: 6px !important;
+    display: none; /* Initially hidden */
+}
+
+.CodeMirror-simplescroll-scrollbar {
+    background: #888 !important;
+}
+
+    .CodeMirror-simplescroll-scrollbar:hover {
+        background: #555 !important;
+    }
+.CodeMirror-cursor {
+    border-left: 2px solid #bbb !important;
+}
+.CodeMirror-selected {
+    background: Highlight !important;
+}
+
+/* Invert the colors for focused text to ensure it has sufficient contrast */
+.CodeMirror-focused .CodeMirror-selected {
+    background: Highlight !important;
+    color: HighlightText !important;
+}
+
+/* Add browser specific rules for Firefox */
+@-moz-document regexp(".*") {
+    .CodeMirror-selected {
+        background: -moz-selection !important;
+    }
+
+    .CodeMirror-focused .CodeMirror-selected {
+        background: -moz-selection !important;
+        color: HighlightText !important;
+    }
+}
+
+.node-title {
+    color: paleturquoise;
+    cursor: pointer;
+    text-decoration: underline;
+}

@@ -1,3 +1,246 @@
+var textarea = document.getElementById('note-input');
+var myCodeMirror = CodeMirror.fromTextArea(textarea, {
+    lineWrapping: true,
+    scrollbarStyle: 'simple',
+    // Other options
+});
+
+myCodeMirror.on("focus", function () {
+    // Enable text selection when the editor is focused
+    myCodeMirror.getWrapperElement().style.userSelect = "text";
+});
+
+myCodeMirror.on("blur", function () {
+    // Disable text selection when the editor loses focus
+    myCodeMirror.getWrapperElement().style.userSelect = "none";
+});
+myCodeMirror.display.wrapper.style.backgroundColor = '#222226';
+myCodeMirror.display.wrapper.style.width = '262px';
+myCodeMirror.display.wrapper.style.height = '250px';
+myCodeMirror.display.wrapper.style.borderStyle = 'inset';
+myCodeMirror.display.wrapper.style.borderColor = '#8882';
+myCodeMirror.display.wrapper.style.fontSize = '15px';
+var nodeInput = document.getElementById('node-tag');
+var refInput = document.getElementById('ref-tag');
+
+setTimeout(function () {
+    myCodeMirror.refresh();
+}, 1);
+
+function updateMode() {
+    CodeMirror.defineMode("custom", function () {
+        var node = nodeInput.value;
+        var ref = refInput.value;
+        const Prompt = "Prompt:";
+        return {
+            token: function (stream) {
+                if (stream.match(node)) {
+                    return "node";
+                }
+                if (stream.match(ref)) {
+                    return "ref";
+                }
+                if (stream.match(Prompt)) {
+                    return "Prompt";
+                }
+                while (stream.next() != null) {
+                    if (stream.eol()) {
+                        return null;
+                    }
+                }
+            }
+        };
+    });
+
+    myCodeMirror.setOption("mode", "custom");
+    myCodeMirror.refresh();  // To apply the new mode immediately
+}
+
+nodeInput.addEventListener('change', updateMode);
+refInput.addEventListener('change', updateMode);
+updateMode();  // To set the initial mode
+
+let userScrolledUp = false;
+
+myCodeMirror.on("scroll", function () {
+    var scrollInfo = myCodeMirror.getScrollInfo();
+    var atBottom = scrollInfo.height - scrollInfo.top - scrollInfo.clientHeight < 1;
+    if (!atBottom) {
+        userScrolledUp = true;
+    } else {
+        userScrolledUp = false;
+    }
+});
+
+// Helper function to determine if a CodeMirror position is within a marked range
+function isWithinMarkedText(cm, pos, className) {
+    var lineMarkers = cm.findMarksAt(pos);
+    for (var i = 0; i < lineMarkers.length; i++) {
+        if (lineMarkers[i].className === className) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Array to store node titles
+let nodeTitles = [];
+
+function identifyNodeTitles() {
+    // Clear previous node titles
+    nodeTitles = [];
+    myCodeMirror.eachLine((line) => {
+        if (line.text.startsWith(nodeInput.value)) {
+            let title = line.text.split(nodeInput.value)[1].trim();
+            // Remove comma if exists
+            if (title.endsWith(',')) {
+                title = title.slice(0, -1);
+            }
+            nodeTitles.push(title);
+        }
+    });
+}
+
+function highlightNodeTitles() {
+    // First clear all existing marks
+    myCodeMirror.getAllMarks().forEach(mark => mark.clear());
+
+    myCodeMirror.eachLine((line) => {
+        nodeTitles.forEach((title) => {
+            if (title.length > 0) {
+                // Escape special regex characters
+                const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp("\\b" + escapedTitle + "\\b", "ig");
+                let match;
+                while (match = regex.exec(line.text)) {
+                    const idx = match.index;
+                    if (idx !== -1) {
+                        myCodeMirror.markText(
+                            CodeMirror.Pos(line.lineNo(), idx),
+                            CodeMirror.Pos(line.lineNo(), idx + title.length),
+                            {
+                                className: 'node-title',
+                                handleMouseEvents: true
+                            }
+                        );
+                    }
+                }
+            }
+        });
+    });
+}
+
+
+let nodeTitleToLineMap = {};
+
+function updateNodeTitleToLineMap() {
+    // Clear the map
+    nodeTitleToLineMap = {};
+
+    myCodeMirror.eachLine((line) => {
+        if (line.text.startsWith(nodeInput.value)) {
+            const title = line.text.split(nodeInput.value)[1].trim();
+            nodeTitleToLineMap[title] = line.lineNo();
+        }
+    });
+}
+
+// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
+myCodeMirror.on("change", function () {
+    updateNodeTitleToLineMap();
+    identifyNodeTitles();
+    highlightNodeTitles();
+});
+
+myCodeMirror.on("change", function (instance, changeObj) {
+    ignoreTextAreaChanges = true; // Tell the MutationObserver to ignore changes
+    textarea.value = instance.getValue();
+
+    // Create a new 'input' event
+    var event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+    });
+
+    // Dispatch the event
+    textarea.dispatchEvent(event);
+
+    ignoreTextAreaChanges = false; // Tell the MutationObserver to observe changes again
+});
+
+
+// Handle the 'mousedown' event on the CodeMirror editor
+myCodeMirror.on("mousedown", function (cm, event) {
+    var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
+    var isWithin = isWithinMarkedText(cm, pos, 'node-title');
+
+    if (isWithin) {
+        const lineMarkers = cm.findMarksAt(pos);
+        for (var i = 0; i < lineMarkers.length; i++) {
+            if (lineMarkers[i].className === 'node-title') {
+                const from = lineMarkers[i].find().from;
+                const to = lineMarkers[i].find().to;
+
+                // Check if click is at the start or end of the marked text
+                if (pos.ch === from.ch || pos.ch === to.ch) {
+                    // If click is at the start or end, just place the cursor
+                    cm.setCursor(pos);
+                    return; // prevent default navigation
+                }
+
+                // prevent default click event
+                event.preventDefault();
+
+                const title = cm.getRange(from, to);
+
+                if (!title) {
+                    return; // title could not be extracted
+                }
+
+                const nodeLineNo = nodeTitleToLineMap[title]; // Use the map to find the line number
+
+                // Manually calculate the position to scroll to
+                if (typeof nodeLineNo === "number") {
+                    const scrollInfo = cm.getScrollInfo();
+                    const halfHeight = scrollInfo.clientHeight / 2;
+                    const coords = cm.charCoords({ line: nodeLineNo, ch: 0 }, "local");
+
+                    // Set the scroll position of the editor
+                    cm.scrollTo(null, coords.top - halfHeight);
+                }
+
+                break; // Exit the loop once a title is found
+            }
+        }
+    } else {
+        // If the click is not within the marked text, check if it's directly next to it
+        const leftPos = CodeMirror.Pos(pos.line, pos.ch - 1);
+        const rightPos = CodeMirror.Pos(pos.line, pos.ch + 1);
+        const isLeftAdjacent = isWithinMarkedText(cm, leftPos, 'node-title');
+        const isRightAdjacent = isWithinMarkedText(cm, rightPos, 'node-title');
+
+        // Set cursor position if click is directly next to the marked text
+        if (isLeftAdjacent || isRightAdjacent) {
+            cm.setCursor(pos);
+        }
+
+        // Check if the click is on a line that starts with 'node:'
+        const lineText = cm.getLine(pos.line);
+        if (lineText.startsWith('node:')) {
+            // If the click is on the 'node:' line but not within the marked text, set the cursor position
+            cm.setCursor(pos);
+        }
+    }
+});
+
+
+
+// Call initially
+identifyNodeTitles();
+highlightNodeTitles();
+
+//END OF CODEMIRROR
+
 
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
