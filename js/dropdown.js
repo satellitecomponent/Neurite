@@ -195,7 +195,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
                 event.preventDefault();
 
                 const title = cm.getRange(from, to);
-                console.log('Clicked title:', title);
+                //console.log('Clicked title:', title);
                 if (!title) {
                     return; // title could not be extracted
                 }
@@ -223,7 +223,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
                 // Get the node by the title
                 const node = getNodeByTitle(title);
-                console.log('Returned node:', node);
+                //console.log('Returned node:', node);
                 if (!node) {
                     return; // the node could not be found
                 }

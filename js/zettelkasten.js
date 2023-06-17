@@ -6,7 +6,7 @@ let llmNodeCreated = false;
     const nodeTableBody = document.getElementById('node-table-body');
     nodeTagInput = document.getElementById('node-tag');
     refTagInput = document.getElementById('ref-tag');
-    const noteInput = document.getElementById('note-input');
+    const noteInput = myCodeMirror;
     const nodes = {};
     const nodeLines = {};
     const draggableWindows = document.querySelectorAll('.window');
@@ -53,25 +53,25 @@ let llmNodeCreated = false;
         return (s) => s.replace(re, replacer);
     }
 
-    function processInput() {
-        const nodeTag = nodeTagInput.value;
-        const refTag = refTagInput.value;
+function processInput() {
+    const nodeTag = nodeTagInput.value;
+    const refTag = refTagInput.value;
 
-        for (const key in nodes) {
-            if (nodes[key].nodeObject.removed) {
-                delete nodes[key];
-            } else {
-                nodes[key].plainText = '';
-                nodes[key].ref = '';
-                nodes[key].live = false;
-            }
+    for (const key in nodes) {
+        if (nodes[key].nodeObject.removed) {
+            delete nodes[key];
+        } else {
+            nodes[key].plainText = '';
+            nodes[key].ref = '';
+            nodes[key].live = false;
         }
+    }
 
-        const lines = noteInput.value.split('\n');
-        let currentNodeTitle = '';
+    const lines = noteInput.getValue().split('\n');
+    let currentNodeTitle = '';
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
 
             if (line.startsWith(nodeTag)) {
                 currentNodeTitle = line.substr(nodeTag.length).trim();
@@ -114,7 +114,7 @@ let llmNodeCreated = false;
                             nodes[newName] = node;
                             node.title = newName;
                             const f = renameNode(name, node.nodeObject.content.children[0].children[0].children[1].value);
-                            noteInput.value = f(noteInput.value);
+                            noteInput.setValue(f(noteInput.getValue()));  // instead of noteInput.value = f(noteInput.value);
                         });
                         node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', (e) => {
                             const body = node.nodeObject.content.children[0].children[1].children[0].value;
@@ -124,10 +124,12 @@ let llmNodeCreated = false;
                             const start = "((\\n|^)" + nt + "[\\t ]*" + RegExp.escape(name) + "[\\t ]*(\\n|$))";
                             const rt = RegExp.escape(refTagInput.value);
                             const end = "(?=((\\n" + nt + ")|(\\n" + rt + ")|$))";
-
                             const re = new RegExp(start + "((?=((" + nt + ")|(" + rt + ")|$))|(([^]*?)" + end + "))");
 
-                            noteInput.value = noteInput.value.replace(re, (match, p1, p2, p3, p4, p5, p6, p7, offset, string, groups) => {
+                            // Save cursor position
+                            const cursorPosition = node.nodeObject.content.children[0].children[1].children[0].selectionStart;
+
+                            noteInput.setValue(noteInput.getValue().replace(re, (match, p1, p2, p3, p4, p5, p6, p7, offset, string, groups) => {
                                 p1 = p1 || "";
                                 if (!p1.endsWith("\n")) {
                                     p1 += "\n";
@@ -136,7 +138,11 @@ let llmNodeCreated = false;
                                     return p1 + body + "\n";
                                 }
                                 return p1 + body;
-                            });
+                            }));
+
+                            // Restore cursor position
+                            node.nodeObject.content.children[0].children[1].children[0].selectionStart = cursorPosition;
+                            node.nodeObject.content.children[0].children[1].children[0].selectionEnd = cursorPosition;
                         });
                     }
                 } else {
@@ -197,7 +203,7 @@ let llmNodeCreated = false;
                             nodes[newName] = node;
                             node.title = newName;
                             const f = renameNode(oldName, newName);
-                            noteInput.value = f(noteInput.value);
+                            noteInput.setValue(f(noteInput.getValue()));  // instead of noteInput.value = f(noteInput.value);
                         });
                     }
                 } else {
@@ -286,7 +292,7 @@ let llmNodeCreated = false;
         //updateTable();
     }
 
-    document.getElementById('note-input').addEventListener('input', processInput);
+    noteInput.on('change', processInput);  // instead of noteInput.addEventListener('input', processInput)
     nodeTagInput.addEventListener('input', processInput);
     refTagInput.addEventListener('input', processInput);
 
