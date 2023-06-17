@@ -379,23 +379,22 @@ function updateLabel() {
         document.body.style.transform = "scale(1)";
         document.body.style.transformOrigin = "0 0";
 
-        function openTab(tabId, element) {
-            var i, tabcontent, tablinks;
+function openTab(tabId, element) {
+    var i, tabcontent, tablinks;
 
-            tabcontent = document.getElementsByClassName("tabcontent");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
 
-            tablinks = document.getElementsByClassName("tablink");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
+    tablinks = document.getElementsByClassName("tablink");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].classList.remove("activeTab"); // We use classList.remove to remove the class
+    }
 
-            document.getElementById(tabId).style.display = "block";
-            element.className += " active";
-        }
-
+    document.getElementById(tabId).style.display = "block";
+    element.classList.add("activeTab"); // We use classList.add to add the class
+}
         // Get the menu button and dropdown content elements
         const menuButton = document.querySelector(".menu-button");
         const dropdownContent = document.querySelector(".dropdown-content");
@@ -450,19 +449,80 @@ function updateLabel() {
             cancel(e);
         });
 
+document.getElementById("save-button").addEventListener("click", function () {
+    nodes.map((n) => n.updateEdgeData());
+    let s = document.getElementById("nodes").innerHTML;
+    let title = prompt("Enter a title for this save:");
 
+    if (title) {
+        // Save the data to localStorage
+        let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+        saves.push({ title: title, data: s });
+        localStorage.setItem("saves", JSON.stringify(saves));
 
+        // Update the saved networks container
+        updateSavedNetworks();
+    }
+});
 
-    document.getElementById("save-button").addEventListener("click", function () {
-     nodes.map((n) => n.updateEdgeData());
-            let s = document.getElementById("nodes").innerHTML;
-            //navigator.clipboard.writeText(s);
-            //console.log("save",s);
-            document.getElementById("save-or-load").value = s;
+function updateSavedNetworks() {
+    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    let container = document.getElementById("saved-networks-container");
+    container.innerHTML = '';
+
+    for (let [index, save] of saves.entries()) {
+        let div = document.createElement("div");
+        let titleInput = document.createElement("input");
+        let data = document.createElement("span");
+        let loadButton = document.createElement("button");
+        let deleteButton = document.createElement("button");
+
+        titleInput.type = "text";
+        titleInput.value = save.title;
+        titleInput.style.border = "none"
+        titleInput.addEventListener('change', function () {
+            save.title = titleInput.value;
+            localStorage.setItem("saves", JSON.stringify(saves));
         });
-        document.getElementById("load-button").addEventListener("click", function () {
-            loadnet(document.getElementById("save-or-load").value, true);
+
+        data.textContent = save.data;
+        data.style.display = "none";
+
+        loadButton.textContent = "Load";
+        loadButton.className = 'linkbuttons';
+        loadButton.addEventListener('click', function () {
+            document.getElementById("save-or-load").value = data.textContent;
         });
+
+        deleteButton.textContent = "X";
+        deleteButton.className = 'linkbuttons';
+        deleteButton.addEventListener('click', function () {
+            // Remove the save from the array
+            saves.splice(index, 1);
+
+            // Update local storage
+            localStorage.setItem("saves", JSON.stringify(saves));
+
+            // Update the saved networks container
+            updateSavedNetworks();
+        });
+
+        div.appendChild(titleInput);
+        div.appendChild(data);
+        div.appendChild(loadButton);
+        div.appendChild(deleteButton);
+        container.appendChild(div);
+    }
+}
+
+// Call updateSavedNetworks on page load to display previously saved networks
+updateSavedNetworks();
+
+document.getElementById("load-button").addEventListener("click", function () {
+    loadnet(document.getElementById("save-or-load").value, true);
+});
+
+
         // Get all the menu items
         const menuItems = document.querySelectorAll(".menu-item");
 

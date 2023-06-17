@@ -494,22 +494,25 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
         let controller = new AbortController();
         let shouldContinue = true;
 
-        function removeLastResponse() {
-            const noteInput = document.getElementById("note-input");
-            const lines = noteInput.value.split("\n");
+function removeLastResponse() {
+    const noteInput = document.getElementById("note-input");
+    const lines = noteInput.value.split("\n");
 
-            // Find the index of the last "Prompt:"
-            let lastPromptIndex = lines.length - 1;
-            while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith("Prompt:")) {
-                lastPromptIndex--;
-            }
+    // Find the index of the last "Prompt:"
+    let lastPromptIndex = lines.length - 1;
+    while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith("Prompt:")) {
+        lastPromptIndex--;
+    }
 
-            // Remove all lines from the last "Prompt:" to the end
-            if (lastPromptIndex >= 0) {
-                lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
-                noteInput.value = lines.join("\n");
-            }
-        }
+    // Remove all lines from the last "Prompt:" to the end
+    if (lastPromptIndex >= 0) {
+        lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
+        noteInput.value = lines.join("\n");
+
+        // Update the CodeMirror instance with the new value
+        myCodeMirror.setValue(noteInput.value);
+    }
+}
 
         function haltResponse() {
             if (aiResponding) {

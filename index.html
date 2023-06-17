@@ -68,25 +68,26 @@
                 <div class="tabs">
                     <button class="tablink" onclick="openTab('tab1', this)">Notes</button>
                     <button class="tablink" onclick="openTab('tab4', this)">Ai</button>
-                    <button class="tablink" onclick="openTab('tabExtract', this)">Extracts</button>
-                    <button class="tablink" onclick="openTab('tab2', this)">Settings</button>
+                    <button class="tablink" onclick="openTab('tabExtract', this)">Data</button>
+                    <button class="tablink" onclick="openTab('tab2', this)">Edit</button>
+                    <button class="tablink" onclick="openTab('tab6', this)">Save</button>
                     <button class="tablink" onclick="openTab('tab3', this)">?</button>
                 </div>
 
                 <div id="tab1" class="tabcontent">
                     <!-- First tab content here -->
                     <div class="submenu">
-                        <input id="Searchbar" class="Searchbar" placeholder="search notes..." />
-                        <br />
-                        <br />
                         <form id="prompt-form" onsubmit="sendMessage(event);">
-                            <div class="input-group">
-                                <textarea id="prompt" rows="1" onkeydown="handleKeyDown(event);" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
-
-                                <div class="btn-group">
-                                    <button type="submit">⏵</button>
-
-                                    <button id="regen-button" type="button">↺</button>
+                            <div>
+                                <div style="display: flex; align-items: center;">
+                                    <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
+                                    <div class="btn-group" style="margin-left: 10px;">
+                                        <button type="submit">⏵</button>
+                                        <button id="regen-button" type="button">↺</button>
+                                    </div>
+                                </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <textarea id="prompt" rows="1" onkeydown="handleKeyDown(event);" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
                                 </div>
                             </div>
                         </form>
@@ -102,23 +103,23 @@
                             </div>
                             <div>
                                 <input type="checkbox" id="code-checkbox" name="code-checkbox">
-                                <label for="code-checkbox">: Code</label>
+                                <label for="code-checkbox">Code</label>
                             </div>
                             <div>
                                 <input type="checkbox" id="auto-mode-checkbox">
-                                <label for="auto-mode-checkbox">: Auto</label>
+                                <label for="auto-mode-checkbox">Auto</label>
                             </div>
                             <div>
                                 <input type="checkbox" id="embed-checkbox">
-                                <label for="embed-checkbox">: Extracts</label>
+                                <label for="embed-checkbox">Data</label>
                             </div>
                             <div>
                                 <input type="checkbox" id="enable-wolfram-alpha" name="enable-wolfram-alpha">
-                                <label for="enable-wolfram-alpha">: Wolfram</label>
+                                <label for="enable-wolfram-alpha">Wolfram</label>
                             </div>
                             <div>
                                 <input type="checkbox" id="wiki-checkbox">
-                                <label for="wiki-checkbox">: Wiki</label>
+                                <label for="wiki-checkbox">Wiki</label>
 
 
                             </div>
@@ -129,26 +130,6 @@
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
-                        <br />
-                        <a id="save-button">Save</a>
-                        <input id="save-or-load" type="text" placeholder="save data..." />
-                        <a id="load-button">Load</a>
-                        <a id="clear-button">Clear</a>
-                        <div id="clear-sure" style="display:none">
-                            <a id="clear-unsure-button">no</a>
-                            <a id="clear-sure-button">yes</a>
-                        </div>
-                        <br />
-                        <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
-                        <br />
-                        <br />
-                        <input type="text" id="node-tag" class="tags" value="node:" />
-                        <label for="node-tag"></label>
-                        <br />
-                        <input type="text" id="ref-tag" class="tags" value="ref:" />
-                        <label for="ref-tag"></label>
-                        <br />
-                        <br />
                         <div id="quality_value">Quality</div>
                         <input id="quality" type="range" min="0" max="100" value="0">
                         <div id="length_value">Length</div>
@@ -162,6 +143,13 @@
                         <br />
                         <input type="checkbox" id="innerCheckbox">
                         <label for="innerCheckbox">: Freeze Inner Opacity</label>
+                        <br />
+                        <br />
+                        <input type="text" id="node-tag" class="tags" value="node:" />
+                        <label for="node-tag"></label>
+                        <br />
+                        <input type="text" id="ref-tag" class="tags" value="ref:" />
+                        <label for="ref-tag"></label>
 
                         <br />
                         <br />
@@ -185,7 +173,7 @@
                         <table>
                             <tr>
                                 <td><strong> AI HOW-TO</strong></td>
-                                <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">This checkbox enables the Ai to explain the website and its controls.</label></td>
+                                <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">←This checkbox enables the Ai to explain Neurite</label></td>
                             </tr>
                             <tr>
                                 <td><a href="https://github.com/satellitecomponent/Neurite" id="clickable-link">Github Link</a></td>
@@ -330,6 +318,23 @@
                             <span id="overlapSizeDisplay">10</span>
                             <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
                         </div>
+                    </div>
+                </div>
+                <div id="tab6" class="tabcontent">
+                    <div class="submenu">
+                        <br />
+                        <div id="saved-networks-container" class="scrollable-list"></div>
+                        <a id="save-button">Save</a>
+                        <input id="save-or-load" type="text" placeholder="save data..." />
+                        <a id="load-button">Load</a>
+                        <a id="clear-button">Clear</a>
+                        <div id="clear-sure" style="display:none">
+                            <a id="clear-unsure-button">no</a>
+                            <a id="clear-sure-button">yes</a>
+                        </div>
+                        <br />
+                        <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
+                        <br />
                     </div>
                 </div>
             </div>
