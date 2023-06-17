@@ -247,7 +247,7 @@ function processInput() {
                 if (currentNodeTitle !== '') {
                     // If the line doesn't start with "LLM:", "ref:", or "node:"
                     if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
-                        if (nodes[currentNodeTitle].plainText !== '' && !line.startsWith('\n')) {
+                        if (nodes[currentNodeTitle].plainText !== '') {
                             nodes[currentNodeTitle].plainText += '\n';
                         }
                         nodes[currentNodeTitle].plainText += line;
