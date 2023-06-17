@@ -132,16 +132,18 @@ function highlightNodeTitles() {
 }
 
 
-let nodeTitleToLineMap = {};
+let nodeTitleToLineMap = new Map();
 
 function updateNodeTitleToLineMap() {
     // Clear the map
-    nodeTitleToLineMap = {};
+    nodeTitleToLineMap = new Map();
 
+    let currentNodeTitleLineNo = null;
     myCodeMirror.eachLine((line) => {
         if (line.text.startsWith(nodeInput.value)) {
             const title = line.text.split(nodeInput.value)[1].trim();
-            nodeTitleToLineMap[title] = line.lineNo();
+            currentNodeTitleLineNo = line.lineNo();  // Store the line number of the "node:" line
+            nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
         }
     });
 }
@@ -170,7 +172,7 @@ myCodeMirror.on("change", function (instance, changeObj) {
 });
 
 
-// Handle the 'mousedown' event on the CodeMirror editor
+// Update the "mousedown" event handler
 myCodeMirror.on("mousedown", function (cm, event) {
     var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
     var isWithin = isWithinMarkedText(cm, pos, 'node-title');
@@ -193,12 +195,20 @@ myCodeMirror.on("mousedown", function (cm, event) {
                 event.preventDefault();
 
                 const title = cm.getRange(from, to);
+                console.log('Clicked title:', title);
                 if (!title) {
                     return; // title could not be extracted
                 }
 
-                // Get the line number of the node from the map
-                const nodeLineNo = nodeTitleToLineMap[title];
+                // Get the line number of the "node:" line from the map
+                const lowerCaseTitle = title.toLowerCase();
+                let nodeLineNo;
+                for (const [mapTitle, mapLineNo] of nodeTitleToLineMap) {
+                    if (mapTitle.toLowerCase() === lowerCaseTitle) {
+                        nodeLineNo = mapLineNo;
+                        break;
+                    }
+                }
                 if (typeof nodeLineNo !== "number") {
                     return; // the line number could not be found
                 }
@@ -213,6 +223,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
                 // Get the node by the title
                 const node = getNodeByTitle(title);
+                console.log('Returned node:', node);
                 if (!node) {
                     return; // the node could not be found
                 }
@@ -256,9 +267,10 @@ highlightNodeTitles();
 
 
 function getNodeByTitle(title) {
+    const lowerCaseTitle = title.toLowerCase();
     for (let n of nodes) {
         let nodeTitle = n.content.getAttribute('data-title');
-        if (nodeTitle === title) {
+        if (nodeTitle && nodeTitle.toLowerCase() === lowerCaseTitle) {
             return n;
         }
     }

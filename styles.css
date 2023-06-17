@@ -479,7 +479,25 @@
     margin: 0;
 }
 
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
 
+    .divider span {
+        border-bottom: 1px solid #000;
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .divider button {
+        background: none;
+        border: none;
+        font-size: 20px;
+        line-height: 1;
+    }
 
 .checkboxarray {
     display: flex;
@@ -940,3 +958,4 @@ input[type=range] {
     cursor: pointer;
     text-decoration: underline;
 }
+
