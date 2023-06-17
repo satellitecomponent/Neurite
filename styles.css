@@ -326,7 +326,7 @@
         .Searchbar {
             background-color: #222226;
             color: #bbb;
-            width: 153px;
+            width: 150px;
             border: inset;
             border-color: #8882;
         }
@@ -475,15 +475,22 @@
                     background-color: #45a049;
                 }
 
-        .checkboxarray {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            width: 270px;
-            padding-top: 6px;
-            /* adjust this as needed */
-        }
+#saved-networks-container .linkbuttons {
+    margin: 0;
+}
+
+
+
+.checkboxarray {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 270px;
+    padding-top: 6px;
+    /* adjust this as needed */
+}
 
             .checkboxarray div {
                 width: 33%;
@@ -760,6 +767,10 @@
 
 #saved-networks-container button {
     margin-right: 10px;
+}
+
+.highlight {
+    border: 2px dashed #aaa;
 }
 
 

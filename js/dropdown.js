@@ -1,4 +1,4 @@
-var textarea = document.getElementById('note-input');
+﻿var textarea = document.getElementById('note-input');
 var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     lineWrapping: true,
     scrollbarStyle: 'simple',
@@ -476,6 +476,7 @@ function updateSavedNetworks() {
         let data = document.createElement("span");
         let loadButton = document.createElement("button");
         let deleteButton = document.createElement("button");
+        let downloadButton = document.createElement("button");
 
         titleInput.type = "text";
         titleInput.value = save.title;
@@ -507,9 +508,30 @@ function updateSavedNetworks() {
             updateSavedNetworks();
         });
 
+        downloadButton.textContent = "↓";
+        downloadButton.className = 'linkbuttons';
+        downloadButton.addEventListener('click', function () {
+            // Create a blob from the data
+            var blob = new Blob([save.data], { type: 'text/plain' });
+
+            // Create a temporary anchor and URL
+            var tempAnchor = document.createElement('a');
+            tempAnchor.download = save.title + '.txt';
+            tempAnchor.href = window.URL.createObjectURL(blob);
+
+            // Simulate a click on the anchor
+            tempAnchor.click();
+
+            // Clean up by revoking the object URL
+            setTimeout(function () {
+                window.URL.revokeObjectURL(tempAnchor.href);
+            }, 1);
+        });
+
         div.appendChild(titleInput);
         div.appendChild(data);
         div.appendChild(loadButton);
+        div.appendChild(downloadButton);
         div.appendChild(deleteButton);
         container.appendChild(div);
     }
@@ -521,6 +543,63 @@ updateSavedNetworks();
 document.getElementById("load-button").addEventListener("click", function () {
     loadnet(document.getElementById("save-or-load").value, true);
 });
+
+let container = document.getElementById("saved-networks-container");
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    container.addEventListener(eventName, preventDefaults, false);
+});
+
+// Highlight the drop area when item is dragged over it
+['dragenter', 'dragover'].forEach(eventName => {
+    container.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    container.addEventListener(eventName, unhighlight, false);
+});
+
+// Handle the drop
+container.addEventListener('drop', handleDrop, false);
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight(e) {
+    container.classList.add('highlight');
+}
+
+function unhighlight(e) {
+    container.classList.remove('highlight');
+}
+
+function handleDrop(e) {
+    let dt = e.dataTransfer;
+    let file = dt.files[0];
+
+    // Only process .txt files
+    if (file && file.name.endsWith('.txt')) {
+        let reader = new FileReader();
+        reader.readAsText(file);
+        reader.onload = function (e) {
+            let content = e.target.result;
+
+            // Save the data to localStorage
+            let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+            let title = file.name.replace('.txt', '');
+            saves.push({ title: title, data: content });
+            localStorage.setItem("saves", JSON.stringify(saves));
+
+            // Update the saved networks container
+            updateSavedNetworks();
+        };
+    } else {
+        console.log('File must be a .txt file');
+    }
+}
 
 
         // Get all the menu items
