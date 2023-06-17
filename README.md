@@ -16,7 +16,7 @@ WARNING: Neurite contains zooming, flashing lights, and colors which may not be 
 join us on discord!
 🔗https://discord.gg/hnY8UpeE22
 
-<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/0c988328-3d18-4813-b27b-4eb60f835bbe" width="700">
+![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
 
 # How-to use Neurite
 
