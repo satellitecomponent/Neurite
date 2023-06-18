@@ -243,32 +243,28 @@ function processInput() {
                         }
                     }
                 }
-            } else {
+        } else {
                 if (currentNodeTitle !== '') {
                     // If the line doesn't start with "LLM:", "ref:", or "node:"
                     if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
-                        if (nodes[currentNodeTitle].plainText !== '') {
-                            // Check if the last character in the textarea is a newline character
-                            if (nodes[currentNodeTitle].plainText.slice(-1) !== '\n') {
-                                nodes[currentNodeTitle].plainText += '\n';
-                            }
-                        }
-                        nodes[currentNodeTitle].plainText += line;
-
                         let targetTextarea;
                         if (nodes[currentNodeTitle].isLLM) {
                             targetTextarea = nodes[currentNodeTitle].nodeObject.promptTextArea;
                         } else {
                             targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
                         }
-                        targetTextarea.value = nodes[currentNodeTitle].plainText;
-
+                        if (nodes[currentNodeTitle].plainText !== '') {
+                            nodes[currentNodeTitle].plainText += '\n';
+                            targetTextarea.value = nodes[currentNodeTitle].plainText.trim(); // Trim the trailing newline character
+                        }
+                        nodes[currentNodeTitle].plainText += line;
+                        targetTextarea.value = nodes[currentNodeTitle].plainText.trim(); // Trim the trailing newline character
                         // Manually call the adjustTextareaHeight function to adjust the textarea height
                         adjustTextareaHeight(targetTextarea);
                     }
                 }
-            }
-        } {
+        }
+    } {
             const dels = [];
             for (const k in nodes) {
                 if (!nodes[k].live) {
