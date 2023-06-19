@@ -1,3 +1,4 @@
+![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
 # Neurite
 Available here.
 🔗https://satellitecomponent.github.io/Neurite/
@@ -16,18 +17,18 @@ WARNING: Neurite contains zooming, flashing lights, and colors which may not be 
 join us on discord!
 🔗https://discord.gg/hnY8UpeE22
 
-![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
-
 # How-to use Neurite
 
-📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Be sure the links are embeddable!
+📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Make sure to use an embed link.
+The controls are listed in the ? tab. Shift + double click to create nodes.
+(Dragging nodes can require some practice. Make sure to dragn nodes by clicking outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
 
 # FractalGPT 🕸️🕷️
 
 - Not your typical chat interface.
 - Web of thought reasoning.
 
-Mind mapping extends the memory capabilities of LLMs to enable advanced interaction between human and AI, as well as between AI and AI.
+Mind mapping through Neurite enables long-term memory for LLMs. 
 
 To interact with the AI, you will need an OpenAi API key. (webLLM support currently on the dev branch.)
 
