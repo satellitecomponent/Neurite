@@ -117,8 +117,8 @@ function processInput() {
                             noteInput.setValue(f(noteInput.getValue()));  // instead of noteInput.value = f(noteInput.value);
                         });
                         node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', (e) => {
-                            const body = node.nodeObject.content.children[0].children[1].children[0].value;
-                            //just replace between #node: [name] and the next tag
+                            let body = node.nodeObject.content.children[0].children[1].children[0].value;  // change const to let
+                            // just replace between #node: [name] and the next tag
                             const name = node.title;
                             const nt = RegExp.escape(nodeTagInput.value);
                             const start = "((\\n|^)" + nt + "[\\t ]*" + RegExp.escape(name) + "[\\t ]*(\\n|$))";
@@ -129,11 +129,18 @@ function processInput() {
                             // Save cursor position
                             const cursorPosition = node.nodeObject.content.children[0].children[1].children[0].selectionStart;
 
+                            // Modify the replace callback function to avoid adding newlines unnecessarily
                             noteInput.setValue(noteInput.getValue().replace(re, (match, p1, p2, p3, p4, p5, p6, p7, offset, string, groups) => {
                                 p1 = p1 || "";
-                                if (!p1.endsWith("\n")) {
+                                // Check if p1 ends with a newline OR if body is not an empty string
+                                if (!p1.endsWith("\n") && body !== '') {
                                     p1 += "\n";
                                 }
+                                // If body ends with a newline, remove it
+                                if (body.endsWith("\n")) {
+                                    body = body.substring(0, body.length - 1);
+                                }
+                                // If p5 is not undefined, add newline after body
                                 if (p5 !== undefined) {
                                     return p1 + body + "\n";
                                 }
@@ -244,25 +251,25 @@ function processInput() {
                     }
                 }
         } else {
-                if (currentNodeTitle !== '') {
-                    // If the line doesn't start with "LLM:", "ref:", or "node:"
-                    if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
-                        let targetTextarea;
-                        if (nodes[currentNodeTitle].isLLM) {
-                            targetTextarea = nodes[currentNodeTitle].nodeObject.promptTextArea;
-                        } else {
-                            targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
-                        }
-                        if (nodes[currentNodeTitle].plainText !== '') {
-                            nodes[currentNodeTitle].plainText += '\n';
-                            targetTextarea.value = nodes[currentNodeTitle].plainText.trim(); // Trim the trailing newline character
-                        }
-                        nodes[currentNodeTitle].plainText += line;
-                        targetTextarea.value = nodes[currentNodeTitle].plainText.trim(); // Trim the trailing newline character
-                        // Manually call the adjustTextareaHeight function to adjust the textarea height
-                        adjustTextareaHeight(targetTextarea);
+            if (currentNodeTitle !== '') {
+                // If the line doesn't start with "LLM:", "ref:", or "node:"
+                if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
+                    let targetTextarea;
+                    if (nodes[currentNodeTitle].isLLM) {
+                        targetTextarea = nodes[currentNodeTitle].nodeObject.promptTextArea;
+                    } else {
+                        targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
                     }
+                    if (nodes[currentNodeTitle].plainText !== '') {
+                        nodes[currentNodeTitle].plainText += '\n';
+                        targetTextarea.value = nodes[currentNodeTitle].plainText;
+                    }
+                    nodes[currentNodeTitle].plainText += line;
+                    targetTextarea.value = nodes[currentNodeTitle].plainText; 
+                    // Manually call the adjustTextareaHeight function to adjust the textarea height
+                    adjustTextareaHeight(targetTextarea);
                 }
+            }
         }
     } {
             const dels = [];

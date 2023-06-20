@@ -229,7 +229,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
                 }
 
                 // Zoom to the node
-                node.zoom_to();
+                node.zoom_to(.5);
                 autopilotSpeed = settings.autopilotSpeed;
 
                 break; // Exit the loop once a title is found

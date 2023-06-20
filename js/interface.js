@@ -717,6 +717,7 @@ outerCheckbox.addEventListener('click', function () {
             let dropdown = document.querySelector('.dropdown');
 
             div.addEventListener('mousedown', function () {
+                autopilotSpeed = 0;
                 dropdown.classList.add('no-select');
             });
 

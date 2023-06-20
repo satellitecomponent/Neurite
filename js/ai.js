@@ -235,7 +235,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     aiResponseTextArea.id = `LLMnoderesponse-${++llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
     aiResponseTextArea.classList.add('custom-scrollbar');
     aiResponseTextArea.onmousedown = cancel;  // Prevent dragging
-    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 300px; height: 200px; overflow-y: auto; resize: vertical;");
+    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow-y: auto; resize: both;");
 
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
