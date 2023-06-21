@@ -9,7 +9,7 @@
 
 1. [Introduction](#introduction)
 2. [How to Use Neurite](#how-to-use-neurite)
-3. [FractalGPT](#fractalgpt)
+3. [FractalGPT](#fractalgpt-🕸️🕷️)
 4. [Local Server Setup](#local-server-setup)
 5. [User Guide](#user-guide)
 6. [Future of Neurite](#future-of-neurite)
