@@ -9,7 +9,7 @@
 
 1. [Introduction](#introduction)
 2. [How to Use Neurite](#how-to-use-neurite)
-3. [FractalGPT](#fractalgpt-🕸️🕷️)
+3. [FractalGPT](#fractalgpt)
 4. [Local Server Setup](#local-server-setup)
 5. [User Guide](#user-guide)
 6. [Future of Neurite](#future-of-neurite)
@@ -36,7 +36,8 @@ The controls are listed in the ? tab. Shift + double click to create nodes.
 
 (Dragging nodes can require some practice. Make sure to drag nodes by clicking on the actual window element outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
 
-## FractalGPT 🕸️🕷️
+## FractalGP
+🕸️🕷️
 
 - Not your typical chat interface.
 - Web of thought reasoning.
