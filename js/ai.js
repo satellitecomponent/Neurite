@@ -1092,12 +1092,11 @@ For generating HTML and JavaScript responses:
 - Structure your HTML correctly with appropriate head and body tags.
 - The HTML will render in an iframe... Be sure to set the canvas size in the HTML as opposed to the JS.
 - Enclose any JavaScript within a script tag rather than an external file.
-- Be aware that more complex JavaScript code, particularly involving async operations or requestAnimationFrame, might not work as expected in the iframe environment. If your script involves such operations, consider alternatives or workarounds like using setInterval or wrapping your code in a 'DOMContentLoaded' event.
 - Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context. This means keeping script tags within the html.
 - Always remember to properly close HTML tags and handle potential JavaScript exceptions to avoid unexpected behavior or script failure.
 - If your HTML/JS response includes CSS, be sure to encapsulate it properly within style tags in the head section.
 
-ensure seperation of your code from your explanation using a unique title for each node.
+ensure seperation of code from your explanation using a unique node title for each part of your response.
 
 ${nodeTag} Unique Python Response title specific to the code. Assume the user is asking for Python code that outputs to Pyodide unless they specify to strictly write Python code that runs outside of Pyodide.
 For generating Python responses in a Pyodide environment:
@@ -1110,8 +1109,8 @@ Always write code that will display correctly in Pyodide.
 - Handle potential exceptions by wrapping your code in try/except blocks due to Pyodide's limitations.
 - Pyodide captures the last expression in the Python code, not what's printed to the console. Therefore, DO NOT rely on print statements to display results. Make sure to RETURN the result as the last expression in your Python code.
 - For non-visual outputs, convert them into a string and Pyodide will include this directly within an HTML paragraph tag. If you're working with more complex data, convert it to a JSON string or an HTML table before returning it.
-- Always label your code blocks with 'python' to clearly indicate that it's Python code. This will help others understand the context.
-Remember: The key is to return the result, not print it. Pyodide can only capture the returned result.
+- Always label your code blocks with 'python' to clearly indicate that it's Python code.
+Remember: The key is to return the result, not print it. Pyodide captures the returned result.
 ${nodeTag} Unique Explanation Node (always use a unique title for each node rather than repeating these example titles)
 Provide a clear explanation of the Python or HTML code and its output. Align the explanation with the Python code steps and avoid repetition. Ensure that your entire response, including code and explanation, is self-contained and does not rely on external files or data unless they are created within the code itself.`
 };
@@ -1560,7 +1559,7 @@ async function fetchWolfram(message) {
 
             let messages = [{
                 role: "system",
-                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format: ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt}  :Avoid repeating the above format context message.`,
+                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating the above format context message.`,
             },
             autoModeMessage ?
                 {
@@ -1570,6 +1569,7 @@ async function fetchWolfram(message) {
                             Example of the desired format for your response with up to date node and reference tags.
                             ${nodeTag} Unique title
                             plain text on the next line for your response.
+                            Always ensure each title is unique. Do not repeat previous titles of nodes.
                             ${refTag} Titles of other nodes separated by commas.
                             ${nodeTag} Example
                             Break your response up into multiple nodes
@@ -1584,6 +1584,7 @@ async function fetchWolfram(message) {
                             Example of the desired format for your response with up to date node and reference tags.
                             ${nodeTag} Unique Title
                             plain text on the next line for your response.
+                            Always ensure each title is unique. Do not repeat previous titles of nodes.
                             ${refTag} Titles of other nodes separated by commas.
                             ${nodeTag} Example
                             Break your response up into multiple nodes
@@ -1603,7 +1604,7 @@ async function fetchWolfram(message) {
             if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
                 messages.splice(1, 0, {
                     role: "system",
-                    content: `These nodes have been retrieved from your memory which is a fractal mind map \nContent: = what node says/plain text\n.${topMatchedNodesContent}`,
+                    content: `These nodes have been retrieved from your memory which is a fractal mind map \nContent: = what node says/context\n.${topMatchedNodesContent}`,
                 });
             }
 
@@ -1777,7 +1778,7 @@ async function performSearch(searchQuery) {
     const apiKey = localStorage.getItem('googleApiKey');
     const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(searchQuery)}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
 
     try {
         const response = await fetch(url);
@@ -1814,7 +1815,7 @@ async function performSearch(searchQuery) {
             },
             {
                 role: "system",
-                content: "Construct search queries based on user prompts... Provide a search for the current user message. Keep in mind your response will be used both as a google search and as an embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in wepages relevant to the user query. Do not preface or explain your output. Consider any necessary terms that are necessary for the request.",
+                content: "Construct search queries based on user prompts... Provide a search for the current user message. Keep in mind your response will be used both as a google search and as an embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages relevant to the user query. Do not preface or explain your output. Consider any necessary terms that are necessary for the request.",
             },
             {
                 role: "user",

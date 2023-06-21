@@ -1272,13 +1272,27 @@ updateEdgeData() {
 
 function edgeFromJSON(o, nodeMap) {
     let pts = o.p.map((k) => nodeMap[k]);
+
     if (pts.includes(undefined)) {
         console.warn("missing keys", o, nodeMap);
     }
-    let e = new Edge(pts, o.l, o.s, o.g);
-    for (let pt of pts) { // add edge to all points
-        pt.addEdge(e);
+
+    // Check if edge already exists
+    for (let e of edges) {
+        let e_pts = e.pts.map(n => n.uuid).sort();
+        let o_pts = o.p.sort();
+        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) {
+            // Edge already exists, return without creating new edge
+            return;
+        }
     }
+
+    let e = new Edge(pts, o.l, o.s, o.g);
+
+    for (let pt of pts) {
+        pt.addEdge(e); // add edge to all points
+    }
+
     edges.push(e);
     return e;
 }
