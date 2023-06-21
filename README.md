@@ -20,8 +20,10 @@ join us on discord!
 # How-to use Neurite
 
 📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Make sure to use an embed link.
+
 The controls are listed in the ? tab. Shift + double click to create nodes.
-(Dragging nodes can require some practice. Make sure to dragn nodes by clicking outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
+
+(Dragging nodes can require some practice. Make sure to drag nodes by clicking outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
 
 # FractalGPT 🕸️🕷️
 
