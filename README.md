@@ -26,8 +26,7 @@
 
 🌱 this is an open-source project in early alpha, we are looking to grow our team! 🚧
 
-join us on discord!
-🔗https://discord.gg/hnY8UpeE22
+join us on [discord](https://discord.gg/hnY8UpeE22)!
 
 ## How to Use Neurite
 
@@ -107,4 +106,4 @@ Neurite is a recursive environment for generating ideas. As we are in the middle
 
 ## Contact
 
-If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  🔗[discord](https://discord.gg/hnY8UpeE22).
+If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/hnY8UpeE22) 🔗
