@@ -77,10 +77,8 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
 
                         // Scroll to the bottom
                         setTimeout(() => {
-                            if (!node.userHasScrolled) {
-                                node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
-                            }
-                        }, 0);
+                            node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+                        }, 1);
                     }
                     buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
                 }
@@ -93,7 +91,7 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
             // Scroll to the bottom
             setTimeout(() => {
                 node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
-            }, 0);
+            }, 1);
         }
     } catch (error) {
         console.error("Error calling ChatGPT API:", error);
@@ -125,7 +123,7 @@ function trimToTokenCount(inputText, maxTokens) {
 
 
 
-function sendLLMNodeMessage(node) {
+async function sendLLMNodeMessage(node) {
     if (node.aiResponding) {
         console.log('AI is currently responding. Please wait for the current response to complete before sending a new message.');
         return;
@@ -150,6 +148,76 @@ function sendLLMNodeMessage(node) {
             content: "Your responses are displayed within a chat interface node. Any connected nodes will be shared as individual system messages."
         },
     ];
+
+    // In your main function, check if searchQuery is null before proceeding with the Google search
+    const searchQuery = await constructSearchQuery(node.latestUserMessage);
+    if (searchQuery === null) {
+        return; // Return early if a link node was created directly
+    }
+
+    let searchResultsData = null;
+    let searchResults = [];
+
+    if (isGoogleSearchEnabled()) {
+        searchResultsData = await performSearch(searchQuery);
+    }
+
+    if (searchResultsData) {
+        searchResults = processSearchResults(searchResultsData);
+        searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
+    }
+
+    displaySearchResults(searchResults);
+
+
+
+    const searchResultsContent = searchResults.map((result, index) => {
+        return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
+    }).join('\n');
+
+    const googleSearchMessage = {
+        role: "system",
+        content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message which describes the format of your response."
+    };
+
+    if (document.getElementById("google-search-checkbox").checked) {
+        messages.push(googleSearchMessage);
+    }
+
+    const embedCheckbox = document.getElementById("embed-checkbox");
+
+    if (embedCheckbox && embedCheckbox.checked) {
+        const aiSuggestedSearch = await constructSearchQuery(node.latestUserMessage);
+        const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
+
+        // Group the chunks by their source (stripping the chunk number from the key)
+        const groupedChunks = relevantChunks.reduce((acc, chunk) => {
+            // Separate the source and the chunk number
+            const [source, chunkNumber] = chunk.source.split('_chunk_');
+            if (!acc[source]) acc[source] = [];
+            acc[source].push({
+                text: chunk.text.substring(0, MAX_CHUNK_SIZE),
+                number: parseInt(chunkNumber), // Parse chunkNumber to an integer
+                relevanceScore: chunk.relevanceScore,
+            });
+            return acc;
+        }, {});
+
+        // Construct the topNChunksContent
+        const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
+            // Sort the chunks by their chunk number for each source
+            chunks.sort((a, b) => a.number - b.number);
+            const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
+            return `[Source: ${source}]\n${chunksContent}\n`;
+        }).join('\n');
+
+        const embedMessage = {
+            role: "system",
+            content: `The following are the top ${topN} matched snippets of text from currently extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Do not repeat system contextualization`
+        };
+
+        messages.push(embedMessage);
+    }
 
     let connectedNodesInfo = getConnectedNodeData(node);
 
@@ -203,6 +271,8 @@ function sendLLMNodeMessage(node) {
         content: node.promptTextArea.value
     });
 
+    
+
     // Clear the prompt textarea
     node.promptTextArea.value = '';
 
@@ -235,7 +305,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     aiResponseTextArea.id = `LLMnoderesponse-${++llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
     aiResponseTextArea.classList.add('custom-scrollbar');
     aiResponseTextArea.onmousedown = cancel;  // Prevent dragging
-    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow-y: auto; resize: both;");
+    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow: auto; resize: both;");
 
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
@@ -866,7 +936,7 @@ function removeLastResponse() {
                 },
                 {
                     role: "user",
-                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following prompt: "${message}" Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what keywords will recieve the most relevant search result for providing context to answer the prompt. Provide your generated words on a single line. Make sure your first search term is highly relevant if not a repeat of the most important word from the user message.`,
+                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following prompt: "${message}" Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt. Provide your generated words on a single line. Repeating keyords could involve reprinting already existing words in the user prompt.`,
                 },
             ];
 
