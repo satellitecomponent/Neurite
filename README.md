@@ -23,7 +23,7 @@ join us on discord!
 
 The controls are listed in the ? tab. Shift + double click to create nodes.
 
-(Dragging nodes can require some practice. Make sure to drag nodes by clicking outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
+(Dragging nodes can require some practice. Make sure to drag nodes by clicking on the actual window element outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
 
 # FractalGPT 🕸️🕷️
 
