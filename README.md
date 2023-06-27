@@ -36,7 +36,7 @@ The controls are listed in the ? tab. Shift + double click to create nodes.
 
 (Dragging nodes can require some practice. Make sure to drag nodes by clicking on the actual window element outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
 
-## FractalGP
+## FractalGPT
 🕸️🕷️
 
 - Not your typical chat interface.
@@ -48,23 +48,24 @@ To interact with the AI, you will need an OpenAi API key. (webLLM support curren
 
 - The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
 - Breaking up the AI's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
-- Mind mapping combined with a fractal interface levels up chain of thought reasoning into a fractal web of thought.
-- The Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for notes)
+- Mind mapping combined with a fractal interface goes beyond chain of thought reasoning to produce a fractal web of thought.
+- A Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for conversation with Ai)
 - The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry.
 
 
-The AI currently has the following capabilities... 
+Neurite currently has the following Ai capabilities... 
 
 1. Auto Mode
-2. Node based memory combined with vector embed retrieval for long term conversation memory.
+2. Node based memory combined with vector embed retrieval enables long term conversation memory for LLMs.
 3. HTML/JS and In-browser Python (pyodide) environment for directly rendering GPT's code output.
 4. Web Search (requires Google programmable search api key and search engine id)
 (to search without an API key, send a url within the prompt input and the webpage will display without going through Google.)
-5. Webpage and PDF text extraction. (requires setting up the 'scrape' local-host server found in the repo)
+5. Webpage and PDF text extraction. 
 6. Wikipedia Summaries (Requires setting up the 'wiki-server' found in the repo)
 7. Wolfram Alpha Results. (Requires an API key and setting up the 'wolfram-server' in the repo)
 
 All API keys can be input through the Ai tab of the menu dropdown.
+
 
 We have recently included an AI node functionality.
 Alt + Double click creates a node with a more traditional AI chat interface. (you can create multiple)
