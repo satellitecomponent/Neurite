@@ -147,7 +147,7 @@ function processInput() {
                                 }
                                 return p1 + body;
                             }));
-
+                            noteInput.refresh();
                             // Restore cursor position
                             node.nodeObject.content.children[0].children[1].children[0].selectionStart = cursorPosition;
                             node.nodeObject.content.children[0].children[1].children[0].selectionEnd = cursorPosition;

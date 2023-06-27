@@ -1929,13 +1929,20 @@ function connectRandom(n) {
             if (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked) {
                 let checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
-                checkbox.id = "customCheckbox"; // Add an id for reference
+
+                // Generate a unique ID for the checkbox
+                let uniqueCheckboxId = "customCheckbox_" + new Date().getTime();
+                checkbox.id = uniqueCheckboxId; // Set the unique ID
 
                 let label = document.createElement("label");
-                label.htmlFor = "customCheckbox"; // Bind label to the checkbox
+                label.htmlFor = uniqueCheckboxId; // Bind label to the checkbox using the unique ID
+
                 checkbox.onchange = async function () {
+                    // This references the specific checkbox that was changed
+                    let associatedTextArea = this.parentNode.querySelector("textarea");
+
                     if (this.checked) {
-                        n.style.display = "none";
+                        associatedTextArea.style.display = "none";
                         let re = /```(.*?)\n([\s\S]*?)```/gs;
                         let codeBlocks = n.value.matchAll(re);
 

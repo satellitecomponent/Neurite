@@ -1079,12 +1079,13 @@ const refTag = document.getElementById("ref-tag").value;
 
 const codeMessage = {
     role: "system",
-    content: `Code Checkbox = true requires your response to include HTML/JS or Python code, handled by Pyodide in the browser. Follow these steps:
+    content: `Code Checkbox = true requires your response to include either HTML/JS or Python code, handled by Pyodide in the browser. Follow these steps:
 
 ${nodeTag} Explanation Title (Unique)
 Provide a concise preface explaining what the code accomplishes. Either HTML/JS or Python.
 
-${nodeTag} HTML/JS Code Title (Unique, if HTML/JS code)
+${nodeTag} HTML/JS Code Title (Unique title)
+Wrap your code in labeled triple backtick code blocks.
 1. Structure your HTML with head and body tags.
 2. Set canvas size in the HTML.
 3. Enclose JavaScript within script tags inside HTML.
@@ -1093,7 +1094,8 @@ ${nodeTag} HTML/JS Code Title (Unique, if HTML/JS code)
 6. Encapsulate any CSS within style tags in the head section.
 7. Ensure the entire HTML/JS code is within a single node.
 
-${nodeTag} Python Code Title (Unique, if Python code)
+${nodeTag} Python Code Title (Unique title)
+Wrap your code in labeled triple backtick code blocks.
 1. Only use libraries: numpy, pandas, matplotlib, scipy, py, sympy, networkx.
 2. For visuals, save figures as base64 strings in HTML img tags.
 3. Convert non-visual outputs to strings or HTML tables.
