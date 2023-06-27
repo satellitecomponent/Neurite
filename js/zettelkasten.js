@@ -115,6 +115,7 @@ function processInput() {
                             node.title = newName;
                             const f = renameNode(name, node.nodeObject.content.children[0].children[0].children[1].value);
                             noteInput.setValue(f(noteInput.getValue()));  // instead of noteInput.value = f(noteInput.value);
+                            noteInput.refresh();
                         });
                         node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', (e) => {
                             let body = node.nodeObject.content.children[0].children[1].children[0].value;  // change const to let
@@ -211,6 +212,7 @@ function processInput() {
                             node.title = newName;
                             const f = renameNode(oldName, newName);
                             noteInput.setValue(f(noteInput.getValue()));  // instead of noteInput.value = f(noteInput.value);
+                            noteInput.refresh();
                         });
                     }
                 } else {

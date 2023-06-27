@@ -467,15 +467,31 @@ document.getElementById("save-button").addEventListener("click", function () {
     let title = prompt("Enter a title for this save:");
 
     if (title) {
-        // Save the data to localStorage
         let saves = JSON.parse(localStorage.getItem("saves") || "[]");
         saves.push({ title: title, data: s });
-        localStorage.setItem("saves", JSON.stringify(saves));
 
-        // Update the saved networks container
-        updateSavedNetworks();
+        try {
+            localStorage.setItem("saves", JSON.stringify(saves));
+            updateSavedNetworks();
+        } catch (e) {
+            // localStorage quota exceeded
+            if (confirm("Local storage is full, download the data as a .txt file?")) {
+                downloadData(title, s);
+            }
+        }
     }
 });
+
+function downloadData(title, data) {
+    var blob = new Blob([data], { type: 'text/plain' });
+    var tempAnchor = document.createElement('a');
+    tempAnchor.download = title + '.txt';
+    tempAnchor.href = window.URL.createObjectURL(blob);
+    tempAnchor.click();
+    setTimeout(function () {
+        window.URL.revokeObjectURL(tempAnchor.href);
+    }, 1);
+}
 
 function updateSavedNetworks() {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
@@ -493,6 +509,7 @@ function updateSavedNetworks() {
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = "none"
+        titleInput.style.width = "134px"
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -592,21 +609,23 @@ function handleDrop(e) {
     let dt = e.dataTransfer;
     let file = dt.files[0];
 
-    // Only process .txt files
     if (file && file.name.endsWith('.txt')) {
         let reader = new FileReader();
         reader.readAsText(file);
         reader.onload = function (e) {
             let content = e.target.result;
-
-            // Save the data to localStorage
-            let saves = JSON.parse(localStorage.getItem("saves") || "[]");
             let title = file.name.replace('.txt', '');
-            saves.push({ title: title, data: content });
-            localStorage.setItem("saves", JSON.stringify(saves));
 
-            // Update the saved networks container
-            updateSavedNetworks();
+            try {
+                // Try saving the data to localStorage
+                let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+                saves.push({ title: title, data: content });
+                localStorage.setItem("saves", JSON.stringify(saves));
+                updateSavedNetworks();
+            } catch (error) {
+                // If local storage is full, update save-load input
+                document.getElementById("save-or-load").value = content;
+            }
         };
     } else {
         console.log('File must be a .txt file');

@@ -4,7 +4,7 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
 
     // Update aiResponding and the button
     node.aiResponding = true;
-    node.regenerateButton.textContent = '❚❚'; // Halt unicode
+    node.regenerateButton.textContent = '\u275A\u275A'; // Double Vertical Bar unicode
 
     console.log("Messages sent to API:", messages);
     console.log("Token count for messages:", getTokenCount(messages));
@@ -98,7 +98,7 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
     } finally {
         node.aiResponding = false;
-        node.regenerateButton.textContent = '↻'; // Your desired refresh symbol here
+        node.regenerateButton.textContent = "\u21BA";
     }
 }
 
@@ -136,8 +136,7 @@ async function sendLLMNodeMessage(node) {
     const maxTokensSlider = document.getElementById('max-tokens-slider');
     let contextSize = 0;
 
-    // Append the user prompt to the AI response area with a distinguishing mark
-    node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
+
 
     // Store the last prompt
     node.latestUserMessage = node.promptTextArea.value;
@@ -145,7 +144,7 @@ async function sendLLMNodeMessage(node) {
     let messages = [
         {
             role: "system",
-            content: "Your responses are displayed within a chat interface node. Any connected nodes will be shared as individual system messages."
+            content: "Your responses are displayed within an Ai node. Any connected nodes will be shared as individual system messages."
         },
     ];
 
@@ -177,7 +176,7 @@ async function sendLLMNodeMessage(node) {
 
     const googleSearchMessage = {
         role: "system",
-        content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message which describes the format of your response."
+        content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS"
     };
 
     if (document.getElementById("google-search-checkbox").checked) {
@@ -213,7 +212,7 @@ async function sendLLMNodeMessage(node) {
 
         const embedMessage = {
             role: "system",
-            content: `The following are the top ${topN} matched snippets of text from currently extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Do not repeat system contextualization`
+            content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
         };
 
         messages.push(embedMessage);
@@ -227,7 +226,7 @@ async function sendLLMNodeMessage(node) {
     const maxContextSize = document.getElementById('max-context-size-slider').value;
 
     connectedNodesInfo.forEach(info => {
-        let infoWithIntro = "This node is connected to your memory: \n" + info;
+        let infoWithIntro = "Node connected to memory: \n" + info;
         let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
         if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
             remainingTokens -= infoTokenCount;
@@ -247,7 +246,7 @@ async function sendLLMNodeMessage(node) {
             });
             messages.push({
                 role: "system",
-                content: "The previous message was trimmed due to token limits."
+                content: "Previous message trimmed due to token limits."
             });
         }
     });
@@ -263,7 +262,7 @@ async function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "system",
-        content: `The following is your most recent conversation. \n ${lastPromptsAndResponses} End of recent conversation.`
+        content: `Recent conversation: \n ${lastPromptsAndResponses} End of recent conversation.`
     });
 
     messages.push({
@@ -272,7 +271,8 @@ async function sendLLMNodeMessage(node) {
     });
 
     
-
+    // Append the user prompt to the AI response area with a distinguishing mark
+    node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
     // Clear the prompt textarea
     node.promptTextArea.value = '';
 
@@ -319,7 +319,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the send button
     let sendButton = document.createElement("button");
     sendButton.type = "submit";
-    sendButton.innerText = "⏵";
+    sendButton.innerText = "\u23F5";
     sendButton.id = "prompt-form";
     sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";    sendButton.addEventListener('mouseover', function () {
         this.style.backgroundColor = '#45a049';
@@ -339,7 +339,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the regenerate button
     let regenerateButton = document.createElement("button");
     regenerateButton.type = "button";
-    regenerateButton.innerText = "↺";
+    regenerateButton.innerText = "\u21BA";
     regenerateButton.id = "prompt-form";
     regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
     regenerateButton.addEventListener('mouseover', function () {
@@ -423,7 +423,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             this.controller.abort();
             this.aiResponding = false;
             this.shouldContinue = false;
-            this.regenerateButton.textContent = '↻';
+            this.regenerateButton.textContent = "\u21BA";
             this.promptTextArea.value = this.latestUserMessage; // Add the last user message to the prompt input
         }
     };
@@ -433,7 +433,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             // AI is not responding, so we want to regenerate
             this.removeLastResponse(); // Remove the last AI response
             this.promptTextArea.value = this.latestUserMessage; // Restore the last user message into the input prompt
-            this.regenerateButton.textContent = '↻';
+            this.regenerateButton.textContent = "\u21BA";
         }
     };
 
@@ -590,7 +590,7 @@ function removeLastResponse() {
                 controller.abort();
                 aiResponding = false;
                 shouldContinue = false;
-                document.getElementById("regen-button").textContent = '↻';
+                document.getElementById("regen-button").textContent = "\u21BA";
                 document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
             }
         }
@@ -600,7 +600,7 @@ function removeLastResponse() {
                 // AI is not responding, so we want to regenerate
                 removeLastResponse(); // Remove the last AI response
                 document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
-                document.getElementById("regen-button").textContent = '↻';
+                document.getElementById("regen-button").textContent = "\u21BA";
 
             }
         }
@@ -635,7 +635,7 @@ function removeLastResponse() {
 
             // Update aiResponding and the button
             aiResponding = true;
-            document.getElementById("regen-button").textContent = '❚❚'; // Halt unicode
+            document.getElementById("regen-button").textContent = '\u275A\u275A'; // Double Vertical Bar unicode
 
             console.log("Messages sent to API:", messages);
             console.log("Token count for messages:", getTokenCount(messages));
@@ -739,7 +739,7 @@ function removeLastResponse() {
                 return "An error occurred while processing your request.";
             } finally {
                 aiResponding = false;
-                document.getElementById("regen-button").textContent = '↻'; // Your desired refresh symbol here
+                document.getElementById("regen-button").textContent = "\u21BA";
             }
         }
 
@@ -936,7 +936,7 @@ function removeLastResponse() {
                 },
                 {
                     role: "user",
-                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following prompt: "${message}" Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt. Provide your generated words on a single line. Repeating keyords could involve reprinting already existing words in the user prompt.`,
+                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following prompt: "${message}" Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt. Provide your generated words on a single line. Repeating keywords could involve reprinting already existing words from the user prompt.`,
                 },
             ];
 
@@ -1063,14 +1063,15 @@ function removeLastResponse() {
             return summaries;
         }
 
-const wolframmessage = `"Your role is to generate Wolfram Alpha compatible code, template, or query based on the current user message. Only include valid search queries with no preface or explanation.
-Create a search which is most probable to return a result from Wolfram. Make sure you are generating Wolfram code which is most specific to the current user message.
-The generated code should be, focused, and capable of returning relevant and accurate information via Wolfram query.
-Your goal is to provide the most relevant Wolfram code that directly addresses the user's inquiry. Remember, the user cannot see your responses, you are interacting with Wolfram Alpha.
-Make sure you response only includes content that can be directly searched in Wolfram Alpha without preface, labeling, or further explanation. (This is because we directly send your query to Alpha)
-Provide a single line of Wolfram Alpha compatible code without any additional explanation or context. If you're unsure about what the user wants, provide your own example as a general alternative that is likely to return a result from Wolfram.
-Your response should only includes a search to Wolfram Alpha witouth any extra tags or explanation.
-If the user has already input valid wolfram code, just reprint their exact code with no other addendum. If the user is vague, make sure you response still includes a valid Wolfram query.
+const wolframmessage = `"Objective:
+Generate a precise Wolfram Alpha query in response to the user's message.
+
+Guidelines:
+- Include only valid search queries with no preface or explanation.
+- The query should be specific to the user's message and return relevant information from Wolfram Alpha.
+- Respond with a single line of code.
+- If the user's input is already valid Wolfram code, use it verbatim.
+- In case of vague user input, provide a general alternative query.
 All your of your output should simulate a query to Wolfram Alpha with no other explnation attatched. Any response other than valid Wolfram Code will produce an error.`
 
 const nodeTag = document.getElementById("node-tag").value;
@@ -1078,41 +1079,34 @@ const refTag = document.getElementById("ref-tag").value;
 
 const codeMessage = {
     role: "system",
-    content: `Code Checkbox = true signifies that your response should include either Html/js or Python code that will be handled by Pyodide in the browser. Users can render plain text within each node as HTML in an iframe or Python in Pyodide. The instructions below guide your response:
-${nodeTag}Unique Explanation Title (always use a unique title for each node rather than repeating these example titles)
-Before writing your primary code response, provide a concise explanation of what you will accomplish with the code. Either html/js or Python
-Step 1. Explantion preface
-Step 2. Seperate node for an entire code block.
-Provide a single code block rather than breaking the code into multiple sections.
-This means keeping script tags within the same html file.
-Step 3. Final explanation seperated from the code block node.
-Only your explanations should be chunked into seperate nodes. The code response should be a single node.
-${nodeTag} Unique HTML/JS Response title specific to the code. ( HTML codeblock) If HTML response = No Python! Default to HTML unless asked for Python
-For generating HTML and JavaScript responses:
-- Structure your HTML correctly with appropriate head and body tags.
-- The HTML will render in an iframe... Be sure to set the canvas size in the HTML as opposed to the JS.
-- Enclose any JavaScript within a script tag rather than an external file.
-- Your JavaScript code will be run within the iframe scope, and won't have access to the parent page DOM or JavaScript context. This means keeping script tags within the html.
-- Always remember to properly close HTML tags and handle potential JavaScript exceptions to avoid unexpected behavior or script failure.
-- If your HTML/JS response includes CSS, be sure to encapsulate it properly within style tags in the head section.
+    content: `Code Checkbox = true requires your response to include HTML/JS or Python code, handled by Pyodide in the browser. Follow these steps:
 
-ensure seperation of code from your explanation using a unique node title for each part of your response.
+${nodeTag} Explanation Title (Unique)
+Provide a concise preface explaining what the code accomplishes. Either HTML/JS or Python.
 
-${nodeTag} Unique Python Response title specific to the code. Assume the user is asking for Python code that outputs to Pyodide unless they specify to strictly write Python code that runs outside of Pyodide.
-For generating Python responses in a Pyodide environment:
+${nodeTag} HTML/JS Code Title (Unique, if HTML/JS code)
+1. Structure your HTML with head and body tags.
+2. Set canvas size in the HTML.
+3. Enclose JavaScript within script tags inside HTML.
+4. JavaScript runs in an iframe and cannot access parent page DOM.
+5. Properly close HTML tags.
+6. Encapsulate any CSS within style tags in the head section.
+7. Ensure the entire HTML/JS code is within a single node.
 
-Always write code that will display correctly in Pyodide.
-- The available libraries in the current Pyodide session are numpy, pandas, matplotlib, scipy, py, sympy, networkx. Stick to these libraries.
-- When your Python code generates a visual output like plots or graphs, do NOT use plt.show(). Instead, save the figure to an in-memory binary stream, convert the image into a base64 string, and return this base64 string as an HTML img tag.
-- Always use base64 and io to convert images into a base64 string for display.
-- File operations and system calls are unsupported in Pyodide. Avoid using them.
-- Handle potential exceptions by wrapping your code in try/except blocks due to Pyodide's limitations.
-- Pyodide captures the last expression in the Python code, not what's printed to the console. Therefore, DO NOT rely on print statements to display results. Make sure to RETURN the result as the last expression in your Python code.
-- For non-visual outputs, convert them into a string and Pyodide will include this directly within an HTML paragraph tag. If you're working with more complex data, convert it to a JSON string or an HTML table before returning it.
-- Always label your code blocks with 'python' to clearly indicate that it's Python code.
-Remember: The key is to return the result, not print it. Pyodide captures the returned result.
-${nodeTag} Unique Explanation Node (always use a unique title for each node rather than repeating these example titles)
-Provide a clear explanation of the Python or HTML code and its output. Align the explanation with the Python code steps and avoid repetition. Ensure that your entire response, including code and explanation, is self-contained and does not rely on external files or data unless they are created within the code itself.`
+${nodeTag} Python Code Title (Unique, if Python code)
+1. Only use libraries: numpy, pandas, matplotlib, scipy, py, sympy, networkx.
+2. For visuals, save figures as base64 strings in HTML img tags.
+3. Convert non-visual outputs to strings or HTML tables.
+4. Avoid file operations and system calls.
+5. Handle exceptions with try/except blocks.
+6. Return the result as the last expression, don't rely on print statements.
+7. Label code blocks with 'python'.
+8. Ensure the entire Python code is within a single node.
+
+${nodeTag} Final Explanation Title (Unique)
+1. Explain the code and its output clearly.
+2. Align the explanation with code steps.
+3. Make sure the response is self-contained and doesn't rely on external files or data unless created within the code.`
 };
 
 const instructionsMessage = {
@@ -1150,62 +1144,48 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
 const aiNodesMessage = {
     role: "system",
-    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you (GPT) are being requested by the user to create AI Chat nodes. Here is how to do it:
+    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
+    1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
+    2. In the next line, provide an initial prompt that will be sent to the AI.
+    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${refTag}.
+    
+    Example:
+    LLM: Understanding AI
+    What is Artificial Intelligence?
+    ${refTag} AI Basics, Neural Networks
 
-1. Start by typing "LLM: (unique AI title)". This denotes the creation of a new Large Language Model (LLM) node.
-2. In the next line, provide an initial prompt that will be sent to the AI.
-3. Connect LLM nodes to any text or LLM nodes you want the AI to have as its memory context. ${refTag}
-Example:
-LLM: Ai (whatever unique title is relevant)
-Initial prompt. (You are not looking to the user for a prompt, instead generate a prompt yourself.)
-Your initial prompt should be formulated to elicit a response from GPT
-${refTag} Exact titles of nodes you want to connect to the LLM node.
-
-Note that these LLM nodes (AI chat nodes) can be interlinked through the use of reference tags. By doing so, any nodes (text or LLM) that are connected through the reference tags will have their text included as part of the memory or context of the LLM nodes they connect to.
-After creating an LLM node, try connect a few text nodes (${nodeTag}) to the LLM node.
-
-In essence, this mechanism allows you to create both LLM nodes and text nodes that extend the memory/context of any LLM nodes they are linked with, providing a more complex and nuanced conversation environment.
-
-Remember to use "LLM:" instead of "${nodeTag}" when creating AI chat nodes. End of LLM system message. Do not repeat system messages.`,
+    Note: Interlink LLM nodes using reference tags. This allows for a complex and nuanced conversation environment by extending the memory/context of LLM nodes they are linked with.
+    Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
 };
 
 
-        const zettelkastenPrompt = `System message to Ai. You are an ai whos responses are being visualized within a fractal mind-map which serves as the cognitive architecture for storing and searching your memories. The website is called Neurite.
-- Follow the node reference tag format. This format is what enables you to connect ideas in a way that is visualized to the user.
-- Use the below style guidelines to format your response. Do not include the following instructions in your response to the user:
-Remember, always use the format below to style your responses.
+const zettelkastenPrompt = `System message to AI: 
+- Responses are visualized in a fractal mind-map called Neurite.
+- Use node reference tag format for visual connections.
+- Do not include the instructions in the response.
+Format:
+    ${nodeTag} (Unique Node Title)
+        - Write plain text.
+        - Provide a concise explanation of a key idea.
+        - Define references for that idea.
+        - Break the response into multiple connected nodes.
 
-                                Prompt: Create a single node which describes how to create nodes.
+    ${refTag} (Node Titles to Connect)
+        - Connect the response to related nodes using reference tags.
 
-                                Format:
-                                ${nodeTag} (insert a unique, relevant, and descriptive node title)
-                                   - Write the plain text response below the node title in any style
-                                   - Provide a clear, concise, and explanation of a key idea, then move on to defining the references for that idea, then move on to creating new nodes. This will result in your response breaking up into multiple nodes.
-                                   - Instaed of replying with single node to represent your thought, break your response up into multiple connected nodes that represent your tapestry of thought.
-                                   - for example, you can represent a dialogue by having the titles for each node represent a character, and the plain text could be an instance of their dialogue.
+Example:
+    Prompt: Create a triangle.
+    ${nodeTag} Point 1
+    This is the first point in our triangle.
+    ${refTag}
 
-                                ${refTag} (to connect nodes, print the exact titles of nodes to connect to this node seperated by commas)
-                                   - Connect the response to other related nodes using reference tags. If the user asks for certain nodes to be connected, make sure the proper ref tags are included to connect your response to the specified nodes.
-                                   - Use the exact node titles of the related nodes for reference tags.
+    ${nodeTag} Point 2
+    This is the second point.
+    ${refTag} Point 1
 
-                                Example:
-
-                                Prompt
-                                Create a triangle.
-
-                                ${nodeTag} Point 1
-                                This is the first point in our triangle.
-                                ${refTag}
-
-                                ${nodeTag} Point 2
-                                This point is second.
-                                ${refTag} title1
-
-                                ${nodeTag} Point 3
-                                You can say anything here relevant to the user memssage. Make sure not to overfill the plain text. Instead, chunk you ideas into relevant node structures.
-                                ${refTag} title2, title 1 //take note of how circles could be made in the same way.
-
-                                Efficiently condense the most salient ideas into a response that contructs a tapestry of thought reasoning within the node reference tag format described above. This is a system prompt`;
+    ${nodeTag} Point 3
+    This point completes the triangle.
+    ${refTag} Point 1, Point 2`;
 
 
         const spatialAwarenessExample = `${nodeTag} Central Node
@@ -1213,7 +1193,7 @@ Remember, always use the format below to style your responses.
 ${refTag} Node A, Node B
 
 ${nodeTag} Node A
-- This node is directly connected to the Central Node and branches out to Node C and Node D.
+- This node connects to the Central Node and branches out to Node C and Node D.
 ${refTag} Central Node, Node C, Node D
 
 ${nodeTag} Node B
@@ -1221,20 +1201,14 @@ ${nodeTag} Node B
 ${refTag} Central Node, Node E, Node F
 
 ${nodeTag} Node C
-- This node is an end point, stemming from Node A.
+- This node is an end point from Node A.
 ${refTag} Node A
 
 ${nodeTag} Node D
-- This node is an end point, stemming from Node A.
+- This node is an end point from Node A.
 ${refTag} Node A
 
-${nodeTag} Node E
-- This node is an end point, stemming from Node B.
-${refTag} Node B
-
-${nodeTag} Node F
-- This node is an end point, stemming from Node B.
-${refTag} Node B`;
+etc..`;
 
         let summarizedZettelkastenPrompt = "";
 
@@ -1249,7 +1223,11 @@ ${refTag} Node B`;
             },
             {
                 role: "user",
-                content: `Do not preface your response. Based on your understanding of the fractal mind-map, tagging format, and the spatial awareness example which utilizes the format, create an advanced and concise example that utilizes the Zettelkasten format and interconnects nodes in way that best informs an ai how to utilize the format to reduce cognitive load. Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total. Each node should break the response into an iterative tapestry of thought reasoning that includes all relevant information to inform an ai system about proper use of the format. Address your response to an ai system.`,
+                content: `Do not preface your response.
+Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demoonstates to an Ai system how to most effectivly utilize the Zettelkasten format.
+Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total.
+Each node should break the response into an iterative tapestry of thought reasoning that includes all relevant information to inform an ai system about proper use of the format.
+Address your response to an ai system.`,
             },
             ];
 
@@ -1559,21 +1537,21 @@ async function fetchWolfram(message) {
 
             let messages = [{
                 role: "system",
-                content: `Your responses are being output to Neurite, a fractal cognitive architecture. Try not to repeat system messages to the user. Respond in the way most probable to match the following example of the correct format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating the above format context message.`,
+                content: `Try to never repeat system messages to the user. Respond in the way most probable to match the following example of the correct format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
             },
             autoModeMessage ?
                 {
                     role: "user",
                     content: `Your self-prompt: ${autoModeMessage}
                             Original prompt: ${originalUserMessage}
-                            Example of the desired format for your response with up to date node and reference tags.
+                            Example of the desired format for your response.
                             ${nodeTag} Unique title
                             plain text on the next line for your response.
-                            Always ensure each title is unique. Do not repeat previous titles of nodes.
+                            Always ensure each title is unique.
+                            !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
                             ${nodeTag} Example
                             Break your response up into multiple nodes
-                            Evaluate your previous response and build of the most correct nodes.
                             Never reference the instructions for the format of your response unless asked.
                                 ${refTag} Repeat titles to connect nodes.
                             Always end your response with a new line, then, Prompt: [the prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
@@ -1581,14 +1559,14 @@ async function fetchWolfram(message) {
                 {
                     role: "user",
                     content: `User Message: ${message}
-                            Example of the desired format for your response with up to date node and reference tags.
+                            Example of the desired format for your response.
                             ${nodeTag} Unique Title
                             plain text on the next line for your response.
-                            Always ensure each title is unique. Do not repeat previous titles of nodes.
+                            Always ensure each title is unique.
+                            !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
                             ${nodeTag} Example
                             Break your response up into multiple nodes
-                            Evaluate your previous response and build of the most correct nodes.
                             Never reference the instructions for the format of your response unless asked.
                                 ${refTag} Repeat titles to connect nodes.
                             ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
@@ -1678,7 +1656,7 @@ async function fetchWolfram(message) {
 
                 const embedMessage = {
                     role: "system",
-                    content: `The following are the top ${topN} matched snippets of text from currently extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Do not repeat system contextualization`
+                    content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
                 };
 
                 messages.push(embedMessage);
@@ -1815,7 +1793,7 @@ async function performSearch(searchQuery) {
             },
             {
                 role: "system",
-                content: "Construct search queries based on user prompts... Provide a search for the current user message. Keep in mind your response will be used both as a google search and as an embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages relevant to the user query. Do not preface or explain your output. Consider any necessary terms that are necessary for the request.",
+                content: "Construct search queries based on user prompts... Provide a search for the current user message. Keep in mind your response will be used both as a Google search and as an vector embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages and chunks relevant to the user query. Do not preface or explain your output.",
             },
             {
                 role: "user",
@@ -1926,7 +1904,7 @@ async function performSearch(searchQuery) {
                     })(listItem);
                 }
             } catch (error) {
-                console.error(`Failed to fetch keys:`, error);
+                console.error(`(Server disconnect) Failed to fetch keys:`, error);
             }
         }
 
