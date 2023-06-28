@@ -232,6 +232,8 @@
                 <div id="tab4" class="tabcontent">
                     <!-- Fourth tab content here -->
                     <div class="submenu">
+                        <input type="checkbox" id="local-embeddings-checkbox">
+                        <label for="local-embeddings-checkbox">: Local Embeddings</label>
                         <div class="api-container">
                             <div class="api-inputs">
                                 <div>
@@ -344,7 +346,7 @@
         </div>
     </div>
     <a id="nodes">
-<!-- Copy all text to personal storage -->
+        <!-- Copy all text to personal storage -->
 
     </a>
     <!--iframe id="inlineFrameExample"
@@ -405,6 +407,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
     <script src="js/dropdown.js"></script>
     <script src="js/zettelkasten.js"></script>
+
+    <script defer type="module" src="js/embeddings.js"></script>
 
     <script src="js/interface.js"></script>
     <script src="js/ai.js"></script>

@@ -744,45 +744,67 @@ function removeLastResponse() {
         }
 
 
-        async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
-            const API_KEY = document.getElementById("api-key-input").value;
-            if (!API_KEY) {
-                alert("Please enter your API key");
-                return;
-            }
+async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
+    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
 
-            const API_URL = "https://api.openai.com/v1/embeddings";
-
-            const headers = new Headers();
-            headers.append("Content-Type", "application/json");
-            headers.append("Authorization", `Bearer ${API_KEY}`);
-
-            const body = JSON.stringify({
-                model: model,
-                input: text,
+    // If the "Use Local Embeddings" checkbox is checked, use the local model
+    if (useLocalEmbeddings && window.generateEmbeddings) {
+        try {
+            // This assumes that the local embedding model is initialized
+            // and assigned to window.generateEmbeddings
+            //console.log('Sending to local model:', text);  // DEBUG
+            const output = await window.generateEmbeddings(text, {
+                pooling: 'mean',
+                normalize: false,
             });
+            //console.log('Local Embedding:', output.data); // DEBUG
+            return output.data;
+        } catch (error) {
+            console.error("Error generating local embeddings:", error);
+            return [];
+        }
+    } else {
+        // Use the API for embeddings
 
-            const requestOptions = {
-                method: "POST",
-                headers: headers,
-                body: body,
-            };
+        const API_KEY = document.getElementById("api-key-input").value;
+        if (!API_KEY) {
+            alert("Please enter your API key");
+            return;
+        }
 
-            try {
-                const response = await fetch(API_URL, requestOptions);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Error fetching embeddings:", errorData);
-                    return [];
-                }
+        const API_URL = "https://api.openai.com/v1/embeddings";
 
-                const data = await response.json();
-                return data.data[0].embedding;
-            } catch (error) {
-                console.error("Error fetching embeddings:", error);
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Authorization", `Bearer ${API_KEY}`);
+
+        const body = JSON.stringify({
+            model: model,
+            input: text,
+        });
+
+        const requestOptions = {
+            method: "POST",
+            headers: headers,
+            body: body,
+        };
+
+        try {
+            const response = await fetch(API_URL, requestOptions);
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Error fetching embeddings:", errorData);
                 return [];
             }
+
+            const data = await response.json();
+            return data.data[0].embedding;
+        } catch (error) {
+            console.error("Error fetching embeddings:", error);
+            return [];
         }
+    }
+}
 
         class LRUCache {
             constructor(maxSize) {
@@ -846,11 +868,26 @@ function removeLastResponse() {
             let matched = [];
 
             const fetchNodeEmbedding = async (node) => {
+                //console.log('Node:', node);  // DEBUG
+                //console.log('Node content:', node.content);  // DEBUG
+
+                const titleElement = node.content.querySelector(".title-input");
+                const contentElement = node.content.querySelector("textarea");
+                const titleText = titleElement ? titleElement.value : '';
+                const contentText = contentElement ? contentElement.value : '';
+
+                //console.log('Extracted title text:', titleText);  // DEBUG
+               // console.log('Extracted content text:', contentText);  // DEBUG
+
+                const fullText = titleText + ' ' + contentText;
+
                 const cachedEmbedding = nodeCache.get(node.uuid);
                 if (cachedEmbedding) {
+                 //   console.log("Using cached embedding for:", fullText); // DEBUG
                     return cachedEmbedding;
                 } else {
-                    const embedding = await fetchEmbeddings(node.content.innerText);
+                //    console.log("Fetching embedding for:", fullText); // DEBUG
+                    const embedding = await fetchEmbeddings(fullText);
                     nodeCache.set(node.uuid, embedding);
                     return embedding;
                 }
@@ -859,6 +896,8 @@ function removeLastResponse() {
             const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
             const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
             const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
+
+         //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
 
             for (let i = 0; i < nodes.length; i++) {
                 const n = nodes[i];
@@ -877,9 +916,14 @@ function removeLastResponse() {
                 const keywordMagnitude = Math.sqrt(keywordEmbedding.reduce((sum, value) => sum + (value * value), 0));
                 const nodeMagnitude = Math.sqrt(nodeEmbedding.reduce((sum, value) => sum + (value * value), 0));
 
-                const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
+             //   console.log('Dot Product:', dotProduct);  // DEBUG
+            //   console.log('Keyword Magnitude:', keywordMagnitude);  // DEBUG
+             //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
 
-                const similarityThreshold = 0.5;
+                const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
+              //  console.log('Cosine Similarity:', cosineSimilarity);
+
+                const similarityThreshold = -1;
                 const keywordMatchPercentage = 0.5;
 
                 if (weightedTitleScore + weightedContentScore > 0 || cosineSimilarity > similarityThreshold) {
@@ -928,7 +972,7 @@ function removeLastResponse() {
             const messages = [
                 {
                     role: "system",
-                    content: lastPromptsAndResponses,
+                    content: `Recent conversation: ${ lastPromptsAndResponses } : end of recent conversation`,
                 },
                 {
                     role: "system",
@@ -936,7 +980,9 @@ function removeLastResponse() {
                 },
                 {
                     role: "user",
-                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following prompt: "${message}" Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt. Provide your generated words on a single line. Repeating keywords could involve reprinting already existing words from the user prompt.`,
+                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following most recent message message: ${message} : end of message
+                    Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt.
+                    Provide your generated words on a single line. Start with the most relevant word which should be a word from the most recent user message.`,
                 },
             ];
 
@@ -947,33 +993,30 @@ function removeLastResponse() {
             return keywords.split(',').map(k => k.trim());
         }
 
+function cosineSimilarity(vecA, vecB) {
+    if (!vecA || !vecB || vecA.length !== vecB.length || vecA.length === 0 || vecB.length === 0) {
+        return 0;
+    }
 
-        function cosineSimilarity(vecA, vecB) {
-            // Check for null or undefined vectors, or vectors of different lengths
-            if (!vecA || !vecB || vecA.length !== vecB.length || vecA.length === 0 || vecB.length === 0) {
-                return 0;
-            }
+    let dotProduct = 0;
+    let vecASquaredSum = 0;
+    let vecBSquaredSum = 0;
 
-            let dotProduct = 0;
-            let vecASquaredSum = 0;
-            let vecBSquaredSum = 0;
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        vecASquaredSum += vecA[i] * vecA[i];
+        vecBSquaredSum += vecB[i] * vecB[i];
+    }
 
-            for (let i = 0; i < vecA.length; i++) {
-                dotProduct += vecA[i] * vecB[i];
-                vecASquaredSum += vecA[i] * vecA[i];
-                vecBSquaredSum += vecB[i] * vecB[i];
-            }
+    const vecAMagnitude = Math.sqrt(vecASquaredSum);
+    const vecBMagnitude = Math.sqrt(vecBSquaredSum);
 
-            const vecAMagnitude = Math.sqrt(vecASquaredSum);
-            const vecBMagnitude = Math.sqrt(vecBSquaredSum);
+    if (vecAMagnitude === 0 || vecBMagnitude === 0) {
+        return 0;
+    }
 
-            // Check if vectors are zero vectors after calculating magnitudes
-            if (vecAMagnitude === 0 || vecBMagnitude === 0) {
-                return 0;
-            }
-
-            return dotProduct / (vecAMagnitude * vecBMagnitude);
-        }
+    return dotProduct / (vecAMagnitude * vecBMagnitude);
+}
 
         function sampleSummaries(summaries, top_n_links) {
             const sampledSummaries = [];
@@ -1166,7 +1209,8 @@ const zettelkastenPrompt = `System message to AI:
 - Use node reference tag format for visual connections.
 - Do not include the instructions in the response.
 Format:
-    ${nodeTag} (Unique Node Title)
+    ${nodeTag} Example Title
+        - Ensure Unique/Specific Node Title
         - Write plain text.
         - Provide a concise explanation of a key idea.
         - Define references for that idea.
@@ -1227,7 +1271,7 @@ etc..`;
                 role: "user",
                 content: `Do not preface your response.
 Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demoonstates to an Ai system how to most effectivly utilize the Zettelkasten format.
-Write your entire response within the format. Its important to make sure to keep your response under about 200 words. Your example should use 6 nodes total.
+Write your entire response within the format. Its important to make sure to keep your response under 200 words. Your example should use 5 nodes total.
 Each node should break the response into an iterative tapestry of thought reasoning that includes all relevant information to inform an ai system about proper use of the format.
 Address your response to an ai system.`,
             },
@@ -1544,15 +1588,16 @@ async function fetchWolfram(message) {
             autoModeMessage ?
                 {
                     role: "user",
-                    content: `Your self-prompt: ${autoModeMessage}
+                    content: `Your self-Prompt: ${autoModeMessage}
                             Original prompt: ${originalUserMessage}
                             Example of the desired format for your response.
-                            ${nodeTag} Unique title
+                            ${nodeTag} Example Title
+                            Ensure unique node titles
                             plain text on the next line for your response.
                             Always ensure each title is unique.
                             !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
-                            ${nodeTag} Example
+                            ${nodeTag} Title
                             Break your response up into multiple nodes
                             Never reference the instructions for the format of your response unless asked.
                                 ${refTag} Repeat titles to connect nodes.
@@ -1560,14 +1605,15 @@ async function fetchWolfram(message) {
                 } :
                 {
                     role: "user",
-                    content: `User Message: ${message}
+                    content: `Current user Prompt: ${message}
                             Example of the desired format for your response.
-                            ${nodeTag} Unique Title
+                            ${nodeTag} Example Title
+                            Ensure unique node titles
                             plain text on the next line for your response.
                             Always ensure each title is unique.
                             !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
-                            ${nodeTag} Example
+                            ${nodeTag} Title
                             Break your response up into multiple nodes
                             Never reference the instructions for the format of your response unless asked.
                                 ${refTag} Repeat titles to connect nodes.
@@ -1632,8 +1678,7 @@ async function fetchWolfram(message) {
 
 
             if (embedCheckbox && embedCheckbox.checked) {
-                const aiSuggestedSearch = await constructSearchQuery(message);
-                const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
+                const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
 
                 // Group the chunks by their source (stripping the chunk number from the key)
                 const groupedChunks = relevantChunks.reduce((acc, chunk) => {
@@ -1658,7 +1703,7 @@ async function fetchWolfram(message) {
 
                 const embedMessage = {
                     role: "system",
-                    content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
+                    content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
                 };
 
                 messages.push(embedMessage);
@@ -1983,39 +2028,44 @@ async function performSearch(searchQuery) {
             }
         }
 
-        async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
-            console.log(`Storing embeddings and text chunks for key: ${key}`);
+async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
+    console.log(`Storing embeddings and text chunks for key: ${key}`);
 
-            try {
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunkKey = `${key}_chunk_${i}`;
-                    const response = await fetch('http://localhost:4000/store-embedding-and-text', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            key: chunkKey,
-                            embedding: embeddings[i],
-                            text: chunks[i]
-                        }),
-                    });
+    // Check if local embeddings are used
+    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+    const source = useLocalEmbeddings ? 'local' : 'openai';
 
-                    if (!response.ok) {
-                        throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
-                    }
-                }
+    try {
+        for (let i = 0; i < chunks.length; i++) {
+            const chunkKey = `${key}_chunk_${i}`;
+            const response = await fetch('http://localhost:4000/store-embedding-and-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    key: chunkKey,
+                    embedding: embeddings[i],
+                    text: chunks[i],
+                    source: source  // attach the source tag
+                }),
+            });
 
-                // If no errors, refresh the key list
-                await fetchAndDisplayAllKeys();
-
-                // If no errors, return true to indicate success
-                return true;
-            } catch (error) {
-                console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
-                throw error;
+            if (!response.ok) {
+                throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
             }
         }
+
+        // If no errors, refresh the key list
+        await fetchAndDisplayAllKeys();
+
+        // If no errors, return true to indicate success
+        return true;
+    } catch (error) {
+        console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
+        throw error;
+    }
+}
 
         async function fetchAndStoreWebPageContent(url) {
             try {
@@ -2069,82 +2119,7 @@ async function performSearch(searchQuery) {
             }
         }
 
-
-        async function getRelevantChunks(searchQuery, searchResults) {
-            const searchQueryEmbedding = await fetchEmbeddings(searchQuery);
-            //console.log("Search query embedding:", searchQueryEmbedding);
-
-            // Get all embeddings from the server
-            const allEmbeddings = await fetchAllStoredEmbeddings();
-            //console.log("All embeddings:", allEmbeddings);
-
-            if (!allEmbeddings) {
-                console.error("No embeddings were fetched. Please check the server logs for more information.");
-                return [];
-            }
-
-            // Get the embeddings for the chunks and store them in an array
-            const chunkEmbeddings = allEmbeddings.flatMap(embedding => {
-                if (typeof embedding.chunks === 'string') {
-                    const result = {
-                        link: embedding.key,
-                        description: embedding.chunks
-                    };
-                    return [{
-                        result,
-                        embedding: embedding.embedding
-                    }];
-                } else if (Array.isArray(embedding.chunks)) {
-                    return embedding.chunks.map(chunk => {
-                        const result = {
-                            link: embedding.key,
-                            description: chunk.text
-                        };
-                        return {
-                            result,
-                            embedding: chunk.embedding
-                        };
-                    });
-                } else {
-                    return [];
-                }
-            });
-            //console.log("Chunk embeddings:", chunkEmbeddings);
-
-            // Calculate the cosine similarity between the search query embedding and each chunk embedding
-            chunkEmbeddings.forEach(chunkEmbedding => {
-                chunkEmbedding.similarity = cosineSimilarity(
-                    searchQueryEmbedding,
-                    chunkEmbedding.embedding
-                );
-            });
-            //console.log("Chunk embeddings with similarity:", chunkEmbeddings); //4551
-
-            // Sort the chunks by their similarity scores
-            chunkEmbeddings.sort((a, b) => b.similarity - a.similarity);
-            console.log("Sorted chunk embeddings:", chunkEmbeddings);
-
-            // Return the top N chunks
-            const topNChunks = chunkEmbeddings
-                .slice(0, topN)
-                .map(chunkEmbedding => ({
-                    text: chunkEmbedding.result.description,
-                    source: chunkEmbedding.result.link,
-                    relevanceScore: chunkEmbedding.similarity
-                }));
-            console.log("Top N Chunks:", topNChunks);
-
-            return topNChunks;
-        }
-
-        let overlapSize = document.getElementById('overlapSizeSlider').value;
-
-        document.getElementById('overlapSizeSlider').addEventListener('input', function (e) {
-            overlapSize = Number(e.target.value);
-            document.getElementById('overlapSizeDisplay').textContent = overlapSize;
-        });
-
-function chunkText(text, maxLength, overlapSize) {
+        function chunkText(text, maxLength, overlapSize) {
     const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g);  // Modified regex to preserve punctuation and spaces
     const chunks = [];
     let chunkWords = [];
@@ -2188,8 +2163,129 @@ function chunkText(text, maxLength, overlapSize) {
     return chunks;
 }
 
+async function getRelevantChunks(searchQuery, searchResults) {
+    const searchQueryEmbedding = await fetchEmbeddings(searchQuery);
 
-        async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-002") {
+    const allEmbeddings = await fetchAllStoredEmbeddings();
+    if (!allEmbeddings) {
+        console.error("No embeddings were fetched. Please check the server logs for more information.");
+        return [];
+    }
+
+    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+
+    const chunkEmbeddings = allEmbeddings.flatMap(embedding => {
+        if (!useLocalEmbeddings && embedding.source === 'local') {
+            return []; // Ignore local embeddings when checkbox is not checked
+        } else if (useLocalEmbeddings && embedding.source !== 'local') {
+            return []; // Ignore non-local embeddings when checkbox is checked
+        }
+                if (typeof embedding.chunks === 'string') {
+                    const result = {
+                        link: embedding.key,
+                        description: embedding.chunks
+                    };
+                    return [{
+                        result,
+                        embedding: embedding.embedding,
+                        source: embedding.source // Extract source here
+                    }];
+                } else if (Array.isArray(embedding.chunks)) {
+                    return embedding.chunks.map(chunk => {
+                        const result = {
+                            link: embedding.key,
+                            description: chunk.text
+                        };
+                        return {
+                            result,
+                            embedding: chunk.embedding,
+                            source: chunk.source // Extract source here
+                        };
+                    });
+                } else {
+                    return [];
+                }
+            });
+
+            // Calculate the cosine similarity between the search query embedding and each chunk embedding
+            chunkEmbeddings.forEach(chunkEmbedding => {
+                const embedding = chunkEmbedding.embedding;
+                const source = chunkEmbedding.source; // Use extracted source
+
+                if (embedding && embedding.length > 0) {
+                    let similarity = cosineSimilarity(
+                        searchQueryEmbedding,
+                        embedding
+                    );
+
+
+                    chunkEmbedding.similarity = similarity;
+                } else {
+                    chunkEmbedding.similarity = 0;
+                }
+            });
+            //console.log("Chunk embeddings with similarity:", chunkEmbeddings); //4551
+
+            // Sort the chunks by their similarity scores
+            chunkEmbeddings.sort((a, b) => b.similarity - a.similarity);
+            console.log("Sorted chunk embeddings:", chunkEmbeddings);
+
+            // Return the top N chunks
+            const topNChunks = chunkEmbeddings
+                .slice(0, topN)
+                .map(chunkEmbedding => ({
+                    text: chunkEmbedding.result.description,
+                    source: chunkEmbedding.result.link,
+                    relevanceScore: chunkEmbedding.similarity
+                }));
+            console.log("Top N Chunks:", topNChunks);
+
+            return topNChunks;
+        }
+
+        let overlapSize = document.getElementById('overlapSizeSlider').value;
+
+        document.getElementById('overlapSizeSlider').addEventListener('input', function (e) {
+            overlapSize = Number(e.target.value);
+            document.getElementById('overlapSizeDisplay').textContent = overlapSize;
+        });
+
+
+
+
+async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-002") {
+    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+
+    // Array to store the embeddings
+    const chunkEmbeddings = [];
+
+    // Loop through each chunk of text
+    for (const chunk of textChunks) {
+
+        // Check if local embeddings should be used
+        if (useLocalEmbeddings && window.generateEmbeddings) {
+            try {
+                // This assumes that the local embedding model is initialized
+                // and assigned to window.generateEmbeddings
+                const output = await window.generateEmbeddings(chunk, {
+                    pooling: 'mean',
+                    normalize: true,
+                });
+                console.log("Local Embedding Output:", output); // Debugging
+                if (output.data && output.data instanceof Float32Array) {
+                    const embeddingArray = Array.from(output.data);
+                    console.log("Local Embedding Array:", embeddingArray); // Debugging
+                    chunkEmbeddings.push(embeddingArray);
+                } else {
+                    console.error("Embedding data format is unexpected.");
+                    chunkEmbeddings.push([]);
+                }
+            } catch (error) {
+                console.error("Error generating local embeddings:", error);
+                chunkEmbeddings.push([]);
+            }
+        } else {
+            // Use the API for embeddings
             const API_KEY = document.getElementById("api-key-input").value;
             if (!API_KEY) {
                 alert("Please enter your API key");
@@ -2202,41 +2298,39 @@ function chunkText(text, maxLength, overlapSize) {
             headers.append("Content-Type", "application/json");
             headers.append("Authorization", `Bearer ${API_KEY}`);
 
-            const chunkEmbeddings = [];
+            const body = JSON.stringify({
+                model: model,
+                input: chunk,
+            });
 
-            for (const chunk of textChunks) {
-                const body = JSON.stringify({
-                    model: model,
-                    input: chunk,
-                });
+            const requestOptions = {
+                method: "POST",
+                headers: headers,
+                body: body,
+            };
 
-                const requestOptions = {
-                    method: "POST",
-                    headers: headers,
-                    body: body,
-                };
-
-                try {
-                    const response = await fetch(API_URL, requestOptions);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error("Error fetching embeddings:", errorData);
-                        chunkEmbeddings.push([]);
-                        continue;
-                    }
-
-                    const data = await response.json();
-                    const embedding = data.data[0].embedding;
-
-                    chunkEmbeddings.push(embedding);
-                } catch (error) {
-                    console.error("Error fetching embeddings:", error);
+            try {
+                const response = await fetch(API_URL, requestOptions);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Error fetching embeddings:", errorData);
                     chunkEmbeddings.push([]);
+                    continue;
                 }
-            }
 
-            return chunkEmbeddings;
+                const data = await response.json();
+                const embedding = data.data[0].embedding;
+
+                chunkEmbeddings.push(embedding);
+            } catch (error) {
+                console.error("Error fetching embeddings:", error);
+                chunkEmbeddings.push([]);
+            }
         }
+    }
+    console.log("Chunk Embeddings: ", chunkEmbeddings);
+    return chunkEmbeddings;
+}
 
         function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
             let t = document.createElement("input");

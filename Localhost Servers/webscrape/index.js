@@ -20,7 +20,7 @@ const db = new sqlite3.Database(':memory:', (err) => {
 
 // Create necessary tables
 db.serialize(() => {
-    db.run('CREATE TABLE embeddings (key TEXT PRIMARY KEY, embedding TEXT)');
+    db.run('CREATE TABLE embeddings (key TEXT PRIMARY KEY, embedding TEXT, source TEXT)');
     db.run('CREATE TABLE webpage_text (url TEXT PRIMARY KEY, text TEXT)');
 });
 
@@ -95,8 +95,8 @@ app.get('/proxy', async (req, res) => {
 });
 
 app.post('/store-embedding-and-text', (req, res) => {
-    const { key, embedding, text } = req.body;
-    db.run('INSERT OR REPLACE INTO embeddings (key, embedding) VALUES (?, ?)', [key, JSON.stringify(embedding)], (err) => {
+    const { key, embedding, text, source } = req.body;
+    db.run('INSERT OR REPLACE INTO embeddings (key, embedding, source) VALUES (?, ?, ?)', [key, JSON.stringify(embedding), source], (err) => {
         if (err) {
             console.error(err.message);
             res.status(500).send('Error storing embedding');
@@ -146,7 +146,7 @@ app.get('/fetch-web-page-text', (req, res) => {
 });
 
 app.get('/fetch-all-embeddings', (req, res) => {
-    db.all('SELECT key, embedding, text FROM embeddings INNER JOIN webpage_text ON embeddings.key = webpage_text.url', (err, rows) => {
+    db.all('SELECT key, embedding, source, text FROM embeddings INNER JOIN webpage_text ON embeddings.key = webpage_text.url', (err, rows) => {
         if (err) {
             console.error(err.message);
             res.status(500).send('Error fetching all embeddings');
@@ -154,15 +154,12 @@ app.get('/fetch-all-embeddings', (req, res) => {
             const embeddings = [];
             for (const row of rows) {
                 try {
-                    console.log('row.embedding:', row.embedding);
-                    console.log('row.text:', row.text);
                     const parsedEmbedding = JSON.parse(row.embedding);
-                    // No need to parse row.text as JSON
-                    const parsedChunks = row.text;
                     embeddings.push({
                         key: row.key,
                         embedding: parsedEmbedding,
-                        chunks: parsedChunks
+                        source: row.source,
+                        chunks: row.text
                     });
                 } catch (error) {
                     console.error('Error parsing JSON for row:', row, 'Error:', error.message);
