@@ -725,6 +725,10 @@ outerCheckbox.addEventListener('click', function () {
                 dropdown.classList.remove('no-select');
             });
 
+            window.addEventListener('mouseup', function () {
+                dropdown.classList.remove('no-select');
+            });
+
             // Add the title input to the header container
             let titleInput = document.createElement('input');
             titleInput.setAttribute('type', 'text');

@@ -94,8 +94,13 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
             }, 1);
         }
     } catch (error) {
-        console.error("Error calling ChatGPT API:", error);
-        node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+        // Check if the error is because of the abort operation
+        if (error.name === 'AbortError') {
+            console.log('Fetch request was aborted');
+        } else {
+            console.error("Error calling ChatGPT API:", error);
+            node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+        }
     } finally {
         node.aiResponding = false;
         node.regenerateButton.textContent = "\u21BA";
@@ -420,7 +425,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.haltResponse = function () {
         if (this.aiResponding) {
             // AI is responding, so we want to stop it
-            this.controller.abort();
+            this.controller.abort(); // This line sends the abort signal to the fetch request
             this.aiResponding = false;
             this.shouldContinue = false;
             this.regenerateButton.textContent = "\u21BA";
@@ -444,7 +449,13 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     });
 
     regenerateButton.addEventListener("click", function () {
-        node.regenerateResponse();
+        if (node.aiResponding) {
+            // If the AI is currently responding, halt the response
+            node.haltResponse();
+        } else {
+            // Otherwise, regenerate the response
+            node.regenerateResponse();
+        }
     });
 
     node.promptTextArea.addEventListener('keydown', function (e) {
@@ -1131,7 +1142,7 @@ ${nodeTag} HTML/JS Code Title (Unique title)
 Wrap your code in labeled triple backtick code blocks.
 1. Structure your HTML with head and body tags.
 2. Set canvas size in the HTML.
-3. Enclose JavaScript within script tags inside HTML.
+3. Enclose JavaScript within script tags inside HTML. Include all Javascript within the HTML rather than a seperate document.
 4. JavaScript runs in an iframe and cannot access parent page DOM.
 5. Properly close HTML tags.
 6. Encapsulate any CSS within style tags in the head section.
@@ -1421,90 +1432,28 @@ async function fetchWolfram(message) {
     return { table, wolframAlphaTextResult, reformulatedQuery };
 }
 
-        async function sendMessage(event, autoModeMessage = null) {
-            const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
-            document.getElementById("prompt").value = ''; // Clear the textarea
-            latestUserMessage = message;
+async function sendMessage(event, autoModeMessage = null) {
+    const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
+    document.getElementById("prompt").value = ''; // Clear the textarea
+    latestUserMessage = message;
 
 
-            if (isAutoModeEnabled && originalUserMessage === null) {
-                originalUserMessage = message;
-            }
+    if (isAutoModeEnabled && originalUserMessage === null) {
+        originalUserMessage = message;
+    }
 
-            // Convert nodes object to an array of nodes
-            const nodesArray = Object.values(nodes);
+    // Convert nodes object to an array of nodes
+    const nodesArray = Object.values(nodes);
 
-            let keywordsArray = [];
-            let keywords = '';
-            let topMatchedNodesContent = [];
-
-            if (!document.getElementById("code-checkbox").checked &&
-                !document.getElementById("instructions-checkbox").checked &&
-                !isUrl(message)) {
-                // Call generateKeywords function to get keywords
-                const count = 3; // Change the count value as needed
-                keywordsArray = await generateKeywords(message, count);
-
-                // Join the keywords array into a single string
-                keywords = keywordsArray.join(' ');
-
-                // Use the embeddedSearch function to find the top 3 matched nodes based on the keywords
-                clearSearchHighlights(nodesArray); // Clear previous search highlights
-                const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
-                for (const node of topMatchedNodes) {
-                    node.content.classList.add("search_matched");
-                }
-                console.log("Top Matched Nodes:", topMatchedNodes);
-
-                // Extract the content of the top matched nodes and pass it as context to the AI
-                topMatchedNodesContent = topMatchedNodes
-                    .map((node) => {
-                        if (!node) {
-                            return "No relevant node found.";
-                        }
-
-                        const titleElement = node.content.querySelector("input.title-input");
-                        const title = titleElement && titleElement.value !== "" ? titleElement.value : "No title found";
-
-                        // Fetch all textareas directly in the node content, without considering the specific nested divs.
-                        const contentElements = node.content.querySelectorAll("textarea");
-                        const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
-                        // console.log("Content:", content);
-
-                        //     const connectedNodesInfo = node.edges
-                        //    ? node.edges.map((edge) => {
-                        //         if (edge.nodeA && edge.nodeB) {
-                        //              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
-                        //              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
-                        //                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
-                        //          } else {
-                        //              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                        //           }
-                        //       }).join("\n")
-                        //          : '';
-                        //
-                        //      const edgeInfo = node.edges
-                        //           .map((edge) => {
-                        //               if (edge.nodeA && edge.nodeB) {
-                        //                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
-                        //               } else {
-                        //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                        //               }
-                        //           }).join("\n");
-                        const createdAt = node.createdAt;
-
-                        //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
-
-                        return `node: ${title}\n ${contents.join("\n")}`;
-                    })
-                    .join("\n\n");
-                //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
-            }
+    let keywordsArray = [];
+    let keywords = '';
+    
+    
             const noteInput = document.getElementById("note-input");
 
             // Check if the last character in the note-input is not a newline, and add one if needed
@@ -1583,7 +1532,7 @@ async function fetchWolfram(message) {
             const embedCheckbox = document.getElementById("embed-checkbox");
 
 
-            const commonInstructions = `As an Ai, remember to follow the below tag format for creating nodes.
+            const commonInstructions = `Remember to follow the below tag format for creating nodes.
 ${nodeTag} Titles on line of node tag without punctuation
 Do not use these example titles.
 Always use different node titles. 
@@ -1600,7 +1549,7 @@ ${refTag} Repeat titles to connect nodes.`;
             let messages = [
                 {
                     role: "system",
-                    content: `As an ai, all of your responses should follow the below format instructions:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
+                    content: `All of your responses should follow the below format instructions:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
                 },
             ];
 
@@ -1608,12 +1557,6 @@ ${refTag} Repeat titles to connect nodes.`;
                 messages.push(instructionsMessage);
             }
 
-            if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
-                messages.splice(1, 0, {
-                    role: "system",
-                    content: `Entire node data for embedded search.\n${topMatchedNodesContent}`,
-                });
-            }
 
             if (document.getElementById("code-checkbox").checked) {
                 messages.push(codeMessage);
@@ -1630,34 +1573,6 @@ ${refTag} Repeat titles to connect nodes.`;
             if (document.getElementById("ai-nodes-checkbox").checked) {
                 messages.push(aiNodesMessage);
             }
-
-            // Calculate total tokens used so far
-            let totalTokenCount = getTokenCount(messages);
-
-            // calculate remaining tokens
-            const maxTokensSlider = document.getElementById('max-tokens-slider');
-            const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-            const maxContextSize = document.getElementById('max-context-size-slider').value;
-            const contextSize = Math.min(remainingTokens, maxContextSize);
-
-            // Update the value of getLastPromptsAndResponses
-            if (autoModeMessage) {
-                context = getLastPromptsAndResponses(2, contextSize);
-            } else {
-                if (document.getElementById("instructions-checkbox").checked) {
-                    context = getLastPromptsAndResponses(1, contextSize);
-                } else {
-                    context = getLastPromptsAndResponses(3, contextSize);
-                }
-            }
-
-            // Add the recent dialogue message
-            messages.splice(1, 0, {
-                role: "system",
-                content: `Recent dialogue if max token count permits. Empty on start of conversation. Continue in the same format: ${context}`,
-            });
-
-
 
             if (embedCheckbox && embedCheckbox.checked) {
                 const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
@@ -1718,6 +1633,128 @@ ${refTag} Repeat titles to connect nodes.`;
                 console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
                 messages.push(wolframAlphaMessage);
             }
+
+            // Calculate total tokens used so far
+            let totalTokenCount = getTokenCount(messages);
+
+            // calculate remaining tokens
+            const maxTokensSlider = document.getElementById('max-tokens-slider');
+            const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+            const maxContextSize = document.getElementById('max-context-size-slider').value;
+            const contextSize = Math.min(remainingTokens, maxContextSize);
+
+            // Update the value of getLastPromptsAndResponses
+            if (autoModeMessage) {
+                context = getLastPromptsAndResponses(2, contextSize);
+            } else {
+                if (document.getElementById("instructions-checkbox").checked) {
+                    context = getLastPromptsAndResponses(1, contextSize);
+                } else {
+                    context = getLastPromptsAndResponses(3, contextSize);
+                }
+            }
+
+    let topMatchedNodesContent = [];
+
+    if (!document.getElementById("code-checkbox").checked &&
+        !document.getElementById("instructions-checkbox").checked &&
+        !isUrl(message)) {
+        // Call generateKeywords function to get keywords
+        const count = 3; // Change the count value as needed
+        keywordsArray = await generateKeywords(message, count);
+
+        // Join the keywords array into a single string
+        keywords = keywordsArray.join(' ');
+
+        // Get the node tag value
+        const nodeTag = document.getElementById("node-tag").value;
+
+        // Extract titles from getLastPromptsAndResponses
+        let contextmatch = getLastPromptsAndResponses(3, contextSize); // Adjust count and token number as necessary
+
+        let existingTitles = new Set();
+        const titleRegex = new RegExp(nodeTag + " (.*?)\\n", "g");
+        let match;
+        while ((match = titleRegex.exec(contextmatch)) !== null) {
+            existingTitles.add(match[1].trim()); // Trim whitespaces from the title
+        }
+
+        // Use the embeddedSearch function to find the top matched nodes based on the keywords
+        clearSearchHighlights(nodesArray); // Clear previous search highlights
+        const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
+        for (const node of topMatchedNodes) {
+            node.content.classList.add("search_matched");
+        }
+        console.log("Top Matched Nodes:", topMatchedNodes);
+
+        // Extract the content of the top matched nodes and pass it as context to the AI
+        // Filter getlastpromptsandresponses out of topMatchedNodesContent
+        topMatchedNodesContent = topMatchedNodes
+            .map((node) => {
+                if (!node) {
+                    return null;
+                }
+
+                const titleElement = node.content.querySelector("input.title-input");
+                const title = titleElement && titleElement.value !== "" ? titleElement.value.trim() : "No title found";
+
+                // If title already present in context, don't include the node
+                if (existingTitles.has(title)) {
+                    return null;
+                }
+
+                // Fetch all textareas directly in the node content, without considering the specific nested divs.
+                const contentElements = node.content.querySelectorAll("textarea");
+                const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
+                // console.log("Content:", content);
+
+                //     const connectedNodesInfo = node.edges
+                //    ? node.edges.map((edge) => {
+                //         if (edge.nodeA && edge.nodeB) {
+                //              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
+                //              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
+                //                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
+                //          } else {
+                //              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+                //           }
+                //       }).join("\n")
+                //          : '';
+                //
+                //      const edgeInfo = node.edges
+                //           .map((edge) => {
+                //               if (edge.nodeA && edge.nodeB) {
+                //                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
+                //               } else {
+                //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+                //               }
+                //           }).join("\n");
+                const createdAt = node.createdAt;
+
+                //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
+
+                return `${nodeTag} ${title}\n ${contents.join("\n")}`;
+            })
+            .filter(content => content !== null) // Remove nulls
+            .join("\n\n");
+        //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
+    }
+
+    if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
+        messages.splice(1, 0, {
+            role: "system",
+            content: `Matched notes from mind map.This is your long term memory. Expand from these existing nodes rather than rewriting them.\n${topMatchedNodesContent}`,
+        });
+    }
+
+            // Add the recent dialogue message
+            messages.splice(1, 0, {
+                role: "system",
+                content: `Already existing dialogue with user. These are nodes you should expand from rather than writing again. Empty on start of conversation. Continue in the same format: ${context}`,
+            });
+
+
+
+            // Add Prompt
 
             if (autoModeMessage) {
                 messages.push({
