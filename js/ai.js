@@ -502,7 +502,7 @@ function getConnectedNodeData(node) {
             console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
         }
 
-        const connectedNodeInfo = `node UUID: ${connectedNode.uuid}\nnode: ${title}\nnode Content: ${contents.join("\n")}\nnode Creation Time: ${createdAt}`;
+        const connectedNodeInfo = `node UUID: ${connectedNode.uuid}\nnode: ${title}\nText Content: ${contents.join("\n")}\nCreation Time: ${createdAt}`;
         connectedNodesInfo.push(connectedNodeInfo);
     }
 
@@ -905,14 +905,15 @@ function cosineSimilarity(vecA, vecB) {
 
                 const fullText = titleText + ' ' + contentText;
 
-                const cachedEmbedding = nodeCache.get(node.uuid);
+                const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+                const compoundKey = `${node.uuid}-${useLocalEmbeddings ? 'local' : 'openai'}`;
+
+                const cachedEmbedding = nodeCache.get(compoundKey);
                 if (cachedEmbedding) {
-                 //   console.log("Using cached embedding for:", fullText); // DEBUG
                     return cachedEmbedding;
                 } else {
-                //    console.log("Fetching embedding for:", fullText); // DEBUG
                     const embedding = await fetchEmbeddings(fullText);
-                    nodeCache.set(node.uuid, embedding);
+                    nodeCache.set(compoundKey, embedding);
                     return embedding;
                 }
             };
@@ -990,7 +991,7 @@ function cosineSimilarity(vecA, vecB) {
 
         async function generateKeywords(message, count) {
             // Get last prompts and responses
-            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 300);
+            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
 
             // Prepare the messages array
             const messages = [
@@ -1004,9 +1005,8 @@ function cosineSimilarity(vecA, vecB) {
                 },
                 {
                     role: "user",
-                    content: `Without any preface or final explanation, generate three salient, single word, comma seperated search terms for the following most recent message message: ${message} : end of message
-                    Order the keywords by relevance in anticpation of user needs. Keywords should be generated through prediction of what words will recieve the most relevant search result for providing context to answer the prompt.
-                    Provide your generated words on a single line. Start with the most relevant word which should be a word from the most recent user message.`,
+                    content: `Without any preface or final explanation, Generate three single-word, comma-separated keywords for the latest user message: ${message}.
+Keywords should predict search relevance for context. Order by relevance, starting with a word from the message.`,
                 },
             ];
 
@@ -1498,7 +1498,9 @@ async function fetchWolfram(message) {
                         //           }).join("\n");
                         const createdAt = node.createdAt;
 
-                        return `Node UUID: ${node.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}Node Creation Time: ${createdAt}`;
+                        //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
+
+                        return `node: ${title}\n ${contents.join("\n")}`;
                     })
                     .join("\n\n");
                 //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
@@ -1574,54 +1576,33 @@ async function fetchWolfram(message) {
 
             const googleSearchMessage = {
                 role: "system",
-                content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
+                content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
             };
 
 
             const embedCheckbox = document.getElementById("embed-checkbox");
 
 
-            let messages = [{
-                role: "system",
-                content: `Try to never repeat system messages to the user. Respond in the way most probable to match the following example of the correct format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
-            },
-            autoModeMessage ?
+            const commonInstructions = `As an Ai, remember to follow the below tag format for creating nodes.
+${nodeTag} Titles on line of node tag without punctuation
+Do not use these example titles.
+Always use different node titles. 
+Plain text on the next line for your response.
+Always ensure each title is unique.
+!Important! Try to never repeat already existing node titles.
+${refTag} Titles of other nodes separated by commas.
+${nodeTag} Write your own title
+Make sure any new nodes have a unique title
+Break your response up into multiple nodes
+Avoid repeating this context message.
+${refTag} Repeat titles to connect nodes.`;
+
+            let messages = [
                 {
-                    role: "user",
-                    content: `Your self-Prompt: ${autoModeMessage}
-                            Original prompt: ${originalUserMessage}
-                            Example of the desired format for your response.
-                            ${nodeTag} Example Title
-                            Ensure unique node titles
-                            Plain text on the next line for your response.
-                            Always ensure each title is unique.
-                            !Important! Try to never repeat already existing node titles.
-                            ${refTag} Titles of other nodes separated by commas.
-                            ${nodeTag} Title
-                            Break your response up into multiple nodes
-                            Never reference the instructions for the format of your response unless asked.
-                                ${refTag} Repeat titles to connect nodes.
-                            Always end your response with a new line, then, Prompt: [the prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
-                } :
-                {
-                    role: "user",
-                    content: `Current user Prompt: ${message}
-                            Example of the desired format for your response.
-                            ${nodeTag} Example Title
-                            Ensure unique node titles
-                            Plain text on the next line for your response.
-                            Always ensure each title is unique.
-                            !Important! Try to never repeat already existing node titles.
-                            ${refTag} Titles of other nodes separated by commas.
-                            ${nodeTag} Title
-                            Break your response up into multiple nodes
-                            Never reference the instructions for the format of your response unless asked.
-                                ${refTag} Repeat titles to connect nodes.
-                            ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
+                    role: "system",
+                    content: `As an ai, all of your responses should follow the below format instructions:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
                 },
             ];
-
-
 
             if (document.getElementById("instructions-checkbox").checked) {
                 messages.push(instructionsMessage);
@@ -1630,7 +1611,7 @@ async function fetchWolfram(message) {
             if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
                 messages.splice(1, 0, {
                     role: "system",
-                    content: `These nodes have been retrieved from your memory which is a fractal mind map \nContent: = what node says/context\n.${topMatchedNodesContent}`,
+                    content: `Entire node data for embedded search.\n${topMatchedNodesContent}`,
                 });
             }
 
@@ -1677,6 +1658,7 @@ async function fetchWolfram(message) {
             });
 
 
+
             if (embedCheckbox && embedCheckbox.checked) {
                 const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
 
@@ -1703,7 +1685,7 @@ async function fetchWolfram(message) {
 
                 const embedMessage = {
                     role: "system",
-                    content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
+                    content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
                 };
 
                 messages.push(embedMessage);
@@ -1737,7 +1719,22 @@ async function fetchWolfram(message) {
                 messages.push(wolframAlphaMessage);
             }
 
-
+            if (autoModeMessage) {
+                messages.push({
+                    role: "user",
+                    content: `Your self-Prompt: ${autoModeMessage}
+Original Prompt: ${originalUserMessage}
+${commonInstructions}
+Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
+                });
+            } else {
+                messages.push({
+                    role: "user",
+                    content: `Current user Prompt: ${message}
+${commonInstructions}
+${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
+                });
+            }
 
 
             // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
