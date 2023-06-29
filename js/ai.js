@@ -1373,7 +1373,7 @@ async function fetchWolfram(message) {
         const errorData = await response.json();
         console.error("Error with Wolfram Alpha API call:", errorData.error);
         console.error("Full error object:", errorData);
-        alert("An error occurred when making a request the Wolfram Alpha. Please ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
+        alert("An error occurred when making a request the Wolfram Alpha. Ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
         return;
     }
 
@@ -1574,7 +1574,7 @@ async function fetchWolfram(message) {
 
             const googleSearchMessage = {
                 role: "system",
-                content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message which describes the format of your response."
+                content: "The following Google Search Results have been displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
             };
 
 
@@ -1593,7 +1593,7 @@ async function fetchWolfram(message) {
                             Example of the desired format for your response.
                             ${nodeTag} Example Title
                             Ensure unique node titles
-                            plain text on the next line for your response.
+                            Plain text on the next line for your response.
                             Always ensure each title is unique.
                             !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
@@ -1609,7 +1609,7 @@ async function fetchWolfram(message) {
                             Example of the desired format for your response.
                             ${nodeTag} Example Title
                             Ensure unique node titles
-                            plain text on the next line for your response.
+                            Plain text on the next line for your response.
                             Always ensure each title is unique.
                             !Important! Try to never repeat already existing node titles.
                             ${refTag} Titles of other nodes separated by commas.
