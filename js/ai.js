@@ -144,7 +144,7 @@ async function sendLLMNodeMessage(node) {
     let messages = [
         {
             role: "system",
-            content: "Your responses are displayed within an Ai node. Any connected nodes will be shared as individual system messages."
+            content: "Your responses are displayed within an Ai node. Connected nodes are shared as individual system messages."
         },
     ];
 
@@ -212,7 +212,7 @@ async function sendLLMNodeMessage(node) {
 
         const embedMessage = {
             role: "system",
-            content: `The following are the top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
+            content: `The following are the top ${topN} matched chunks of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
         };
 
         messages.push(embedMessage);
@@ -226,7 +226,7 @@ async function sendLLMNodeMessage(node) {
     const maxContextSize = document.getElementById('max-context-size-slider').value;
 
     connectedNodesInfo.forEach(info => {
-        let infoWithIntro = "Node connected to memory: \n" + info;
+        let infoWithIntro = "node connected to memory: \n" + info;
         let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
         if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
             remainingTokens -= infoTokenCount;
@@ -502,7 +502,7 @@ function getConnectedNodeData(node) {
             console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
         }
 
-        const connectedNodeInfo = `Node UUID: ${connectedNode.uuid}\nNode Title: ${title}\nNode Content: ${contents.join("\n")}\nNode Creation Time: ${createdAt}`;
+        const connectedNodeInfo = `node UUID: ${connectedNode.uuid}\nnode: ${title}\nnode Content: ${contents.join("\n")}\nnode Creation Time: ${createdAt}`;
         connectedNodesInfo.push(connectedNodeInfo);
     }
 
@@ -752,13 +752,12 @@ async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
         try {
             // This assumes that the local embedding model is initialized
             // and assigned to window.generateEmbeddings
-            //console.log('Sending to local model:', text);  // DEBUG
             const output = await window.generateEmbeddings(text, {
                 pooling: 'mean',
-                normalize: false,
+                normalize: true,
             });
-            //console.log('Local Embedding:', output.data); // DEBUG
-            return output.data;
+            // Convert Float32Array to regular array
+            return Array.from(output.data);
         } catch (error) {
             console.error("Error generating local embeddings:", error);
             return [];
@@ -804,6 +803,31 @@ async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
             return [];
         }
     }
+}
+
+function cosineSimilarity(vecA, vecB) {
+    if (!vecA || !vecB || vecA.length !== vecB.length || vecA.length === 0 || vecB.length === 0) {
+        return 0;
+    }
+
+    let dotProduct = 0;
+    let vecASquaredSum = 0;
+    let vecBSquaredSum = 0;
+
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        vecASquaredSum += vecA[i] * vecA[i];
+        vecBSquaredSum += vecB[i] * vecB[i];
+    }
+
+    const vecAMagnitude = Math.sqrt(vecASquaredSum);
+    const vecBMagnitude = Math.sqrt(vecBSquaredSum);
+
+    if (vecAMagnitude === 0 || vecBMagnitude === 0) {
+        return 0;
+    }
+
+    return dotProduct / (vecAMagnitude * vecBMagnitude);
 }
 
         class LRUCache {
@@ -921,7 +945,7 @@ async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
              //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
 
                 const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-              //  console.log('Cosine Similarity:', cosineSimilarity);
+                console.log('Cosine Similarity:', cosineSimilarity);
 
                 const similarityThreshold = -1;
                 const keywordMatchPercentage = 0.5;
@@ -993,30 +1017,6 @@ async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
             return keywords.split(',').map(k => k.trim());
         }
 
-function cosineSimilarity(vecA, vecB) {
-    if (!vecA || !vecB || vecA.length !== vecB.length || vecA.length === 0 || vecB.length === 0) {
-        return 0;
-    }
-
-    let dotProduct = 0;
-    let vecASquaredSum = 0;
-    let vecBSquaredSum = 0;
-
-    for (let i = 0; i < vecA.length; i++) {
-        dotProduct += vecA[i] * vecB[i];
-        vecASquaredSum += vecA[i] * vecA[i];
-        vecBSquaredSum += vecB[i] * vecB[i];
-    }
-
-    const vecAMagnitude = Math.sqrt(vecASquaredSum);
-    const vecBMagnitude = Math.sqrt(vecBSquaredSum);
-
-    if (vecAMagnitude === 0 || vecBMagnitude === 0) {
-        return 0;
-    }
-
-    return dotProduct / (vecAMagnitude * vecBMagnitude);
-}
 
         function sampleSummaries(summaries, top_n_links) {
             const sampledSummaries = [];
@@ -2271,15 +2271,8 @@ async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-00
                     pooling: 'mean',
                     normalize: true,
                 });
-                console.log("Local Embedding Output:", output); // Debugging
-                if (output.data && output.data instanceof Float32Array) {
-                    const embeddingArray = Array.from(output.data);
-                    console.log("Local Embedding Array:", embeddingArray); // Debugging
-                    chunkEmbeddings.push(embeddingArray);
-                } else {
-                    console.error("Embedding data format is unexpected.");
-                    chunkEmbeddings.push([]);
-                }
+                // Convert Float32Array to regular array
+                chunkEmbeddings.push(Array.from(output.data));
             } catch (error) {
                 console.error("Error generating local embeddings:", error);
                 chunkEmbeddings.push([]);
@@ -2328,7 +2321,6 @@ async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-00
             }
         }
     }
-    console.log("Chunk Embeddings: ", chunkEmbeddings);
     return chunkEmbeddings;
 }
 
