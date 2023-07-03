@@ -223,8 +223,20 @@
                                 <td>Resize a window.</td>
                             </tr>
                             <tr>
+                                <td>
+                                    <strong>Local LLM</strong>
+                                </td>
+                                <td>In the Ai tab, check Local LLM and select a model. The Ai will download into your browser cache. More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a> or <a href="https://mlc.ai/web-llm/" target="_blank" id="clickable-link">web-llm</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Local Embeddings</strong>
+                                </td>
+                                <td>In the Ai tab, check Local Embeddings. The embeddings model will download into your browser cache.</td>
+                            </tr>
+                            <tr>
                                 <td><strong>LocalHost Servers</strong></td>
-                                <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br />Visit the Github link for more information.<br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
+                                <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br /> More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a><br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
                             </tr>
                         </table>
                     </div>
@@ -232,8 +244,20 @@
                 <div id="tab4" class="tabcontent">
                     <!-- Fourth tab content here -->
                     <div class="submenu">
-                     <input type="checkbox" id="local-embeddings-checkbox">
+                        <div class="inline-container">
+                            <input type="checkbox" id="localLLM">
+                            <label for="localLLM">: Local LLM :</label>
+                        </div>
+                        <div class="inline-container">
+                            <select id="LocalLLMselect">
+                                <option value="vicuna-v1-7b-q4f32_0" selected>Vicuna 7B f32</option>
+                                <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0">Red Pajama 3B f32</option>
+                            </select>
+                        </div>
+                        <input type="checkbox" id="local-embeddings-checkbox">
                         <label for="local-embeddings-checkbox">: Local Embeddings</label>
+                        <br />
+                        <br />
                         <div class="api-container">
                             <div class="api-inputs">
                                 <div>
@@ -314,7 +338,7 @@
 
                         </div>
                         <div class="slidecontainer">
-                            <label for="maxChunkSizeSlider"></label>Max Chunk Size: <span id="maxChunkSizeValue"></span></label>
+                            <label for="maxChunkSizeSlider">Max Chunk Size: <span id="maxChunkSizeValue"></span></label>
                             <input type="range" min="1" max="4096" value="256" class="slider" id="maxChunkSizeSlider">
                         </div>
                         <div>
@@ -408,12 +432,15 @@
     <script src="js/dropdown.js"></script>
     <script src="js/zettelkasten.js"></script>
 
-    <script defer type="module" src="./js/embeddings.js"></script> 
+    <!--<script defer type="module" src="js/embeddings.ts"></script>-->
+    <!-- <script type="module" src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.3.0"></script>-->
+    <script defer type="module" src="./js/embeddings.js"></script>
+
 
     <script src="js/interface.js"></script>
     <script src="js/ai.js"></script>
-    <!-- <script type="module" src="webLLM/webllm.ts"></script>-->
+    <script type="module" src="webLLM/webllm.ts"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 
-    </html>
+        </html>

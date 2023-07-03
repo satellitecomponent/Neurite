@@ -288,12 +288,26 @@ async function sendLLMNodeMessage(node) {
 
     node.aiResponding = true;
     node.userHasScrolled = false;
-    callChatGPTApiForLLMNode(messages, node, true)
-        .then(() => node.aiResponding = false)
-        .catch((error) => {
-            console.error(`An error occurred while getting response: ${error}`);
-            node.aiResponding = false;
-        });
+    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
+
+    // Check if local LLM checkbox is checked and if the selected value is not 'OpenAI'
+    if (document.getElementById("localLLM").checked && LocalLLMSelect.value !== 'OpenAi') {
+        // Local LLM call
+        window.generateLocalLLMResponse(node, messages)
+            .then(() => node.aiResponding = false)
+            .catch((error) => {
+                console.error(`An error occurred while getting response: ${error}`);
+                node.aiResponding = false;
+            });
+    } else {
+        // If the local LLM checkbox is not checked or 'OpenAI' is selected in dropdown, default to OpenAI call
+        callChatGPTApiForLLMNode(messages, node, true)
+            .then(() => node.aiResponding = false)
+            .catch((error) => {
+                console.error(`An error occurred while getting response: ${error}`);
+                node.aiResponding = false;
+            });
+    }
 }
 
 window.addEventListener('dblclick', function (e) {
@@ -378,6 +392,33 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     wrapperDiv.appendChild(aiResponseTextArea);
     wrapperDiv.appendChild(promptDiv);
 
+    // Create the Local LLM dropdown
+    let LocalLLMSelect = document.createElement("select");
+    LocalLLMSelect.id = `dynamicLocalLLMselect-${llmNodeCount}`;
+    LocalLLMSelect.classList.add('inline-container');
+    LocalLLMSelect.style.backgroundColor = "#222226";
+    LocalLLMSelect.style.border = "none";
+
+    let localLLMCheckbox = document.getElementById("localLLM");
+
+    if (localLLMCheckbox.checked) {
+        LocalLLMSelect.style.display = "block";
+    } else {
+        LocalLLMSelect.style.display = "none";
+    }
+
+    // Options for the dropdown
+    let option1 = new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, true);
+    let option2 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, false);
+    let option3 = new Option('OpenAI', 'OpenAi', false, false);
+
+    LocalLLMSelect.add(option1, undefined);
+    LocalLLMSelect.add(option2, undefined);
+    LocalLLMSelect.add(option3, undefined); // Adding new option
+
+    // Append dropdown to the div
+    wrapperDiv.appendChild(LocalLLMSelect);
+
     // Pass this div to addNodeAtNaturalScale
     let node = addNodeAtNaturalScale(name, []);
     let windowDiv = node.content.querySelector(".window");
@@ -397,6 +438,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.controller = new AbortController();
     node.shouldContinue = true;
     node.userHasScrolled = false;
+    node.LocalLLMSelectID = `dynamicLocalLLMselect-${llmNodeCount}`;
+    node.index = llmNodeCount;
 
     node.aiResponseTextArea.addEventListener('scroll', () => {
         if (node.aiResponseTextArea.scrollTop < node.aiResponseTextArea.scrollHeight - node.aiResponseTextArea.clientHeight) {
@@ -469,6 +512,17 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     return node;
 }
+
+document.getElementById("localLLM").addEventListener("change", function () {
+    let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
+    for (let i = 0; i < llmNodes.length; i++) {
+        if (this.checked) {
+            llmNodes[i].style.display = "block";
+        } else {
+            llmNodes[i].style.display = "none";
+        }
+    }
+});
 
 let llmNodeCount = 0;
 
@@ -1433,6 +1487,11 @@ async function fetchWolfram(message) {
 }
 
 async function sendMessage(event, autoModeMessage = null) {
+    const localLLMCheckbox = document.getElementById("localLLM");
+    if (localLLMCheckbox.checked) {
+        // If local LLM is checked, don't do anything.
+        return false;
+    }
     const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
     if (event) {
         event.preventDefault();

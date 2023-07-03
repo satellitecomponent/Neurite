@@ -941,17 +941,6 @@ input[type=range] {
     color: HighlightText !important;
 }
 
-/* Add browser specific rules for Firefox */
-@-moz-document regexp(".*") {
-    .CodeMirror-selected {
-        background: -moz-selection !important;
-    }
-
-    .CodeMirror-focused .CodeMirror-selected {
-        background: -moz-selection !important;
-        color: HighlightText !important;
-    }
-}
 
 .node-title {
     color: paleturquoise;

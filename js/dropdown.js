@@ -335,27 +335,36 @@ function updateLabel() {
             document.getElementById('wolframApiKey').value = '';
         }
 
-        function handleKeyDown(event) {
-            if (event.key === 'Enter') {
-                if (event.shiftKey) {
-                    // Shift + Enter was pressed, submit the form
-                    event.preventDefault();
-                    sendMessage(event);
-                } else {
-                    // Enter was pressed without Shift, insert a newline
-                    event.preventDefault();
-                    // insert a newline at the cursor
-                    const cursorPosition = event.target.selectionStart;
-                    event.target.value = event.target.value.substring(0, cursorPosition) + "\n" + event.target.value.substring(cursorPosition);
-                    // position the cursor after the newline
-                    event.target.selectionStart = cursorPosition + 1;
-                    event.target.selectionEnd = cursorPosition + 1;
-                    // force the textarea to resize
-                    autoGrow(event);
-                }
+function handleKeyDown(event) {
+    if (event.key === 'Enter') {
+        const localLLMCheckbox = document.getElementById("localLLM");
+
+        if (event.shiftKey) {
+            // Shift + Enter was pressed
+            event.preventDefault();
+
+            // If localLLM checkbox is enabled, submit the form (which triggers LLM code).
+            if (localLLMCheckbox.checked) {
+                document.getElementById('prompt-form').dispatchEvent(new Event('submit'));
+            } else {
+                // Otherwise, call sendMessage function
+                sendMessage(event);
             }
-            return true;
+        } else {
+            // Enter was pressed without Shift, insert a newline
+            event.preventDefault();
+            // insert a newline at the cursor
+            const cursorPosition = event.target.selectionStart;
+            event.target.value = event.target.value.substring(0, cursorPosition) + "\n" + event.target.value.substring(cursorPosition);
+            // position the cursor after the newline
+            event.target.selectionStart = cursorPosition + 1;
+            event.target.selectionEnd = cursorPosition + 1;
+            // force the textarea to resize
+            autoGrow(event);
         }
+    }
+    return true;
+}
 
         function autoGrow(event) {
             const textarea = event.target;
