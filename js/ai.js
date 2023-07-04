@@ -957,7 +957,7 @@ function cosineSimilarity(vecA, vecB) {
              //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
 
                 const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-                console.log('Cosine Similarity:', cosineSimilarity);
+                //console.log('Cosine Similarity:', cosineSimilarity);
 
                 const similarityThreshold = -1;
                 const keywordMatchPercentage = 0.5;
@@ -1215,34 +1215,19 @@ const aiNodesMessage = {
 };
 
 
-const zettelkastenPrompt = `System message to AI: 
+const zettelkastenPrompt = `${nodeTag} System message to AI: 
 - Responses are visualized in a fractal mind-map called Neurite.
-- Use node reference tag format for visual connections.
-- Do not include the instructions in the response.
+- Use node reference tag format in all responses.
+
 Format:
     ${nodeTag} Example Title
         - Ensure Unique/Specific Node Title
         - Write plain text.
         - Provide a concise explanation of a key idea.
-        - Define references for that idea.
-        - Break the response into multiple connected nodes.
+        - Break response into multiple connected nodes.
 
     ${refTag} (Node Titles to Connect)
-        - Connect the response to related nodes using reference tags.
-
-Example:
-    Prompt: Create a triangle.
-    ${nodeTag} Point 1
-    This is the first point in our triangle.
-    ${refTag}
-
-    ${nodeTag} Point 2
-    This is the second point.
-    ${refTag} Point 1
-
-    ${nodeTag} Point 3
-    This point completes the triangle.
-    ${refTag} Point 1, Point 2`;
+        - Connect the response to related nodes using reference tags.`;
 
 
         const spatialAwarenessExample = `${nodeTag} Central Node
@@ -1282,8 +1267,8 @@ etc..`;
                 role: "user",
                 content: `Do not preface your response.
 Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demoonstates to an Ai system how to most effectivly utilize the Zettelkasten format.
-Write your entire response within the format. Its important to make sure to keep your response under 200 words. Your example should use 5 nodes total.
-Each node should break the response into an iterative tapestry of thought reasoning that includes all relevant information to inform an ai system about proper use of the format.
+Write your entire response within the format. Its important to make sure to keep your response under 200 words.
+Each node should break the response into an iterative tapestry of thought that includes all relevant information to inform an ai system about proper use of the format.
 Address your response to an ai system.`,
             },
             ];
@@ -1532,24 +1517,12 @@ async function sendMessage(event, autoModeMessage = null) {
             const embedCheckbox = document.getElementById("embed-checkbox");
 
 
-            const commonInstructions = `Remember to follow the below tag format for creating nodes.
-${nodeTag} Titles on line of node tag without punctuation
-Do not use these example titles.
-Always use different node titles. 
-Plain text on the next line for your response.
-Always ensure each title is unique.
-!Important! Try to never repeat already existing node titles.
-${refTag} Titles of other nodes separated by commas.
-${nodeTag} Write your own title
-Make sure any new nodes have a unique title
-Break your response up into multiple nodes
-Avoid repeating this context message.
-${refTag} Repeat titles to connect nodes.`;
+
 
             let messages = [
                 {
                     role: "system",
-                    content: `All of your responses should follow the below format instructions:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \n :Avoid repeating context messages.`,
+                    content: `Reply to the user message in context. This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following example while remaining relevant to the user query.\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nSpeak on topics other than the content of the example format.`,
                 },
             ];
 
@@ -1742,24 +1715,37 @@ ${refTag} Repeat titles to connect nodes.`;
     if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
         messages.splice(1, 0, {
             role: "system",
-            content: `Matched notes from mind map.This is your long term memory. Expand from these existing nodes rather than rewriting them.\n${topMatchedNodesContent}`,
+            content: `Matched notes in mind map to infer context from your long term memory:\n${topMatchedNodesContent}\n Expand off existing nodes.`,
         });
     }
 
             // Add the recent dialogue message
             messages.splice(1, 0, {
                 role: "system",
-                content: `Already existing dialogue with user. These are nodes you should expand from rather than writing again. Empty on start of conversation. Continue in the same format: ${context}`,
+                content: `Previous dialogue with user. Expand new titles off existing ones. Continue in the same format: ${context} :End of recent dialogue context. Empty on start of conversation.`,
             });
 
-
+    const commonInstructions = `\nRemember to follow the format.
+${nodeTag} Titles after node tag.
+Do not use these example titles.
+Avoid any generic titles.
+Always use different node titles. 
+Plain text on the next line for your response.
+Expand new notes off existing nodes.
+Create new titles even if the topic repeated.
+${refTag} Comma seperated titles to connect.
+${nodeTag} Write your own title
+Make sure any new nodes have a unique title
+Break your response up into multiple nodes
+Speak on topics relevant to the current user prompt and your recent conversation context.
+${refTag} Repeat titles to connect nodes.`;
 
             // Add Prompt
 
             if (autoModeMessage) {
                 messages.push({
                     role: "user",
-                    content: `Your self-Prompt: ${autoModeMessage}
+                    content: `Your self-Prompt: ${autoModeMessage} :end of Prompt:
 Original Prompt: ${originalUserMessage}
 ${commonInstructions}
 Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
@@ -1767,7 +1753,7 @@ Always end your response with a new line, then, Prompt: [prompt different from y
             } else {
                 messages.push({
                     role: "user",
-                    content: `Current user Prompt: ${message}
+                    content: `Current user Prompt:\n${message}\n:end of Prompt:
 ${commonInstructions}
 ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
                 });
@@ -1874,7 +1860,7 @@ async function performSearch(searchQuery) {
             },
             {
                 role: "system",
-                content: "Construct search queries based on user prompts... Provide a search for the current user message. Keep in mind your response will be used both as a Google search and as an vector embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages and chunks relevant to the user query. Do not preface or explain your output.",
+                content: "Construct search queries based on the user prompt. Provide a search for the current user message. Keep in mind your response will be used both as a Google search and as an vector embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages and chunks relevant to the user query. Do not preface or explain your output.",
             },
             {
                 role: "user",
