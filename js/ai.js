@@ -1117,7 +1117,7 @@ Keywords should predict search relevance for context. Order by relevance, starti
             return summaries;
         }
 
-const wolframmessage = `"Objective:
+const wolframmessage = `Objective:
 Generate a precise Wolfram Alpha query in response to the user's message.
 
 Guidelines:
@@ -1248,9 +1248,7 @@ ${refTag} Node A
 
 ${nodeTag} Node D
 - This node is an end point from Node A.
-${refTag} Node A
-
-etc..`;
+${refTag} Node A`;
 
         let summarizedZettelkastenPrompt = "";
 
@@ -1267,7 +1265,8 @@ etc..`;
                 role: "user",
                 content: `Do not preface your response.
 Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demoonstates to an Ai system how to most effectivly utilize the Zettelkasten format.
-Write your entire response within the format. Its important to make sure to keep your response under 200 words.
+Write your entire response within the format.
+Make sure your example is as concise as possible. Keep it under 150 words.
 Each node should break the response into an iterative tapestry of thought that includes all relevant information to inform an ai system about proper use of the format.
 Address your response to an ai system.`,
             },

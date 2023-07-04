@@ -111,7 +111,7 @@ function highlightNodeTitles() {
             if (title.length > 0) {
                 // Escape special regex characters
                 const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp("\\b" + escapedTitle + "\\b", "ig");
+                const regex = new RegExp(escapedTitle, "ig"); // removed \\b word boundaries
                 let match;
                 while (match = regex.exec(line.text)) {
                     const idx = match.index;
