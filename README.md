@@ -34,10 +34,15 @@ join us on [discord](https://discord.gg/hnY8UpeE22)!
 
 The controls are listed in the ? tab.
 
+
 Shift + double click to create nodes.
+
 Shift to freeze nodes.
+
 Double click nodes to anchor.
+
 Shift + click nodes to connect.
+
 
 ## FractalGPT
 🕸️🕷️
