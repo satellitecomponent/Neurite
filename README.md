@@ -91,7 +91,8 @@ Above is an example of conversation history being shared between GPT-3.5-turbo a
 - Still, advancements in context window size only further enable Neurite's performance.
   
 ## Local Server Setup
-- To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. The readme in the Locahost Servers folder explains how to run them all at once.
+- The Wikipedia, Wolfram, and web scrape servers, require Python and Node.js.
+- The readme in the Locahost Servers folder explains how to run all of the servers at once.
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 - All servers can be run with one command. Dowload the Locahost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run node start_servers.js. This will run all of the servers at once. The servers work with our Github pages host of Neurite, or any other way you locally access the interface.
 
