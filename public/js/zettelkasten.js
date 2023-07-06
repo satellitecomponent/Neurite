@@ -1,5 +1,6 @@
 var nodeTagInput;
 var refTagInput;
+var myCodeMirror;
 let llmNodeCreated = false;
 {
 
@@ -300,7 +301,7 @@ function processInput() {
         //updateTable();
     }
 
-    noteInput.on('change', processInput);  // instead of noteInput.addEventListener('input', processInput)
+    noteInput.on('change', processInput);   //instead of noteInput.addEventListener('input', processInput)
     nodeTagInput.addEventListener('input', processInput);
     refTagInput.addEventListener('input', processInput);
 

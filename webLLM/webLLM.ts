@@ -1,4 +1,7 @@
 //webLLM.ts
+declare var myCodeMirror: any;
+declare var CodeMirror: any;
+
 import * as webllm from "@mlc-ai/web-llm";
 
 let chat;
@@ -61,7 +64,7 @@ async function initializeLLM(model) {
 }
 
 document.getElementById('LocalLLMselect').addEventListener('change', async (event) => {
-    const selectedModel = event.target.value;
+    const selectedModel = (event.target as HTMLInputElement).value;
     llmInitialized = false; // Mark chat as uninitialized
     await initializeLLM(selectedModel);
 });
@@ -70,7 +73,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     const localLLMCheckbox = document.getElementById("localLLM");
 
     // If the LLM checkbox is not checked, don't submit the form.
-    if (!localLLMCheckbox.checked) {
+    if (!(localLLMCheckbox as HTMLInputElement).checked) {
         event.preventDefault();
         return;
     }
@@ -80,7 +83,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     const promptInput = document.getElementById("prompt");
     const LocalLLMselect = document.getElementById("LocalLLMselect");
     let lastMessageLength = 0;
-    const selectedModel = LocalLLMselect.value;
+    const selectedModel = (LocalLLMselect as HTMLSelectElement).value;
 
     const generateProgressCallback = (_step, message) => {
         // Remove the last intermediate message
@@ -103,9 +106,10 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
         context += "Prompt: " + turn.prompt + "\nAI: " + turn.response + "\n";
     });
 
-    const prompt = context + "...End of previous conversation\n\nYou are an AI.\nCurrent Prompt: " + promptInput.value;
+    const prompt = context + "End of previous conversation\n\nYou are an AI.\nCurrent Prompt: " + (promptInput as HTMLInputElement).value;
     console.log(prompt);
-    const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + promptInput.value + "\n";
+    const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + (promptInput as HTMLInputElement).value + "\n";
+
     noteInput.replaceRange(userPrompt, CodeMirror.Pos(noteInput.lastLine()));
 
     if (!llmInitialized || chat.currentModel !== selectedModel) {
@@ -123,13 +127,13 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     responseCount++;
 
     // Save this conversation turn to history
-    conversationHistory.push({ prompt: promptInput.value, response: reply });
+    conversationHistory.push({ prompt: (promptInput as HTMLInputElement).value, response: reply });
     // Limit conversation history to maxConversationHistory
     if (conversationHistory.length > maxConversationHistory) {
         conversationHistory.shift();
     }
 
-    promptInput.value = ''; // Clear the prompt input
+    (promptInput as HTMLInputElement).value = ''; // Clear the prompt input
 });
 
 declare global {
@@ -145,14 +149,14 @@ window.generateLocalLLMResponse = async function (node, messages) {
     const localLLMCheckbox = document.getElementById("localLLM");
 
     // If the LLM checkbox is not checked, don't use local LLM.
-    if (!localLLMCheckbox.checked) {
+    if (!(localLLMCheckbox as HTMLInputElement).checked) {
         return;
     }
 
     // Get the selected model
     const llmNodeIndex = node.index;
     const LocalLLMselect = document.getElementById(`dynamicLocalLLMselect-${llmNodeIndex}`);
-    const selectedModel = LocalLLMselect.value;
+    const selectedModel = (LocalLLMselect as HTMLSelectElement).value;
 
     // If the selected model is 'openai', return immediately
     if (selectedModel === 'OpenAi') {
@@ -171,7 +175,7 @@ window.generateLocalLLMResponse = async function (node, messages) {
             messageString += message.content.replace("Node Creation Time: undefined", "end of connected nodes.");
         } else if (message.role === "user") {
             // This is the current prompt
-            messageString += " \nYou are an ai.\nAnswer this Prompt: " + message.content;
+            messageString += " \nYou are an ai.\nUser Prompt:" + message.content;
         } else {
             messageString += message.content;
         }
@@ -215,10 +219,10 @@ async function processQueue() {
 
     const generateProgressCallback = (_step, message) => {
         // Remove the last intermediate message
-        aiResponseTextArea.value = aiResponseTextArea.value.substring(0, aiResponseTextArea.value.length - lastMessageLength);
+        (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
         // Append the latest intermediate message
         const formattedMessage = "\nAI: " + message;
-        aiResponseTextArea.value += formattedMessage;
+        (aiResponseTextArea as HTMLTextAreaElement).value += formattedMessage;
         // Store the length of the current message to be able to remove it next time
         lastMessageLength = formattedMessage.length;
         // Dispatch input event
@@ -229,17 +233,17 @@ async function processQueue() {
         }
     };
 
-    console.log("Messages sent to LLM: ", messageString); // Logging the processed message string
+    console.log("Messages sent to LLM:", messageString); // Logging the processed message string
 
     if (!llmInitialized || chat.currentModel !== selectedModel) {
         await initializeLLM(selectedModel);
     }
     const reply = await chat.generate(messageString, generateProgressCallback);
     // Remove the last intermediate message
-    aiResponseTextArea.value = aiResponseTextArea.value.substring(0, aiResponseTextArea.value.length - lastMessageLength);
+    (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
     // Append the final response
     const finalMessage = "\nAI: " + reply;
-    aiResponseTextArea.value += finalMessage;
+    (aiResponseTextArea as HTMLTextAreaElement).value += finalMessage;
     // Dispatch input event
     aiResponseTextArea.dispatchEvent(new Event('input'));
     // Auto scroll to bottom for the final message only if the user hasn't scrolled up

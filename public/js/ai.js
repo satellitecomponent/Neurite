@@ -217,7 +217,7 @@ async function sendLLMNodeMessage(node) {
 
         const embedMessage = {
             role: "system",
-            content: `The following are the top ${topN} matched chunks of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
+            content: `The following are the top ${topN} matched chunks of text from extracted webpages:\n` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
         };
 
         messages.push(embedMessage);
@@ -267,7 +267,7 @@ async function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "system",
-        content: `Recent conversation: \n ${lastPromptsAndResponses} End of recent conversation.`
+        content: `Recent conversation:\n${lastPromptsAndResponses}\n...End of recent conversation.`
     });
 
     messages.push({

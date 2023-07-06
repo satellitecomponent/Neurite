@@ -4,24 +4,24 @@
   "type": "module",
   "description": "fractal mind map",
   "scripts": {
-    "start": "parcel index.html --port 8080",
-    "build": "parcel build index.html --dist-dir lib --no-content-hash --public-url ./"
+    "start": "vite",
+    "build": "vite build"
   },
   "keywords": [],
   "author": "satellitecomponent",
   "license": "ISC",
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.2",
     "buffer": "^6.0.3",
     "cssnano": "^6.0.1",
-    "parcel": "^2.0.0",
     "postcss": "^8.4.24",
     "process": "^0.11.10",
     "ts-node": "^10.9.1",
+    "tslib": "^2.6.0",
     "typescript": "^5.1.3",
-    "url": "^0.11.1"
+    "vite": "^2.9.16"
   },
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.1",
-    "@xenova/transformers": "^2.3.1"
+    "@mlc-ai/web-llm": "^0.2.1"
   }
 }
