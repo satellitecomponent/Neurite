@@ -44,7 +44,7 @@
 
 
     <svg id="debug_layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="position: absolute; left:0px; top:0px; display:none; visibility:hidden; width: 100%; height: 100vh;">
-        <style>
+        <style type="text/css">
             .white {
                 font: 12px sans-serif;
                 fill: white;
@@ -174,7 +174,7 @@
                     <div id="howto" class="howto custom-scrollbar">
                         <table>
                             <tr>
-                                <td><strong> AI HOW-TO</strong></td>
+                                <td><strong>AI HOW-TO</strong></td>
                                 <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">←This checkbox enables the Ai to explain Neurite</label></td>
                             </tr>
                             <tr>
@@ -305,7 +305,7 @@
                         <br />
                         <label for="max-context-size-slider">Max Context Size:</label>
                         <span id="max-context-size-display">32000</span>
-                        <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="1000">
+                        <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="500">
                         <label id="node-slider-label">Top 3 nodes</label>
                         <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
                         <br />
@@ -370,7 +370,7 @@
         </div>
     </div>
     <a id="nodes">
-        <!-- Copy all text to personal storage -->
+<!-- Copy all text to personal storage -->
 
     </a>
     <!--iframe id="inlineFrameExample"

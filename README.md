@@ -18,13 +18,13 @@
 ## Introduction
 
 
-💡 Neurite unleashes a new dimension of digital interfacing... 
+💡 **Neurite unleashes a new dimension of digital interface...**
 
 
-...the fractal dimension....
+**...the fractal dimension.**
 
 
-🌱 this is an open-source project in early alpha, we are looking to grow our team! 🚧
+🌱 This is an open-source project in early alpha, we are looking to grow our team! 🚧
 
 join us on [discord](https://discord.gg/hnY8UpeE22)!
 
@@ -32,14 +32,22 @@ join us on [discord](https://discord.gg/hnY8UpeE22)!
 
 📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Make sure to use an embed link.
 
-The controls are listed in the ? tab. Shift + double click to create nodes.
+The controls are listed in the ? tab.
 
-(Dragging nodes can require some practice. Make sure to drag nodes by clicking on the actual window element outside of the textarea or buttons. Hold shift to freeze all nodes, and double click to anchor)
+
+Shift + double click to create nodes.
+
+Shift to freeze nodes.
+
+Double click nodes to anchor.
+
+Shift + click nodes to connect.
+
 
 ## FractalGPT
 🕸️🕷️
 
-- Not your typical chat interface.
+**Not your typical chat interface.**
 - Web of thought reasoning.
 
 Mind mapping through Neurite enables long-term memory for LLMs. 
@@ -67,15 +75,24 @@ Neurite currently has the following Ai capabilities...
 All API keys can be input through the Ai tab of the menu dropdown.
 
 
-We have recently included an AI node functionality.
-Alt + Double click creates a node with a more traditional AI chat interface. (you can create multiple)
-The AI node will retain context from any other text or AI nodes that are connected to it. This means the ability to connect multiple chat interfaces together.
+![Screenshot 2023-07-06 101637](https://github.com/satellitecomponent/Neurite/assets/129367899/4705ddbd-5b20-4e8b-b18e-d8c33ff93a69)
+Above is an example of conversation history being shared between GPT-3.5-turbo and a Local Ai model, Red Pajamas, run through [webLLM](https://mlc.ai/web-llm/).
+
+(See the local-ai branch for webLLM support. It is still a work in progress.)
+
+- Alt + Double click creates a node with a more traditional AI chat interface. (you can create multiple)
+- The AI node will retain context from any other text or AI nodes that connect to it.
+- This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
-- This diagram represents how the AI's response incorperates note-taking to extend its memory context for each user prompt.
-
+- This diagram represents how the AI's response incorperates note-taking to retain a non-linear conversation history.
+- We feed both the recent conversation as well as any matched notes that are not already in the recent conversation as part of the context message to the Ai.
+- This means retaining relevant information from any part of the conversation regardless of the Ai's context window size.
+- Still, advancements in context window size only further enable Neurite's performance.
+  
 ## Local Server Setup
-- To set up the Wikipedia, Wolfram, and web scrape servers, you will require Python and Node.js. The readme in the Locahost Servers folder explains how to run them all at once.
+- The Wikipedia, Wolfram, and web scrape servers, require Python and Node.js.
+- The readme in the Locahost Servers folder explains how to run all of the servers at once.
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 - All servers can be run with one command. Dowload the Locahost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run node start_servers.js. This will run all of the servers at once. The servers work with our Github pages host of Neurite, or any other way you locally access the interface.
 
@@ -83,7 +100,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 ## User Guide
 - Search: Enter a search query to locate windows containing that text. A list of search results will display to the left of the menu. Click on a search result to zoom your view window to where the window is positioned and scaled within the Mandelbrot set (fractal).
-- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Settings tab. Non-textual content currently needs to be re-inserted.
+- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Save tab. Non-textual content currently needs to be re-inserted.
 - Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its responses together. This allows for a tree of thought reasoning process within the Mandelbrot set.
 
 ## Future of Neurite
@@ -92,7 +109,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 Neurite is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information are ever more necessary. Neurite is an experimental approach to this newfound technological landscape.
 
 🚧 
-- webLLM (see the dev branch)
+- webLLM (see the local-ai)
 - VR
 - deeper zoom
 - improved fractal integration/visualization
