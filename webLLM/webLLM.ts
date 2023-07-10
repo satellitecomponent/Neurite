@@ -8,7 +8,7 @@ let chat;
 let llmInitialized = false;
 let responseCount = 1; // Start from 1
 let conversationHistory = []; // Stores the history of conversation turns
-const maxConversationHistory = 3; // Specify the maximum number of conversation turns you want to keep as context
+const maxConversationHistory = 2; // Specify the maximum number of conversation turns you want to keep as context
 const noteInput = myCodeMirror; // Use CodeMirror instance
 let userHasScrolledUp = false;
 
@@ -20,19 +20,25 @@ noteInput.on('scroll', () => {
 
 
 const appConfig = {
-    model_list: [
+    "model_list": [
         {
-            model_url: "https://huggingface.co/mlc-ai/mlc-chat-vicuna-v1-7b-q4f32_0/resolve/main/",
-            local_id: "vicuna-v1-7b-q4f32_0"
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-RedPajama-INCITE-Chat-3B-v1-q4f32_0/resolve/main/",
+            "local_id": "RedPajama-INCITE-Chat-3B-v1-q4f32_0"
         },
         {
-            model_url: "https://huggingface.co/mlc-ai/mlc-chat-RedPajama-INCITE-Chat-3B-v1-q4f32_0/resolve/main/",
-            local_id: "RedPajama-INCITE-Chat-3B-v1-q4f32_0"
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-vicuna-v1-7b-q4f32_0/resolve/main/",
+            "local_id": "vicuna-v1-7b-q4f32_0"
+        },
+        {
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-RedPajama-INCITE-Chat-3B-v1-q4f16_0/resolve/main/",
+            "local_id": "RedPajama-INCITE-Chat-3B-v1-q4f16_0",
+            "required_features": ["shader-f16"],
         }
     ],
-    model_lib_map: {
-        "vicuna-v1-7b-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/vicuna-v1-7b-q4f32_0-webgpu.wasm",
-        "RedPajama-INCITE-Chat-3B-v1-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f32_0-webgpu.wasm"
+    "model_lib_map": {
+        "vicuna-v1-7b-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/vicuna-v1-7b-q4f32_0-webgpu-v1.wasm",
+        "RedPajama-INCITE-Chat-3B-v1-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f32_0-webgpu-v1.wasm",
+        "RedPajama-INCITE-Chat-3B-v1-q4f16_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f16_0-webgpu-v1.wasm"
     }
 }
 
@@ -63,10 +69,42 @@ async function initializeLLM(model) {
     llmInitialized = true;
 }
 
-document.getElementById('LocalLLMselect').addEventListener('change', async (event) => {
-    const selectedModel = (event.target as HTMLInputElement).value;
+document.getElementById('downloadAiButton').addEventListener('click', async () => {
+    const loadingIcon = document.getElementById('loadingIcon');
+    const aiLoadingIcon = document.getElementById('aiLoadingIcon');
+    const errorIcon = document.getElementById('errorIcon');
+    const aiErrorIcon = document.getElementById('aiErrorIcon');
+    const selectedModel = (document.getElementById('LocalLLMselect') as HTMLInputElement).value;
+
     llmInitialized = false; // Mark chat as uninitialized
-    await initializeLLM(selectedModel);
+
+    // Show loading icons
+    loadingIcon.style.display = 'block';
+    if (aiLoadingIcon) aiLoadingIcon.style.display = 'block';
+
+    // Enable the local LLM checkbox
+    const localLLMCheckbox = document.getElementById('localLLM') as HTMLInputElement;
+    localLLMCheckbox.checked = true;
+
+    try {
+        // Initialize AI
+        await initializeLLM(selectedModel);
+
+        // If successful, hide error icons (in case they were previously shown)
+        errorIcon.style.display = 'none';
+        if (aiErrorIcon) aiErrorIcon.style.display = 'none';
+    } catch (error) {
+        // Show error icons in case of an error
+        errorIcon.style.display = 'block';
+        if (aiErrorIcon) aiErrorIcon.style.display = 'block';
+
+        // Optionally, log the error to the console for debugging
+        console.error('Error initializing AI:', error);
+    } finally {
+        // Hide loading icons regardless of success or failure
+        loadingIcon.style.display = 'none';
+        if (aiLoadingIcon) aiLoadingIcon.style.display = 'none';
+    }
 });
 
 document.getElementById('prompt-form').addEventListener('submit', async (event) => {
@@ -106,7 +144,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
         context += "Prompt: " + turn.prompt + "\nAI: " + turn.response + "\n";
     });
 
-    const prompt = context + "End of previous conversation\n\nYou are an AI.\nCurrent Prompt: " + (promptInput as HTMLInputElement).value;
+    const prompt = context + "You are an AI.\nUser Prompt: " + (promptInput as HTMLInputElement).value;
     console.log(prompt);
     const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + (promptInput as HTMLInputElement).value + "\n";
 
@@ -139,6 +177,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
 declare global {
     interface Window {
         generateLocalLLMResponse: any;
+        callWebLLMGeneric: (messages: any[]) => Promise<string>;
     }
 }
 
@@ -258,3 +297,28 @@ async function processQueue() {
         processQueue();
     }
 }
+
+//window.callWebLLMGeneric = async function (messages) {
+    // Get the selected model
+    //const LocalLLMselect = document.getElementById('LocalLLMselect');
+    //const selectedModel = (LocalLLMselect as HTMLSelectElement).value;
+
+    // Check if the current model is not the selected one or if LLM is not initialized yet
+    //if (!llmInitialized || chat.currentModel !== selectedModel) {
+        // Initialize the LLM with the selected model
+        //await initializeLLM(selectedModel);
+    //}
+
+    // Convert the messages array to a string
+    //const prompt = messages.join(" ");
+
+    // A progress callback that does nothing
+    //const generateProgressCallback = (_step, _message) => { };
+
+    // Generate a response using the webLLM
+    //const reply = await chat.generate(prompt, generateProgressCallback);
+
+    // Return the AI's response
+    //console.log(reply);
+    //return reply;
+//};

@@ -51,6 +51,13 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
             const errorData = await response.json();
             console.error("Error calling ChatGPT API:", errorData);
             node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+
+            // Display error icon and hide loading icon
+            const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
+            const aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
+            if (aiErrorIcon) aiErrorIcon.style.display = 'block';
+            if (aiLoadingIcon) aiLoadingIcon.style.display = 'none';
+
             return;
         }
 
@@ -100,6 +107,12 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         } else {
             console.error("Error calling ChatGPT API:", error);
             node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+
+            // Display error icon and hide loading icon
+            const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
+            const aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
+            if (aiErrorIcon) aiErrorIcon.style.display = 'block';
+            if (aiLoadingIcon) aiLoadingIcon.style.display = 'none';
         }
     } finally {
         node.aiResponding = false;
@@ -231,7 +244,7 @@ async function sendLLMNodeMessage(node) {
     const maxContextSize = document.getElementById('max-context-size-slider').value;
 
     connectedNodesInfo.forEach(info => {
-        let infoWithIntro = "node connected to memory: \n" + info;
+        let infoWithIntro = "node connected to memory:\n" + info;
         let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
         if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
             remainingTokens -= infoTokenCount;
@@ -267,7 +280,7 @@ async function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "system",
-        content: `Recent conversation:\n${lastPromptsAndResponses}\n...End of recent conversation.`
+        content: `Recent conversation:${lastPromptsAndResponses}...End of recent conversation.`
     });
 
     messages.push({
@@ -290,22 +303,35 @@ async function sendLLMNodeMessage(node) {
     node.userHasScrolled = false;
     let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
 
-    // Check if local LLM checkbox is checked and if the selected value is not 'OpenAI'
+    // Get the loading and error icons
+    let aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
+    let aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
+
+    // Hide the error icon and show the loading icon
+    aiErrorIcon.style.display = 'none'; // Hide error icon
+    aiLoadingIcon.style.display = 'block'; // Show loading icon
+
     if (document.getElementById("localLLM").checked && LocalLLMSelect.value !== 'OpenAi') {
         // Local LLM call
         window.generateLocalLLMResponse(node, messages)
-            .then(() => node.aiResponding = false)
+            .finally(() => {
+                node.aiResponding = false;
+                aiLoadingIcon.style.display = 'none'; // Hide loading icon
+            })
             .catch((error) => {
                 console.error(`An error occurred while getting response: ${error}`);
-                node.aiResponding = false;
+                aiErrorIcon.style.display = 'block';  // Show error icon
             });
     } else {
-        // If the local LLM checkbox is not checked or 'OpenAI' is selected in dropdown, default to OpenAI call
+        // OpenAI call
         callChatGPTApiForLLMNode(messages, node, true)
-            .then(() => node.aiResponding = false)
+            .finally(() => {
+                node.aiResponding = false;
+                aiLoadingIcon.style.display = 'none'; // Hide loading icon
+            })
             .catch((error) => {
                 console.error(`An error occurred while getting response: ${error}`);
-                node.aiResponding = false;
+                aiErrorIcon.style.display = 'block';  // Show error icon
             });
     }
 }
@@ -376,19 +402,61 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
         this.style.backgroundColor = '#ddd';
     });
 
+    // Create the loader and error icons container
+    let statusIconsContainer = document.createElement("div");
+    statusIconsContainer.className = 'status-icons-container';
+    statusIconsContainer.style.cssText = 'position: absolute; top: 15px; right: 80px; width: 20px; height: 20px;';
+
+    // Create the loader icon
+    let aiLoadingIcon = document.createElement("div");
+    aiLoadingIcon.className = 'loader';
+    aiLoadingIcon.id = `aiLoadingIcon-${llmNodeCount}`; // Assign unique id
+    aiLoadingIcon.style.display = 'none';
+
+    // Create the error icon
+    let aiErrorIcon = document.createElement("div");
+    aiErrorIcon.className = 'error-icon-css';
+    aiErrorIcon.id = `aiErrorIcon-${llmNodeCount}`; // Assign unique id
+    aiErrorIcon.style.display = 'none';
+
+    // Create the 'X' mark inside the error icon
+    let xMark = document.createElement("div");
+    xMark.className = 'error-x-mark';
+
+    let xMarkLeft = document.createElement("div");
+    xMarkLeft.className = 'error-x-mark-left';
+
+    let xMarkRight = document.createElement("div");
+    xMarkRight.className = 'error-x-mark-right';
+
+    xMark.appendChild(xMarkLeft);
+    xMark.appendChild(xMarkRight);
+    aiErrorIcon.appendChild(xMark); // Append the 'X' mark to the error icon
+
+    // Append loader and error icons to container
+    statusIconsContainer.appendChild(aiLoadingIcon);
+    statusIconsContainer.appendChild(aiErrorIcon);
+
+
     // Create a div to wrap prompt textarea and buttons
     let buttonDiv = document.createElement("div");
     buttonDiv.appendChild(sendButton);
     buttonDiv.appendChild(regenerateButton);
     buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
 
+    // Create the promptDiv with relative position
     let promptDiv = document.createElement("div");
-    promptDiv.style.cssText = "display: flex; justify-content: space-between;";
+    promptDiv.style.cssText = "display: flex; flex-direction: row; justify-content: space-between; align-items: center; position: relative;"; // Added position: relative;
+
+    // Append statusIconsContainer to the promptDiv instead of wrapperDiv
+    promptDiv.appendChild(statusIconsContainer);
     promptDiv.appendChild(promptTextArea);
     promptDiv.appendChild(buttonDiv);
 
     // Wrap elements in a div
     let wrapperDiv = document.createElement("div");
+    wrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
+
     wrapperDiv.appendChild(aiResponseTextArea);
     wrapperDiv.appendChild(promptDiv);
 
@@ -694,16 +762,42 @@ function removeLastResponse() {
             document.getElementById('max-tokens-display').innerText = e.target.value;
         });
 
-        async function callChatGPTApi(messages, stream = false) {
-            // Reset shouldContinue
-            shouldContinue = true;
+async function callChatGPTApi(messages, stream = false) {
+    // Reset shouldContinue
+    shouldContinue = true;
 
-            // Update aiResponding and the button
-            aiResponding = true;
-            document.getElementById("regen-button").textContent = '\u275A\u275A'; // Double Vertical Bar unicode
+    // Update aiResponding and the button
+    aiResponding = true;
+    document.getElementById("regen-button").textContent = '\u275A\u275A'; // Double Vertical Bar unicode
 
-            console.log("Messages sent to API:", messages);
-            console.log("Token count for messages:", getTokenCount(messages));
+    // Show loading icon
+    document.getElementById("aiLoadingIcon").style.display = 'block';
+
+    // Hide error icon in case it was previously shown
+    document.getElementById("aiErrorIcon").style.display = 'none';
+
+    console.log("Messages sent to API:", messages);
+    console.log("Token count for messages:", getTokenCount(messages));
+
+    //const localLLMCheckbox = document.getElementById('localLLM');
+
+    //if (localLLMCheckbox.checked) {
+        // Use local LLM
+        //try {
+            //const aiResponse = await callWebLLMGeneric(messages);
+            //return aiResponse;
+        //} catch (error) {
+            //console.error("Error calling local LLM:", error);
+            //document.getElementById("aiErrorIcon").style.display = 'block';
+            //return "An error occurred while processing your request.";
+        //} finally {
+            //aiResponding = false;
+            //document.getElementById("regen-button").textContent = "\u21BA";
+
+            // Hide loading icon
+            //document.getElementById("aiLoadingIcon").style.display = 'none';
+        //}
+    //}
 
             const API_KEY = document.getElementById("api-key-input").value;
             if (!API_KEY) {
@@ -746,6 +840,7 @@ function removeLastResponse() {
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("Error calling ChatGPT API:", errorData);
+                    document.getElementById("aiErrorIcon").style.display = 'block';
                     return "An error occurred while processing your request.";
                 }
 
@@ -801,12 +896,16 @@ function removeLastResponse() {
                 }
             } catch (error) {
                 console.error("Error calling ChatGPT API:", error);
+                document.getElementById("aiErrorIcon").style.display = 'block';
                 return "An error occurred while processing your request.";
             } finally {
                 aiResponding = false;
                 document.getElementById("regen-button").textContent = "\u21BA";
+        
+                // Hide loading icon
+                document.getElementById("aiLoadingIcon").style.display = 'none';
             }
-        }
+}
 
 
 async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
@@ -1062,7 +1161,7 @@ function cosineSimilarity(vecA, vecB) {
             const messages = [
                 {
                     role: "system",
-                    content: `Recent conversation: ${ lastPromptsAndResponses } : end of recent conversation`,
+                    content: `Recent conversation:${ lastPromptsAndResponses }: end of recent conversation`,
                 },
                 {
                     role: "system",

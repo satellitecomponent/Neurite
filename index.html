@@ -82,6 +82,15 @@
                             <div>
                                 <div style="display: flex; align-items: center;">
                                     <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
+                                    <div class="status-icons-container">
+                                        <div class="loader" id="aiLoadingIcon" style="display:none;"></div>
+                                        <div class="error-icon-css" id="aiErrorIcon" style="display:none;">
+                                            <div class="error-x-mark">
+                                                <span class="error-x-mark-left"></span>
+                                                <span class="error-x-mark-right"></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="btn-group" style="margin-left: 10px;">
                                         <button type="submit">&#x23F5;</button>
                                         <button id="regen-button" type="button">&#x21BA;</button>
@@ -152,7 +161,13 @@
                         <br />
                         <input type="text" id="ref-tag" class="tags" value="ref:" />
                         <label for="ref-tag"></label>
-
+                        <br />
+                        <br />
+                        <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
+                        <br />
+                        <br />
+                        <input type="checkbox" id="ai-nodes-checkbox">
+                        <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
                         <br />
                         <br />
                         <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
@@ -246,14 +261,29 @@
                     <div class="submenu">
                         <div class="inline-container">
                             <input type="checkbox" id="localLLM">
-                            <label for="localLLM">: Local LLM :</label>
+                            <label for="localLLM">:</label>
                         </div>
+                        <button id="downloadAiButton" class="key-button">INSTALL</button>
                         <div class="inline-container">
-                            <select id="LocalLLMselect">
+                            <select id="LocalLLMselect" class="model-dropdown">
                                 <option value="vicuna-v1-7b-q4f32_0" selected>Vicuna 7B f32</option>
                                 <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0">Red Pajama 3B f32</option>
                             </select>
                         </div>
+                        <div class="inline-container">
+                            <div class="loader" id="loadingIcon" style="display:none;"></div>
+                        </div>
+                        <div class="inline-container">
+                            <div id="errorIcon" style="display:none;">
+                                <div class="error-icon-css">
+                                    <div class="error-x-mark">
+                                        <span class="error-x-mark-left"></span>
+                                        <span class="error-x-mark-right"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
                         <input type="checkbox" id="local-embeddings-checkbox">
                         <label for="local-embeddings-checkbox">: Local Embeddings</label>
                         <br />
@@ -308,12 +338,6 @@
                         <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="500">
                         <label id="node-slider-label">Top 3 nodes</label>
                         <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
-                        <br />
-                        <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
-                        <br />
-                        <br />
-                        <input type="checkbox" id="ai-nodes-checkbox">
-                        <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
                     </div>
                 </div>
                 <div id="tabExtract" class="tabcontent">
@@ -370,7 +394,7 @@
         </div>
     </div>
     <a id="nodes">
-<!-- Copy all text to personal storage -->
+        <!-- Copy all text to personal storage -->
 
     </a>
     <!--iframe id="inlineFrameExample"
@@ -429,17 +453,18 @@
 
     </div>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
-    <script src="/js/dropdown.js"></script>
-    <script src="/js/zettelkasten.js"></script>
+    <script src="js/dropdown.js"></script>
+    <script src="js/zettelkasten.js"></script>
 
     <!--<script defer type="module" src="js/embeddings.ts"></script>-->
     <!--<script type="module" src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.3.0"></script>-->
-    <script defer type="module" src="/js/embeddings.js"></script>
+    <script defer type="module" src="/webLLM/embeddings.js"></script>
 
 
-    <script src="/js/interface.js"></script>
-    <script src="/js/ai.js"></script>
+    <script src="js/interface.js"></script>
     <script type="module" src="/webLLM/webllm.ts" defer></script>
+    <script src="js/ai.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 
