@@ -476,8 +476,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     }
 
     // Options for the dropdown
-    let option1 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, false);
-    let option2 = new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, true);
+    let option1 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, true);
+    let option2 = new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, false);
     let option3 = new Option('OpenAI', 'OpenAi', false, false);
 
     LocalLLMSelect.add(option1, undefined);
