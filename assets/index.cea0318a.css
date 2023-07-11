@@ -1,0 +1,1014 @@
+﻿        html {
+            /* overflow:hidden; */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+
+        .window {
+            display: flex;
+            flex-direction: column;
+            align-items: baseline;
+            border: none;
+            background-color: rgba(60, 59, 66, 0.93);
+            -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+            -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            position: relative;
+            /* Set initial width and height */
+            width: fit-content;
+            height: fit-content;
+            border: 1px solid rgba(0, 0, 0, 0);
+            transition: border-color 0.3s ease;
+        }
+
+        .window-anchored {
+            background-color: rgba(0, 0, 0, 0.82);
+            /* Change this to the desired color */
+        }
+
+            .window-anchored::before {
+                content: "";
+                display: block;
+                position: absolute;
+                top: -1px;
+                left: -1px;
+                right: -1px;
+                bottom: -1px;
+                border: 2px solid #bbb;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+        .window:hover::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border: 2px solid #bbb;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .window.selected::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border: 2px solid #007BFF;
+            pointer-events: none;
+            z-index: 5;
+        }
+.no-select {
+    user-select: none;
+}
+        .title-input {
+            color: #bbb;
+            background: none !important;
+            border-style: solid;
+            border-width: 3px 3px 0px 0;
+            border-color: #aaa;
+            transform: translate(-2%, 10%);
+            transition: border-color 0.3s ease;
+            /* Add transition for smooth color change */
+        }
+
+            .title-input:focus {
+                border-color: #bbb;
+                /* Change the border color when the input is focused */
+                outline: none;
+                /* Remove the default outline */
+            }
+
+        .resize-container {
+            position: absolute;
+            flex-grow: 1;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            pointer-events: auto;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            /* Add this line */
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            bottom: -8px;
+            /* Adjust this value */
+            right: -8px;
+            cursor: nwse-resize;
+            z-index: 4;
+            pointer-events: auto;
+            /* Add this line */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            min-width: 300px;
+            min-height: 200px;
+            background-color: white;
+        }
+
+        .content {
+            width: fit-content;
+            height: fit-content;
+            box-sizing: border-box;
+            /* Add this line */
+        }
+
+        .resize-handle::before {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: #bbb;
+            transform-origin: 0 0;
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            width: 2.8px;
+            height: 5px;
+            background-color: #bbb;
+            transform-origin: 0 0;
+        }
+
+        .resize-handle::before {
+            transform: rotate(45deg) translate(-1px, -4px) scale(.9);
+        }
+
+        .resize-handle::after {
+            transform: rotate(45deg) translate(3px, -1px) scale(.5);
+        }
+
+        .resize-handle.dragging {
+            background-color: none;
+        }
+
+        .selectable {
+            user-select: auto;
+        }
+
+        #elements svg g {
+            z-index: 10;
+            display: inline-block;
+        }
+
+        * {
+            font-family: "Inter", sans-serif;
+            color: #bbb;
+        }
+
+        .disable-pointer-events {
+            pointer-events: none;
+        }
+
+        .search_matched {
+            outline-style: double;
+            outline-color: red;
+            outline-width: 10px;
+        }
+
+        .search_nomatch {
+            outline-style: hidden;
+            outline-color: blue;
+            outline-width: 0px;
+        }
+
+        /* Dropdown menu styles */
+
+        .dropdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .menu-button {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .menu-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 2px;
+            background-color: #bbb;
+            transition: all 0.3s ease-in-out;
+            z-index: 10; /* higher than dropdown-content */
+        }
+
+            .menu-icon::before,
+            .menu-icon::after {
+                content: "";
+                position: absolute;
+                width: 20px;
+                height: 2px;
+                background-color: #bbb;
+                transition: all 0.3s ease-in-out;
+            }
+
+            .menu-icon::before {
+                top: -6px;
+            }
+
+            .menu-icon::after {
+                bottom: -6px;
+            }
+
+        .menu-button.open .menu-icon {
+            background-color: transparent;
+        }
+
+            .menu-button.open .menu-icon::before {
+                transform: translateY(6px) rotate(45deg);
+            }
+
+            .menu-button.open .menu-icon::after {
+                transform: translateY(-6px) rotate(-45deg);
+            }
+
+        .dropdown-content {
+            position: absolute;
+            top: 100%; /* modify if needed */
+            right: 0; /* modify if needed */
+            background: rgba(60, 59, 66, 0.9);
+            border-top-right-radius: 8px;
+            border-bottom-left-radius: 8px;
+            overflow: hidden;
+            display: none;
+            z-index: 1;
+            margin-top: -38px; /* negative margin */
+            margin-right: -5px; /* negative margin */
+        }
+
+            .dropdown-content.open {
+                display: block;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: 1fr;
+                grid-column-gap: 0px;
+                grid-row-gap: 0px;
+                -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+                -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+                box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+            }
+
+        .submenu {
+            padding: 10px;
+            color: #bbb
+        }
+
+            .submenu a {
+                display: block;
+                color: #bbb;
+                text-decoration: none;
+                padding: 5px;
+            }
+
+                .submenu a.selected:before {
+                    content: "\2713";
+                    color: #bbb;
+                    margin-right: 5px;
+                }
+
+                .submenu a:hover {
+                    background-color: #ddd;
+                }
+
+        input[type="range"] {
+            display: block;
+            margin: 0 auto;
+            width: 200px;
+        }
+
+        input[type="text"i] {
+            padding: 1px 2px;
+            background-color: #222226;
+            color: #bbb;
+        }
+
+        .submenu-btn {
+            display: flex;
+            align-content: flex-start;
+            border: none;
+            background-color: transparent;
+            color: #bbb;
+            cursor: pointer;
+            padding: 5px;
+            font-size: medium;
+        }
+
+        .Searchbar {
+            background-color: #222226;
+            color: #bbb;
+            width: 150px;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .gradient-selector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gradient-preview {
+            width: 250px;
+            height: 100px;
+            margin-top: 5px;
+        }
+
+        .color-inputs {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .color-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            background-color: #8882;
+            color: #bbb
+        }
+
+        .delete-btn {
+            margin-top: 5px;
+            background-color: #8882;
+            color: #bbb
+        }
+
+        .add-btn {
+            margin-top: 10px;
+            background-color: #8882;
+            display: flex;
+            justify-content: center !important;
+            width: auto;
+            color: #bbb;
+        }
+
+        .search_matched {
+            outline-style: double;
+            outline-color: red;
+            outline-width: 10px;
+        }
+
+        .search_nomatch {
+            outline-style: hidden;
+            outline-color: blue;
+            outline-width: 0px;
+        }
+
+        .textnode {
+            background-color: #222226;
+        }
+
+        #prompt-form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        textarea#prompt {
+            overflow-y: hidden;
+            flex-grow: 1;
+            background-color: #222226;
+            color: inherit;
+            border: inset;
+            border-color: #8882;
+            width: 270px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        #prompt-form button {
+            z-index: 1;
+            padding: 4px 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #222226;
+            transition: background-color 0.3s;
+            border: inset;
+            border-color: #8882;
+        }
+
+            #prompt-form button:hover {
+                background-color: #ddd;
+                color: #222226
+            }
+
+            #prompt-form button[type="submit"] {
+                background-color: #222226;
+                color: white;
+            }
+
+                #prompt-form button[type="submit"]:hover {
+                    background-color: #45a049;
+                    color: #222226;
+                }
+
+        #api-key-input {
+            background-color: #222226;
+            color: #bbb;
+            border: inset;
+            border-color: #8882;
+        }
+
+.api-container {
+
+}
+
+.linkbuttons {
+    padding: 4px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    transition: background-color 0.3s;
+    border: inset;
+    border-color: #8882;
+}
+
+            .linkbuttons:hover {
+                background-color: #ddd;
+            }
+
+            .linkbuttons[type="submit"] {
+                background-color: #222226;
+                color: #bbb;
+            }
+
+                .linkbuttons[type="submit"]:hover {
+                    background-color: #45a049;
+                }
+
+#saved-networks-container .linkbuttons {
+    margin: 0;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+    .divider span {
+        border-bottom: 1px solid #000;
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .divider button {
+        background: none;
+        border: none;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+.checkboxarray {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 270px;
+    padding-top: 6px;
+    /* adjust this as needed */
+}
+
+            .checkboxarray div {
+                width: 33%;
+                /* adjust this as needed */
+            }
+
+        .tabs {
+            display: flex;
+            justify-content: flex-start;
+            padding-right: 47px;
+        }
+
+        .tabcontent {
+            display: none;
+        }
+
+.tablink {
+    padding: 4px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    transition: background-color 0.3s;
+    border: inset;
+    border-color: #8882;
+}
+
+    .tablink:hover {
+        background-color: #ddd;
+        color: #222226;
+        /* Change text color on hover so it's visible against the lighter background */
+    }
+
+    .tablink.activeTab {
+        background-color: #929292; /* Or the color you want for active tab */
+        color: #222226; /* Or the color you want for the text of active tab */
+    }
+
+        .input-group {
+            display: flex;
+            align-items: start;
+        }
+
+        .btn-group button {
+            width: 39px;
+            /* Adjust as needed */
+            height: 33px;
+            /* Adjust as needed */
+        }
+
+        .btn-group {
+            display: flex;
+            align-items: start;
+            gap: 5px;
+            padding-left: 33px;
+            padding-bottom: 10px;
+            width: 30px;
+            height: 20px;
+        }
+
+        .zettelkasten {
+            background-color: #222226;
+            width: 261px;
+            z-index: -1;
+            border: inset;
+            border-color: #8882;
+            resize: vertical;
+            /* only allows the height to be resizable */
+        }
+
+            .zettelkasten::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .zettelkasten::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .zettelkasten::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .zettelkasten::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+        .howto {
+            width: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 283px;
+            background-color: #222226;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+        .custom-scrollbar::-webkit-scrollbar-corner {
+            background: transparent;
+            border: none;
+        }
+
+        .key-button {
+            z-index: 1;
+            padding: 4px 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #222226;
+            transition: background-color 0.3s;
+            border: inset;
+            border-color: #8882;
+        }
+
+            .key-button:hover {
+                background-color: #ddd;
+                color: #222226;
+            }
+
+        .google-key-input input {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .model-selector {
+            border: 1px solid #222226;
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .model-input {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        #wolframApiKey {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        #howto {
+            max-height: 500px; /* adjust this value as needed */
+            overflow-y: auto;
+        }
+
+        #clickable-link {
+            color: #0572eb;
+            text-decoration: underline;
+        }
+
+            #clickable-link:hover {
+                color: #0572eb;
+                text-decoration: none;
+            }
+
+            #clickable-link:visited {
+                color: #652fc5;
+            }
+
+        #svg_bg {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .extract-textarea {
+            background-color: #222226;
+            width: 261px;
+            z-index: -1;
+            border: inset;
+            border-color: #8882;
+            resize: vertical;
+            /* only allows the height to be resizable */
+        }
+
+            .extract-textarea::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .extract-textarea::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .extract-textarea::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .extract-textarea::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+
+        .extract-button {
+            
+        }
+
+        .scrollable-list {
+            height: 100px; /* Adjust this value based on how tall you want your list to be */
+            width: 250px;
+            overflow-y: auto;
+            border: 1px solid #000;
+            padding: 5px;
+        }
+
+            .scrollable-list::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .scrollable-list::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .scrollable-list::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .scrollable-list::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+        /* Existing CSS */
+        .selected {
+            background-color: #bbb; /* Or any other color */
+            color: #222226;
+        }
+
+        /* New CSS */
+        #key-list p:hover {
+            background-color: #bbb; /* Or any other color */
+            color: #222226;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+.inline-container {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#LocalLLMselect {
+    background-color: #222226;
+    border: none;
+}
+
+#saved-networks-container div {
+    margin: 5px 0;
+}
+
+#saved-networks-container button {
+    margin-right: 10px;
+}
+
+.highlight {
+    border: 2px dashed #aaa;
+}
+
+
+input[type="checkbox"] {
+    display: none;
+}
+
+/* Create a custom checkbox */
+input[type="checkbox"] + label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgb(60, 59, 66);
+    background-color: #222226;
+    display: inline-block;
+    border-radius: 25%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+
+input[type="checkbox"]:checked + label:before {
+    background-color: #006BB6;
+}
+
+
+input[type="checkbox"] + label {
+    padding-left: 25px;
+}
+
+input[type="checkbox"] + label {
+    position: relative;
+    top: -3px;
+}
+
+input[type="checkbox"]:checked + label:after {
+    content: '✔';
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: 15px;
+    color: #bbb;
+}
+
+label {
+    user-select: none;
+    padding-top: 2px;
+}
+
+/* The slider itself */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #222226;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    margin: 12px 0;
+    background: linear-gradient(to right, #006BB6 0%, #006BB6 50%, #222226 50%, #222226 100%);
+}
+
+    /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 10px;
+        height: 20px;
+        background: #bbb;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-top: -1px;
+    }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            background: #aaa;
+        }
+
+    input[type=range]::-moz-range-thumb {
+        width: 10px;
+        height: 20px;
+        background: #bbb;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    /* The slider progress (for Firefox) */
+    input[type=range]::-moz-range-progress {
+        background: #006BB6;
+    }
+
+    /* The slider track (for Firefox) */
+    input[type=range]::-moz-range-track {
+        background: #222226;
+    }
+
+    input[type=range]::-moz-range-thumb:hover {
+        background: #aaa;
+    }
+
+.api-container {
+    display: flex;
+}
+
+.api-inputs {
+    flex-grow: 1;
+}
+
+.api-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin-left: -80px;
+}
+
+.key-button {
+    margin-bottom: 10px; /* Optional: Add some margin between the buttons */
+}
+
+.CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
+    background-color: #222226 !important;
+    width: 6px !important;
+    display: none; /* Initially hidden */
+}
+
+.CodeMirror-simplescroll-scrollbar {
+    background: #888 !important;
+}
+
+    .CodeMirror-simplescroll-scrollbar:hover {
+        background: #555 !important;
+    }
+
+.CodeMirror-cursor {
+    border-left: 2px solid #bbb !important;
+}
+
+.CodeMirror-selected {
+    background: Highlight !important;
+}
+
+/* Invert the colors for focused text to ensure it has sufficient contrast */
+.CodeMirror-focused .CodeMirror-selected {
+    background: Highlight !important;
+    color: HighlightText !important;
+}
+
+
+.node-title {
+    color: paleturquoise;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.loader {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.model-dropdown {
+    width: 123px;
+}
+
+.error-icon-css {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    text-align: center;
+    margin: 3px;
+}
+
+.error-x-mark {
+    position: relative;
+    margin-top: 12px;
+    z-index: 2;
+}
+
+.error-x-mark-left,
+.error-x-mark-right {
+    display: block;
+    position: absolute;
+    width: 21px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    background-color: red;
+}
+
+.error-x-mark-left {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.error-x-mark-right {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.status-icons-container {
+    position: relative;
+    width: 24px; /* Width of the icons */
+    height: 24px; /* Height of the icons */
+    margin-right: -30px; /* Space between icons and buttons */
+    margin-left: 10px;
+}
