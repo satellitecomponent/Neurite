@@ -8,7 +8,7 @@ let chat;
 let llmInitialized = false;
 let responseCount = 1; // Start from 1
 let conversationHistory = []; // Stores the history of conversation turns
-const maxConversationHistory = 2; // Specify the maximum number of conversation turns you want to keep as context
+const maxConversationHistory = 0; // Specify the maximum number of conversation turns you want to keep as context
 const noteInput = myCodeMirror; // Use CodeMirror instance
 let userHasScrolledUp = false;
 
@@ -86,6 +86,9 @@ document.getElementById('downloadAiButton').addEventListener('click', async () =
     const localLLMCheckbox = document.getElementById('localLLM') as HTMLInputElement;
     localLLMCheckbox.checked = true;
 
+    // Manually trigger the change event
+    localLLMCheckbox.dispatchEvent(new Event('change'));
+
     try {
         // Initialize AI
         await initializeLLM(selectedModel);
@@ -144,7 +147,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
         context += "Prompt: " + turn.prompt + "\nAI: " + turn.response + "\n";
     });
 
-    const prompt = context + "You are an AI.\nUser Prompt: " + (promptInput as HTMLInputElement).value;
+    const prompt = context + "Prompt: " + (promptInput as HTMLInputElement).value;
     console.log(prompt);
     const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + (promptInput as HTMLInputElement).value + "\n";
 
@@ -202,24 +205,24 @@ window.generateLocalLLMResponse = async function (node, messages) {
         return;
     }
 
+    // Filter out the first message and the second-to-last message
+    const filteredMessages = messages.filter((message, index) => {
+        return !(index === 0 || index === messages.length - 2);
+    });
+
     let messageString = "";
 
-    // Process messages to build messageString
-    messages.forEach((message, index) => {
-        // Skip the first message
-        if (index === 0) return;
-
-        // Append connected node information
-        if (index === 1) {
+    // Process filteredMessages to build messageString
+    filteredMessages.forEach((message, index) => {
+        if (index === 0) {
             messageString += message.content.replace("Node Creation Time: undefined", "end of connected nodes.");
         } else if (message.role === "user") {
             // This is the current prompt
-            messageString += " \nYou are an ai.\nUser Prompt:" + message.content;
+            messageString += `Prompt:${message.content}`;
         } else {
             messageString += message.content;
         }
     });
-
 
     messageQueue.push({
         node,
