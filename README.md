@@ -122,9 +122,11 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information are ever more necessary. This project is an experimental approach to this emergent technological landscape.
 
-🚧 
+🚧
+
 ✅ webLLM 
 - webLLM localhost
+
 ✅ local embeddings 
 - VR
 - deeper zoom
