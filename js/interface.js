@@ -465,22 +465,7 @@ outerCheckbox.addEventListener('click', function () {
             return (z.mag2() > 4) ? iters : iters + 1;
         }
 
-        function mandelbrott_dist(iters, c, z) {
-            if (z === undefined) {
-                z = new vec2(0, 0);
-            }
-            let pz = z;
-            for (let i = 0; i < iters; i++) {
-                if (z.mag2() > 4) {
-                    let zm = z.mag();
-                    let pzm = pz.mag();
-                    return i + (2 - pzm) / (zm - pzm);
-                }
-                pz = z;
-                z = mand_step(z, c);
-            }
-            return iters;
-        }
+
 
         function mandelbrott_dist(iters, c, z) {
             let bailout = 1e8; //large so z^2+c -> z^2
@@ -1190,10 +1175,17 @@ updateEdgeData() {
                         connect(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
                         prevNode = undefined;
                     }
-                } else {
-
                 }
+                // Add an event listener to window.mouseup that stops the node from following the mouse
+                window.addEventListener('mouseup', () => this.stopFollowingMouse());
                 cancel(event);
+            }
+
+            stopFollowingMouse() {
+                this.followingMouse = 0;
+                movingNode = undefined;
+                // Remove the event listener to clean up
+                window.removeEventListener('mouseup', this.stopFollowingMouse);
             }
             onmouseup(event) {
                 this.followingMouse = 0;

@@ -941,17 +941,6 @@ input[type=range] {
     color: HighlightText !important;
 }
 
-/* Add browser specific rules for Firefox */
-@-moz-document regexp(".*") {
-    .CodeMirror-selected {
-        background: -moz-selection !important;
-    }
-
-    .CodeMirror-focused .CodeMirror-selected {
-        background: -moz-selection !important;
-        color: HighlightText !important;
-    }
-}
 
 .node-title {
     color: paleturquoise;
@@ -959,3 +948,67 @@ input[type=range] {
     text-decoration: underline;
 }
 
+.loader {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.model-dropdown {
+    width: 123px;
+}
+
+.error-icon-css {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    text-align: center;
+    margin: 3px;
+}
+
+.error-x-mark {
+    position: relative;
+    margin-top: 12px;
+    z-index: 2;
+}
+
+.error-x-mark-left,
+.error-x-mark-right {
+    display: block;
+    position: absolute;
+    width: 21px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    background-color: red;
+}
+
+.error-x-mark-left {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.error-x-mark-right {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.status-icons-container {
+    position: relative;
+    width: 24px; /* Width of the icons */
+    height: 24px; /* Height of the icons */
+    margin-right: -30px; /* Space between icons and buttons */
+    margin-left: 10px;
+}
