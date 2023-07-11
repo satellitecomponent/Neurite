@@ -280,7 +280,7 @@ async function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "system",
-        content: `Recent conversation:${lastPromptsAndResponses}`
+        content: `Recent conversation:${lastPromptsAndResponses}` //Recent conversation removed from webLLM.ts
     });
 
     messages.push({
