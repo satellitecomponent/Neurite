@@ -10,7 +10,7 @@ export default {
     ],
     build: {
         rollupOptions: {
-            external: ['js/dropdown.js', 'js/zettelkasten.js', 'js/interface.js', 'js/ai.js']
+            external: ['js/dropdown.js', 'js/zettelkasten.js', 'js/interface.js', 'js/ai.js', `js/record.js`]
         },
         sourcemap: 'inline',
         target: 'esnext',

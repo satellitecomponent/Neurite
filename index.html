@@ -141,34 +141,50 @@
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
+                        z <sup id="exponent_value" style="color: powderblue">2</sup> + c
+                        <input id="exponent" type="range" min="1" max="8" value="2">
                         <div id="quality_value">Quality</div>
                         <input id="quality" type="range" min="0" max="100" value="0">
                         <div id="length_value">Length</div>
                         <input id="length" type="range" min="0" max="100" value="50">
-                        z <sup id="exponent_value" style="color: powderblue">2</sup> + c
-                        <input id="exponent" type="range" min="1" max="8" value="2">
-                        <div id="opacity_value">Opacity</div>
-                        <input id="opacity" type="range" min="0" max="100" value="100">
-                        <input type="checkbox" id="outerCheckbox">
-                        <label for="outerCheckbox">: Freeze Outer Opacity</label>
+                        <div id="colorselection">
+                            <div class="color-picker-container">
+                                <div class="color-picker-item">
+                                    <label for="rColor">R</label>
+                                    <input type="color" id="rColor" name="rColor" value="#FF0000">
+                                </div>
+                                <div class="color-picker-item">
+                                    <label for="gColor">G</label>
+                                    <input type="color" id="gColor" name="gColor" value="#00FF00">
+                                </div>
+                                <div class="color-picker-item">
+                                    <label for="bColor">B</label>
+                                    <input type="color" id="bColor" name="bColor" value="#0000FF">
+                                </div>
+                            </div>
+                            <br />
+                            <div id="colorsliders">
+                                <input type="range" min="0" max="255" id="rSlider" value="0" style="display: none;">
+                                <label for="cSlider">Brightness</label>
+                                <input type="range" min="0" max="255" id="cSlider" value="128">
+                                <label for="sSlider">Saturation</label>
+                                <input type="range" min="0" max="255" id="sSlider" value="127">
+                                <div id="opacity_value">Opacity</div>
+                                <input id="opacity" type="range" min="0" max="100" value="100">
+                                <input type="checkbox" id="outerCheckbox">
+                                <label for="outerCheckbox">: Freeze Outer Opacity</label>
+                                <br />
+                                <input type="checkbox" id="innerCheckbox">
+                                <label for="innerCheckbox">: Freeze Inner Opacity</label>
+                            </div>
+                            <div id="bgpick">
+                                <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226; margin-top:5px">
+                                <label for="colorPicker">Background Color</label>
+                            </div>
+                        </div>
                         <br />
-                        <input type="checkbox" id="innerCheckbox">
-                        <label for="innerCheckbox">: Freeze Inner Opacity</label>
-                        <br />
-                        <br />
-                        <input type="text" id="node-tag" class="tags" value="node:" />
-                        <label for="node-tag"></label>
-                        <br />
-                        <input type="text" id="ref-tag" class="tags" value="ref:" />
-                        <label for="ref-tag"></label>
-                        <br />
-                        <br />
-                        <input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty <br />(Shuffled Wiki Results)</strong></label>
-                        <br />
-                        <br />
-                        <input type="checkbox" id="ai-nodes-checkbox">
-                        <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
-                        <br />
+                        <button id="screenshotButton" class="key-button">Screenshot</button>
+                        <button id="recordButton" class="key-button">Record</button>
                         <br />
                         <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
                             pan:
@@ -179,8 +195,6 @@
                             <br />
                             <br />
                             <div id="fps" style="display:flex; justify-content:flex-start;">fps:?? (is javascript enabled?)</div>
-
-
                         </div>
                     </div>
                 </div>
@@ -252,6 +266,27 @@
                             <tr>
                                 <td><strong>LocalHost Servers</strong></td>
                                 <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br /> More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a><br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
+                            </tr>
+                            <tr>
+                                <td>Extras</td>
+                                <td><input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty<br />(Shuffled Wiki Results)</strong></label></td>
+                            </tr>
+                            <tr>
+                                <td>Extras</td>
+                                <td>
+                                    <input type="checkbox" id="ai-nodes-checkbox">
+                                    <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input type="text" id="node-tag" class="tags" value="node:" style="width:80px;" />
+                                    <label for="node-tag">Node Tag</label>
+                                </td>
+                                <td>
+                                    <input type="text" id="ref-tag" class="tags" value="ref:" style="width:80px;" />
+                                    <label for="ref-tag">Reference Tag</label>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -464,7 +499,7 @@
     <script src="js/interface.js"></script>
     <script type="module" src="/webLLM/webllm.ts" defer></script>
     <script src="js/ai.js"></script>
-
+    <script src="js/record.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 

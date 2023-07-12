@@ -563,19 +563,41 @@ outerCheckbox.addEventListener('click', function () {
             }
         }
 
-        function col(i, r = undefined, c = 128, s = 127) {
-            if (r === undefined) {
-                r = nodeMode_v
-            }
-            let rgb = [c - s * Math.cos(i / 2 ** .9), c - s * Math.cos(i / 3 ** .9), c - s * Math.cos(i / 5 ** .9)];
-            let y = 0.17697 * rgb[0] + 0.81240 * rgb[1] + 0.01063 * rgb[2];
-            return [lerp(rgb[0], y, r), lerp(rgb[1], y, r), lerp(rgb[2], y, r)];
-        }
+let rSlider = document.getElementById("rSlider");
+let cSlider = document.getElementById("cSlider");
+let sSlider = document.getElementById("sSlider");
 
-        function scol(i, r = undefined, c = 128, s = 127) {
-            c = col(i, r, c, s);
-            return "RGB(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + ")";
-        }
+function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : null;
+}
+
+let colorPickerR = document.getElementById("rColor");
+let colorPickerG = document.getElementById("gColor");
+let colorPickerB = document.getElementById("bColor");
+
+function col(i, r = rSlider.value, c = cSlider.value, s = sSlider.value) {
+    if (nodeMode) {
+        r = nodeMode_v;
+    }
+
+    let colorR = hexToRgb(colorPickerR.value)[0] / 255; // Normalize to [0, 1]
+    let colorG = hexToRgb(colorPickerG.value)[1] / 255; // Normalize to [0, 1]
+    let colorB = hexToRgb(colorPickerB.value)[2] / 255; // Normalize to [0, 1]
+
+    let rgb = [colorR * (c - s * Math.cos(i / 2 ** .9)), colorG * (c - s * Math.cos(i / 3 ** .9)), colorB * (c - s * Math.cos(i / 5 ** .9))];
+    let y = 0.17697 * rgb[0] + 0.81240 * rgb[1] + 0.01063 * rgb[2];
+    return [lerp(rgb[0], y, r), lerp(rgb[1], y, r), lerp(rgb[2], y, r)];
+}
+
+function scol(i, r = rSlider.value, c = cSlider.value, s = sSlider.value) {
+    c = col(i, r, c, s);
+    return "RGB(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + ")";
+}
 
 
         //let l = document.getElementById("link");
@@ -1710,13 +1732,13 @@ function connectRandom(n) {
             for (let e of edges) {
                 e.step(dt); //line 2703
             }
-            regenDebt = Math.min(16, regenDebt + lerp(4, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
+            regenDebt = Math.min(16, regenDebt + lerp(1, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
             for (; regenDebt > 0; regenDebt--) {
                 render_hair(Math.random() * settings.renderSteps);
             }
             regenAmount = 0;
             nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
-            window.requestAnimationFrame(nodeStep); //line 2711
+            window.requestAnimationFrame(nodeStep);
         }
         nodeStep();
 

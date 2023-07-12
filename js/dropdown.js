@@ -702,3 +702,12 @@ function handleDrop(e) {
 document.getElementById('node-count-slider').addEventListener('input', function () {
     document.getElementById('node-slider-label').innerText = 'Top ' + this.value + ' nodes';
 });
+
+let colorPicker = document.getElementById("colorPicker");
+
+colorPicker.addEventListener("input", function () {
+    document.body.style.backgroundColor = this.value;
+}, false);
+
+// Manually dispatch the input event
+colorPicker.dispatchEvent(new Event("input"));

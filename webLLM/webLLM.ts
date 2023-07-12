@@ -218,7 +218,7 @@ window.generateLocalLLMResponse = async function (node, messages) {
             messageString += message.content.replace("Node Creation Time: undefined", "end of connected nodes.");
         } else if (message.role === "user") {
             // This is the current prompt
-            messageString += `Prompt:${message.content}`;
+            messageString += `Prompt: ${message.content}`;
         } else {
             messageString += message.content;
         }

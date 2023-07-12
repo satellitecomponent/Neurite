@@ -1012,3 +1012,22 @@ input[type=range] {
     margin-right: -30px; /* Space between icons and buttons */
     margin-left: 10px;
 }
+
+.color-picker-container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+    .color-picker-item input[type="color"] {
+        background: #222226;
+    }
+
+#bgpick {
+    align-content: center;
+}
