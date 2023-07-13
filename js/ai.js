@@ -194,7 +194,7 @@ async function sendLLMNodeMessage(node) {
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS"
+        content: "Google Search Results displayed to user:" + searchResultsContent
     };
 
     if (document.getElementById("google-search-checkbox").checked) {
@@ -1155,13 +1155,13 @@ function cosineSimilarity(vecA, vecB) {
 
         async function generateKeywords(message, count) {
             // Get last prompts and responses
-            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
+            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 100);
 
             // Prepare the messages array
             const messages = [
                 {
                     role: "system",
-                    content: `Recent conversation:${ lastPromptsAndResponses }: end of recent conversation`,
+                    content: `Recent conversation:${ lastPromptsAndResponses }:End of recent conversation`,
                 },
                 {
                     role: "system",
@@ -1288,7 +1288,7 @@ const codeMessage = {
     role: "system",
     content: `Code Checkbox = true requires your response to include either HTML/JS or Python code, handled by Pyodide in the browser. Follow these steps:
 
-${nodeTag} Explanation Title (Unique)
+${nodeTag} Explanation Title (Optional)
 Provide a concise preface explaining what the code accomplishes. Either HTML/JS or Python.
 
 ${nodeTag} HTML/JS Code Title (Unique title)
@@ -1384,23 +1384,23 @@ Format:
 
 
         const spatialAwarenessExample = `${nodeTag} Central Node
-- This is the central node from which other nodes branch out.
+- Node from which other nodes branch out.
 ${refTag} Node A, Node B
 
 ${nodeTag} Node A
-- This node connects to the Central Node and branches out to Node C and Node D.
+- Connects to the Central Node, branches to C, D.
 ${refTag} Central Node, Node C, Node D
 
 ${nodeTag} Node B
-- This node branches out from the Central Node to Node E and Node F.
+- Branches out from Central to E and F.
 ${refTag} Central Node, Node E, Node F
 
 ${nodeTag} Node C
-- This node is an end point from Node A.
+- End point from A.
 ${refTag} Node A
 
 ${nodeTag} Node D
-- This node is an end point from Node A.
+- End point from A.
 ${refTag} Node A`;
 
         let summarizedZettelkastenPrompt = "";
@@ -1417,11 +1417,9 @@ ${refTag} Node A`;
             {
                 role: "user",
                 content: `Do not preface your response.
-Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demoonstates to an Ai system how to most effectivly utilize the Zettelkasten format.
-Write your entire response within the format.
-Make sure your example is as concise as possible. Keep it under 150 words.
-Each node should break the response into an iterative tapestry of thought that includes all relevant information to inform an ai system about proper use of the format.
-Address your response to an ai system.`,
+Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demonstrates how to most effectivly utilize the Zettelkasten format.
+Write your entire response within the format. Make sure your example is as concise as possible. Under 150 words.
+Each node should break the response into an iterative tapestry of thought that informs an ai system about proper use of the format.`,
             },
             ];
 
@@ -1884,12 +1882,11 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const commonInstructions = `\nRemember to follow the format.
 ${nodeTag} Titles after node tag.
-Do not use these example titles.
-Avoid any generic titles.
-Always use different node titles. 
 Plain text on the next line for your response.
+Do not use these example titles.
+Avoid generic titles, (conclusion, etc.)
+Always use different node titles. 
 Expand new notes off existing nodes.
-Create new titles even if the topic repeated.
 ${refTag} Comma seperated titles to connect.
 ${nodeTag} Write your own title
 Make sure any new nodes have a unique title
@@ -1902,7 +1899,7 @@ ${refTag} Repeat titles to connect nodes.`;
             if (autoModeMessage) {
                 messages.push({
                     role: "user",
-                    content: `Your self-Prompt: ${autoModeMessage} :end of Prompt:
+                    content: `Your self-Prompt: ${autoModeMessage} :
 Original Prompt: ${originalUserMessage}
 ${commonInstructions}
 Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
@@ -1910,7 +1907,7 @@ Always end your response with a new line, then, Prompt: [prompt different from y
             } else {
                 messages.push({
                     role: "user",
-                    content: `Current user Prompt:\n${message}\n:end of Prompt:
+                    content: `Current Prompt:\n${message}\n:end of Prompt:
 ${commonInstructions}
 ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
                 });
