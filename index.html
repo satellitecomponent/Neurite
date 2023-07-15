@@ -27,8 +27,8 @@
             padding: 2px;
         }
     </style>
-  <script type="module" crossorigin src="./assets/index.25c4078a.js"></script>
-  <link rel="stylesheet" href="./assets/index.921790c7.css">
+  <script type="module" crossorigin src="./assets/index.b51151f5.js"></script>
+  <link rel="stylesheet" href="./assets/index.4a489ebe.css">
 </head>
 
 <body id="body">
@@ -140,10 +140,34 @@
                     <div class="submenu">
                         z <sup id="exponent_value" style="color: powderblue">2</sup> + c
                         <input id="exponent" type="range" min="1" max="8" value="2">
-                        <div id="quality_value">Quality</div>
+                        <div style="display:flex; justify-content: space-between;">
+                            <div id="quality_value">Quality</div>
+                            <div id="fps">fps:?? (is javascript enabled?)</div>
+                        </div>
                         <input id="quality" type="range" min="0" max="100" value="0">
-                        <div id="length_value">Length</div>
-                        <input id="length" type="range" min="0" max="100" value="50">
+                        <div class="gridLayout">
+
+                            <div class="settingsSlider">
+                                <label for="length">Length: <span id="length_value"></span></label>
+                                <input id="length" type="range" min="0" max="100" value="30">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label for="renderWidthMultSlider">Width: <span id="renderWidthMultValue"></span></label>
+                                <input type="range" id="renderWidthMultSlider" min="0" max="20" step="0.001">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
+                                <input type="range" id="maxLinesSlider" min="0" max="1024" step="1">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
+                                <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
+                            </div>
+
+                        </div>
                         <div id="colorselection">
                             <div class="color-picker-container">
                                 <div class="color-picker-item">
@@ -162,22 +186,34 @@
                             <br />
                             <div id="colorsliders">
                                 <input type="range" min="0" max="255" id="rSlider" value="0" style="display: none;">
-                                <label for="cSlider">Brightness</label>
-                                <input type="range" min="0" max="255" id="cSlider" value="128">
-                                <label for="sSlider">Saturation</label>
-                                <input type="range" min="0" max="255" id="sSlider" value="127">
-                                <div id="opacity_value">Opacity</div>
-                                <input id="opacity" type="range" min="0" max="100" value="100">
-                                <input type="checkbox" id="outerCheckbox">
-                                <label for="outerCheckbox">: Freeze Outer Opacity</label>
-                                <br />
-                                <input type="checkbox" id="innerCheckbox">
-                                <label for="innerCheckbox">: Freeze Inner Opacity</label>
+                                <div class="gridLayout">
+
+                                    <div class="settingsSlider">
+                                        <label for="cSlider">Brightness: <span id="c_value"></span></label>
+                                        <input type="range" min="0" max="255" id="cSlider" value="128">
+                                    </div>
+
+                                    <div class="settingsSlider">
+                                        <label for="sSlider">Saturation: <span id="s_value"></span></label>
+                                        <input type="range" min="0" max="255" id="sSlider" value="127">
+                                    </div>
+
+                                    <div class="settingsSlider">
+                                        <label for="outer_opacity">Outer Opacity: <span id="outer_opacity_value"></span></label>
+                                        <input id="outer_opacity" type="range" min="0" max="100" value="100">
+                                    </div>
+
+                                    <div class="settingsSlider">
+                                        <label for="inner_opacity">Inner Opacity: <span id="inner_opacity_value"></span></label>
+                                        <input id="inner_opacity" type="range" min="0" max="100" value="100">
+                                    </div>
+
+                                </div>
                             </div>
-                            <div id="bgpick">
-                                <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226; margin-top:5px">
-                                <label for="colorPicker">Background Color</label>
-                            </div>
+                        </div>
+                        <div id="bgpick">
+                            <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226; margin-top:5px">
+                            <label for="colorPicker">Background</label>
                         </div>
                         <br />
                         <button id="screenshotButton" class="key-button">Screenshot</button>
@@ -189,9 +225,6 @@
                             <br />
                             zoom:
                             <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
-                            <br />
-                            <br />
-                            <div id="fps" style="display:flex; justify-content:flex-start;">fps:?? (is javascript enabled?)</div>
                         </div>
                     </div>
                 </div>
@@ -484,6 +517,10 @@
 
 
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
     <script src="js/dropdown.js"></script>
     <script src="js/zettelkasten.js"></script>
@@ -492,12 +529,12 @@
     <!--<script type="module" src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.3.0"></script>-->
     <script defer type="module" src="./embeddings.js"></script>
 
-
+    <script src="js/mandelbrot.js"></script>
     <script src="js/interface.js"></script>
     
     <script src="js/ai.js"></script>
     <script src="js/record.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 </body>
 
         </html>

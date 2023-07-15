@@ -1,3 +1,5 @@
+let previousContent = "";
+
 async function callChatGPTApiForLLMNode(messages, node, stream = false) {
     // Reset shouldContinue
     node.shouldContinue = true;
@@ -81,10 +83,9 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
                     if (content.trim() !== "[DONE]") {
                         node.aiResponseTextArea.value += `${content}`;  // Append the AI's response to the textarea
                         node.aiResponseTextArea.dispatchEvent(new Event("input"));
-
                         // Scroll to the bottom
                         setTimeout(() => {
-                            node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+                            node.aiResponseDiv.scrollTop = node.aiResponseDiv.scrollHeight;
                         }, 1);
                     }
                     buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
@@ -93,11 +94,12 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         } else {
             const data = await response.json();
             console.log("Token usage:", data.usage);
-            node.aiResponseTextArea.value += `${data.choices[0].message.content.trim()}`;  // Append the AI's response to the textarea
+            node.aiResponseTextArea.innerText += `${data.choices[0].message.content.trim()}`;  // Append the AI's response to the textarea
+            node.aiResponseTextArea.dispatchEvent(new Event("input"));
 
             // Scroll to the bottom
             setTimeout(() => {
-                node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+                node.aiResponseDiv.scrollTop = node.aiResponseDiv.scrollHeight;
             }, 1);
         }
     } catch (error) {
@@ -106,7 +108,6 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
             console.log('Fetch request was aborted');
         } else {
             console.error("Error calling ChatGPT API:", error);
-            node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
 
             // Display error icon and hide loading icon
             const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
@@ -291,12 +292,15 @@ async function sendLLMNodeMessage(node) {
     
     // Append the user prompt to the AI response area with a distinguishing mark
     node.aiResponseTextArea.value += `Prompt: ${node.promptTextArea.value}\n\n`;
+    // Trigger the input event programmatically
+    node.aiResponseTextArea.dispatchEvent(new Event('input'));
     // Clear the prompt textarea
     node.promptTextArea.value = '';
 
+
     // Set a timeout to allow the UI to render the new value and update the scrollHeight
     setTimeout(() => {
-        node.aiResponseTextArea.scrollTop = node.aiResponseTextArea.scrollHeight;
+        node.aiResponseDiv.scrollTop = node.aiResponseDiv.scrollHeight;
     }, 0);
 
     node.aiResponding = true;
@@ -348,9 +352,22 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the AI response textarea
     let aiResponseTextArea = document.createElement("textarea");
     aiResponseTextArea.id = `LLMnoderesponse-${++llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
-    aiResponseTextArea.classList.add('custom-scrollbar');
-    aiResponseTextArea.onmousedown = cancel;  // Prevent dragging
-    aiResponseTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow: auto; resize: both;");
+    aiResponseTextArea.style.display = 'none';  // Hide the textarea
+
+    // Create the AI response container
+    let aiResponseDiv = document.createElement("div");
+    aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;  // Assign unique id to each aiResponseDiv
+    aiResponseDiv.classList.add('custom-scrollbar');
+    aiResponseDiv.onmousedown = cancel;  // Prevent dragging
+    aiResponseDiv.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow: auto; resize: both; user-select: text;");
+
+    // Add a 'wheel' event listener
+    aiResponseDiv.addEventListener('wheel', function (event) {
+        // If the Shift key is not being held down, stop the event propagation
+        if (!event.shiftKey) {
+            event.stopPropagation();
+        }
+    }, { passive: false });
 
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
@@ -458,6 +475,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     wrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
 
     wrapperDiv.appendChild(aiResponseTextArea);
+    wrapperDiv.appendChild(aiResponseDiv); 
     wrapperDiv.appendChild(promptDiv);
 
     // Create the Local LLM dropdown
@@ -497,6 +515,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Additional configurations
     node.aiResponseTextArea = aiResponseTextArea;
+    node.aiResponseDiv = aiResponseDiv;
     node.promptTextArea = promptTextArea;
     node.sendButton = sendButton;
     node.regenerateButton = regenerateButton;
@@ -509,13 +528,76 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.LocalLLMSelectID = `dynamicLocalLLMselect-${llmNodeCount}`;
     node.index = llmNodeCount;
 
-    node.aiResponseTextArea.addEventListener('scroll', () => {
-        if (node.aiResponseTextArea.scrollTop < node.aiResponseTextArea.scrollHeight - node.aiResponseTextArea.clientHeight) {
+    node.aiResponseDiv.addEventListener('scroll', () => {
+        if (node.aiResponseDiv.scrollTop < node.aiResponseDiv.scrollHeight - node.aiResponseDiv.clientHeight) {
             node.userHasScrolled = true;
         } else {
             node.userHasScrolled = false;
         }
     });
+
+    node.scrollToBottomIfNotScrolled = function () {
+        // If user hasn't scrolled, auto-scroll to the bottom
+        if (!this.userHasScrolled) {
+            setTimeout(() => {
+                this.aiResponseDiv.scrollTop = this.aiResponseDiv.scrollHeight;
+            }, 0);
+        }
+    };
+
+    let previousContent = "";
+
+    node.aiResponseTextArea.addEventListener('input', function () {
+        try {
+            // Get the new response
+            let newResponse = node.aiResponseTextArea.value.substring(previousContent.length);
+
+            // Replace newline characters with <br> in newResponse
+            newResponse = newResponse.replace(/\n/g, '<br>');
+
+            // Sanitize and parse the new response into HTML
+            let sanitizedMarkdown = DOMPurify.sanitize(newResponse);
+            let html = marked.parse(sanitizedMarkdown, { mangle: false, headerIds: false });
+
+            // Create a temporary div to hold the new HTML
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            // Get the last paragraph in aiResponseDiv
+            let lastP = node.aiResponseDiv.lastElementChild;
+            if (tempDiv.firstChild && lastP && lastP.tagName === 'P' && tempDiv.firstChild.tagName === 'P') {
+                // If the last element in aiResponseDiv is a paragraph and the new HTML starts with a paragraph,
+                // append the new text to the existing paragraph
+                lastP.innerHTML += tempDiv.firstChild.innerHTML;
+            } else if (tempDiv.firstChild) {
+                // If the last element in aiResponseDiv is not a paragraph or the new HTML doesn't start with a paragraph,
+                // append the new HTML as is
+                node.aiResponseDiv.appendChild(tempDiv.firstChild);
+            }
+
+            previousContent = node.aiResponseTextArea.value;  // Update the previousContent to current content
+
+            // Scroll to bottom if user hasn't manually scrolled up
+            node.scrollToBottomIfNotScrolled();
+
+        } catch (error) {
+            console.error('Error while processing markdown:', error);
+        }
+    });
+
+    node.refreshMarkdown = function () {
+        // Get the updated conversation from the textarea
+        let updatedConversation = this.aiResponseTextArea.value;
+
+        // Reset previousContent and the HTML in aiResponseDiv
+        previousContent = "";
+        this.aiResponseDiv.innerHTML = "";
+
+        // Re-render the entire conversation
+        this.aiResponseTextArea.value = "";
+        this.aiResponseTextArea.value = updatedConversation;
+        this.aiResponseTextArea.dispatchEvent(new Event('input'));
+    };
 
     node.removeLastResponse = function () {
         const lines = this.aiResponseTextArea.value.split("\n");
@@ -530,6 +612,12 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
         if (lastPromptIndex >= 0) {
             lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
             this.aiResponseTextArea.value = lines.join("\n");
+
+            // Save the updated conversation
+            let updatedConversation = this.aiResponseTextArea.value;
+
+            // Call the new refreshMarkdown function
+            this.refreshMarkdown(updatedConversation);
         }
     };
 
@@ -575,6 +663,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             sendLLMNodeMessage(node);
         }
     });
+
+    let timer = null;
 
     node.isLLM = true;
 
@@ -634,8 +724,8 @@ function getConnectedNodeData(node) {
         if (!createdAt) {
             console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
         }
-
-        const connectedNodeInfo = `node UUID: ${connectedNode.uuid}\nnode: ${title}\nText Content: ${contents.join("\n")}\nCreation Time: ${createdAt}`;
+        //node UUID: ${connectedNode.uuid}\n \nCreation Time: ${createdAt}
+        const connectedNodeInfo = `node: ${title}\nText Content: ${contents.join("\n")}`;
         connectedNodesInfo.push(connectedNodeInfo);
     }
 
@@ -762,6 +852,8 @@ function removeLastResponse() {
             document.getElementById('max-tokens-display').innerText = e.target.value;
         });
 
+
+
 async function callChatGPTApi(messages, stream = false) {
     // Reset shouldContinue
     shouldContinue = true;
@@ -835,76 +927,77 @@ async function callChatGPTApi(messages, stream = false) {
                 signal: signal,
             };
 
-            try {
-                const response = await fetch(API_URL, requestOptions);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Error calling ChatGPT API:", errorData);
-                    document.getElementById("aiErrorIcon").style.display = 'block';
-                    return "An error occurred while processing your request.";
+    try {
+        const response = await fetch(API_URL, requestOptions);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Error calling ChatGPT API:", errorData);
+            document.getElementById("aiErrorIcon").style.display = 'block';
+            return "An error occurred while processing your request.";
+        }
+
+        const noteInput = document.getElementById("note-input");
+
+        if (stream) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+
+            const appendContent = async function (content) {
+                await new Promise(resolve => setTimeout(resolve, 25));  // Delay response append
+
+                const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
+                if (shouldContinue) {
+                    myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
                 }
+                if (isScrolledToBottom && !userScrolledUp) {
+                    noteInput.scrollTop = noteInput.scrollHeight;
+                    myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
+                }
+                noteInput.dispatchEvent(new Event("input"));
+            };
 
-                const noteInput = document.getElementById("note-input");
+            while (true) {
+                const { value, done } = await reader.read();
+                // Break the loop if streaming is done or the shouldContinue flag is set to false
+                if (done || !shouldContinue) break;
 
-                if (stream) {
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder("utf-8");
-                    let buffer = "";
+                buffer += decoder.decode(value, { stream: true });
 
-                    while (true) {
-                        const {
-                            value,
-                            done
-                        } = await reader.read();
-                        // Break the loop if streaming is done or the shouldContinue flag is set to false
-                        if (done || !shouldContinue) break;
+                // If shouldContinue is false, stop processing
+                if (!shouldContinue) break;
 
-                        buffer += decoder.decode(value, {
-                            stream: true
-                        });
+                // Handle content processing only when shouldContinue is true
+                if (shouldContinue) {
+                    let contentMatch;
+                    while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+                        const content = JSON.parse('"' + contentMatch[1] + '"');
 
-                        // If shouldContinue is false, stop processing
                         if (!shouldContinue) break;
 
-                        // Handle content processing only when shouldContinue is true
-                        if (shouldContinue) {
-                            let contentMatch;
-                            while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-                                const content = JSON.parse('"' + contentMatch[1] + '"');
-
-                                if (!shouldContinue) break;
-
-                                if (content.trim() !== "[DONE]") {
-                                    const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
-                                    if (shouldContinue) {
-                                        myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
-                                    }
-                                    if (isScrolledToBottom && !userScrolledUp) {
-                                        noteInput.scrollTop = noteInput.scrollHeight;
-                                        myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
-                                    }
-                                    noteInput.dispatchEvent(new Event("input"));
-                                }
-                                buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-                            }
+                        if (content.trim() !== "[DONE]") {
+                            await appendContent(content);
                         }
+                        buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
                     }
-                } else {
-                    const data = await response.json();
-                    console.log("Token usage:", data.usage);
-                    return data.choices[0].message.content.trim();
                 }
-            } catch (error) {
-                console.error("Error calling ChatGPT API:", error);
-                document.getElementById("aiErrorIcon").style.display = 'block';
-                return "An error occurred while processing your request.";
-            } finally {
-                aiResponding = false;
-                document.getElementById("regen-button").textContent = "\u21BA";
-        
-                // Hide loading icon
-                document.getElementById("aiLoadingIcon").style.display = 'none';
             }
+        } else {
+            const data = await response.json();
+            console.log("Token usage:", data.usage);
+            return data.choices[0].message.content.trim();
+        }
+    } catch (error) {
+        console.error("Error calling ChatGPT API:", error);
+        document.getElementById("aiErrorIcon").style.display = 'block';
+        return "An error occurred while processing your request.";
+     } finally {
+        aiResponding = false;
+        document.getElementById("regen-button").textContent = "\u21BA";
+        
+        // Hide loading icon
+        document.getElementById("aiLoadingIcon").style.display = 'none';
+     }
 }
 
 
@@ -914,8 +1007,6 @@ async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
     // If the "Use Local Embeddings" checkbox is checked, use the local model
     if (useLocalEmbeddings && window.generateEmbeddings) {
         try {
-            // This assumes that the local embedding model is initialized
-            // and assigned to window.generateEmbeddings
             const output = await window.generateEmbeddings(text, {
                 pooling: 'mean',
                 normalize: true,
@@ -1324,7 +1415,7 @@ const instructionsMessage = {
 ${nodeTag} Essential Controls:
 - Drag to move; Scroll to zoom; Alt + Scroll to rotate; Alt + Click to resize multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
-- Hold shift for 'Node Mode', freezing time for node interaction.
+- Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
 - Shift + click on two nodes to link; Shift + Double Click on links to delete.
 - Double Click a node to anchor/unanchor.
@@ -1337,12 +1428,12 @@ ${nodeTag} Zettelkasten:
 
 ${nodeTag} Advanced Controls:
 - Checkboxes below main text area provide additional features.
-- API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. OpenAI, Google Programable Search, and Wolfram API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
+- API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
 - Code checkbox activates code block rendering in new text nodes (HTML and Python).
-- Search checkbox displays relevant webpages or pdfs. Requires Google Search API key unless a direct link is input as your prompt. Direct link entry bypasses google search api key requirement.
-- Extract button on webpage/pdf nodes sends text to vector embeddings database Requires extracts localhost server.
-- Extract checkbox sends the relevant chunks of text from the extracted webpage as context to the ai.
-- The Context tab includes controls for adjusting extracted text chunk size and number of chunks. The context tab also includes a text input for directly embedding text into the vector embeddings database.
+- Search checkbox displays relevant webpages or pdfs. Requires Google Search API key unless a direct link is input as your prompt. Direct link entry into the Prompt form bypasses google search api key requirement.
+- Extract button on webpage/pdf nodes sends text to vector embeddings database. Requires extracts localhost server.
+- Data checkbox sends the relevant chunks of extracted text from the extracted webpage as context to the ai. Requires webscrape localhost.
+- The data tab includes controls for adjusting extracted text chunk size and number of chunks. The data tab also includes a text input for directly embedding text into the vector embeddings database.
 - Wolfram checkbox displays relevant Wolfram Alpha results. Requires Wolfram localhost server.
 - Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
 - Auto checkbox sets the AI into self-prompting mode.
@@ -1363,7 +1454,7 @@ const aiNodesMessage = {
     What is Artificial Intelligence?
     ${refTag} AI Basics, Neural Networks
 
-    Note: Interlink LLM nodes using reference tags. This allows for a complex and nuanced conversation environment by extending the memory/context of LLM nodes they are linked with.
+    Note: Interlink LLM nodes using reference tags. This allows for a complex and nuanced conversation environment by extending the memory/context of LLM nodes and text nodes they are linked to.
     Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
 };
 
@@ -1385,46 +1476,63 @@ Format:
 
         const spatialAwarenessExample = `${nodeTag} Central Node
 - Node from which other nodes branch out.
-${refTag} Node A, Node B
+${refTag} A, B
 
-${nodeTag} Node A
+${nodeTag} A
 - Connects to the Central Node, branches to C, D.
-${refTag} Central Node, Node C, Node D
+${refTag} Central Node, C, D
 
 ${nodeTag} Node B
 - Branches out from Central to E and F.
-${refTag} Central Node, Node E, Node F
+${refTag} Central Node, E, F
 
-${nodeTag} Node C
+${nodeTag} C
 - End point from A.
-${refTag} Node A
+${refTag} A
 
-${nodeTag} Node D
+${nodeTag} D
 - End point from A.
-${refTag} Node A`;
+${refTag} A`;
 
         let summarizedZettelkastenPrompt = "";
 
-        async function summarizeZettelkastenPrompt(zettelkastenPrompt) {
-            const summarizedPromptMessages = [{
-                role: "system",
-                content: `zettelkastenPrompt ${zettelkastenPrompt}`,
-            },
-            {
-                role: "system",
-                content: `spatialAwarenessExample ${spatialAwarenessExample}`,
-            },
-            {
-                role: "user",
-                content: `Do not preface your response.
-Based on your understanding of the fractal mind-map, tagging format, and spatial awareness example, create an advanced and concise guide that demonstrates how to most effectivly utilize the Zettelkasten format.
-Write your entire response within the format. Make sure your example is as concise as possible. Under 150 words.
-Each node should break the response into an iterative tapestry of thought that informs an ai system about proper use of the format.`,
-            },
-            ];
+async function summarizeZettelkastenPrompt(zettelkastenPrompt) {
+    const summarizedPromptMessages = [{
+        role: "system",
+        content: `zettelkastenPrompt ${zettelkastenPrompt}`,
+    },
+    {
+        role: "system",
+        content: `spatialAwarenessExample ${spatialAwarenessExample}`,
+    },
+        {
+            role: "user",
+            content: `Directly generate a concise guide (<150 words) in Zettelkasten format, demonstrating the principles of fractal mind-map, tagging, and spatial awareness. Ensure your entire response is within the format. Avoid prefacing or explaining the response.`
+        },
+    ];
 
-            return await callChatGPTApi(summarizedPromptMessages);
-        }
+    let summarizedPrompt = await callChatGPTApi(summarizedPromptMessages);
+
+    // Find the midpoint of the summarized prompt
+    const promptHalfLength = Math.floor(summarizedPrompt.length / 2);
+    const nodeTag = document.getElementById("node-tag").value;
+
+    // Locate the first newline after the half point to split the text neatly
+    let splitPosition = summarizedPrompt.indexOf('\n', promptHalfLength);
+    // Move down until the line starts with the nodeTag
+    while (!summarizedPrompt.substring(splitPosition + 1, summarizedPrompt.indexOf('\n', splitPosition + 1)).startsWith(nodeTag)) {
+        splitPosition = summarizedPrompt.indexOf('\n', splitPosition + 1);
+        // In case there's no suitable line, break the loop to avoid infinite loops
+        if (splitPosition === -1) break;
+    }
+
+    // If a suitable split position was found, generate the summarized prompt
+    if (splitPosition !== -1) {
+        summarizedPrompt = summarizedPrompt.substring(0, splitPosition).trim();
+    }
+
+    return summarizedPrompt;
+}
 
         let isZettelkastenPromptSent = false;
 
@@ -1464,24 +1572,6 @@ Each node should break the response into an iterative tapestry of thought that i
 
         let isFirstMessage = true; // Initial value set to true
         let originalUserMessage = null;
-
-        async function handleAutoMode() {
-            const lastMessage = getLastPromptsAndResponses(1, 400);
-            //console.log("Last message: ", lastMessage); // Debugging line
-
-            // Use promptToUse if lastMessage doesn't contain the AI-generated prompt.
-            const promptRegex = /prompt:\s*(.*)/i;
-            const match = promptRegex.exec(lastMessage);
-
-            if (match) {
-                const aiGeneratedPrompt = match[1].trim();
-                //console.log("AI generated prompt: ", aiGeneratedPrompt); // Debugging line
-                return aiGeneratedPrompt;
-            } else {
-                console.error("AI-generated prompt not found in the last message.");
-                return promptToUse;
-            }
-        }
 
 async function fetchWolfram(message) {
     let wolframAlphaResult = "not-enabled";
@@ -1677,7 +1767,7 @@ async function sendMessage(event, autoModeMessage = null) {
             let messages = [
                 {
                     role: "system",
-                    content: `Reply to the user message in context. This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following example while remaining relevant to the user query.\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nSpeak on topics other than the content of the example format.`,
+                    content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following example and maintain relevance to the user query.\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nThe program fails if titles are repeated.`,
                 },
             ];
 
@@ -1870,29 +1960,29 @@ async function sendMessage(event, autoModeMessage = null) {
     if (!document.getElementById("code-checkbox").checked && !document.getElementById("instructions-checkbox").checked) {
         messages.splice(1, 0, {
             role: "system",
-            content: `Matched notes in mind map to infer context from your long term memory:\n${topMatchedNodesContent}\n Expand off existing nodes.`,
+            content: `Matched notes in mind map to infer context from your long term memory:\n${topMatchedNodesContent}`,
         });
     }
 
             // Add the recent dialogue message
             messages.splice(1, 0, {
                 role: "system",
-                content: `Previous dialogue with user. Expand new titles off existing ones. Continue in the same format: ${context} :End of recent dialogue context. Empty on start of conversation.`,
+                content: `Previous dialogue with user. Branch new titles off existent nodes. Continue in the same format: ${context} :End of recent dialogue context. Empty on start of conversation.`,
             });
 
     const commonInstructions = `\nRemember to follow the format.
 ${nodeTag} Titles after node tag.
 Plain text on the next line for your response.
-Do not use these example titles.
+Do not use these example titles or conclusion titles.
 Avoid generic titles, (conclusion, etc.)
 Always use different node titles. 
-Expand new notes off existing nodes.
+Expand existing mind-map using notes with unique titles.
 ${refTag} Comma seperated titles to connect.
 ${nodeTag} Write your own title
 Make sure any new nodes have a unique title
 Break your response up into multiple nodes
 Speak on topics relevant to the current user prompt and your recent conversation context.
-${refTag} Repeat titles to connect nodes.`;
+${refTag} Branch unique non-linear connections.`;
 
             // Add Prompt
 
@@ -1902,7 +1992,7 @@ ${refTag} Repeat titles to connect nodes.`;
                     content: `Your self-Prompt: ${autoModeMessage} :
 Original Prompt: ${originalUserMessage}
 ${commonInstructions}
-Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt to continue the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
+Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt that progresses the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
                 });
             } else {
                 messages.push({
@@ -1937,37 +2027,51 @@ ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [
                     console.error('AI response was undefined');
                 }
             }
-
-            // Only continue if shouldContinue flag is true
-            if (shouldContinue) {
-                // Handle auto mode
-                if (isAutoModeEnabled && shouldContinue) {
-                    // If the summarized prompt has not been generated yet, use the original zettelkasten prompt
-                    let zettelkastenPromptToUse = summarizedZettelkastenPrompt !== "" ? summarizedZettelkastenPrompt : zettelkastenPrompt;
-                    const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
-                    sendMessage(null, aiGeneratedPrompt);
-                }
-
-                // Check if the Zettelkasten prompt should be sent
-                if (!isZettelkastenPromptSent && summarizedZettelkastenPrompt === "" && shouldContinue) {
-                    // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
-                    isZettelkastenPromptSent = true;
-
-                    // Try to get summarizedZettelkastenPrompt from local storage
-                    summarizedZettelkastenPrompt = localStorage.getItem('summarizedZettelkastenPrompt');
-
-                    if (!summarizedZettelkastenPrompt) {
-                        // If it's not in the local storage, generate it and save in local storage for future use
-                        summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt(zettelkastenPrompt);
-                        localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
-                    }
-                }
-
-                
-            }
-            return false;
-
+    // Only continue if shouldContinue flag is true
+    if (shouldContinue) {
+        // Handle auto mode
+        if (isAutoModeEnabled && shouldContinue) {
+            // If the summarized prompt has not been generated yet, use the original zettelkasten prompt
+            let zettelkastenPromptToUse = summarizedZettelkastenPrompt !== "" ? summarizedZettelkastenPrompt : zettelkastenPrompt;
+            const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
+            sendMessage(null, aiGeneratedPrompt);
         }
+
+        // Check if the Zettelkasten prompt should be sent
+        if (!isZettelkastenPromptSent && summarizedZettelkastenPrompt === "" && shouldContinue) {
+            // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
+            isZettelkastenPromptSent = true;
+
+            // Try to get summarizedZettelkastenPrompt from local storage
+            summarizedZettelkastenPrompt = localStorage.getItem('summarizedZettelkastenPrompt');
+
+            if (!summarizedZettelkastenPrompt) {
+                // If it's not in the local storage, generate it and save in local storage for future use
+                summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt(zettelkastenPrompt);
+                localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
+            }
+        }
+
+
+    }
+    return false;
+
+}
+
+// Update handleAutoMode to accept the prompt as a parameter
+async function handleAutoMode(zettelkastenPromptToUse) {
+    const lastMessage = getLastPromptsAndResponses(1, 400);
+    const promptRegex = /prompt:\s*(.*)/i;
+    const match = promptRegex.exec(lastMessage);
+
+    if (match) {
+        const aiGeneratedPrompt = match[1].trim();
+        return aiGeneratedPrompt;
+    } else {
+        console.error("AI-generated prompt not found in the last message.");
+        return zettelkastenPromptToUse; // Use the passed in prompt instead of promptToUse
+    }
+}
 
     //ENDOFAI
 
