@@ -147,7 +147,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
         context += "Prompt: " + turn.prompt + "\nAI: " + turn.response + "\n";
     });
 
-    const prompt = context + "Prompt: " + (promptInput as HTMLInputElement).value;
+    const prompt = context + (promptInput as HTMLInputElement).value;
     console.log(prompt);
     const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + (promptInput as HTMLInputElement).value + "\n";
 
@@ -176,6 +176,8 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
 
     (promptInput as HTMLInputElement).value = ''; // Clear the prompt input
 });
+
+
 
 declare global {
     interface Window {
@@ -218,7 +220,7 @@ window.generateLocalLLMResponse = async function (node, messages) {
             messageString += message.content.replace("Node Creation Time: undefined", "end of connected nodes.");
         } else if (message.role === "user") {
             // This is the current prompt
-            messageString += `Prompt: ${message.content}`;
+            messageString += `${message.content}`;
         } else {
             messageString += message.content;
         }
@@ -242,65 +244,42 @@ async function processQueue() {
 
     isProcessing = true;
 
-    // Get the first message in the queue
     const { node, messageString, selectedModel } = messageQueue.shift();
-
     let lastMessageLength = 0;
-
-    // Access the aiResponseTextArea of the node
     const aiResponseTextArea = document.getElementById(node.id);
 
-    let userHasScrolled = false;
-
-    // Check if the user has scrolled
-    aiResponseTextArea.addEventListener('scroll', () => {
-        if (aiResponseTextArea.scrollTop + aiResponseTextArea.clientHeight < aiResponseTextArea.scrollHeight) {
-            userHasScrolled = true;
-        }
-    });
-
     const generateProgressCallback = (_step, message) => {
-        // Remove the last intermediate message
+
         (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
-        // Append the latest intermediate message
         const formattedMessage = "\nAI: " + message;
         (aiResponseTextArea as HTMLTextAreaElement).value += formattedMessage;
-        // Store the length of the current message to be able to remove it next time
         lastMessageLength = formattedMessage.length;
-        // Dispatch input event
         aiResponseTextArea.dispatchEvent(new Event('input'));
-        // Auto scroll to bottom only if the user hasn't scrolled up
-        if (!userHasScrolled) {
-            aiResponseTextArea.scrollTop = aiResponseTextArea.scrollHeight;
-        }
     };
 
-    console.log("Messages sent to LLM:", messageString); // Logging the processed message string
+    console.log("Messages sent to LLM:", messageString);
 
     if (!llmInitialized || chat.currentModel !== selectedModel) {
         await initializeLLM(selectedModel);
     }
     const reply = await chat.generate(messageString, generateProgressCallback);
-    // Remove the last intermediate message
+
     (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
-    // Append the final response
     const finalMessage = "\nAI: " + reply;
     (aiResponseTextArea as HTMLTextAreaElement).value += finalMessage;
-    // Dispatch input event
     aiResponseTextArea.dispatchEvent(new Event('input'));
-    // Auto scroll to bottom for the final message only if the user hasn't scrolled up
-    if (!userHasScrolled) {
-        aiResponseTextArea.scrollTop = aiResponseTextArea.scrollHeight;
-    }
+
 
     isProcessing = false;
 
-    // If there are more messages in the queue, process the next one
+    // Refresh the Markdown rendering for this node after processing is complete
+    node.refreshMarkdown();
+
+
     if (messageQueue.length > 0) {
         processQueue();
     }
 }
-
 //window.callWebLLMGeneric = async function (messages) {
     // Get the selected model
     //const LocalLLMselect = document.getElementById('LocalLLMselect');

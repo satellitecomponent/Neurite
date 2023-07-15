@@ -941,6 +941,10 @@ input[type=range] {
     color: HighlightText !important;
 }
 
+.aiResponseEditor .CodeMirror-scroll {
+    padding: 0 !important;
+    background-color: #222226;
+}
 
 .node-title {
     color: paleturquoise;
@@ -1030,4 +1034,19 @@ input[type=range] {
 
 #bgpick {
     align-content: center;
+}
+
+.gridLayout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.settingsSlider {
+    background-color: #222226;
+    padding: 5px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
 }

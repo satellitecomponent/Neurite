@@ -671,6 +671,138 @@ function handleDrop(e) {
             document.getElementById("clear-button").text = "clear";
         });
 
+var settings = {
+    zoomSpeed: 0.0005,
+    panSpeed: 1,
+    zoomContentExp: 0.5,
+    gestureZoomSpeed: 0.001,
+    gestureRotateSpeed: Math.PI / 180,
+    scroll: ('GestureEvent' in window) ? "pan" : "zoom",
+    nodeModeKey: "Shift", //"CapsLock",
+    nodeModeTrigger: "down", //"toggle"
+
+    //slider adjustment
+    maxLines: 256,
+    renderWidthMult: 0.5, //1,
+    regenDebtAdjustmentFactor: 0.5,
+
+    renderStepSize: 0.1, //0.25,
+    renderSteps: 16, //64,
+    renderDChar: "L",
+    opacity: 1,
+
+
+    rotateModifier: "Alt",
+    rotateModifierSpeed: Math.PI / 180 / 36,
+
+    iterations: 256,
+
+    //autopilotRF_Pscale:1,
+    autopilotRF_Iscale: 0.5,
+    //autopilotRF_Dscale:0.1,
+    autopilotSpeed: 0.1,
+    autopilotMaxSpeed: 0.1,
+
+    buttonGraphics: {
+        hover: ["RGB(100,100,100)", "RGB(200,200,255)"],
+        click: ["RGB(70,70,70)", "RGB(100,100,100)"],
+        initial: ["none", "RGB(170,170,170)"]
+    },
+
+    maxDist: 4,
+    orbitStepRate: 2,
+
+    innerOpacity: 1,
+    outerOpacity: 1
+}
+
+let innerOpacitySlider = document.getElementById('inner_opacity');
+innerOpacitySlider.addEventListener('input', function () {
+    settings.innerOpacity = innerOpacitySlider.value / 100;
+});
+
+let outerOpacitySlider = document.getElementById('outer_opacity');
+outerOpacitySlider.addEventListener('input', function () {
+    settings.outerOpacity = outerOpacitySlider.value / 100;
+});
+
+// Initialize the slider with the settings.renderWidthMult value
+let renderWidthMultSlider = document.getElementById("renderWidthMultSlider");
+renderWidthMultSlider.value = settings.renderWidthMult;
+renderWidthMultSlider.dispatchEvent(new Event('input'));
+
+// Initialize the slider with the settings.maxLines value
+let maxLinesSlider = document.getElementById("maxLinesSlider");
+maxLinesSlider.value = settings.maxLines;
+maxLinesSlider.dispatchEvent(new Event('input'));
+
+// Initialize the slider with the settings.regenDebtAdjustmentFactor value
+let regenDebtSlider = document.getElementById("regenDebtSlider");
+regenDebtSlider.value = settings.regenDebtAdjustmentFactor;
+regenDebtSlider.dispatchEvent(new Event('input'));
+
+function getLength() {
+    let v = document.getElementById("length").value / 100;
+    return 2 ** (v * 8);
+}
+document.getElementById("length").addEventListener("input", (e) => {
+    let v = getLength();
+    setRenderLength(v);
+    document.getElementById("length_value").textContent = (Math.round(v * 100) / 100);
+});
+
+function getRegenDebtAdjustmentFactor() {
+    let v = document.getElementById("regenDebtSlider").value;
+    return v;
+}
+document.getElementById("regenDebtSlider").addEventListener("input", (e) => {
+    let v = getRegenDebtAdjustmentFactor();
+    settings.regenDebtAdjustmentFactor = v;
+    document.getElementById("regenDebtValue").textContent = v;
+});
+
+function setRenderWidthMult(v) {
+    settings.renderWidthMult = v;
+}
+
+function setRenderLength(l) {
+    let f = settings.renderStepSize * settings.renderSteps / l;
+    //settings.renderStepSize /= f;
+    //settings.renderWidthMult *= f;
+    settings.renderSteps /= f;
+}
+setRenderLength(getLength());
+
+
+function getMaxLines() {
+    let v = parseInt(document.getElementById("maxLinesSlider").value);
+    return v;
+}
+document.getElementById("maxLinesSlider").addEventListener("input", (e) => {
+    let v = getMaxLines();
+    settings.maxLines = v;
+    document.getElementById("maxLinesValue").textContent = + v;
+});
+
+function getRenderWidthMult() {
+    let v = document.getElementById("renderWidthMultSlider").value;
+    return v;
+}
+document.getElementById("renderWidthMultSlider").addEventListener("input", (e) => {
+    let v = getRenderWidthMult();
+    setRenderWidthMult(v);
+    document.getElementById("renderWidthMultValue").textContent = v;
+});
+
+function setRenderQuality(n) {
+    let q = 1 / n;
+    let f = settings.renderStepSize / q;
+    settings.renderStepSize = q;
+    settings.renderWidthMult *= f;
+    settings.renderSteps *= f;
+}
+setRenderQuality(getQuality());
+
         function getQuality() {
             let v = document.getElementById("quality").value / 100;
             return 2 ** (v * 4);
@@ -681,15 +813,7 @@ function handleDrop(e) {
             document.getElementById("quality_value").textContent = "Quality:" + (Math.round(v * 100) / 100);
         });
 
-        function getLength() {
-            let v = document.getElementById("length").value / 100;
-            return 2 ** (v * 8);
-        }
-        document.getElementById("length").addEventListener("input", (e) => {
-            let v = getLength();
-            setRenderLength(v);
-            document.getElementById("length_value").textContent = "Length:" + (Math.round(v * 100) / 100);
-        });
+
         document.getElementById("exponent").addEventListener("input", (e) => {
             let v = e.target.value * 1;
             mand_step = (z, c) => {
