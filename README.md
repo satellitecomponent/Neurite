@@ -131,8 +131,11 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 - VR
 - deeper zoom
 - improved fractal integration/visualization
+  
 ✅ color selection
+
 ✅ adjust width, length, max lines, speed
+
 ✅ screen recording
 - accessibility
 - auto embed formats
