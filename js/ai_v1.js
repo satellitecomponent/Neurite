@@ -2078,10 +2078,16 @@ async function handleAutoMode(zettelkastenPromptToUse) {
         // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
     // Get the API Key and Search Engine ID from local storage
+
+
     const apiKey = localStorage.getItem('googleApiKey');
     const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
+    // Replace spaces in the search query with underscores
+
+    const formattedSearchQuery = searchQuery.replace(/\s/g, '_');
+
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(formattedSearchQuery)}`;
 
     try {
         const response = await fetch(url);
