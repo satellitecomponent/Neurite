@@ -3,7 +3,7 @@
 
 <head>
     <title>Neurite</title>
-    <link rel="stylesheet" type="text/css" href="./styles.css">
+    <link rel="stylesheet" type="text/css" href="./styles_v1.css">
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.js"></script>
@@ -141,13 +141,19 @@
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
-                        z <sup id="exponent_value" style="color: powderblue">2</sup> + c
-                        <input id="exponent" type="range" min="1" max="8" value="2">
-                        <div style="display:flex; justify-content: space-between;">
-                            <div id="quality_value">Quality</div>
-                            <div id="fps">fps:?? (is javascript enabled?)</div>
+                        <div class="settingsSlider" style="margin-bottom: 10px;">
+                            <label style="white-space: nowrap;">
+                                z <sup id="exponent_value" style="color: powderblue">2</sup> + c
+                            </label>
+                            <input id="exponent" type="range" min="1" max="8" value="2">
                         </div>
-                        <input id="quality" type="range" min="0" max="100" value="0">
+                        <div class="settingsSlider" style="margin-bottom: 10px;">
+                            <div style="display:flex; justify-content: space-between;">
+                                <div id="quality_value">Quality</div>
+                                <div id="fps">fps:?? (is javascript enabled?)</div>
+                            </div>
+                            <input id="quality" type="range" min="0" max="100" value="0">
+                        </div>
                         <div class="gridLayout">
 
                             <div class="settingsSlider">
@@ -261,6 +267,10 @@
                                 <td>Creates a text node</td>
                             </tr>
                             <tr>
+                                <td><strong>SHIFT (hold)</strong></td>
+                                <td>Freeze Windows</td>
+                            </tr>
+                            <tr>
                                 <td><strong>ALT + SCROLL</strong></td>
                                 <td>Rotate the view.</td>
                             </tr>
@@ -275,10 +285,6 @@
                             <tr>
                                 <td><strong>DOUBLE CLICK</strong></td>
                                 <td>'Anchor' a window in place.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHIFT (hold)</strong></td>
-                                <td>Toggle 'Node-Mode'. <br />Freezes Windows</td>
                             </tr>
                             <tr>
                                 <td><strong>SHIFT + SCROLL</strong></td>
@@ -396,16 +402,30 @@
                             <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
                         </div>
                         <br />
-                        <label for="max-tokens-slider">Max Tokens: <span id="max-tokens-display">2000</span></label>
-                        <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="1" max="32000" value="2000">
-                        <label id="model-temperature-label" for="model-temperature">Model Temperature: 0.1</label>
-                        <input type="range" id="model-temperature" name="model-temperature" class="slider" min="0" max="1" step="0.1" value="0.1" onchange="updateLabel()">
-                        <br />
-                        <label for="max-context-size-slider">Max Context Size:</label>
-                        <span id="max-context-size-display">32000</span>
-                        <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="500">
-                        <label id="node-slider-label">Top 3 nodes</label>
-                        <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
+                        <div class="gridLayout">
+
+                            <div class="settingsSlider">
+                                <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
+                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="1" max="32000" value="2000">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.1</label>
+                                <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.1" onchange="updateLabel()">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label for="max-context-size-slider">Context Size:</label>
+                                <span id="max-context-size-display">32000</span>
+                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="500">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label id="node-slider-label">Top 3 <br />nodes</label>
+                                <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
+                            </div>
+
+                        </div>
                     </div>
                 </div>
                 <div id="tabExtract" class="tabcontent">
@@ -424,19 +444,22 @@
                             <!-- Stored keys will be dynamically added here -->
                         </div>
                         <br />
-                        <div>
+                        <div class="settingsSlider" style="margin-bottom: 10px;">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
                             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+                        </div>
+                        <div class="gridLayout">
 
-                        </div>
-                        <div class="slidecontainer">
-                            <label for="maxChunkSizeSlider">Max Chunk Size: <span id="maxChunkSizeValue"></span></label>
-                            <input type="range" min="1" max="4096" value="256" class="slider" id="maxChunkSizeSlider">
-                        </div>
-                        <div>
-                            <label for="overlapSize">Overlap Size:</label>
-                            <span id="overlapSizeDisplay">10</span>
-                            <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+                            <div class="settingsSlider">
+                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
+                                <input type="range" min="1" max="4096" value="256" class="slider" id="maxChunkSizeSlider">
+                            </div>
+
+                            <div class="settingsSlider">
+                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
+                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -524,7 +547,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
-    <script src="js/dropdown_v1.js"></script>
+    <script src="js/dropdown_v1_0_1.js"></script>
     <script src="js/zettelkasten_v1.js"></script>
 
     <script defer type="module" src="/embeddings.js"></script>
@@ -534,7 +557,7 @@
 
     <script type="module" src="/webLLM/webllm_v1.ts" defer></script>
 
-    <script src="js/ai_v1.js"></script>
+    <script src="js/ai_v1_0_1.js"></script>
     <script src="js/record_v1.js"></script>
 
 </body>

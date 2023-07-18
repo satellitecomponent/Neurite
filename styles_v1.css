@@ -846,13 +846,12 @@ input[type=range] {
     appearance: none;
     width: 100%;
     height: 6px;
-    background: #222226;
     outline: none;
     opacity: 0.7;
     -webkit-transition: .2s;
     transition: opacity .2s;
     margin: 12px 0;
-    background: linear-gradient(to right, #006BB6 0%, #006BB6 50%, #222226 50%, #222226 100%);
+    background: linear-gradient(to right, #888 0%, #888 50%, #888 50%, #888 100%);
 }
 
     /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
@@ -881,12 +880,12 @@ input[type=range] {
 
     /* The slider progress (for Firefox) */
     input[type=range]::-moz-range-progress {
-        background: #006BB6;
+        background: #888;
     }
 
     /* The slider track (for Firefox) */
     input[type=range]::-moz-range-track {
-        background: #222226;
+        background: #888;
     }
 
     input[type=range]::-moz-range-thumb:hover {

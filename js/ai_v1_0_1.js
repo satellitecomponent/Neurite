@@ -359,8 +359,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;  // Assign unique id to each aiResponseDiv
     aiResponseDiv.classList.add('custom-scrollbar');
     aiResponseDiv.onmousedown = cancel;  // Prevent dragging
-    aiResponseDiv.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow: auto; resize: both; user-select: text;");
-
+    aiResponseDiv.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 400px; height: 250px; overflow-y: auto; overflow-x: hidden; resize: both; word-wrap: break-word; user-select: text;");
     // Add a 'wheel' event listener
     aiResponseDiv.addEventListener('wheel', function (event) {
         // If the Shift key is not being held down, stop the event propagation
@@ -1536,16 +1535,6 @@ async function summarizeZettelkastenPrompt(zettelkastenPrompt) {
 
         let isZettelkastenPromptSent = false;
 
-        // Check if the user's message is a URL
-        const isUrl = (text) => {
-            try {
-                new URL(text);
-                return true;
-            } catch (_) {
-                return false;
-            }
-        }
-
         let MAX_CHUNK_SIZE = 400;
 
         const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
@@ -1657,18 +1646,43 @@ async function fetchWolfram(message) {
     return { table, wolframAlphaTextResult, reformulatedQuery };
 }
 
+document.getElementById("auto-mode-checkbox").addEventListener("change", function () {
+    if (this.checked) {
+        isFirstAutoModeMessage = true;
+    }
+});
+
+// Check if the user's message is a URL
+const isUrl = (text) => {
+    try {
+        new URL(text);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+
+
+
 async function sendMessage(event, autoModeMessage = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    // Check if the message is a URL and if it is, only execute constructSearchQuery and nothing else
+    const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
+    if (isUrl(message)) {
+        constructSearchQuery(message);
+        return; // This will stop the function execution here
+    }
     const localLLMCheckbox = document.getElementById("localLLM");
     if (localLLMCheckbox.checked) {
         // If local LLM is checked, don't do anything.
         return false;
     }
     const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
+
     document.getElementById("prompt").value = ''; // Clear the textarea
     latestUserMessage = message;
 
@@ -1767,7 +1781,7 @@ async function sendMessage(event, autoModeMessage = null) {
             let messages = [
                 {
                     role: "system",
-                    content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following example and maintain relevance to the user query.\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nThe program fails if titles are repeated.`,
+                    content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nThe program fails if titles are repeated.`,
                 },
             ];
 
@@ -1818,7 +1832,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
                 const embedMessage = {
                     role: "system",
-                    content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective source url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
+                    content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
                 };
 
                 messages.push(embedMessage);
@@ -1875,8 +1889,7 @@ async function sendMessage(event, autoModeMessage = null) {
     let topMatchedNodesContent = [];
 
     if (!document.getElementById("code-checkbox").checked &&
-        !document.getElementById("instructions-checkbox").checked &&
-        !isUrl(message)) {
+        !document.getElementById("instructions-checkbox").checked) {
         // Call generateKeywords function to get keywords
         const count = 3; // Change the count value as needed
         keywordsArray = await generateKeywords(message, count);
@@ -1975,14 +1988,13 @@ ${nodeTag} Titles after node tag.
 Plain text on the next line for your response.
 Do not use these example titles or conclusion titles.
 Avoid generic titles, (conclusion, etc.)
-Always use different node titles. 
 Expand existing mind-map using notes with unique titles.
 ${refTag} Comma seperated titles to connect.
 ${nodeTag} Write your own title
 Make sure any new nodes have a unique title
 Break your response up into multiple nodes
 Speak on topics relevant to the current user prompt and your recent conversation context.
-${refTag} Branch unique non-linear connections.`;
+${refTag} Branch specific linear or non-linear connections.`;
 
             // Add Prompt
 
@@ -2004,10 +2016,13 @@ ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [
             }
 
 
-            // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
-            if (!autoModeMessage || (isFirstMessage && autoModeMessage)) {
-                myCodeMirror.replaceRange(`\nPrompt: ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
-            }
+    // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
+    if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
+        myCodeMirror.replaceRange(`\nPrompt: ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        isFirstAutoModeMessage = false;
+    } else if (autoModeMessage) {
+        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+    }
 
             const stream = true;
 
@@ -2105,16 +2120,26 @@ async function performSearch(searchQuery) {
 }
 
         async function constructSearchQuery(userMessage) {
+            // If the user's message is a URL, use it as the search query and create a link node
+            if (isUrl(userMessage)) {
+                document.getElementById("prompt").value = ''; // Clear the textarea
+                let node = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
+
+                htmlnodes_parent.appendChild(node.content);
+                registernode(node);
+                // Attach the node to the user's mouse
+                node.followingMouse = 1;
+                node.draw();
+                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+
+            return null; // Return null to indicate that no further processing is necessary
+            }
             const embedCheckbox = document.getElementById("embed-checkbox");
             if (!isGoogleSearchEnabled() && (!embedCheckbox || !embedCheckbox.checked)) {
                 return "not-enabled"; // Return an empty string or any default value when search is disabled
             }
 
-            // If the user's message is a URL, use it as the search query and create a link node
-            if (isUrl(userMessage)) {
-                createLinkNode("User provided link", userMessage, userMessage);
-                return null; // Return null to indicate that no further processing is necessary
-            }
+
 
             recentcontext = getLastPromptsAndResponses(2, 200);
 
@@ -2464,68 +2489,69 @@ async function getRelevantChunks(searchQuery, searchResults) {
         } else if (useLocalEmbeddings && embedding.source !== 'local') {
             return []; // Ignore non-local embeddings when checkbox is checked
         }
-                if (typeof embedding.chunks === 'string') {
-                    const result = {
-                        link: embedding.key,
-                        description: embedding.chunks
-                    };
-                    return [{
-                        result,
-                        embedding: embedding.embedding,
-                        source: embedding.source // Extract source here
-                    }];
-                } else if (Array.isArray(embedding.chunks)) {
-                    return embedding.chunks.map(chunk => {
-                        const result = {
-                            link: embedding.key,
-                            description: chunk.text
-                        };
-                        return {
-                            result,
-                            embedding: chunk.embedding,
-                            source: chunk.source // Extract source here
-                        };
-                    });
-                } else {
-                    return [];
-                }
+        if (typeof embedding.chunks === 'string') {
+            const result = {
+                link: embedding.key,
+                description: embedding.chunks
+            };
+            return [{
+                result,
+                embedding: embedding.embedding,
+                source: embedding.source // Extract source here
+            }];
+        } else if (Array.isArray(embedding.chunks)) {
+            return embedding.chunks.map(chunk => {
+                const result = {
+                    link: embedding.key,
+                    description: chunk.text
+                };
+                return {
+                    result,
+                    embedding: chunk.embedding,
+                    source: chunk.source // Extract source here
+                };
             });
-
-            // Calculate the cosine similarity between the search query embedding and each chunk embedding
-            chunkEmbeddings.forEach(chunkEmbedding => {
-                const embedding = chunkEmbedding.embedding;
-                const source = chunkEmbedding.source; // Use extracted source
-
-                if (embedding && embedding.length > 0) {
-                    let similarity = cosineSimilarity(
-                        searchQueryEmbedding,
-                        embedding
-                    );
-
-
-                    chunkEmbedding.similarity = similarity;
-                } else {
-                    chunkEmbedding.similarity = 0;
-                }
-            });
-            //console.log("Chunk embeddings with similarity:", chunkEmbeddings); //4551
-
-            // Sort the chunks by their similarity scores
-            chunkEmbeddings.sort((a, b) => b.similarity - a.similarity);
-            console.log("Sorted chunk embeddings:", chunkEmbeddings);
-
-            // Return the top N chunks
-            const topNChunks = chunkEmbeddings
-                .slice(0, topN)
-                .map(chunkEmbedding => ({
-                    text: chunkEmbedding.result.description,
-                    source: chunkEmbedding.result.link,
-                    relevanceScore: chunkEmbedding.similarity
-                }));
-            console.log("Top N Chunks:", topNChunks);
-
-            return topNChunks;
+        } else {
+            return [];
         }
+    });
+
+    // Calculate the cosine similarity between the search query embedding and each chunk embedding
+    chunkEmbeddings.forEach(chunkEmbedding => {
+        const embedding = chunkEmbedding.embedding;
+        const source = chunkEmbedding.source; // Use extracted source
+
+        if (embedding && embedding.length > 0) {
+            let similarity = cosineSimilarity(
+                searchQueryEmbedding,
+                embedding
+            );
+
+
+            chunkEmbedding.similarity = similarity;
+        } else {
+            chunkEmbedding.similarity = 0;
+        }
+    });
+    //console.log("Chunk embeddings with similarity:", chunkEmbeddings); //4551
+
+    // Sort the chunks by their similarity scores
+    chunkEmbeddings.sort((a, b) => b.similarity - a.similarity);
+    console.log("Sorted chunk embeddings:", chunkEmbeddings);
+
+    // Return the top N chunks or the total number of chunks if less than N
+    const limit = Math.min(topN, chunkEmbeddings.length);
+    const topNChunks = chunkEmbeddings
+        .slice(0, limit)
+        .map(chunkEmbedding => ({
+            text: chunkEmbedding.result.description,
+            source: chunkEmbedding.result.link,
+            relevanceScore: chunkEmbedding.similarity
+        }));
+    console.log("Top N Chunks:", topNChunks);
+
+    return topNChunks;
+}
 
         let overlapSize = document.getElementById('overlapSizeSlider').value;
 
@@ -2619,10 +2645,21 @@ async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-00
             a.setAttribute("href", link);
             a.setAttribute("target", "_blank");
             a.textContent = text;
-            a.setAttribute("style", "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap;");
+            a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
+
+            a.addEventListener('mouseover', function () {
+                this.style.color = '#888';
+                this.style.backgroundColor = '#1a1a1d'; // Change background color on hover
+            }, false);
+
+            a.addEventListener('mouseout', function () {
+                this.style.color = '#bbb';
+                this.style.backgroundColor = '#222226'; // Reset background color when mouse leaves
+            }, false);
 
             let linkWrapper = document.createElement("div");
             linkWrapper.style.width = "300px";
+            linkWrapper.style.padding = "20px 0"; // Add vertical padding
             linkWrapper.appendChild(a);
 
             let iframeWrapper = document.createElement("div");
@@ -2857,7 +2894,7 @@ async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-00
 
         function displaySearchResults(searchResults) {
             searchResults.forEach((result, index) => {
-                let title = `Search Result ${index + 1}: ${result.title}`;
+                let title = `${result.title}`;
                 let description = result.description.substring(0, 500) + "...";
                 let link = result.link;
 

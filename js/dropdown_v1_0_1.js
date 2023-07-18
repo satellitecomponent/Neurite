@@ -288,7 +288,7 @@ document.querySelectorAll('input[type=range]').forEach(function (slider) {
         const max = slider.max ? parseFloat(slider.max) : 100;
         const value = slider.value ? parseFloat(slider.value) : 0;
         const percentage = (value - min) / (max - min) * 100;
-        slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #222226 ${percentage}%, #222226 100%)`;
+        slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
     }
 
     // Set the background color split initially
@@ -305,7 +305,7 @@ document.getElementById('model-temperature').addEventListener('input', updateLab
 
 function updateLabel() {
     const temperature = document.getElementById('model-temperature').value;
-    document.getElementById('model-temperature-label').innerText = 'Model Temperature: ' + temperature;
+    document.getElementById('model-temperature-label').innerText = 'Temperature:\n ' + temperature;
 }
         // Load any saved keys from local storage
         document.getElementById('googleApiKey').value = localStorage.getItem('googleApiKey') || '';
@@ -824,7 +824,7 @@ setRenderQuality(getQuality());
         const submenuBtn = document.querySelector('.submenu-btn');
 
 document.getElementById('node-count-slider').addEventListener('input', function () {
-    document.getElementById('node-slider-label').innerText = 'Top ' + this.value + ' nodes';
+    document.getElementById('node-slider-label').innerText = 'Top ' + this.value + '\nnodes';
 });
 
 let colorPicker = document.getElementById("colorPicker");
