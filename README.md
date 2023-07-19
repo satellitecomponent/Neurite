@@ -1,10 +1,29 @@
-![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
+⚠️ Warning: Neurite contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
 
+![Neuritereadme4fps360](https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e)
+
+full video [here](https://youtu.be/1VmE_Bov-Xw)
 # Neurite
 
-⚠️ Warning: Neurite contains zooming, flashing lights, and colors which may not be suitable for people with photosensitive epilepsy.
 
-**Available here:** [Neurite](https://satellitecomponent.github.io/Neurite/)
+
+**Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
+
+To run locally,
+either:  
+1. Clone the repository  
+2. Open the index.html file in your browser (note: local AI features will not be enabled)  
+
+Or, to enable local AI features without using our Github pages host above:  
+1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
+2. Install any global dependencies if getting errors when running the below,
+
+```
+npm install
+npm run build
+npm run start
+```
+
 
 ## Table of Contents
 
@@ -47,7 +66,6 @@ Shift + click nodes to connect.
 
 
 ## FractalGPT
-🕸️🕷️
 
 **Not your typical chat interface.**
 - Web of thought reasoning.
@@ -107,7 +125,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 ## User Guide
 - Search: Enter a search query to locate windows containing that text. A list of search results will display to the left of the menu. Click on a search result to zoom your view window to where the window is positioned and scaled within the Mandelbrot set (fractal).
-- Saving: Saving is currently a work-in-progress. Text windows and connections between windows can be saved via the Save tab. Non-textual content currently needs to be re-inserted.
+- Saving: Saving is currently a work-in-progress. Your networks will can be saved in the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file in the save box, then click the second load button to display the network. Non-textual content currently needs to be re-inserted.
 - Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its responses together. This allows for a tree of thought reasoning process within the Mandelbrot set.
 
 
@@ -149,3 +167,5 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 ## Contact
 
 If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/hnY8UpeE22) 🔗
+
+![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
