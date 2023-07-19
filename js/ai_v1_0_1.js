@@ -724,7 +724,7 @@ function getConnectedNodeData(node) {
             console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
         }
         //node UUID: ${connectedNode.uuid}\n \nCreation Time: ${createdAt}
-        const connectedNodeInfo = `node: ${title}\nText Content: ${contents.join("\n")}`;
+        const connectedNodeInfo = `${nodeTag} ${title}\nText Content: ${contents.join("\n")}`;
         connectedNodesInfo.push(connectedNodeInfo);
     }
 
@@ -1251,7 +1251,7 @@ function cosineSimilarity(vecA, vecB) {
             const messages = [
                 {
                     role: "system",
-                    content: `Recent conversation:${ lastPromptsAndResponses }:End of recent conversation`,
+                    content: `Recent conversation (which may or may not be relevant):${ lastPromptsAndResponses }:End of recent conversation`,
                 },
                 {
                     role: "system",
@@ -2093,16 +2093,13 @@ async function handleAutoMode(zettelkastenPromptToUse) {
         // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
     // Get the API Key and Search Engine ID from local storage
-
-
     const apiKey = localStorage.getItem('googleApiKey');
     const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-    // Replace spaces in the search query with underscores
+    console.log(`Search query: ${searchQuery}`);  // Log the search query
 
-    const formattedSearchQuery = searchQuery.replace(/\s/g, '_');
-
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(formattedSearchQuery)}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
+    //console.log(`Request URL: ${url}`);  // Log the request URL
 
     try {
         const response = await fetch(url);
@@ -2110,6 +2107,7 @@ async function performSearch(searchQuery) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Received data:', data);  // Log the received data
 
         return data;
     } catch (error) {
@@ -2149,7 +2147,7 @@ async function performSearch(searchQuery) {
             },
             {
                 role: "system",
-                content: "Construct search queries based on the user prompt. Provide a search for the current user message. Keep in mind your response will be used both as a Google search and as an vector embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages and chunks relevant to the user query. Do not preface or explain your output.",
+                content: "Create search queries from the user prompt. Your response is used for Google and embedded vector searches to find relevant webpages/pdf chunks. User can't see your output. Provide a single search query that's most likely to yield relevant results. No need to explain or preface your output."
             },
             {
                 role: "user",
