@@ -104,7 +104,7 @@ Above is an example of conversation history being shared between GPT-3.5-turbo a
 - This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
 - Supports webLLM and OpenAi models concurrently.
 
-[Neurite](https://satellitecomponent.github.io/Neurite/) currently supports Red Pajamas 3B, and Vicuna 7B.
+[Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, Red Pajamas 3B, and Vicuna 7B.
 - webLLM runs Ai models directly in browser on the GPU or CPU.
 - We are also running an embeddings model locally through [Transformers.js](https://www.npmjs.com/package/@xenova/transformers) for local webpage/pdf extraction.
 - This is an early implementation.
