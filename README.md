@@ -5,7 +5,18 @@
 full video [here](https://youtu.be/1VmE_Bov-Xw)
 # Neurite
 
+## Introduction
 
+
+💡 **Neurite unleashes a new dimension of digital interface...**
+
+
+**...the fractal dimension.**
+
+
+🌱 This is an open-source project in early alpha, we are looking to grow our team! 🚧
+
+join us on [discord](https://discord.gg/hnY8UpeE22)!
 
 **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 
@@ -36,19 +47,6 @@ npm run start
 7. [Future of Neurite](#future-of-neurite)
 8. [Contact](#contact)
 
-## Introduction
-
-
-💡 **Neurite unleashes a new dimension of digital interface...**
-
-
-**...the fractal dimension.**
-
-
-🌱 This is an open-source project in early alpha, we are looking to grow our team! 🚧
-
-join us on [discord](https://discord.gg/hnY8UpeE22)!
-
 ## How to Use Neurite
 
 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - onto a rendering of the Mandelbrot set. You can either drag and drop files from your local system or paste embed links straight onto the fractal. Make sure to use an embed link.
@@ -77,8 +75,8 @@ To interact with the AI, you will need an OpenAi API key. (webLLM support curren
 - The LLM’s responses format themselves into notes and connections within the fractal mind map, leading to an emergent graph structure that represents the AI’s memory.
 - Breaking up the AI's output into a chain of thought reasoning is one of a number of methods that correlate to improved Ai response.
 - Mind mapping combined with a fractal interface goes beyond chain of thought reasoning to produce a fractal web of thought.
-- A Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for conversation with Ai)
-- The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry.
+- Our Zettelkasten parsing method combined with vector embedding search allows for arbitrary time-distance memory. (Long term memory for conversation with Ai)
+- The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of multimedia.
 
 
 Neurite currently enables the following Ai capabilities.
