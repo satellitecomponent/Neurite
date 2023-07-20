@@ -724,7 +724,7 @@ function getConnectedNodeData(node) {
             console.warn(`getConnectedNodeData: Creation time for node ${connectedNode.uuid} is not defined.`);
         }
         //node UUID: ${connectedNode.uuid}\n \nCreation Time: ${createdAt}
-        const connectedNodeInfo = `node: ${title}\nText Content: ${contents.join("\n")}`;
+        const connectedNodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contents.join("\n")}`;
         connectedNodesInfo.push(connectedNodeInfo);
     }
 
@@ -1245,13 +1245,13 @@ function cosineSimilarity(vecA, vecB) {
 
         async function generateKeywords(message, count) {
             // Get last prompts and responses
-            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 100);
+            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
 
             // Prepare the messages array
             const messages = [
                 {
                     role: "system",
-                    content: `Recent conversation:${ lastPromptsAndResponses }:End of recent conversation`,
+                    content: `Recent conversation:${ lastPromptsAndResponses }`,
                 },
                 {
                     role: "system",
@@ -1260,7 +1260,7 @@ function cosineSimilarity(vecA, vecB) {
                 {
                     role: "user",
                     content: `Without any preface or final explanation, Generate three single-word, comma-separated keywords for the latest user message: ${message}.
-Keywords should predict search relevance for context. Order by relevance, starting with a word from the message.`,
+Keywords may result from the user query and/or the recent conversation. Order by relevance, starting with a word from the message.`,
                 },
             ];
 
@@ -1371,17 +1371,23 @@ Guidelines:
 - In case of vague user input, provide a general alternative query.
 All your of your output should simulate a query to Wolfram Alpha with no other explnation attatched. Any response other than valid Wolfram Code will produce an error.`
 
-const nodeTag = document.getElementById("node-tag").value;
-const refTag = document.getElementById("ref-tag").value;
+const tagValues = {
+    get nodeTag() {
+        return document.getElementById("node-tag").value;
+    },
+    get refTag() {
+        return document.getElementById("ref-tag").value;
+    }
+}
 
-const codeMessage = {
+const codeMessage = () => ({
     role: "system",
     content: `Code Checkbox = true requires your response to include either HTML/JS or Python code, handled by Pyodide in the browser. Follow these steps:
 
-${nodeTag} Explanation Title (Optional)
+${tagValues.nodeTag} Explanation Title (Optional)
 Provide a concise preface explaining what the code accomplishes. Either HTML/JS or Python.
 
-${nodeTag} HTML/JS Code Title (Unique title)
+${tagValues.nodeTag} HTML/JS Code Title (Unique title)
 Wrap your code in labeled triple backtick code blocks.
 1. Structure your HTML with head and body tags.
 2. Set canvas size in the HTML.
@@ -1391,7 +1397,7 @@ Wrap your code in labeled triple backtick code blocks.
 6. Encapsulate any CSS within style tags in the head section.
 7. Ensure the entire HTML/JS code is within a single node.
 
-${nodeTag} Python Code Title (Unique title)
+${tagValues.nodeTag} Python Code Title (Unique title)
 Wrap your code in labeled triple backtick code blocks.
 1. Only use libraries: numpy, pandas, matplotlib, scipy, py, sympy, networkx.
 2. For visuals, save figures as base64 strings in HTML img tags.
@@ -1402,16 +1408,16 @@ Wrap your code in labeled triple backtick code blocks.
 7. Label code blocks with 'python'.
 8. Ensure the entire Python code is within a single node.
 
-${nodeTag} Final Explanation Title (Unique)
+${tagValues.nodeTag} Final Explanation Title (Unique)
 1. Explain the code and its output clearly.
 2. Align the explanation with code steps.
 3. Make sure the response is self-contained and doesn't rely on external files or data unless created within the code.`
-};
+});
 
-const instructionsMessage = {
+const instructionsMessage = () => ({
     role: "system",
     content: `The How-to checkbox is on. Please explain the fractal mind map implementation:
-${nodeTag} Essential Controls:
+${tagValues.nodeTag} Essential Controls:
 - Drag to move; Scroll to zoom; Alt + Scroll to rotate; Alt + Click to resize multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
@@ -1421,11 +1427,11 @@ ${nodeTag} Essential Controls:
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
 
-${nodeTag} Zettelkasten:
-- Type notes in main text area using ${nodeTag} and ${refTag} (node reference tag) format.
+${tagValues.nodeTag} Zettelkasten:
+- Type notes in main text area using ${tagValues.nodeTag} and ${tagValues.refTag} (node reference tag) format.
 - Save/Load notes in the settings tab or by copying and pasting main text area's content.
 
-${nodeTag} Advanced Controls:
+${tagValues.nodeTag} Advanced Controls:
 - Checkboxes below main text area provide additional features.
 - API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
 - Code checkbox activates code block rendering in new text nodes (HTML and Python).
@@ -1439,71 +1445,71 @@ ${nodeTag} Advanced Controls:
 - To enable local servers, download the Localhost Servers folder from the Github. Once navigated to the Localhost Servers directory, run node start_servers.js
 
 Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
-};
+});
 
-const aiNodesMessage = {
+const aiNodesMessage = () => ({
     role: "system",
     content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
     1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
     2. In the next line, provide an initial prompt that will be sent to the AI.
-    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${refTag}.
+    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${tagValues.refTag}.
     
     Example:
     LLM: Understanding AI
     What is Artificial Intelligence?
-    ${refTag} AI Basics, Neural Networks
+    ${tagValues.refTag} AI Basics, Neural Networks
 
     Note: Interlink LLM nodes using reference tags. This allows for a complex and nuanced conversation environment by extending the memory/context of LLM nodes and text nodes they are linked to.
     Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
-};
+});
 
-
-const zettelkastenPrompt = `${nodeTag} System message to AI: 
+const zettelkastenPrompt = () => `${tagValues.nodeTag} System message to AI: 
 - Responses are visualized in a fractal mind-map called Neurite.
 - Use node reference tag format in all responses.
 
 Format:
-    ${nodeTag} Example Title
+    ${tagValues.nodeTag} Example Title
         - Ensure Unique/Specific Node Title
         - Write plain text.
         - Provide a concise explanation of a key idea.
         - Break response into multiple connected nodes.
 
-    ${refTag} (Node Titles to Connect)
+    ${tagValues.refTag} (Node Titles to Connect)
         - Connect the response to related nodes using reference tags.`;
 
 
-        const spatialAwarenessExample = `${nodeTag} Central Node
+const spatialAwarenessExample = () =>
+`${tagValues.nodeTag} Central Node
 - Node from which other nodes branch out.
-${refTag} A, B
+${tagValues.refTag} A, B
 
-${nodeTag} A
+${tagValues.nodeTag} A
 - Connects to the Central Node, branches to C, D.
-${refTag} Central Node, C, D
+${tagValues.refTag} Central Node, C, D
 
-${nodeTag} Node B
+${tagValues.nodeTag} Node B
 - Branches out from Central to E and F.
-${refTag} Central Node, E, F
+${tagValues.refTag} Central Node, E, F
 
-${nodeTag} C
+${tagValues.nodeTag} C
 - End point from A.
-${refTag} A
+${tagValues.refTag} A
 
-${nodeTag} D
+${tagValues.nodeTag} D
 - End point from A.
-${refTag} A`;
+${tagValues.refTag} A`;
 
         let summarizedZettelkastenPrompt = "";
 
-async function summarizeZettelkastenPrompt(zettelkastenPrompt) {
+async function summarizeZettelkastenPrompt() {
     const summarizedPromptMessages = [{
         role: "system",
-        content: `zettelkastenPrompt ${zettelkastenPrompt}`,
-    },
-    {
-        role: "system",
-        content: `spatialAwarenessExample ${spatialAwarenessExample}`,
-    },
+        content: `zettelkastenPrompt ${zettelkastenPrompt()}`,
+        },
+        {
+            role: "system",
+            content: `spatialAwarenessExample ${spatialAwarenessExample()}`,
+        },
         {
             role: "user",
             content: `Directly generate a concise guide (<150 words) in Zettelkasten format, demonstrating the principles of fractal mind-map, tagging, and spatial awareness. Ensure your entire response is within the format. Avoid prefacing or explaining the response.`
@@ -1691,33 +1697,31 @@ async function sendMessage(event, autoModeMessage = null) {
         originalUserMessage = message;
     }
 
+    const noteInput = document.getElementById("note-input");
+
+    // Check if the last character in the note-input is not a newline, and add one if needed
+    if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
+        myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
+    }
+
     // Convert nodes object to an array of nodes
     const nodesArray = Object.values(nodes);
 
     let keywordsArray = [];
     let keywords = '';
-    
-    
-            const noteInput = document.getElementById("note-input");
 
-            // Check if the last character in the note-input is not a newline, and add one if needed
-            if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
-                myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
-            }
+    // Call generateKeywords function to get keywords
+    const count = 3; // Change the count value as needed
+    keywordsArray = await generateKeywords(message, count);
+
+    // Join the keywords array into a single string
+    keywords = keywordsArray.join(' ');
+    
+
 
             const keywordString = keywords.replace("Keywords: ", "");
             const splitKeywords = keywordString.split(',').map(k => k.trim());
             const firstKeyword = splitKeywords[0];
-            //  console.log("split?", splitKeywords[0])
-            //console.log("first keyword", firstKeyword)
-            console.log("keywords", keywords)
-            //    console.log("keywords[0]", keywords[0])
-
-            if (isWikipediaEnabled()) {
-                const wikipediaSummaries = await getWikipediaSummaries(keywordsArray);
-                // Use the summaries as needed
-            }
-
             // Convert the keywords string into an array by splitting on spaces
 
 
@@ -1778,21 +1782,43 @@ async function sendMessage(event, autoModeMessage = null) {
 
 
 
-            let messages = [
-                {
-                    role: "system",
-                    content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${!isZettelkastenPromptSent ? zettelkastenPrompt : summarizedZettelkastenPrompt} \nThe program fails if titles are repeated.`,
-                },
-            ];
+    let tagsChanged = false;
+
+    // Check if the node or reference tags have changed
+    const storedNodeTag = localStorage.getItem('nodeTag');
+    const storedRefTag = localStorage.getItem('refTag');
+    if (storedNodeTag !== tagValues.nodeTag || storedRefTag !== tagValues.refTag) {
+        tagsChanged = true;
+        localStorage.setItem('nodeTag', tagValues.nodeTag);
+        localStorage.setItem('refTag', tagValues.refTag);
+    }
+
+    // Get the appropriate Zettelkasten prompt to use
+    let zettelkastenPromptToUse;
+    if (!isZettelkastenPromptSent || tagsChanged) {
+        // If the Zettelkasten prompt hasn't been sent yet, or if the tags have changed, use the original prompt
+        zettelkastenPromptToUse = zettelkastenPrompt();
+    } else if (summarizedZettelkastenPrompt !== "") {
+        // Otherwise, if the summarized prompt has been generated, use it
+        zettelkastenPromptToUse = summarizedZettelkastenPrompt;
+    }
+
+    // Create the messages
+    let messages = [
+        {
+            role: "system",
+            content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if titles are repeated.`,
+        },
+    ];
 
             if (document.getElementById("instructions-checkbox").checked) {
-                messages.push(instructionsMessage);
+                messages.push(instructionsMessage());
             }
 
 
-            if (document.getElementById("code-checkbox").checked) {
-                messages.push(codeMessage);
-            }
+    if (document.getElementById("code-checkbox").checked) {
+        messages.push(codeMessage());
+    }
 
             if (document.getElementById("wiki-checkbox").checked) {
                 messages.push(wikipediaMessage);
@@ -1802,9 +1828,9 @@ async function sendMessage(event, autoModeMessage = null) {
                 messages.push(googleSearchMessage);
             }
 
-            if (document.getElementById("ai-nodes-checkbox").checked) {
-                messages.push(aiNodesMessage);
-            }
+    if (document.getElementById("ai-nodes-checkbox").checked) {
+        messages.push(aiNodesMessage());
+    }
 
             if (embedCheckbox && embedCheckbox.checked) {
                 const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
@@ -1890,13 +1916,6 @@ async function sendMessage(event, autoModeMessage = null) {
 
     if (!document.getElementById("code-checkbox").checked &&
         !document.getElementById("instructions-checkbox").checked) {
-        // Call generateKeywords function to get keywords
-        const count = 3; // Change the count value as needed
-        keywordsArray = await generateKeywords(message, count);
-
-        // Join the keywords array into a single string
-        keywords = keywordsArray.join(' ');
-
         // Get the node tag value
         const nodeTag = document.getElementById("node-tag").value;
 
@@ -1963,7 +1982,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
                 //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
 
-                return `${nodeTag} ${title}\n ${contents.join("\n")}`;
+                return `${tagValues.nodeTag} ${title}\n ${contents.join("\n")}`;
             })
             .filter(content => content !== null) // Remove nulls
             .join("\n\n");
@@ -1984,17 +2003,17 @@ async function sendMessage(event, autoModeMessage = null) {
             });
 
     const commonInstructions = `\nRemember to follow the format.
-${nodeTag} Titles after node tag.
+${tagValues.nodeTag} Titles after node tag.
 Plain text on the next line for your response.
 Do not use these example titles or conclusion titles.
 Avoid generic titles, (conclusion, etc.)
 Expand existing mind-map using notes with unique titles.
-${refTag} Comma seperated titles to connect.
-${nodeTag} Write your own title
+${tagValues.refTag} Comma seperated titles to connect.
+${tagValues.nodeTag} Write your own title
 Make sure any new nodes have a unique title
 Break your response up into multiple nodes
 Speak on topics relevant to the current user prompt and your recent conversation context.
-${refTag} Branch specific linear or non-linear connections.`;
+${tagValues.refTag} Branch specific linear or non-linear connections.`;
 
             // Add Prompt
 
@@ -2026,51 +2045,48 @@ ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [
 
             const stream = true;
 
-            // Main AI call
-            if (stream) {
-                await callChatGPTApi(messages, stream);
-            } else {
-                let aiResponse = await callChatGPTApi(messages, stream);
+    // Main AI call
+    if (stream) {
+        await callChatGPTApi(messages, stream);
+    } else {
+        let aiResponse = await callChatGPTApi(messages, stream);
 
-                if (aiResponse) {
-                    const noteInput = document.getElementById("note-input");
-                    if (noteInput.value[noteInput.value.length - 1] !== '\n') {
-                        myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
-                    }
-                    myCodeMirror.replaceRange(aiResponse + "\n", CodeMirror.Pos(myCodeMirror.lastLine()));
-                } else {
-                    console.error('AI response was undefined');
-                }
+        if (aiResponse) {
+            const noteInput = document.getElementById("note-input");
+            if (noteInput.value[noteInput.value.length - 1] !== '\n') {
+                myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
             }
+            myCodeMirror.replaceRange(aiResponse + "\n", CodeMirror.Pos(myCodeMirror.lastLine()));
+        } else {
+            console.error('AI response was undefined');
+        }
+    }
+
     // Only continue if shouldContinue flag is true
     if (shouldContinue) {
         // Handle auto mode
         if (isAutoModeEnabled && shouldContinue) {
-            // If the summarized prompt has not been generated yet, use the original zettelkasten prompt
-            let zettelkastenPromptToUse = summarizedZettelkastenPrompt !== "" ? summarizedZettelkastenPrompt : zettelkastenPrompt;
+            // If the tags have changed, use the original zettelkasten prompt
+            let zettelkastenPromptToUse = tagsChanged ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
             const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
             sendMessage(null, aiGeneratedPrompt);
         }
 
-        // Check if the Zettelkasten prompt should be sent
-        if (!isZettelkastenPromptSent && summarizedZettelkastenPrompt === "" && shouldContinue) {
-            // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
-            isZettelkastenPromptSent = true;
-
-            // Try to get summarizedZettelkastenPrompt from local storage
-            summarizedZettelkastenPrompt = localStorage.getItem('summarizedZettelkastenPrompt');
-
-            if (!summarizedZettelkastenPrompt) {
-                // If it's not in the local storage, generate it and save in local storage for future use
-                summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt(zettelkastenPrompt);
-                localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
-            }
+        // Regenerate the summarizedZettelkastenPrompt if the tags have changed
+        if (tagsChanged) {
+            summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt();
+            localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
+            tagsChanged = false; // Reset the tagsChanged flag
         }
 
-
+        // Check if the Zettelkasten prompt should be sent
+        if (!isZettelkastenPromptSent && shouldContinue) {
+            // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
+            isZettelkastenPromptSent = true;
+        }
     }
-    return false;
 
+    return false;
 }
 
 // Update handleAutoMode to accept the prompt as a parameter
@@ -2093,16 +2109,13 @@ async function handleAutoMode(zettelkastenPromptToUse) {
         // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
     // Get the API Key and Search Engine ID from local storage
-
-
     const apiKey = localStorage.getItem('googleApiKey');
     const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-    // Replace spaces in the search query with underscores
+    console.log(`Search query: ${searchQuery}`);  // Log the search query
 
-    const formattedSearchQuery = searchQuery.replace(/\s/g, '_');
-
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(formattedSearchQuery)}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
+    //console.log(`Request URL: ${url}`);  // Log the request URL
 
     try {
         const response = await fetch(url);
@@ -2110,6 +2123,7 @@ async function performSearch(searchQuery) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Received data:', data);  // Log the received data
 
         return data;
     } catch (error) {
@@ -2149,7 +2163,7 @@ async function performSearch(searchQuery) {
             },
             {
                 role: "system",
-                content: "Construct search queries based on the user prompt. Provide a search for the current user message. Keep in mind your response will be used both as a Google search and as an vector embedded search for finding relevant chunks of webpage/pdf text. The user can not see your output. Only provide a single search query most probable to result in webpages and chunks relevant to the user query. Do not preface or explain your output.",
+                content: "Create search queries from the user prompt. Your response is used for Google and embedded vector searches to find relevant webpages/pdf chunks. User can't see your output. Provide a single search query that's most likely to yield relevant results. No need to explain or preface your output."
             },
             {
                 role: "user",
