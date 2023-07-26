@@ -31,8 +31,8 @@ if (!RegExp.escape) {
         var mousePos = new vec2(0, 0);
         var mousePath = "";
 
-        var zoom = new vec2(4, 0); //bigger is further out
-        var pan = new vec2(0, 0);
+        var zoom = new vec2(1.5, 0); //bigger is further out
+        var pan = new vec2(-0.3, 0);
 
         var zoomTo = new vec2(4, 0);
         var panTo = new vec2(0, 0);
@@ -50,13 +50,12 @@ if (!RegExp.escape) {
             let div = document.createElement('div');
             let buttons = document.getElementById("elements").children[0];
             let w = buttons.cloneNode(true);
-
+            w.className = 'button-container';
             // Create a header container for buttons and title input
             let headerContainer = document.createElement('div');
-            headerContainer.style.display = 'flex';
-            headerContainer.style.justifyContent = 'space-between';
-            headerContainer.style.alignItems = 'center';
+            headerContainer.className = 'header-container';
             headerContainer.appendChild(w);
+            
 
             div.appendChild(headerContainer);
             odiv.appendChild(div);
@@ -84,15 +83,33 @@ if (!RegExp.escape) {
             div.addEventListener('mousedown', function () {
                 autopilotSpeed = 0;
                 dropdown.classList.add('no-select');
+
+                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+                for (let i = 0; i < allWrapperDivs.length; i++) {
+                    allWrapperDivs[i].classList.add('no-select');
+                }
             });
 
             div.addEventListener('mouseup', function () {
                 dropdown.classList.remove('no-select');
+
+                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+                for (let i = 0; i < allWrapperDivs.length; i++) {
+                    allWrapperDivs[i].classList.remove('no-select');
+                }
             });
 
             window.addEventListener('mouseup', function () {
                 dropdown.classList.remove('no-select');
+
+                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+                for (let i = 0; i < allWrapperDivs.length; i++) {
+                    allWrapperDivs[i].classList.remove('no-select');
+                }
             });
+
+            // Calculate the width of buttons
+            let buttonsWidth = w.offsetWidth;
 
             // Add the title input to the header container
             let titleInput = document.createElement('input');
@@ -116,7 +133,7 @@ if (!RegExp.escape) {
             observeContentResize(innerContent, div);
             div.win = node;
             return rewindowify(node);
-}
+        }
 
 function extractScalingFactors(element) {
     const rect = element.getBoundingClientRect();
@@ -204,9 +221,20 @@ function extractScalingFactors(element) {
             };
 
             const handleMouseUp = () => {
+                isMouseMoving = false;
+                // Remove event listeners when mouse is released
+                removeEventListeners();
+            };
+
+            const addEventListeners = () => {
+                // Listen for mousemove and mouseup on the entire document
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            };
+
+            const removeEventListeners = () => {
                 document.removeEventListener('mousemove', handleMouseMove);
                 document.removeEventListener('mouseup', handleMouseUp);
-                isMouseMoving = false;
             };
 
             resizeHandle.addEventListener('mousedown', (event) => {
@@ -217,72 +245,81 @@ function extractScalingFactors(element) {
                 startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
                 startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
 
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
+                addEventListeners();
             });
 
-            resizeHandle.addEventListener('mouseenter', () => {
-                document.body.style.cursor = 'nwse-resize';
-            });
+            resizeHandle.addEventListener('mouseenter', addEventListeners);
 
-            resizeHandle.addEventListener('mouseleave', () => {
-                if (!isMouseMoving) {
+            resizeHandle.addEventListener('mouseleave', (event) => {
+                if (!event.buttons) {
                     document.body.style.cursor = 'auto';
+                    removeEventListeners();
+                }
+            });
+
+            windowDiv.addEventListener('mouseleave', (event) => {
+                if (!event.buttons) {
+                    document.body.style.cursor = 'auto';
+                    removeEventListeners();
                 }
             });
         }
 
 
 
+function rewindowify(node) {
+    node.push_extra("window");
+    let w = node.content;
 
+    let del = w.querySelector("#button-delete");
+    let fs = w.querySelector("#button-fullscreen");
+    let col = w.querySelector("#button-collapse");
 
+    function set(e, v, s = "fill") {
+        e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
+        e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
+    }
 
-        function rewindowify(node) {
-            node.push_extra("window");
-            let w = node.content;
-
-
-            let del = w.querySelector("#button-delete");
-            let fs = w.querySelector("#button-fullscreen");
-            let col = w.querySelector("#button-collapse");
-
-            function set(e, v, s = "fill") {
-                e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
-                e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
-            }
-
-            function ui(e, cb = (() => { }), s = "fill") {
-                e.onmouseenter = (ev) => {
-                    set(e, "hover", s);
-                }
-                e.onmouseleave = (ev) => {
-                    set(e, "initial", s);
-                    e.ready = false;
-                }
-                e.onmousedown = (ev) => {
-                    set(e, "click", s);
-                    e.ready = true;
-                    cancel(ev);
-                }
-                e.onmouseup = (ev) => {
-                    set(e, "initial", s);
-                    cancel(ev);
-                    if (e.ready) {
-                        cb(ev);
-                    }
-                }
-                e.onmouseleave();
-            }
-            ui(del, node.remove.bind(node));
-            ui(fs, (() => {
-                node.zoom_to_fit();
-                zoomTo = zoomTo.scale(1.0625);
-                autopilotSpeed = settings.autopilotSpeed;
-            }));
-            ui(col, (() => { }), "stroke");
-
-            return node;
+    function ui(e, cb = (() => { }), s = "fill") {
+        e.onmouseenter = (ev) => {
+            set(e, "hover", s);
         }
+        e.onmouseleave = (ev) => {
+            set(e, "initial", s);
+            e.ready = false;
+        }
+        e.onmousedown = (ev) => {
+            set(e, "click", s);
+            e.ready = true;
+            cancel(ev);
+        }
+        e.onmouseup = (ev) => {
+            set(e, "initial", s);
+            cancel(ev);
+            if (e.ready) {
+                cb(ev);
+            }
+        }
+        e.onmouseleave();
+    }
+    ui(del, node.remove.bind(node));
+    ui(fs, (() => {
+        node.zoom_to_fit();
+        zoomTo = zoomTo.scale(1.0625);
+        autopilotSpeed = settings.autopilotSpeed;
+    }));
+    //ui(col, collapseNode(node), "stroke");
+    ui(col, (() => { }), "stroke");
+
+    // Add the "mouseup" event listener to the document
+    document.addEventListener('mouseup', () => {
+        if (node.followingMouse) {
+            node.stopFollowingMouse();
+        }
+    });
+
+    return node;
+}
 
 
 
@@ -344,6 +381,8 @@ function extractScalingFactors(element) {
         let prevNode = undefined;
         var NodeUUID = 0;
         var nodeMap = {};
+        var draggedNode = null;
+        var mousedownNode = undefined;
 
         function nextUUID() {
             while (nodeMap[NodeUUID] !== undefined) {
@@ -351,238 +390,240 @@ function extractScalingFactors(element) {
             }
             return NodeUUID;
         }
-        class Node {
-            constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
-            this.anchor = new vec2(0, 0);
-            this.anchorForce = 0;
-            this.mouseAnchor = new vec2(0, 0);
-            this.edges = [];
-            this.createdAt = new Date().toISOString();
-            this.init = (nodeMap) => {};
-            if (p === undefined) {
-              let n = thing;
-              let o = JSON.parse(n.dataset.node_json)
-              for (const k of ['anchor', 'mouseAnchor', 'vel', 'pos', 'force']) {
+class Node {
+    constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
+        this.anchor = new vec2(0, 0);
+        this.anchorForce = 0;
+        this.mouseAnchor = new vec2(0, 0);
+        this.edges = [];
+        this.createdAt = new Date().toISOString();
+        this.init = (nodeMap) => { };
+        if (p === undefined) {
+            let n = thing;
+            let o = JSON.parse(n.dataset.node_json)
+            for (const k of ['anchor', 'mouseAnchor', 'vel', 'pos', 'force']) {
                 o[k] = new vec2(o[k]);
-              }
-              for (const k in o) {
+            }
+            for (const k in o) {
                 this[k] = o[k];
-              }
-              this.save_extras = [];
-              this.content = thing;
-              if (n.dataset.node_extras) {
+            }
+            this.save_extras = [];
+            this.content = thing;
+            if (n.dataset.node_extras) {
                 o = JSON.parse(n.dataset.node_extras);
                 for (const e of o) {
-                  NodeExtensions[e.f](this, e.a);
+                    NodeExtensions[e.f](this, e.a);
                 }
-              }
-              this.attach();
-                this.content.setAttribute("data-uuid", this.uuid);
-                if (n.dataset.edges !== undefined && createEdges) {
-                    let es = JSON.parse(n.dataset.edges);
-                    this.init = ((nodeMap) => {
-                        for (let e of es) {
-                            edgeFromJSON(e, nodeMap);
-                        }
-                    }).bind(this);
-                }
-                return;
-            } else {
-              this.uuid = nextUUID();
             }
-            this.uuid = "" + this.uuid;
+            this.attach();
+            this.content.setAttribute("data-uuid", this.uuid);
+            if (n.dataset.edges !== undefined && createEdges) {
+                let es = JSON.parse(n.dataset.edges);
+                this.init = ((nodeMap) => {
+                    for (let e of es) {
+                        edgeFromJSON(e, nodeMap);
+                    }
+                }).bind(this);
+            }
+            return;
+        } else {
+            this.uuid = nextUUID();
+        }
+        this.uuid = "" + this.uuid;
 
-            this.pos = p;
-            this.scale = scale;
-            this.intrinsicScale = intrinsicScale;
+        this.pos = p;
+        this.scale = scale;
+        this.intrinsicScale = intrinsicScale;
 
-            this.content = thing;
+        this.content = thing;
 
+        this.vel = new vec2(0, 0);
+        this.force = new vec2(0, 0);
+        this.followingMouse = 0;
+
+        this.removed = false;
+
+        this.content.setAttribute("data-uuid", this.uuid);
+        this.attach();
+        this.save_extras = [];
+    }
+    attach() {
+        let div = this.content;
+        let node = this;
+        div.onclick = node.onclick.bind(node);
+        div.ondblclick = node.ondblclick.bind(node);
+        div.onmousedown = node.onmousedown.bind(node);
+        document.onmousemove = this.onmousemove.bind(this);
+        document.onmouseup = this.onmouseup.bind(this);
+        div.onwheel = node.onwheel.bind(node);
+    }
+    json() {
+        return JSON.stringify(this, (k, v) => {
+            if (k === "content" || k === "edges" || k === "save_extras" || k === "aiResponseEditor") {
+                return undefined;
+            }
+            return v;
+        });
+    }
+    push_extra_cb(f) {
+        this.save_extras.push(f);
+    }
+    push_extra(func_name, args = undefined) {
+        this.save_extras.push({
+            f: func_name,
+            a: args
+        });
+    }
+    draw() {
+        put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
+
+        // Before saving, get the current title input value and store it in a data-attribute
+        let titleInput = this.content.querySelector('.title-input');
+        if (titleInput) {
+            this.content.setAttribute('data-title', titleInput.value);
+        }
+
+        this.content.setAttribute("data-node_json", this.json());
+        let se = [];
+        for (let e of this.save_extras) {
+            se.push(typeof e === "function" ? e(this) : e);
+        }
+        this.content.setAttribute("data-node_extras", JSON.stringify(se));
+    }
+    zoom_to_fit(margin = 1) {
+        let bb = this.content.getBoundingClientRect();
+        let svgbb = svg.getBoundingClientRect();
+        let so = windowScaleAndOffset();
+        let aspect = svgbb.width / svgbb.height;
+        let scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
+        this.zoom_by(1 / scale);
+    }
+    zoom_by(s = 1) {
+        panTo = new vec2(0, 0); //this.pos;
+        let gz = ((s) ** (-1 / settings.zoomContentExp));
+        zoomTo = zoom.unscale(gz ** 0.5);
+        autopilotReferenceFrame = this;
+        panToI = new vec2(0, 0);
+    }
+    zoom_to(s = 1) {
+        panTo = new vec2(0, 0); //this.pos;
+        let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
+        zoomTo = zoom.unscale(gz ** 0.5);
+        autopilotReferenceFrame = this;
+        panToI = new vec2(0, 0);
+    }
+    addEdge(edge) {
+        this.edges.push(edge);
+        this.updateEdgeData();
+    }
+    updateEdgeData() {
+        let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+        this.content.setAttribute("data-edges", es);
+    }
+
+
+    step(dt) {
+        if (dt === undefined || isNaN(dt)) {
+            dt = 0;
+        } else {
+            if (dt > 1) {
+                dt = 1;
+            }
+        }
+        if (!this.followingMouse) {
+            this.pos = this.pos.plus(this.vel.scale(dt / 2));
+            this.vel = this.vel.plus(this.force.scale(dt));
+            this.pos = this.pos.plus(this.vel.scale(dt / 2));
+            this.force = this.vel.scale(-Math.min(this.vel.mag() + 0.4 + this.anchorForce, 1 / (dt + 1e-300)));
+        } else {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
+        }
+        let g = mandGrad(settings.iterations, this.pos);
+        //g.y *= -1; //why?
+        this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
+        this.force = this.force.plus(this.anchor.minus(this.pos).scale(this.anchorForce));
+        //let d = toZ(mousePos).minus(this.pos);
+        //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
+        if (this.followingMouse) {
+            let p = toZ(mousePos).minus(this.mouseAnchor);
+            this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
+            this.pos = p;
+            this.anchor = this.pos;
+        }
+        //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
+        this.draw();
+    }
+    searchStrings() {
+        function* search(e) {
+            yield e.textContent;
+            if (e.value)
+                yield e.value;
+            for (let c of e.children) {
+                yield* search(c);
+            }
+        }
+        return search(this.content);
+    }
+    onclick(event) {
+
+    }
+    toggleWindowAnchored(anchored) {
+        if (anchored) {
+            this.content.classList.add("window-anchored");
+        } else {
+            this.content.classList.remove("window-anchored");
+        }
+    }
+    ondblclick(event) {
+        this.anchor = this.pos;
+        this.anchorForce = 1 - this.anchorForce;
+        this.toggleWindowAnchored(this.anchorForce === 1);
+        let connectednodes = getAllConnectedNodesData(this)
+        console.log(connectednodes)
+        cancel(event);
+    }
+    onmousedown(event) {
+        this.mouseAnchor = toZ(new vec2(event.clientX, event.clientY)).minus(this.pos);
+        this.followingMouse = 1;
+        window.draggedNode = this;
+        movingNode = this;
+        if (nodeMode) {
+            if (prevNode === undefined) {
+                prevNode = this;
+            } else {
+                connect(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
+                prevNode = undefined;
+            }
+        }
+        // Add an event listener to window.mouseup that stops the node from following the mouse
+        window.addEventListener('mouseup', () => this.stopFollowingMouse());
+        cancel(event);
+    }
+
+    stopFollowingMouse() {
+        this.followingMouse = 0;
+        movingNode = undefined;
+        // Remove the event listener to clean up
+        window.removeEventListener('mouseup', this.stopFollowingMouse);
+    }
+    onmouseup(event) {
+        if (this === window.draggedNode) {
             this.followingMouse = 0;
-
-            this.removed = false;
-
-            this.content.setAttribute("data-uuid", this.uuid);
-            this.attach();
-            this.save_extras = [];
-          }
-          attach() {
-            let div = this.content;
-            let node = this;
-            div.onclick = node.onclick.bind(node);
-            div.ondblclick = node.ondblclick.bind(node);
-            div.onmousedown = node.onmousedown.bind(node);
-            div.onmouseup = node.onmouseup.bind(node);
-            div.onmousemove = node.onmousemove.bind(node);
-            div.onwheel = node.onwheel.bind(node);
-          }
-            json() {
-                return JSON.stringify(this, (k, v) => {
-                    if (k === "content" || k === "edges" || k === "save_extras" || k === "aiResponseEditor") {
-                        return undefined;
-                    }
-                    return v;
-                });
-            }
-          push_extra_cb(f) {
-            this.save_extras.push(f);
-          }
-          push_extra(func_name, args = undefined) {
-            this.save_extras.push({
-              f: func_name,
-              a: args
-            });
-          }
-            draw() {
-                put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
-
-                // Before saving, get the current title input value and store it in a data-attribute
-                let titleInput = this.content.querySelector('.title-input');
-                if (titleInput) {
-                    this.content.setAttribute('data-title', titleInput.value);
-                }
-
-                this.content.setAttribute("data-node_json", this.json());
-                let se = [];
-                for (let e of this.save_extras) {
-                    se.push(typeof e === "function" ? e(this) : e);
-                }
-                this.content.setAttribute("data-node_extras", JSON.stringify(se));
-            }
-            zoom_to_fit(margin = 1) {
-                let bb = this.content.getBoundingClientRect();
-                let svgbb = svg.getBoundingClientRect();
-                let so = windowScaleAndOffset();
-                let aspect = svgbb.width / svgbb.height;
-                let scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
-                this.zoom_by(1 / scale);
-            }
-            zoom_by(s = 1) {
-                panTo = new vec2(0, 0); //this.pos;
-                let gz = ((s) ** (-1 / settings.zoomContentExp));
-                zoomTo = zoom.unscale(gz ** 0.5);
-                autopilotReferenceFrame = this;
-                panToI = new vec2(0, 0);
-            }
-            zoom_to(s = 1) {
-                panTo = new vec2(0, 0); //this.pos;
-                let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
-                zoomTo = zoom.unscale(gz ** 0.5);
-                autopilotReferenceFrame = this;
-                panToI = new vec2(0, 0);
-            }
-            addEdge(edge) {
-                this.edges.push(edge);
-                this.updateEdgeData();
-            }
-updateEdgeData() {
-  let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
-  this.content.setAttribute("data-edges", es);
-}
-
-
-            step(dt) {
-                if (dt === undefined || isNaN(dt)) {
-                    dt = 0;
-                } else {
-                    if (dt > 1) {
-                        dt = 1;
-                    }
-                }
-                if (!this.followingMouse) {
-                    this.pos = this.pos.plus(this.vel.scale(dt / 2));
-                    this.vel = this.vel.plus(this.force.scale(dt));
-                    this.pos = this.pos.plus(this.vel.scale(dt / 2));
-                    this.force = this.vel.scale(-Math.min(this.vel.mag() + 0.4 + this.anchorForce, 1 / (dt + 1e-300)));
-                } else {
-                    this.vel = new vec2(0, 0);
-                    this.force = new vec2(0, 0);
-                }
-                let g = mandGrad(settings.iterations, this.pos);
-                //g.y *= -1; //why?
-                this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
-                this.force = this.force.plus(this.anchor.minus(this.pos).scale(this.anchorForce));
-                //let d = toZ(mousePos).minus(this.pos);
-                //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
-                if (this.followingMouse) {
-                    let p = toZ(mousePos).minus(this.mouseAnchor);
-                    this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
-                    this.pos = p;
-                    this.anchor = this.pos;
-                }
-                //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
-                this.draw();
-            }
-            searchStrings() {
-                function* search(e) {
-                    yield e.textContent;
-                    if (e.value)
-                        yield e.value;
-                    for (let c of e.children) {
-                        yield* search(c);
-                    }
-                }
-                return search(this.content);
-            }
-            onclick(event) {
-
-            }
-            toggleWindowAnchored(anchored) {
-                if (anchored) {
-                    this.content.classList.add("window-anchored");
-                } else {
-                    this.content.classList.remove("window-anchored");
-                }
-            }
-            ondblclick(event) {
-                this.anchor = this.pos;
-                this.anchorForce = 1 - this.anchorForce;
-                this.toggleWindowAnchored(this.anchorForce === 1);
-                cancel(event);
-            }
-            onmousedown(event) {
-                this.mouseAnchor = toZ(new vec2(event.clientX, event.clientY)).minus(this.pos);
-                this.followingMouse = 1;
-                movingNode = this;
-                if (nodeMode) {
-                    if (prevNode === undefined) {
-                        prevNode = this;
-                    } else {
-                        connect(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
-                        prevNode = undefined;
-                    }
-                }
-                // Add an event listener to window.mouseup that stops the node from following the mouse
-                window.addEventListener('mouseup', () => this.stopFollowingMouse());
-                cancel(event);
-            }
-
-            stopFollowingMouse() {
-                this.followingMouse = 0;
-                movingNode = undefined;
-                // Remove the event listener to clean up
-                window.removeEventListener('mouseup', this.stopFollowingMouse);
-            }
-            onmouseup(event) {
-                this.followingMouse = 0;
-                if (this === movingNode) {
-                    movingNode = undefined;
-                }
-                cancel(event);
-            }
-            onmousemove(event) {
-                if (this.followingMouse) {
-                    prevNode = undefined;
-                }
-                /*if (this.followingMouse){
-                this.pos = this.pos.plus(toDZ(new vec2(event.movementX,event.movementY)));
-                this.draw()
-                //cancel(event);
-                }*/
-            }
-            onwheel(event) {
+            window.draggedNode = undefined;
+        }
+    }
+    onmousemove(event) {
+        if (this === window.draggedNode) {
+            prevNode = undefined;
+        }
+        /*if (this.followingMouse){
+        this.pos = this.pos.plus(toDZ(new vec2(event.movementX,event.movementY)));
+        this.draw()
+        //cancel(event);
+        }*/
+    }
+    onwheel(event) {
                 if (nodeMode) {
                     let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
                     let targetWindow = event.target.closest('.window');
@@ -625,6 +666,11 @@ updateEdgeData() {
                 }
                 for (let e of dels) {
                     e.remove();
+                }
+
+                // Remove this node from the edges array of any nodes it was connected to
+                for (let n of nodes) {
+                    n.edges = n.edges.filter(edge => !edge.pts.includes(this));
                 }
 
                 let index = nodes.indexOf(this);
@@ -807,15 +853,22 @@ function edgeFromJSON(o, nodeMap) {
                 }
             }
             remove() {
+                // Remove the edge from the global edge array
                 let index = edges.indexOf(this);
                 if (index !== -1) {
                     edges.splice(index, 1);
                 }
-                index = this.pts[0].edges.indexOf(this);
-                if (index !== -1) {
-                    this.pts[0].edges.splice(index, 1);
-                    this.pts[0].updateEdgeData();
-                }
+
+                // Remove this edge from both connected nodes' edges arrays
+                this.pts.forEach((node) => {
+                    index = node.edges.indexOf(this);
+                    if (index !== -1) {
+                        node.edges.splice(index, 1);
+                        node.updateEdgeData();
+                    }
+                });
+
+                // Remove the edge from the DOM
                 this.html.remove();
             }
         }
@@ -1209,170 +1262,292 @@ function connectRandom(n) {
             textarea.style.height = textarea.scrollHeight + "px";
         }
 
-        let pyodideLoadingPromise = null;
-        let pyodide = null;
 
-        async function loadPyodideAndSetup() {
-            // Load Pyodide
-            let pyodideLoadPromise = loadPyodide({
-                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.0/full/",
-            });
-            pyodide = await pyodideLoadPromise;
 
-            // Load commonly used packages
-            return Promise.all([
-                pyodide.loadPackage('numpy'),
-                pyodide.loadPackage('pandas'),
-                pyodide.loadPackage('matplotlib'),
-                pyodide.loadPackage('scipy'),
-                pyodide.loadPackage('py'),
-                pyodide.loadPackage('sympy'),
-                pyodide.loadPackage('networkx'),
-            ]);
+let pyodideLoadingPromise = null;
+let pyodide = null;
+let loadedPackages = {};
 
-            console.log('Pyodide and packages loaded');
+// List of Python's built-in modules
+let builtinModules = [
+    "io",
+    "base64",
+    // Add more built-in modules here as needed
+];
+
+async function loadPyodideAndSetup(pythonView) {
+    let pyodideLoadPromise = loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.0/full/",
+    });
+    pyodide = await pyodideLoadPromise;
+
+    // Define the JavaScript function to be called from Python
+    function outputHTML(html) {
+        let resultDiv = document.createElement("div");
+        resultDiv.innerHTML = html || '';
+        pythonView.appendChild(resultDiv);
+    }
+    window.outputHTML = outputHTML;
+
+    // Add the output_html function to Python builtins
+    pyodide.runPython(`
+        from js import window
+
+        def output_html(html):
+            window.outputHTML(html)
+
+        __builtins__.output_html = output_html
+    `);
+
+    console.log('Pyodide loaded');
+}
+
+async function runPythonCode(code, pythonView) {
+    pythonView.innerHTML = "Initializing Pyodide and dependencies...";
+
+    if (!pyodide) {
+        if (!pyodideLoadingPromise) {
+            pyodideLoadingPromise = loadPyodideAndSetup(pythonView);
+        }
+        await pyodideLoadingPromise;
+    }
+
+    try {
+        pythonView.innerHTML = "";
+        let imports = pyodide.runPython(
+            'from pyodide.code import find_imports\n' +
+            `find_imports('''${code}''')`
+        );
+
+        for (let module of imports) {
+            if (!builtinModules.includes(module) && !loadedPackages[module]) {
+                try {
+                    await pyodide.loadPackage(module);
+                    loadedPackages[module] = true;
+                } catch (error) {
+                    console.log(`Failed to load module: ${module}`);
+                }
+            }
         }
 
-        async function runPythonCode(code, pythonView) {
-            // Display a loading message
-            pythonView.innerHTML = "Initializing Pyodide and dependencies...";
+        let result = pyodide.runPython(code);
 
-            // If Pyodide is not loaded yet, start loading it
-            if (!pyodide) {
-                if (!pyodideLoadingPromise) {
-                    pyodideLoadingPromise = loadPyodideAndSetup();
+        return result;
+    } catch (error) {
+        return error.message;
+    }
+}
+
+
+
+
+function bundleWebContent(nodesInfo) {
+    let htmlContent = [];
+    let cssContent = [];
+    let jsContent = [];
+
+    for (let nodeInfo of nodesInfo) {
+        let re = /Text Content: (.*?)$/gs;
+        let contentMatch = re.exec(nodeInfo);
+
+        if (!contentMatch || contentMatch.length < 2) {
+            console.warn('No content found for node');
+            continue;
+        }
+
+        let content = contentMatch[1];
+        let codeBlocks = content.matchAll(/```(.*?)\n([\s\S]*?)```/gs);
+
+        for (let block of codeBlocks) {
+            let language = block[1].trim();
+            let code = block[2];
+
+            switch (language) {
+                case 'html':
+                case '':
+                    htmlContent.push(code);
+                    break;
+                case 'css':
+                    cssContent.push(code);
+                    break;
+                case 'javascript':
+                    jsContent.push(code);
+                    break;
+                default:
+                    console.warn(`Language ${language} not supported for bundling.`);
+            }
+        }
+    }
+
+    return {
+        html: htmlContent.join('\n'),
+        css: `<style>${cssContent.join('\n')}</style>`,
+        js: `<script>${jsContent.join('\n')}</script>`
+    };
+}
+
+function handleCodeButton(button, textarea, node) {
+    button.onclick = async function () {
+        if (button.innerHTML === 'Render Code') {
+            textarea.style.display = "none";
+            let re = /```(.*?)\n([\s\S]*?)```/gs;
+            let codeBlocks = textarea.value.matchAll(re);
+
+            let allPythonCode = '';
+            let allWebCode = [];
+
+            for (let block of codeBlocks) {
+                let language = block[1].trim();
+                let code = block[2];
+
+                if (language === 'python') {
+                    allPythonCode += '\n' + code;
+                } else if (language === 'html' || language === 'css' || language === 'javascript' || language === '') {
+                    allWebCode.push(`Text Content: \n\`\`\`${language}\n${code}\n\`\`\``);
                 }
-                await pyodideLoadingPromise;
             }
 
-            try {
-                // Clear the pythonView
-                pythonView.innerHTML = "";
-
-                // Run the code and get the result
-                let result = pyodide.runPython(code);
-
-                // Create a new div for the result
-                let resultDiv = document.createElement("div");
-
-                // Append the output to the new div
-                resultDiv.innerHTML = result || '';
-
-                // Append the new div to the pythonView
-                pythonView.appendChild(resultDiv);
-
-                // Return the resultDiv's innerHTML
-                return resultDiv.innerHTML;
-            } catch (error) {
-                // If an error occurred, return the error message
-                return error.message;
-            }
-        }
-
-        function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight = 80) {
-            const resizeObserver = new ResizeObserver((entries) => {
-                for (let entry of entries) {
-                    const {
-                        width,
-                        height
-                    } = entry.contentRect;
-                    iframe.style.width = Math.max(0, width - paddingWidth) + "px";
-                    iframe.style.height = Math.max(0, height - paddingHeight) + "px";
+            if (allPythonCode !== '') {
+                if (!textarea.pythonView) {
+                    textarea.pythonView = document.createElement("div");
+                    textarea.parentNode.insertBefore(textarea.pythonView, textarea.nextSibling);
                 }
-            });
+                textarea.pythonView.style.display = "block";
+                console.log('Running Python code...');
+                let result = await runPythonCode(allPythonCode, textarea.pythonView);
+                console.log('Python code executed, result:', result);
+            }
 
-            resizeObserver.observe(parentDiv);
-            return resizeObserver;
-        }
-        
-        function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-            let t = document.createElement("input");
-            t.setAttribute("type", "text");
-            t.setAttribute("value", "untitled");
-            t.setAttribute("style", "background:none; ");
-            t.classList.add("title-input");
+            if (allWebCode.length > 0) {
+                let allConnectedNodesInfo = getAllConnectedNodesData(node);
+                allConnectedNodesInfo.push(...allWebCode);
+                let bundledContent = bundleWebContent(allConnectedNodesInfo);
 
-            let n = document.createElement("textarea");
-            n.classList.add('custom-scrollbar');
-            n.onmousedown = cancel;
-            n.setAttribute("type", "text");
-            n.setAttribute("size", "11");
-            n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 218px;");
+                if (textarea.htmlView) {
+                    textarea.htmlView.remove();
+                }
 
-            let elements = [n];
-            if (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked) {
-                let checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
+                textarea.htmlView = document.createElement("iframe");
+                textarea.htmlView.style.border = "none";
+                textarea.htmlView.style.boxSizing = "border-box";
+                textarea.htmlView.style.width = "100%";
+                textarea.htmlView.style.height = "100%";
 
-                // Generate a unique ID for the checkbox
-                let uniqueCheckboxId = "customCheckbox_" + new Date().getTime();
-                checkbox.id = uniqueCheckboxId; // Set the unique ID
-
-                let label = document.createElement("label");
-                label.htmlFor = uniqueCheckboxId; // Bind label to the checkbox using the unique ID
-
-                checkbox.onchange = async function () {
-                    // This references the specific checkbox that was changed
-                    let associatedTextArea = this.parentNode.querySelector("textarea");
-
-                    if (this.checked) {
-                        associatedTextArea.style.display = "none";
-                        let re = /```(.*?)\n([\s\S]*?)```/gs;
-                        let codeBlocks = n.value.matchAll(re);
-
-                        for (let block of codeBlocks) {
-                            let language = block[1].trim();
-                            let code = block[2];
-
-                            if (language === 'python') {
-                                if (!n.pythonView) {
-                                    n.pythonView = document.createElement("div");
-                                    n.parentNode.insertBefore(n.pythonView, n.nextSibling);
-                                }
-                                n.pythonView.style.display = "block";
-                                console.log('Running Python code...');
-                                let result = await runPythonCode(code, n.pythonView);
-                                console.log('Python code executed, result:', result);
-                            } else if (language === 'html' || language === '') {
-                                // Remove the old iframe if it exists
-                                if (n.htmlView) {
-                                    n.htmlView.remove();
-                                }
-                                // Always create a new iframe
-                                n.htmlView = document.createElement("iframe");
-                                n.htmlView.style.border = "none";
-                                n.htmlView.style.boxSizing = "border-box";
-
-                                // Prevent event bubbling
-                                n.htmlView.onmousedown = function (event) {
-                                    event.stopPropagation();
-                                };
-
-                                // Insert the iframe into the DOM
-                                n.parentNode.insertBefore(n.htmlView, n.nextSibling);
-
-                                n.htmlView.srcdoc = code;
-
-                                let windowDiv = n.htmlView.parentNode;
-                                while (windowDiv && (!windowDiv.win || !windowDiv.classList.contains('window'))) {
-                                    windowDiv = windowDiv.parentNode;
-                                }
-                                if (windowDiv) {
-                                    observeParentResize(windowDiv, n.htmlView);
-                                }
-                            }
-                        }
-                    } else {
-                        n.style.display = "block";
-                        if (n.htmlView) {
-                            n.htmlView.style.display = "none";
-                            n.htmlView.srcdoc = "";
-                        }
-                    }
+                textarea.htmlView.onmousedown = function (event) {
+                    event.stopPropagation();
                 };
-                elements.push(checkbox, label);
+
+                textarea.parentNode.insertBefore(textarea.htmlView, textarea.nextSibling);
+
+                textarea.htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
+
+                let windowDiv = textarea.htmlView.parentNode;
+                while (windowDiv && (!windowDiv.win || !windowDiv.classList.contains('window'))) {
+                    windowDiv = windowDiv.parentNode;
+                }
+                if (windowDiv) {
+                    observeParentResize(windowDiv, textarea.htmlView);
+                }
             }
-            let node = addNodeAtNaturalScale(name, elements);
+
+            button.innerHTML = 'Code Text';
+            button.style.backgroundColor = '#717171';
+        } else {
+            textarea.style.display = "block";
+            if (textarea.htmlView) {
+                textarea.htmlView.style.display = "none";
+                textarea.htmlView.srcdoc = "";
+            }
+            if (textarea.pythonView) {
+                textarea.pythonView.style.display = "none";
+                textarea.pythonView.innerHTML = "";
+            }
+            button.innerHTML = 'Render Code';
+            button.style.backgroundColor = '';
+        }
+    };
+}
+
+function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight = 80) {
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            const {
+                width,
+                height
+            } = entry.contentRect;
+            iframe.style.width = Math.max(0, width - paddingWidth) + "px";
+            iframe.style.height = Math.max(0, height - paddingHeight) + "px";
+        }
+    });
+
+    resizeObserver.observe(parentDiv);
+    return resizeObserver;
+}
+        
+function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
+    let t = document.createElement("input");
+    t.setAttribute("type", "text");
+    t.setAttribute("value", "untitled");
+    t.setAttribute("style", "background:none; ");
+    t.classList.add("title-input");
+
+    let n = document.createElement("textarea");
+    n.classList.add('custom-scrollbar');
+    n.onmousedown = cancel;
+    n.setAttribute("type", "text");
+    n.setAttribute("size", "11");
+    n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4;");
+    n.style.display = "block";
+
+    let elements = [n];
+
+    let buttonCallback = null;
+
+    let button = document.createElement("button");
+    button.innerHTML = "Render Code";
+    button.classList.add("code-button");
+
+    // Initially hide the button
+    button.style.display = "none";
+
+    if (document.getElementById('code-checkbox')) {
+        // Add an event listener to the checkbox to show/hide the button based on its state
+        document.getElementById('code-checkbox').addEventListener('change', (event) => {
+            // If addCodeButton is set, always show the button and return
+            if (addCodeButton) {
+                button.style.display = "block";
+                return;
+            }
+
+            if (event.target.checked) {
+                button.style.display = "block";
+            } else {
+                button.style.display = "none";
+            }
+        });
+
+        // If the checkbox is initially checked, show the button
+        if (document.getElementById('code-checkbox').checked) {
+            button.style.display = "block";
+        }
+    }
+
+    if (addCodeButton) {
+        // If addCodeButton is set, always show the button
+        button.style.display = "block";
+    }
+
+    // Store the callback to set up the button onclick handler.
+    buttonCallback = (node) => handleCodeButton(button, n, node);
+    elements.push(button);
+
+    let node = addNodeAtNaturalScale(name, elements);
+
+    // Call the button callback after the node has been created.
+    if (buttonCallback) {
+        buttonCallback(node);
+    }
+
 
             let max_height = 300; // Set maximum height in pixels
 
@@ -1659,15 +1834,65 @@ function connectRandom(n) {
         });
 
 
-
+// Check if a string is valid JSON
+function isJSON(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
 
         //todo patches for zoom in
 
 
-        function dropHandler(ev) {
-            console.log(ev);
+function dropHandler(ev) {
+    ev.preventDefault();
 
-            ev.preventDefault();
+    const data = ev.dataTransfer.getData('text');
+
+    if (data && isJSON(data)) {
+        let [title, content] = JSON.parse(data);
+
+        // If this is one of the three specific types of divs, handle it here
+        if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
+            //console.log(`Dropped div "${title}": "${content}"`);
+
+            let addCheckbox = false;
+
+            if (title === 'Code Block') {
+                // Split the content into lines
+                let lines = content.split('\n');
+
+                // Remove the second line (index 1 in a 0-indexed array)
+                if (lines.length > 1) {
+                    lines.splice(1, 1);
+                }
+
+                // Add the triple backticks at the start of the first line and at the end of the content
+                // If the first line exists, add the backticks directly before it. If not, just start with backticks
+                content = (lines[0] ? "```" + lines[0] : "```") + "\n" + lines.slice(1).join('\n') + "\n```";
+
+                addCheckbox = true;
+            }
+
+
+
+            let node = createTextNode(title, '', undefined, undefined, undefined, undefined, addCheckbox);
+            htmlnodes_parent.appendChild(node.content);
+            registernode(node);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            
+            node.content.children[0].children[1].children[0].value = content;
+
+
+            // Stop the drop event from being handled further
+            return;
+        }
+    }
             let files = [];
             if (ev.dataTransfer.items) {
                 // Use DataTransferItemList interface to access the file(s)
@@ -1907,6 +2132,6 @@ function connectRandom(n) {
         addEventListener("paste", (event) => {
             if (event.target.tagName.toLowerCase() === "textarea") {
                 event.stopPropagation();
-                console.log("Paste disabled for textarea");
+                //console.log("Paste disabled for textarea");
             }
         }, true);

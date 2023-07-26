@@ -263,9 +263,6 @@ myCodeMirror.on("mousedown", function (cm, event) {
 identifyNodeTitles();
 highlightNodeTitles();
 
-//END OF CODEMIRROR
-
-
 function getNodeByTitle(title) {
     const lowerCaseTitle = title.toLowerCase();
     for (let n of nodes) {
@@ -276,6 +273,11 @@ function getNodeByTitle(title) {
     }
     return null;
 }
+
+//END OF CODEMIRROR
+
+
+
 
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
