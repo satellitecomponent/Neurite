@@ -579,12 +579,8 @@ class Node {
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
-
-        if (event.ctrlKey) {  // Check if the Control key is held down
-            let connectednodes = getAllConnectedNodesData(this)
-            console.log(connectednodes)
-        }
-
+        let connectednodes = getAllConnectedNodesData(this)
+        console.log(connectednodes)
         cancel(event);
     }
     onmousedown(event) {

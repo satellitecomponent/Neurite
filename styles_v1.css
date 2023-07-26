@@ -105,7 +105,7 @@
 .button-container {
     flex-grow: 0;
     flex-shrink: 0;
-    z-index: 1000;
+    z-index: 0;
     pointer-events: auto;
 }
 
@@ -1119,6 +1119,7 @@ input[type=range] {
     margin-bottom: -20px;
     box-sizing: border-box;
     cursor: grab;
+    user-select: none;
 }
 
 .code-block pre code {
@@ -1218,6 +1219,7 @@ input[type=range] {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease; /* smooth transition */
+    user-select: none;
 }
 
     .copy-btn:hover {

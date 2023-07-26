@@ -136,7 +136,7 @@ function trimToTokenCount(inputText, maxTokens) {
 
 
 
-async function sendLLMNodeMessage(node) {
+async function sendLLMNodeMessage(node, message = null) {
     if (node.aiResponding) {
         console.log('AI is currently responding. Please wait for the current response to complete before sending a new message.');
         return;
@@ -145,15 +145,13 @@ async function sendLLMNodeMessage(node) {
     const maxTokensSlider = document.getElementById('max-tokens-slider');
     let contextSize = 0;
 
-
-
-    // Store the last prompt
-    node.latestUserMessage = node.promptTextArea.value;
+    node.latestUserMessage = message ? message : node.promptTextArea.value;
+    console.log(`Received message: "${node.latestUserMessage}"`);
 
     let messages = [
         {
             role: "system",
-            content: "Your responses are displayed within an Ai node. Connected nodes are shared as individual system messages. Use triple backtick and labels for codeblocks"
+            content: "You (Ai) are responding in an Ai node. Nodes that connect to you are shared in the 'remember this' system message. Use triple backtick and labels for codeblocks"
         },
     ];
 
@@ -318,7 +316,7 @@ async function sendLLMNodeMessage(node) {
     let messageTrimmed = false;
 
     let infoString = allConnectedNodesData.map(info => info.replace("Text Content:", "")).join("\n\n"); // Remove 'Text Content:' tag from each info and concatenate
-    let infoWithIntro = "Remember the following:\n" + infoString;
+    let infoWithIntro = "Remember this:\n" + infoString;
 
     let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
     if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
@@ -363,12 +361,12 @@ async function sendLLMNodeMessage(node) {
 
     messages.push({
         role: "user",
-        content: node.promptTextArea.value
+        content: node.latestUserMessage
     });
 
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    node.aiResponseTextArea.value += `\n\nPrompt: ${node.promptTextArea.value}\n`;
+    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
     // Trigger the input event programmatically
     node.aiResponseTextArea.dispatchEvent(new Event('input'));
     // Clear the prompt textarea
@@ -443,6 +441,412 @@ function makeDivDraggable(div, customTitle, handle) {
         div.setAttribute('draggable', 'false');
     });
 }
+
+function encodeHTML(str) {
+    return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function decodeHTML(html) {
+    let txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+}
+
+class ResponseHandler {
+    constructor(node) {
+        this.node = node;
+        this.previousContent = "";
+        this.inCodeBlock = false;
+        this.codeBlockContent = '';
+        this.codeBlockStartIndex = -1;
+        this.currentLanguage = "javascript";
+        this.node.codeBlockCount = 0;
+        this.processingQueue = Promise.resolve();
+        this.previousContentLength = 0;
+        this.responseCount = 0;
+
+        this.node.aiResponseTextArea.addEventListener('input', () => {
+            this.processingQueue = this.processingQueue.then(() => this.handleInput());
+        });
+    }
+
+    async handleInput() {
+        try {
+            let content = this.node.aiResponseTextArea.value;
+            let newContent = content.substring(this.previousContentLength);
+
+            if (newContent.trim() === "") {
+                newContent = newContent.replace(/ /g, "&nbsp;");
+            }
+            let trimmedNewContent = newContent.trim();
+
+            if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
+                trimmedNewContent = trimmedNewContent.trimStart();
+            }
+
+            if (trimmedNewContent.startsWith(`${PROMPT_IDENTIFIER} `)) {
+                let promptContent = trimmedNewContent.substring(8).trim();
+                this.handleUserPrompt(promptContent);
+                newContent = '';
+            } else {
+                if (this.inCodeBlock) {
+                    this.codeBlockContent += newContent;
+                    let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                    if (endOfCodeBlockIndex !== -1) {
+                        let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                        this.renderCodeBlock(codeContent, true);
+
+                        this.codeBlockContent = '';
+                        this.codeBlockStartIndex = -1;
+                        this.inCodeBlock = false;
+
+                        newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
+                    } else {
+                        let endOfLanguageStringIndex = this.codeBlockContent.indexOf('\n');
+                        if (endOfLanguageStringIndex !== -1) {
+                            let languageString = this.codeBlockContent.substring(0, endOfLanguageStringIndex).trim();
+                            if (languageString.length > 0) {
+                                this.currentLanguage = languageString;
+                            }
+                        }
+                        this.renderCodeBlock(this.codeBlockContent);
+                        newContent = '';
+                    }
+                }
+
+                if (newContent.length > 0) {
+                    let startOfCodeBlockIndex = trimmedNewContent.indexOf('```');
+                    if (startOfCodeBlockIndex !== -1) {
+                        let markdown = newContent.substring(0, startOfCodeBlockIndex);
+                        this.handleMarkdown(markdown);
+
+                        this.inCodeBlock = true;
+                        this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
+                        this.codeBlockContent = trimmedNewContent.substring(startOfCodeBlockIndex + 3);
+                    } else if (!trimmedNewContent.startsWith('```') && !trimmedNewContent.endsWith('```')) {
+                        this.handleMarkdown(newContent);
+                    }
+                }
+            }
+
+            this.previousContent = content;
+            this.previousContentLength = this.previousContent.length;
+
+        } catch (error) {
+            console.error('Error while processing markdown:', error);
+        }
+    }
+
+    handleUserPrompt(promptContent) {
+        // Create a new div for the outer container
+        let outerDiv = document.createElement('div');
+        outerDiv.style.width = '100%';
+        outerDiv.style.textAlign = 'right';
+
+        // Create a new div for the user prompt
+        let promptDiv = document.createElement('div');
+        promptDiv.className = 'user-prompt';
+        promptDiv.id = `prompt-${this.responseCount}`;  // Assign a unique ID to each prompt
+        promptDiv.contentEditable = false; // Set contentEditable to false when the promptDiv is created
+
+        // Replace newline characters with '<br>' and set as HTML content
+        promptDiv.innerHTML = promptContent.replace(/\n/g, '<br>');
+
+        // Append the prompt div to the outer div
+        outerDiv.appendChild(promptDiv);
+
+        // Append the outer div to the response area
+        this.node.aiResponseDiv.appendChild(outerDiv);
+
+        // Make the prompt div draggable
+        makeDivDraggable(promptDiv, 'Prompt');
+
+        let isEditing = false; // Flag to check if user is editing the content
+
+        let handleKeyDown = function (event) {
+            if (event.key === 'Enter' && event.shiftKey) {
+                event.preventDefault();
+                this.removeResponsesUntil(promptDiv.id);
+
+                // Get the HTML content of the promptDiv
+                let message = promptDiv.innerHTML;
+
+                console.log(`Sending message: "${message}"`);
+                sendLLMNodeMessage(this.node, message);
+            }
+        }.bind(this);
+
+        // Add a double click listener to the prompt div
+        promptDiv.addEventListener('dblclick', function (event) {
+            // Prevent the default action of double click
+            event.preventDefault();
+
+            // Toggle isEditing
+            isEditing = !isEditing;
+
+            if (isEditing) {
+                // Set contentEditable to true when entering edit mode
+                promptDiv.contentEditable = true;
+
+                // Remove draggable attribute
+                promptDiv.removeAttribute('draggable');
+
+                // Set the cursor style to text
+                promptDiv.style.cursor = "text";
+
+                // Set the background and text color to match original, remove inherited text decoration
+                promptDiv.style.backgroundColor = "inherit";
+                promptDiv.style.color = "#bbb";
+                promptDiv.style.textDecoration = "none";
+                promptDiv.style.outline = "none";
+                promptDiv.style.border = "none";
+
+                // Focus the div
+                promptDiv.focus();
+
+                // Add the keydown event listener when the promptDiv enters edit mode
+                promptDiv.addEventListener('keydown', handleKeyDown);
+
+                // Set promptDiv non-draggable
+                promptDiv.ondragstart = function () { return false; };
+                // Set an onBlur event handler to handle when the div loses focus
+                promptDiv.onblur = function () {
+                    // Set contentEditable to false when div loses focus
+                    promptDiv.contentEditable = false;
+
+                    // Reset isEditing
+                    isEditing = false;
+
+                    // Reset styles to non-editing state
+                    promptDiv.style.backgroundColor = "#9578ab";
+                    promptDiv.style.color = "#222226";
+
+                    // Reset the cursor style to move
+                    promptDiv.style.cursor = "move";
+
+                    // Make the div draggable
+                    makeDivDraggable(promptDiv, 'Prompt');
+                    promptDiv.ondragstart = function () { return isEditing ? false : null; };
+
+                    // Remove the keydown event listener
+                    promptDiv.removeEventListener('keydown', handleKeyDown);
+                }.bind(this);
+            } else {
+                // Set contentEditable to false when leaving edit mode
+                promptDiv.contentEditable = false;
+
+
+                // Handle leaving edit mode
+                promptDiv.style.backgroundColor = "#9578ab";
+                promptDiv.style.color = "#222226";
+
+                // Set the cursor style to move
+                promptDiv.style.cursor = "move";
+
+                makeDivDraggable(promptDiv, 'Prompt');
+                promptDiv.ondragstart = function () { return isEditing ? false : null; };
+                promptDiv.removeEventListener('keydown', handleKeyDown);
+            }
+
+        }.bind(this));
+
+        this.responseCount++;  // Increment the response count after each prompt
+    }
+
+    handleMarkdown(markdown) {
+        if (markdown.trim().length > 0) {
+            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
+            let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
+
+            if (lastWrapperDiv && lastWrapperDiv.className === 'response-wrapper') {
+                let aiResponseDiv = lastWrapperDiv.getElementsByClassName('ai-response')[0];
+                aiResponseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
+            } else {
+                let handleDiv = document.createElement('div');
+                handleDiv.className = 'drag-handle';
+                handleDiv.innerHTML = `
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        `;
+
+                let responseDiv = document.createElement('div');
+                responseDiv.className = 'ai-response';
+                responseDiv.innerHTML = sanitizedMarkdown.replace(/\n/g, "<br>");
+
+                let wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'response-wrapper';
+                wrapperDiv.appendChild(handleDiv);
+                wrapperDiv.appendChild(responseDiv);
+
+                makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
+
+                this.node.aiResponseDiv.appendChild(wrapperDiv);
+
+                handleDiv.addEventListener('mouseover', function () {
+                    wrapperDiv.classList.add('hovered');
+                });
+
+                handleDiv.addEventListener('mouseout', function () {
+                    wrapperDiv.classList.remove('hovered');
+                });
+            }
+        }
+    }
+
+    renderCodeBlock(content, isFinal = false) {
+        let encodedContent = encodeHTML(content);
+        let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
+        let decodedContent = decodeHTML(cleanedContent);
+
+        let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
+
+        if (!isFinal && this.node.lastBlockId) {
+            let oldBlock = document.getElementById(this.node.lastBlockId);
+            if (oldBlock) {
+                oldBlock.parentNode.removeChild(oldBlock);
+            }
+        }
+
+        let existingWrapperDiv = document.getElementById(codeBlockDivId);
+
+        if (!existingWrapperDiv) {
+            existingWrapperDiv = document.createElement('div');
+            existingWrapperDiv.id = codeBlockDivId;
+            existingWrapperDiv.className = "code-block-wrapper";
+            this.node.aiResponseDiv.appendChild(existingWrapperDiv);
+
+            let languageLabelDiv = document.createElement('div');
+            languageLabelDiv.className = "language-label";
+            existingWrapperDiv.appendChild(languageLabelDiv);
+
+            makeDivDraggable(existingWrapperDiv, 'Code Block', languageLabelDiv); // Make sure it's in the right scope
+
+            let preDiv = document.createElement('pre');
+            preDiv.className = "code-block custom-scrollbar";
+            existingWrapperDiv.appendChild(preDiv);
+        }
+
+        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
+
+        let codeElement = document.createElement("code");
+        codeElement.className = `language-${this.currentLanguage}`;
+        codeElement.textContent = decodedContent;
+
+        Prism.highlightElement(codeElement);
+
+        preDiv.innerHTML = '';
+        preDiv.appendChild(codeElement);
+
+        let languageLabelDiv = existingWrapperDiv.getElementsByClassName('language-label')[0];
+        languageLabelDiv.innerText = this.currentLanguage;
+        languageLabelDiv.style.display = 'flex';
+        languageLabelDiv.style.justifyContent = 'space-between';
+        languageLabelDiv.style.alignItems = 'center';
+
+        let copyButton = document.createElement('button');
+        copyButton.innerText = 'Copy';
+        copyButton.className = 'copy-btn';
+        copyButton.onclick = function () {
+            let textarea = document.createElement('textarea');
+            textarea.value = decodedContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            let successfulCopy = document.execCommand('copy');
+            if (successfulCopy) {
+                copyButton.innerText = "Copied!";
+                setTimeout(() => {
+                    copyButton.innerText = "Copy";
+                }, 1200);
+            }
+
+            document.body.removeChild(textarea);
+        };
+
+        languageLabelDiv.appendChild(copyButton);
+        languageLabelDiv.addEventListener('mouseover', function () {
+            existingWrapperDiv.classList.add('hovered');
+        });
+
+        languageLabelDiv.addEventListener('mouseout', function () {
+            existingWrapperDiv.classList.remove('hovered');
+        });
+
+        if (isFinal) {
+            this.node.codeBlockCount++;
+            this.node.lastBlockId = null;
+        } else {
+            this.node.lastBlockId = codeBlockDivId;
+        }
+    }
+
+    removeLastResponse() {
+        // Handling the div as per the new version
+        let prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
+        let lastPrompt = prompts[prompts.length - 1];
+        let lastPromptId = lastPrompt ? lastPrompt.id : null;
+
+        if (lastPrompt) {
+            // Remove everything after the last 'user-prompt' div
+            while (this.node.aiResponseDiv.lastChild !== lastPrompt.parentNode) {
+                this.node.aiResponseDiv.removeChild(this.node.aiResponseDiv.lastChild);
+            }
+            // Remove the last 'user-prompt' div itself
+            this.node.aiResponseDiv.removeChild(lastPrompt.parentNode);
+        }
+
+        // Handling the textarea as per the old version
+        const lines = this.node.aiResponseTextArea.value.split("\n");
+
+        // Find the index of the last "Prompt:"
+        let lastPromptIndex = lines.length - 1;
+        while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(`${PROMPT_IDENTIFIER}`)) {
+            lastPromptIndex--;
+        }
+
+        // Remove all lines from the last "Prompt:" to the end
+        if (lastPromptIndex >= 0) {
+            lines.length = lastPromptIndex;
+            this.node.aiResponseTextArea.value = lines.join("\n");
+            this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength here
+        }
+
+        // Handle the case where a code block is being processed but is not yet complete
+        if (this.inCodeBlock) {
+            // Reset properties related to code block
+            this.inCodeBlock = false;
+            this.codeBlockContent = '';
+            this.codeBlockStartIndex = -1;
+            this.currentLanguage = "javascript";
+
+            // Remove the partial code block from the div if present
+            let codeBlockDiv = document.getElementById(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
+            if (codeBlockDiv) {
+                codeBlockDiv.parentNode.removeChild(codeBlockDiv);
+            }
+
+            // Remove the partial code block from the textarea
+            let codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
+            if (codeBlockStartLine >= 0) {
+                this.node.aiResponseTextArea.value = this.node.aiResponseTextArea.value.substring(0, codeBlockStartLine);
+                this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength again
+            }
+        }
+
+        this.handleInput(); // Invoke handleInput here
+        return lastPromptId;
+    }
+
+    removeResponsesUntil(id) {
+        let lastRemovedId;
+        do {
+            lastRemovedId = this.removeLastResponse();
+        } while (lastRemovedId !== id && lastRemovedId !== null);
+    }
+}
+
+
 
 function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     // Create the AI response textarea
@@ -617,6 +1021,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Pass this div to addNodeAtNaturalScale
     let node = addNodeAtNaturalScale(name, []);
+
+
     let windowDiv = node.content.querySelector(".window");
     windowDiv.style.resize = 'both';
 
@@ -673,324 +1079,13 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Call scrollToBottom whenever there's an input
     node.aiResponseTextArea.addEventListener('input', scrollToBottom);
 
-    let previousContent = "";
-    let inCodeBlock = false;
-    let codeBlockContent = '';
-    let codeBlockStartIndex = -1;
-    let currentLanguage = "javascript"; // default language
-    node.codeBlockCount = 0;  // Counter for generating unique IDs for code blocks
-    let processingQueue = Promise.resolve();
-
-    node.aiResponseTextArea.addEventListener('input', function () {
-        processingQueue = processingQueue.then(() => handleInput());
-    });
-
-    let previousContentLength = 0;
-
-    async function handleInput() {
-        try {
-            let content = node.aiResponseTextArea.value;
-            let newContent = content.substring(previousContentLength);
-
-            // If new content is only a space/spaces, replace with an HTML safe space(s)
-            if (newContent.trim() === "") {
-                newContent = newContent.replace(/ /g, "&nbsp;");
-            }
-            let trimmedNewContent = newContent.trim();
-
-            // Check for any newline characters before the 'Prompt: ' 
-            if (trimmedNewContent.startsWith('\n\nPrompt: ')) {
-                trimmedNewContent = trimmedNewContent.trimStart();
-            }
-
-            if (trimmedNewContent.startsWith('Prompt: ')) {
-                let promptContent = trimmedNewContent.substring(8).trim(); // Remove 'Prompt: ' from the beginning
-                handleUserPrompt(promptContent);
-                newContent = '';
-            } else {
-                // If we're in a code block, we need to check if the new response closes it
-                if (inCodeBlock) {
-                    codeBlockContent += newContent;  // Update the codeBlockContent with the new content
-                    let endOfCodeBlockIndex = codeBlockContent.indexOf('```');
-                    if (endOfCodeBlockIndex !== -1) {
-                        let codeContent = codeBlockContent.substring(0, endOfCodeBlockIndex);
-                        renderCodeBlock(codeContent, true);
-
-                        codeBlockContent = '';
-                        codeBlockStartIndex = -1;
-                        inCodeBlock = false;
-
-                        newContent = codeBlockContent.substring(endOfCodeBlockIndex + 3);  // The remaining part after the closing backticks
-                    } else {
-                        let endOfLanguageStringIndex = codeBlockContent.indexOf('\n');
-                        if (endOfLanguageStringIndex !== -1) {
-                            let languageString = codeBlockContent.substring(0, endOfLanguageStringIndex).trim();
-                            if (languageString.length > 0) {
-                                currentLanguage = languageString;
-                            }
-                        }
-                        renderCodeBlock(codeBlockContent);
-                        newContent = '';
-                    }
-                }
-
-                // If newContent is not empty, process it as markdown
-                if (newContent.length > 0) {
-                    // Check if the parsed response starts a code block
-                    let startOfCodeBlockIndex = trimmedNewContent.indexOf('```');
-                    if (startOfCodeBlockIndex !== -1) {
-                        // Process the markdown before the code block
-                        let markdown = newContent.substring(0, startOfCodeBlockIndex);
-                        handleMarkdown(markdown);
-
-                        // Start a new code block
-                        inCodeBlock = true;
-                        codeBlockStartIndex = previousContent.length + startOfCodeBlockIndex;
-                        codeBlockContent = trimmedNewContent.substring(startOfCodeBlockIndex + 3);
-                    } else if (!trimmedNewContent.startsWith('```') && !trimmedNewContent.endsWith('```')) {
-                        // If no new code block is opened and trimmedNewContent does not start or end with a code block,
-                        // process all new input as markdown
-                        handleMarkdown(newContent);
-                    }
-                }
-            }
-
-            previousContent = content;
-
-            // After all processing, set the new length of previous content
-            previousContentLength = previousContent.length;
-
-        } catch (error) {
-            console.error('Error while processing markdown:', error);
-        }
-    }
-
-    let responseCount = 0;  // Counter for generating unique IDs for responses
-
-    function handleUserPrompt(promptContent) {
-        // Create a new div for the outer container
-        let outerDiv = document.createElement('div');
-        outerDiv.style.width = '100%';
-        outerDiv.style.textAlign = 'right';
-
-        // Create a new div for the user prompt
-        let promptDiv = document.createElement('div');
-        promptDiv.className = 'user-prompt';
-        promptDiv.id = `prompt-${responseCount}`;  // Assign a unique ID to each prompt
-
-        // Replace newline characters with '<br>' and set as HTML content
-        promptDiv.innerHTML = promptContent.replace(/\n/g, '<br>');
-
-        // Append the prompt div to the outer div
-        outerDiv.appendChild(promptDiv);
-
-        // Append the outer div to the response area
-        node.aiResponseDiv.appendChild(outerDiv);
-
-        // Make the prompt div draggable
-        makeDivDraggable(promptDiv, 'Prompt');
-
-        responseCount++;  // Increment the response count after each prompt
-    }
-
-    //not actually using markdown right now...
-    function handleMarkdown(markdown) {
-        // Check if the markdown is not just whitespace
-        if (markdown.trim().length > 0) {
-
-            // Sanitize the content
-            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
 
 
-            // Get the last child of the AI response container
-            let lastWrapperDiv = node.aiResponseDiv.lastElementChild;
+    let responseHandler = new ResponseHandler(node);
 
-            // Check if the last child of the AI response container exists and if it has the class 'response-wrapper'
-            if (lastWrapperDiv && lastWrapperDiv.className === 'response-wrapper') {
-                // Get the 'ai-response' div inside the wrapper
-                let aiResponseDiv = lastWrapperDiv.getElementsByClassName('ai-response')[0];
-                // Append the sanitized markdown to the existing AI response
-                aiResponseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
-            } else {
-                // Create the handle div
-                let handleDiv = document.createElement('div');
-                handleDiv.className = 'drag-handle';
-                handleDiv.innerHTML = `
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            `;
+    node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
 
-                // Create the response div
-                let responseDiv = document.createElement('div');
-                responseDiv.className = 'ai-response';
-                responseDiv.innerHTML = sanitizedMarkdown.replace(/\n/g, "<br>");
-
-                // Create the wrapper div and add handle and response div to it
-                let wrapperDiv = document.createElement('div');
-                wrapperDiv.className = 'response-wrapper';
-                wrapperDiv.appendChild(handleDiv);
-                wrapperDiv.appendChild(responseDiv);
-
-                // Make the wrapper div draggable
-                makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
-
-                // Append the new wrapper div to the AI response container
-                node.aiResponseDiv.appendChild(wrapperDiv);
-
-                // On mouseover, add the 'hovered' class to the response wrapper
-                handleDiv.addEventListener('mouseover', function () {
-                    wrapperDiv.classList.add('hovered');
-                });
-
-                // On mouseout, remove the 'hovered' class from the response wrapper
-                handleDiv.addEventListener('mouseout', function () {
-                    wrapperDiv.classList.remove('hovered');
-                });
-            }
-        }
-    }
-
-    function encodeHTML(str) {
-        return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    function decodeHTML(html) {
-        let txt = document.createElement('textarea');
-        txt.innerHTML = html;
-        return txt.value;
-    }
-
-    function renderCodeBlock(content, isFinal = false) {
-        let encodedContent = encodeHTML(content);
-        let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
-        let decodedContent = decodeHTML(cleanedContent);
-
-        // Generate a unique ID for the new code block div based on the current node id and the block count
-        let codeBlockDivId = `code-block-wrapper-${node.id}-${node.codeBlockCount}`;
-
-        // If the block is not final, remove the old one
-        if (!isFinal && node.lastBlockId) {
-            let oldBlock = document.getElementById(node.lastBlockId);
-            if (oldBlock) {
-                oldBlock.parentNode.removeChild(oldBlock);
-            }
-        }
-
-        let existingWrapperDiv = document.getElementById(codeBlockDivId);
-
-        if (!existingWrapperDiv) {
-            existingWrapperDiv = document.createElement('div');
-            existingWrapperDiv.id = codeBlockDivId;
-            existingWrapperDiv.className = "code-block-wrapper";
-            node.aiResponseDiv.appendChild(existingWrapperDiv);
-
-            let languageLabelDiv = document.createElement('div');
-            languageLabelDiv.className = "language-label";
-            existingWrapperDiv.appendChild(languageLabelDiv);
-
-            makeDivDraggable(existingWrapperDiv, 'Code Block', languageLabelDiv); // Add this line
-
-            let preDiv = document.createElement('pre');
-            preDiv.className = "code-block custom-scrollbar";
-            existingWrapperDiv.appendChild(preDiv);
-        }
-
-        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
-
-        // Create a code element and set its text and class
-        let codeElement = document.createElement("code");
-        codeElement.className = `language-${currentLanguage}`;
-        codeElement.textContent = decodedContent;
-
-        // Call Prism to highlight the code element
-        Prism.highlightElement(codeElement);
-
-        // Replace the code block in the preformatted text div
-        preDiv.innerHTML = '';
-        preDiv.appendChild(codeElement);
-
-        let languageLabelDiv = existingWrapperDiv.getElementsByClassName('language-label')[0];
-        languageLabelDiv.innerText = currentLanguage;
-        languageLabelDiv.style.display = 'flex';
-        languageLabelDiv.style.justifyContent = 'space-between';
-        languageLabelDiv.style.alignItems = 'center';
-
-        let copyButton = document.createElement('button');
-        copyButton.innerText = 'Copy';
-        copyButton.className = 'copy-btn';
-        copyButton.onclick = function () {
-            let textarea = document.createElement('textarea');
-            textarea.value = decodedContent;
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            let successfulCopy = document.execCommand('copy');
-            if (successfulCopy) {
-                copyButton.innerText = "Copied!";
-                setTimeout(() => {
-                    copyButton.innerText = "Copy";
-                }, 1200);
-            }
-
-            document.body.removeChild(textarea);
-        };
-
-        languageLabelDiv.appendChild(copyButton);
-        // On mouseover, add the 'hovered' class to the code block wrapper
-        languageLabelDiv.addEventListener('mouseover', function () {
-            existingWrapperDiv.classList.add('hovered');
-        });
-
-        // On mouseout, remove the 'hovered' class from the code block wrapper
-        languageLabelDiv.addEventListener('mouseout', function () {
-            existingWrapperDiv.classList.remove('hovered');
-        });
-
-        if (isFinal) {
-            node.codeBlockCount++;
-            node.lastBlockId = null;
-        } else {
-            node.lastBlockId = codeBlockDivId;
-        }
-    }
-
-
-
-    node.aiResponseTextArea.removeEventListener('input', handleInput); // Remove the existing listener
-    // Update: 'handleInput' should be invoked manually after removing the last response
-    node.removeLastResponse = function () {
-        // Handling the div as per the new version
-        let prompts = node.aiResponseDiv.querySelectorAll('.user-prompt');
-        let lastPrompt = prompts[prompts.length - 1];
-
-        if (lastPrompt) {
-            // Remove everything after the last 'user-prompt' div
-            while (node.aiResponseDiv.lastChild !== lastPrompt.parentNode) {
-                node.aiResponseDiv.removeChild(node.aiResponseDiv.lastChild);
-            }
-            // Remove the last 'user-prompt' div itself
-            node.aiResponseDiv.removeChild(lastPrompt.parentNode);
-        }
-
-        // Handling the textarea as per the old version
-        const lines = this.aiResponseTextArea.value.split("\n");
-
-        // Find the index of the last "Prompt:"
-        let lastPromptIndex = lines.length - 1;
-        while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith("Prompt:")) {
-            lastPromptIndex--;
-        }
-
-        // Remove all lines from the last "Prompt:" to the end
-        if (lastPromptIndex >= 0) {
-            lines.length = lastPromptIndex;
-            this.aiResponseTextArea.value = lines.join("\n");
-            previousContentLength = this.aiResponseTextArea.value.length; // Update previousContentLength here
-        }
-
-        handleInput(); // Invoke handleInput here
-    };
+ 
 
     node.haltResponse = function () {
         if (this.aiResponding) {

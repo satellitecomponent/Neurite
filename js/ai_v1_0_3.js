@@ -1,15 +1,15 @@
 
-        function getTokenCount(messages) {
-            let tokenCount = 0;
-            messages.forEach(message => {
-                // match words, numbers, punctuations and whitespace
-                let tokens = message.content.match(/[\w]+|[^\s\w]/g);
-                if (tokens !== null) {
-                    tokenCount += tokens.length;
-                }
-            });
-            return tokenCount;
+function getTokenCount(messages) {
+    let tokenCount = 0;
+    messages.forEach(message => {
+        // match words, numbers, punctuations and whitespace
+        let tokens = message.content.match(/[\w]+|[^\s\w]/g);
+        if (tokens !== null) {
+            tokenCount += tokens.length;
         }
+    });
+    return tokenCount;
+}
 
 const maxContextSizeSlider = document.getElementById("max-context-size-slider");
 const maxContextSizeDisplay = document.getElementById("max-context-size-display");
@@ -29,7 +29,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
     let tokenCount = 0;
 
     for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].startsWith("Prompt:")) {
+        if (lines[i].startsWith(`${PROMPT_IDENTIFIER}`)) {
             promptCount++;
         }
         if (promptCount > count) {
@@ -49,10 +49,10 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
     return lastPromptsAndResponses;
 }
 
-        let aiResponding = false;
-        let latestUserMessage = null;
-        let controller = new AbortController();
-        let shouldContinue = true;
+let aiResponding = false;
+let latestUserMessage = null;
+let controller = new AbortController();
+let shouldContinue = true;
 
 function removeLastResponse() {
     const noteInput = document.getElementById("note-input");
@@ -60,7 +60,7 @@ function removeLastResponse() {
 
     // Find the index of the last "Prompt:"
     let lastPromptIndex = lines.length - 1;
-    while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith("Prompt:")) {
+    while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(`${PROMPT_IDENTIFIER}`)) {
         lastPromptIndex--;
     }
 
@@ -74,52 +74,53 @@ function removeLastResponse() {
     }
 }
 
-        function haltResponse() {
-            if (aiResponding) {
-                // AI is responding, so we want to stop it
-                controller.abort();
-                aiResponding = false;
-                shouldContinue = false;
-                document.getElementById("regen-button").textContent = "\u21BA";
-                document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
-            }
-        }
+function haltResponse() {
+    if (aiResponding) {
+        // AI is responding, so we want to stop it
+        controller.abort();
+        aiResponding = false;
+        shouldContinue = false;
+        document.getElementById("regen-button").textContent = "\u21BA";
+        document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
+    }
+}
 
-        function regenerateResponse() {
-            if (!aiResponding) {
-                // AI is not responding, so we want to regenerate
-                removeLastResponse(); // Remove the last AI response
-                document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
-                document.getElementById("regen-button").textContent = "\u21BA";
+function regenerateResponse() {
+    if (!aiResponding) {
+        // AI is not responding, so we want to regenerate
+        removeLastResponse(); // Remove the last AI response
+        document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
+        document.getElementById("regen-button").textContent = "\u21BA";
 
-            }
-        }
+    }
+}
 
-        document.getElementById("regen-button").addEventListener("click", function () {
-            if (aiResponding) {
-                haltResponse();
-            } else {
-                regenerateResponse();
-            }
-        });
+document.getElementById("regen-button").addEventListener("click", function () {
+    if (aiResponding) {
+        haltResponse();
+    } else {
+        regenerateResponse();
+    }
+});
 
-        function checkOtherModel(selectElement) {
-            var modelInput = document.getElementById('model-input');
-            if (selectElement.value === 'other') {
-                // If 'Other...' is selected, show the text input field
-                modelInput.style.display = 'inline';
-            } else {
-                // Otherwise, hide the text input field and clear its value
-                modelInput.style.display = 'none';
-                modelInput.value = '';
-            }
-        }
+function checkOtherModel(selectElement) {
+    var modelInput = document.getElementById('model-input');
+    if (selectElement.value === 'other') {
+        // If 'Other...' is selected, show the text input field
+        modelInput.style.display = 'inline';
+    } else {
+        // Otherwise, hide the text input field and clear its value
+        modelInput.style.display = 'none';
+        modelInput.value = '';
+    }
+}
 
-        document.getElementById('max-tokens-slider').addEventListener('input', function (e) {
-            document.getElementById('max-tokens-display').innerText = e.target.value;
-        });
+document.getElementById('max-tokens-slider').addEventListener('input', function (e) {
+    document.getElementById('max-tokens-display').innerText = e.target.value;
+});
 
-
+let failCounter = 0;
+const MAX_FAILS = 2;
 
 async function callChatGPTApi(messages, stream = false) {
     // Reset shouldContinue
@@ -141,66 +142,81 @@ async function callChatGPTApi(messages, stream = false) {
     //const localLLMCheckbox = document.getElementById('localLLM');
 
     //if (localLLMCheckbox.checked) {
-        // Use local LLM
-        //try {
-            //const aiResponse = await callWebLLMGeneric(messages);
-            //return aiResponse;
-        //} catch (error) {
-            //console.error("Error calling local LLM:", error);
-            //document.getElementById("aiErrorIcon").style.display = 'block';
-            //return "An error occurred while processing your request.";
-        //} finally {
-            //aiResponding = false;
-            //document.getElementById("regen-button").textContent = "\u21BA";
+    // Use local LLM
+    //try {
+    //const aiResponse = await callWebLLMGeneric(messages);
+    //return aiResponse;
+    //} catch (error) {
+    //console.error("Error calling local LLM:", error);
+    //document.getElementById("aiErrorIcon").style.display = 'block';
+    //return "An error occurred while processing your request.";
+    //} finally {
+    //aiResponding = false;
+    //document.getElementById("regen-button").textContent = "\u21BA";
 
-            // Hide loading icon
-            //document.getElementById("aiLoadingIcon").style.display = 'none';
-        //}
+    // Hide loading icon
+    //document.getElementById("aiLoadingIcon").style.display = 'none';
+    //}
     //}
 
-            const API_KEY = document.getElementById("api-key-input").value;
-            if (!API_KEY) {
-                alert("Please enter your API key");
-                return;
-            }
+    const API_KEY = document.getElementById("api-key-input").value;
+    if (!API_KEY) {
+        alert("Please enter your API key");
+        return;
+    }
 
-            const API_URL = "https://api.openai.com/v1/chat/completions";
+    const API_URL = "https://api.openai.com/v1/chat/completions";
 
-            const headers = new Headers();
-            headers.append("Content-Type", "application/json");
-            headers.append("Authorization", `Bearer ${API_KEY}`);
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", `Bearer ${API_KEY}`);
 
-            // Create a new AbortController each time the function is called
-            controller = new AbortController();
-            let signal = controller.signal;
+    // Create a new AbortController each time the function is called
+    controller = new AbortController();
+    let signal = controller.signal;
 
-            // Add the signal to your fetch request options
-            const temperature = document.getElementById('model-temperature').value;
-            const modelSelect = document.getElementById('model-select');
-            const modelInput = document.getElementById('model-input');
-            const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
-            let max_tokens = document.getElementById('max-tokens-slider').value;
+    // Add Controller signal for halt response
+    const temperature = document.getElementById('model-temperature').value;
+    const modelSelect = document.getElementById('model-select');
+    const modelInput = document.getElementById('model-input');
+    const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
+    let max_tokens = document.getElementById('max-tokens-slider').value;
 
-            const requestOptions = {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    model: model,
-                    messages: messages,
-                    max_tokens: parseInt(max_tokens),
-                    temperature: parseFloat(temperature),
-                    stream: stream,
-                }),
-                signal: signal,
-            };
+    const requestOptions = {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+            model: model,
+            messages: messages,
+            max_tokens: parseInt(max_tokens),
+            temperature: parseFloat(temperature),
+            stream: stream,
+        }),
+        signal: signal,
+    };
 
     try {
         const response = await fetch(API_URL, requestOptions);
+
         if (!response.ok) {
             const errorData = await response.json();
             console.error("Error calling ChatGPT API:", errorData);
             document.getElementById("aiErrorIcon").style.display = 'block';
-            return "An error occurred while processing your request.";
+
+            // Increment fail counter and check if it's time to stop trying
+            failCounter++;
+            if (failCounter >= MAX_FAILS) {
+                console.error("Max attempts reached. Stopping further API calls.");
+                shouldContinue = false; // Set this to false to stop the process
+                // Abort the current fetch operation if it's not done yet
+                if (!response.bodyUsed) {
+                    controller.abort();
+                }
+                return "An error occurred while processing your request.";
+            }
+        } else {
+            // Reset failCounter to 0 if the call was successful
+            failCounter = 0;
         }
 
         const noteInput = document.getElementById("note-input");
@@ -257,14 +273,21 @@ async function callChatGPTApi(messages, stream = false) {
     } catch (error) {
         console.error("Error calling ChatGPT API:", error);
         document.getElementById("aiErrorIcon").style.display = 'block';
-        return "An error occurred while processing your request.";
-     } finally {
+
+        // Increment fail counter and check if it's time to stop trying
+        failCounter++;
+        if (failCounter >= MAX_FAILS) {
+            console.error("Max attempts reached. Stopping further API calls.");
+            shouldContinue = false; // Set this to false to stop the process
+            return "An error occurred while processing your request.";
+        }
+    } finally {
         aiResponding = false;
         document.getElementById("regen-button").textContent = "\u21BA";
-        
+
         // Hide loading icon
         document.getElementById("aiLoadingIcon").style.display = 'none';
-     }
+    }
 }
 
 
@@ -352,281 +375,281 @@ function cosineSimilarity(vecA, vecB) {
     return dotProduct / (vecAMagnitude * vecBMagnitude);
 }
 
-        class LRUCache {
-            constructor(maxSize) {
-                this.maxSize = maxSize;
-                this.cache = new Map();
-            }
+class LRUCache {
+    constructor(maxSize) {
+        this.maxSize = maxSize;
+        this.cache = new Map();
+    }
 
-            get(key) {
-                const value = this.cache.get(key);
-                if (value !== undefined) {
-                    this.cache.delete(key);
-                    this.cache.set(key, value);
-                }
-                return value;
-            }
-
-            set(key, value) {
-                if (this.cache.size >= this.maxSize) {
-                    const oldestKey = this.cache.keys().next().value;
-                    this.cache.delete(oldestKey);
-                }
-                this.cache.set(key, value);
-            }
+    get(key) {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            this.cache.delete(key);
+            this.cache.set(key, value);
         }
+        return value;
+    }
 
-        const MAX_CACHE_SIZE = 100;
-        const nodeCache = new LRUCache(MAX_CACHE_SIZE);
-
-        function getNodeText() {
-            const nodes = [];
-            for (const child of htmlnodes_parent.children) {
-                if (child.firstChild && child.firstChild.win) {
-                    const node = child.firstChild.win;
-                    const titleInput = node.content.querySelector("input.title-input");
-                    const contentWrapper = node.content.querySelector("div.content");
-                    const contentElement = contentWrapper ? contentWrapper.querySelector("textarea") : null;
-                    const contentText = contentElement ? contentElement.value : '';
-
-                    nodes.push({
-                        ...node,
-                        searchStrings: [
-                            titleInput ? titleInput.value : '',
-                            contentText ? contentText : ''
-                        ]
-                    });
-                }
-            }
-            return nodes;
+    set(key, value) {
+        if (this.cache.size >= this.maxSize) {
+            const oldestKey = this.cache.keys().next().value;
+            this.cache.delete(oldestKey);
         }
+        this.cache.set(key, value);
+    }
+}
 
-        async function embeddedSearch(searchTerm) {
-            const maxNodes = document.getElementById('node-count-slider').value;
-            let keywords = searchTerm.toLowerCase().split(/,\s*/);
+const MAX_CACHE_SIZE = 100;
+const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
-            const nodes = getNodeText();
+function getNodeText() {
+    const nodes = [];
+    for (const child of htmlnodes_parent.children) {
+        if (child.firstChild && child.firstChild.win) {
+            const node = child.firstChild.win;
+            const titleInput = node.content.querySelector("input.title-input");
+            const contentWrapper = node.content.querySelector("div.content");
+            const contentElement = contentWrapper ? contentWrapper.querySelector("textarea") : null;
+            const contentText = contentElement ? contentElement.value : '';
 
-            if (nodes.length === 0) {
-                return [];
-            }
-
-            let matched = [];
-
-            const fetchNodeEmbedding = async (node) => {
-                //console.log('Node:', node);  // DEBUG
-                //console.log('Node content:', node.content);  // DEBUG
-
-                const titleElement = node.content.querySelector(".title-input");
-                const contentElement = node.content.querySelector("textarea");
-                const titleText = titleElement ? titleElement.value : '';
-                const contentText = contentElement ? contentElement.value : '';
-
-                //console.log('Extracted title text:', titleText);  // DEBUG
-               // console.log('Extracted content text:', contentText);  // DEBUG
-
-                const fullText = titleText + ' ' + contentText;
-
-                const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-                const compoundKey = `${node.uuid}-${useLocalEmbeddings ? 'local' : 'openai'}`;
-
-                const cachedEmbedding = nodeCache.get(compoundKey);
-                if (cachedEmbedding) {
-                    return cachedEmbedding;
-                } else {
-                    const embedding = await fetchEmbeddings(fullText);
-                    nodeCache.set(compoundKey, embedding);
-                    return embedding;
-                }
-            };
-
-            const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
-            const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
-            const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
-
-         //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
-
-            for (let i = 0; i < nodes.length; i++) {
-                const n = nodes[i];
-
-                const titleMatchScore = n.searchStrings[0].toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
-                const contentMatchScore = keywords.filter(keyword => {
-                    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-                    return n.searchStrings[1].match(regex);
-                }).length;
-                const weightedTitleScore = titleMatchScore * 10;
-                const weightedContentScore = contentMatchScore;
-
-                const nodeEmbedding = nodeEmbeddings[i];
-
-                const dotProduct = keywordEmbedding.reduce((sum, value, index) => sum + (value * nodeEmbedding[index]), 0);
-                const keywordMagnitude = Math.sqrt(keywordEmbedding.reduce((sum, value) => sum + (value * value), 0));
-                const nodeMagnitude = Math.sqrt(nodeEmbedding.reduce((sum, value) => sum + (value * value), 0));
-
-             //   console.log('Dot Product:', dotProduct);  // DEBUG
-            //   console.log('Keyword Magnitude:', keywordMagnitude);  // DEBUG
-             //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
-
-                const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-                //console.log('Cosine Similarity:', cosineSimilarity);
-
-                const similarityThreshold = -1;
-                const keywordMatchPercentage = 0.5;
-
-                if (weightedTitleScore + weightedContentScore > 0 || cosineSimilarity > similarityThreshold) {
-                    matched.push({
-                        node: n,
-                        title: n.title,
-                        content: n.content.innerText,
-                        weightedTitleScore: weightedTitleScore,
-                        weightedContentScore: weightedContentScore,
-                        similarity: cosineSimilarity,
-                    });
-                }
-            }
-
-            matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
-            return matched.slice(0, maxNodes).map(m => m.node);
-        }
-
-
-
-        const nodeTitlesAndContent = [];
-
-        for (let key in nodes) {
-            let nodeTitle = nodes[key].title;
-            let nodeContent = nodes[key].plainText;
-            nodeTitlesAndContent.push({
-                title: nodeTitle,
-                content: nodeContent
+            nodes.push({
+                ...node,
+                searchStrings: [
+                    titleInput ? titleInput.value : '',
+                    contentText ? contentText : ''
+                ]
             });
         }
+    }
+    return nodes;
+}
 
-        function clearSearchHighlights(nodesArray) {
-            for (const node of nodesArray) {
-                node.content.classList.remove("search_matched");
-                node.content.classList.remove("search_nomatch");
-            }
+async function embeddedSearch(searchTerm) {
+    const maxNodes = document.getElementById('node-count-slider').value;
+    let keywords = searchTerm.toLowerCase().split(/,\s*/);
+
+    const nodes = getNodeText();
+
+    if (nodes.length === 0) {
+        return [];
+    }
+
+    let matched = [];
+
+    const fetchNodeEmbedding = async (node) => {
+        //console.log('Node:', node);  // DEBUG
+        //console.log('Node content:', node.content);  // DEBUG
+
+        const titleElement = node.content.querySelector(".title-input");
+        const contentElement = node.content.querySelector("textarea");
+        const titleText = titleElement ? titleElement.value : '';
+        const contentText = contentElement ? contentElement.value : '';
+
+        //console.log('Extracted title text:', titleText);  // DEBUG
+        // console.log('Extracted content text:', contentText);  // DEBUG
+
+        const fullText = titleText + ' ' + contentText;
+
+        const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+        const compoundKey = `${node.uuid}-${useLocalEmbeddings ? 'local' : 'openai'}`;
+
+        const cachedEmbedding = nodeCache.get(compoundKey);
+        if (cachedEmbedding) {
+            return cachedEmbedding;
+        } else {
+            const embedding = await fetchEmbeddings(fullText);
+            nodeCache.set(compoundKey, embedding);
+            return embedding;
         }
+    };
+
+    const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
+    const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
+    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
+
+    //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
+
+    for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+
+        const titleMatchScore = n.searchStrings[0].toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
+        const contentMatchScore = keywords.filter(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            return n.searchStrings[1].match(regex);
+        }).length;
+        const weightedTitleScore = titleMatchScore * 10;
+        const weightedContentScore = contentMatchScore;
+
+        const nodeEmbedding = nodeEmbeddings[i];
+
+        const dotProduct = keywordEmbedding.reduce((sum, value, index) => sum + (value * nodeEmbedding[index]), 0);
+        const keywordMagnitude = Math.sqrt(keywordEmbedding.reduce((sum, value) => sum + (value * value), 0));
+        const nodeMagnitude = Math.sqrt(nodeEmbedding.reduce((sum, value) => sum + (value * value), 0));
+
+        //   console.log('Dot Product:', dotProduct);  // DEBUG
+        //   console.log('Keyword Magnitude:', keywordMagnitude);  // DEBUG
+        //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
+
+        const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
+        //console.log('Cosine Similarity:', cosineSimilarity);
+
+        const similarityThreshold = -1;
+        const keywordMatchPercentage = 0.5;
+
+        if (weightedTitleScore + weightedContentScore > 0 || cosineSimilarity > similarityThreshold) {
+            matched.push({
+                node: n,
+                title: n.title,
+                content: n.content.innerText,
+                weightedTitleScore: weightedTitleScore,
+                weightedContentScore: weightedContentScore,
+                similarity: cosineSimilarity,
+            });
+        }
+    }
+
+    matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
+    return matched.slice(0, maxNodes).map(m => m.node);
+}
 
 
 
-        async function generateKeywords(message, count) {
-            // Get last prompts and responses
-            const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
+const nodeTitlesAndContent = [];
 
-            // Prepare the messages array
-            const messages = [
-                {
-                    role: "system",
-                    content: `Recent conversation:${ lastPromptsAndResponses }`,
-                },
-                {
-                    role: "system",
-                    content: `You provide key search terms for other LLMS`,
-                },
-                {
-                    role: "user",
-                    content: `Without any preface or final explanation, Generate three single-word, comma-separated keywords for the latest user message: ${message}.
+for (let key in nodes) {
+    let nodeTitle = nodes[key].title;
+    let nodeContent = nodes[key].plainText;
+    nodeTitlesAndContent.push({
+        title: nodeTitle,
+        content: nodeContent
+    });
+}
+
+function clearSearchHighlights(nodesArray) {
+    for (const node of nodesArray) {
+        node.content.classList.remove("search_matched");
+        node.content.classList.remove("search_nomatch");
+    }
+}
+
+
+
+async function generateKeywords(message, count) {
+    // Get last prompts and responses
+    const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
+
+    // Prepare the messages array
+    const messages = [
+        {
+            role: "system",
+            content: `Recent conversation:${lastPromptsAndResponses}`,
+        },
+        {
+            role: "system",
+            content: `You provide key search terms for other LLMS`,
+        },
+        {
+            role: "user",
+            content: `Without any preface or final explanation, Generate three single-word, comma-separated keywords for the latest user message: ${message}.
 Keywords may result from the user query and/or the recent conversation. Order by relevance, starting with a word from the message.`,
-                },
-            ];
+        },
+    ];
 
-            // Call the API
-            const keywords = await callChatGPTApi(messages);
+    // Call the API
+    const keywords = await callChatGPTApi(messages);
 
-            // Return the keywords
-            return keywords.split(',').map(k => k.trim());
+    // Return the keywords
+    return keywords.split(',').map(k => k.trim());
+}
+
+
+function sampleSummaries(summaries, top_n_links) {
+    const sampledSummaries = [];
+    for (let i = 0; i < top_n_links; i++) {
+        if (summaries.length > 0) {
+            const randomIndex = Math.floor(Math.random() * summaries.length);
+            const randomSummary = summaries.splice(randomIndex, 1)[0];
+            sampledSummaries.push(randomSummary);
         }
+    }
+    return sampledSummaries;
+}
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
 
-        function sampleSummaries(summaries, top_n_links) {
-            const sampledSummaries = [];
-            for (let i = 0; i < top_n_links; i++) {
-                if (summaries.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * summaries.length);
-                    const randomSummary = summaries.splice(randomIndex, 1)[0];
-                    sampledSummaries.push(randomSummary);
-                }
-            }
-            return sampledSummaries;
-        }
+function isNoveltyEnabled() {
+    const checkbox = document.getElementById("novelty-checkbox");
+    return checkbox.checked;
+}
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
+function isWikipediaEnabled() {
+    const checkbox = document.getElementById("wiki-checkbox");
+    return checkbox.checked;
+}
 
-        function isNoveltyEnabled() {
-            const checkbox = document.getElementById("novelty-checkbox");
-            return checkbox.checked;
-        }
+async function getWikipediaSummaries(keywords, top_n_links = 3) {
+    const allSummariesPromises = keywords.map(async (keyword) => {
+        try {
+            const response = await fetch(
+                `http://localhost:5000/wikipedia_summaries?keyword=${keyword}&top_n_links=${top_n_links}`
+            );
 
-        function isWikipediaEnabled() {
-            const checkbox = document.getElementById("wiki-checkbox");
-            return checkbox.checked;
-        }
-
-        async function getWikipediaSummaries(keywords, top_n_links = 3) {
-            const allSummariesPromises = keywords.map(async (keyword) => {
-                try {
-                    const response = await fetch(
-                        `http://localhost:5000/wikipedia_summaries?keyword=${keyword}&top_n_links=${top_n_links}`
-                    );
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    const keywordSummaries = await calculateRelevanceScores(data, await fetchEmbeddings(keyword));
-                    return keywordSummaries;
-                } catch (error) {
-                    console.error('Error fetching Wikipedia summaries:', error);
-                    alert('Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.');
-                    return [];
-                }
-            });
-
-            const allSummaries = await Promise.all(allSummariesPromises);
-            const summaries = [].concat(...allSummaries); // Flatten the array of summaries
-
-            // Sort the summaries by relevance score in descending order
-            summaries.sort((a, b) => b.relevanceScore - a.relevanceScore);
-
-            const combinedSummaries = [];
-
-            // Include the top matched summary
-            combinedSummaries.push(summaries[0]);
-
-            // Check if the novelty checkbox is checked
-            if (isNoveltyEnabled()) {
-                // If checked, randomly pick two summaries from the remaining summaries
-                const remainingSummaries = summaries.slice(1);
-                shuffleArray(remainingSummaries);
-                combinedSummaries.push(...sampleSummaries(remainingSummaries, 2));
-            } else {
-                // If not checked, push the top n summaries
-                combinedSummaries.push(...summaries.slice(1, top_n_links));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            return combinedSummaries;
+            const data = await response.json();
+            const keywordSummaries = await calculateRelevanceScores(data, await fetchEmbeddings(keyword));
+            return keywordSummaries;
+        } catch (error) {
+            console.error('Error fetching Wikipedia summaries:', error);
+            alert('Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.');
+            return [];
         }
+    });
+
+    const allSummaries = await Promise.all(allSummariesPromises);
+    const summaries = [].concat(...allSummaries); // Flatten the array of summaries
+
+    // Sort the summaries by relevance score in descending order
+    summaries.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    const combinedSummaries = [];
+
+    // Include the top matched summary
+    combinedSummaries.push(summaries[0]);
+
+    // Check if the novelty checkbox is checked
+    if (isNoveltyEnabled()) {
+        // If checked, randomly pick two summaries from the remaining summaries
+        const remainingSummaries = summaries.slice(1);
+        shuffleArray(remainingSummaries);
+        combinedSummaries.push(...sampleSummaries(remainingSummaries, 2));
+    } else {
+        // If not checked, push the top n summaries
+        combinedSummaries.push(...summaries.slice(1, top_n_links));
+    }
+
+    return combinedSummaries;
+}
 
 
-        async function calculateRelevanceScores(summaries, searchTermEmbedding) {
-            // Use the existing searchTermEmbedding for cosine similarity calculations
-            const titleEmbeddings = await Promise.all(summaries.map(summary => fetchEmbeddings(summary.title)));
+async function calculateRelevanceScores(summaries, searchTermEmbedding) {
+    // Use the existing searchTermEmbedding for cosine similarity calculations
+    const titleEmbeddings = await Promise.all(summaries.map(summary => fetchEmbeddings(summary.title)));
 
-            for (let i = 0; i < summaries.length; i++) {
-                const similarity = cosineSimilarity(searchTermEmbedding, titleEmbeddings[i]);
-                summaries[i].relevanceScore = similarity;
-            }
+    for (let i = 0; i < summaries.length; i++) {
+        const similarity = cosineSimilarity(searchTermEmbedding, titleEmbeddings[i]);
+        summaries[i].relevanceScore = similarity;
+    }
 
-            return summaries;
-        }
+    return summaries;
+}
 
 const wolframmessage = `Objective:
 Generate a precise Wolfram Alpha query in response to the user's message.
@@ -750,20 +773,21 @@ const aiNodesMessage = () => ({
 const zettelkastenPrompt = () => `${tagValues.nodeTag} System message to AI: 
 - Responses are visualized in a fractal mind-map called Neurite.
 - Use node reference tag format in all responses.
-
+Current node title tag = ${tagValues.nodeTag}
+Current reference linking tag = ${tagValues.refTag}
 Format:
-    ${tagValues.nodeTag} Example Title
+    ${tagValues.nodeTag} Relevant Title after title tag
         - Ensure Unique/Specific Node Title
         - Write plain text.
         - Provide a concise explanation of a key idea.
         - Break response into multiple connected nodes.
 
-    ${tagValues.refTag} (Node Titles to Connect)
+    ${tagValues.refTag} (Repeat Exact Node Titles to Connect)
         - Connect the response to related nodes using reference tags.`;
 
 
 const spatialAwarenessExample = () =>
-`${tagValues.nodeTag} Central Node
+    `${tagValues.nodeTag} Central Node
 - Node from which other nodes branch out.
 ${tagValues.refTag} A, B
 
@@ -783,21 +807,21 @@ ${tagValues.nodeTag} D
 - End point from A.
 ${tagValues.refTag} A`;
 
-        let summarizedZettelkastenPrompt = "";
+let summarizedZettelkastenPrompt = "";
 
 async function summarizeZettelkastenPrompt() {
     const summarizedPromptMessages = [{
         role: "system",
         content: `zettelkastenPrompt ${zettelkastenPrompt()}`,
-        },
-        {
-            role: "system",
-            content: `spatialAwarenessExample ${spatialAwarenessExample()}`,
-        },
-        {
-            role: "user",
-            content: `Directly generate a concise guide (<150 words) in Zettelkasten format, demonstrating the principles of fractal mind-map, tagging, and spatial awareness. Ensure your entire response is within the format. Avoid prefacing or explaining the response.`
-        },
+    },
+    {
+        role: "system",
+        content: `spatialAwarenessExample ${spatialAwarenessExample()}`,
+    },
+    {
+        role: "user",
+        content: `Directly generate a concise guide (<150 words) in Zettelkasten format, demonstrating the principles of fractal mind-map, tagging, and spatial awareness. Ensure your entire response is within the format. Avoid prefacing or explaining the response.`
+    },
     ];
 
     let summarizedPrompt = await callChatGPTApi(summarizedPromptMessages);
@@ -823,34 +847,34 @@ async function summarizeZettelkastenPrompt() {
     return summarizedPrompt;
 }
 
-        let isZettelkastenPromptSent = false;
+let isZettelkastenPromptSent = false;
 
-        let MAX_CHUNK_SIZE = 400;
+let MAX_CHUNK_SIZE = 400;
 
-        const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
-        const maxChunkSizeValue = document.getElementById('maxChunkSizeValue');
+const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
+const maxChunkSizeValue = document.getElementById('maxChunkSizeValue');
 
-        // Display the initial slider value
-        maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
+// Display the initial slider value
+maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
 
-        // Update the current slider value (each time you drag the slider handle)
-        maxChunkSizeSlider.oninput = function () {
-            MAX_CHUNK_SIZE = this.value;
-            maxChunkSizeValue.textContent = this.value;
-        }
+// Update the current slider value (each time you drag the slider handle)
+maxChunkSizeSlider.oninput = function () {
+    MAX_CHUNK_SIZE = this.value;
+    maxChunkSizeValue.textContent = this.value;
+}
 
-        let topN = 5;
-        const topNSlider = document.getElementById('topNSlider');
-        const topNValue = document.getElementById('topNValue');
+let topN = 5;
+const topNSlider = document.getElementById('topNSlider');
+const topNValue = document.getElementById('topNValue');
 
-        topNSlider.addEventListener('input', function () {
-            topN = this.value;
-            topNValue.textContent = this.value;
-        });
+topNSlider.addEventListener('input', function () {
+    topN = this.value;
+    topNValue.textContent = this.value;
+});
 
 
-        let isFirstMessage = true; // Initial value set to true
-        let originalUserMessage = null;
+let isFirstMessage = true; // Initial value set to true
+let originalUserMessage = null;
 
 async function fetchWolfram(message) {
     let wolframAlphaResult = "not-enabled";
@@ -860,7 +884,7 @@ async function fetchWolfram(message) {
     reformulatedQuery = await callChatGPTApi([
         {
             role: "system",
-            content: `${wolframmessage}` 
+            content: `${wolframmessage}`
         },
         {
             role: "user",
@@ -1000,68 +1024,68 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // Join the keywords array into a single string
     keywords = keywordsArray.join(' ');
-    
 
 
-            const keywordString = keywords.replace("Keywords: ", "");
-            const splitKeywords = keywordString.split(',').map(k => k.trim());
-            const firstKeyword = splitKeywords[0];
-            // Convert the keywords string into an array by splitting on spaces
+
+    const keywordString = keywords.replace("Keywords: ", "");
+    const splitKeywords = keywordString.split(',').map(k => k.trim());
+    const firstKeyword = splitKeywords[0];
+    // Convert the keywords string into an array by splitting on spaces
 
 
-            let wikipediaSummaries;
+    let wikipediaSummaries;
 
-            if (isWikipediaEnabled()) {
-                wikipediaSummaries = await getWikipediaSummaries([firstKeyword]);
-            } else {
-                wikipediaSummaries = "Wiki Disabled";
-            }
+    if (isWikipediaEnabled()) {
+        wikipediaSummaries = await getWikipediaSummaries([firstKeyword]);
+    } else {
+        wikipediaSummaries = "Wiki Disabled";
+    }
 
-            console.log("wikipediasummaries", wikipediaSummaries);
-            //console.log("Keywords array:", keywords);
+    console.log("wikipediasummaries", wikipediaSummaries);
+    //console.log("Keywords array:", keywords);
 
-            const wikipediaMessage = {
-                role: "system",
-                content: `Wikipedia Summaries (Keywords: ${keywords}): \n ${Array.isArray(wikipediaSummaries)
-                    ? wikipediaSummaries
-                        .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
-                        .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
-                        .join("\n\n")
-                    : "Wiki Disabled"
-                    } END OF SUMMARIES`
-            };
+    const wikipediaMessage = {
+        role: "system",
+        content: `Wikipedia Summaries (Keywords: ${keywords}): \n ${Array.isArray(wikipediaSummaries)
+            ? wikipediaSummaries
+                .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
+                .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
+                .join("\n\n")
+            : "Wiki Disabled"
+            } END OF SUMMARIES`
+    };
 
-            // In your main function, check if searchQuery is null before proceeding with the Google search
-            const searchQuery = await constructSearchQuery(message);
-            if (searchQuery === null) {
-                return; // Return early if a link node was created directly
-            }
+    // In your main function, check if searchQuery is null before proceeding with the Google search
+    const searchQuery = await constructSearchQuery(message);
+    if (searchQuery === null) {
+        return; // Return early if a link node was created directly
+    }
 
-            let searchResultsData = null;
-            let searchResults = [];
+    let searchResultsData = null;
+    let searchResults = [];
 
-            if (isGoogleSearchEnabled()) {
-                searchResultsData = await performSearch(searchQuery);
-            }
+    if (isGoogleSearchEnabled()) {
+        searchResultsData = await performSearch(searchQuery);
+    }
 
-            if (searchResultsData) {
-                searchResults = processSearchResults(searchResultsData);
-                searchResults = await getRelevantSearchResults(message, searchResults);
-            }
+    if (searchResultsData) {
+        searchResults = processSearchResults(searchResultsData);
+        searchResults = await getRelevantSearchResults(message, searchResults);
+    }
 
-            displaySearchResults(searchResults);
+    displaySearchResults(searchResults);
 
-            const searchResultsContent = searchResults.map((result, index) => {
-                return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
-            }).join('\n');
+    const searchResultsContent = searchResults.map((result, index) => {
+        return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
+    }).join('\n');
 
-            const googleSearchMessage = {
-                role: "system",
-                content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
-            };
+    const googleSearchMessage = {
+        role: "system",
+        content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
+    };
 
 
-            const embedCheckbox = document.getElementById("embed-checkbox");
+    const embedCheckbox = document.getElementById("embed-checkbox");
 
 
 
@@ -1095,106 +1119,106 @@ async function sendMessage(event, autoModeMessage = null) {
         },
     ];
 
-            if (document.getElementById("instructions-checkbox").checked) {
-                messages.push(instructionsMessage());
-            }
+    if (document.getElementById("instructions-checkbox").checked) {
+        messages.push(instructionsMessage());
+    }
 
 
     if (document.getElementById("code-checkbox").checked) {
         messages.push(codeMessage());
     }
 
-            if (document.getElementById("wiki-checkbox").checked) {
-                messages.push(wikipediaMessage);
-            }
+    if (document.getElementById("wiki-checkbox").checked) {
+        messages.push(wikipediaMessage);
+    }
 
-            if (document.getElementById("google-search-checkbox").checked) {
-                messages.push(googleSearchMessage);
-            }
+    if (document.getElementById("google-search-checkbox").checked) {
+        messages.push(googleSearchMessage);
+    }
 
     if (document.getElementById("ai-nodes-checkbox").checked) {
         messages.push(aiNodesMessage());
     }
 
-            if (embedCheckbox && embedCheckbox.checked) {
-                const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
+    if (embedCheckbox && embedCheckbox.checked) {
+        const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
 
-                // Group the chunks by their source (stripping the chunk number from the key)
-                const groupedChunks = relevantChunks.reduce((acc, chunk) => {
-                    // Separate the source and the chunk number
-                    const [source, chunkNumber] = chunk.source.split('_chunk_');
-                    if (!acc[source]) acc[source] = [];
-                    acc[source].push({
-                        text: chunk.text.substring(0, MAX_CHUNK_SIZE),
-                        number: parseInt(chunkNumber), // Parse chunkNumber to an integer
-                        relevanceScore: chunk.relevanceScore,
-                    });
-                    return acc;
-                }, {});
+        // Group the chunks by their source (stripping the chunk number from the key)
+        const groupedChunks = relevantChunks.reduce((acc, chunk) => {
+            // Separate the source and the chunk number
+            const [source, chunkNumber] = chunk.source.split('_chunk_');
+            if (!acc[source]) acc[source] = [];
+            acc[source].push({
+                text: chunk.text.substring(0, MAX_CHUNK_SIZE),
+                number: parseInt(chunkNumber), // Parse chunkNumber to an integer
+                relevanceScore: chunk.relevanceScore,
+            });
+            return acc;
+        }, {});
 
-                // Construct the topNChunksContent
-                const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
-                    // Sort the chunks by their chunk number for each source
-                    chunks.sort((a, b) => a.number - b.number);
-                    const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
-                    return `[Source: ${source}]\n${chunksContent}\n`;
-                }).join('\n');
+        // Construct the topNChunksContent
+        const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
+            // Sort the chunks by their chunk number for each source
+            chunks.sort((a, b) => a.number - b.number);
+            const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
+            return `[Source: ${source}]\n${chunksContent}\n`;
+        }).join('\n');
 
-                const embedMessage = {
-                    role: "system",
-                    content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
-                };
+        const embedMessage = {
+            role: "system",
+            content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
+        };
 
-                messages.push(embedMessage);
-            }
+        messages.push(embedMessage);
+    }
 
-            let wolframData;
+    let wolframData;
 
-            if (document.getElementById("enable-wolfram-alpha").checked) {
-                wolframData = await fetchWolfram(message);
-            }
+    if (document.getElementById("enable-wolfram-alpha").checked) {
+        wolframData = await fetchWolfram(message);
+    }
 
-            if (wolframData) {
-                const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
+    if (wolframData) {
+        const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
 
-                let content = [table];
-                let scale = 1; // You can adjust the scale as needed
+        let content = [table];
+        let scale = 1; // You can adjust the scale as needed
 
-                let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-                htmlnodes_parent.appendChild(node.content);
-                registernode(node);
-                node.followingMouse = 1;
-                node.draw();
-                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
+        htmlnodes_parent.appendChild(node.content);
+        registernode(node);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
 
-                const wolframAlphaMessage = {
-                    role: "system",
-                    content: `Wolfram Alpha Result: ${wolframAlphaTextResult}`
-                };
+        const wolframAlphaMessage = {
+            role: "system",
+            content: `Wolfram Alpha Result: ${wolframAlphaTextResult}`
+        };
 
-                console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
-                messages.push(wolframAlphaMessage);
-            }
+        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
+        messages.push(wolframAlphaMessage);
+    }
 
-            // Calculate total tokens used so far
-            let totalTokenCount = getTokenCount(messages);
+    // Calculate total tokens used so far
+    let totalTokenCount = getTokenCount(messages);
 
-            // calculate remaining tokens
-            const maxTokensSlider = document.getElementById('max-tokens-slider');
-            const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-            const maxContextSize = document.getElementById('max-context-size-slider').value;
-            const contextSize = Math.min(remainingTokens, maxContextSize);
+    // calculate remaining tokens
+    const maxTokensSlider = document.getElementById('max-tokens-slider');
+    const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    const maxContextSize = document.getElementById('max-context-size-slider').value;
+    const contextSize = Math.min(remainingTokens, maxContextSize);
 
-            // Update the value of getLastPromptsAndResponses
-            if (autoModeMessage) {
-                context = getLastPromptsAndResponses(2, contextSize);
-            } else {
-                if (document.getElementById("instructions-checkbox").checked) {
-                    context = getLastPromptsAndResponses(1, contextSize);
-                } else {
-                    context = getLastPromptsAndResponses(3, contextSize);
-                }
-            }
+    // Update the value of getLastPromptsAndResponses
+    if (autoModeMessage) {
+        context = getLastPromptsAndResponses(2, contextSize);
+    } else {
+        if (document.getElementById("instructions-checkbox").checked) {
+            context = getLastPromptsAndResponses(1, contextSize);
+        } else {
+            context = getLastPromptsAndResponses(3, contextSize);
+        }
+    }
 
     let topMatchedNodesContent = [];
 
@@ -1280,11 +1304,11 @@ async function sendMessage(event, autoModeMessage = null) {
         });
     }
 
-            // Add the recent dialogue message
-            messages.splice(1, 0, {
-                role: "system",
-                content: `Previous dialogue with user. Branch new titles off existent nodes. Continue in the same format: ${context} \n:End of recent dialogue context. Empty on start of conversation.`,
-            });
+    // Add the recent dialogue message
+    messages.splice(1, 0, {
+        role: "system",
+        content: `Previous dialogue with user. Branch new titles off existent nodes. Continue in the same format: ${context} \n:End of recent dialogue context. Empty on start of conversation.`,
+    });
 
     const commonInstructions = `\nRemember to follow the format.
 ${tagValues.nodeTag} Titles after node tag.
@@ -1300,35 +1324,35 @@ Speak on topics relevant to the current user prompt and your recent conversation
 ${tagValues.refTag} Branch specific linear or non-linear connections.
 Ensure any code you write only connects to its dependencies`;
 
-            // Add Prompt
+    // Add Prompt
 
-            if (autoModeMessage) {
-                messages.push({
-                    role: "user",
-                    content: `Your self-Prompt: ${autoModeMessage} :
-Original Prompt: ${originalUserMessage}
+    if (autoModeMessage) {
+        messages.push({
+            role: "user",
+            content: `Your self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
+Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
 ${commonInstructions}
-Always end your response with a new line, then, Prompt: [prompt different from your current self prompt and original prompt that progresses the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
-                });
-            } else {
-                messages.push({
-                    role: "user",
-                    content: `Current Prompt:\n${message}\n:end of Prompt:
+Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [prompt different from your current self prompt and original prompt that progresses the conversation (consider if the original goal has been accomplished while also progressing the conversation in new directions)]`,
+        });
+    } else {
+        messages.push({
+            role: "user",
+            content: `Current ${PROMPT_IDENTIFIER}\n${message}\n:end of ${PROMPT_IDENTIFIER}
 ${commonInstructions}
-${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [the prompt to continue the conversation]" : ""}`,
-                });
-            }
+${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [the prompt to continue the conversation]` : ""}`,
+        });
+    }
 
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
-        myCodeMirror.replaceRange(`\nPrompt: ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
         isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
         myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
     }
 
-            const stream = true;
+    const stream = true;
 
     // Main AI call
     if (stream) {
@@ -1377,7 +1401,7 @@ ${isAutoModeEnabled ? "Always end your response with a new line, then, Prompt: [
 // Update handleAutoMode to accept the prompt as a parameter
 async function handleAutoMode(zettelkastenPromptToUse) {
     const lastMessage = getLastPromptsAndResponses(1, 400);
-    const promptRegex = /prompt:\s*(.*)/i;
+    const promptRegex = new RegExp(`${PROMPT_IDENTIFIER}\\s*(.*)`, "i");
     const match = promptRegex.exec(lastMessage);
 
     if (match) {
