@@ -9,26 +9,25 @@
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <style type="text/css">
         .cm-node {
             color: #D15050;
-
         }
 
         .cm-ref {
             color: #4F8EB7;
-
         }
 
         .cm-Prompt {
             color: #E0B0FF;
             background-color: #464250;
-            border-radius: 5px; 
+            border-radius: 5px;
             padding: 2px;
         }
     </style>
-  <script type="module" crossorigin src="./assets/index.5f2e110e.js"></script>
-  <link rel="stylesheet" href="./assets/index.77cf85e3.css">
+  <script type="module" crossorigin src="./assets/index.98b9d040.js"></script>
+  <link rel="stylesheet" href="./assets/index.01aa2a39.css">
 </head>
 
 <body id="body">
@@ -219,7 +218,7 @@
                         </div>
                         <div id="bgpick">
                             <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226; margin-top:5px">
-                            <label for="colorPicker">Background</label>
+                            <label for="colorPicker"> Background Color</label>
                         </div>
                         <br />
                         <button id="screenshotButton" class="key-button">Screenshot</button>
@@ -542,19 +541,26 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <!-- Include additional language files here as needed -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
-    <script src="js/dropdown_v1_0_1.js"></script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
+    <script src="js/dropdown_v1_0_2.js"></script>
+    <script src="js/mandelbrot_v1_0_1.js"></script>
     <script src="js/zettelkasten_v1.js"></script>
 
     <script defer type="module" src="./embeddings.js"></script>
 
-    <script src="js/mandelbrot_v1.js"></script>
-    <script src="js/interface_v1.js"></script>
+
+    <script src="js/interface_v1_0_1.js"></script>
 
     
 
-    <script src="js/ai_v1_0_2.js"></script>
+    <script src="js/ainodes_v1_0_1.js"></script>
+    <script src="js/ai_v1_0_3.js"></script>
+    <script src="js/searchapi_v1_0_1.js"></script>
     <script src="js/record_v1.js"></script>
 
 </body>
