@@ -153,7 +153,7 @@ npm run start
 ## Future of Neurite
 
 
-### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information are ever more necessary. The project is an experimental atempt to navigate this emergent technological landscape.
+### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information are ever more necessary. The project is an experimental attempt to navigate this emergent technological landscape.
 
 🚧
 
