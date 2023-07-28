@@ -1,5 +1,89 @@
 //searchapi.js
 
+async function fetchWolfram(message) {
+    let wolframAlphaResult = "not-enabled";
+    let wolframAlphaTextResult = "";
+    let reformulatedQuery = "";
+
+    reformulatedQuery = await callChatGPTApi([
+        {
+            role: "system",
+            content: `${wolframmessage}`
+        },
+        {
+            role: "user",
+            content: `${message} Wolfram Query`,
+        }
+    ]);
+
+    console.log("Reformulated query:", reformulatedQuery);
+
+    // Call Wolfram Alpha API with the reformulated query
+    const apiKey = document.getElementById("wolframApiKey").value;
+
+    const response = await fetch("http://localhost:3000", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            query: reformulatedQuery,
+            apiKey: apiKey
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error with Wolfram Alpha API call:", errorData.error);
+        console.error("Full error object:", errorData);
+        alert("An error occurred when making a request the Wolfram Alpha. Ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
+        return;
+    }
+
+    const data = await response.json();
+    console.log("Wolfram Alpha data:", data); // Debugging data object
+
+    if (!data.pods) {
+        return;
+    }
+
+    const table = document.createElement("table");
+    table.style = "width: 100%; border-collapse: collapse;";
+
+    for (const pod of data.pods) {
+        const row = document.createElement("tr");
+
+        const titleCell = document.createElement("td");
+        titleCell.textContent = pod.title;
+        titleCell.style = "padding: 10px; background-color: #222226;";
+
+        const imageCell = document.createElement("td");
+        imageCell.style = "padding: 10px; text-align: center; background-color: white";
+
+        for (let i = 0; i < pod.images.length; i++) {
+            const imageUrl = pod.images[i];
+            const plaintext = pod.plaintexts[i];
+
+            // Adding plaintext to wolframAlphaTextResult
+            wolframAlphaTextResult += `${pod.title}: ${plaintext}\n`;
+
+            const img = document.createElement("img");
+            img.alt = `${reformulatedQuery} - ${pod.title}`;
+            img.style = "display: block; margin: auto; border: none;";
+            img.src = imageUrl;
+
+            imageCell.appendChild(img);
+        }
+
+        row.appendChild(titleCell);
+        row.appendChild(imageCell);
+        table.appendChild(row);
+    }
+
+
+    return { table, wolframAlphaTextResult, reformulatedQuery };
+}
+
 // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
     // Get the API Key and Search Engine ID from local storage
@@ -49,7 +133,7 @@ async function constructSearchQuery(userMessage) {
 
 
 
-    recentcontext = getLastPromptsAndResponses(2, 200);
+    recentcontext = getLastPromptsAndResponses(2, 150);
 
     const queryContext = [{
         role: "system",
@@ -57,7 +141,7 @@ async function constructSearchQuery(userMessage) {
     },
     {
         role: "system",
-        content: "Create search queries from the user prompt. Your response is used for Google and embedded vector searches to find relevant webpages/pdf chunks. User can't see your output. Provide a single search query that's most likely to yield relevant results. No need to explain or preface your output."
+        content: "Generate a search query most relevant to the current user message. Your response is used for both a Google Programable Search and an embedded vector search to find relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results. No need to explain or preface your output."
     },
     {
         role: "user",

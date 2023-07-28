@@ -440,6 +440,8 @@ class Node {
         this.vel = new vec2(0, 0);
         this.force = new vec2(0, 0);
         this.followingMouse = 0;
+        this.followingAiCursor = false;
+        this.aiCursorAnchor = new vec2(0, 0);
 
         this.removed = false;
 
@@ -459,7 +461,7 @@ class Node {
     }
     json() {
         return JSON.stringify(this, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras" || k === "aiResponseEditor") {
+            if (k === "content" || k === "edges" || k === "save_extras" || k === "aiResponseEditor" || k === "aiCursor") {
                 return undefined;
             }
             return v;
@@ -539,6 +541,15 @@ class Node {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
         }
+        if (this.followingAiCursor) {
+            let p = toZ(this.aiCursor.position).minus(this.aiCursorAnchor);
+            this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
+            this.pos = p;
+            this.anchor = this.pos;
+        }
+        if (this.aiCursor) {
+            this.pos = toDZ(this.aiCursor.position);
+        }
         let g = mandGrad(settings.iterations, this.pos);
         //g.y *= -1; //why?
         this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
@@ -579,8 +590,8 @@ class Node {
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
-        let connectednodes = getAllConnectedNodesData(this)
-        console.log(connectednodes)
+        //let connectednodes = getAllConnectedNodesData(this)
+        //console.log(connectednodes)
         cancel(event);
     }
     onmousedown(event) {
