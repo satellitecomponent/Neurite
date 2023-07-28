@@ -107,7 +107,7 @@ See [webLLM's](https://mlc.ai/web-llm/) documentation for how to run the models 
 
 ## Local Server Setup
 
-### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers) through Downgit.io 
+### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
 ### The servers enable plugin integration for webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
 - The Wikipedia, Wolfram, and web scrape servers require Python and Node.js
@@ -124,7 +124,7 @@ Above is an example of combining the Wolfram Alpha API with GPT-4.
 
 Wolfram, Wikipedia, and Webpage/PDF vector database plugins are accessed through the localhost servers.
 ## User Guide
-### To Neurite run locally,
+### To run Neurite locally,
 either:  
 1. Clone the repository  
 2. Open the index.html file in your browser (note: local AI features will not be enabled)  
