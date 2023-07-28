@@ -217,7 +217,6 @@ window.generateLocalLLMResponse = async function (node, messages) {
     // Process filteredMessages to build messageString
     filteredMessages.forEach((message, index) => {
         if (index === 0) {
-            messageString += message.content.replace("Node Creation Time: undefined", "end of connected nodes.");
         } else if (message.role === "user") {
             // This is the current prompt
             messageString += `${message.content}`;
@@ -251,7 +250,7 @@ async function processQueue() {
     const generateProgressCallback = (_step, message) => {
 
         (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
-        const formattedMessage = "\nAI: " + message;
+        const formattedMessage = message;
         (aiResponseTextArea as HTMLTextAreaElement).value += formattedMessage;
         lastMessageLength = formattedMessage.length;
         aiResponseTextArea.dispatchEvent(new Event('input'));
@@ -265,15 +264,12 @@ async function processQueue() {
     const reply = await chat.generate(messageString, generateProgressCallback);
 
     (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
-    const finalMessage = "\nAI: " + reply;
+    const finalMessage = reply;
     (aiResponseTextArea as HTMLTextAreaElement).value += finalMessage;
     aiResponseTextArea.dispatchEvent(new Event('input'));
 
 
     isProcessing = false;
-
-    // Refresh the Markdown rendering for this node after processing is complete
-    node.refreshMarkdown();
 
 
     if (messageQueue.length > 0) {

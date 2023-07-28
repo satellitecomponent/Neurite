@@ -1,4 +1,6 @@
-﻿var textarea = document.getElementById('note-input');
+﻿const PROMPT_IDENTIFIER = "Prompt:";
+
+var textarea = document.getElementById('note-input');
 var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     lineWrapping: true,
     scrollbarStyle: 'simple',
@@ -32,7 +34,7 @@ function updateMode() {
     CodeMirror.defineMode("custom", function () {
         var node = nodeInput.value;
         var ref = refInput.value;
-        const Prompt = "Prompt:";
+        const Prompt = `${PROMPT_IDENTIFIER}`;
         return {
             token: function (stream) {
                 if (stream.match(node)) {
@@ -263,9 +265,6 @@ myCodeMirror.on("mousedown", function (cm, event) {
 identifyNodeTitles();
 highlightNodeTitles();
 
-//END OF CODEMIRROR
-
-
 function getNodeByTitle(title) {
     const lowerCaseTitle = title.toLowerCase();
     for (let n of nodes) {
@@ -276,6 +275,11 @@ function getNodeByTitle(title) {
     }
     return null;
 }
+
+//END OF CODEMIRROR
+
+
+
 
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
