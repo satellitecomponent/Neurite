@@ -148,10 +148,18 @@ async function sendLLMNodeMessage(node, message = null) {
     node.latestUserMessage = message ? message : node.promptTextArea.value;
     console.log(`Received message: "${node.latestUserMessage}"`);
 
+    // Append the user prompt to the AI response area with a distinguishing mark and end tag
+    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
+    // Trigger the input event programmatically
+    node.aiResponseTextArea.dispatchEvent(new Event('input'));
+    // Clear the prompt textarea
+    node.promptTextArea.value = '';
+    node.promptTextArea.dispatchEvent(new Event('input'));
+
     let messages = [
         {
             role: "system",
-            content: "You (Ai) are responding in an Ai node. Nodes that connect to you are shared in the 'remember this' system message. Use triple backtick and labels for codeblocks"
+            content: "You (Ai) are responding in an Ai node. Connected nodes are shared in the 'remember this' system message. Triple backtick and label your codeblocks"
         },
     ];
 
@@ -365,14 +373,6 @@ async function sendLLMNodeMessage(node, message = null) {
     });
 
 
-    // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
-    // Trigger the input event programmatically
-    node.aiResponseTextArea.dispatchEvent(new Event('input'));
-    // Clear the prompt textarea
-    node.promptTextArea.value = '';
-    node.promptTextArea.dispatchEvent(new Event('input'));
-
     node.aiResponding = true;
     node.userHasScrolled = false;
     let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
@@ -452,6 +452,9 @@ function decodeHTML(html) {
     return txt.value;
 }
 
+
+//Handles Ai node conversation parsing for Prismjs and a div css.
+//Creates div class, user-prompt, ai-response, code-block
 class ResponseHandler {
     constructor(node) {
         this.node = node;
@@ -618,7 +621,7 @@ class ResponseHandler {
                     isEditing = false;
 
                     // Reset styles to non-editing state
-                    promptDiv.style.backgroundColor = "#9578ab";
+                    promptDiv.style.backgroundColor = "#b799ce";
                     promptDiv.style.color = "#222226";
 
                     // Reset the cursor style to move
@@ -637,7 +640,7 @@ class ResponseHandler {
 
 
                 // Handle leaving edit mode
-                promptDiv.style.backgroundColor = "#9578ab";
+                promptDiv.style.backgroundColor = "#b799ce";
                 promptDiv.style.color = "#222226";
 
                 // Set the cursor style to move

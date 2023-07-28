@@ -27,7 +27,7 @@
         }
     </style>
   <script type="module" crossorigin src="./assets/index.98b9d040.js"></script>
-  <link rel="stylesheet" href="./assets/index.01aa2a39.css">
+  <link rel="stylesheet" href="./assets/index.7c1b0508.css">
 </head>
 
 <body id="body">
@@ -329,6 +329,9 @@
                 <div id="tab4" class="tabcontent">
                     <!-- Fourth tab content here -->
                     <div class="submenu">
+                        <!--<div>
+                            <button id="ai-cursor-button">Enable Ai Cursor</button>
+                        </div>-->
                         <div class="inline-container">
                             <input type="checkbox" id="localLLM">
                             <label for="localLLM">:</label>
@@ -439,6 +442,8 @@
                         <div id="key-list" class="scrollable-list">
                             <!-- Stored keys will be dynamically added here -->
                         </div>
+                        <!--<input type="file" id="fileInput" />
+                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
                         <div class="settingsSlider" style="margin-bottom: 10px;">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
@@ -482,7 +487,6 @@
     </div>
     <a id="nodes">
         <!-- Copy all text to personal storage -->
-
     </a>
     <!--iframe id="inlineFrameExample"
             title="Inline Frame Example"
@@ -539,11 +543,27 @@
 
 
     </div>
+
+    <script>
+        window.onload = function () {
+            var input = document.createElement("input");
+            input.type = "file";
+            if ('webkitdirectory' in input) {
+                // If the browser supports directory selection, add the webkitdirectory attribute
+                input.setAttribute('webkitdirectory', '');
+                input.setAttribute('multiple', '');
+            }
+            input.id = "fileInput";
+            // Append the input field to the body (or any other container you prefer)
+            document.body.appendChild(input);
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <!-- Include additional language files here as needed -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>-->
 
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
@@ -560,9 +580,12 @@
 
     <script src="js/ainodes_v1_0_1.js"></script>
     <script src="js/ai_v1_0_3.js"></script>
+
+    <!--<script src="js/aicursor.js"></script>-->
+
     <script src="js/searchapi_v1_0_1.js"></script>
     <script src="js/record_v1.js"></script>
 
 </body>
 
-        </html>
+                </html>
