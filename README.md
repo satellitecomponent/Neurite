@@ -1,4 +1,4 @@
-⚠️ Warning: Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
+⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
 # Neurite
 
 https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-4176-ac6b-b9a3bf4329d8
@@ -46,13 +46,13 @@ Supports embedded links. Ctrl+V to paste an embed link
 ### Controls
   *Full controls are listed in the ? tab.
 
-**Shift + double click** to create nodes.
+`Shift + double click` to create nodes.
 
-**Shift** to freeze nodes.
+`Shift` to freeze nodes.
 
-**Double click** to anchor node.
+`Double click` to anchor node.
 
-**Hold Shift + click** two nodes to connect.
+`Hold Shift + click` two nodes to connect.
 
 
 ## FractalGPT
@@ -93,8 +93,8 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/3c26c9bb-5caa-40f
 Above is an example of conversation history being shared between GPT-4 and a Local Ai model, Red Pajamas, run through [webLLM](https://mlc.ai/web-llm/).
 
 ### Ai Nodes allow for the creation of an arbitrary number of Ai Agents that can connect together.
-- **Alt + Double click** creates a node with a more traditional AI chat interface. (you can create multiple)
-- The AI node will retain context from any other text or AI nodes that connect to it. (**Hold Shift + Click** two node windows to connect them together)
+- `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
+- The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift + Click` two node windows to connect them together)
 - This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
 - Supports webLLM and OpenAi models concurrently.
 
