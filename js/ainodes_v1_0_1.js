@@ -579,6 +579,34 @@ class ResponseHandler {
             }
         }.bind(this);
 
+        // Set an onBlur event handler to handle when the div loses focus
+        promptDiv.addEventListener('blur', function () {
+            // If the div is in editing mode
+            if (isEditing) {
+                // Remove the .editing class
+                promptDiv.classList.remove('editing');
+                // Set contentEditable to false when div loses focus
+                promptDiv.contentEditable = false;
+
+                // Reset isEditing
+                isEditing = false;
+
+                // Reset styles to non-editing state
+                promptDiv.style.backgroundColor = "#b799ce";
+                promptDiv.style.color = "#222226";
+
+                // Reset the cursor style to move
+                promptDiv.style.cursor = "move";
+
+                // Make the div draggable
+                makeDivDraggable(promptDiv, 'Prompt');
+                promptDiv.ondragstart = function () { return isEditing ? false : null; };
+
+                // Remove the keydown event listener
+                promptDiv.removeEventListener('keydown', handleKeyDown);
+            }
+        }.bind(this));
+
         // Add a double click listener to the prompt div
         promptDiv.addEventListener('dblclick', function (event) {
             // Prevent the default action of double click
@@ -588,6 +616,8 @@ class ResponseHandler {
             isEditing = !isEditing;
 
             if (isEditing) {
+                // Add the .editing class
+                promptDiv.classList.add('editing');
                 // Set contentEditable to true when entering edit mode
                 promptDiv.contentEditable = true;
 
@@ -612,29 +642,9 @@ class ResponseHandler {
 
                 // Set promptDiv non-draggable
                 promptDiv.ondragstart = function () { return false; };
-                // Set an onBlur event handler to handle when the div loses focus
-                promptDiv.onblur = function () {
-                    // Set contentEditable to false when div loses focus
-                    promptDiv.contentEditable = false;
-
-                    // Reset isEditing
-                    isEditing = false;
-
-                    // Reset styles to non-editing state
-                    promptDiv.style.backgroundColor = "#b799ce";
-                    promptDiv.style.color = "#222226";
-
-                    // Reset the cursor style to move
-                    promptDiv.style.cursor = "move";
-
-                    // Make the div draggable
-                    makeDivDraggable(promptDiv, 'Prompt');
-                    promptDiv.ondragstart = function () { return isEditing ? false : null; };
-
-                    // Remove the keydown event listener
-                    promptDiv.removeEventListener('keydown', handleKeyDown);
-                }.bind(this);
             } else {
+                // Remove the .editing class
+                promptDiv.classList.remove('editing');
                 // Set contentEditable to false when leaving edit mode
                 promptDiv.contentEditable = false;
 
@@ -711,25 +721,30 @@ class ResponseHandler {
             }
         }
 
-        let existingWrapperDiv = document.getElementById(codeBlockDivId);
+        let existingContainerDiv = document.getElementById(codeBlockDivId);
 
-        if (!existingWrapperDiv) {
-            existingWrapperDiv = document.createElement('div');
-            existingWrapperDiv.id = codeBlockDivId;
-            existingWrapperDiv.className = "code-block-wrapper";
-            this.node.aiResponseDiv.appendChild(existingWrapperDiv);
+        if (!existingContainerDiv) {
+            existingContainerDiv = document.createElement('div');
+            existingContainerDiv.id = codeBlockDivId;
+            existingContainerDiv.className = "code-block-container";
+            this.node.aiResponseDiv.appendChild(existingContainerDiv);
 
             let languageLabelDiv = document.createElement('div');
             languageLabelDiv.className = "language-label";
-            existingWrapperDiv.appendChild(languageLabelDiv);
+            existingContainerDiv.appendChild(languageLabelDiv);
 
-            makeDivDraggable(existingWrapperDiv, 'Code Block', languageLabelDiv); // Make sure it's in the right scope
+            let existingWrapperDiv = document.createElement('div');
+            existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
+            existingContainerDiv.appendChild(existingWrapperDiv);
 
             let preDiv = document.createElement('pre');
-            preDiv.className = "code-block custom-scrollbar";
+            preDiv.className = "code-block";
             existingWrapperDiv.appendChild(preDiv);
+
+            makeDivDraggable(existingContainerDiv, 'Code Block', languageLabelDiv);
         }
 
+        let existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
         let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
 
         let codeElement = document.createElement("code");
@@ -741,7 +756,7 @@ class ResponseHandler {
         preDiv.innerHTML = '';
         preDiv.appendChild(codeElement);
 
-        let languageLabelDiv = existingWrapperDiv.getElementsByClassName('language-label')[0];
+        let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
         languageLabelDiv.innerText = this.currentLanguage;
         languageLabelDiv.style.display = 'flex';
         languageLabelDiv.style.justifyContent = 'space-between';
@@ -769,11 +784,11 @@ class ResponseHandler {
 
         languageLabelDiv.appendChild(copyButton);
         languageLabelDiv.addEventListener('mouseover', function () {
-            existingWrapperDiv.classList.add('hovered');
+            existingContainerDiv.classList.add('hovered');
         });
 
         languageLabelDiv.addEventListener('mouseout', function () {
-            existingWrapperDiv.classList.remove('hovered');
+            existingContainerDiv.classList.remove('hovered');
         });
 
         if (isFinal) {
