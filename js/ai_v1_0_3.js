@@ -774,7 +774,7 @@ const zettelkastenPrompt = () => `${tagValues.nodeTag} System message to AI:
 - Responses are visualized in a fractal mind-map, Neurite.
 - Use node reference tag format in all responses.
 Current node title tag = ${tagValues.nodeTag}
-Current reference linking tag = ${tagValues.refTag}
+Current reference tag = ${tagValues.refTag}
 Format:
     ${tagValues.nodeTag} Relevant Title after title tag
         - Ensure Unique/Specific Node Title
@@ -1222,12 +1222,14 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
     // Add the recent dialogue message
-    messages.splice(1, 0, {
+    messages.splice(2, 0, {
         role: "system",
         content: `Previous dialogue with user. Branch new titles off existent nodes. Continue in the same format: ${context} \n:End of recent dialogue context. Empty on start of conversation.`,
     });
 
-    const commonInstructions = `\nRemember, always follow the format.
+    const commonInstructions = `\nCurrent node title tag = ${tagValues.nodeTag}
+Current reference tag = ${tagValues.refTag}
+Remember, always follow the below tag format.
 ${tagValues.nodeTag} Titles after node tag.
 Plain text on the next line for your response.
 Do not use these example titles or conclusion titles.
@@ -1293,7 +1295,7 @@ ${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_
         // Handle auto mode
         if (isAutoModeEnabled && shouldContinue) {
             // If the tags have changed, use the original zettelkasten prompt
-            let zettelkastenPromptToUse = tagsChanged ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
+            let zettelkastenPromptToUse = (tagsChanged || !summarizedZettelkastenPrompt) ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
             const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
             sendMessage(null, aiGeneratedPrompt);
         }
