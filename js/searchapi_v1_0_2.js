@@ -8,7 +8,7 @@ async function fetchWolfram(message) {
     reformulatedQuery = await callChatGPTApi([
         {
             role: "system",
-            content: `${wolframmessage}`
+            content: `<wolfram>${wolframmessage}</wolfram>`
         },
         {
             role: "user",
