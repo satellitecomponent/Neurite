@@ -148,10 +148,6 @@ async function sendLLMNodeMessage(node, message = null) {
     node.latestUserMessage = message ? message : node.promptTextArea.value;
     console.log(`Received message: "${node.latestUserMessage}"`);
 
-    // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
-    // Trigger the input event programmatically
-    node.aiResponseTextArea.dispatchEvent(new Event('input'));
     // Clear the prompt textarea
     node.promptTextArea.value = '';
     node.promptTextArea.dispatchEvent(new Event('input'));
@@ -280,7 +276,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched chunks of text from extracted webpages:\n` + topNChunksContent + `\n Provide relevant information from the chunks as well as the respective source url. Do not repeat system contextualization`
+            content: `Top ${topN} matched chunks of text from extracted webpages:\n` + topNChunksContent + `\n Use the given chunks as context. Cite your sources!`
         };
 
         messages.push(embedMessage);
@@ -362,9 +358,14 @@ async function sendLLMNodeMessage(node, message = null) {
     // Update the value of getLastPromptsAndResponses
     const lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
 
+    // Append the user prompt to the AI response area with a distinguishing mark and end tag
+    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
+    // Trigger the input event programmatically
+    node.aiResponseTextArea.dispatchEvent(new Event('input'));
+
     messages.push({
         role: "system",
-        content: `Recent conversation:${lastPromptsAndResponses}` //Recent conversation removed from webLLM.ts
+        content: `Conversation history:${lastPromptsAndResponses}` //Recent conversation removed from webLLM.ts
     });
 
     messages.push({
@@ -467,6 +468,7 @@ class ResponseHandler {
         this.processingQueue = Promise.resolve();
         this.previousContentLength = 0;
         this.responseCount = 0;
+        this.currentResponseEnded = false
 
         this.node.aiResponseTextArea.addEventListener('input', () => {
             this.processingQueue = this.processingQueue.then(() => this.handleInput());
@@ -516,6 +518,7 @@ class ResponseHandler {
                         newContent = '';
                     }
                 }
+
 
                 if (newContent.length > 0) {
                     let startOfCodeBlockIndex = trimmedNewContent.indexOf('```');
@@ -667,25 +670,24 @@ class ResponseHandler {
     }
 
     handleMarkdown(markdown) {
-        if (markdown.trim().length > 0) {
+        if ((this.node.aiResponding || this.node.localAiResponding) && markdown.trim().length > 0) {
             let sanitizedMarkdown = DOMPurify.sanitize(markdown);
             let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
+            let responseDiv;
 
-            if (lastWrapperDiv && lastWrapperDiv.className === 'response-wrapper') {
-                let aiResponseDiv = lastWrapperDiv.getElementsByClassName('ai-response')[0];
-                aiResponseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
+            if (lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
+                responseDiv = lastWrapperDiv.querySelector('.ai-response');
             } else {
                 let handleDiv = document.createElement('div');
                 handleDiv.className = 'drag-handle';
                 handleDiv.innerHTML = `
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-        `;
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            `;
 
-                let responseDiv = document.createElement('div');
+                responseDiv = document.createElement('div');
                 responseDiv.className = 'ai-response';
-                responseDiv.innerHTML = sanitizedMarkdown.replace(/\n/g, "<br>");
 
                 let wrapperDiv = document.createElement('div');
                 wrapperDiv.className = 'response-wrapper';
@@ -704,6 +706,8 @@ class ResponseHandler {
                     wrapperDiv.classList.remove('hovered');
                 });
             }
+
+            responseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
         }
     }
 
@@ -783,12 +787,16 @@ class ResponseHandler {
         };
 
         languageLabelDiv.appendChild(copyButton);
-        languageLabelDiv.addEventListener('mouseover', function () {
-            existingContainerDiv.classList.add('hovered');
+        existingContainerDiv.addEventListener('mouseover', function (event) {
+            if (event.target.classList.contains('language-label') || event.target.classList.contains('copy-btn')) {
+                existingContainerDiv.classList.add('hovered');
+            }
         });
 
-        languageLabelDiv.addEventListener('mouseout', function () {
-            existingContainerDiv.classList.remove('hovered');
+        existingContainerDiv.addEventListener('mouseout', function (event) {
+            if (event.target.classList.contains('language-label') || event.target.classList.contains('copy-btn')) {
+                existingContainerDiv.classList.remove('hovered');
+            }
         });
 
         if (isFinal) {
@@ -864,7 +872,7 @@ class ResponseHandler {
     }
 }
 
-
+const nodeResponseHandlers = new Map();
 
 function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     // Create the AI response textarea
@@ -876,8 +884,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let aiResponseDiv = document.createElement("div");
     aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;  // Assign unique id to each aiResponseDiv
     aiResponseDiv.classList.add('custom-scrollbar');
-    aiResponseDiv.onmousedown = cancel;  // Prevent dragging
-    aiResponseDiv.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 500px; height: 420px; overflow-y: auto; overflow-x: hidden; resize: both; word-wrap: break-word; user-select: none; padding-left: 25px; padding-right: 25px; line-height: 1.75;");
+    aiResponseDiv.onmousedown = cancel; // Prevent dragging
+    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 530px; height: 450px; overflow-y: auto; overflow-x: hidden; resize: both; word-wrap: break-word; user-select: none; padding-left: 25px; padding-right: 25px; line-height: 1.75;");
     aiResponseDiv.addEventListener('mouseenter', function () {
         aiResponseDiv.style.userSelect = "text";
     });
@@ -1055,6 +1063,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.regenerateButton = regenerateButton;
     node.id = aiResponseTextArea.id;  // Store the id in the node object
     node.aiResponding = false;
+    node.localAiResponding = false;
     node.latestUserMessage = null;
     node.controller = new AbortController();
     node.shouldContinue = true;
@@ -1097,13 +1106,11 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Call scrollToBottom whenever there's an input
     node.aiResponseTextArea.addEventListener('input', scrollToBottom);
 
-
-
+    //Handles parsing of conversation divs.
     let responseHandler = new ResponseHandler(node);
+    nodeResponseHandlers.set(node, responseHandler); // map response handler to node
 
     node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
-
- 
 
     node.haltResponse = function () {
         if (this.aiResponding) {
@@ -1113,6 +1120,27 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             this.shouldContinue = false;
             this.regenerateButton.textContent = "\u21BA";
             this.promptTextArea.value = this.latestUserMessage; // Add the last user message to the prompt input
+
+            // If currently in a code block
+            if (responseHandler.inCodeBlock) {
+                // Add closing backticks to the current code block content
+                responseHandler.codeBlockContent += '```\n';
+
+                // Render the final code block
+                responseHandler.renderCodeBlock(responseHandler.codeBlockContent, true);
+
+                // Reset the code block state
+                responseHandler.codeBlockContent = '';
+                responseHandler.codeBlockStartIndex = -1;
+                responseHandler.inCodeBlock = false;
+
+                // Clear the textarea value to avoid reprocessing
+                this.aiResponseTextArea.value = responseHandler.previousContent + responseHandler.codeBlockContent;
+
+                // Update the previous content length
+                responseHandler.previousContentLength = this.aiResponseTextArea.value.length;
+                this.aiResponseTextArea.dispatchEvent(event);
+            }
         }
     };
 
@@ -1142,9 +1170,13 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     });
 
     node.promptTextArea.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && e.shiftKey) {
-            e.preventDefault();
-            sendLLMNodeMessage(node);
+        if (e.key === 'Enter') {
+            if (e.shiftKey) {
+                // Allow the new line to be added
+            } else {
+                e.preventDefault();
+                sendLLMNodeMessage(node);
+            }
         }
     });
 

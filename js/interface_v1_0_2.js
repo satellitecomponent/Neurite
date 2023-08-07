@@ -135,6 +135,67 @@ if (!RegExp.escape) {
             return rewindowify(node);
         }
 
+function rewindowify(node) {
+    node.push_extra("window");
+    let w = node.content;
+
+    let del = w.querySelector("#button-delete");
+    del.classList.add('windowbutton');
+
+    let fs = w.querySelector("#button-fullscreen");
+    fs.classList.add('windowbutton');
+
+    let col = w.querySelector("#button-collapse");
+    col.classList.add('windowbutton');
+
+    function set(e, v, s = "fill") {
+        e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
+        e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
+    }
+
+    function ui(e, cb = (() => { }), s = "fill") {
+        e.onmouseenter = (ev) => {
+            set(e, "hover", s);
+        }
+        e.onmouseleave = (ev) => {
+            set(e, "initial", s);
+            e.ready = false;
+        }
+        e.onmousedown = (ev) => {
+            set(e, "click", s);
+            e.ready = true;
+            cancel(ev);
+        }
+        e.onmouseup = (ev) => {
+            set(e, "initial", s);
+            cancel(ev);
+            if (e.ready) {
+                cb(ev);
+            }
+        }
+        e.onmouseleave();
+    }
+    ui(del, node.remove.bind(node));
+    ui(fs, (() => {
+        requestAnimationFrame(() => {
+            node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.0625);
+            autopilotSpeed = settings.autopilotSpeed;
+        });
+    }));
+    //ui(col, collapseNode(node), "stroke");
+    ui(col, (() => { }), "stroke");
+
+    // Add the "mouseup" event listener to the document
+    document.addEventListener('mouseup', () => {
+        if (node.followingMouse) {
+            node.stopFollowingMouse();
+        }
+    });
+
+    return node;
+}
+
 function extractScalingFactors(element) {
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
@@ -265,61 +326,6 @@ function extractScalingFactors(element) {
             });
         }
 
-
-
-function rewindowify(node) {
-    node.push_extra("window");
-    let w = node.content;
-
-    let del = w.querySelector("#button-delete");
-    let fs = w.querySelector("#button-fullscreen");
-    let col = w.querySelector("#button-collapse");
-
-    function set(e, v, s = "fill") {
-        e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
-        e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
-    }
-
-    function ui(e, cb = (() => { }), s = "fill") {
-        e.onmouseenter = (ev) => {
-            set(e, "hover", s);
-        }
-        e.onmouseleave = (ev) => {
-            set(e, "initial", s);
-            e.ready = false;
-        }
-        e.onmousedown = (ev) => {
-            set(e, "click", s);
-            e.ready = true;
-            cancel(ev);
-        }
-        e.onmouseup = (ev) => {
-            set(e, "initial", s);
-            cancel(ev);
-            if (e.ready) {
-                cb(ev);
-            }
-        }
-        e.onmouseleave();
-    }
-    ui(del, node.remove.bind(node));
-    ui(fs, (() => {
-        node.zoom_to_fit();
-        zoomTo = zoomTo.scale(1.0625);
-        autopilotSpeed = settings.autopilotSpeed;
-    }));
-    //ui(col, collapseNode(node), "stroke");
-    ui(col, (() => { }), "stroke");
-
-    // Add the "mouseup" event listener to the document
-    document.addEventListener('mouseup', () => {
-        if (node.followingMouse) {
-            node.stopFollowingMouse();
-        }
-    });
-
-    return node;
-}
 
 
 

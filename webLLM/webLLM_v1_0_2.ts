@@ -190,13 +190,14 @@ let messageQueue = [];
 let isProcessing = false;
 
 window.generateLocalLLMResponse = async function (node, messages) {
-    const localLLMCheckbox = document.getElementById("localLLM");
+    node.localAiResponding = true; // Set the flag right here
+//console.log("Node.aiResponding set to:", node.localAiResponding);
 
-    // If the LLM checkbox is not checked, don't use local LLM.
+    const localLLMCheckbox = document.getElementById("localLLM");
     if (!(localLLMCheckbox as HTMLInputElement).checked) {
+        node.aiResponding = false; // Reset if needed
         return;
     }
-
     // Get the selected model
     const llmNodeIndex = node.index;
     const LocalLLMselect = document.getElementById(`dynamicLocalLLMselect-${llmNodeIndex}`);
@@ -248,7 +249,6 @@ async function processQueue() {
     const aiResponseTextArea = document.getElementById(node.id);
 
     const generateProgressCallback = (_step, message) => {
-
         (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
         const formattedMessage = message;
         (aiResponseTextArea as HTMLTextAreaElement).value += formattedMessage;
@@ -268,9 +268,11 @@ async function processQueue() {
     (aiResponseTextArea as HTMLTextAreaElement).value += finalMessage;
     aiResponseTextArea.dispatchEvent(new Event('input'));
 
+    // Set the flag to false here, after the final message has been processed
+    node.localAiResponding = false;
+    //console.log("Node.aiResponding set to:", node.localAiResponding);
 
     isProcessing = false;
-
 
     if (messageQueue.length > 0) {
         processQueue();

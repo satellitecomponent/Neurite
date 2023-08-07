@@ -1,4 +1,4 @@
-
+﻿
 function getTokenCount(messages) {
     let tokenCount = 0;
     messages.forEach(message => {
@@ -660,7 +660,7 @@ Guidelines:
 - Respond with a single line of code.
 - If the user's input is already valid Wolfram code, use it verbatim.
 - In case of vague user input, provide a general alternative query.
-All your of your output should simulate a query to Wolfram Alpha with no other explnation attatched. Any response other than valid Wolfram Code will produce an error.`
+All your of your output should simulate a query to Wolfram Alpha with no other explanation attached. Any response other than valid Wolfram Code will produce an error.`
 
 const tagValues = {
     get nodeTag() {
@@ -673,7 +673,7 @@ const tagValues = {
 
 const codeMessage = () => ({
     role: "system",
-    content: `Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
+    content: `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
 
 ${tagValues.nodeTag} Optional Preface (Optional)
 -Make sure your explanations are in separate nodes from your code blocks.
@@ -698,7 +698,7 @@ Ensure consideration of Pyodide's limitations in browser.
 ${tagValues.nodeTag} Final Explanation Title
 1. Explain code and output.
 2. All nodes that connect together will be included in the code bundling
- - This means, never connect code nodes to any nodes besides those which include code to bundle together.`
+ - This means, never connect code nodes to any nodes besides those which include code to bundle together.</code>`
 });
 
 const aiNodeCodeMessage = () => ({
@@ -998,7 +998,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search Results displayed to the user:" + searchResultsContent + "END OF SEARCH RESULTS  Always remember to follow the system context message that describes the format of your response."
+        content: "Google Search Results displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> Always remember to follow the <format> message"
     };
 
 
@@ -1028,11 +1028,16 @@ async function sendMessage(event, autoModeMessage = null) {
         zettelkastenPromptToUse = summarizedZettelkastenPrompt;
     }
 
+    // If none of the above conditions are met, fall back to the default prompt
+    if (!zettelkastenPromptToUse || zettelkastenPromptToUse.trim() === '') {
+        zettelkastenPromptToUse = zettelkastenPrompt();
+    }
+
     // Create the messages
     let messages = [
         {
             role: "system",
-            content: `This is a system message about formatting your reply. Focus on the form of the format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if any titles are repeated.`,
+            content: `XML tags indicate your frame of reference for each system message and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if any titles are repeated.</format>`,
         },
     ];
 
@@ -1083,7 +1088,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched snippets of text from extracted webpages: ` + topNChunksContent + `\n Provide relevant information from each chunks as well as the respective url in the plain text of the node. Remember to always follow the Zettelkasten format. Never repeat system contextualization`
+            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Use the given topNchunks as context. Cite your sources!`
         };
 
         messages.push(embedMessage);
@@ -1214,53 +1219,60 @@ async function sendMessage(event, autoModeMessage = null) {
         //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
     }
 
-    if (!document.getElementById("instructions-checkbox").checked) {
-        messages.splice(1, 0, {
+    // Check if the content string is not empty
+    if (typeof topMatchedNodesContent === "string" && topMatchedNodesContent.trim() !== "") {
+        if (!document.getElementById("instructions-checkbox").checked) {
+            messages.splice(1, 0, {
+                role: "system",
+                content: `Matched notes in mind map to infer context from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>`,
+            });
+        }
+    }
+
+    if (context.trim() !== "") {
+        // Add the recent dialogue message only if the context is not empty
+        messages.splice(2, 0, {
             role: "system",
-            content: `Matched notes in mind map to infer context from your long term memory:\n${topMatchedNodesContent}`,
+            content: `Previous dialogue with user: <context>${context}</context>`,
         });
     }
 
-    // Add the recent dialogue message
-    messages.splice(2, 0, {
-        role: "system",
-        content: `Previous dialogue with user. Branch new titles off existent nodes. Continue in the same format: ${context} \n:End of recent dialogue context. Empty on start of conversation.`,
-    });
-
-    const commonInstructions = `\nCurrent node title tag = ${tagValues.nodeTag}
-Current reference tag = ${tagValues.refTag}
-Remember, always follow the below tag format.
-${tagValues.nodeTag} Titles after node tag.
-Plain text on the next line for your response.
-Do not use these example titles or conclusion titles.
-Avoid generic titles, (conclusion, etc.)
+    const commonInstructions = `
+Utilize the format and respond to the ${PROMPT_IDENTIFIER}. Here is another format guide.
+${tagValues.nodeTag} Title following the node tag.
+My responses sit within the plain text of the defined node.
+While this is a condensed example of the format, your response should retain relevance + authenticity.
+Avoid conclusion or example titles.
 Expand existing mind-map using notes with unique titles.
-${tagValues.refTag} Comma seperated titles to connect.
-${tagValues.nodeTag} Write your own title
+${tagValues.refTag} (Use a single tag after the plain text) Type titles of nodes as a comma seperated list to connect them.
+${tagValues.nodeTag} Write your own titles
 Make sure any new nodes have a unique title
 Break your response up into multiple nodes
-Speak on topics relevant to the current user prompt and your recent conversation context.
-${tagValues.refTag} Branch specific linear or non-linear connections. Connect intentionally.
-If writing code, only reference node titles that should bundle together as code`;
+Branch specific and intentional linear or non-linear connections to effectively convey the ideas in your response.
+${tagValues.refTag} Type existing or future node titles as a comma separated list to connect.
+`;
 
     // Add Prompt
-
     if (autoModeMessage) {
         messages.push({
             role: "user",
-            content: `Your self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
+            content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
 Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-${commonInstructions}
 Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message different from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} that progresses the conversation (consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also progressing the conversation in new directions)]`,
         });
     } else {
         messages.push({
             role: "user",
-            content: `Current ${PROMPT_IDENTIFIER}\n${message}\n:end of ${PROMPT_IDENTIFIER}
-${commonInstructions}
+            content: `${message}
 ${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
         });
     }
+
+    // Add Common Instructions as a separate system message
+    messages.push({
+        role: "system",
+        content: commonInstructions
+    });
 
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
@@ -1294,8 +1306,11 @@ ${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_
     if (shouldContinue) {
         // Handle auto mode
         if (isAutoModeEnabled && shouldContinue) {
-            // If the tags have changed, use the original zettelkasten prompt
-            let zettelkastenPromptToUse = (tagsChanged || !summarizedZettelkastenPrompt) ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
+            // If the tags have changed, or if the summarizedZettelkastenPrompt is undefined or empty, use the original zettelkasten prompt
+            let zettelkastenPromptToUse = (tagsChanged || !summarizedZettelkastenPrompt || summarizedZettelkastenPrompt.trim() === '') ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
+            if (!zettelkastenPromptToUse || zettelkastenPromptToUse.trim() === '') {
+                zettelkastenPromptToUse = zettelkastenPrompt(); // Ensures a default value if all else fails
+            }
             const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
             sendMessage(null, aiGeneratedPrompt);
         }

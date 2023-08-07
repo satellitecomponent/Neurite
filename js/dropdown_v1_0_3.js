@@ -344,18 +344,7 @@ function handleKeyDown(event) {
         const localLLMCheckbox = document.getElementById("localLLM");
 
         if (event.shiftKey) {
-            // Shift + Enter was pressed
-            event.preventDefault();
-
-            // If localLLM checkbox is enabled, submit the form (which triggers LLM code).
-            if (localLLMCheckbox.checked) {
-                document.getElementById('prompt-form').dispatchEvent(new Event('submit'));
-            } else {
-                // Otherwise, call sendMessage function
-                sendMessage(event);
-            }
-        } else {
-            // Enter was pressed without Shift, insert a newline
+            // Shift + Enter was pressed, insert a newline
             event.preventDefault();
             // insert a newline at the cursor
             const cursorPosition = event.target.selectionStart;
@@ -365,6 +354,17 @@ function handleKeyDown(event) {
             event.target.selectionEnd = cursorPosition + 1;
             // force the textarea to resize
             autoGrow(event);
+        } else {
+            // Enter was pressed without Shift
+            event.preventDefault();
+
+            // If localLLM checkbox is enabled, submit the form (which triggers LLM code).
+            if (localLLMCheckbox.checked) {
+                document.getElementById('prompt-form').dispatchEvent(new Event('submit'));
+            } else {
+                // Otherwise, call sendMessage function
+                sendMessage(event);
+            }
         }
     }
     return true;
@@ -686,9 +686,9 @@ var settings = {
     nodeModeTrigger: "down", //"toggle"
 
     //slider adjustment
-    maxLines: 256,
-    renderWidthMult: 0.5, //1,
-    regenDebtAdjustmentFactor: 0.5,
+    maxLines: 48,
+    renderWidthMult: 0.3, //1,
+    regenDebtAdjustmentFactor: 0.05,
 
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,
