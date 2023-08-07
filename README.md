@@ -8,7 +8,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 ## Introduction
 
 
-💡 **Neurite unleashes a new dimension of digital interface...**
+💡 **[Neurite](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 
 **...the fractal dimension.**
@@ -139,9 +139,12 @@ npm run build
 npm run start
 ```
 
-- Search: Enter a search query to locate windows containing that text. A list of search results will display to the left of the menu. Click on a search result to zoom your view window to where the window is positioned and scaled within the Mandelbrot set (fractal).
+### Notes
+- Search: Enter a search query to locate windows containing that text. The search results display to the left of the menu. Click on a search result to zoom your view to where the corresponding window is positioned within the fractal.
 - Saving: Saving is currently a work-in-progress. Your networks will can be saved in the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file in the save box, then click the second load button to display the network. Non-textual content currently needs to be re-inserted.
-- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its responses together. This allows for a tree of thought reasoning process within the Mandelbrot set.
+- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its responses together.
+
+The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our real time Mandelbrot set visualization.
 
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
@@ -153,9 +156,9 @@ npm run start
 ## Future of Neurite
 
 
-### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. As we are in the middle of a rapid acceleration in AI development, new tools to visualize and organize information are ever more necessary. The project is an experimental attempt to navigate this emergent technological landscape.
+### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing thought.
 
-🚧
+🚧 Neurite is in active development. 🚧 
 
 ✅ webLLM 
 - webLLM localhost
@@ -174,7 +177,8 @@ npm run start
 - auto embed formats
 - custom equations for the fractal
 - drawing-tool
-- user feedback/bug fixes
+
+🔄 user feedback/bug fixes
 
 🚧
 
