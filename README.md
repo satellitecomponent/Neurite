@@ -92,7 +92,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/3c26c9bb-5caa-40f
 
 Above is an example of conversation history being shared between GPT-4 and a Local Ai model, Red Pajamas, run through [webLLM](https://mlc.ai/web-llm/).
 
-### Ai Nodes allow for the creation of an arbitrary number of Ai Agents that can connect together.
+### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability connect memories.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
 - The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift + Click` two node windows to connect them together)
 - This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
