@@ -38,7 +38,7 @@ feel free to visit our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - into the Mandelbrot set. 
+### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content directly into the Mandelbrot set. 
 
 Drag and drop local files or web content straight into the fractal 
 
