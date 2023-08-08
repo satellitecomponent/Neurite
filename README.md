@@ -90,10 +90,12 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/ddcfe933-84d1-422
 2. Node based memory.
 3. HTML/JS and In-browser Python (pyodide) environment for directly rendering GPT's code output.
 4. Web Search (requires Google programmable search api key and search engine id)
-(to search without an API key, send a url within the prompt input and the webpage will display without going through Google.)
+
+(to search without an API key, send a url within the prompt input or past an embed link and the webpage will display without going through Google.)
+
 5. Webpage and PDF text extraction. (see the localhost servers documentation for how to set up)
-6. Wikipedia Summaries (see the localhost servers documentation for how to set up)
-7. Wolfram Alpha Results. (see the localhost servers documentation for how to set up)
+6. Wikipedia Summaries (see the localhost servers)
+7. Wolfram Alpha Results. (see the localhost servers)
 
 All API keys can be input through the Ai tab of the menu dropdown.
 
@@ -103,7 +105,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/3c26c9bb-5caa-40f
 
 Above is an example of conversation history being shared between GPT-4 and a Local Ai model, Red Pajamas, run through [webLLM](https://mlc.ai/web-llm/).
 
-### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect their memories.
+### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect their memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
 - The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift + Click` two node windows to connect them together)
 - This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
