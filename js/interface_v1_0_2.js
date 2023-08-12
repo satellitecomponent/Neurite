@@ -177,11 +177,9 @@ function rewindowify(node) {
     }
     ui(del, node.remove.bind(node));
     ui(fs, (() => {
-        requestAnimationFrame(() => {
             node.zoom_to_fit();
             zoomTo = zoomTo.scale(1.0625);
             autopilotSpeed = settings.autopilotSpeed;
-        });
     }));
     //ui(col, collapseNode(node), "stroke");
     ui(col, (() => { }), "stroke");
@@ -1673,20 +1671,6 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         }
 
 
-        addEventListener("dblclick", (event) => {
-            if (nodeMode) {
-                if (prevNode) {
-                    prevNode = undefined;
-                } else {
-                    //addNodeAtNaturalScale()
-                    //let n = document.createElementNS("http://www.w3.org/2000/svg","svg");
-                    //n.addChild(
-                    //<svg width="20" height="20"><circle cx="10" cy="10" r="10" fill="blue"/></svg>
-                    createTextNode();
-                }
-            }
-            cancel(event);
-        });
 
         let touches = new Map();
 
