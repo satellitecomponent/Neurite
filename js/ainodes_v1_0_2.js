@@ -411,13 +411,6 @@ async function sendLLMNodeMessage(node, message = null) {
     }
 }
 
-window.addEventListener('dblclick', function (e) {
-    if (e.altKey) {
-        e.preventDefault();
-        // Assuming that the createLLMNode function takes x, y coordinates
-        const node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
-    }
-});
 
 // Update handleUserPrompt, handleMarkdown, and renderCodeBlock to make the created divs draggable
 function makeDivDraggable(div, customTitle, handle) {

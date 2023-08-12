@@ -770,19 +770,16 @@ const aiNodesMessage = () => ({
     Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
 });
 
-const zettelkastenPrompt = () => `${tagValues.nodeTag} System message to AI: 
+const zettelkastenPrompt = () => `A prompt is entered, and you respond using this format.
+${tagValues.nodeTag} Response title here.
 - Responses are visualized in a fractal mind-map, Neurite.
-- Use node reference tag format in all responses.
-Current node title tag = ${tagValues.nodeTag}
-Current reference tag = ${tagValues.refTag}
-Format:
-    ${tagValues.nodeTag} Relevant Title after title tag
-        - Ensure Unique/Specific Node Title
-        - Write plain text.
-        - Provide a concise explanation of a key idea.
-        - Break response into multiple connected nodes.
-    ${tagValues.refTag} (Repeat Exact Node Titles to Connect)
-        - Connect the response to related nodes using reference tags.`;
+- Use the tagging format in every response if you want the user to see your message.
+${tagValues.nodeTag} Relevant Title after title tag
+- Ensure Unique/Specific Node Title
+- Write plain text.
+- Provide a concise explanation of a key idea.
+- Break ideas from your response into nodes that build a fractal tapestry of thought.
+    ${tagValues.refTag} (Repeat Exact Node Titles as a comma seperated list to connect if relevant)`;
 
 
 const spatialAwarenessExample = () =>
@@ -1037,7 +1034,7 @@ async function sendMessage(event, autoModeMessage = null) {
     let messages = [
         {
             role: "system",
-            content: `XML tags indicate your frame of reference for each system message and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. Your reply should mimic the format of the following:\nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if any titles are repeated.</format>`,
+            content: `XML tags indicate your frame of thought for each system message and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. \nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if existing titles are repeated.</format>`,
         },
     ];
 
@@ -1088,7 +1085,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Use the given topNchunks as context. Cite your sources!`
+            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Use the given topNchunks as context. Cite your given sources!`
         };
 
         messages.push(embedMessage);
@@ -1224,7 +1221,7 @@ async function sendMessage(event, autoModeMessage = null) {
         if (!document.getElementById("instructions-checkbox").checked) {
             messages.splice(1, 0, {
                 role: "system",
-                content: `Matched notes in mind map to infer context from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>`,
+                content: `Matched notes in mind map to infer a communicative goal from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, or intermediate knowledge within new notes.`,
             });
         }
     }
@@ -1237,20 +1234,26 @@ async function sendMessage(event, autoModeMessage = null) {
         });
     }
 
+
     const commonInstructions = `
-Utilize the format and respond to the ${PROMPT_IDENTIFIER}. Here is another format guide.
-${tagValues.nodeTag} Title following the node tag.
-My responses sit within the plain text of the defined node.
-While this is a condensed example of the format, your response should retain relevance + authenticity.
-Avoid conclusion or example titles.
-Expand existing mind-map using notes with unique titles.
-${tagValues.refTag} (Use a single tag after the plain text) Type titles of nodes as a comma seperated list to connect them.
+Utilize the format and any existing context to communicate your response. Below is another format guide.
+${tagValues.nodeTag} Titles follow the node tag
+Plain text follows the node title.
+This guideline is highly condensed. Reply with expertise of the format.
+Avoid example titles, conlcusion titles, and nodes that connect to all previous nodes.
+Expand the existing mind-map using notes with unique titles.
+${tagValues.refTag} Use a single reference tag after the plain text. Repeat titles of nodes as a comma seperated list to connect them.
 ${tagValues.nodeTag} Write your own titles
 Make sure any new nodes have a unique title
 Break your response up into multiple nodes
-Branch specific and intentional linear or non-linear connections to effectively convey the ideas in your response.
-${tagValues.refTag} Type existing or future node titles as a comma separated list to connect.
-`;
+Branch specific and intentional linear or non-linear connections between notes.
+${tagValues.refTag} Connect existing and potential notes by typing their titles as a comma seperated list.`;
+
+    // Add Common Instructions as a separate system message
+    messages.push({
+        role: "system",
+        content: commonInstructions
+    });
 
     // Add Prompt
     if (autoModeMessage) {
@@ -1267,12 +1270,6 @@ Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message di
 ${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
         });
     }
-
-    // Add Common Instructions as a separate system message
-    messages.push({
-        role: "system",
-        content: commonInstructions
-    });
 
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode

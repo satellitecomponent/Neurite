@@ -8,24 +8,24 @@
             background-color: #000000;
         }
 
-        .window {
-            display: flex;
-            flex-direction: column;
-            align-items: baseline;
-            border: none;
-            background-color: rgba(60, 59, 66, 0.93);
-            -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
-            -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
-            box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
-            user-select: none;
-            position: relative;
-            /* Set initial width and height */
-            width: 100%;
-            height: fit-content;
-            border: 1px solid rgba(0, 0, 0, 0);
-            transition: border-color 0.3s ease;
-            z-index: 2;
-        }
+.window {
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    border: none;
+    background-color: rgba(60, 59, 66, 0.93);
+    -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    user-select: none;
+    position: relative;
+    /* Set initial width and height */
+    width: 100%;
+    height: fit-content;
+    border: 1px solid rgba(0, 0, 0, 0);
+    z-index: 2;
+    transition: border 0.3s ease-in-out;
+}
 
         .window-anchored {
             background-color: rgba(0, 0, 0, 0.82);
@@ -45,17 +45,38 @@
                 z-index: 1;
             }
 
-.window:hover::before {
+@keyframes fadeInOut {
+    0% {
+        border-color: transparent;
+    }
+
+    100% {
+        border-color: #bbb;
+    }
+    /* Fast ease-in */
+    10% {
+        border-color: #bbb;
+    }
+    /* Slow ease-out */
+}
+
+.window::before {
     content: "";
     display: block;
     position: absolute;
-    top: -2px;
-    left: -2px;
+    top: -2.5px;
+    left: -2.5px;
     right: -2px;
     bottom: -2px;
-    border: 2px solid #bbb;
+    border: 2px solid rgba(187, 187, 187, 0); /* Transparent version of #bbb */
     pointer-events: none;
     z-index: -2;
+    transition: border-color 3s linear; /* Fast ease-in */
+}
+
+.window:hover::before {
+    border-color: rgba(187, 187, 187, 0.6); /* Opaque version of #bbb */
+    transition: border-color 0.2s ease-out; /* Slow ease-out */
 }
 
         .window.selected::before {
@@ -102,14 +123,12 @@
 .title-input {
     flex-grow: 1;
     flex-shrink: 1;
-    min-width: 2px;
     color: #bbb;
     background: none !important;
     border-style: solid;
     border-width: 3px 3px 0px 0;
     border-color: #aaa;
     transform: translate(-2%, 10%);
-    transition: border-color 0.3s ease;
     z-index: 1;
 }
 
@@ -122,12 +141,30 @@
 
 .header-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end; /* Align items to the end (right) of the container */
     width: 100%; /* Make sure this takes up the full width of the parent container */
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     z-index: 1;
 }
 
+.container-for-textarea-and-pre {
+    position: relative;
+}
+
+.code-highlight {
+    white-space: pre-wrap; /* Respect newlines */
+    word-wrap: break-word; /* Respect word wrap */
+    overflow: hidden; /* Hide overflow */
+}
+
+.pre-with-cursor::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1em;
+    background-color: black; /* or any color you want for the cursor */
+    pointer-events: none;
+}
 
 
         .resize-container {
@@ -1271,3 +1308,4 @@ input[type=range] {
         background-color: #ddd;
         color: #222226;
     }
+
