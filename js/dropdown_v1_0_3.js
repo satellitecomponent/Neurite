@@ -311,33 +311,75 @@ function updateLabel() {
     const temperature = document.getElementById('model-temperature').value;
     document.getElementById('model-temperature-label').innerText = 'Temperature:\n ' + temperature;
 }
-        // Load any saved keys from local storage
-        document.getElementById('googleApiKey').value = localStorage.getItem('googleApiKey') || '';
-        document.getElementById('googleSearchEngineId').value = localStorage.getItem('googleSearchEngineId') || '';
-        document.getElementById('api-key-input').value = localStorage.getItem('openaiApiKey') || '';
-        document.getElementById('wolframApiKey').value = localStorage.getItem('wolframApiKey') || '';
 
-        function saveKeys() {
-            // Save keys to local storage
-            localStorage.setItem('googleApiKey', document.getElementById('googleApiKey').value);
-            localStorage.setItem('googleSearchEngineId', document.getElementById('googleSearchEngineId').value);
-            localStorage.setItem('openaiApiKey', document.getElementById('api-key-input').value);
-            localStorage.setItem('wolframApiKey', document.getElementById('wolframApiKey').value);
-        }
+//api keys
 
-        function clearKeys() {
-            // Clear keys from local storage
-            localStorage.removeItem('googleApiKey');
-            localStorage.removeItem('googleSearchEngineId');
-            localStorage.removeItem('openaiApiKey');
-            localStorage.removeItem('wolframApiKey');
+// Load any saved keys from local storage
+document.getElementById('googleApiKey').value = localStorage.getItem('googleApiKey') || '';
+document.getElementById('googleSearchEngineId').value = localStorage.getItem('googleSearchEngineId') || '';
+document.getElementById('api-key-input').value = localStorage.getItem('openaiApiKey') || '';
+document.getElementById('wolframApiKey').value = localStorage.getItem('wolframApiKey') || '';
 
-            // Clear input fields
-            document.getElementById('googleApiKey').value = '';
-            document.getElementById('googleSearchEngineId').value = '';
-            document.getElementById('api-key-input').value = '';
-            document.getElementById('wolframApiKey').value = '';
-        }
+function saveKeys() {
+    // Save keys to local storage
+    localStorage.setItem('googleApiKey', document.getElementById('googleApiKey').value);
+    localStorage.setItem('googleSearchEngineId', document.getElementById('googleSearchEngineId').value);
+    localStorage.setItem('openaiApiKey', document.getElementById('api-key-input').value);
+    localStorage.setItem('wolframApiKey', document.getElementById('wolframApiKey').value);
+}
+
+async function saveKeysToFile() {
+    // Gather the keys
+    const keys = {
+        googleApiKey: document.getElementById('googleApiKey').value || '',
+        googleSearchEngineId: document.getElementById('googleSearchEngineId').value || '',
+        openaiApiKey: document.getElementById('api-key-input').value || '',
+        wolframApiKey: document.getElementById('wolframApiKey').value || '',
+    };
+
+    // Save to .txt file
+    const handle = await window.showSaveFilePicker({
+        types: [
+            {
+                description: 'Text Files',
+                accept: {
+                    'text/plain': ['.txt'],
+                },
+            },
+        ],
+    });
+    const writable = await handle.createWritable();
+    await writable.write(JSON.stringify(keys));
+    await writable.close();
+}
+
+async function loadKeysFromFile() {
+    const [fileHandle] = await window.showOpenFilePicker();
+    const file = await fileHandle.getFile();
+    const contents = await file.text();
+
+    const keys = JSON.parse(contents);
+    document.getElementById('googleApiKey').value = keys.googleApiKey || '';
+    document.getElementById('googleSearchEngineId').value = keys.googleSearchEngineId || '';
+    document.getElementById('api-key-input').value = keys.openaiApiKey || '';
+    document.getElementById('wolframApiKey').value = keys.wolframApiKey || '';
+}
+
+function clearKeys() {
+    // Clear keys from local storage
+    localStorage.removeItem('googleApiKey');
+    localStorage.removeItem('googleSearchEngineId');
+    localStorage.removeItem('openaiApiKey');
+    localStorage.removeItem('wolframApiKey');
+
+    // Clear input fields
+    document.getElementById('googleApiKey').value = '';
+    document.getElementById('googleSearchEngineId').value = '';
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('wolframApiKey').value = '';
+}
+
+
 
 function handleKeyDown(event) {
     if (event.key === 'Enter') {

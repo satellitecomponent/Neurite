@@ -43,7 +43,7 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             box-sizing: border-box;
             display: flex;
             justify-content: space-between;
-            height: 45vh;
+            height: 90vh;
             width: calc(100% - 20px); /* 10px margin on left and right side */
             max-width: 1200px;
             margin-bottom: 0px;
@@ -126,12 +126,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             background-color: #222226;
         }
 
-
-        #output-container {
-            background-color: #222226;
-            height: 50vh; /* Taking the remaining 50% of the viewport height */
-        }
-
         .custom-scrollbar::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -159,38 +153,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
                 scrollbar-color: #555 transparent;
             }
 
-        #button-container {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            justify-content: flex-start; /* Aligning the button to the left */
-            padding: 0;
-            z-index: 10; /* Ensure that it stays above the other elements */
-        }
-
-        button#runButton {
-            background-color: #262737;
-            color: #bbb;
-            padding: 7px;
-            border: none;
-            cursor: pointer;
-            height: 33px;
-            margin: 10px;
-        }
-
-        #output-container {
-            background-color: #222226;
-            height: 50vh;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        #output {
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-
         .no-select {
             user-select: none;
             -webkit-user-select: none;
@@ -217,12 +179,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             </div>
         </div>
         <div id="vertical-resize-handle"></div>
-        <div id="button-container">
-            <button id="runButton">Run</button>
-        </div>
-        <div id="output-container" class="custom-scrollbar">
-            <iframe id="output"></iframe>
-        </div>
     </div>
         <script>
             var htmlEditor = CodeMirror(document.getElementById('htmlEditor'), {
@@ -242,25 +198,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             }
 
             window.requestAnimationFrame(refreshEditors);
-
-            document.getElementById("runButton").addEventListener("click", function () {
-                const html = htmlEditor.getValue();
-                const css = "<style>" + cssEditor.getValue() + "</style>";
-                const js = jsEditor.getValue();
-
-                const combinedCode = html + css //since we are using an iframe exclude custom scrollbar css to concatenate later
-
-                const output = document.getElementById("output");
-                output.contentWindow.document.open();
-
-                output.contentWindow.document.open();
-                output.contentWindow.document.write(combinedCode);
-                output.contentWindow.document.close();
-
-                const scriptTag = output.contentWindow.document.createElement("script");
-                scriptTag.textContent = js;
-                output.contentWindow.document.body.appendChild(scriptTag);
-            });
 
             const draggableBars = document.querySelectorAll('.draggable-bar');
             const editorContainers = document.querySelectorAll('.editor-container');
@@ -408,7 +345,7 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
 
     // Generate a unique identifier for the iframe using the node's uuid
     let node = addNodeAtNaturalScale(title, [wrapperDiv]); // Use the wrapper div here
-    iframeElement.identifier = 'editor-' + node.uuid; // Store the identifier
+    iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier
 
     node.content.style.width = '400px'; // Set the width to match the wrapper
     node.content.style.height = '400px'; // Set the height to match the wrapper
