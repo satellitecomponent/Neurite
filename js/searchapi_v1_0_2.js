@@ -316,7 +316,7 @@ async function chunkAndStoreInputExtract() {
         // Store the chunks and their embeddings in the database
         const success = await storeEmbeddingsAndChunksInDatabase(key, chunkedText, chunkedEmbeddings);
 
-        chunkAndStoreButton.textContent = success ? "Store Chunks" : "Chunking Failed";
+        chunkAndStoreButton.textContent = success ? "Store Key & Text" : "Chunking Failed";
 
     } catch (error) {
         console.error(`Failed to chunk and store input:`, error); //1872
@@ -419,7 +419,11 @@ async function fetchAllStoredEmbeddings() {
 }
 
 function chunkText(text, maxLength, overlapSize) {
-    const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g);  // Modified regex to preserve punctuation and spaces
+    const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g); // Modified regex to preserve punctuation and spaces
+    if (!Array.isArray(sentences)) {
+        console.error('Failed to split text into sentences:', text);
+        return [];
+    }
     const chunks = [];
     let chunkWords = [];
     let chunkLength = 0;
@@ -674,6 +678,8 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
         }
     });
 
+    //iframe button
+
     let button = document.createElement("button");
     button.textContent = "Load as iframe";
     button.classList.add("linkbuttons");
@@ -700,11 +706,13 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
         }
     });
 
+    //extract text
+
     let extractButton = document.createElement("button");
     extractButton.textContent = "Extract Text";
     extractButton.classList.add("linkbuttons");
 
-    extractButton.addEventListener("click", function () {
+    extractButton.addEventListener("click", async function () {
         let dotCount = 0;
 
         // Start the dot animation
@@ -713,30 +721,54 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
             extractButton.textContent = "Extracting" + ".".repeat(dotCount);
         }, 500); // Update every 500 milliseconds
 
+        let storageKey = link; // Default to link (blob URL)
+
+        if (node && node.fileName) { // Check if fileName property exists
+            storageKey = node.fileName; // Use fileName as storage key if available
+        }
+
+        async function processExtraction(text, storageKey) {
+            // Chunk the extracted text
+            const chunkedText = chunkText(text, MAX_CHUNK_SIZE, overlapSize);
+
+            // Fetch embeddings for the chunked text
+            const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
+
+            extractButton.textContent = "Storing...";
+
+            // Store the embeddings in the database along with the extracted text
+            await storeEmbeddingsAndChunksInDatabase(storageKey, chunkedText, chunkedEmbeddings);
+
+            extractButton.textContent = "Extracted";
+        }
+
         setTimeout(async function () {
             try {
-                // Send the link to the server for text extraction
-                const response = await fetch('http://localhost:4000/proxy?url=' + encodeURIComponent(link));
-
-                // Handle the server response
-                if (response.ok) {
-                    const extractedText = await response.text();
-                    console.log('Extracted text:', extractedText);
-
-                    // Chunk the extracted text
-                    const chunkedText = chunkText(extractedText, MAX_CHUNK_SIZE, overlapSize);
-
-                    // Fetch embeddings for the chunked text
-                    const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
-
-                    // Store the embeddings in the database along with the extracted text
-                    await storeEmbeddingsAndChunksInDatabase(link, chunkedText, chunkedEmbeddings);
-
-                    extractButton.textContent = "Extracted";
+                if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
+                    const loadingTask = pdfjsLib.getDocument(link);
+                    loadingTask.promise.then(async (pdf) => {
+                        let extractedText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            extractedText += textContent.items.map(item => item.str).join(' ');
+                        }
+                        await processExtraction(extractedText, storageKey);
+                    }).catch(error => {
+                        console.error('Error reading PDF:', error);
+                        extractButton.textContent = "Extract Failed";
+                    });
                 } else {
-                    console.error('Failed to extract text:', response.statusText);
-                    extractButton.textContent = "Extract Failed";
-                    alert("Failed to connect to the local server. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
+                    const response = await fetch('http://localhost:4000/proxy?url=' + encodeURIComponent(link));
+                    if (response.ok) {
+                        const extractedText = await response.text();
+                        await processExtraction(extractedText, link);
+                    } else {
+                        console.error('Failed to extract text:', response.statusText);
+                        extractButton.textContent = "Extract Failed";
+                        alert("Failed to connect to the local server. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
+                    }
                 }
             } catch (error) {
                 console.error('Error during extraction:', error);
@@ -748,6 +780,8 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
             }
         }, 500);
     });
+
+    //display through proxy
 
     let displayWrapper = document.createElement("div");
     displayWrapper.style.width = "100%";
@@ -842,45 +876,6 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     return node;
 }
 
-function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
-    const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-            const {
-                width,
-                height
-            } = entry.contentRect;
-
-            // Find the buttonsWrapper inside windowDiv
-            const buttonsWrapper = windowDiv.querySelector(".buttons-wrapper");
-
-            if (buttonsWrapper) {
-                // Calculate the available height for the iframes
-                let buttonsHeight = buttonsWrapper.offsetHeight || 0;
-                let iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
-
-                // Update the width and height of iframeWrapper and displayWrapper
-                iframeWrapper.style.width = width + "px";
-                iframeWrapper.style.height = iframeHeight + "px";
-                displayWrapper.style.width = width + "px";
-                displayWrapper.style.height = iframeHeight + "px";
-            }
-        }
-    });
-
-    resizeObserver.observe(windowDiv);
-}
-
-function createLinkElement(link, text) {
-    const linkWrapper = document.createElement("div");
-    linkWrapper.style.width = "300px";
-    const a = document.createElement("a");
-    a.setAttribute("href", link);
-    a.setAttribute("target", "_blank");
-    a.textContent = text;
-    a.setAttribute("style", "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap;");
-    linkWrapper.appendChild(a);
-    return linkWrapper;
-}
 
 function displaySearchResults(searchResults) {
     searchResults.forEach((result, index) => {

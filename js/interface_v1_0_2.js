@@ -325,7 +325,33 @@ function extractScalingFactors(element) {
         }
 
 
+function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            const {
+                width,
+                height
+            } = entry.contentRect;
 
+            // Find the buttonsWrapper inside windowDiv
+            const buttonsWrapper = windowDiv.querySelector(".buttons-wrapper");
+
+            if (buttonsWrapper) {
+                // Calculate the available height for the iframes
+                let buttonsHeight = buttonsWrapper.offsetHeight || 0;
+                let iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
+
+                // Update the width and height of iframeWrapper and displayWrapper
+                iframeWrapper.style.width = width + "px";
+                iframeWrapper.style.height = iframeHeight + "px";
+                displayWrapper.style.width = width + "px";
+                displayWrapper.style.height = iframeHeight + "px";
+            }
+        }
+    });
+
+    resizeObserver.observe(windowDiv);
+}
 
 
 
@@ -2031,6 +2057,27 @@ function dropHandler(ev) {
                             }
                             mdReader.readAsText(files[i]);
                             break;
+                        case "application": // Handle PDF files
+                            if (files[i].type.endsWith("pdf")) {
+                                let reader = new FileReader();
+                                reader.readAsArrayBuffer(files[i]);
+
+                                reader.onload = function () {
+                                    let url = URL.createObjectURL(new Blob([reader.result], { type: 'application/pdf' }));
+                                    let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
+                                    node.fileName = files[i].name; // Store file name in node
+                                    htmlnodes_parent.appendChild(node.content);
+                                    registernode(node);
+                                    node.followingMouse = 1;
+                                    node.draw();
+                                    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                                };
+
+                                reader.onerror = function (err) {
+                                    console.error('Error reading PDF file:', err);
+                                };
+                            }
+                            break;
                     }
                 }
             }
@@ -2041,7 +2088,7 @@ function dropHandler(ev) {
                 // them on the server until the user's session ends.
                 console.log("FileReader not supported or no files");
             }
-        }
+}
 
 
         function registernode(node) {

@@ -1212,24 +1212,42 @@ function getConnectedNodes(node) {
 function getNodeData(node) {
     const titleElement = node.content.querySelector("input.title-input");
     const title = titleElement ? titleElement.value : "No title found";
-
-    // Here we're considering that there may be multiple textareas within a node
-    const contentElements = node.content.querySelectorAll("textarea");
-    let contents = [];
-    contentElements.forEach(contentElement => {
-        const content = contentElement ? contentElement.value : "No content found";
-        contents.push(content);
-    });
-
     const createdAt = node.createdAt;
 
     if (!createdAt) {
         console.warn(`getNodeData: Creation time for node ${node.uuid} is not defined.`);
     }
 
-    //node UUID: ${node.uuid}\n \nCreation Time: ${createdAt}
-    const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contents.join("\n")}`;
-    return nodeInfo;
+    // Check if the node contains an iframe editor
+    let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
+    if (iframeElement) {
+        // Get the iframe content window
+        let iframeWindow = iframeElement.contentWindow;
+
+        // Retrieve the content from the editors
+        let htmlContent = iframeWindow.htmlEditor.getValue();
+        let cssContent = iframeWindow.cssEditor.getValue();
+        let jsContent = iframeWindow.jsEditor.getValue();
+
+        const nodeInfo =
+            `${tagValues.nodeTag} ${title}\n` +
+            `Text Content: \n\`\`\`html\n${htmlContent}\n\`\`\`\n` +
+            `\`\`\`css\n${cssContent}\n\`\`\`\n` +
+            `\`\`\`javascript\n${jsContent}\n\`\`\``;
+
+        return nodeInfo;
+    } else {
+        // Existing functionality for non-iframe nodes
+        const contentElements = node.content.querySelectorAll("textarea");
+        let contents = [];
+        contentElements.forEach(contentElement => {
+            const content = contentElement ? contentElement.value : "No content found";
+            contents.push(content);
+        });
+
+        const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contents.join("\n")}`;
+        return nodeInfo;
+    }
 }
 
 function topologicalSort(node, visited, stack) {
