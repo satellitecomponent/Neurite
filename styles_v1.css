@@ -8,6 +8,12 @@
             background-color: #000000;
         }
 
+* {
+    font-family: "Inter", sans-serif;
+    color: #888;
+    font-size: 16px;
+}
+
 .window {
     display: flex;
     flex-direction: column;
@@ -20,7 +26,7 @@
     user-select: none;
     position: relative;
     /* Set initial width and height */
-    width: 100%;
+    width: fit-content;
     height: fit-content;
     border: 1px solid rgba(0, 0, 0, 0);
     z-index: 2;
@@ -250,12 +256,6 @@
             display: inline-block;
         }
 
-        * {
-            font-family: "Inter", sans-serif;
-            color: #bbb;
-            font-size: 16px;
-        }
-
         .disable-pointer-events {
             pointer-events: none;
         }
@@ -472,7 +472,7 @@
             overflow-y: hidden;
             flex-grow: 1;
             background-color: #222226;
-            color: inherit;
+            color: #bbb;
             border: inset;
             border-color: #8882;
             width: 270px;
@@ -509,7 +509,6 @@
 
         #api-key-input {
             background-color: #222226;
-            color: #bbb;
             border: inset;
             border-color: #8882;
         }
@@ -640,6 +639,7 @@
         .zettelkasten {
             background-color: #222226;
             width: 261px;
+            height: 150px;
             z-index: -1;
             border: inset;
             border-color: #8882;
@@ -710,13 +710,14 @@
 
         .key-button {
             z-index: 1;
-            padding: 4px 6px;
+            padding: 2px 2px;
             font-size: 14px;
             cursor: pointer;
             background-color: #222226;
             transition: background-color 0.3s;
             border: inset;
             border-color: #8882;
+            margin-bottom: 4px;
         }
 
             .key-button:hover {
@@ -817,7 +818,8 @@
         }
 
             .scrollable-list::-webkit-scrollbar {
-                width: 10px;
+                width: 8px;
+                height: 8px;
             }
 
             .scrollable-list::-webkit-scrollbar-thumb {
@@ -983,13 +985,10 @@ input[type=range] {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
-    margin-left: -80px;
+    align-items: flex-end;
+    margin-left: 0px;
 }
 
-.key-button {
-    margin-bottom: 10px; /* Optional: Add some margin between the buttons */
-}
 
 .CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
     background-color: #222226 !important;
@@ -1022,12 +1021,6 @@ input[type=range] {
 .aiResponseEditor .CodeMirror-scroll {
     padding: 0 !important;
     background-color: #222226;
-}
-
-.node-title {
-    color: paleturquoise;
-    cursor: pointer;
-    text-decoration: underline;
 }
 
 .loader {

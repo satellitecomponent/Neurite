@@ -119,12 +119,6 @@
             background-color: #222226;
         }
 
-
-        #output-container {
-            background-color: #222226;
-            height: 50vh; /* Taking the remaining 50% of the viewport height */
-        }
-
         .custom-scrollbar::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -152,38 +146,6 @@
                 scrollbar-color: #555 transparent;
             }
 
-        #button-container {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            justify-content: flex-start; /* Aligning the button to the left */
-            padding: 0;
-            z-index: 10; /* Ensure that it stays above the other elements */
-        }
-
-        button#runButton {
-            background-color: #262737;
-            color: #bbb;
-            padding: 7px;
-            border: none;
-            cursor: pointer;
-            height: 33px;
-            margin: 10px;
-        }
-
-        #output-container {
-            background-color: #222226;
-            height: 50vh;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        #output {
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-
         .no-select {
             user-select: none;
             -webkit-user-select: none;
@@ -210,12 +172,6 @@
             </div>
         </div>
         <div id="vertical-resize-handle"></div>
-        <div id="button-container">
-            <button id="runButton">Run</button>
-        </div>
-        <div id="output-container" class="custom-scrollbar">
-            <iframe id="output"></iframe>
-        </div>
     </div>
         <script>
             var htmlEditor = CodeMirror(document.getElementById('htmlEditor'), {
@@ -257,25 +213,6 @@
         }
     </style>
 `;
-
-            document.getElementById("runButton").addEventListener("click", function () {
-                const html = htmlEditor.getValue();
-                const css = "<style>" + cssEditor.getValue() + "</style>";
-                const js = jsEditor.getValue();
-
-                const combinedCode = html + css + customScrollbarStyles; // Include custom scrollbar styles
-
-                const output = document.getElementById("output");
-                output.contentWindow.document.open();
-
-                output.contentWindow.document.open();
-                output.contentWindow.document.write(combinedCode);
-                output.contentWindow.document.close();
-
-                const scriptTag = output.contentWindow.document.createElement("script");
-                scriptTag.textContent = js;
-                output.contentWindow.document.body.appendChild(scriptTag);
-            });
 
             const draggableBars = document.querySelectorAll('.draggable-bar');
             const editorContainers = document.querySelectorAll('.editor-container');
