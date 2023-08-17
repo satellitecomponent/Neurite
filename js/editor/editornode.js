@@ -1,8 +1,8 @@
 function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     // Create the wrapper div
     let wrapperDiv = document.createElement('div');
-    wrapperDiv.style.width = '1100px'; // Set width of the wrapper
-    wrapperDiv.style.height = '600px'; // Set height of the wrapper 
+    wrapperDiv.style.width = '800px'; // Set width of the wrapper
+    wrapperDiv.style.height = '400px'; // Set height of the wrapper 
     wrapperDiv.style.overflow = 'none';
 
     let htmlContent = `<!DOCTYPE html>

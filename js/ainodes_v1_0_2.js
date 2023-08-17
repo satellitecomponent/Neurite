@@ -6,7 +6,10 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
 
     // Update aiResponding and the button
     node.aiResponding = true;
-    node.regenerateButton.textContent = '\u275A\u275A'; // Double Vertical Bar unicode
+    node.regenerateButton.innerHTML = `
+    <svg width="24" height="24">
+        <use xlink:href="#pause-icon"></use>
+    </svg>`;
 
     console.log("Messages sent to API:", messages);
     console.log("Token count for messages:", getTokenCount(messages));
@@ -111,7 +114,10 @@ async function callChatGPTApiForLLMNode(messages, node, stream = false) {
         }
     } finally {
         node.aiResponding = false;
-        node.regenerateButton.textContent = "\u21BA";
+        node.regenerateButton.innerHTML = `
+    <svg width="24" height="24" class="icon">
+        <use xlink:href="#refresh-icon"></use>
+    </svg>`;
     }
 }
 
@@ -482,8 +488,8 @@ class ResponseHandler {
                 trimmedNewContent = trimmedNewContent.trimStart();
             }
 
-            if (trimmedNewContent.startsWith(`${PROMPT_IDENTIFIER} `)) {
-                let promptContent = trimmedNewContent.substring(8).trim();
+            if (trimmedNewContent.startsWith(`${PROMPT_IDENTIFIER} `) || trimmedNewContent === `${PROMPT_IDENTIFIER}`) {
+                let promptContent = trimmedNewContent.substring(PROMPT_IDENTIFIER.length).trim();
                 this.handleUserPrompt(promptContent);
                 newContent = '';
             } else {
@@ -899,7 +905,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     promptTextArea.id = 'prompt';
     promptTextArea.classList.add('custom-scrollbar');
     promptTextArea.onmousedown = cancel;  // Prevent dragging
-    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 270px; height: 55px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none; user-select: none;");
+    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 270px; height: 70px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none; user-select: none;");
     promptTextArea.addEventListener('input', autoGrow);
     promptTextArea.addEventListener('mouseenter', function () {
         promptTextArea.style.userSelect = "text";
@@ -912,12 +918,15 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the send button
     let sendButton = document.createElement("button");
     sendButton.type = "submit";
-    sendButton.innerText = "\u23F5";
     sendButton.id = "prompt-form";
-    sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;"; sendButton.addEventListener('mouseover', function () {
+    sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;"; sendButton.addEventListener('mouseover', function () {
         this.style.backgroundColor = '#45a049';
         this.style.color = '#222226';
     });
+    sendButton.innerHTML = `
+    <svg width="24" height="24">
+        <use xlink:href="#play-icon"></use>
+    </svg>`;
     sendButton.addEventListener('mouseout', function () {
         this.style.backgroundColor = '#222226';
         this.style.color = '#ddd';
@@ -932,9 +941,12 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the regenerate button
     let regenerateButton = document.createElement("button");
     regenerateButton.type = "button";
-    regenerateButton.innerText = "\u21BA";
     regenerateButton.id = "prompt-form";
-    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 10px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+    regenerateButton.innerHTML = `
+    <svg width="24" height="24">
+        <use xlink:href="#refresh-icon"></use>
+    </svg>`;
     regenerateButton.addEventListener('mouseover', function () {
         this.style.backgroundColor = '#ddd';
         this.style.color = '#222226';
@@ -991,7 +1003,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let buttonDiv = document.createElement("div");
     buttonDiv.appendChild(sendButton);
     buttonDiv.appendChild(regenerateButton);
-    buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end;";
+    buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; margin-top: 4px;";
 
     // Create the promptDiv with relative position
     let promptDiv = document.createElement("div");
@@ -1111,7 +1123,10 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             this.controller.abort(); // This line sends the abort signal to the fetch request
             this.aiResponding = false;
             this.shouldContinue = false;
-            this.regenerateButton.textContent = "\u21BA";
+            this.regenerateButton.innerHTML = `
+    <svg width="24" height="24" class="icon">
+        <use xlink:href="#refresh-icon"></use>
+    </svg>`;
             this.promptTextArea.value = this.latestUserMessage; // Add the last user message to the prompt input
 
             // If currently in a code block
@@ -1142,7 +1157,10 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             // AI is not responding, so we want to regenerate
             this.removeLastResponse(); // Remove the last AI response
             this.promptTextArea.value = this.latestUserMessage; // Restore the last user message into the input prompt
-            this.regenerateButton.textContent = "\u21BA";
+            this.regenerateButton.innerHTML = `
+    <svg width="24" height="24" class="icon">
+        <use xlink:href="#refresh-icon"></use>
+    </svg>`;
         }
     };
 
