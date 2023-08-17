@@ -68,9 +68,7 @@ Supports embedded links. Ctrl+V to paste an embed link
 
 ###  Ai that doesn't get lost.
 
-Neurite combines a number of prompting techniques that allow for finer control over the focus of your Ai conversation.
-
-To interact with the Ai, you either need an OpenAi API key, or you can install an Ai directly in browser!
+Neurite allows for finer control over the focus of your Ai conversation.
 
 - The LLM’s responses format themselves into notes and connections within the fractal mind map. This emergent graph structure represents the AI’s memory.
 
@@ -78,6 +76,8 @@ To interact with the Ai, you either need an OpenAi API key, or you can install a
 - Breaking up the AI's output into a chain of thought reasoning correlates to improved Ai response.
 - Mind mapping combined with our fractal interface goes beyond chain of thought reasoning to produce an interactive fractal web of thought.
 - Notes are easily returned to wherever they are at any point in the fractal via our search bar, or by clicking on their syntax highlighted titles in the notes tab.
+
+To interact with the Ai, you either need an OpenAi API key, or you can install an Ai directly in browser!
 
 - The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of thoughts, references, and creations!
 
