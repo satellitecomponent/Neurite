@@ -16,9 +16,33 @@ myCodeMirror.on("blur", function () {
     // Disable text selection when the editor loses focus
     myCodeMirror.getWrapperElement().style.userSelect = "none";
 });
+//sync codemirror and textarea
+// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
+myCodeMirror.on("change", function () {
+    updateNodeTitleToLineMap();
+    identifyNodeTitles();
+    highlightNodeTitles();
+});
+
+myCodeMirror.on("change", function (instance, changeObj) {
+    ignoreTextAreaChanges = true; // Tell the MutationObserver to ignore changes
+    textarea.value = instance.getValue();
+
+    // Create a new 'input' event
+    var event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+    });
+
+    // Dispatch the event
+    textarea.dispatchEvent(event);
+
+    ignoreTextAreaChanges = false; // Tell the MutationObserver to observe changes again
+});
+
 myCodeMirror.display.wrapper.style.backgroundColor = '#222226';
 myCodeMirror.display.wrapper.style.width = '265px';
-myCodeMirror.display.wrapper.style.height = '250px';
+myCodeMirror.display.wrapper.style.height = '45vh';
 myCodeMirror.display.wrapper.style.borderStyle = 'inset';
 myCodeMirror.display.wrapper.style.borderColor = '#8882';
 myCodeMirror.display.wrapper.style.fontSize = '15px';
@@ -150,31 +174,89 @@ function updateNodeTitleToLineMap() {
     });
 }
 
-// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
-myCodeMirror.on("change", function () {
-    updateNodeTitleToLineMap();
-    identifyNodeTitles();
-    highlightNodeTitles();
-});
 
-myCodeMirror.on("change", function (instance, changeObj) {
-    ignoreTextAreaChanges = true; // Tell the MutationObserver to ignore changes
-    textarea.value = instance.getValue();
 
-    // Create a new 'input' event
-    var event = new Event('input', {
-        bubbles: true,
-        cancelable: true,
+function getNodeSectionRange(title, cm) {
+    const lowerCaseTitle = title.toLowerCase();
+    let nodeLineNo;
+    let nextNodeLineNo = cm.lineCount(); // Defaults to the end of the document
+
+    let foundCurrentNode = false;
+
+    for (const [mapTitle, mapLineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+        if (mapTitle.toLowerCase() === lowerCaseTitle) {
+            nodeLineNo = mapLineNo;
+            foundCurrentNode = true;
+            continue; // Skip the current node's line
+        }
+        if (foundCurrentNode) {
+            nextNodeLineNo = mapLineNo;
+            break;
+        }
+    }
+
+    let startLineNo = nodeLineNo;
+    let endLineNo = nextNodeLineNo - 1; // End line is the line just before the next node
+
+    return { startLineNo, endLineNo };
+}
+
+function highlightNodeSection(title, cm) {
+    // Clear any existing "current-node-section" marks
+    cm.getAllMarks().forEach(mark => {
+        if (mark.className === 'current-node-section') mark.clear();
     });
 
-    // Dispatch the event
-    textarea.dispatchEvent(event);
+    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
 
-    ignoreTextAreaChanges = false; // Tell the MutationObserver to observe changes again
-});
+    if (startLineNo === undefined) {
+        // If the start line number is undefined, it means the title does not exist in the CodeMirror.
+        // In that case, simply return, leaving all section highlights cleared.
+        return;
+    }
 
+    // Mark the section between the current title and the next title with a special class for styling
+    cm.markText(
+        CodeMirror.Pos(startLineNo, 0), // Start from the current title's line
+        CodeMirror.Pos(endLineNo, cm.getLine(endLineNo).length),
+        { className: 'current-node-section' }
+    );
+}
 
-// Update the "mousedown" event handler
+function scrollToTitle(title, cm, lineOffset = 0, chPosition = 0) {
+    if (!title || !cm) return; // Check if title and CodeMirror instance are not null or undefined
+
+    const lowerCaseTitle = title.toLowerCase();
+    let nodeLineNo;
+    for (const [mapTitle, mapLineNo] of nodeTitleToLineMap) {
+        if (mapTitle.toLowerCase() === lowerCaseTitle) {
+            nodeLineNo = mapLineNo;
+            break;
+        }
+    }
+
+    if (nodeLineNo === undefined) return; // Check if nodeLineNo is found
+
+    // Modify the line number to account for the line offset
+    nodeLineNo += lineOffset;
+
+    // Calculate the position to scroll to
+    const coords = cm.charCoords({ line: nodeLineNo, ch: chPosition }, "local"); // Use line and character position
+
+    // Set the scroll position of the editor to scroll the target line to the top
+    cm.scrollTo(null, coords.top);
+
+    // Highlight the section of the current node
+    highlightNodeSection(title, cm);
+
+    // Get the node by the title
+    const node = getNodeByTitle(title);
+    if (!node) {
+        return; // The node could not be found
+    }
+    return node; // Return the node object
+}
+
 myCodeMirror.on("mousedown", function (cm, event) {
     var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
     var isWithin = isWithinMarkedText(cm, pos, 'node-title');
@@ -185,54 +267,24 @@ myCodeMirror.on("mousedown", function (cm, event) {
             if (lineMarkers[i].className === 'node-title') {
                 const from = lineMarkers[i].find().from;
                 const to = lineMarkers[i].find().to;
+                const title = cm.getRange(from, to);
 
                 // Check if click is at the start or end of the marked text
                 if (pos.ch === from.ch || pos.ch === to.ch) {
-                    // If click is at the start or end, just place the cursor
-                    cm.setCursor(pos);
-                    return; // prevent default navigation
-                }
-
-                // prevent default click event
-                event.preventDefault();
-
-                const title = cm.getRange(from, to);
-                //console.log('Clicked title:', title);
-                if (!title) {
-                    return; // title could not be extracted
-                }
-
-                // Get the line number of the "node:" line from the map
-                const lowerCaseTitle = title.toLowerCase();
-                let nodeLineNo;
-                for (const [mapTitle, mapLineNo] of nodeTitleToLineMap) {
-                    if (mapTitle.toLowerCase() === lowerCaseTitle) {
-                        nodeLineNo = mapLineNo;
-                        break;
+                    if (title.length === 1) {
+                        // If the title is one character long, perform click behavior
+                        handleTitleClick(title, cm);
+                    } else {
+                        // If click is at the start or end of a title longer than one character, just place the cursor
+                        cm.setCursor(pos);
                     }
+                } else {
+                    // prevent default click event
+                    event.preventDefault();
+
+                    // Scroll and zoom to the title
+                    handleTitleClick(title, cm);
                 }
-                if (typeof nodeLineNo !== "number") {
-                    return; // the line number could not be found
-                }
-
-                // Calculate the position to scroll to
-                const scrollInfo = cm.getScrollInfo();
-                const halfHeight = scrollInfo.clientHeight / 2;
-                const coords = cm.charCoords({ line: nodeLineNo, ch: 0 }, "local");
-
-                // Set the scroll position of the editor
-                cm.scrollTo(null, coords.top - halfHeight);
-
-                // Get the node by the title
-                const node = getNodeByTitle(title);
-                //console.log('Returned node:', node);
-                if (!node) {
-                    return; // the node could not be found
-                }
-
-                // Zoom to the node
-                node.zoom_to(.5);
-                autopilotSpeed = settings.autopilotSpeed;
 
                 break; // Exit the loop once a title is found
             }
@@ -259,7 +311,57 @@ myCodeMirror.on("mousedown", function (cm, event) {
     }
 });
 
+myCodeMirror.on("cursorActivity", function (cm) {
+    const cursorPos = cm.getCursor();
+    const cursorLineNo = cursorPos.line;
 
+    // Find the appropriate node section based on the cursor's position
+    let currentNodeSectionTitle;
+    for (const [title, lineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+        if (lineNo <= cursorLineNo) {
+            currentNodeSectionTitle = title;
+        } else {
+            break;
+        }
+    }
+
+    // If the cursor is within a node section, highlight it, otherwise clear the highlighting
+    if (currentNodeSectionTitle) {
+        const { startLineNo, endLineNo } = getNodeSectionRange(currentNodeSectionTitle, cm);
+        if (cursorLineNo >= startLineNo && cursorLineNo <= endLineNo) {
+            highlightNodeSection(currentNodeSectionTitle, cm);
+            return;
+        }
+    }
+
+    // Clear any existing "current-node-section" marks if the cursor is not within any node section
+    cm.getAllMarks().forEach(mark => {
+        if (mark.className === 'current-node-section') mark.clear();
+    });
+});
+
+function handleTitleClick(title, cm) {
+    if (!title) {
+        return; // title could not be extracted
+    }
+
+    // Scroll to the title
+    const node = scrollToTitle(title, cm);
+    if (node) {
+        let bb = node.content.getBoundingClientRect();
+
+        // Check if the bounding rectangle exists
+        if (bb && bb.width > 0 && bb.height > 0) {
+            // Zoom to fit the node if the bounding rectangle exists
+            node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.5);
+        } else {
+            // Use alternative zoom method if the bounding rectangle does not exist
+            node.zoom_to(.5);
+        }
+        autopilotSpeed = settings.autopilotSpeed;
+    }
+}
 
 // Call initially
 identifyNodeTitles();
@@ -268,7 +370,7 @@ highlightNodeTitles();
 function getNodeByTitle(title) {
     const lowerCaseTitle = title.toLowerCase();
     for (let n of nodes) {
-        let nodeTitle = n.content.getAttribute('data-title');
+        let nodeTitle = n.getTitle(); // Use the new getTitle method
         if (nodeTitle && nodeTitle.toLowerCase() === lowerCaseTitle) {
             return n;
         }
@@ -426,8 +528,6 @@ function handleKeyDown(event) {
             }
         }
 
-
-
         //disable ctl +/- zoom on browser
         document.addEventListener('keydown', (event) => {
             if (event.ctrlKey && (event.key === '+' || event.key === '-' || event.key === '=')) {
@@ -445,6 +545,8 @@ function handleKeyDown(event) {
 
         document.body.style.transform = "scale(1)";
         document.body.style.transformOrigin = "0 0";
+
+
 
 function openTab(tabId, element) {
     var i, tabcontent, tablinks;
@@ -465,6 +567,8 @@ function openTab(tabId, element) {
         // Get the menu button and dropdown content elements
         const menuButton = document.querySelector(".menu-button");
         const dropdownContent = document.querySelector(".dropdown-content");
+        const nodePanel = document.querySelector(".node-panel");
+
 
         // Get the first tabcontent element
         const firstTab = document.querySelector(".tabcontent");
@@ -487,7 +591,7 @@ function openTab(tabId, element) {
             // Toggle the "open" class on the menu button and dropdown content
             menuButton.classList.toggle("open");
             dropdownContent.classList.toggle("open");
-
+            nodePanel.classList.toggle("open");
             // If the dropdown is opened, manually set the first tab to active and display its content
             if (dropdownContent.classList.contains("open")) {
                 var tablinks = document.getElementsByClassName("tablink");
@@ -515,6 +619,9 @@ function openTab(tabId, element) {
         dropdownContent.addEventListener("mousedown", (e) => {
             cancel(e);
         });
+
+
+
 
 document.getElementById("save-button").addEventListener("click", function () {
     nodes.map((n) => n.updateEdgeData());

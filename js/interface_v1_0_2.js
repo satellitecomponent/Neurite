@@ -45,6 +45,139 @@ if (!RegExp.escape) {
         }
 
 
+function collapseNode(node) {
+    return function (event) {
+        let div = node.content.querySelector('.window');
+        let titleInput = div.querySelector('.title-input');
+        let headerContainer = div.querySelector('.header-container');
+
+        if (!div.collapsed) {
+            div.originalSize = {
+                width: div.offsetWidth,
+                height: div.offsetHeight
+            };
+
+            // Hide all children of the window div except headerContainer and titleInput
+            Array.from(div.children).forEach(child => {
+                if (child !== headerContainer && child !== titleInput) {
+                    child.style.display = 'none';
+                }
+            });
+
+            // Hide all children of headerContainer except titleInput
+            Array.from(headerContainer.children).forEach(child => {
+                if (child !== titleInput) {
+                    child.style.display = 'none';
+                }
+            });
+
+            // Adjust the window to make it look like a circle
+            div.style.width = '40px';
+            div.style.height = '40px';
+            div.style.borderRadius = '50%';
+            // Capture the box-shadow of the window div
+            let boxShadow = getComputedStyle(div).boxShadow;
+
+            div.style.boxShadow = 'none'; // Remove box-shadow from div
+            div.classList.add('collapsed');
+
+            // Position title input in the center
+            titleInput.style.position = 'absolute';
+            titleInput.style.top = '50%';
+            titleInput.style.left = '50%';
+            titleInput.style.transform = 'translate(-50%, -50%)';
+            titleInput.style.border = 'none';
+            titleInput.style.textAlign = 'center';
+            titleInput.style.pointerEvents = 'none';
+
+
+            // Create the circle
+            let circle = document.createElement('div');
+            circle.className = 'collapsed-circle';
+            circle.style.width = '40px';
+            circle.style.height = '40px';
+            circle.style.borderRadius = '50%';
+            circle.style.boxShadow = boxShadow;
+
+            div.appendChild(circle);
+
+            // Prevent the browser's default drag behavior for the circle
+            circle.ondragstart = function (event) {
+                event.preventDefault();
+            };
+
+            // If window is anchored, switch out for the collapsed node anchor class
+            if (node.content.classList.contains('window-anchored')) {
+                node.content.classList.remove('window-anchored');
+                circle.classList.add('collapsed-anchor');
+            }
+
+            function handleCircleDoubleClick(event) {
+                if (nodeMode !== 1) {
+                    if (circle.classList.contains('collapsed-anchor')) {
+                        circle.classList.remove('collapsed-anchor');
+                    } else {
+                        circle.classList.add('collapsed-anchor');
+                    }
+                } else {
+                    expandNode(node, div, circle);
+                    event.stopPropagation(); // Prevent the event from propagating up the DOM tree only in node mode
+                }
+            }
+
+            circle.addEventListener('dblclick', handleCircleDoubleClick);
+
+            //Flag for toggleanchored in node class
+            div.collapsed = true;
+        } else {
+            expandNode(node, div);
+        }
+    }
+}
+
+function expandNode(node, div, circle) {
+    // Reset the window properties
+    div.style.borderRadius = '';
+    div.style.width = div.originalSize.width + 'px';
+    div.style.height = div.originalSize.height + 'px';
+    div.style.boxShadow = ``;
+    div.classList.remove('collapsed');
+
+    // Show all the children of the window div
+    let children = Array.from(div.children);
+    for (let child of children) {
+        child.style.display = '';
+    }
+
+    // Show the children of the header container
+    let headerChildren = Array.from(div.querySelector('.header-container').children);
+    for (let child of headerChildren) {
+        child.style.display = '';
+    }
+
+    // Reset the title input's position and transformation
+    let titleInput = div.querySelector('.title-input');
+    titleInput.style.position = '';
+    titleInput.style.top = '';
+    titleInput.style.left = '';
+    titleInput.style.transform = '';
+    titleInput.style.textAlign = '';
+    titleInput.style.pointerEvents = '';
+
+    // Transfer the .window-anchored class from circle to node.content if present
+    if (circle && circle.classList.contains('collapsed-anchor')) {
+        node.content.classList.add('window-anchored');
+        circle.classList.remove('collapsed-anchor');
+    }
+
+    // Remove the circle from the window div
+    if (circle) {
+        div.removeChild(circle);
+    }
+
+    div.collapsed = false;
+}
+
         function windowify(title, content, pos, scale, iscale, link) {
             let odiv = document.createElement('div');
             let div = document.createElement('div');
@@ -177,12 +310,13 @@ function rewindowify(node) {
     }
     ui(del, node.remove.bind(node));
     ui(fs, (() => {
-            node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.0625);
-            autopilotSpeed = settings.autopilotSpeed;
+        node.zoom_to_fit();
+        zoomTo = zoomTo.scale(1.0625);
+        autopilotSpeed = settings.autopilotSpeed;
+        scrollToTitle(node.getTitle(), noteInput); // Use the getTitle method
     }));
-    //ui(col, collapseNode(node), "stroke");
-    ui(col, (() => { }), "stroke");
+
+    ui(col, collapseNode(node), "stroke");
 
     // Add the "mouseup" event listener to the document
     document.addEventListener('mouseup', () => {
@@ -191,6 +325,25 @@ function rewindowify(node) {
         }
     });
 
+    return node;
+}
+
+function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 1, window_it = true) {
+    let node;
+    if (window_it) {
+        let pos = toZ(mousePos)
+        if (!Array.isArray(content)) {
+            content = [content];
+        }
+        node = windowify(title, content, pos, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
+        htmlnodes_parent.appendChild(node.content);
+    } else {
+        let div = document.createElement('div');
+        node = new Node(toZ(mousePos), div, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
+        div.appendChild(content);
+        htmlnodes_parent.appendChild(div);
+    }
+    registernode(node)
     return node;
 }
 
@@ -215,6 +368,9 @@ function extractScalingFactors(element) {
         scaleY
     };
 }
+
+// impact on responsiveness?
+//addEventListener("resize", (event) => { });
 
         function setResizeEventListeners(resizeHandle, node) {
             const inverse2DMatrix = (matrix) => {
@@ -351,6 +507,94 @@ function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
     });
 
     resizeObserver.observe(windowDiv);
+}
+
+//used for programatic interaction in zettelkasten.js
+function adjustTextareaHeight(textarea) {
+    requestAnimationFrame(() => {
+        // Save the current scroll state
+        const currentScrollTop = textarea.scrollTop;
+        const currentClientHeight = textarea.clientHeight;
+
+        // Determine the distance from the current scroll position to the bottom before height adjustment
+        const distanceToBottomBeforeAdjustment = textarea.scrollHeight - currentScrollTop - currentClientHeight;
+
+        // Epsilon for determining how close the user must be to the bottom
+        const epsilon = 100;
+
+        // Determine if the user is at the bottom before the adjustment
+        const isAtBottom = distanceToBottomBeforeAdjustment < epsilon;
+
+
+        // Adjust the height
+        textarea.style.height = "";
+        textarea.style.height = Math.min(textarea.scrollHeight, textarea.maxHeight || Infinity) + "px";
+
+        // If the user was at the bottom, scroll them to the bottom again
+        if (isAtBottom) {
+            textarea.scrollTop = textarea.scrollHeight - textarea.clientHeight;
+        }
+    });
+}
+//used for user interaction in create text node
+function adjustTextareaElement(node, element) {
+    let max_height = 300; // Set maximum height in pixels
+
+    // Function to adjust the height and handle overflow of the textarea
+    const adjustHeight = (element) => {
+        if (!node.isResizing) {
+            if (element.scrollHeight > max_height) {
+                if (element.clientHeight < max_height) {
+                    element.style.height = max_height + 'px';
+                    element.style.overflowY = 'auto';
+                }
+            } else {
+                element.style.height = 'auto'; // Reset the height
+                element.style.height = element.scrollHeight + 'px'; // Set to scrollHeight
+            }
+        }
+    };
+
+    // Function to auto-scroll to the bottom if user is already at the bottom
+    const autoScrollToBottom = (element) => {
+        if (element.scrollTop + element.clientHeight >= element.scrollHeight - 5) {
+            // Using scrollIntoView to smoothly scroll to the bottom
+            element.scrollIntoView(false);
+        }
+    };
+
+    node.isResizing = false;
+
+    element.addEventListener('mousedown', (e) => {
+        node.isResizing = true;
+    });
+
+    element.addEventListener('mouseup', (e) => {
+        node.isResizing = false;
+    });
+
+    adjustHeight(element);
+
+    node.observer = new ResizeObserver(() => {
+        adjustHeight(element);
+    });
+    node.observer.observe(element);
+
+    let prevScrollHeight = element.scrollHeight;
+
+    const mutationObserver = new MutationObserver(() => {
+        if (element.scrollHeight !== prevScrollHeight) {
+            adjustHeight(element);
+            autoScrollToBottom(element);
+            prevScrollHeight = element.scrollHeight;
+        }
+    });
+
+    mutationObserver.observe(element, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
 }
 
 
@@ -552,6 +796,9 @@ class Node {
         let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
         this.content.setAttribute("data-edges", es);
     }
+    getTitle() {
+        return this.content.getAttribute('data-title');
+    }
 
 
     step(dt) {
@@ -610,10 +857,13 @@ class Node {
 
     }
     toggleWindowAnchored(anchored) {
-        if (anchored) {
-            this.content.classList.add("window-anchored");
-        } else {
-            this.content.classList.remove("window-anchored");
+        let div = this.content.querySelector('.window');
+        if (div && !div.collapsed) { // Check if not collapsed
+            if (anchored) {
+                this.content.classList.add("window-anchored");
+            } else {
+                this.content.classList.remove("window-anchored");
+            }
         }
     }
     ondblclick(event) {
@@ -633,7 +883,7 @@ class Node {
             if (prevNode === undefined) {
                 prevNode = this;
             } else {
-                connect(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
+                connectDistance(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
                 prevNode = undefined;
             }
         }
@@ -1196,11 +1446,6 @@ function connectRandom(n) {
         //connectRandom(10);
 
 
-
-
-        addEventListener("resize", (event) => { });
-
-
         document.addEventListener('wheel', (event) => {
             // Get the element that the user is scrolling on
             let targetElement = event.target;
@@ -1255,6 +1500,8 @@ function connectRandom(n) {
                 event.preventDefault();
             }
         });
+
+
         let mouseDown = false;
         let mouseDownPos = new vec2(0, 0);
         addEventListener("mousedown", (event) => {
@@ -1263,46 +1510,76 @@ function connectRandom(n) {
             mouseDown = true;
             cancel(event);
         });
-        addEventListener("mouseup", (event) => {
-            mouseDown = false;
-            if (movingNode !== undefined) {
-                movingNode.onmouseup(event);
-            }
-        });
-        addEventListener("mousemove", (event) => {
-            if (mouseDown) {
-                autopilotSpeed = 0;
-                coordsLive = true;
-                let delta = mousePos.minus(mouseDownPos);
-                pan = pan.minus(toDZ(delta));
-                regenAmount += delta.mag() * 0.25;
-                mouseDownPos = mousePos.scale(1);
-            }
-        });
-        addEventListener("keydown", (event) => {
-            //console.log(event);
-            if (event.key === settings.nodeModeKey) {
-                if (settings.nodeModeTrigger === "down") {
-                    if (settings.nodeModeKey === "CapsLock") {
-                        nodeMode = event.getModifierState("CapsLock");
-                    } else {
-                        nodeMode = 1;
-                    }
-                } else if (settings.nodeModeTrigger === "toggle") {
-                    nodeMode = 1 - nodeMode;
-                }
-            } else if (event.key === "Escape") {
-                for (let n of nodes) {
-                    n.followingMouse = 0;
-                }
-            }
-        });
+addEventListener("mouseup", (event) => {
+    mouseDown = false;
+    if (movingNode !== undefined) {
+        movingNode.onmouseup(event);
+    }
+    isDraggingIcon = false; // Reset the flag
+});
+addEventListener("mousemove", (event) => {
+    if (mouseDown) {
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let delta = mousePos.minus(mouseDownPos);
+        pan = pan.minus(toDZ(delta));
+        regenAmount += delta.mag() * 0.25;
+        mouseDownPos = mousePos.scale(1);
+    }
+});
 
-        function adjustTextareaHeight(textarea) {
-            textarea.style.height = "";
-            textarea.style.height = textarea.scrollHeight + "px";
+const edgesIcon = document.querySelector('.edges-icon');
+let lockedNodeMode = false;
+
+function toggleNodeModeState() {
+    if (nodeMode) {
+        edgesIcon.classList.add('edges-active');
+    } else {
+        edgesIcon.classList.remove('edges-active');
+    }
+}
+
+function toggleNodeMode() {
+    nodeMode = 1 - nodeMode;
+    lockedNodeMode = !!nodeMode;  // Lock it only if activated by button
+    toggleNodeModeState();
+}
+
+edgesIcon.addEventListener('click', toggleNodeMode);
+
+addEventListener("keydown", (event) => {
+    if (event.key === settings.nodeModeKey) {
+        const isCapsLockMode = settings.nodeModeKey === "CapsLock" && event.getModifierState("CapsLock");
+
+        if (lockedNodeMode && !nodeMode) {
+            // If nodeMode was deactivated by the key while it was locked, unlock it
+            lockedNodeMode = false;
         }
 
+        if (settings.nodeModeTrigger === "down" && !isCapsLockMode) {
+            nodeMode = 1;
+            toggleNodeModeState();
+        } else if (settings.nodeModeTrigger === "toggle" || isCapsLockMode) {
+            toggleNodeMode();
+        }
+    } else if (event.key === "Escape") {
+        for (let n of nodes) {
+            n.followingMouse = 0;
+        }
+    }
+});
+
+addEventListener("keyup", (event) => {
+    if (event.key === settings.nodeModeKey && settings.nodeModeTrigger === "down") {
+        if (lockedNodeMode) {
+            return;  // Don't allow the keyup event to deactivate nodeMode if it's locked
+        }
+
+        nodeMode = 0;
+        toggleNodeModeState();
+        cancel(event);
+    }
+});
 
 
 let pyodideLoadingPromise = null;
@@ -1589,75 +1866,16 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         buttonCallback(node);
     }
 
+    // Resize/height adjustment
+    n.oninput = function () {
+        adjustTextareaElement(node, this);
+    };
 
-            let max_height = 300; // Set maximum height in pixels
-
-            // Add a flag to the node to track resizing
-            node.isResizing = false;
-
-            // Add a mousedown event listener to track user interactions with the resize handle
-            n.addEventListener('mousedown', (e) => {
-                node.isResizing = true;
-            });
-
-            // Add a mouseup event listener to re-enable auto-height adjustment
-            n.addEventListener('mouseup', (e) => {
-                node.isResizing = false;
-            });
-
-            // Function to adjust the height and handle overflow of the textarea
-            const adjustHeight = (element) => {
-                if (!node.isResizing) {
-                    if (element.scrollHeight > max_height) {
-                        if (element.clientHeight < max_height) {
-                            element.style.height = max_height + 'px';
-                            element.style.overflowY = 'auto';
-                        }
-                    } else {
-                        element.style.height = 'auto'; // Reset the height
-                        element.style.height = element.scrollHeight + 'px'; // Set to scrollHeight
-                    }
-                }
-            };
-
-            // Function to auto-scroll to the bottom if user is already at the bottom
-            const autoScrollToBottom = (element) => {
-                if (element.scrollTop + element.clientHeight >= element.scrollHeight - 5) {
-                    // Using scrollIntoView to smoothly scroll to the bottom
-                    element.scrollIntoView(false);
-                }
-            };
-
-            // Modify the oninput function to check the isResizing flag and max height
-            n.oninput = function () {
-                adjustHeight(this);
-            };
-
-            // Add the observer to the node
-            node.observer = new ResizeObserver(() => {
-                adjustHeight(n);
-            });
-
-            // Start observing the textarea element
-            node.observer.observe(n);
-
-            // Track the previous scrollHeight
-            let prevScrollHeight = n.scrollHeight;
-
-            // Use a MutationObserver to watch for changes to the textarea's value
-            const mutationObserver = new MutationObserver(() => {
-                if (n.scrollHeight !== prevScrollHeight) {
-                    adjustHeight(n);
-                    autoScrollToBottom(n);
-                    prevScrollHeight = n.scrollHeight;
-                }
-            });
-
-            mutationObserver.observe(n, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
+    //Highlight Codemirror text
+    n.onfocus = function () {
+        const title = node.getTitle();
+        highlightNodeSection(title, myCodeMirror);
+    };
 
             if (sx !== undefined) {
                 x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
@@ -1697,6 +1915,7 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         }
 
 
+//Touchpad controls (WIP)
 
         let touches = new Map();
 
@@ -1850,17 +2069,6 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         });
 
 
-        addEventListener("keyup", (event) => {
-            //console.log(event);
-            if (event.key === settings.nodeModeKey) {
-                if (settings.nodeModeTrigger === "down") {
-                    nodeMode = 0;
-                    cancel(event);
-                }
-            }
-        });
-
-
 // Check if a string is valid JSON
 function isJSON(str) {
     try {
@@ -1873,6 +2081,129 @@ function isJSON(str) {
 
         //todo patches for zoom in
 
+// Check if the user's message is a URL
+const isUrl = (text) => {
+    try {
+        const url = new URL(text);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (_) {
+        return false;
+    }
+}
+
+        //Drag and Drop
+
+let isDraggingIcon = false;
+let initialMousePosition = null;
+
+function makeIconDraggable(iconDiv) {
+    iconDiv.addEventListener('mousedown', function (event) {
+        if (!iconDiv.classList.contains('edges-icon')) {
+            iconDiv.dataset.draggable = 'true';  // Set to draggable immediately on mousedown
+            mouseDown = true;
+        }
+    });
+
+    iconDiv.addEventListener('mousemove', function (event) {
+        if (mouseDown && !isDraggingIcon && !iconDiv.classList.contains('edges-icon')) {
+            iconDiv.setAttribute('draggable', 'true');
+            isDraggingIcon = true;
+        }
+    });
+
+    iconDiv.addEventListener('mouseup', function () {
+        iconDiv.setAttribute('draggable', 'false');
+        isDraggingIcon = false;
+        mouseDown = false;
+        initialMousePosition = null;
+    });
+
+    iconDiv.addEventListener('dragstart', function (event) {
+        const rect = iconDiv.getBoundingClientRect();
+        const offsetX = event.clientX - rect.left;
+        const offsetY = event.clientY - rect.top;
+
+        event.dataTransfer.setDragImage(iconDiv, offsetX, offsetY);
+
+        const draggableData = {
+            type: 'icon',
+            iconName: iconDiv.classList[1]
+        };
+        event.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
+    });
+
+    // When dragging ends, make sure the div is non-draggable
+    iconDiv.addEventListener('dragend', function () {
+        iconDiv.setAttribute('draggable', 'false');
+        isDraggingIcon = false;
+        mouseDown = false;
+    });
+}
+
+const icons = document.querySelectorAll('.panel-icon');
+icons.forEach(icon => {
+    makeIconDraggable(icon);
+});
+
+function makeEdgesIconNotDraggable(iconDiv) {
+    iconDiv.addEventListener('dragstart', function (event) {
+        event.preventDefault();
+    });
+}
+
+const edgesIcons = document.querySelectorAll('.edges-icon');
+edgesIcons.forEach(icon => {
+    makeEdgesIconNotDraggable(icon);
+});
+
+
+function handleIconDrop(event, iconName) {
+
+    console.log(`Dropped icon: ${iconName}`);
+
+    switch (iconName) {
+        case 'note-icon':
+            node = createTextNode(``, '', undefined, undefined, undefined, undefined);
+            registernode(node);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            console.log('Handle drop for the note icon');
+            break;
+        case 'ai-icon':
+            node = createLLMNode('', undefined, undefined, undefined, undefined);
+            registernode(node);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            console.log('Handle drop for the ai icon');
+            break;
+        case 'link-icon':
+            let linkUrl = prompt("Enter a Link or Search Query", "");
+
+            if (linkUrl) {
+                processLinkInput(linkUrl);
+            }
+            break;
+        case 'code-icon':
+            node = createEditorNode();
+            registernode(node);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            console.log('Handle drop for the code icon');
+            break;
+        case 'edges-icon':
+            console.log('Handle drop for the edges icon');
+            break;
+        default:
+            console.warn(`No handler defined for icon: ${iconName}`);
+            break;
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+}
 
 function dropHandler(ev) {
     ev.preventDefault();
@@ -1880,8 +2211,16 @@ function dropHandler(ev) {
     const data = ev.dataTransfer.getData('text');
 
     if (data && isJSON(data)) {
-        let [title, content] = JSON.parse(data);
+        const parsedData = JSON.parse(data);
+        
+        if (parsedData.type === 'icon') {
+            // Handle the icon drop
+            handleIconDrop(ev, parsedData.iconName);
+            return;  // Exit the handler early
+        }
 
+        // Now only try destructuring if the data isn't an icon type
+        let [title, content] = parsedData;
         // If this is one of the three specific types of divs, handle it here
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
             //console.log(`Dropped div "${title}": "${content}"`);
@@ -1906,7 +2245,7 @@ function dropHandler(ev) {
 
 
 
-            let node = createTextNode(title, '', undefined, undefined, undefined, undefined, addCheckbox);
+            node = createTextNode(title, '', undefined, undefined, undefined, undefined, addCheckbox);
             htmlnodes_parent.appendChild(node.content);
             registernode(node);
             node.followingMouse = 1;
@@ -2030,6 +2369,7 @@ function dropHandler(ev) {
                                 let node = createTextNode(files[i].name, '');
                                 node.content.children[0].children[1].children[0].value = text; // set the content of the textarea
                                 htmlnodes_parent.appendChild(node.content);
+                                registernode(node);
                             }
                             reader.readAsText(files[i]);
                             break;
@@ -2080,10 +2420,7 @@ function dropHandler(ev) {
                             break;
                     }
                 }
-            }
-
-            // Not supported
-            else {
+            } else {
                 // fallback -- perhaps submit the input to an iframe and temporarily store
                 // them on the server until the user's session ends.
                 console.log("FileReader not supported or no files");
@@ -2137,25 +2474,6 @@ function dropHandler(ev) {
             } else {
                 event.cancelBubble = true; // IE model
             }
-        }
-
-        function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 1, window_it = true) {
-            let node;
-            if (window_it) {
-                let pos = toZ(mousePos)
-                if (!Array.isArray(content)) {
-                    content = [content];
-                }
-                node = windowify(title, content, pos, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
-                htmlnodes_parent.appendChild(node.content);
-            } else {
-                let div = document.createElement('div');
-                node = new Node(toZ(mousePos), div, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
-                div.appendChild(content);
-                htmlnodes_parent.appendChild(div);
-            }
-            registernode(node)
-            return node;
         }
 
 

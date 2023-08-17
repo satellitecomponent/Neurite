@@ -25,6 +25,9 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
     <style type="text/css">
+        .current-node-section {
+            color: #bbb;
+        }
         .node-title {
             color: paleturquoise;
             cursor: pointer;
@@ -55,7 +58,7 @@
             <title>Mandelbrot</title>
             <g id="viewmatrix">
                 <g id="bg" />
-                <path id="mousePath" d="" fill="none" stroke="red" stroke-width="0.01" />
+                <path id="mousePath" d="" fill="none" stroke="rgb(50 51 62 / 80%)" stroke-width="0.01" />
                 <g id="edges" />
             </g>
         </svg>
@@ -78,6 +81,45 @@
         <div class="menu-button">
             <div class="menu-icon"></div>
         </div>
+
+        <div class="node-panel">
+            <div class="icon-content">
+                <div class="panel-icon edges-icon" title="Freeze and Connect Nodes (Hold Shift)">
+                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" style="transform: translateX(-1px);" aria-hidden="true">
+                        <use xlink:href="#edges-icon-symbol"></use>
+                    </svg>
+                </div>
+            </div>
+            <div class="icon-content">
+                <div class="panel-icon note-icon" title="Create Note (Shift + Double Click)">
+                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                        <use xlink:href="#note-icon-symbol"></use>
+                    </svg>
+                </div>
+            </div>
+            <div class="icon-content">
+                <div class="panel-icon ai-icon" title="Ai Note (ALT/Option + Double Click)">
+                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                        <use xlink:href="#ai-icon-symbol"></use>
+                    </svg>
+                </div>
+            </div>
+            <div class="icon-content">
+                <div class="panel-icon link-icon" title="Display Link">
+                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                        <use xlink:href="#link-icon-symbol"></use>
+                    </svg>
+                </div>
+            </div>
+            <div class="icon-content">
+                <div class="panel-icon code-icon" title="Create Code Editor (Shift + ALT/Option + Double Click)">
+                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                        <use xlink:href="#code-icon-symbol"></use>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <div class="dropdown-content">
             <div style="display: none;" id="search-results">
                 <div class="submenu">
@@ -111,8 +153,16 @@
                                         </div>
                                     </div>
                                     <div class="btn-group" style="margin-left: 10px;">
-                                        <button type="submit">&#x23F5;</button>
-                                        <button id="regen-button" type="button">&#x21BA;</button>
+                                        <button type="submit">
+                                            <svg width="18" height="18">
+                                                <use xlink:href="#play-icon"></use>
+                                            </svg>
+                                        </button>
+                                        <button id="regen-button" type="button">
+                                            <svg width="18" height="18">
+                                                <use xlink:href="#refresh-icon"></use>
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="input-group" style="margin-top: 10px;">
@@ -290,15 +340,15 @@
                                 <td>Freeze Windows</td>
                             </tr>
                             <tr>
-                                <td><strong>ALT + SCROLL</strong></td>
+                                <td><strong>ALT/Option + SCROLL</strong></td>
                                 <td>Rotate the view.</td>
                             </tr>
                             <tr>
-                                <td><strong>ALT + CLICK</strong></td>
+                                <td><strong>ALT/Option + CLICK</strong></td>
                                 <td>Selects multiple nodes. Allows for multiple nodes to be re-scaled</td>
                             </tr>
                             <tr>
-                                <td><strong>ALT + DOUBLE CLICK</strong></td>
+                                <td><strong>ALT/Option + DOUBLE CLICK</strong></td>
                                 <td>Creates an ai chat node</td>
                             </tr>
                             <tr>
@@ -441,7 +491,7 @@
                             <div class="settingsSlider">
                                 <label for="max-context-size-slider">Context Size:</label>
                                 <span id="max-context-size-display">32000</span>
-                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="500">
+                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="1000">
                             </div>
 
                             <div class="settingsSlider">
@@ -568,6 +618,50 @@
         </svg>
     </div>
 
+    <!--icon svgs -->
+
+    <svg style="display: none;">
+        <symbol id="note-icon-symbol" viewBox="0 0 20 20">
+            <path stroke="#686868" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.7" d="M15 17v1a.97.97 0 0 1-.933 1H1.933A.97.97 0 0 1 1 18V5.828a2 2 0 0 1 .586-1.414l2.828-2.828A2 2 0 0 1 5.828 1h8.239A.97.97 0 0 1 15 2M6 1v4a1 1 0 0 1-1 1H1m13.14.772 2.745 2.746M18.1 5.612a2.086 2.086 0 0 1 0 2.953l-6.65 6.646-3.693.739.739-3.692 6.646-6.646a2.087 2.087 0 0 1 2.958 0Z" />
+        </symbol>
+
+        <symbol id="ai-icon-symbol" viewBox="0 0 20 18">
+            <path stroke="#686868" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.7" d="M4.109 17H1v-2a4 4 0 0 1 4-4h.87M10 4.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Zm7.95 2.55a2 2 0 0 1 0 2.829l-6.364 6.364-3.536.707.707-3.536 6.364-6.364a2 2 0 0 1 2.829 0Z" />
+        </symbol>
+
+        <symbol id="link-icon-symbol" viewBox="0 0 19 19">
+            <path stroke="#686868" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.7" d="M11.013 7.962a3.519 3.519 0 0 0-4.975 0l-3.554 3.554a3.518 3.518 0 0 0 4.975 4.975l.461-.46m-.461-4.515a3.518 3.518 0 0 0 4.975 0l3.553-3.554a3.518 3.518 0 0 0-4.974-4.975L10.3 3.7" />
+        </symbol>
+
+        <symbol id="code-icon-symbol" viewBox="0 0 20 16">
+            <path stroke="#686868" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.8" d="M5 4 1 8l4 4m10-8 4 4-4 4M11 1 9 15" />
+        </symbol>
+
+        <symbol id="edges-icon-symbol" viewBox="0 0 18 18">
+            <path stroke="#686868" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.7" d="m5.953 7.467 6.094-2.612m.096 8.114L5.857 9.676m.305-1.192a2.581 2.581 0 1 1-5.162 0 2.581 2.581 0 0 1 5.162 0ZM17 3.84a2.581 2.581 0 1 1-5.162 0 2.581 2.581 0 0 1 5.162 0Zm0 10.322a2.581 2.581 0 1 1-5.162 0 2.581 2.581 0 0 1 5.162 0Z" />
+        </symbol>
+    </svg>
+
+    <svg style="display:none;">
+        <defs>
+            <symbol id="play-icon" viewBox="0 0 24 24">
+                <svg class="w-[25px] h-[25px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 12 16">
+                    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M11 1v14m-8.336-.479 6.5-5.774a1 1 0 0 0 0-1.494l-6.5-5.774A1 1 0 0 0 1 2.227v11.546a1 1 0 0 0 1.664.748Z" />
+                </svg>
+            </symbol>
+            <symbol id="refresh-icon" viewBox="0 0 24 24">
+                <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
+                    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97" />
+                </svg>
+            </symbol>
+            <symbol id="pause-icon" viewBox="0 0 24 24">
+                <svg class="w-[25px] h-[25px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 12 18">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M1 1.8c0-.442.32-.8.714-.8h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H1.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 1 16.2V1.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H8.857c-.394 0-.714-.358-.714-.8V1.8Z" clip-rule="evenodd" />
+                </svg>
+            </symbol>
+        </defs>
+    </svg>
+
     <script>
         window.onload = function () {
             var input = document.createElement("input");
@@ -593,7 +687,7 @@
     <script src="js/interface_v1_0_2.js"></script>
     <script src="js/editor/editornode.js"></script>
 
-    <script type="module" src="/webLLM/webllm_v1_0_2.ts" defer></script>
+    <script type="module" src="/webllm/webllm_v1_0_2.ts" defer></script>
 
     <script src="js/ainodes_v1_0_2.js"></script>
     <script src="js/ai_v1_0_4.js"></script>
