@@ -80,7 +80,7 @@ function haltResponse() {
         controller.abort();
         aiResponding = false;
         shouldContinue = false;
-        document.getElementById("regen-button").textContent = "\u21BA";
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
         document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
     }
 }
@@ -90,7 +90,7 @@ function regenerateResponse() {
         // AI is not responding, so we want to regenerate
         removeLastResponse(); // Remove the last AI response
         document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
-        document.getElementById("regen-button").textContent = "\u21BA";
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
 
     }
 }
@@ -128,7 +128,7 @@ async function callChatGPTApi(messages, stream = false) {
 
     // Update aiResponding and the button
     aiResponding = true;
-    document.getElementById("regen-button").textContent = '\u275A\u275A'; // Double Vertical Bar unicode
+    document.querySelector('#regen-button use').setAttribute('xlink:href', '#pause-icon');
 
     // Show loading icon
     document.getElementById("aiLoadingIcon").style.display = 'block';
@@ -283,7 +283,7 @@ async function callChatGPTApi(messages, stream = false) {
         }
     } finally {
         aiResponding = false;
-        document.getElementById("regen-button").textContent = "\u21BA";
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
 
         // Hide loading icon
         document.getElementById("aiLoadingIcon").style.display = 'none';
@@ -728,7 +728,7 @@ ${tagValues.nodeTag} Essential Controls:
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
-- Shift + click on two nodes to link; Shift + Double Click on links to delete.
+- Shift + click on two nodes to link; Shift + Double Click on edges to delete.
 - Double Click a node to anchor/unanchor.
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
@@ -751,6 +751,9 @@ ${tagValues.nodeTag} Advanced Controls:
 - Auto checkbox sets the AI into self-prompting mode.
 - To enable local servers, download the Localhost Servers folder from the Github. Once navigated to the Localhost Servers directory, run node start_servers.js
 
+-Alt/Option Double Click to create an Ai node.
+-Alt/Option + Shift + Double click to create a code editor node.
+
 Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
 });
 
@@ -770,17 +773,18 @@ const aiNodesMessage = () => ({
     Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
 });
 
-const zettelkastenPrompt = () => `A prompt is entered, and you respond using this format.
-${tagValues.nodeTag} Response title here.
-- Responses are visualized in a fractal mind-map, Neurite.
-- Use the tagging format in every response if you want the user to see your message.
-${tagValues.nodeTag} Relevant Title after title tag
-- Ensure Unique/Specific Node Title
-- Write plain text.
-- Provide a concise explanation of a key idea.
-- Break ideas from your response into nodes that build a fractal tapestry of thought.
-    ${tagValues.refTag} (Repeat Exact Node Titles as a comma seperated list to connect if relevant)`;
+const zettelkastenPrompt = () => `No matter the query, follow this format to visualize your response within Neurite, our fractal mind mapping interface.
+${tagValues.nodeTag} Title and Format
+- New line after node title; any deviation will not display.
+- Not following the format will break the code, The user will not see your response.
 
+${tagValues.nodeTag} Graph Types
+- Examples: Tree, Cyclic, Bipartite, Rhizomatic.
+
+${tagValues.nodeTag} Creating and Connecting Nodes
+- New title for each segment; each paragraph can be a node.
+- Break ideas into nodes; connect with exact titles, separated by commas.
+    ${tagValues.refTag} Title and Format, Graph Types`;
 
 const spatialAwarenessExample = () =>
     `${tagValues.nodeTag} Central Node
@@ -788,7 +792,7 @@ const spatialAwarenessExample = () =>
 ${tagValues.refTag} A, B
 
 ${tagValues.nodeTag} A
-- Connects to the Central Node, branches to C, D.
+- Connects to Central Node, branches to C, D.
 ${tagValues.refTag} Central Node, C, D
 
 ${tagValues.nodeTag} Node B
@@ -879,16 +883,6 @@ document.getElementById("auto-mode-checkbox").addEventListener("change", functio
         isFirstAutoModeMessage = true;
     }
 });
-
-// Check if the user's message is a URL
-const isUrl = (text) => {
-    try {
-        const url = new URL(text);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-        return false;
-    }
-}
 
 
 
@@ -1034,7 +1028,7 @@ async function sendMessage(event, autoModeMessage = null) {
     let messages = [
         {
             role: "system",
-            content: `XML tags indicate your frame of thought for each system message and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. \nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if existing titles are repeated.</format>`,
+            content: `XML tags indicate meta-information -your frame of thought for each system message's goal and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. \nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if existing titles are repeated.</format>`,
         },
     ];
 
@@ -1221,7 +1215,7 @@ async function sendMessage(event, autoModeMessage = null) {
         if (!document.getElementById("instructions-checkbox").checked) {
             messages.splice(1, 0, {
                 role: "system",
-                content: `Matched notes in mind map to infer a communicative goal from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, or intermediate knowledge within new notes.`,
+                content: `Matched notes in mind map to remember from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, or intermediate knowledge by connecting and adding nodes.`,
             });
         }
     }
@@ -1230,24 +1224,24 @@ async function sendMessage(event, autoModeMessage = null) {
         // Add the recent dialogue message only if the context is not empty
         messages.splice(2, 0, {
             role: "system",
-            content: `Previous dialogue with user: <context>${context}</context>`,
+            content: `Conversation history: <context>${context}</context>`,
         });
     }
 
 
     const commonInstructions = `
-Utilize the format and any existing context to communicate your response. Below is another format guide.
-${tagValues.nodeTag} Titles follow the node tag
-Plain text follows the node title.
-This guideline is highly condensed. Reply with expertise of the format.
-Avoid example titles, conlcusion titles, and nodes that connect to all previous nodes.
-Expand the existing mind-map using notes with unique titles.
+For all queries, utilize the format and any existing context to communicate your response. Below is another format guide.
+${tagValues.nodeTag} Title on same line after the tag.
+Write text for each node in a paragraph between the title and reference tag.
+This guideline is highly condensed. Demonstrate your expertise of this format.
+Avoid example titles, conclusions, and ending nodes that connect to all previous nodes.
+Expand the existing mind-map by writing notes with unique titles.
+Write reference tags for each note if they should connect to anything.
 ${tagValues.refTag} Use a single reference tag after the plain text. Repeat titles of nodes as a comma seperated list to connect them.
-${tagValues.nodeTag} Write your own titles
-Make sure any new nodes have a unique title
-Break your response up into multiple nodes
-Branch specific and intentional linear or non-linear connections between notes.
-${tagValues.refTag} Connect existing and potential notes by typing their titles as a comma seperated list.`;
+${tagValues.nodeTag} Write relevant titles
+Divide your response into multiple node plain texts
+Use the tag format to build any type of graph. !important
+${tagValues.refTag} Connect relevant nodes by writing their titles as a comma separated list.`;
 
     // Add Common Instructions as a separate system message
     messages.push({
@@ -1261,7 +1255,7 @@ ${tagValues.refTag} Connect existing and potential notes by typing their titles 
             role: "user",
             content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
 Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message different from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} that progresses the conversation (consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also progressing the conversation in new directions)]`,
+Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message different from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
         });
     } else {
         messages.push({

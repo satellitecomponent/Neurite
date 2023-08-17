@@ -11,9 +11,13 @@ document.addEventListener('dblclick', function (e) {
         // Alt + double click behavior
         e.preventDefault();
         // Assuming that the createLLMNode function takes x, y coordinates
-        const node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
+        let node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
+        registernode(node);
+        node.draw();
     } else if (nodeMode && !prevNode) {
         // Node mode (Shift) + double click behavior
-        createTextNode();
+        let node = createTextNode();
+        registernode(node);
+        node.draw();
     }
 });

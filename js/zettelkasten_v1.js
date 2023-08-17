@@ -2,12 +2,13 @@ var nodeTagInput;
 var refTagInput;
 var myCodeMirror;
 let llmNodeCreated = false;
+const noteInput = myCodeMirror;
 {
 
     const nodeTableBody = document.getElementById('node-table-body');
     nodeTagInput = document.getElementById('node-tag');
     refTagInput = document.getElementById('ref-tag');
-    const noteInput = myCodeMirror;
+
     const nodes = {};
     const nodeLines = {};
     const draggableWindows = document.querySelectorAll('.window');
@@ -70,11 +71,13 @@ function processInput() {
 
     const lines = noteInput.getValue().split('\n');
     let currentNodeTitle = '';
+    let processingNode = false; // New flag to check if we're inside a node block
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
             if (line.startsWith(nodeTag)) {
+                processingNode = true;
                 currentNodeTitle = line.substr(nodeTag.length).trim();
                 if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
                     if (nodeLines[i] && !nodeLines[i].nodeObject.removed) {
@@ -95,6 +98,8 @@ function processInput() {
                             edges: new Map(),
                             lineNum: i,
                         };
+
+                        //Event Listeners to handle sync between Node textarea and Codemirror.
 
                         node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', (e) => {
                             const name = node.title;
@@ -130,19 +135,15 @@ function processInput() {
 
                             // Save cursor position
                             const cursorPosition = node.nodeObject.content.children[0].children[1].children[0].selectionStart;
+                            const linesAboveCursor = body.substr(0, cursorPosition).split("\n");
+                            const lineOffset = linesAboveCursor.length - 1;
+                            const charPosition = linesAboveCursor[lineOffset].length;
 
-                            // Modify the replace callback function to avoid adding newlines unnecessarily
                             noteInput.setValue(noteInput.getValue().replace(re, (match, p1, p2, p3, p4, p5, p6, p7, offset, string, groups) => {
                                 p1 = p1 || "";
-                                // Check if p1 ends with a newline OR if body is not an empty string
-                                if (!p1.endsWith("\n") && body !== '') {
+                                if (!p1.endsWith("\n")) {
                                     p1 += "\n";
                                 }
-                                // If body ends with a newline, remove it
-                                if (body.endsWith("\n")) {
-                                    body = body.substring(0, body.length - 1);
-                                }
-                                // If p5 is not undefined, add newline after body
                                 if (p5 !== undefined) {
                                     return p1 + body + "\n";
                                 }
@@ -152,11 +153,14 @@ function processInput() {
                             // Restore cursor position
                             node.nodeObject.content.children[0].children[1].children[0].selectionStart = cursorPosition;
                             node.nodeObject.content.children[0].children[1].children[0].selectionEnd = cursorPosition;
+
+                            // Scroll to the title, accounting for the line offset and character position within the textarea
+                            scrollToTitle(node.title, noteInput, lineOffset, charPosition);
                         });
                     }
                 } else {
                     nodes[currentNodeTitle].plainText = "";
-                    nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0].value = nodes[currentNodeTitle].plainText; //144
+                    nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0].value = nodes[currentNodeTitle].plainText;
                     if (nodeLines[nodes[currentNodeTitle].lineNum] === nodes[currentNodeTitle]) {
                         delete nodeLines[nodes[currentNodeTitle].lineNum];
                     }
@@ -232,6 +236,7 @@ function processInput() {
                     nodes[currentNodeTitle].nodeObject.promptTextArea.value += line.trim();
                 }
             } else if (line.startsWith(refTag)) {
+                processingNode = false;
                 if (currentNodeTitle !== '') {
                     const references = line.substr(refTag.length).split(',').map(ref => ref.trim());
                     const thisNode = nodes[currentNodeTitle];
@@ -253,8 +258,7 @@ function processInput() {
                         }
                     }
                 }
-        } else {
-            if (currentNodeTitle !== '') {
+            } else if (processingNode && currentNodeTitle !== '') {
                 // If the line doesn't start with "LLM:", "ref:", or "node:"
                 if (!line.startsWith("LLM:") && !line.startsWith("ref:") && !line.startsWith("node:")) {
                     let targetTextarea;
@@ -265,43 +269,41 @@ function processInput() {
                     }
                     if (nodes[currentNodeTitle].plainText !== '') {
                         nodes[currentNodeTitle].plainText += '\n';
-                        targetTextarea.value = nodes[currentNodeTitle].plainText;
                     }
                     nodes[currentNodeTitle].plainText += line;
-                    targetTextarea.value = nodes[currentNodeTitle].plainText; 
-                    // Manually call the adjustTextareaHeight function to adjust the textarea height
+                    targetTextarea.value = nodes[currentNodeTitle].plainText;
+
                     adjustTextareaHeight(targetTextarea);
                 }
             }
         }
-    } {
-            const dels = [];
-            for (const k in nodes) {
-                if (!nodes[k].live) {
-                    nodes[k].nodeObject.remove();
-                    dels.push(k);
-                }
-            }
-            for (const k of dels) {
-                delete nodes[k];
-            }
-        } {
-            const dels = [];
-            for (const k in nodeLines) {
-                if (!nodeLines[k].live) {
-                    nodeLines[k].nodeObject.remove();
-                    dels.push(k);
-                }
-            }
-            for (const k of dels) {
-                delete nodeLines[k];
+
+        const dels = [];
+        for (const k in nodes) {
+            if (!nodes[k].live) {
+                nodes[k].nodeObject.remove();
+                dels.push(k);
             }
         }
+        for (const k of dels) {
+            delete nodes[k];
+        }
 
-        //updateTable();
+        const nodeLineDels = [];
+        for (const k in nodeLines) {
+            if (!nodeLines[k].live) {
+                nodeLines[k].nodeObject.remove();
+                nodeLineDels.push(k);
+            }
+        }
+        for (const k of nodeLineDels) {
+            delete nodeLines[k];
+        }
+
+        // updateTable();
     }
 
-    noteInput.on('change', processInput);   //instead of noteInput.addEventListener('input', processInput)
+    noteInput.on('change', processInput); //instead of noteInput.addEventListener('input', processInput)
     nodeTagInput.addEventListener('input', processInput);
     refTagInput.addEventListener('input', processInput);
 

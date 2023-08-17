@@ -86,6 +86,7 @@ async function fetchWolfram(message) {
 
 // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
+    console.log(`Search Query in processLinkInput: ${searchQuery}`);
     // Get the API Key and Search Engine ID from local storage
     const apiKey = localStorage.getItem('googleApiKey');
     const searchEngineId = localStorage.getItem('googleSearchEngineId');
@@ -137,7 +138,7 @@ async function constructSearchQuery(userMessage) {
 
     const queryContext = [{
         role: "system",
-        content: `The following recent conversation may provide further context for generating your search query. \n ${recentcontext},`
+        content: `The following recent conversation may provide further context for generating your search query; \n ${recentcontext},`
     },
     {
         role: "system",
@@ -892,4 +893,33 @@ function displaySearchResults(searchResults) {
         node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
     });
+}
+
+    //for interface.js link node drop handler
+async function processLinkInput(linkUrl) {
+    if (isUrl(linkUrl)) {
+        let node = createLinkNode(linkUrl, linkUrl, linkUrl);
+        registernode(node);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        console.log('Handle drop for the link icon');
+    } else {
+        let searchResultsData = null;
+        let searchResults = [];
+        // Construct the search query
+        const searchQuery = linkUrl;
+        console.log(`Search Query in processLinkInput: ${searchQuery}`);
+        if (searchQuery === null) {
+            return; // Return early if a link node was created directly
+        }
+
+        searchResultsData = await performSearch(searchQuery);
+
+        if (searchResultsData) {
+            let searchResults = processSearchResults(searchResultsData);
+            searchResults = await getRelevantSearchResults(linkUrl, searchResults);
+            displaySearchResults(searchResults);
+        }
+    }
 }
