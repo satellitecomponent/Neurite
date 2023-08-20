@@ -1,6 +1,6 @@
 let previousContent = "";
 
-async function callChatGPTApiForLLMNode(messages, node, stream = false) {
+async function callchatLLMnode(messages, node, stream = false) {
     // Reset shouldContinue
     node.shouldContinue = true;
 
@@ -405,7 +405,7 @@ async function sendLLMNodeMessage(node, message = null) {
             });
     } else {
         // OpenAI call
-        callChatGPTApiForLLMNode(messages, node, true)
+        callchatLLMnode(messages, node, true)
             .finally(() => {
                 node.aiResponding = false;
                 aiLoadingIcon.style.display = 'none'; // Hide loading icon
@@ -1032,11 +1032,6 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     let localLLMCheckbox = document.getElementById("localLLM");
 
-    if (localLLMCheckbox.checked) {
-        LocalLLMSelect.style.display = "block";
-    } else {
-        LocalLLMSelect.style.display = "none";
-    }
 
     // Options for the dropdown
     let option1 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, true);
@@ -1049,6 +1044,16 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Append dropdown to the div
     wrapperDiv.appendChild(LocalLLMSelect);
+    setupCustomDropdown(LocalLLMSelect);
+
+    // Find the parent .select-container after the setupCustomDropdown function
+    let selectContainer = LocalLLMSelect.closest('.select-container');
+
+    if (localLLMCheckbox.checked) {
+        selectContainer.style.display = "block";
+    } else {
+        selectContainer.style.display = "none";
+    }
 
     // Pass this div to addNodeAtNaturalScale
     let node = addNodeAtNaturalScale(name, []);
@@ -1201,10 +1206,12 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 document.getElementById("localLLM").addEventListener("change", function () {
     let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
     for (let i = 0; i < llmNodes.length; i++) {
+        let selectContainer = llmNodes[i].closest('.select-container');  // Find the closest parent .select-container
+
         if (this.checked) {
-            llmNodes[i].style.display = "block";
+            selectContainer.style.display = "block";
         } else {
-            llmNodes[i].style.display = "none";
+            selectContainer.style.display = "none";
         }
     }
 });

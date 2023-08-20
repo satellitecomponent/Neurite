@@ -170,6 +170,7 @@ function processInput() {
                 }
             } else if (line.startsWith("LLM:")) {
                 let llmNodeTitle = line.substr("LLM:".length).trim();
+                currentNodeTitle = llmNodeTitle;
 
                 // If llmNodeTitle is empty after trimming, set it to "Untitled"
                 if (llmNodeTitle === "") {
@@ -229,11 +230,14 @@ function processInput() {
                     nodeLines[i] = nodes[llmNodeTitle];
                 }
                 currentNodeTitle = llmNodeTitle;  // Update currentNodeTitle at the end
-            } else if (currentNodeTitle.startsWith("LLM:") && nodes[currentNodeTitle].isLLM) {
+                nodes[currentNodeTitle].nodeObject.promptTextArea.value = "";  // Clear the previous value here, for a new LLM node
+            } else if (nodes[currentNodeTitle] && nodes[currentNodeTitle].isLLM) {
                 if (line.startsWith("node:") || line.startsWith("ref:")) {
                     currentNodeTitle = '';
                 } else {
-                    nodes[currentNodeTitle].nodeObject.promptTextArea.value += line.trim();
+                    // Check if the promptTextArea is empty. If not, prefix with newline
+                    const prefix = nodes[currentNodeTitle].nodeObject.promptTextArea.value ? "\n" : "";
+                    nodes[currentNodeTitle].nodeObject.promptTextArea.value += prefix + line.trim();
                 }
             } else if (line.startsWith(refTag)) {
                 processingNode = false;

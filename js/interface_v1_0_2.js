@@ -107,8 +107,8 @@ function collapseNode(node) {
             };
 
             // If window is anchored, switch out for the collapsed node anchor class
-            if (node.content.classList.contains('window-anchored')) {
-                node.content.classList.remove('window-anchored');
+            if (div.classList.contains('window-anchored')) {
+                div.classList.remove('window-anchored');
                 circle.classList.add('collapsed-anchor');
             }
 
@@ -163,10 +163,11 @@ function expandNode(node, div, circle) {
     titleInput.style.transform = '';
     titleInput.style.textAlign = '';
     titleInput.style.pointerEvents = '';
+    titleInput.style.border = '';
 
     // Transfer the .window-anchored class from circle to node.content if present
     if (circle && circle.classList.contains('collapsed-anchor')) {
-        node.content.classList.add('window-anchored');
+        div.classList.add('window-anchored');
         circle.classList.remove('collapsed-anchor');
     }
 
@@ -308,7 +309,14 @@ function rewindowify(node) {
         }
         e.onmouseleave();
     }
-    ui(del, node.remove.bind(node));
+    ui(del, () => {
+        if (prevNode === node) {
+            prevNode = undefined;
+            mousePath = "";
+            svg_mousePath.setAttribute("d", "");
+        }
+        node.remove();
+    });
     ui(fs, (() => {
         node.zoom_to_fit();
         zoomTo = zoomTo.scale(1.0625);
@@ -371,6 +379,8 @@ function extractScalingFactors(element) {
 
 // impact on responsiveness?
 //addEventListener("resize", (event) => { });
+
+var isPanning = false;
 
         function setResizeEventListeners(resizeHandle, node) {
             const inverse2DMatrix = (matrix) => {
@@ -857,12 +867,12 @@ class Node {
 
     }
     toggleWindowAnchored(anchored) {
-        let div = this.content.querySelector('.window');
-        if (div && !div.collapsed) { // Check if not collapsed
+        let windowDiv = this.content.querySelector('.window');
+        if (windowDiv && !windowDiv.collapsed) { // Check if not collapsed
             if (anchored) {
-                this.content.classList.add("window-anchored");
+                windowDiv.classList.add("window-anchored");
             } else {
-                this.content.classList.remove("window-anchored");
+                windowDiv.classList.remove("window-anchored");
             }
         }
     }
@@ -1404,12 +1414,24 @@ function connectRandom(n) {
 
 
             }
+            let width = zoom.mag() * 0.0005 * SVGzoom;
+
             if (nodeMode && prevNode !== undefined) {
                 svg_mousePath.setAttribute("d", "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
+                width *= 50; // This will increase the width when connecting nodes. Adjust as needed.
             } else {
                 svg_mousePath.setAttribute("d", mousePath);
             }
-            let width = zoom.mag() * 0.0005 * SVGzoom;
+
+            // Moved the check to clear prevNode outside of the if-else block
+            if (!nodeMode && prevNode !== undefined) {
+                prevNode = undefined;
+
+                // Clear the mouse path
+                mousePath = "";
+                svg_mousePath.setAttribute("d", "");
+            }
+
             svg_mousePath.setAttribute("stroke-width", width + "");
             if (current_time === undefined) {
                 current_time = time;
@@ -2164,7 +2186,6 @@ function handleIconDrop(event, iconName) {
     switch (iconName) {
         case 'note-icon':
             node = createTextNode(``, '', undefined, undefined, undefined, undefined);
-            registernode(node);
             node.followingMouse = 1;
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
@@ -2172,7 +2193,6 @@ function handleIconDrop(event, iconName) {
             break;
         case 'ai-icon':
             node = createLLMNode('', undefined, undefined, undefined, undefined);
-            registernode(node);
             node.followingMouse = 1;
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
@@ -2187,7 +2207,6 @@ function handleIconDrop(event, iconName) {
             break;
         case 'code-icon':
             node = createEditorNode();
-            registernode(node);
             node.followingMouse = 1;
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
@@ -2247,7 +2266,6 @@ function dropHandler(ev) {
 
             node = createTextNode(title, '', undefined, undefined, undefined, undefined, addCheckbox);
             htmlnodes_parent.appendChild(node.content);
-            registernode(node);
             node.followingMouse = 1;
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
@@ -2369,7 +2387,6 @@ function dropHandler(ev) {
                                 let node = createTextNode(files[i].name, '');
                                 node.content.children[0].children[1].children[0].value = text; // set the content of the textarea
                                 htmlnodes_parent.appendChild(node.content);
-                                registernode(node);
                             }
                             reader.readAsText(files[i]);
                             break;
@@ -2407,7 +2424,6 @@ function dropHandler(ev) {
                                     let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
                                     node.fileName = files[i].name; // Store file name in node
                                     htmlnodes_parent.appendChild(node.content);
-                                    registernode(node);
                                     node.followingMouse = 1;
                                     node.draw();
                                     node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));

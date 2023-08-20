@@ -19,7 +19,6 @@ class AiCursor {
     addAiCursorNode(content) {
         this.aiNode = createTextNode("AI", content, undefined, undefined, undefined, undefined, false);
         htmlnodes_parent.appendChild(this.aiNode.content);
-        registernode(this.aiNode);
         this.aiNode.aiCursor = this;
         this.followingAiCursor = true;
         this.aiNode.draw();

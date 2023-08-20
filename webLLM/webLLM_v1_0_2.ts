@@ -110,6 +110,32 @@ document.getElementById('downloadAiButton').addEventListener('click', async () =
     }
 });
 
+const getServerResponse = async (message: string): Promise<string | null> => {
+    try {
+        const response = await fetch('http://127.0.0.1:8085/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message }),
+        });
+
+        // Check if response status is between 200 and 299 (inclusive)
+        if (!response.ok) {
+            return null;
+        }
+
+        const data = await response.json();
+        return data.response;
+    } catch (error) {
+        // Silently handle connection errors, but log other errors
+        if (error.message !== "Failed to fetch") {
+            console.error('Error communicating with the server:', error);
+        }
+        return null;
+    }
+};
+
 document.getElementById('prompt-form').addEventListener('submit', async (event) => {
     const localLLMCheckbox = document.getElementById("localLLM");
 
@@ -137,17 +163,15 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
         // Refresh the content of CodeMirror
         noteInput.refresh();
 
-        if (!userHasScrolledUp) {
-            noteInput.setCursor(noteInput.lineCount());
+        //this does not currently work
+        const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
+        if (isScrolledToBottom && !userHasScrolledUp) {
+            noteInput.scrollTop = noteInput.scrollHeight;
+            myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
         }
     };
 
-    let context = "";
-    conversationHistory.forEach((turn) => {
-        context += "Prompt: " + turn.prompt + "\nAI: " + turn.response + "\n";
-    });
-
-    const prompt = context + (promptInput as HTMLInputElement).value;
+    const prompt = (promptInput as HTMLInputElement).value;
     console.log(prompt);
     const userPrompt = (noteInput.getValue() ? '\n' : '') + "Prompt: " + (promptInput as HTMLInputElement).value + "\n";
 
@@ -156,22 +180,25 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     if (!llmInitialized || chat.currentModel !== selectedModel) {
         await initializeLLM(selectedModel);
     }
-    const reply = await chat.generate(prompt, generateProgressCallback);
-    // Remove the last intermediate message
-    const finalContent = noteInput.getValue().substring(0, noteInput.getValue().length - lastMessageLength);
-    // Append the final response
-    const finalMessage = "\nnode: LLM" + responseCount.toString() + "\n" + reply + "\nref:\n";
-    noteInput.setValue(finalContent + finalMessage);
-    // Refresh the content of CodeMirror
-    noteInput.refresh();
-    // Increment the response count after the final response
-    responseCount++;
 
-    // Save this conversation turn to history
-    conversationHistory.push({ prompt: (promptInput as HTMLInputElement).value, response: reply });
-    // Limit conversation history to maxConversationHistory
-    if (conversationHistory.length > maxConversationHistory) {
-        conversationHistory.shift();
+    // Try getting a response from the server
+    const serverResponse = await getServerResponse((promptInput as HTMLInputElement).value);
+
+    if (serverResponse) {
+        const serverMessage = "\nnode: SERVER\n" + serverResponse + "\nref:\n";
+        noteInput.setValue(noteInput.getValue() + serverMessage);
+        responseCount++;
+        conversationHistory.push({ prompt: (promptInput as HTMLInputElement).value, response: serverResponse });
+    } else {
+        if (!llmInitialized || chat.currentModel !== selectedModel) {
+            await initializeLLM(selectedModel);
+        }
+        const reply = await chat.generate(prompt, generateProgressCallback);
+        const finalContent = noteInput.getValue().substring(0, noteInput.getValue().length - lastMessageLength);
+        const finalMessage = "\nnode: LLM" + responseCount.toString() + "\n" + reply + "\nref:\n";
+        noteInput.setValue(finalContent + finalMessage);
+        responseCount++;
+        conversationHistory.push({ prompt: (promptInput as HTMLInputElement).value, response: reply });
     }
 
     (promptInput as HTMLInputElement).value = ''; // Clear the prompt input
@@ -258,19 +285,27 @@ async function processQueue() {
 
     console.log("Messages sent to LLM:", messageString);
 
-    if (!llmInitialized || chat.currentModel !== selectedModel) {
-        await initializeLLM(selectedModel);
+    const updateTextAreaWithMessage = (textArea: HTMLTextAreaElement, message: string) => {
+        textArea.value = textArea.value.substring(0, textArea.value.length - lastMessageLength) + message;
+        textArea.dispatchEvent(new Event('input'));
+        setTimeout(() => {
+            textArea.dispatchEvent(new Event('input'));
+        }, 30);
     }
-    const reply = await chat.generate(messageString, generateProgressCallback);
 
-    (aiResponseTextArea as HTMLTextAreaElement).value = (aiResponseTextArea as HTMLTextAreaElement).value.substring(0, (aiResponseTextArea as HTMLTextAreaElement).value.length - lastMessageLength);
-    const finalMessage = reply;
-    (aiResponseTextArea as HTMLTextAreaElement).value += finalMessage;
-    aiResponseTextArea.dispatchEvent(new Event('input'));
+    const serverReply = await getServerResponse(messageString);
 
-    // Set the flag to false here, after the final message has been processed
-    node.localAiResponding = false;
-    //console.log("Node.aiResponding set to:", node.localAiResponding);
+    if (serverReply) {
+        updateTextAreaWithMessage(aiResponseTextArea as HTMLTextAreaElement, serverReply);
+        node.localAiResponding = false;
+    } else {
+        if (!llmInitialized || chat.currentModel !== selectedModel) {
+            await initializeLLM(selectedModel);
+        }
+        const reply = await chat.generate(messageString, generateProgressCallback);
+        updateTextAreaWithMessage(aiResponseTextArea as HTMLTextAreaElement, reply);
+        node.localAiResponding = false;
+    }
 
     isProcessing = false;
 

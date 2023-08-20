@@ -60,7 +60,7 @@
 }
 
 .window-anchored {
-    background-color: rgb(215 184 255 / 80%);
+    background-color: rgb(111 105 121 / 74%);
     /* Change this to the desired color */
 }
 
@@ -104,18 +104,6 @@
 
 .windowbutton {
     cursor: pointer;
-}
-
-.search_matched {
-    outline-style: double;
-    outline-color: red;
-    outline-width: 10px;
-}
-
-.search_nomatch {
-    outline-style: hidden;
-    outline-color: blue;
-    outline-width: 0px;
 }
 
 .no-select {
@@ -331,7 +319,7 @@
             background: rgba(60, 59, 66, 0.7);
             border-top-right-radius: 8px;
             border-bottom-left-radius: 8px;
-            overflow: hidden;
+            overflow: visible;
             display: none;
             z-index: 1;
             margin-top: -38px; /* negative margin */
@@ -454,7 +442,7 @@
 
 .search_matched {
     outline-style: double;
-    outline-color: #85DFB5;
+    outline-color: #54876f;
     outline-width: 10px;
 }
 
@@ -686,6 +674,116 @@
             text-align: center;
             border: 1px solid #ddd;
         }
+
+.select-replacer.closed {
+    white-space: nowrap; /* Prevent wrapping of selected option text */
+    overflow: hidden; /* Hide excess content */
+    text-overflow: ellipsis; /* Show ellipsis when content overflows */
+}
+
+.select-container {
+    position: relative;
+    display: inline-block;
+    width: 130px; /* width of the select-replacer */
+    height: 25px; /* This accounts for the height of select-replacer including padding and border */
+    z-index: 20;
+}
+
+.select-replacer {
+    position: absolute;
+    top: 0;
+    border: 1px solid rgb(52 52 52);
+    padding: 2px 10px;
+    cursor: pointer;
+    width: 100%;
+    background-color: #222226;
+    color: #fff;
+    box-sizing: border-box;
+    z-index: 20;
+    user-select: none; /* Disable text selection */
+}
+
+select-replacer > div:first-child {
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative; /* Makes sure the pseudo-element is relative to this element */
+    padding-right: 46px;
+}
+
+.select-replacer > div:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 46px; /* This should match the padding-right value */
+    background: linear-gradient(to left, #222226, transparent); /* Change 'white' to the background color of your container */
+    pointer-events: none; /* Ensures that the pseudo-element doesn't interfere with any user interactions */
+}
+
+
+.select-replacer::before {
+    content: "";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 8px; /* length of the chevron */
+    height: 2px; /* thickness of the chevron */
+    background: #bbb;
+    transform: translateY(-50%) rotate(-45deg);
+    transition: transform 0.2s;
+    z-index: 20;
+}
+
+.select-replacer::after {
+    content: "";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    width: 8px; /* length of the chevron */
+    height: 2px; /* thickness of the chevron */
+    background: #bbb;
+    transform: translateY(-50%) rotate(45deg);
+    transition: transform 0.2s;
+    z-index: 20;
+}
+
+    .select-replacer:not(.closed)::before {
+        transform: translateY(-50%) rotate(45deg);
+    }
+
+    .select-replacer:not(.closed)::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+.options-replacer {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid rgb(24, 24, 28);
+    background-color: #e2e2e2;
+    color: #ddd;
+    width: 100%; /* Match width with select-replacer */
+    z-index: 11;
+}
+
+    .options-replacer div {
+        padding: 5px 10px;
+    }
+
+        .options-replacer div:hover {
+            background-color: #ffffff;
+        }
+
+        .options-replacer div.selected {
+            background-color: #a3d3eb;
+        }
+
+    .options-replacer.show {
+        display: block;
+    }
 
 .custom-scrollbar::-webkit-scrollbar {
     width: 10px;

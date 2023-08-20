@@ -122,7 +122,60 @@ document.getElementById('max-tokens-slider').addEventListener('input', function 
 let failCounter = 0;
 const MAX_FAILS = 2;
 
-async function callChatGPTApi(messages, stream = false) {
+let streamedResponse = "";
+
+async function handleStreamingResponse(response) {
+    streamedResponse = "";
+    const noteInput = document.getElementById("note-input");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    const appendContent = async function (content) {
+        await new Promise(resolve => setTimeout(resolve, 25));  // Delay response append
+
+        const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
+        if (shouldContinue) {
+            myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
+            streamedResponse += content;  // Append the content to the streamedResponse
+        }
+        if (isScrolledToBottom && !userScrolledUp) {
+            noteInput.scrollTop = noteInput.scrollHeight;
+            myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
+        }
+        noteInput.dispatchEvent(new Event("input"));
+    };
+
+    while (true) {
+        const { value, done } = await reader.read();
+        // Break the loop if streaming is done or the shouldContinue flag is set to false
+        if (done || !shouldContinue) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // If shouldContinue is false, stop processing
+        if (!shouldContinue) break;
+
+        // Handle content processing only when shouldContinue is true
+        if (shouldContinue) {
+            let contentMatch;
+            while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+                const content = JSON.parse('"' + contentMatch[1] + '"');
+                if (!shouldContinue) break;
+
+                if (content.trim() !== "[DONE]") {
+                    await appendContent(content);
+                }
+                buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
+            }
+        }
+    }
+
+    // Return the complete streamed response
+    return streamedResponse;
+}
+
+async function callchatAPI(messages, stream = false) {
     // Reset shouldContinue
     shouldContinue = true;
 
@@ -222,49 +275,8 @@ async function callChatGPTApi(messages, stream = false) {
         const noteInput = document.getElementById("note-input");
 
         if (stream) {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let buffer = "";
-
-            const appendContent = async function (content) {
-                await new Promise(resolve => setTimeout(resolve, 25));  // Delay response append
-
-                const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
-                if (shouldContinue) {
-                    myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
-                }
-                if (isScrolledToBottom && !userScrolledUp) {
-                    noteInput.scrollTop = noteInput.scrollHeight;
-                    myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
-                }
-                noteInput.dispatchEvent(new Event("input"));
-            };
-
-            while (true) {
-                const { value, done } = await reader.read();
-                // Break the loop if streaming is done or the shouldContinue flag is set to false
-                if (done || !shouldContinue) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                // If shouldContinue is false, stop processing
-                if (!shouldContinue) break;
-
-                // Handle content processing only when shouldContinue is true
-                if (shouldContinue) {
-                    let contentMatch;
-                    while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-                        const content = JSON.parse('"' + contentMatch[1] + '"');
-
-                        if (!shouldContinue) break;
-
-                        if (content.trim() !== "[DONE]") {
-                            await appendContent(content);
-                        }
-                        buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-                    }
-                }
-            }
+            let currentResponse = await handleStreamingResponse(response);
+            return currentResponse;  // Return the response of the current call
         } else {
             const data = await response.json();
             console.log("Token usage:", data.usage);
@@ -556,7 +568,7 @@ Keywords may result from the user query and/or the recent conversation. Order by
     ];
 
     // Call the API
-    const keywords = await callChatGPTApi(messages);
+    const keywords = await callchatAPI(messages);
 
     // Return the keywords
     return keywords.split(',').map(k => k.trim());
@@ -587,57 +599,6 @@ function isNoveltyEnabled() {
     return checkbox.checked;
 }
 
-function isWikipediaEnabled() {
-    const checkbox = document.getElementById("wiki-checkbox");
-    return checkbox.checked;
-}
-
-async function getWikipediaSummaries(keywords, top_n_links = 3) {
-    const allSummariesPromises = keywords.map(async (keyword) => {
-        try {
-            const response = await fetch(
-                `http://localhost:5000/wikipedia_summaries?keyword=${keyword}&top_n_links=${top_n_links}`
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const keywordSummaries = await calculateRelevanceScores(data, await fetchEmbeddings(keyword));
-            return keywordSummaries;
-        } catch (error) {
-            console.error('Error fetching Wikipedia summaries:', error);
-            alert('Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.');
-            return [];
-        }
-    });
-
-    const allSummaries = await Promise.all(allSummariesPromises);
-    const summaries = [].concat(...allSummaries); // Flatten the array of summaries
-
-    // Sort the summaries by relevance score in descending order
-    summaries.sort((a, b) => b.relevanceScore - a.relevanceScore);
-
-    const combinedSummaries = [];
-
-    // Include the top matched summary
-    combinedSummaries.push(summaries[0]);
-
-    // Check if the novelty checkbox is checked
-    if (isNoveltyEnabled()) {
-        // If checked, randomly pick two summaries from the remaining summaries
-        const remainingSummaries = summaries.slice(1);
-        shuffleArray(remainingSummaries);
-        combinedSummaries.push(...sampleSummaries(remainingSummaries, 2));
-    } else {
-        // If not checked, push the top n summaries
-        combinedSummaries.push(...summaries.slice(1, top_n_links));
-    }
-
-    return combinedSummaries;
-}
-
 
 async function calculateRelevanceScores(summaries, searchTermEmbedding) {
     // Use the existing searchTermEmbedding for cosine similarity calculations
@@ -651,17 +612,6 @@ async function calculateRelevanceScores(summaries, searchTermEmbedding) {
     return summaries;
 }
 
-const wolframmessage = `Objective:
-Generate a precise Wolfram Alpha query in response to the user's message.
-
-Guidelines:
-- Include only valid search queries with no preface or explanation.
-- The query should be specific to the user's message and return relevant information from Wolfram Alpha.
-- Respond with a single line of code.
-- If the user's input is already valid Wolfram code, use it verbatim.
-- In case of vague user input, provide a general alternative query.
-All your of your output should simulate a query to Wolfram Alpha with no other explanation attached. Any response other than valid Wolfram Code will produce an error.`
-
 const tagValues = {
     get nodeTag() {
         return document.getElementById("node-tag").value;
@@ -670,6 +620,9 @@ const tagValues = {
         return document.getElementById("ref-tag").value;
     }
 }
+
+// Get the node tag value
+const nodeTag = document.getElementById("node-tag").value;
 
 const codeMessage = () => ({
     role: "system",
@@ -754,12 +707,12 @@ ${tagValues.nodeTag} Advanced Controls:
 -Alt/Option Double Click to create an Ai node.
 -Alt/Option + Shift + Double click to create a code editor node.
 
-Make sure to exclusivly reference the above described controls. Try not to make anything up which is not explained in the above instructions.`
+Make sure to exclusivly reference the above described controls. Try not to make an ything up which is not explained in the above instructions.`
 });
 
 const aiNodesMessage = () => ({
     role: "system",
-    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
+    content: `Do not repeat the sfollowing system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
     1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
     2. In the next line, provide an initial prompt that will be sent to the AI.
     3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${tagValues.refTag}.
@@ -773,81 +726,22 @@ const aiNodesMessage = () => ({
     Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
 });
 
-const zettelkastenPrompt = () => `No matter the query, follow this format to visualize your response within Neurite, our fractal mind mapping interface.
-${tagValues.nodeTag} Title and Format
-- New line after node title; any deviation will not display.
-- Not following the format will break the code, The user will not see your response.
 
-${tagValues.nodeTag} Graph Types
-- Examples: Tree, Cyclic, Bipartite, Rhizomatic.
 
-${tagValues.nodeTag} Creating and Connecting Nodes
-- New title for each segment; each paragraph can be a node.
-- Break ideas into nodes; connect with exact titles, separated by commas.
-    ${tagValues.refTag} Title and Format, Graph Types`;
+const zettelkastenPrompt = () => {
+    const codeSnippet = `
+FUNCTION formatFromSchema(schema):
+    FOR EACH node IN schema.Example:
+        PRINT ${tagValues.nodeTag}: + node's Title
+        PRINT node's Content
+        IF node has References:
+            PRINT ${tagValues.refTag}: + JOIN node's References with ', '
+        END IF
+    END FOR
+END FUNCTION`
 
-const spatialAwarenessExample = () =>
-    `${tagValues.nodeTag} Central Node
-- Node from which other nodes branch out.
-${tagValues.refTag} A, B
-
-${tagValues.nodeTag} A
-- Connects to Central Node, branches to C, D.
-${tagValues.refTag} Central Node, C, D
-
-${tagValues.nodeTag} Node B
-- Branches out from Central to E and F.
-${tagValues.refTag} Central Node, E, F
-
-${tagValues.nodeTag} C
-- End point from A.
-${tagValues.refTag} A
-
-${tagValues.nodeTag} D
-- End point from A.
-${tagValues.refTag} A`;
-
-let summarizedZettelkastenPrompt = "";
-
-async function summarizeZettelkastenPrompt() {
-    const summarizedPromptMessages = [{
-        role: "system",
-        content: `zettelkastenPrompt ${zettelkastenPrompt()}`,
-    },
-    {
-        role: "system",
-        content: `spatialAwarenessExample ${spatialAwarenessExample()}`,
-    },
-    {
-        role: "user",
-        content: `Directly generate a concise guide (<150 words) in Zettelkasten format, demonstrating the principles of fractal mind-map, tagging, and spatial awareness. Ensure your entire response is within the format. Avoid prefacing or explaining the response.`
-    },
-    ];
-
-    let summarizedPrompt = await callChatGPTApi(summarizedPromptMessages);
-
-    // Find the midpoint of the summarized prompt
-    const promptHalfLength = Math.floor(summarizedPrompt.length / 2);
-    const nodeTag = document.getElementById("node-tag").value;
-
-    // Locate the first newline after the half point to split the text neatly
-    let splitPosition = summarizedPrompt.indexOf('\n', promptHalfLength);
-    // Move down until the line starts with the nodeTag
-    while (!summarizedPrompt.substring(splitPosition + 1, summarizedPrompt.indexOf('\n', splitPosition + 1)).startsWith(nodeTag)) {
-        splitPosition = summarizedPrompt.indexOf('\n', splitPosition + 1);
-        // In case there's no suitable line, break the loop to avoid infinite loops
-        if (splitPosition === -1) break;
-    }
-
-    // If a suitable split position was found, generate the summarized prompt
-    if (splitPosition !== -1) {
-        summarizedPrompt = summarizedPrompt.substring(0, splitPosition).trim();
-    }
-
-    return summarizedPrompt;
-}
-
-let isZettelkastenPromptSent = false;
+    return `You are responding within a fractal mind mapping interface that parses your response via the following format. Ensure your response aligns with the format output of the given schema.${codeSnippet}`;
+};
 
 let MAX_CHUNK_SIZE = 400;
 
@@ -948,8 +842,6 @@ async function sendMessage(event, autoModeMessage = null) {
     } else {
         wikipediaSummaries = "Wiki Disabled";
     }
-
-    console.log("wikipediasummaries", wikipediaSummaries);
     //console.log("Keywords array:", keywords);
 
     const wikipediaMessage = {
@@ -989,7 +881,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search Results displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> Always remember to follow the <format> message"
+        content: "Google Search Results displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> Always remember to follow the <format> message",
     };
 
 
@@ -1004,31 +896,18 @@ async function sendMessage(event, autoModeMessage = null) {
     const storedNodeTag = localStorage.getItem('nodeTag');
     const storedRefTag = localStorage.getItem('refTag');
     if (storedNodeTag !== tagValues.nodeTag || storedRefTag !== tagValues.refTag) {
-        tagsChanged = true;
         localStorage.setItem('nodeTag', tagValues.nodeTag);
         localStorage.setItem('refTag', tagValues.refTag);
     }
 
-    // Get the appropriate Zettelkasten prompt to use
-    let zettelkastenPromptToUse;
-    if (!isZettelkastenPromptSent || tagsChanged) {
-        // If the Zettelkasten prompt hasn't been sent yet, or if the tags have changed, use the original prompt
-        zettelkastenPromptToUse = zettelkastenPrompt();
-    } else if (summarizedZettelkastenPrompt !== "") {
-        // Otherwise, if the summarized prompt has been generated, use it
-        zettelkastenPromptToUse = summarizedZettelkastenPrompt;
-    }
-
-    // If none of the above conditions are met, fall back to the default prompt
-    if (!zettelkastenPromptToUse || zettelkastenPromptToUse.trim() === '') {
-        zettelkastenPromptToUse = zettelkastenPrompt();
-    }
+    // Always use the original Zettelkasten prompt
+    const zettelkastenPromptToUse = zettelkastenPrompt();
 
     // Create the messages
     let messages = [
         {
             role: "system",
-            content: `XML tags indicate meta-information -your frame of thought for each system message's goal and are not part of the format. <format> Focus on the form of the following format example as opposed to its content. \nExample format:\n ${zettelkastenPromptToUse} \nThe program fails if existing titles are repeated.</format>`,
+            content: `XML tags indicate your frame of thought for each system message<format>${zettelkastenPromptToUse}</format> \nAssign unique titles for any new nodes!`,
         },
     ];
 
@@ -1085,6 +964,126 @@ async function sendMessage(event, autoModeMessage = null) {
         messages.push(embedMessage);
     }
 
+    // Calculate total tokens used so far
+    let totalTokenCount = getTokenCount(messages);
+
+    // calculate remaining tokens
+    const maxTokensSlider = document.getElementById('max-tokens-slider');
+    const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    const maxContextSize = document.getElementById('max-context-size-slider').value;
+    const contextSize = Math.min(remainingTokens, maxContextSize);
+
+    // Get the context
+    context = getLastPromptsAndResponses(100, contextSize);
+    let topMatchedNodesContent = "";
+
+        // Use the helper function to extract titles
+        let existingTitles = extractTitlesFromContent(context, nodeTag);
+
+        // Use the embeddedSearch function to find the top matched nodes based on the keywords
+        clearSearchHighlights(nodesArray); // Clear previous search highlights
+        const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
+        for (const node of topMatchedNodes) {
+            node.content.classList.add("search_matched");
+        }
+
+        let titlesToForget = new Set();
+
+        // Use helper function to get the content
+        const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag);
+        topMatchedNodesContent = nodeContents.join("\n\n");
+
+        // If forgetting is enabled, extract titles to forget
+        if (document.getElementById("forget-checkbox").checked) {
+            console.log("User message being sent to forget:", message);
+            titlesToForget = await forget(message, `${context}\n\n${topMatchedNodesContent}`);
+
+            console.log("Titles to Forget:", titlesToForget);
+
+            // Use helper function to remove forgotten nodes from context
+            context = removeTitlesFromContext(context, titlesToForget, nodeTag);
+
+            // Refilter topMatchedNodesContent by removing titles to forget
+            topMatchedNodesContent = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag).join("\n\n");
+            console.log("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
+        }
+
+    // Check if the content string is not empty
+    if (typeof topMatchedNodesContent === "string" && topMatchedNodesContent.trim() !== "") {
+        if (!document.getElementById("instructions-checkbox").checked) {
+            messages.splice(1, 0, {
+                role: "system",
+                content: `Matched notes in mind map to remember from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, or intermediate knowledge by connecting and adding nodes.`,
+            });
+        }
+    }
+
+    if (context.trim() !== "") {
+        // Add the recent dialogue message only if the context is not empty
+        messages.splice(2, 0, {
+            role: "system",
+            content: `Conversation history: <context>${context}</context>`,
+        });
+    }
+
+
+    const commonInstructions = `Generate a response for the user's query using the following format:
+1. Start distinct ideas with "${tagValues.nodeTag}". The title should capture the content essence.
+2. Use multiple nodes in every response.
+3. Describe in plain text after the title. No numbered lists or lengthy paragraphs.
+4. Link related nodes with "${tagValues.refTag}", followed by comma-separated nodes.
+5. Define references after every node unless none are required.
+
+NOTE:
+- Use the example below ONLY for format. Don't replicate its content.
+- Each response should introduce new information.
+- Avoid repetitive and generic titles. Each title should be unique.
+- Stay aligned with the user's query.
+
+Example (This is what FUNCTION formatFromSchema(schema) outputs.):
+${tagValues.nodeTag} Topics
+Descriptive content here.
+
+${tagValues.nodeTag} Note Taking
+Info here.
+${tagValues.refTag} Topics, Connect Ideas
+
+${tagValues.nodeTag} Connect Ideas
+Info here.
+${tagValues.refTag} Note Taking,`;
+
+    // Add Common Instructions as a separate system message
+    messages.push({
+        role: "system",
+        content: commonInstructions
+    });
+
+    // Add Prompt
+    if (autoModeMessage) {
+        messages.push({
+            role: "user",
+            content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
+Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
+Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
+        });
+    } else {
+        messages.push({
+            role: "user",
+            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
+        });
+    }
+
+
+
+    // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
+    if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
+        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        isFirstAutoModeMessage = false;
+    } else if (autoModeMessage) {
+        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+    }
+
+
     let wolframData;
 
     if (document.getElementById("enable-wolfram-alpha").checked) {
@@ -1113,174 +1112,14 @@ async function sendMessage(event, autoModeMessage = null) {
         messages.push(wolframAlphaMessage);
     }
 
-    // Calculate total tokens used so far
-    let totalTokenCount = getTokenCount(messages);
-
-    // calculate remaining tokens
-    const maxTokensSlider = document.getElementById('max-tokens-slider');
-    const remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-    const maxContextSize = document.getElementById('max-context-size-slider').value;
-    const contextSize = Math.min(remainingTokens, maxContextSize);
-
-    // Update the value of getLastPromptsAndResponses
-    if (autoModeMessage) {
-        context = getLastPromptsAndResponses(2, contextSize);
-    } else {
-        if (document.getElementById("instructions-checkbox").checked) {
-            context = getLastPromptsAndResponses(1, contextSize);
-        } else {
-            context = getLastPromptsAndResponses(3, contextSize);
-        }
-    }
-
-    let topMatchedNodesContent = [];
-
-    if (!document.getElementById("code-checkbox").checked &&
-        !document.getElementById("instructions-checkbox").checked) {
-        // Get the node tag value
-        const nodeTag = document.getElementById("node-tag").value;
-
-        // Extract titles from getLastPromptsAndResponses
-        let contextmatch = getLastPromptsAndResponses(3, contextSize); // Adjust count and token number as necessary
-
-        let existingTitles = new Set();
-        const titleRegex = new RegExp(nodeTag + " (.*?)\\n", "g");
-        let match;
-        while ((match = titleRegex.exec(contextmatch)) !== null) {
-            existingTitles.add(match[1].trim()); // Trim whitespaces from the title
-        }
-
-        // Use the embeddedSearch function to find the top matched nodes based on the keywords
-        clearSearchHighlights(nodesArray); // Clear previous search highlights
-        const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
-        for (const node of topMatchedNodes) {
-            node.content.classList.add("search_matched");
-        }
-        console.log("Top Matched Nodes:", topMatchedNodes);
-
-        // Extract the content of the top matched nodes and pass it as context to the AI
-        // Filter getlastpromptsandresponses out of topMatchedNodesContent
-        topMatchedNodesContent = topMatchedNodes
-            .map((node) => {
-                if (!node) {
-                    return null;
-                }
-
-                const titleElement = node.content.querySelector("input.title-input");
-                const title = titleElement && titleElement.value !== "" ? titleElement.value.trim() : "No title found";
-
-                // If title already present in context, don't include the node
-                if (existingTitles.has(title)) {
-                    return null;
-                }
-
-                // Fetch all textareas directly in the node content, without considering the specific nested divs.
-                const contentElements = node.content.querySelectorAll("textarea");
-                const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
-                // console.log("Content:", content);
-
-                //     const connectedNodesInfo = node.edges
-                //    ? node.edges.map((edge) => {
-                //         if (edge.nodeA && edge.nodeB) {
-                //              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
-                //              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
-                //                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
-                //          } else {
-                //              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                //           }
-                //       }).join("\n")
-                //          : '';
-                //
-                //      const edgeInfo = node.edges
-                //           .map((edge) => {
-                //               if (edge.nodeA && edge.nodeB) {
-                //                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
-                //               } else {
-                //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                //               }
-                //           }).join("\n");
-                const createdAt = node.createdAt;
-
-                //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
-
-                return `${tagValues.nodeTag} ${title}\n ${contents.join("\n")}`;
-            })
-            .filter(content => content !== null) // Remove nulls
-            .join("\n\n");
-        //console.log("Top Matched Nodes Content:", topMatchedNodesContent);
-    }
-
-    // Check if the content string is not empty
-    if (typeof topMatchedNodesContent === "string" && topMatchedNodesContent.trim() !== "") {
-        if (!document.getElementById("instructions-checkbox").checked) {
-            messages.splice(1, 0, {
-                role: "system",
-                content: `Matched notes in mind map to remember from your long term memory:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, or intermediate knowledge by connecting and adding nodes.`,
-            });
-        }
-    }
-
-    if (context.trim() !== "") {
-        // Add the recent dialogue message only if the context is not empty
-        messages.splice(2, 0, {
-            role: "system",
-            content: `Conversation history: <context>${context}</context>`,
-        });
-    }
-
-
-    const commonInstructions = `
-For all queries, utilize the format and any existing context to communicate your response. Below is another format guide.
-${tagValues.nodeTag} Title on same line after the tag.
-Write text for each node in a paragraph between the title and reference tag.
-This guideline is highly condensed. Demonstrate your expertise of this format.
-Avoid example titles, conclusions, and ending nodes that connect to all previous nodes.
-Expand the existing mind-map by writing notes with unique titles.
-Write reference tags for each note if they should connect to anything.
-${tagValues.refTag} Use a single reference tag after the plain text. Repeat titles of nodes as a comma seperated list to connect them.
-${tagValues.nodeTag} Write relevant titles
-Divide your response into multiple node plain texts
-Use the tag format to build any type of graph. !important
-${tagValues.refTag} Connect relevant nodes by writing their titles as a comma separated list.`;
-
-    // Add Common Instructions as a separate system message
-    messages.push({
-        role: "system",
-        content: commonInstructions
-    });
-
-    // Add Prompt
-    if (autoModeMessage) {
-        messages.push({
-            role: "user",
-            content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
-Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message different from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
-        });
-    } else {
-        messages.push({
-            role: "user",
-            content: `${message}
-${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
-        });
-    }
-
-
-    // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
-    if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
-        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
-        isFirstAutoModeMessage = false;
-    } else if (autoModeMessage) {
-        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
-    }
 
     const stream = true;
 
     // Main AI call
     if (stream) {
-        await callChatGPTApi(messages, stream);
+        await callchatAPI(messages, stream);
     } else {
-        let aiResponse = await callChatGPTApi(messages, stream);
+        let aiResponse = await callchatAPI(messages, stream);
 
         if (aiResponse) {
             const noteInput = document.getElementById("note-input");
@@ -1293,49 +1132,27 @@ ${isAutoModeEnabled ? `Always end your response with a new line, then, ${PROMPT_
         }
     }
 
-    // Only continue if shouldContinue flag is true
-    if (shouldContinue) {
-        // Handle auto mode
-        if (isAutoModeEnabled && shouldContinue) {
-            // If the tags have changed, or if the summarizedZettelkastenPrompt is undefined or empty, use the original zettelkasten prompt
-            let zettelkastenPromptToUse = (tagsChanged || !summarizedZettelkastenPrompt || summarizedZettelkastenPrompt.trim() === '') ? zettelkastenPrompt() : summarizedZettelkastenPrompt;
-            if (!zettelkastenPromptToUse || zettelkastenPromptToUse.trim() === '') {
-                zettelkastenPromptToUse = zettelkastenPrompt(); // Ensures a default value if all else fails
-            }
-            const aiGeneratedPrompt = await handleAutoMode(zettelkastenPromptToUse);
-            sendMessage(null, aiGeneratedPrompt);
-        }
-
-        // Regenerate the summarizedZettelkastenPrompt if the tags have changed
-        if (tagsChanged) {
-            summarizedZettelkastenPrompt = await summarizeZettelkastenPrompt();
-            localStorage.setItem('summarizedZettelkastenPrompt', summarizedZettelkastenPrompt);
-            tagsChanged = false; // Reset the tagsChanged flag
-        }
-
-        // Check if the Zettelkasten prompt should be sent
-        if (!isZettelkastenPromptSent && shouldContinue) {
-            // Update the isZettelkastenPromptSent flag after sending the zettelkasten prompt for the first time
-            isZettelkastenPromptSent = true;
-        }
+    // Only continue if shouldContinue flag is true and auto mode checkbox is checked
+    if (shouldContinue && isAutoModeEnabled) {
+        const extractedPrompt = extractLastPrompt();
+        sendMessage(null, extractedPrompt);
     }
 
     return false;
 }
 
-// Handles Prompt identification and Zettelkasten prompt determination. (prewritten vs ai summary)
-async function handleAutoMode(zettelkastenPromptToUse) {
-    const lastMessage = getLastPromptsAndResponses(1, 400);
-    const promptRegex = new RegExp(`${PROMPT_IDENTIFIER}\\s*(.*)`, "i");
-    const match = promptRegex.exec(lastMessage);
+    // Extract the prompt from the last message
+    function extractLastPrompt() {
+        const lastMessage = getLastPromptsAndResponses(1, 400);
+        const promptRegex = new RegExp(`${PROMPT_IDENTIFIER}\\s*(.*)`, "i");
+        const match = promptRegex.exec(lastMessage);
 
-    if (match) {
-        const aiGeneratedPrompt = match[1].trim();
-        return aiGeneratedPrompt;
-    } else {
-        console.error("AI-generated prompt not found in the last message.");
-        return zettelkastenPromptToUse; // Use the passed in prompt instead of promptToUse
+        if (match) {
+            return match[1].trim();
+        } else {
+            console.warn("Prompt not found in the last message. Sending with a blank prompt.");
+            return ""; // Return blank if prompt isn't found
+        }
     }
-}
 
     //ENDOFAI
