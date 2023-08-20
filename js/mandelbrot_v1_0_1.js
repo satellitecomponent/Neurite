@@ -299,17 +299,28 @@ function recalc_svg() {
 
 
 
+document.getElementById("body").addEventListener("mousedown", (event) => {
+    isPanning = true;
+    document.body.style.userSelect = "none"; // Disable text selection
+}, false);
+
 document.getElementById("body").addEventListener("mousemove", (event) => {
     mousePos.x = event.pageX;
     mousePos.y = event.pageY;
     mousePath = "";
 }, false);
-document.getElementById("body").addEventListener("mouseclick", (event) => {
-    mousePos.x = event.pageX;
-    mousePos.y = event.pageY;
-    /*let p = toZ(mousePos);
-    zoom = zoom.unscale(2);
-    pan = p;*/
+
+document.getElementById("body").addEventListener("mouseup", (event) => {
+    if (isPanning) {
+        isPanning = false;
+        document.body.style.userSelect = "auto"; // Re-enable text selection
+    }
+}, false);
+document.getElementById("body").addEventListener("mouseleave", (event) => {
+    if (isPanning) {
+        isPanning = false;
+        document.body.style.userSelect = "auto"; // Re-enable text selection
+    }
 }, false);
 
 function mand_step(z, c) {

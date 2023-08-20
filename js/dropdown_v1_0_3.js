@@ -380,7 +380,108 @@ function getNodeByTitle(title) {
 
 //END OF CODEMIRROR
 
+function setupCustomDropdown(select) {
+    // Create the main custom dropdown container
+    let selectReplacer = document.createElement('div');
+    selectReplacer.className = 'select-replacer closed'; // add 'closed' class by default
 
+    // Create the currently selected value container
+    let selectedDiv = document.createElement('div');
+    selectedDiv.innerText = select.options[select.selectedIndex].innerText;
+    selectReplacer.appendChild(selectedDiv);
+
+    // Create the dropdown options container
+    let optionsReplacer = document.createElement('div');
+    optionsReplacer.className = 'options-replacer';
+
+    // Create individual options
+    Array.from(select.options).forEach((option, index) => {
+        let optionDiv = document.createElement('div');
+        optionDiv.innerText = option.innerText;
+
+        // Highlight the selected option
+        if (select.selectedIndex === index) {
+            optionDiv.classList.add('selected');
+        }
+
+        optionDiv.addEventListener('click', function (event) {
+            event.stopPropagation(); // Stops the event from bubbling up
+
+            select.value = option.value;
+            selectedDiv.innerText = option.innerText;
+
+            // Remove `selected` class from previously selected option
+            const previousSelected = optionsReplacer.querySelector('.selected');
+            if (previousSelected) {
+                previousSelected.classList.remove('selected');
+            }
+            // Add `selected` class to the new selected option
+            optionDiv.classList.add('selected');
+
+            // Trigger the original dropdown's change event
+            let changeEvent = new Event('change', {
+                'bubbles': true,
+                'cancelable': true
+            });
+            select.dispatchEvent(changeEvent);
+        });
+        optionsReplacer.appendChild(optionDiv);
+    });
+
+    // Append the options container to the main dropdown container
+    selectReplacer.appendChild(optionsReplacer);
+
+    // Toggle dropdown on click
+    let isPendingFrame = false;
+
+    selectReplacer.addEventListener('click', function (event) {
+        if (optionsReplacer.classList.contains('show')) {
+            if (!event.target.closest('.options-replacer')) {
+                // Dropdown is open and click was outside of the options, so close it
+                window.requestAnimationFrame(() => {
+                    optionsReplacer.classList.remove('show');
+                    selectReplacer.classList.add('closed');
+                    isPendingFrame = false;
+                });
+                isPendingFrame = true;
+            }
+        } else {
+            // Dropdown is closed, so open it
+            if (!isPendingFrame) {
+                window.requestAnimationFrame(() => {
+                    optionsReplacer.classList.add('show');
+                    selectReplacer.classList.remove('closed');
+                    isPendingFrame = false;
+                });
+                isPendingFrame = true;
+            }
+        }
+    });
+
+    // Replace the original select with the custom dropdown
+    let container = document.createElement('div');
+    container.className = 'select-container';
+    select.parentNode.insertBefore(container, select);
+    container.appendChild(selectReplacer);
+    container.appendChild(select);
+    select.style.display = 'none'; // Hide the original select
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    let selects = document.querySelectorAll('select.custom-select');
+    selects.forEach(setupCustomDropdown);
+
+    // Close dropdowns if clicked outside
+    window.addEventListener('click', function (event) {
+        if (!event.target.matches('.select-replacer > div')) {
+            let replacers = document.querySelectorAll('.options-replacer');
+            replacers.forEach(replacer => {
+                replacer.classList.remove('show');
+                replacer.parentNode.classList.add('closed');
+            });
+        }
+    });
+});
 
 
 document.getElementById("clearLocalStorage").onclick = function () {
@@ -439,32 +540,53 @@ async function saveKeysToFile() {
         wolframApiKey: document.getElementById('wolframApiKey').value || '',
     };
 
-    // Save to .txt file
-    const handle = await window.showSaveFilePicker({
-        types: [
-            {
-                description: 'Text Files',
-                accept: {
-                    'text/plain': ['.txt'],
-                },
-            },
-        ],
-    });
-    const writable = await handle.createWritable();
-    await writable.write(JSON.stringify(keys));
-    await writable.close();
+    try {
+        if ('showSaveFilePicker' in window) {
+            const handle = await window.showSaveFilePicker({
+                types: [
+                    {
+                        description: 'Text Files',
+                        accept: {
+                            'text/plain': ['.txt'],
+                        },
+                    },
+                ],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(JSON.stringify(keys));
+            await writable.close();
+        } else {
+            // Handle lack of support for showSaveFilePicker
+            alert('Your browser does not support saving files.');
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            alert('An error occurred while saving: ' + error);
+        }
+    }
 }
 
 async function loadKeysFromFile() {
-    const [fileHandle] = await window.showOpenFilePicker();
-    const file = await fileHandle.getFile();
-    const contents = await file.text();
+    try {
+        if ('showOpenFilePicker' in window) {
+            const [fileHandle] = await window.showOpenFilePicker();
+            const file = await fileHandle.getFile();
+            const contents = await file.text();
 
-    const keys = JSON.parse(contents);
-    document.getElementById('googleApiKey').value = keys.googleApiKey || '';
-    document.getElementById('googleSearchEngineId').value = keys.googleSearchEngineId || '';
-    document.getElementById('api-key-input').value = keys.openaiApiKey || '';
-    document.getElementById('wolframApiKey').value = keys.wolframApiKey || '';
+            const keys = JSON.parse(contents);
+            document.getElementById('googleApiKey').value = keys.googleApiKey || '';
+            document.getElementById('googleSearchEngineId').value = keys.googleSearchEngineId || '';
+            document.getElementById('api-key-input').value = keys.openaiApiKey || '';
+            document.getElementById('wolframApiKey').value = keys.wolframApiKey || '';
+        } else {
+            // Handle lack of support for showOpenFilePicker
+            alert('Your browser does not support opening files.');
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            alert('An error occurred while loading: ' + error);
+        }
+    }
 }
 
 function clearKeys() {

@@ -49,8 +49,8 @@
             padding: 2px;
         }
     </style>
-  <script type="module" crossorigin src="./assets/index.22ff3953.js"></script>
-  <link rel="stylesheet" href="./assets/index.b08c1614.css">
+  <script type="module" crossorigin src="./assets/index.9d736eed.js"></script>
+  <link rel="stylesheet" href="./assets/index.3b18a4b2.css">
 </head>
 
 <body id="body">
@@ -373,7 +373,10 @@
                                 <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br /> More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a><br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
                             </tr>
                             <tr>
-                                <td>Extras</td>
+                                <td>
+                                    <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
+                                    <label for="forget-checkbox"><strong>:Enable Selective Forgetting </strong></label>
+                                </td>
                                 <td><input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty<br />(Shuffled Wiki Results)</strong></label></td>
                             </tr>
                             <tr>
@@ -400,15 +403,15 @@
                     <!-- Fourth tab content here -->
                     <div class="submenu">
                         <!--<div>
-                            <button id="ai-cursor-button">Enable Ai Cursor</button>
-                        </div>-->
+        <button id="ai-cursor-button">Enable Ai Cursor</button>
+    </div>-->
                         <div class="inline-container">
                             <input type="checkbox" id="localLLM">
                             <label for="localLLM">:</label>
                         </div>
                         <button id="downloadAiButton" class="key-button">INSTALL</button>
                         <div class="inline-container">
-                            <select id="LocalLLMselect" class="model-dropdown">
+                            <select id="LocalLLMselect" class="model-dropdown custom-select">
                                 <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
                                 <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
                             </select>
@@ -459,18 +462,20 @@
                             </div>
                         </div>
                         <br />
-                        <div style="display: flex; justify-content: flex-end; align-items: center;">
+                        <div style="display: flex; justify-content: space-evenly; align-items: center; ">
                             <label for="model-select" style="margin-right: 10px;">Select Model:</label>
-                            <select id="model-select" class="model-selector" onchange="checkOtherModel(this)">
-                                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
-                                <option value="gpt-3.5-turbo-0613">gpt-3.5-turbo-0613</option>
-                                <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-turbo-16k-0613</option>
-                                <option value="gpt-4">gpt-4</option>
-                                <option value="gpt-4-0613">gpt-4-0613</option>
-                                <option value="other">Other...</option>
-                            </select>
-                            <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
+                            <div class="dropdown-container">
+                                <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
+                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-turbo-0613</option>
+                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-turbo-16k-0613</option>
+                                    <option value="gpt-4">gpt-4</option>
+                                    <option value="gpt-4-0613">gpt-4-0613</option>
+                                    <option value="other">Other...</option>
+                                </select>
+                                <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
+                            </div>
                         </div>
                         <br />
                         <div class="gridLayout">
