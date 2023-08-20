@@ -1,11 +1,216 @@
 //searchapi.js
 
+//Node filtering helper functions
+
+async function forget(userMessage, combinedContext) {
+    // Trim the combinedContext to remove leading and trailing whitespaces and new lines, then check if it's empty.
+    if (!combinedContext.trim()) {
+        console.log("Combined context is empty or just newlines. Skipping API call.");
+        return new Set(); // Return an empty Set since no titles are to be forgotten.
+    }
+
+    const forgetQueryContext = [
+        {
+            role: "system",
+            content: `Here's the current context and top matched nodes to help you decide which node titles should be forgotten:\n\n${combinedContext}`
+        },
+        {
+            role: "user",
+            content: userMessage
+        },
+        {
+            role: "system",
+            content: "Without preface or explanation, based on the provided user message and context, suggest which node titles should be forgotten. Return the exact titles to forget separated by newlines."
+        },
+    ];
+
+    // Now we'll mock calling the AI API just like you did with the 'callChatGPTApi' function.
+    const response = await callChatGPTApi(forgetQueryContext);
+    console.log(response)
+    // Extract the node titles to forget from the AI's response
+    const titlesToForget = new Set(response.split("\n"));
+    console.log(titlesToForget)
+    return titlesToForget;
+}
+
+function extractTitlesFromContent(content, nodeTag) {
+    let titles = new Set();
+    const titleRegex = new RegExp(nodeTag + " (.*?)\\n", "g");
+    let match;
+    while ((match = titleRegex.exec(content)) !== null) {
+        titles.add(match[1].trim());
+    }
+    return titles;
+}
+
+function removeTitlesFromContext(contentStr, titlesToForget, nodeTag) {
+    const regex = new RegExp(`${nodeTag} (.*?)(?=${nodeTag}|$)`, 'gs');
+    let match;
+    let newContent = "";
+    while ((match = regex.exec(contentStr)) !== null) {
+        const title = match[1].split('\n')[0].trim();
+        if (!titlesToForget.has(title)) {
+            newContent += match[0];
+        }
+    }
+    return newContent;
+}
+
+function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget, nodeTag) {
+    return nodes
+        .map((node) => {
+            if (!node) {
+                return null;
+            }
+
+            const titleElement = node.content.querySelector("input.title-input");
+            const title = titleElement && titleElement.value !== "" ? titleElement.value.trim() : "No title found";
+
+            // If title already present in context, don't include the node
+            if (existingTitles.has(title) || titlesToForget.has(title)) {
+                return null;
+            }
+
+            // Fetch all textareas directly in the node content.
+            const contentElements = node.content.querySelectorAll("textarea");
+            const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
+            // console.log("Content:", content);
+
+            //     const connectedNodesInfo = node.edges
+            //    ? node.edges.map((edge) => {
+            //         if (edge.nodeA && edge.nodeB) {
+            //              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
+            //              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
+            //                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
+            //          } else {
+            //              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+            //           }
+            //       }).join("\n")
+            //          : '';
+            //
+            //      const edgeInfo = node.edges
+            //           .map((edge) => {
+            //               if (edge.nodeA && edge.nodeB) {
+            //                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
+            //               } else {
+            //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+            //               }
+            //           }).join("\n");
+            const createdAt = node.createdAt;
+
+            //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
+
+            return `${tagValues.nodeTag} ${title}\n ${contents.join("\n")}`;
+        })
+        .filter(content => content !== null); // Remove nulls
+}
+
+
+
+//api calls
+
+function isWikipediaEnabled() {
+    const checkbox = document.getElementById("wiki-checkbox");
+    return checkbox.checked;
+}
+
+async function getWikipediaSummaries(keywords, top_n_links = 3) {
+    const allSummariesPromises = keywords.map(async (keyword) => {
+        try {
+            const response = await fetch(
+                `http://localhost:5000/wikipedia_summaries?keyword=${keyword}&top_n_links=${top_n_links}`
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const keywordSummaries = await calculateRelevanceScores(data, await fetchEmbeddings(keyword));
+            return keywordSummaries;
+        } catch (error) {
+            console.error('Error fetching Wikipedia summaries:', error);
+            alert('Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.');
+            return [];
+        }
+    });
+
+    const allSummaries = await Promise.all(allSummariesPromises);
+    const summaries = [].concat(...allSummaries); // Flatten the array of summaries
+
+    // Sort the summaries by relevance score in descending order
+    summaries.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    const combinedSummaries = [];
+
+    // Include the top matched summary
+    combinedSummaries.push(summaries[0]);
+
+    // Check if the novelty checkbox is checked
+    if (isNoveltyEnabled()) {
+        // If checked, randomly pick two summaries from the remaining summaries
+        const remainingSummaries = summaries.slice(1);
+        shuffleArray(remainingSummaries);
+        combinedSummaries.push(...sampleSummaries(remainingSummaries, 2));
+    } else {
+        // If not checked, push the top n summaries
+        combinedSummaries.push(...summaries.slice(1, top_n_links));
+    }
+
+    // Display the final selected Wikipedia results
+    displayWikipediaResults(combinedSummaries);
+
+    return combinedSummaries;
+}
+
+function displayWikipediaResults(wikipediaSummaries) {
+    wikipediaSummaries.forEach((result, index) => {
+        let title = `${result.title}`;
+
+        // Trimming whitespace and truncating the description
+        let description = truncateDescription(result.summary.trim(), 200); // Limiting to 300 characters for example
+
+        // Create the Wikipedia URL from the title
+        let link = `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(' ', '_'))}`;
+
+        let node = createLinkNode(title, description, link);
+        htmlnodes_parent.appendChild(node.content);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    });
+}
+
+// Utility function to truncate descriptions
+function truncateDescription(description, maxLength) {
+    if (description.length <= maxLength) return description;
+
+    // Return the substring of the given description up to maxLength and append '...'
+    return description.substring(0, maxLength) + "...";
+}
+
+const wolframmessage = `Generate a concise preface and a precise Wolfram Alpha query in response to the user message.
+- Exclusivly write your query on the last line of your response. The last line is treated as the query.
+- The Wolfram query should be specific to the user's message. The last line of your response will be used to query Wolfram Alpha.
+- If the user's input is already valid Wolfram code, use it verbatim but still provide a brief preface.
+Query Wolfram Alpha, work through the reasoning of the query before making it. Any response that doesn't adhere to this format will produce an error.`
+
+let wolframCallCounter = 0;
+
 async function fetchWolfram(message) {
     let wolframAlphaResult = "not-enabled";
     let wolframAlphaTextResult = "";
     let reformulatedQuery = "";
 
-    reformulatedQuery = await callChatGPTApi([
+    recentcontext = getLastPromptsAndResponses(2, 300);
+
+    // Increment the Wolfram call counter
+    wolframCallCounter++;
+
+    // Insert the tag and unique title to the note-input 
+    myCodeMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+
+    let messages = [
         {
             role: "system",
             content: `<wolfram>${wolframmessage}</wolfram>`
@@ -14,8 +219,26 @@ async function fetchWolfram(message) {
             role: "user",
             content: `${message} Wolfram Query`,
         }
-    ]);
+    ];
 
+    // Only add the recentcontext message if it is not empty
+    if (recentcontext.trim() !== "") {
+        messages.splice(1, 0, {
+            role: "system",
+            content: `The following recent conversation may provide further context for generating your Wolfram query; \n ${recentcontext},`
+        });
+    }
+
+    let fullResponse = await callChatGPTApi(messages, true);
+
+    let lines = fullResponse.trim().split("\n");
+    reformulatedQuery = lines[lines.length - 1];
+    let preface = lines.slice(0, lines.length - 1).join("\n");
+
+    // Append an additional new line
+    myCodeMirror.replaceRange(`\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+
+    console.log("Preface:", preface);
     console.log("Reformulated query:", reformulatedQuery);
 
     // Call Wolfram Alpha API with the reformulated query
@@ -119,7 +342,6 @@ async function constructSearchQuery(userMessage) {
         let node = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
 
         htmlnodes_parent.appendChild(node.content);
-        registernode(node);
         // Attach the node to the user's mouse
         node.followingMouse = 1;
         node.draw();
@@ -142,7 +364,7 @@ async function constructSearchQuery(userMessage) {
     },
     {
         role: "system",
-        content: "Generate a search query most relevant to the current user message. Your response is used for both a Google Programable Search and an embedded vector search to find relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results. No need to explain or preface your output."
+        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used for both a Google Programable Search and an embedded vector search to find relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results."
     },
     {
         role: "user",
@@ -887,7 +1109,6 @@ function displaySearchResults(searchResults) {
         let node = createLinkNode(title, description, link);
 
         htmlnodes_parent.appendChild(node.content);
-        registernode(node);
         // Attach the node to the user's mouse
         node.followingMouse = 1;
         node.draw();
@@ -899,7 +1120,6 @@ function displaySearchResults(searchResults) {
 async function processLinkInput(linkUrl) {
     if (isUrl(linkUrl)) {
         let node = createLinkNode(linkUrl, linkUrl, linkUrl);
-        registernode(node);
         node.followingMouse = 1;
         node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
