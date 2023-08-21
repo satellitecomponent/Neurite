@@ -1198,6 +1198,18 @@ function clearnet() {
     }
 }
 
+//this is a quick fix to retain textarea height, the full fix requires all event listeners to be attatched to each node.
+
+function adjustTextareaHeightToContent(nodes) {
+    for (let node of nodes) {
+        let textarea = node.content.querySelector('textarea');
+        if (textarea) {
+            textarea.style.height = 'auto'; // Temporarily shrink to content
+            textarea.style.height = (textarea.scrollHeight) + 'px'; // Set to full content height
+        }
+    }
+}
+
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
@@ -1215,6 +1227,8 @@ function loadnet(text, clobber, createEdges = true) {
     for (let n of newNodes) {
         htmlnodes_parent.appendChild(n.content);
     }
+
+    adjustTextareaHeightToContent(newNodes);
     for (let n of newNodes) {
         n.init(nodeMap); //2 pass for connections
     }

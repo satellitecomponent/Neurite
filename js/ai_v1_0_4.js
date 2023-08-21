@@ -132,7 +132,7 @@ async function handleStreamingResponse(response) {
     let buffer = "";
 
     const appendContent = async function (content) {
-        await new Promise(resolve => setTimeout(resolve, 25));  // Delay response append
+        await new Promise(resolve => setTimeout(resolve, 30));  // Delay response append
 
         const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
         if (shouldContinue) {
