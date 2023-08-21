@@ -3,17 +3,18 @@
 https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-4176-ac6b-b9a3bf4329d8
 
 
-
 ## `Introduction`
-
 
 💡 **[Neurite](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
+**...the fractal dimension...**
 
-**...the fractal dimension.**
+## Bridging Fractals and Thought
 
+Neurite melds the captivating complexity of the Mandelbrot set with a cutting-edge approach to mind mapping. Within this fractal landscape, users can actively arrange, connect, scale, and anchor nodes, each containing text, images, videos, code, and AI-driven insights. Together, they weave into an organic tapestry of thoughts.
 
-
+### `Complexity Meets Creativity`
+Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite transcends the ordinary, offering a fresh perspective on thought through a fractal environment that maps the branching landscape of creativity.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -22,9 +23,9 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 See the User Guide for instructions on running locally
 
 
-🌱 This is an open-source project in early alpha, we are looking to grow our team! 🚧
+🌱 This is an open-source project in active development, we are looking to grow our team! 🚧
 
-feel free to visit our [Discord](https://discord.gg/hnY8UpeE22)!
+feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
@@ -57,47 +58,47 @@ Supports embedded links. Ctrl+V to paste an embed link
  
 `Alt + double click` to create an Ai node.
 
+Or, drag in different node types from the dropdown.
+
+
 ## FractalGPT
 
-### Not your typical chat interface.
-- Web of thought reasoning.
-- Non-linear, rhizomatic memory.
-- Limitless Ai Agents.
-- Fractal Interface.
-- Custom tool creation.
+### `Not your typical chat interface`
+- **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory.
+- **Limitless AI Agents:** Create an endless number of chat interfaces, or let the AI take notes from above.
+- **Fractal Interface:** Immerse yourself in learning within a captivating fractal landscape.
+- **Custom Tool Creation:** Craft personalized tools that resonate with your intellectual pursuits.
 
-###  Ai that doesn't get lost.
+### `Modular Conversation`
 
-Neurite allows for finer control over the focus of your Ai conversation.
+In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:
 
-- The LLM’s responses format themselves into notes and connections within the fractal mind map. This emergent graph structure represents the AI’s memory.
+- **Structured Memory Mapping:** Anchor the AI's evolving thought process as notes within an evolving fractal mind map.
+- **Enhanced AI Response:** Segment AI's output into a cohesive chain of thought that improves AI reasoning.
+- **Interactive Fractal Thought Network:** Utilize our fractal interface to create a personal, emergent, and contextually aware database of knowledge.
+- **Intuitive Note Navigation:** Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.
 
-    (Long term memory for conversation with Ai)
-- Breaking up the AI's output into a chain of thought reasoning correlates to improved Ai response.
-- Mind mapping combined with our fractal interface goes beyond chain of thought reasoning to produce an interactive fractal web of thought.
-- Notes are easily returned to wherever they are at any point in the fractal via our search bar, or by clicking on their syntax highlighted titles in the notes tab.
+### `Unbounded AI Exploration`
+An open world generative landscape for thought integrated with cutting edge artificial intelligence.
 
-To interact with the Ai, you either need an OpenAi API key, or you can install an Ai directly in browser!
-
-- The Mandelbrot set acts as the terrain for your mind-map to grow into an interconnected tapestry of thoughts, references, and creations!
+Connect to the AI using an OpenAI API key or from directly within your browser via [webLLM](https://mlc.ai/web-llm/). Let the Mandelbrot set shape the endless topology for your mind-map, guiding it into an interconnected tapestry of thoughts, references, and creativity.
 
 https://github.com/satellitecomponent/Neurite/assets/129367899/ddcfe933-84d1-422d-98b5-adb291c2f6f8
 
 
-### Neurite supports the following Ai features
+### Neurite Supports the Following AI Plugins:
 
-1. Auto Mode
-2. Node based memory.
-3. HTML/JS and In-browser Python (pyodide) environment for directly rendering GPT's code output.
-4. Web Search (requires Google programmable search api key and search engine id)
+- **Auto Mode**: Enable the AI to recursively generate its own prompts.
+- **Node-Based Memory**: Utilize long-term recall through our vector-embedded search of your notes and conversation. (Experimental forgetting mode in the ? tab)
+- **Direct Rendering Environments**:
+  - **HTML/JS**: Render GPT's code output directly. Connected nodes bundle together any HTML/CSS/JS codeblocks or editors.
+  - **Python ([Pyodide](https://github.com/pyodide/pyodide))**: Execute Python code directly within the browser.
+- **Web Search**: Utilize the Google programmable search API to retrieve webpages that can be sent as context to the AI.
+- **Webpage and PDF Text Extraction**: Leverage a local vector database to extend the AI's context window.
+- **Wikipedia Results**: Retrieve the top 3 Wikipedia results or shuffle through the top 20.
+- **Wolfram Alpha Results**: Experience our unique implementation of integrating Wolfram with AI.
 
-(to search without an API key, send a url within the prompt input or past an embed link and the webpage will display without going through Google.)
-
-5. Webpage and PDF text extraction. (see the localhost servers documentation for how to set up)
-6. Wikipedia Summaries (see the localhost servers)
-7. Wolfram Alpha Results. (see the localhost servers)
-
-All API keys can be input through the Ai tab of the menu dropdown.
+All API keys can be input through the AI tab in the menu dropdown.
 
 ## `Local Ai`
 
@@ -105,10 +106,10 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/3c26c9bb-5caa-40f
 
 Above is an example of conversation history being shared between GPT-4 and a Local Ai model, Red Pajamas, run through [webLLM](https://mlc.ai/web-llm/).
 
-### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect their memories together.
+### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
-- The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift + Click` two node windows to connect them together)
-- This means the ability to connect multiple chat interfaces together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
+- The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift and Click` two node windows to connect them together)
+- This means the ability to inteface multiple chat wimdows together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
 - Supports webLLM and OpenAi models concurrently.
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, Red Pajamas 3B, and Vicuna 7B.
@@ -131,7 +132,7 @@ either:
 
 Or, to enable local AI features without using our Github pages host above:  
 1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-2. Install any necessary global dependencies when running the below,
+2. Install any necessary global dependencies when running the below, (Node.js, Rust, Embscripten, Strawberry Perl, Vite)
 
 ```
 npm install
@@ -144,8 +145,7 @@ npm run start
 ### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
 ### The servers enable plugin integration for webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
-- The Wikipedia, Wolfram, and web scrape servers require Python and Node.js
-- The readme in the Locahost Servers folder explains how to run all of the servers at once.
+- Our Wikipedia, Wolfram, and web scrape servers require Python and Node.js
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
@@ -159,9 +159,9 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 ### `Notes`
 - Search: Enter a search query to locate windows containing that text. The search results display to the left of the menu. Click on a search result to zoom your view to where the corresponding window is positioned within the fractal.
 - Saving: Saving is currently a work-in-progress. Your networks will can be saved in the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file in the save box, then click the second load button to display the network. Non-textual content currently needs to be re-inserted.
-- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its responses together.
+- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its response.
 
-The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our real time Mandelbrot set visualization.
+The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
 
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
@@ -178,19 +178,19 @@ The Zettelkasten note taking method accesses tapestry of thought reasoning for A
 🚧 `Neurite is in active development.` 🚧 
 
 ✅ webLLM 
-- webLLM localhost
+🔄 python LLM localhost
 
 ✅ local embeddings 
 - VR
 - deeper fractal zoom
-- Ai cursor control
+🔄 Ai cursor control
   
 ✅ color selection
 
 ✅ adjust width, length, max lines, speed
 
 ✅ screen recording
-- accessibility
+🔄 accessibility
 - auto embed formats
 - custom equations for the fractal
 - drawing-tool
