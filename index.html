@@ -24,31 +24,6 @@
 
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
-    <style type="text/css">
-        .current-node-section {
-            color: #bbb;
-        }
-        .node-title {
-            color: paleturquoise;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .cm-node {
-            color: #D15050;
-        }
-
-        .cm-ref {
-            color: #4F8EB7;
-        }
-
-        .cm-Prompt {
-            color: #E0B0FF;
-            background-color: #464250;
-            border-radius: 5px;
-            padding: 2px;
-        }
-    </style>
 </head>
 
 <body id="body">
@@ -417,6 +392,10 @@
                             <select id="LocalLLMselect" class="model-dropdown custom-select">
                                 <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
                                 <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
+                                <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
+                                <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
+                                <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
+                                <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
                             </select>
                         </div>
                         <div class="inline-container">

@@ -3,6 +3,8 @@ var refTagInput;
 var myCodeMirror;
 let llmNodeCreated = false;
 const noteInput = myCodeMirror;
+let nodefromWindow = false;
+let followMouseFromWindow = false;
 {
 
     const nodeTableBody = document.getElementById('node-table-body');
@@ -55,7 +57,28 @@ const noteInput = myCodeMirror;
         return (s) => s.replace(re, replacer);
     }
 
+    function addNodeTagToZettelkasten(title, content = null) {
+        const nodeTagLine = nodeTag + ' ' + title; // Added a space between the nodeTag and the title
+        let currentZettelkastenValue = noteInput.getValue();
+
+        // Check if the content ends with a newline and add one or two newlines accordingly
+        if (currentZettelkastenValue.endsWith('\n')) {
+            currentZettelkastenValue += '\n' + nodeTagLine;
+        } else {
+            currentZettelkastenValue += '\n\n' + nodeTagLine;
+        }
+
+        // Add content if given
+        if (content) {
+            currentZettelkastenValue += '\n' + content;
+        }
+
+        noteInput.setValue(currentZettelkastenValue); // Assuming noteInput is the object to manipulate zettelkasten
+        noteInput.refresh();
+    }
+
 function processInput() {
+
     const nodeTag = nodeTagInput.value;
     const refTag = refTagInput.value;
 
@@ -89,12 +112,24 @@ function processInput() {
                         node.live = true;
                         node.nodeObject.content.children[0].children[0].children[1].value = currentNodeTitle;
                     } else {
+                    let nodeObject;
+                        if (nodefromWindow) { //flag set in createnodefromwindow in createnodes.js
+                            nodeObject = createTextNode(currentNodeTitle, '');
+                            nodefromWindow = false; // Reset the flag
+                            if (followMouseFromWindow) { //flag set in createnodefromwindow in createnodes.js
+                                nodeObject.followingMouse = 1;
+                                followMouseFromWindow = false; // Reset this flag as well
+                            }
+                        } else {
+                            nodeObject = createTextNode(currentNodeTitle, '', (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8);
+                        }
+
                         const node = nodeLines[i] = nodes[currentNodeTitle] = {
                             title: currentNodeTitle,
                             plainText: '',
                             ref: '',
                             live: true,
-                            nodeObject: createTextNode(currentNodeTitle, '', (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8),
+                            nodeObject: nodeObject,
                             edges: new Map(),
                             lineNum: i,
                         };

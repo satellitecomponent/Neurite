@@ -621,9 +621,6 @@ const tagValues = {
     }
 }
 
-// Get the node tag value
-const nodeTag = document.getElementById("node-tag").value;
-
 const codeMessage = () => ({
     role: "system",
     content: `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
@@ -808,6 +805,8 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
     const noteInput = document.getElementById("note-input");
+    // Get the node tag value
+    let nodeTag = document.getElementById("node-tag").value;
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {

@@ -35,7 +35,7 @@ async function forget(userMessage, combinedContext) {
 
 function extractTitlesFromContent(content, nodeTag) {
     let titles = new Set();
-    const titleRegex = new RegExp(nodeTag + " (.*?)\\n", "g");
+    const titleRegex = new RegExp(nodeTag + " (.*?)\\r?\\n", "g"); // Match until the newline character
     let match;
     while ((match = titleRegex.exec(content)) !== null) {
         titles.add(match[1].trim());
@@ -44,11 +44,11 @@ function extractTitlesFromContent(content, nodeTag) {
 }
 
 function removeTitlesFromContext(contentStr, titlesToForget, nodeTag) {
-    const regex = new RegExp(`${nodeTag} (.*?)(?=${nodeTag}|$)`, 'gs');
+    const regex = new RegExp(`(${nodeTag} )(.*?)\\r?\\n`, 'gs'); // Separate the tag and the title
     let match;
     let newContent = "";
     while ((match = regex.exec(contentStr)) !== null) {
-        const title = match[1].split('\n')[0].trim();
+        const title = match[2].trim(); // Get the title only, excluding the tag
         if (!titlesToForget.has(title)) {
             newContent += match[0];
         }

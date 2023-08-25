@@ -33,14 +33,37 @@ const appConfig = {
             "model_url": "https://huggingface.co/mlc-ai/mlc-chat-RedPajama-INCITE-Chat-3B-v1-q4f16_0/resolve/main/",
             "local_id": "RedPajama-INCITE-Chat-3B-v1-q4f16_0",
             "required_features": ["shader-f16"],
+        },
+        {
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-Llama-2-7b-chat-hf-q4f32_1/resolve/main/",
+            "local_id": "Llama-2-7b-chat-hf-q4f32_1"
+        },
+        {
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-Llama-2-13b-chat-hf-q4f32_1/resolve/main/",
+            "local_id": "Llama-2-13b-chat-hf-q4f32_1"
+        },
+        {
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-Llama-2-70b-chat-hf-q4f16_1/resolve/main/",
+            "local_id": "Llama-2-70b-chat-hf-q4f16_1",
+            "required_features": ["shader-f16"],
+        },
+        {
+            "model_url": "https://huggingface.co/mlc-ai/mlc-chat-WizardCoder-15B-V1.0-q4f32_1/resolve/main",
+            "local_id": "WizardCoder-15B-V1.0-q4f32_1",
         }
     ],
     "model_lib_map": {
         "vicuna-v1-7b-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/vicuna-v1-7b-q4f32_0-webgpu-v1.wasm",
         "RedPajama-INCITE-Chat-3B-v1-q4f32_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f32_0-webgpu-v1.wasm",
-        "RedPajama-INCITE-Chat-3B-v1-q4f16_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f16_0-webgpu-v1.wasm"
-    }
+        "RedPajama-INCITE-Chat-3B-v1-q4f16_0": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/RedPajama-INCITE-Chat-3B-v1-q4f16_0-webgpu-v1.wasm",
+        "Llama-2-7b-chat-hf-q4f32_1": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/Llama-2-7b-chat-hf-q4f32_1-webgpu.wasm",
+        "Llama-2-13b-chat-hf-q4f32_1": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/Llama-2-13b-chat-hf-q4f32_1-webgpu.wasm",
+        "Llama-2-70b-chat-hf-q4f16_1": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/Llama-2-70b-chat-hf-q4f16_1-webgpu.wasm",
+        "WizardCoder-15B-V1.0-q4f32_1": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/WizardCoder-15B-V1.0-q4f32_1-webgpu.wasm"
+    },
+    "use_web_worker": true
 }
+
 
 async function initializeLLM(model) {
     chat = new webllm.ChatWorkerClient(new Worker(
@@ -81,6 +104,9 @@ document.getElementById('downloadAiButton').addEventListener('click', async () =
     // Show loading icons
     loadingIcon.style.display = 'block';
     if (aiLoadingIcon) aiLoadingIcon.style.display = 'block';
+    //Hide error
+    errorIcon.style.display = 'none';
+    if (aiErrorIcon) aiErrorIcon.style.display = 'none';
 
     // Enable the local LLM checkbox
     const localLLMCheckbox = document.getElementById('localLLM') as HTMLInputElement;
@@ -110,7 +136,22 @@ document.getElementById('downloadAiButton').addEventListener('click', async () =
     }
 });
 
+let serverAvailable: boolean | null = null;
+
+const checkServerAvailability = async () => {
+    try {
+        const response = await fetch('http://127.0.0.1:8085/ping');
+        serverAvailable = response.ok;
+    } catch (error) {
+        serverAvailable = false;
+    }
+};
+
 const getServerResponse = async (message: string): Promise<string | null> => {
+    if (serverAvailable === false) {
+        return null;
+    }
+
     try {
         const response = await fetch('http://127.0.0.1:8085/chat', {
             method: 'POST',
@@ -120,7 +161,6 @@ const getServerResponse = async (message: string): Promise<string | null> => {
             body: JSON.stringify({ message: message }),
         });
 
-        // Check if response status is between 200 and 299 (inclusive)
         if (!response.ok) {
             return null;
         }
@@ -128,13 +168,15 @@ const getServerResponse = async (message: string): Promise<string | null> => {
         const data = await response.json();
         return data.response;
     } catch (error) {
-        // Silently handle connection errors, but log other errors
         if (error.message !== "Failed to fetch") {
             console.error('Error communicating with the server:', error);
         }
         return null;
     }
 };
+
+// Call this function on page refresh to determine if the server is available
+checkServerAvailability();
 
 document.getElementById('prompt-form').addEventListener('submit', async (event) => {
     const localLLMCheckbox = document.getElementById("localLLM");
@@ -185,7 +227,7 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     const serverResponse = await getServerResponse((promptInput as HTMLInputElement).value);
 
     if (serverResponse) {
-        const serverMessage = "\nnode: SERVER\n" + serverResponse + "\nref:\n";
+        const serverMessage = "\nnode: LLM" + responseCount.toString() + "\n" + serverResponse + "\nref:\n";
         noteInput.setValue(noteInput.getValue() + serverMessage);
         responseCount++;
         conversationHistory.push({ prompt: (promptInput as HTMLInputElement).value, response: serverResponse });

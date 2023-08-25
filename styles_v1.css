@@ -16,11 +16,11 @@
 
 
 .collapsed-circle {
-    display: inline-block;
+    display: relative;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     background-color: #222226;
 }
 
@@ -30,7 +30,7 @@
 
 
 .collapsed-circle.collapsed-anchor {
-    background-color: rgb(125 116 139) !important;
+    background-color: #6b6279 !important;
     border: none;
 }
 
@@ -699,7 +699,7 @@
     background-color: #222226;
     color: #fff;
     box-sizing: border-box;
-    z-index: 20;
+    z-index: 10;
     user-select: none; /* Disable text selection */
 }
 
@@ -732,7 +732,7 @@ select-replacer > div:first-child {
     background: #bbb;
     transform: translateY(-50%) rotate(-45deg);
     transition: transform 0.2s;
-    z-index: 20;
+    z-index: 10;
 }
 
 .select-replacer::after {
@@ -745,7 +745,7 @@ select-replacer > div:first-child {
     background: #bbb;
     transform: translateY(-50%) rotate(45deg);
     transition: transform 0.2s;
-    z-index: 20;
+    z-index: 30;
 }
 
     .select-replacer:not(.closed)::before {
@@ -766,7 +766,7 @@ select-replacer > div:first-child {
     background-color: #e2e2e2;
     color: #ddd;
     width: 100%; /* Match width with select-replacer */
-    z-index: 11;
+    z-index: 10;
 }
 
     .options-replacer div {
@@ -1120,6 +1120,36 @@ input[type=range] {
 .CodeMirror-focused .CodeMirror-selected {
     background: Highlight !important;
     color: HighlightText !important;
+}
+/*Hide codemirror node text*/
+.hidden-text {
+    display: none;
+}
+
+.current-node-section {
+    color: #bbb;
+}
+
+.node-title {
+    color: paleturquoise;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.cm-node {
+    color: #D15050;
+    cursor: pointer;
+}
+
+.cm-ref {
+    color: #4F8EB7;
+}
+
+.cm-Prompt {
+    color: #E0B0FF;
+    background-color: #464250;
+    border-radius: 5px;
+    padding: 2px;
 }
 
 .aiResponseEditor .CodeMirror-scroll {
