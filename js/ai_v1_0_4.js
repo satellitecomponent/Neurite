@@ -132,7 +132,7 @@ async function handleStreamingResponse(response) {
     let buffer = "";
 
     const appendContent = async function (content) {
-        await new Promise(resolve => setTimeout(resolve, 25));  // Delay response append
+        await new Promise(resolve => setTimeout(resolve, 30));  // Delay response append
 
         const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
         if (shouldContinue) {
@@ -621,9 +621,6 @@ const tagValues = {
     }
 }
 
-// Get the node tag value
-const nodeTag = document.getElementById("node-tag").value;
-
 const codeMessage = () => ({
     role: "system",
     content: `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
@@ -808,6 +805,8 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
     const noteInput = document.getElementById("note-input");
+    // Get the node tag value
+    let nodeTag = document.getElementById("node-tag").value;
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
@@ -1032,7 +1031,7 @@ async function sendMessage(event, autoModeMessage = null) {
 2. Use multiple nodes in every response.
 3. Describe in plain text after the title. No numbered lists or lengthy paragraphs.
 4. Link related nodes with "${tagValues.refTag}", followed by comma-separated nodes.
-5. References can be defined after the plain text of any node, not just the last one.
+5. Define references after every node unless none are required.
 
 NOTE:
 - Use the example below ONLY for format. Don't replicate its content.
@@ -1046,11 +1045,11 @@ Descriptive content here.
 
 ${tagValues.nodeTag} Note Taking
 Info here.
-${tagValues.refTag} Topics
+${tagValues.refTag} Topics, Connect Ideas
 
 ${tagValues.nodeTag} Connect Ideas
 Info here.
-${tagValues.refTag} Note Taking, Topics`;
+${tagValues.refTag} Note Taking,`;
 
     // Add Common Instructions as a separate system message
     messages.push({

@@ -1036,11 +1036,19 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Options for the dropdown
     let option1 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, true);
     let option2 = new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, false);
-    let option3 = new Option('OpenAI', 'OpenAi', false, false);
+    let option3 = new Option('Llama 2 7B f32', 'Llama-2-7b-chat-hf-q4f32_1', false, false);
+    let option4 = new Option('Llama 2 13B f32', 'Llama-2-13b-chat-hf-q4f32_1', false, false);
+    let option5 = new Option('Llama 2 70B f16', 'Llama-2-70b-chat-hf-q4f16_1', false, false);
+    let option6 = new Option('WizardCoder 15B f32', '"WizardCoder-15B-V1.0-q4f32_1', false, false);
+    let option7 = new Option('OpenAI', 'OpenAi', false, false);
 
     LocalLLMSelect.add(option1, undefined);
     LocalLLMSelect.add(option2, undefined);
-    LocalLLMSelect.add(option3, undefined); // Adding new option
+    LocalLLMSelect.add(option3, undefined);
+    //LocalLLMSelect.add(option4, undefined);
+    LocalLLMSelect.add(option5, undefined);
+    //LocalLLMSelect.add(option6, undefined);
+    LocalLLMSelect.add(option7, undefined);
 
     // Append dropdown to the div
     wrapperDiv.appendChild(LocalLLMSelect);
@@ -1293,7 +1301,7 @@ function topologicalSort(node, visited, stack) {
     stack.push(node);
 }
 
-function getAllConnectedNodesData(node) {
+function traverseConnectedNodes(node, callback) {
     let visited = new Set();
     let stack = []; // stack to store the result
 
@@ -1302,7 +1310,6 @@ function getAllConnectedNodesData(node) {
     topologicalSort(node, visited, stack);
 
     // Now we can process nodes in topological order
-    let allConnectedNodesData = [];
     while (stack.length > 0) {
         let currentNode = stack.pop();
 
@@ -1311,9 +1318,27 @@ function getAllConnectedNodesData(node) {
             continue;
         }
 
+        callback(currentNode); // Execute the callback on the current node
+    }
+}
+
+function getAllConnectedNodesData(node) {
+    let allConnectedNodesData = [];
+
+    traverseConnectedNodes(node, currentNode => {
         let currentNodeData = getNodeData(currentNode);
         allConnectedNodesData.push(currentNodeData);
-    }
+    });
 
     return allConnectedNodesData;
+}
+
+function getAllConnectedNodes(node) {
+    let allConnectedNodes = [];
+
+    traverseConnectedNodes(node, currentNode => {
+        allConnectedNodes.push(currentNode); // Only including the node itself
+    });
+
+    return allConnectedNodes;
 }

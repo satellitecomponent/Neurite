@@ -45,6 +45,40 @@ if (!RegExp.escape) {
         }
 
 
+function toggleNodeState(nodeOrTitle, cm, event) {
+    let node;
+    let title;
+
+    if (typeof nodeOrTitle === 'string') {
+        title = nodeOrTitle;
+        node = getNodeByTitle(title);
+    } else {
+        node = nodeOrTitle;
+        title = node.getTitle();
+    }
+
+    if (!node || !node.content) return;
+    let div = node.content.querySelector('.window');
+    let circle = div.querySelector('.collapsed-circle'); // Find the circle here
+
+    // Collapse or expand based on current state
+    if (div && div.collapsed) {
+        expandNode(node, div, circle);
+        if (title) showNodeText(title, cm); // Show node text in CodeMirror
+    } else {
+        collapseNode(node)(null);
+        if (title) hideNodeText(title, cm); // Hide node text in CodeMirror
+    }
+
+    // Check if the CTRL key is being held
+    if (event && event.ctrlKey) {
+        let allConnectedNodes = getAllConnectedNodes(node);
+        allConnectedNodes.forEach(connectedNode => {
+            toggleNodeState(connectedNode, cm); // Pass the connected node
+        });
+    }
+}
+
 function collapseNode(node) {
     return function (event) {
         let div = node.content.querySelector('.window');
@@ -71,9 +105,10 @@ function collapseNode(node) {
                 }
             });
 
+            div.style.display = 'relative';
             // Adjust the window to make it look like a circle
-            div.style.width = '40px';
-            div.style.height = '40px';
+            div.style.width = '60px';
+            div.style.height = '60px';
             div.style.borderRadius = '50%';
             // Capture the box-shadow of the window div
             let boxShadow = getComputedStyle(div).boxShadow;
@@ -89,13 +124,11 @@ function collapseNode(node) {
             titleInput.style.border = 'none';
             titleInput.style.textAlign = 'center';
             titleInput.style.pointerEvents = 'none';
-
+            titleInput.style.fontSize = '25px';
 
             // Create the circle
             let circle = document.createElement('div');
             circle.className = 'collapsed-circle';
-            circle.style.width = '40px';
-            circle.style.height = '40px';
             circle.style.borderRadius = '50%';
             circle.style.boxShadow = boxShadow;
 
@@ -120,7 +153,8 @@ function collapseNode(node) {
                         circle.classList.add('collapsed-anchor');
                     }
                 } else {
-                    expandNode(node, div, circle);
+                    // Call the toggleNodeState function instead of expanding the node directly
+                    toggleNodeState(node, myCodeMirror, event); // Assuming myCodeMirror is in scope
                     event.stopPropagation(); // Prevent the event from propagating up the DOM tree only in node mode
                 }
             }
@@ -137,10 +171,13 @@ function collapseNode(node) {
 
 function expandNode(node, div, circle) {
     // Reset the window properties
+    div.style.display = '';
     div.style.borderRadius = '';
-    div.style.width = div.originalSize.width + 'px';
-    div.style.height = div.originalSize.height + 'px';
-    div.style.boxShadow = ``;
+    div.style.width = div.originalSize ? div.originalSize.width + 'px' : '';
+    div.style.height = div.originalSize ? div.originalSize.height + 'px' : '';
+    div.style.backgroundColor = '';
+    div.style.borderColor = '';
+    div.style.boxShadow = '';
     div.classList.remove('collapsed');
 
     // Show all the children of the window div
@@ -164,6 +201,7 @@ function expandNode(node, div, circle) {
     titleInput.style.textAlign = '';
     titleInput.style.pointerEvents = '';
     titleInput.style.border = '';
+    titleInput.style.fontSize = '';
 
     // Transfer the .window-anchored class from circle to node.content if present
     if (circle && circle.classList.contains('collapsed-anchor')) {
@@ -310,12 +348,15 @@ function rewindowify(node) {
         e.onmouseleave();
     }
     ui(del, () => {
+        const title = node.getTitle();
         if (prevNode === node) {
             prevNode = undefined;
             mousePath = "";
             svg_mousePath.setAttribute("d", "");
         }
         node.remove();
+        // Delete the node from CodeMirror
+        deleteNodeByTitle(title);
     });
     ui(fs, (() => {
         node.zoom_to_fit();
@@ -324,7 +365,7 @@ function rewindowify(node) {
         scrollToTitle(node.getTitle(), noteInput); // Use the getTitle method
     }));
 
-    ui(col, collapseNode(node), "stroke");
+    ui(col, () => toggleNodeState(node, myCodeMirror, event), "stroke");
 
     // Add the "mouseup" event listener to the document
     document.addEventListener('mouseup', () => {
@@ -1198,6 +1239,18 @@ function clearnet() {
     }
 }
 
+//this is a quick fix to retain textarea height, the full fix requires all event listeners to be attatched to each node.
+
+function adjustTextareaHeightToContent(nodes) {
+    for (let node of nodes) {
+        let textarea = node.content.querySelector('textarea');
+        if (textarea) {
+            textarea.style.height = 'auto'; // Temporarily shrink to content
+            textarea.style.height = (textarea.scrollHeight) + 'px'; // Set to full content height
+        }
+    }
+}
+
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
@@ -1215,6 +1268,8 @@ function loadnet(text, clobber, createEdges = true) {
     for (let n of newNodes) {
         htmlnodes_parent.appendChild(n.content);
     }
+
+    adjustTextareaHeightToContent(newNodes);
     for (let n of newNodes) {
         n.init(nodeMap); //2 pass for connections
     }
@@ -2113,6 +2168,22 @@ const isUrl = (text) => {
     }
 }
 
+const isIframe = (text) => {
+    try {
+        const doc = new DOMParser().parseFromString(text, "text/html");
+        return doc.body.childNodes[0] && doc.body.childNodes[0].nodeName.toLowerCase() === 'iframe';
+    } catch (_) {
+        return false;
+    }
+}
+
+function getIframeUrl(iframeContent) {
+    // Function to extract URL from the iframe content
+    // Using a simple regex to get the 'src' attribute value
+    const match = iframeContent.match(/src\s*=\s*"([^"]+)"/);
+    return match ? match[1] : null; // Return URL or null if not found
+}
+
         //Drag and Drop
 
 let isDraggingIcon = false;
@@ -2185,10 +2256,7 @@ function handleIconDrop(event, iconName) {
 
     switch (iconName) {
         case 'note-icon':
-            node = createTextNode(``, '', undefined, undefined, undefined, undefined);
-            node.followingMouse = 1;
-            node.draw();
-            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            node = createNodeFromWindow(``, ``, true); // The last parameter sets followMouse to true
             console.log('Handle drop for the note icon');
             break;
         case 'ai-icon':
@@ -2264,14 +2332,9 @@ function dropHandler(ev) {
 
 
 
-            node = createTextNode(title, '', undefined, undefined, undefined, undefined, addCheckbox);
-            htmlnodes_parent.appendChild(node.content);
-            node.followingMouse = 1;
-            node.draw();
-            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-            
-            node.content.children[0].children[1].children[0].value = content;
-
+            const defaultTitle = getDefaultTitle();
+            const fullTitle = title + ' ' + defaultTitle;
+            node = createNodeFromWindow(fullTitle, content, true);
 
             // Stop the drop event from being handled further
             return;
@@ -2384,9 +2447,7 @@ function dropHandler(ev) {
                         case "text":
                             reader.onload = function (e) {
                                 let text = e.target.result;
-                                let node = createTextNode(files[i].name, '');
-                                node.content.children[0].children[1].children[0].value = text; // set the content of the textarea
-                                htmlnodes_parent.appendChild(node.content);
+                                let node = createNodeFromWindow(files[i].name, text);
                             }
                             reader.readAsText(files[i]);
                             break;
@@ -2492,24 +2553,42 @@ function dropHandler(ev) {
             }
         }
 
+//Paste event listener...
 
-        addEventListener("paste", (event) => {
-            console.log(event);
-            let cd = (event.clipboardData || window.clipboardData);
-            let content = document.createElement("div");
-            content.innerHTML = cd.getData("text");
-            let t = document.createElement("input");
-            t.setAttribute("type", "text");
-            t.setAttribute("value", "untitled");
-            t.setAttribute("style", " background:none;");
-            t.classList.add("title-input");
-            let node = windowify("untitled", [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
-            htmlnodes_parent.appendChild(node.content);
-            registernode(node);
-            node.followingMouse = 1;
-            node.draw();
-            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-        });
+addEventListener("paste", (event) => {
+    console.log(event);
+    let cd = (event.clipboardData || window.clipboardData);
+    let pastedData = cd.getData("text");
+
+    // Check if the pasted data is a URL or an iframe
+    if (isUrl(pastedData)) {
+        let node = createLinkNode(pastedData, pastedData, pastedData); // Use 'pastedData' instead of 'url'
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    } else if (isIframe(pastedData)) {
+        let iframeUrl = getIframeUrl(pastedData);
+        let node = createLinkNode(iframeUrl, iframeUrl, iframeUrl);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    } else {
+        // Existing code for handling other pasted content
+        let content = document.createElement("div");
+        content.innerHTML = pastedData;
+        let t = document.createElement("input");
+        t.setAttribute("type", "text");
+        t.setAttribute("value", "untitled");
+        t.setAttribute("style", "background:none;");
+        t.classList.add("title-input");
+        let node = windowify("untitled", [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
+        htmlnodes_parent.appendChild(node.content);
+        registernode(node);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    }
+});
 
         addEventListener("paste", (event) => {
             if (event.target.tagName.toLowerCase() === "textarea") {

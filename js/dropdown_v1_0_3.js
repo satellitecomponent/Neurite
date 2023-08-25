@@ -7,6 +7,13 @@ var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     // Other options
 });
 
+// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
+myCodeMirror.on("change", function () {
+    updateNodeTitleToLineMap();
+    identifyNodeTitles();
+    highlightNodeTitles();
+});
+
 myCodeMirror.on("focus", function () {
     // Enable text selection when the editor is focused
     myCodeMirror.getWrapperElement().style.userSelect = "text";
@@ -17,12 +24,6 @@ myCodeMirror.on("blur", function () {
     myCodeMirror.getWrapperElement().style.userSelect = "none";
 });
 //sync codemirror and textarea
-// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
-myCodeMirror.on("change", function () {
-    updateNodeTitleToLineMap();
-    identifyNodeTitles();
-    highlightNodeTitles();
-});
 
 myCodeMirror.on("change", function (instance, changeObj) {
     ignoreTextAreaChanges = true; // Tell the MutationObserver to ignore changes
@@ -50,9 +51,6 @@ myCodeMirror.getWrapperElement().style.resize = "vertical";
 var nodeInput = document.getElementById('node-tag');
 var refInput = document.getElementById('ref-tag');
 
-setTimeout(function () {
-    myCodeMirror.refresh();
-}, 1);
 
 function updateMode() {
     CodeMirror.defineMode("custom", function () {
@@ -80,7 +78,8 @@ function updateMode() {
     });
 
     myCodeMirror.setOption("mode", "custom");
-    myCodeMirror.refresh();  // To apply the new mode immediately
+
+    myCodeMirror.refresh();
 }
 
 nodeInput.addEventListener('change', updateMode);
@@ -128,6 +127,22 @@ function identifyNodeTitles() {
     });
 }
 
+let nodeTitleToLineMap = new Map();
+
+function updateNodeTitleToLineMap() {
+    // Clear the map
+    nodeTitleToLineMap = new Map();
+
+    let currentNodeTitleLineNo = null;
+    myCodeMirror.eachLine((line) => {
+        if (line.text.startsWith(nodeInput.value)) {
+            const title = line.text.split(nodeInput.value)[1].trim();
+            currentNodeTitleLineNo = line.lineNo();  // Store the line number of the "node:" line
+            nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
+        }
+    });
+}
+
 function highlightNodeTitles() {
     // First clear all existing marks
     myCodeMirror.getAllMarks().forEach(mark => mark.clear());
@@ -158,21 +173,7 @@ function highlightNodeTitles() {
 }
 
 
-let nodeTitleToLineMap = new Map();
 
-function updateNodeTitleToLineMap() {
-    // Clear the map
-    nodeTitleToLineMap = new Map();
-
-    let currentNodeTitleLineNo = null;
-    myCodeMirror.eachLine((line) => {
-        if (line.text.startsWith(nodeInput.value)) {
-            const title = line.text.split(nodeInput.value)[1].trim();
-            currentNodeTitleLineNo = line.lineNo();  // Store the line number of the "node:" line
-            nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
-        }
-    });
-}
 
 
 
@@ -196,7 +197,19 @@ function getNodeSectionRange(title, cm) {
     }
 
     let startLineNo = nodeLineNo;
-    let endLineNo = nextNodeLineNo - 1; // End line is the line just before the next node
+    let endLineNo = nextNodeLineNo - 1; // Default end line is the line just before the next node
+
+    // Get the reference tag from the global variable
+    const refTag = document.getElementById('ref-tag').value;
+
+    // Search for reference tag between the found node line and the next node line
+    for (let i = startLineNo; i < nextNodeLineNo; i++) {
+        const lineText = cm.getLine(i);
+        if (lineText.startsWith(refTag)) {
+            endLineNo = i; // If reference tag is found, set end line to that line, including it
+            break;
+        }
+    }
 
     return { startLineNo, endLineNo };
 }
@@ -257,8 +270,47 @@ function scrollToTitle(title, cm, lineOffset = 0, chPosition = 0) {
     return node; // Return the node object
 }
 
+function deleteNodeByTitle(title) {
+    // Make sure to have the most recent map of node titles to line numbers
+    updateNodeTitleToLineMap();
+
+    // Get the start line for the node section
+    const startLineNo = nodeTitleToLineMap.get(title);
+
+    if (typeof startLineNo !== 'undefined') {
+        let endLineNo = startLineNo;
+        // Iterate from the start line until the next node or reference tag is found
+        for (let i = startLineNo + 1; i < myCodeMirror.lineCount(); i++) {
+            const lineText = myCodeMirror.getLine(i);
+            if (lineText.startsWith(nodeInput.value)) {
+                break; // Found the next node tag, so stop here
+            }
+            if (lineText.startsWith(refInput.value)) {
+                endLineNo = i; // Extend the end line to include the reference line
+                break; // Found the reference tag, so stop here
+            }
+            endLineNo = i; // Extend the end line to include this line
+        }
+
+        // Remove the lines corresponding to the node, including the reference line if found
+        myCodeMirror.replaceRange("", { line: startLineNo, ch: 0 }, { line: endLineNo + 1, ch: 0 });
+
+        myCodeMirror.refresh();
+    }
+}
+
 myCodeMirror.on("mousedown", function (cm, event) {
     var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
+    const token = cm.getTokenAt(pos);
+    console.log(token.type);
+
+    if (token.type && token.type.includes("node")) {
+        const lineContent = cm.getLine(pos.line);
+        const title = lineContent.split(nodeInput.value)[1].trim(); // Title is the rest of the text after the node tag
+        if (title) toggleNodeState(title, cm, event); // Pass the event object here
+        return; // Skip the rest of the handler if the click is on a node tag
+    }
+
     var isWithin = isWithinMarkedText(cm, pos, 'node-title');
 
     if (isWithin) {
@@ -363,6 +415,20 @@ function handleTitleClick(title, cm) {
     }
 }
 
+function hideNodeText(title, cm) {
+    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
+    for (let i = startLineNo + 1; i <= endLineNo; i++) {
+        cm.addLineClass(i, 'text', 'hidden-text');
+    }
+}
+
+function showNodeText(title, cm) {
+    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
+    for (let i = startLineNo + 1; i <= endLineNo; i++) {
+        cm.removeLineClass(i, 'text', 'hidden-text');
+    }
+}
+
 // Call initially
 identifyNodeTitles();
 highlightNodeTitles();
@@ -435,18 +501,25 @@ function setupCustomDropdown(select) {
     let isPendingFrame = false;
 
     selectReplacer.addEventListener('click', function (event) {
+        // Get all the select containers
+        const selectContainers = document.querySelectorAll('.select-container');
+        // Reset z-index for all
+        selectContainers.forEach((el) => el.style.zIndex = "20");
+
         if (optionsReplacer.classList.contains('show')) {
             if (!event.target.closest('.options-replacer')) {
                 // Dropdown is open and click was outside of the options, so close it
                 window.requestAnimationFrame(() => {
                     optionsReplacer.classList.remove('show');
                     selectReplacer.classList.add('closed');
+                    container.style.zIndex = "20"; // reset the z-index of the parent container
                     isPendingFrame = false;
                 });
                 isPendingFrame = true;
             }
         } else {
             // Dropdown is closed, so open it
+            container.style.zIndex = "30"; // increase the z-index of the parent container
             if (!isPendingFrame) {
                 window.requestAnimationFrame(() => {
                     optionsReplacer.classList.add('show');
@@ -735,6 +808,7 @@ function openTab(tabId, element) {
                     document.selection.empty();
                 }
             }
+            myCodeMirror.refresh();
         });
 
 
