@@ -12,10 +12,10 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 
 ## Bridging Fractals and Thought
 
-Neurite melds the captivating complexity of the Mandelbrot set with a cutting-edge approach to mind mapping. Within this fractal landscape, users can actively arrange, connect, scale, and anchor nodes, each containing text, images, videos, code, and AI-driven insights. Together, they weave into an organic tapestry of thoughts.
+Neurite melds the captivating complexity of the Mandelbrot set with a cutting-edge approach towards mind mapping. Within this fractal landscape, you can actively arrange, connect, scale, and anchor nodes, each containing text, images, videos, code, and AI generated graphs/Ai agents. Together, they weave into a fractal tapestry of thoughts.
 
 ### `Complexity Meets Creativity`
-Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite transcends the ordinary, offering a fresh perspective on thought through a fractal environment that maps the branching landscape of creativity.
+Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite transcends the traditional interface, offering a fresh perspective on thought through a fractal environment that maps the branching landscape of creativity.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -179,11 +179,13 @@ The Zettelkasten note taking method accesses tapestry of thought reasoning for A
 🚧 `Neurite is in active development.` 🚧 
 
 ✅ webLLM 
+
 🔄 python LLM localhost
 
 ✅ local embeddings 
 - VR
 - deeper fractal zoom
+
 🔄 Ai cursor control
   
 ✅ color selection
@@ -191,8 +193,11 @@ The Zettelkasten note taking method accesses tapestry of thought reasoning for A
 ✅ adjust width, length, max lines, speed
 
 ✅ screen recording
+
 🔄 accessibility
-- auto embed formats
+
+✅ auto embed formats
+
 - custom equations for the fractal
 - drawing-tool
 
