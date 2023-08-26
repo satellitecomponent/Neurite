@@ -12,10 +12,10 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 
 ## Bridging Fractals and Thought
 
-Neurite melds the captivating complexity of the Mandelbrot set with a cutting-edge approach towards mind mapping. Within this fractal landscape, you can actively arrange, connect, scale, and anchor nodes, each containing text, images, videos, code, and AI generated graphs/Ai agents. Together, they weave into a fractal tapestry of thoughts.
+Drawing inspiration from chaos theory, Neurite unveils the hidden patterns and intricate interconnections that shape the fabric of creative thinking. Within our virtually limitless fractal workspace, we blend the mesmerizing complexity of the Mandelbrot set with contemporary mind-mapping technique.  Nodes, each encompassing text, images, videos, code snippets, or AI agents — all interact in a dynamic, self-similar tapestry of thought.
 
-### `Complexity Meets Creativity`
-Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite transcends the traditional interface, offering a fresh perspective on thought through a fractal environment that maps the branching landscape of creativity.
+### `Complexity Inspires Creativity`
+Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating your creative exploration through ever-branching fractal pathways.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -40,11 +40,11 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content directly into the Mandelbrot set. 
+### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - directly into the Mandelbrot set. 
 
-Drag and drop local files or web content straight into the fractal 
+Drag and drop local files or web content straight into the fractal.
 
-Supports embedded links. Ctrl+V to paste an embed link
+Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links will be converted.
 
 ### `Controls`
   *Full controls are listed in the ? tab.
