@@ -5,11 +5,13 @@ let llmNodeCreated = false;
 const noteInput = myCodeMirror;
 let nodefromWindow = false;
 let followMouseFromWindow = false;
+nodeTagInput = document.getElementById('node-tag');
+refTagInput = document.getElementById('ref-tag');
+const nodeTag = nodeTagInput.value;
+const refTag = refTagInput.value;
 {
 
     const nodeTableBody = document.getElementById('node-table-body');
-    nodeTagInput = document.getElementById('node-tag');
-    refTagInput = document.getElementById('ref-tag');
 
     const nodes = {};
     const nodeLines = {};
@@ -58,7 +60,8 @@ let followMouseFromWindow = false;
     }
 
     function addNodeTagToZettelkasten(title, content = null) {
-        const nodeTagLine = nodeTag + ' ' + title; // Added a space between the nodeTag and the title
+        const nodeTag = tagValues.nodeTag;  // Using the getter to always get the current value
+        const nodeTagLine = nodeTag + ' ' + title;
         let currentZettelkastenValue = noteInput.getValue();
 
         // Check if the content ends with a newline and add one or two newlines accordingly
