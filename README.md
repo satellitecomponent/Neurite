@@ -41,15 +41,15 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides a unique real-time, bi-directional synchronization between UI-based Mind Mapping and text-based Zettelkasten methodologies. This versatility allows you to seamlessly organize thoughts without sacrificing the benefits of either approach.
+Neurite provides a unique real-time, bi-directional synchronization between UI-based Mind Mapping interactivity and text-based hyperlinking (Zettelkasten) methodology. This versatility allows you to seamlessly organize thoughts without sacrificing the benefits of either approach.
 
 - **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected in the Mind Map.
-- **Visual & Textual Harmony**: Create and manipulate Mind Map nodes via the UI, while simultaneously seeing these actions mirrored in your text-based Zettelkasten, which employs hyperlinked references for intricate internal structure.
-- **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element but as an interactive space, offering the ability to zoom between detailed and broad views.
+- **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element - but as an interactive generative landscape, offering the ability to zoom between detailed and broad views.
 - **Zoom-to-Node**: Navigate through your Zettelkasten notes and zoom directly to their corresponding nodes within the Mandelbrot set, a feature that enriches both context and navigation.
 
-Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both granular and macroscopic perspectives.
+Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both the granular and macroscopic perspectives of your information.
 
+Custom `node:` and `ref:` tags can be set in the ? tab of the main dropdown.
 
 
 ## `How to Use Neurite`
