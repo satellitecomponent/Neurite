@@ -12,7 +12,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 
 ## Bridging Fractals and Thought
 
-Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape the fabric of creative thinking. Our virtually limitless fractal workspace blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.  Nodes, each encompassing text, images, videos, code, or AI agents — all interact in a dynamic, self-similar tapestry of thought.
+Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape the fabric of creative thinking. Our virtually limitless fractal workspace blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.  Nodes, each encompassing text, images, videos, code, or AI agents — all interweave within a dynamic, self-similar tapestry of thought.
 
 ### `Complexity Inspires Creativity`
 Whether you're a researcher, writer, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating your creative exploration through ever-branching fractal pathways.
@@ -30,13 +30,27 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
-2. [How to Use Neurite](#how-to-use-neurite)
-3. [FractalGPT](#fractalgpt)
-4. [Local Ai](#local-ai)
-5. [User Guide](#user-guide)
-6. [Local Server Setup](#local-server-setup)
-7. [Future of Neurite](#future-of-neurite)
-8. [Contact](#contact)
+2. [Synchronized Knowledge Management](#synchronized-knowledge-management)
+3. [How to Use Neurite](#how-to-use-neurite)
+4. [FractalGPT](#fractalgpt)
+5. [Local Ai](#local-ai)
+6. [User Guide](#user-guide)
+7. [Local Server Setup](#local-server-setup)
+8. [Future of Neurite](#future-of-neurite)
+9. [Contact](#contact)
+
+## `Synchronized Knowledge Management`
+
+Neurite provides a unique real-time, bi-directional synchronization between UI-based Mind Mapping and text-based Zettelkasten methodologies. This versatility allows you to seamlessly organize thoughts without sacrificing the benefits of either approach.
+
+- **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected in the Mind Map.
+- **Visual & Textual Harmony**: Create and manipulate Mind Map nodes via the UI, while simultaneously seeing these actions mirrored in your text-based Zettelkasten, which employs hyperlinked references for intricate internal structure.
+- **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element but as an interactive space, offering the ability to zoom between detailed and broad views.
+- **Zoom-to-Node**: Navigate through your Zettelkasten notes and zoom directly to their corresponding nodes within the Mandelbrot set, a feature that enriches both context and navigation.
+
+Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both granular and macroscopic perspectives.
+
+
 
 ## `How to Use Neurite`
 
@@ -47,7 +61,7 @@ Drag and drop local files or web content straight into the fractal.
 Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links will be converted.
 
 ### `Controls`
-  *Full controls are listed in the ? tab.
+  *Full controls are listed in the ? tab within Neurite's main dropdown.
 
 `Shift + double click` to create nodes.
 
@@ -158,9 +172,9 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 
 ### `Notes`
-- Search: Enter a search query to locate windows containing that text. The search results display to the left of the menu. Click on a search result to zoom your view to where the corresponding window is positioned within the fractal.
-- Saving: Saving is currently a work-in-progress. Your networks will can be saved in the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file in the save box, then click the second load button to display the network. Non-textual content currently needs to be re-inserted.
-- Zettelkasten: The Zettelkasten method enables nodes to be created by typing into the main text area. The AI follows this format to create and connect its response.
+- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zeroing in on the node containing your specified query. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
+- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. Some non-textual content currently needs to be re-inserted.
+- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten, for the uninitiated, is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Either create nodes through custom-defined syntax, or create nodes through UI interaction within the mandelbrot set workspace, whos contents are bi-directionaly linked to the main Zettelkasten documenent.
 
 The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
 
