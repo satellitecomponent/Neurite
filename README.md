@@ -15,7 +15,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape the fabric of creative thinking. Our virtually limitless fractal workspace blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.  Nodes, each encompassing text, images, videos, code, or AI agents — all interweave within a dynamic, self-similar tapestry of thought.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating your creative exploration through ever-branching fractal pathways.
+Whether you're a researcher, writer, artist, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -41,7 +41,7 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides a unique real-time, bi-directional synchronization between UI-based Mind Mapping interactivity and text-based hyperlinking (Zettelkasten) methodology. This versatility allows you to seamlessly organize thoughts without sacrificing the benefits of either approach.
+Neurite provides real-time, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-based hyperlinking (Zettelkasten) methodology. This versatie approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
 - **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected in the Mind Map.
 - **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element - but as an interactive generative landscape, offering the ability to zoom between detailed and broad views.
@@ -184,7 +184,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 ### `Notes`
 - Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zeroing in on the node containing your specified query. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
 - Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. Some non-textual content currently needs to be re-inserted.
-- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten, for the uninitiated, is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Either create nodes through custom-defined syntax, or create nodes through UI interaction within the mandelbrot set workspace, whos contents are bi-directionaly linked to the main Zettelkasten documenent.
+- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, whos contents are bi-directionaly linked to the main Zettelkasten documenent.
 
 The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
 
