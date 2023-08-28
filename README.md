@@ -75,7 +75,17 @@ Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links w
 
 Or, drag in different node types from the dropdown.
 
+*TIPS*
 
+
+
+When arranging windows, drag them via the title input. 
+
+Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.
+
+The AI tab has controls for token limit, tempeture, number of searched nodes sent as context, and lenght of recent conversation sent.
+
+Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
 ## FractalGPT
 
 ### `Not your typical chat interface`
@@ -124,10 +134,10 @@ Above is an example of conversation history being shared between GPT-4 and a Loc
 ### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
 - The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift and Click` two node windows to connect them together)
-- This means the ability to inteface multiple chat wimdows together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
+- This means the ability to inteface multiple chat windows together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
 - Supports webLLM and OpenAi models concurrently.
 
-### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, Red Pajamas 3B, and Vicuna 7B.
+### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, LLama 2, Red Pajamas 3B, and Vicuna 7B.
 - webLLM runs Ai models directly in browser on the GPU or CPU.
 - We are also running an embeddings model locally through [Transformers.js](https://www.npmjs.com/package/@xenova/transformers) for local webpage/pdf extraction.
 - This is an early implementation.
