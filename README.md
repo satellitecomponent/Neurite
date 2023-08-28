@@ -63,6 +63,10 @@ Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links w
 ### `Controls`
   *Full controls are listed in the ? tab within Neurite's main dropdown.
 
+`Scroll` to zoom through the fractal.
+
+`Click and drag` to move around
+
 `Shift + double click` to create nodes.
 
 `Shift` to freeze nodes.
@@ -75,32 +79,28 @@ Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links w
 
 Or, drag in different node types from the dropdown.
 
-*TIPS*
+`Organization Tips`
 
-
-
-When arranging windows, drag them via the title input. 
-
-Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.
-
-The AI tab has controls for token limit, tempeture, number of searched nodes sent as context, and lenght of recent conversation sent.
-
-Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
+- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will just overlap and be too big.
+- When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
+- Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
+- The AI tab has controls for token limit, tempeture, number of searched nodes sent as context, and lenght of recent conversation sent.
+- Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
 ## FractalGPT
 
 ### `Not your typical chat interface`
 - **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory.
 - **Limitless AI Agents:** Create an endless number of chat interfaces, or let the AI take notes from above.
 - **Fractal Interface:** Immerse yourself in learning within a captivating fractal landscape.
-- **Custom Tool Creation:** Craft personalized tools that resonate with your intellectual pursuits.
+- **Custom Tool Creation:**  Connect nodes that contain code blocks together to run html/css/js in an iframe, or Python via Pyodide.
 
 ### `Modular Conversation`
 
 In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:
 
-- **Structured Memory Mapping:** Anchor the AI's evolving thought process as notes within an evolving fractal mind map.
-- **Enhanced AI Response:** Segment AI's output into a cohesive chain of thought that improves AI reasoning.
-- **Interactive Fractal Thought Network:** Utilize our fractal interface to create a personal, emergent, and contextually aware database of knowledge.
+- **Structured Memory Mapping:** Anchor the AI's thought process as notes within an evolving fractal mind map.
+- **Graph your AI Conversations:** Segment AI's responses into a cohesive web of thought that improves AI reasoning and allows for further processing to construct the Ai's memory.
+- **Interactive Fractal Network:** Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.
 - **Intuitive Note Navigation:** Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.
 
 ### `Unbounded AI Exploration`
