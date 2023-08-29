@@ -1,14 +1,14 @@
 // aicursor.js
 
 class AiCursor {
-    constructor(brotcordmode = 1) {
-        this.brotcordmode = brotcordmode;
+    constructor(randomInit = false) {
+        let viewBox = getSvgViewBox();  // Assuming you have a function to get the current viewbox
+        this.initialPosition = new vec2((Math.random() - 0.5) * 1.8 + viewBox.x, (Math.random() - 0.5) * 1.8 + viewBox.y);
+        this.updatePosition = this.initialPosition;  // for subsequent moves
         this.aiNode = null;
         this.followingAiCursor = false;
         this.aiCursorAnchor = new vec2(0, 0); // Initial anchor point
         this.scale = new vec2(1, 1); // Initial scale
-        this.viewboxCenter = this.calculateViewboxCenter();
-        this.position = new vec2(0, 0); // Initialize position
     }
 
     calculateViewboxCenter() {
@@ -17,26 +17,13 @@ class AiCursor {
     }
 
     addAiCursorNode(content) {
-        this.aiNode = createTextNode("AI", content, undefined, undefined, undefined, undefined, false);
-        htmlnodes_parent.appendChild(this.aiNode.content);
+        console.log("Entering addAiCursorNode");
+        this.aiNode = createTextNode(`Ai`, '', this.initialPosition.x, this.initialPosition.y);
+        this.aiNode.pos = this.initialPosition;
         this.aiNode.aiCursor = this;
         this.followingAiCursor = true;
-        this.aiNode.draw();
         this.aiNode.aiCursorAnchor = toDZ(new vec2(0, -this.aiNode.content.offsetHeight / 2 + 6));
-        this.aiNode.content.children[0].children[1].children[0].value = content;
         this.aiNode.aiCursorAnchor = this.aiCursorAnchor;
-        const scaleFactors = extractScalingFactors(this.aiNode.content);
-        this.scale = new vec2(scaleFactors.scaleX, scaleFactors.scaleY);
-        this.aiNode.content.style.transform = `scale(${this.scale.x}, ${this.scale.y})`;
-
-        if (this.brotcordmode === 0) {
-            // Update viewboxCenter
-            this.viewboxCenter = this.calculateViewboxCenter();
-            // Directly use viewboxCenter as node position
-            this.aiNode.pos = this.viewboxCenter;
-        } else if (this.brotcordmode === 1) {
-            this.aiNode.pos = toZ(new vec2(0, 0)); // position in the Mandelbrot set
-        }
     }
 
     removeAiNode() {
@@ -48,19 +35,14 @@ class AiCursor {
     }
 
     move(x, y, scale = this.scale) {
-        let svgbb = svg.getBoundingClientRect();
-        let viewboxCenter = new vec2(svgbb.width / 2, svgbb.height / 2);
-
-        if (this.brotcordmode === 0) {
-            // In this case, viewboxCenter should be used as the origin
-            this.position = this.viewboxCenter.plus(new vec2(x * scale.x, y * scale.y));
-        } else if (this.brotcordmode === 1) {
-            // In this case, the Mandelbrot set's origin is used
-            this.position = toZ(new vec2(x, y));
-        }
+        // Update the updatePosition vector
+        this.updatePosition = this.updatePosition.plus(new vec2(x * scale.x, y * scale.y));
+        // The final position would be the sum of initialPosition and updatePosition
+        let finalPosition = this.initialPosition.plus(this.updatePosition);
 
         if (this.aiNode) {
-            this.aiNode.pos = this.position;
+            this.aiNode.pos = finalPosition;
+            this.aiNode.draw();
         }
     }
 
@@ -73,35 +55,16 @@ class AiCursor {
     }
 }
 
-// An example of using AiCursor with brotcordmode = 0
-let shiftPressed = false;
-
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'Shift') {
-        shiftPressed = true;
-    }
-});
-
-window.addEventListener('keyup', (event) => {
-    if (event.key === 'Shift') {
-        shiftPressed = false;
-    }
-});
-
 document.getElementById('ai-cursor-button').addEventListener('click', (event) => {
-    let brotcordmode = shiftPressed ? 0 : 1;
-    let aiCursor = new AiCursor(brotcordmode);
-
-    // If brotcordmode is 0, initialize the aiCursor's position to the center of the viewbox
-    if (brotcordmode === 0) {
-        let svgbb = svg.getBoundingClientRect();
-        let viewboxCenter = new vec2(svgbb.width / 2, svgbb.height / 2);
-        aiCursor.position = toZ(viewboxCenter);
-    }
+    // Instantiate AiCursor with random initial position
+    let aiCursor = new AiCursor(true);
     aiCursor.addAiCursorNode('This is AI node content');
 
-    setTimeout(() => {
-        aiCursor.move(100, 50);
-        aiCursor.releaseNode();
-    }, 2000);
+    if (!aiCursor.aiNode) {
+        console.log("AI Node was not created.");
+        return;
+    }
+
+    // After creation, move the node by a certain amount. Adjust x and y as you see fit.
+    aiCursor.move(0.1, 0.2);
 });

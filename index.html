@@ -8,11 +8,27 @@
 
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.min.js"></script>
 
+    <!-- Core -->
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.css">
+
+    <!-- Add-Ons -->
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/mode/overlay.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/mode/loadmode.js"></script>
+
+    <!-- Modes -->
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/meta.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.3/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/xml/xml.js"></script> <!-- for HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/css/css.js"></script> <!-- for CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/python/python.js"></script> <!-- for Python -->
+    <!--Themes-->
+    <!-- Custom Scrollbars -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.css">
 
+    <!--Prism.js-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 
@@ -146,7 +162,9 @@
                             </div>
                         </form>
                         <br />
-                        <div>
+                        <div class="zet-container">
+                            <div id="zetHorizDragHandle" class="zet-drag-handle-horiz"></div>
+                            <div id="zetVertDragHandle" class="zet-drag-handle-vert"></div>
                             <textarea id="note-input" class="zettelkasten" rows="10" cols="50"></textarea>
                         </div>
 
