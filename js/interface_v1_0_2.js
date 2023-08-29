@@ -560,87 +560,75 @@ function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
     resizeObserver.observe(windowDiv);
 }
 
-//used for programatic interaction in zettelkasten.js
-function adjustTextareaHeight(textarea) {
-    requestAnimationFrame(() => {
-        // Save the current scroll state
-        const currentScrollTop = textarea.scrollTop;
-        const currentClientHeight = textarea.clientHeight;
+ // Set the textarea's height according to its scrollHeight and maxHeight
+function setTextAreaHeight(textarea, maxHeight) {
+    // Calculate the bottom position of the textarea within the viewport
+    const textareaBottom = textarea.getBoundingClientRect().bottom;
+    const viewportHeight = window.innerHeight;
 
-        // Determine the distance from the current scroll position to the bottom before height adjustment
-        const distanceToBottomBeforeAdjustment = textarea.scrollHeight - currentScrollTop - currentClientHeight;
+    // Check if textarea is near the bottom of the viewport
+    if (textareaBottom + 10 > viewportHeight) {
+        textarea.style.overflowY = 'auto';
+        return;
+    }
 
-        // Epsilon for determining how close the user must be to the bottom
-        const epsilon = 100;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${Math.max(newHeight, 60)}px`;
 
-        // Determine if the user is at the bottom before the adjustment
-        const isAtBottom = distanceToBottomBeforeAdjustment < epsilon;
-
-
-        // Adjust the height
-        textarea.style.height = "";
-        textarea.style.height = Math.min(textarea.scrollHeight, textarea.maxHeight || Infinity) + "px";
-
-        // If the user was at the bottom, scroll them to the bottom again
-        if (isAtBottom) {
-            textarea.scrollTop = textarea.scrollHeight - textarea.clientHeight;
-        }
-    });
+    if (newHeight >= maxHeight) {
+        textarea.style.overflowY = 'auto';
+    } else {
+        textarea.style.overflowY = 'hidden';
+    }
 }
-//used for user interaction in create text node
-function adjustTextareaElement(node, element) {
-    let max_height = 300; // Set maximum height in pixels
 
-    // Function to adjust the height and handle overflow of the textarea
-    const adjustHeight = (element) => {
-        if (!node.isResizing) {
-            if (element.scrollHeight > max_height) {
-                if (element.clientHeight < max_height) {
-                    element.style.height = max_height + 'px';
-                    element.style.overflowY = 'auto';
-                }
-            } else {
-                element.style.height = 'auto'; // Reset the height
-                element.style.height = element.scrollHeight + 'px'; // Set to scrollHeight
-            }
-        }
-    };
-
-    // Function to auto-scroll to the bottom if user is already at the bottom
-    const autoScrollToBottom = (element) => {
-        if (element.scrollTop + element.clientHeight >= element.scrollHeight - 5) {
-            // Using scrollIntoView to smoothly scroll to the bottom
-            element.scrollIntoView(false);
-        }
-    };
-
-    node.isResizing = false;
-
-    element.addEventListener('mousedown', (e) => {
+/**
+ * Event handlers for mouse down and up to set resizing state
+ */
+function attachMouseEvents(node, element) {
+    element.addEventListener('mousedown', () => {
         node.isResizing = true;
     });
 
-    element.addEventListener('mouseup', (e) => {
+    element.addEventListener('mouseup', () => {
         node.isResizing = false;
+        const newMaxHeight = element.clientHeight;
+        element.setAttribute('data-max-height', newMaxHeight);
     });
+}
 
-    adjustHeight(element);
-
-    node.observer = new ResizeObserver(() => {
-        adjustHeight(element);
+/**
+ * Function used for programmatic interaction in zettelkasten.js
+ */
+function adjustTextareaHeight(textarea) {
+    requestAnimationFrame(() => {
+        const maxHeight = textarea.getAttribute('data-max-height') || 300;
+        setTextAreaHeight(textarea, maxHeight);
     });
+}
+
+/**
+ * Function used for user interaction in create text node
+ */
+function adjustTextareaElement(node, element) {
+    const adjustHeight = () => {
+        if (!node.isResizing) {
+            const maxHeight = element.getAttribute('data-max-height') || 300;
+            setTextAreaHeight(element, maxHeight);
+        }
+    };
+
+    attachMouseEvents(node, element);
+
+    adjustHeight();
+
+    node.isResizing = false;
+    
+    node.observer = new ResizeObserver(adjustHeight);
     node.observer.observe(element);
 
-    let prevScrollHeight = element.scrollHeight;
-
-    const mutationObserver = new MutationObserver(() => {
-        if (element.scrollHeight !== prevScrollHeight) {
-            adjustHeight(element);
-            autoScrollToBottom(element);
-            prevScrollHeight = element.scrollHeight;
-        }
-    });
-
+    const mutationObserver = new MutationObserver(adjustHeight);
     mutationObserver.observe(element, {
         childList: true,
         subtree: true,
@@ -875,9 +863,10 @@ class Node {
             this.pos = p;
             this.anchor = this.pos;
         }
-        if (this.aiCursor) {
-            this.pos = toDZ(this.aiCursor.position);
-        }
+        if (this.followingAiCursor && this.aiCursor) {
+            let finalPosition = this.aiCursor.initialPosition.plus(this.aiCursor.updatePosition);
+            this.pos = toDZ(finalPosition);
+        } 
         let g = mandGrad(settings.iterations, this.pos);
         //g.y *= -1; //why?
         this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));

@@ -343,12 +343,41 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
     // Append the iframe to the wrapper div
     wrapperDiv.appendChild(iframeElement);
 
-    // Generate a unique identifier for the iframe using the node's uuid
-    let node = addNodeAtNaturalScale(title, [wrapperDiv]); // Use the wrapper div here
-    iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier
 
-    node.content.style.width = '400px'; // Set the width to match the wrapper
-    node.content.style.height = '400px'; // Set the height to match the wrapper
+    let node = addNodeAtNaturalScale(title, [wrapperDiv]); // Use the wrapper div here
+
+    // Locate the .window parent container
+    let windowElement = wrapperDiv.closest('.window');
+
+    // Create overlay div
+    let overlay = document.createElement('div');
+    overlay.classList.add('overlay');
+
+    // Attach dragstart and dragend events to windowElement
+    windowElement.addEventListener('mousedown', (e) => {
+        // Place overlay above iframe
+        wrapperDiv.appendChild(overlay);
+    });
+
+    windowElement.addEventListener('mouseup', (e) => {
+        // Remove overlay
+        wrapperDiv.removeChild(overlay);
+    });
+
+    if (windowElement) {
+        const resizeObserver = new ResizeObserver(() => {
+            let parentWidth = windowElement.clientWidth;
+            let parentHeight = windowElement.clientHeight;
+
+            iframeElement.style.width = parentWidth + 'px';
+            iframeElement.style.height = parentHeight + 'px';
+        });
+
+        resizeObserver.observe(windowElement);
+    }
+
+        // Generate a unique identifier for the iframe using the node's uuid
+    iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier
 
     // Update the existing title of the node
     if (node.title) {

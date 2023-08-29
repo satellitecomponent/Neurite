@@ -4,14 +4,116 @@ var textarea = document.getElementById('note-input');
 var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     lineWrapping: true,
     scrollbarStyle: 'simple',
-    // Other options
+    theme: 'default',
 });
+
+// Get the viewport dimensions
+let maxWidth = window.innerWidth * 0.9;
+let maxHeight = window.innerHeight * 0.7;
+
+// Horizontal drag handle
+let zetHorizDragHandle = document.getElementById("zetHorizDragHandle");
+let zetIsHorizResizing = false;
+let initialX;
+let initialWidth;
+
+zetHorizDragHandle.addEventListener("mousedown", function (event) {
+    zetIsHorizResizing = true;
+    initialX = event.clientX;
+    let cmElement = myCodeMirror.getWrapperElement();
+    initialWidth = cmElement.offsetWidth;
+
+    // Prevent text selection while resizing
+    document.body.style.userSelect = 'none';
+
+    document.addEventListener("mousemove", zetHandleHorizMouseMove);
+    document.addEventListener("mouseup", function () {
+        zetIsHorizResizing = false;
+
+        // Enable text selection again after resizing
+        document.body.style.userSelect = '';
+
+        document.removeEventListener("mousemove", zetHandleHorizMouseMove);
+    });
+});
+
+function zetHandleHorizMouseMove(event) {
+    if (zetIsHorizResizing) {
+        let dx = event.clientX - initialX;
+        let cmElement = myCodeMirror.getWrapperElement();
+        let newWidth = initialWidth - dx;
+
+        if (newWidth > 50 && newWidth <= maxWidth) {
+            cmElement.style.width = newWidth + "px";
+            document.getElementById('prompt').style.width = newWidth + 'px';
+            myCodeMirror.refresh();
+        }
+    }
+}
+
+// Vertical drag handle
+let zetVertDragHandle = document.getElementById("zetVertDragHandle");
+let zetIsVertResizing = false;
+let initialY;
+let initialHeight;
+
+zetVertDragHandle.addEventListener("mousedown", function (event) {
+    zetIsVertResizing = true;
+    initialY = event.clientY;
+    let cmElement = myCodeMirror.getWrapperElement();
+    initialHeight = cmElement.offsetHeight;
+
+    // Prevent text selection while resizing
+    document.body.style.userSelect = 'none';
+
+    document.addEventListener("mousemove", zetHandleVertMouseMove);
+    document.addEventListener("mouseup", function () {
+        zetIsVertResizing = false;
+
+        // Enable text selection again after resizing
+        document.body.style.userSelect = '';
+
+        document.removeEventListener("mousemove", zetHandleVertMouseMove);
+    });
+});
+
+function zetHandleVertMouseMove(event) {
+    if (zetIsVertResizing) {
+        let dy = event.clientY - initialY;
+        let cmElement = myCodeMirror.getWrapperElement();
+        let newHeight = initialHeight + dy;
+
+        if (newHeight > 50 && newHeight <= maxHeight) {
+            cmElement.style.height = newHeight + "px";
+            myCodeMirror.refresh();
+        }
+    }
+}
+
+// Add this event listener to handle window resizing
+window.addEventListener("resize", function () {
+    maxWidth = window.innerWidth * 0.9;
+    maxHeight = window.innerHeight * 0.9;
+
+    let cmElement = myCodeMirror.getWrapperElement();
+
+    if (cmElement.offsetHeight > maxHeight) {
+        cmElement.style.height = maxHeight + "px";
+    }
+
+    if (cmElement.offsetWidth > maxWidth) {
+        cmElement.style.width = maxWidth + "px";
+    }
+
+    myCodeMirror.refresh();
+});
+
 
 // Call updateNodeTitleToLineMap whenever the CodeMirror content changes
 myCodeMirror.on("change", function () {
     updateNodeTitleToLineMap();
     identifyNodeTitles();
-    highlightNodeTitles();
+    highlightNodeTitles()
 });
 
 myCodeMirror.on("focus", function () {
@@ -52,33 +154,66 @@ var nodeInput = document.getElementById('node-tag');
 var refInput = document.getElementById('ref-tag');
 
 
-function updateMode() {
-    CodeMirror.defineMode("custom", function () {
-        var node = nodeInput.value;
-        var ref = refInput.value;
-        const Prompt = `${PROMPT_IDENTIFIER}`;
-        return {
-            token: function (stream) {
-                if (stream.match(node)) {
-                    return "node";
+CodeMirror.defineMode("custom", function (config, parserConfig) {
+    const Prompt = `${PROMPT_IDENTIFIER}`;
+    var node = parserConfig.node || "";
+    var ref = parserConfig.ref || "";
+
+    const htmlMixedMode = CodeMirror.getMode(config, "htmlmixed");
+    const cssMode = CodeMirror.getMode(config, "css");
+    const jsMode = CodeMirror.getMode(config, "javascript");
+    const pythonMode = CodeMirror.getMode(config, "python");
+
+    return {
+        startState: function () {
+            return {
+                inBlock: null,
+                subState: null
+            };
+        },
+        token: function (stream, state) {
+            if (stream.sol()) {
+                let match = stream.match(/```(html|css|(js|javascript)|python)/, false); // Updated regex
+                if (match && match[1]) {
+                    state.inBlock = match[1] === "javascript" ? "js" : match[1]; // Normalize "javascript" to "js"
+                    state.subState = CodeMirror.startState({ 'html': htmlMixedMode, 'css': cssMode, 'js': jsMode, 'python': pythonMode }[state.inBlock]);
+                    stream.skipToEnd();
+                    return "string";
                 }
-                if (stream.match(ref)) {
-                    return "ref";
-                }
-                if (stream.match(Prompt)) {
-                    return "Prompt";
-                }
-                while (stream.next() != null) {
-                    if (stream.eol()) {
-                        return null;
-                    }
+
+                match = stream.match(/```/, false);
+                if (match) {
+                    state.inBlock = null;
+                    state.subState = null;
+                    stream.skipToEnd();
+                    return "string";
                 }
             }
-        };
-    });
 
-    myCodeMirror.setOption("mode", "custom");
+            if (state.inBlock) {
+                return ({ 'html': htmlMixedMode, 'css': cssMode, 'js': jsMode, 'python': pythonMode }[state.inBlock]).token(stream, state.subState);
+            }
 
+            if (stream.match(node)) {
+                return "node";
+            }
+            if (stream.match(ref)) {
+                return "ref";
+            }
+            if (stream.match(Prompt)) {
+                return "Prompt";
+            }
+
+            stream.skipToEnd();
+            return null;
+        },
+    };
+});
+
+function updateMode() {
+    var node = nodeInput.value;
+    var ref = refInput.value;
+    myCodeMirror.setOption("mode", { name: "custom", node: node, ref: ref });
     myCodeMirror.refresh();
 }
 
@@ -408,7 +543,7 @@ function handleTitleClick(title, cm) {
             node.zoom_to_fit();
             zoomTo = zoomTo.scale(1.5);
         } else {
-            // Use alternative zoom method if the bounding rectangle does not exist
+            // Use alternative zoom method if the bounding rectangle does not exist (allows best of both options, i.e. zoomto with exact height calculations when available, and when not currenetly in the viewport, a set value.)
             node.zoom_to(.5);
         }
         autopilotSpeed = settings.autopilotSpeed;
@@ -1033,7 +1168,7 @@ var settings = {
     //slider adjustment
     maxLines: 48,
     renderWidthMult: 0.3, //1,
-    regenDebtAdjustmentFactor: 0.05,
+    regenDebtAdjustmentFactor: 0.51,
 
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,

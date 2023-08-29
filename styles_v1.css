@@ -470,6 +470,7 @@
             border: inset;
             border-color: #8882;
             width: 270px;
+            min-width: 270px;
             padding: 10px;
             box-sizing: border-box;
             resize: none;
@@ -630,16 +631,41 @@
             height: 20px;
         }
 
-        .zettelkasten {
-            background-color: #222226;
-            width: 261px;
-            height: 150px;
-            z-index: -1;
-            border: inset;
-            border-color: #8882;
-            resize: vertical;
-            /* only allows the height to be resizable */
-        }
+.zet-container {
+    position: relative;
+}
+
+.zet-drag-handle-horiz {
+    width: 6px; /* Increase the width */
+    height: 100%;
+    cursor: ew-resize;
+    background-color: transparent; /* Make it transparent */
+    position: absolute;
+    left: 0;
+    z-index: 1;
+}
+
+.zet-drag-handle-vert {
+    width: 100%;
+    height: 6px; /* Increase the height */
+    cursor: ns-resize;
+    background-color: transparent; /* Make it transparent */
+    position: absolute;
+    bottom: 0;
+    z-index: 1;
+}
+
+.zettelkasten {
+    background-color: #222226;
+    width: 261px;
+    min-width: 261px;
+    height: 150px;
+    z-index: -1;
+    border: inset;
+    border-color: #8882;
+    resize: none !important;
+    overflow: auto;
+}
 
             .zettelkasten::-webkit-scrollbar {
                 width: 10px;
@@ -1121,6 +1147,92 @@ input[type=range] {
     background: Highlight !important;
     color: HighlightText !important;
 }
+
+/* Gutter */
+.CodeMirror-gutters {
+    background: #282a36 !important;
+    border-right: 0px !important;
+}
+.CodeMirror-gutter-wrapper {
+    position: absolute;
+    z-index: 1000;
+    background: white !important;
+    border: 1px solid #ccc !important;
+}
+
+.CodeMirror-linenumbers {
+    color: black !important;
+}
+.CodeMirror-linenumbers div {
+    color: black !important;
+}
+/* Syntax Highlighting - Mimics our Prism.js theme */
+
+/* General */
+.CodeMirror {
+    left: 0 !important; /* Add this line */
+    min-width: 266px;
+    resize: none !important;
+}
+
+.cm-s-default {
+    color: #ccc !important;
+}
+
+    /* Keywords & Built-ins */
+    .cm-s-default .cm-keyword, .cm-s-default .cm-builtin {
+        color: #cc99cd !important;
+    }
+
+    /* Definitions & Variables */
+    .cm-s-default .cm-def, .cm-s-default .cm-variable, .cm-s-default .cm-variable-2, .cm-s-default .cm-variable-3 {
+        color: #ccc !important;
+    }
+
+    /* Operators & Properties */
+    .cm-s-default .cm-operator, .cm-s-default .cm-property {
+        color: #67cdcc !important;
+    }
+
+    /* Numbers */
+    .cm-s-default .cm-number {
+        color: #f08d49 !important;
+    }
+
+    /* Strings */
+    .cm-s-default .cm-string, .cm-s-default .cm-string-2 {
+        color: #7ec699 !important;
+    }
+
+    /* Comments */
+    .cm-s-default .cm-comment {
+        color: #999 !important;
+    }
+
+    /* Punctuation */
+    .cm-s-default .cm-punctuation {
+        color: #ccc !important;
+    }
+
+    /* Atoms */
+    .cm-s-default .cm-atom {
+        color: #95cecc !important;
+    }
+
+    /* Qualifiers & Types */
+    .cm-s-default .cm-qualifier, .cm-s-default .cm-type {
+        color: #8c5896 !important;
+    }
+
+    /* Tags & Attributes */
+    .cm-s-default .cm-tag {
+        color: #e2777a !important;
+    }
+
+    .cm-s-default .cm-attribute {
+        color: #cc99cd !important;
+    }
+
 /*Hide codemirror node text*/
 .hidden-text {
     display: none;
@@ -1526,4 +1638,13 @@ input[type=range] {
     width: 100%;
     height: 100%;
     display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
 }

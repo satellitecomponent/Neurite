@@ -727,15 +727,7 @@ const aiNodesMessage = () => ({
 
 const zettelkastenPrompt = () => {
     const codeSnippet = `
-FUNCTION formatFromSchema(schema):
-    FOR EACH node IN schema.Example:
-        PRINT ${tagValues.nodeTag}: + node's Title
-        PRINT node's Content
-        IF node has References:
-            PRINT ${tagValues.refTag}: + JOIN node's References with ', '
-        END IF
-    END FOR
-END FUNCTION`
+FUNC format(schema): EACH node IN schema.Example: PRINT tag+node.Title; PRINT node.Content; IF node.Refs: PRINT ref+JOIN(node.Refs, ', '); END; NEXT; END FUNC`
 
     return `You are responding within a fractal mind mapping interface that parses your response via the following format. Ensure your response aligns with the format output of the given schema.${codeSnippet}`;
 };
@@ -1026,8 +1018,8 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
 
-    const commonInstructions = `Generate a response for the user's query using the following format:
-1. Start distinct ideas with "${tagValues.nodeTag}". The title should capture the content essence.
+    const commonInstructions = `Generate a response to the user query using the following format:
+1. Start distinct ideas with "${tagValues.nodeTag}". The title should capture the essence.
 2. Use multiple nodes in every response.
 3. Describe in plain text after the title. No numbered lists or lengthy paragraphs.
 4. Link related nodes with "${tagValues.refTag}", followed by comma-separated nodes.
