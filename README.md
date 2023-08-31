@@ -12,7 +12,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 
 ## Bridging Fractals and Thought
 
-Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape the fabric of creative thinking. Our virtually limitless fractal workspace blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.  Nodes, each encompassing text, images, videos, code, or AI agents — all interweave within a dynamic, self-similar tapestry of thought.
+Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape creative thinking. To do this, we have developed a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques. Why? Fractals are not jost an aesthetic choice, their inner logic is ingrainded into a number of natural and constructive phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cpsmic web](https://cosmicweb.kimalbrecht.com/). Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
 
 ### `Complexity Inspires Creativity`
 Whether you're a researcher, writer, artist, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
