@@ -62,7 +62,7 @@ Custom `node:` and `ref:` tags can be set in the ? tab of the main dropdown.
 
 Drag and drop local files or web content straight into the fractal.
 
-Supports embedded links. Ctrl+V to paste an embed link, or not embeddded links will be converted.
+Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links embeds them into an iframe if supported by the host.
 
 ### `Controls`
   *Full controls are listed in the ? tab within Neurite's main dropdown.
