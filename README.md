@@ -16,10 +16,10 @@ Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidd
 
 Why? 
 
-Fractals are not jost an aesthetic choice, their inner logic is ingrainded into a number of natural and constructive phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).  Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
+Fractals are not jost an aesthetic choice, their inner logic is ingrainded into a number of natural and constructed phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).  Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, innovator, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -137,8 +137,7 @@ Above is an example of conversation history being shared between GPT-4 and a Loc
 
 ### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
-- The AI node will retain context from any other text or AI nodes that connect to it. (`Hold Shift and Click` two node windows to connect them together)
-- This means the ability to inteface multiple chat windows together, and the ability to retain textual memories without having to re-copy and re-paste them every time.
+- Connected Ai nodes will now send messages to one another. This is still in an early expirmental state. (`Hold Shift and Click` two node windows to connect them together)
 - Supports webLLM and OpenAi models concurrently.
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, LLama 2, Red Pajamas 3B, and Vicuna 7B.
