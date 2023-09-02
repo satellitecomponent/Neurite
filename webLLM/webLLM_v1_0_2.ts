@@ -260,13 +260,13 @@ let isProcessing = false;
 
 window.generateLocalLLMResponse = async function (node, messages) {
     node.localAiResponding = true; // Set the flag right here
-//console.log("Node.aiResponding set to:", node.localAiResponding);
 
     const localLLMCheckbox = document.getElementById("localLLM");
     if (!(localLLMCheckbox as HTMLInputElement).checked) {
-        node.aiResponding = false; // Reset if needed
+        node.localAiResponding = false; // Reset if needed
         return;
     }
+
     // Get the selected model
     const llmNodeIndex = node.index;
     const LocalLLMselect = document.getElementById(`dynamicLocalLLMselect-${llmNodeIndex}`);
@@ -277,34 +277,28 @@ window.generateLocalLLMResponse = async function (node, messages) {
         return;
     }
 
-    // Filter out the first message and the second-to-last message
-    const filteredMessages = messages.filter((message, index) => {
-        return !(index === 0 || index === messages.length - 2);
+    // Only take the last message in the messages array
+    const lastMessage = messages[messages.length - 1].content;
+
+    // Adds a deferred object to resolve the promise later
+    let deferred: any = { resolve: null };
+    deferred.promise = new Promise<string>(resolve => {
+        deferred.resolve = resolve;
     });
 
-    let messageString = "";
-
-    // Process filteredMessages to build messageString
-    filteredMessages.forEach((message, index) => {
-        if (index === 0) {
-        } else if (message.role === "user") {
-            // This is the current prompt
-            messageString += `${message.content}`;
-        } else {
-            messageString += message.content;
-        }
-    });
-
+    // Push it into the queue
     messageQueue.push({
         node,
-        messageString,
-        selectedModel
+        messageString: lastMessage,
+        selectedModel,
+        deferred
     });
 
-    // If not currently processing a message, start processing the queue
     if (!isProcessing) {
         processQueue();
     }
+
+    return deferred.promise;
 }
 async function processQueue() {
     if (messageQueue.length === 0) {
@@ -313,7 +307,7 @@ async function processQueue() {
 
     isProcessing = true;
 
-    const { node, messageString, selectedModel } = messageQueue.shift();
+    const { node, messageString, selectedModel, deferred } = messageQueue.shift();
     let lastMessageLength = 0;
     const aiResponseTextArea = document.getElementById(node.id);
 
@@ -347,12 +341,17 @@ async function processQueue() {
         const reply = await chat.generate(messageString, generateProgressCallback);
         updateTextAreaWithMessage(aiResponseTextArea as HTMLTextAreaElement, reply);
         node.localAiResponding = false;
+
+        // Resolve the promise with the reply message
+        deferred.resolve(reply); 
     }
 
     isProcessing = false;
 
     if (messageQueue.length > 0) {
         processQueue();
+    } else {
+        deferred.resolve();  // Resolve the promise when queue is empty
     }
 }
 //window.callWebLLMGeneric = async function (messages) {

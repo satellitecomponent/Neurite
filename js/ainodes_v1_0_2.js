@@ -66,6 +66,16 @@ async function callchatLLMnode(messages, node, stream = false) {
             return;
         }
 
+        async function appendWithDelay(content, node, delay) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    node.aiResponseTextArea.value += content;
+                    node.aiResponseTextArea.dispatchEvent(new Event("input"));
+                    resolve();
+                }, delay);
+            });
+        }
+
         if (stream) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
@@ -80,24 +90,20 @@ async function callchatLLMnode(messages, node, stream = false) {
                 let contentMatch;
                 while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
                     const content = JSON.parse('"' + contentMatch[1] + '"');
-
                     if (!node.shouldContinue) break;
 
                     if (content.trim() !== "[DONE]") {
-                        node.aiResponseTextArea.value += `${content}`;  // Append the AI's response to the textarea
-                        node.aiResponseTextArea.dispatchEvent(new Event("input"));
-
+                        await appendWithDelay(content, node, 30);  // Append the AI's response to the textarea
                     }
+
                     buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
                 }
             }
         } else {
             const data = await response.json();
             console.log("Token usage:", data.usage);
-            node.aiResponseTextArea.innerText += `${data.choices[0].message.content.trim()}`;  // Append the AI's response to the textarea
+            node.aiResponseTextArea.innerText += `${data.choices[0].message.content.trim()}`; 
             node.aiResponseTextArea.dispatchEvent(new Event("input"));
-
-
         }
     } catch (error) {
         // Check if the error is because of the abort operation
@@ -140,7 +146,11 @@ function trimToTokenCount(inputText, maxTokens) {
     return trimmedText;
 }
 
-
+async function getLastLineFromTextArea(textArea) {
+    const text = textArea.value;
+    const lines = text.split('\n');
+    return lines[lines.length - 1];
+}
 
 async function sendLLMNodeMessage(node, message = null) {
     if (node.aiResponding) {
@@ -152,8 +162,6 @@ async function sendLLMNodeMessage(node, message = null) {
     let contextSize = 0;
 
     node.latestUserMessage = message ? message : node.promptTextArea.value;
-    console.log(`Received message: "${node.latestUserMessage}"`);
-
     // Clear the prompt textarea
     node.promptTextArea.value = '';
     node.promptTextArea.dispatchEvent(new Event('input'));
@@ -161,9 +169,85 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: "You (Ai) are responding in an Ai node. Connected nodes are shared in the 'remember this' system message. Triple backtick and label your codeblocks"
+            content: "You (Ai) are responding in an Ai node. All connected nodes are shared in the 'remember this' system message. Triple backtick and label any codeblocks"
         },
     ];
+
+
+    // Check if all conneceted nodes should be sent or just nodes up to the first ai node in each branch. connecteed nodes (default)
+    const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
+
+    // Choose the function based on checkbox state
+    let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
+
+    // Determine if there are any connected AI nodes
+    let hasConnectedAiNode = allConnectedNodes.some(n => n.isLLMNode);
+
+    if (hasConnectedAiNode) {
+        node.shouldAppendQuestion = true;
+    } else {
+        node.shouldAppendQuestion = false;
+    }
+
+    if (node.shouldAppendQuestion) {
+        messages.push({
+            role: "system",
+            content: `Control: You (AI) sets topics, shares interests, and introduce new subjects without being prompted to.
+Format: The last line of your response will be extracted and sent to any connected Ai.
+Context: Follow any recieved instructions from all connected nodes.`
+        });
+    }
+
+    const clickQueues = {};  // Contains a click queue for each AI node
+
+    async function processClickQueue(nodeId) {
+        const queue = clickQueues[nodeId] || [];
+        while (true) {
+            if (queue.length > 0) {
+                const connectedNode = queue[0].connectedNode;
+
+                if (!connectedNode.aiResponding) {
+                    const { sendButton } = queue.shift();
+                    sendButton.click();
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+
+    async function questionConnectedAiNodes(lastLine) {
+        for (const connectedNode of allConnectedNodes) {
+            if (connectedNode.isLLMNode) {
+                let uniqueNodeId = connectedNode.index;
+                let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
+                let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
+
+                if (!promptElement || !sendButton) {
+                    console.error(`Elements for ${uniqueNodeId} are not found`);
+                    continue;
+                }
+
+                if (promptElement instanceof HTMLTextAreaElement) {
+                    promptElement.value += `\n${lastLine}`;
+                } else if (promptElement instanceof HTMLDivElement) {
+                    promptElement.innerHTML += `<br>${lastLine}`;
+                } else {
+                    console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+                }
+
+                promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+
+                // Initialize the click queue for this node if it doesn't exist
+                if (!clickQueues[uniqueNodeId]) {
+                    clickQueues[uniqueNodeId] = [];
+                    processClickQueue(uniqueNodeId);  // Start processing this node's click queue
+                }
+
+                // Add to the node's specific click queue
+                clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+            }
+        }
+    }
 
     if (document.getElementById("code-checkbox").checked) {
         messages.push(aiNodeCodeMessage());
@@ -316,7 +400,7 @@ async function sendLLMNodeMessage(node, message = null) {
         messages.push(wolframAlphaMessage);
     }
 
-    let allConnectedNodesData = getAllConnectedNodesData(node);
+    let allConnectedNodesData = getAllConnectedNodesData(node, true);
 
     let totalTokenCount = getTokenCount(messages);
     let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
@@ -326,7 +410,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let messageTrimmed = false;
 
     let infoString = allConnectedNodesData.map(info => info.replace("Text Content:", "")).join("\n\n"); // Remove 'Text Content:' tag from each info and concatenate
-    let infoWithIntro = "Remember this:\n" + infoString;
+    let infoWithIntro = "Remember this: The following are nodes that have been manually connected to your chat interface.\n" + infoString;
 
     let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
     if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
@@ -382,6 +466,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
     node.aiResponding = true;
     node.userHasScrolled = false;
+
     let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
 
     // Get the loading and error icons
@@ -392,27 +477,37 @@ async function sendLLMNodeMessage(node, message = null) {
     aiErrorIcon.style.display = 'none'; // Hide error icon
     aiLoadingIcon.style.display = 'block'; // Show loading icon
 
+
+    // Local LLM call
     if (document.getElementById("localLLM").checked && LocalLLMSelect.value !== 'OpenAi') {
-        // Local LLM call
         window.generateLocalLLMResponse(node, messages)
-            .finally(() => {
+            .then(async (fullMessage) => {
                 node.aiResponding = false;
-                aiLoadingIcon.style.display = 'none'; // Hide loading icon
+                aiLoadingIcon.style.display = 'none';
+                if (node.shouldAppendQuestion) {
+                    // Use the fullMessage instead of getting the last line from the text area
+                    await questionConnectedAiNodes(fullMessage);
+                }
             })
             .catch((error) => {
                 console.error(`An error occurred while getting response: ${error}`);
-                aiErrorIcon.style.display = 'block';  // Show error icon
+                aiErrorIcon.style.display = 'block';
             });
     } else {
         // OpenAI call
         callchatLLMnode(messages, node, true)
-            .finally(() => {
+            .finally(async () => {
                 node.aiResponding = false;
-                aiLoadingIcon.style.display = 'none'; // Hide loading icon
+                aiLoadingIcon.style.display = 'none';
+                if (node.shouldAppendQuestion) {
+                    const lastLine = await getLastLineFromTextArea(node.aiResponseTextArea);
+                    //console.log(lastLine)
+                    await questionConnectedAiNodes(lastLine);
+                }
             })
             .catch((error) => {
                 console.error(`An error occurred while getting response: ${error}`);
-                aiErrorIcon.style.display = 'block';  // Show error icon
+                aiErrorIcon.style.display = 'block';
             });
     }
 }
@@ -873,10 +968,16 @@ class ResponseHandler {
 
 const nodeResponseHandlers = new Map();
 
+
+let llmNodeCount = 0;
+
+
 function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
+    llmNodeCount++;
+
     // Create the AI response textarea
     let aiResponseTextArea = document.createElement("textarea");
-    aiResponseTextArea.id = `LLMnoderesponse-${++llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
+    aiResponseTextArea.id = `LLMnoderesponse-${llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
     aiResponseTextArea.style.display = 'none';  // Hide the textarea
 
     // Create the AI response container
@@ -902,10 +1003,10 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
-    promptTextArea.id = 'prompt';
+    promptTextArea.id = `nodeprompt-${llmNodeCount}`;
     promptTextArea.classList.add('custom-scrollbar');
     promptTextArea.onmousedown = cancel;  // Prevent dragging
-    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 270px; height: 70px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none; user-select: none;");
+    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 100%; height: 70px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none; user-select: none;");
     promptTextArea.addEventListener('input', autoGrow);
     promptTextArea.addEventListener('mouseenter', function () {
         promptTextArea.style.userSelect = "text";
@@ -918,7 +1019,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the send button
     let sendButton = document.createElement("button");
     sendButton.type = "submit";
-    sendButton.id = "prompt-form";
+    sendButton.id = `prompt-form-${llmNodeCount}`;
     sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;"; sendButton.addEventListener('mouseover', function () {
         this.style.backgroundColor = '#45a049';
         this.style.color = '#222226';
@@ -1089,6 +1190,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.index = llmNodeCount;
     node.isLLMNode = true;
     node.wrapperDiv = wrapperDiv;
+    node.shouldAppendQuestion = false;
 
 
     // If user has not scrolled, it's safe to automatically scroll to bottom
@@ -1224,8 +1326,6 @@ document.getElementById("localLLM").addEventListener("change", function () {
     }
 });
 
-let llmNodeCount = 0;
-
 function getConnectedNodes(node) {
     // Get the connected nodes
     let connectedNodes = node.edges ? node.edges
@@ -1283,62 +1383,65 @@ function getNodeData(node) {
     }
 }
 
-function topologicalSort(node, visited, stack) {
-    // Mark the current node as visited
-    visited.add(node);
+function topologicalSort(node, visited, stack, filterAfterLLM = false, branchUUID = undefined) {
+    visited.add(node.uuid);
 
-    // Get all connected nodes
-    let connectedNodes = getConnectedNodes(node);
+    // Push the node to the stack before checking the conditions.
+    stack.push(node);
 
-    // Recur for all connected nodes
-    for (let connectedNode of connectedNodes) {
-        if (!visited.has(connectedNode)) {
-            topologicalSort(connectedNode, visited, stack);
+    if (node.isLLM) {
+        if (branchUUID === null) {
+            branchUUID = node.uuid;  // Assign new branch
+        } else if (branchUUID !== node.uuid && branchUUID !== undefined) {
+            // Different AI branch, so return after pushing the boundary node.
+            return;
         }
     }
 
-    // Push current node to stack which stores the result
-    stack.push(node);
+    let connectedNodes = getConnectedNodes(node);
+
+    for (let connectedNode of connectedNodes) {
+        if (visited.has(connectedNode.uuid)) continue;
+
+        let nextFilterAfterLLM = connectedNode.isLLM ? true : filterAfterLLM;
+
+        topologicalSort(connectedNode, visited, stack, nextFilterAfterLLM, branchUUID);
+    }
 }
 
-function traverseConnectedNodes(node, callback) {
+function traverseConnectedNodes(node, callback, filterAfterLLM = false) {
     let visited = new Set();
-    let stack = []; // stack to store the result
+    let stack = [];
+    topologicalSort(node, visited, stack, filterAfterLLM, filterAfterLLM ? null : undefined);
 
-    // Call the recursive helper function to store topological sort 
-    // starting from the selected node
-    topologicalSort(node, visited, stack);
-
-    // Now we can process nodes in topological order
     while (stack.length > 0) {
         let currentNode = stack.pop();
 
-        // Ignore the initial node
-        if (currentNode === node) {
+        if (currentNode.uuid === node.uuid) {
             continue;
         }
 
-        callback(currentNode); // Execute the callback on the current node
+        callback(currentNode);
     }
 }
 
-function getAllConnectedNodesData(node) {
+function getAllConnectedNodesData(node, filterAfterLLM = false) {
     let allConnectedNodesData = [];
 
     traverseConnectedNodes(node, currentNode => {
         let currentNodeData = getNodeData(currentNode);
         allConnectedNodesData.push(currentNodeData);
-    });
+    }, filterAfterLLM);
 
     return allConnectedNodesData;
 }
 
-function getAllConnectedNodes(node) {
+function getAllConnectedNodes(node, filterAfterLLM = false) {
     let allConnectedNodes = [];
 
     traverseConnectedNodes(node, currentNode => {
-        allConnectedNodes.push(currentNode); // Only including the node itself
-    });
+        allConnectedNodes.push(currentNode);
+    }, filterAfterLLM);
 
     return allConnectedNodes;
 }

@@ -893,6 +893,8 @@ function openTab(tabId, element) {
 
     document.getElementById(tabId).style.display = "block";
     element.classList.add("activeTab"); // We use classList.add to add the class
+
+    myCodeMirror.refresh();
 }
         // Get the menu button and dropdown content elements
         const menuButton = document.querySelector(".menu-button");
@@ -1166,9 +1168,9 @@ var settings = {
     nodeModeTrigger: "down", //"toggle"
 
     //slider adjustment
-    maxLines: 48,
+    maxLines: 36,
     renderWidthMult: 0.3, //1,
-    regenDebtAdjustmentFactor: 0.51,
+    regenDebtAdjustmentFactor: 0.37,
 
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,
