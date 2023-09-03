@@ -15,7 +15,7 @@ Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidd
 
 Why? 
 
-Fractals are not jost an aesthetic choice, their inner logic is ingrainded into a number of natural and constructed phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).  Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
+Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).  Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
 
 ### `Complexity Inspires Creativity`
 Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
@@ -87,7 +87,7 @@ Or, drag in different node types from the dropdown.
 - Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will just overlap and be too big.
 - When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
 - Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
-- The AI tab has controls for token limit, tempeture, number of searched nodes sent as context, and lenght of recent conversation sent.
+- The AI tab has controls for token limit, temperature, number of searched nodes sent as context, and length of recent conversation sent.
 - Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
 ## FractalGPT
 
@@ -159,7 +159,7 @@ either:
 
 Or, to enable local AI features without using our Github pages host above:  
 1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-2. Install any necessary global dependencies when running the below, (Node.js, Rust, Embscripten, Strawberry Perl, Vite)
+2. Install any necessary global dependencies when running the below, (Node.js, Rust, Emuscripten, Strawberry Perl, Vite)
 
 ```
 npm install
@@ -186,13 +186,13 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 ### `Notes`
 - Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zeroing in on the node containing your specified query. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
 - Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. Some non-textual content currently needs to be re-inserted.
-- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, whos contents are bi-directionaly linked to the main Zettelkasten documenent.
+- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 
 The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
 
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
-- This diagram represents how the AI's response incorperates note-taking to retain a non-linear conversation history.
+- This diagram represents how the AI's response incorporates note-taking to retain a non-linear conversation history.
 - We feed both the recent conversation as well as any matched notes that are not already in the recent conversation as part of the context message to the Ai.
 - This means retaining relevant information from any part of the conversation regardless of the Ai's context window size.
 - Still, advancements in context window size only further enable Neurite's performance.
