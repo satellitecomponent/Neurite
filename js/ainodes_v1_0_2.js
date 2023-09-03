@@ -484,8 +484,7 @@ Context: Follow any recieved instructions from all connected nodes.`
             .then(async (fullMessage) => {
                 node.aiResponding = false;
                 aiLoadingIcon.style.display = 'none';
-                if (node.shouldAppendQuestion) {
-                    // Use the fullMessage instead of getting the last line from the text area
+                if (node.shouldContinue && node.shouldAppendQuestion) {
                     await questionConnectedAiNodes(fullMessage);
                 }
             })
@@ -499,9 +498,8 @@ Context: Follow any recieved instructions from all connected nodes.`
             .finally(async () => {
                 node.aiResponding = false;
                 aiLoadingIcon.style.display = 'none';
-                if (node.shouldAppendQuestion) {
+                if (node.shouldContinue && node.shouldAppendQuestion) {
                     const lastLine = await getLastLineFromTextArea(node.aiResponseTextArea);
-                    //console.log(lastLine)
                     await questionConnectedAiNodes(lastLine);
                 }
             })
