@@ -1,8 +1,7 @@
 # `Neurite`
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-4176-ac6b-b9a3bf4329d8
-
+![Neurite2](https://github.com/satellitecomponent/Neurite/assets/129367899/73c66088-8029-413b-8da0-4c6968436639)
 
 ## `Introduction`
 
@@ -232,6 +231,7 @@ The Zettelkasten note taking method accesses tapestry of thought reasoning for A
 
 🚧
 
+https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-4176-ac6b-b9a3bf4329d8
 
 ## `Contact`
 
