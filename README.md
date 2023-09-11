@@ -11,11 +11,13 @@
 
 ## Bridging Fractals and Thought
 
-Drawing inspiration from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape creative thinking. To do this, we have developed a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques. 
+Inspired by chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that underlie creative thinking. To do this, we developed a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques. 
 
 Why? 
 
-Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).  Nodes, each encompassing text, images, videos, code, or AI agents — interweave within a dynamic, self-similar microcosm of thought.
+Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
+
+Nodes encompass text, images, videos, code, or AI agents — and interweave within a personalized microcosm of your thoughts and inspirations.
 
 ### `Complexity Inspires Creativity`
 Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
@@ -92,9 +94,9 @@ Or, drag in different node types from the dropdown.
 ## FractalGPT
 
 ### `Not your typical chat interface`
-- **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory.
-- **Limitless AI Agents:** Create an endless number of chat interfaces, or let the AI take notes from above.
-- **Fractal Interface:** Immerse yourself in learning within a captivating fractal landscape.
+- **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory through our biomimetic interface.
+- **Limitless AI Agents:** Create and connect an endless number of individual chat windows, or let the AI take notes from above.
+- **Fractal Interface:** Utilize a custom fractal environment designed for Iterative Exploratory Learning.
 - **Custom Tool Creation:**  Connect nodes that contain code blocks together to run html/css/js in an iframe, or Python via Pyodide.
 
 ### `Modular Conversation`
@@ -102,7 +104,7 @@ Or, drag in different node types from the dropdown.
 In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:
 
 - **Structured Memory Mapping:** Anchor the AI's thought process as notes within an evolving fractal mind map.
-- **Graph your AI Conversations:** Segment AI's responses into a cohesive web of thought that improves AI reasoning and allows for further processing to construct the Ai's memory.
+- **Graph your AI Conversations:** Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for further processing to construct the Ai's memory.
 - **Interactive Fractal Network:** Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.
 - **Intuitive Note Navigation:** Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.
 
@@ -137,7 +139,16 @@ Above is an example of conversation history being shared between GPT-4 and a Loc
 ### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
 - Connected Ai nodes will now send messages to one another. This is still in an early expirmental state. (`Hold Shift and Click` two node windows to connect them together)
-- Supports webLLM and OpenAi models concurrently.
+- Supports Local and OpenAi models concurrently.
+
+### Inter-AI Communication
+- **Message Looping:** Initiate conversational loops among connected AI nodes.
+- **Prompt Generation:** Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to other connected nodes.
+- **Unique & Shared Instructions:**
+  - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
+  - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because...
+    - **Context Cut-Off:** ...once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.
+- **Related Research:** [Conversational Swarm Intelligence Paper](https://arxiv.org/abs/2309.03220)
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, LLama 2, Red Pajamas 3B, and Vicuna 7B.
 - webLLM runs Ai models directly in browser on the GPU or CPU.
@@ -184,9 +195,9 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 
 ### `Notes`
-- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zeroing in on the node containing your specified query. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. Some non-textual content currently needs to be re-inserted.
-- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files or folders, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
+- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming you to the node you are looking for. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
+- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. This is still in an early state.
+- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 
 The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
 
