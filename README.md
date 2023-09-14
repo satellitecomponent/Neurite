@@ -11,7 +11,7 @@
 
 ## Bridging Fractals and Thought
 
-Inspired by chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that underlie creative thinking. To do this, we developed a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques. 
+Inspired by chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape creative thinking. To do this, we developed a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques. 
 
 Why? 
 
