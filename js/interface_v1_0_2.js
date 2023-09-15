@@ -28,21 +28,21 @@ if (!RegExp.escape) {
 }
 
 
-        var mousePos = new vec2(0, 0);
-        var mousePath = "";
+var mousePos = new vec2(0, 0);
+var mousePath = "";
 
-        var zoom = new vec2(1.5, 0); //bigger is further out
-        var pan = new vec2(-0.3, 0);
+var zoom = new vec2(1.5, 0); //bigger is further out
+var pan = new vec2(-0.3, 0);
 
-        var zoomTo = new vec2(4, 0);
-        var panTo = new vec2(0, 0);
-        var autopilotReferenceFrame = undefined;
-        var autopilotSpeed = 0;
+var zoomTo = new vec2(4, 0);
+var panTo = new vec2(0, 0);
+var autopilotReferenceFrame = undefined;
+var autopilotSpeed = 0;
 
-        function skipAutopilot() {
-            zoom = zoomTo
-            pan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo;
-        }
+function skipAutopilot() {
+    zoom = zoomTo
+    pan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo;
+}
 
 
 function toggleNodeState(nodeOrTitle, cm, event) {
@@ -217,95 +217,95 @@ function expandNode(node, div, circle) {
     div.collapsed = false;
 }
 
-        function windowify(title, content, pos, scale, iscale, link) {
-            let odiv = document.createElement('div');
-            let div = document.createElement('div');
-            let buttons = document.getElementById("elements").children[0];
-            let w = buttons.cloneNode(true);
-            w.className = 'button-container';
-            // Create a header container for buttons and title input
-            let headerContainer = document.createElement('div');
-            headerContainer.className = 'header-container';
-            headerContainer.appendChild(w);
-            
-
-            div.appendChild(headerContainer);
-            odiv.appendChild(div);
-
-            let innerContent = document.createElement('div');
-            innerContent.className = 'content';
-            for (let c of content) {
-                innerContent.appendChild(c);
-            }
-            div.appendChild(innerContent);
+function windowify(title, content, pos, scale, iscale, link) {
+    let odiv = document.createElement('div');
+    let div = document.createElement('div');
+    let buttons = document.getElementById("elements").children[0];
+    let w = buttons.cloneNode(true);
+    w.className = 'button-container';
+    // Create a header container for buttons and title input
+    let headerContainer = document.createElement('div');
+    headerContainer.className = 'header-container';
+    headerContainer.appendChild(w);
 
 
-            odiv.setAttribute("data-init", "window");
-            div.setAttribute("class", "window");
+    div.appendChild(headerContainer);
+    odiv.appendChild(div);
 
-            div.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (event.altKey) {
-                    div.classList.toggle('selected');
-                }
-            });
-
-            let dropdown = document.querySelector('.dropdown');
-
-            div.addEventListener('mousedown', function () {
-                autopilotSpeed = 0;
-                dropdown.classList.add('no-select');
-
-                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-                for (let i = 0; i < allWrapperDivs.length; i++) {
-                    allWrapperDivs[i].classList.add('no-select');
-                }
-            });
-
-            div.addEventListener('mouseup', function () {
-                dropdown.classList.remove('no-select');
-
-                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-                for (let i = 0; i < allWrapperDivs.length; i++) {
-                    allWrapperDivs[i].classList.remove('no-select');
-                }
-            });
-
-            window.addEventListener('mouseup', function () {
-                dropdown.classList.remove('no-select');
-
-                let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-                for (let i = 0; i < allWrapperDivs.length; i++) {
-                    allWrapperDivs[i].classList.remove('no-select');
-                }
-            });
-
-            // Calculate the width of buttons
-            let buttonsWidth = w.offsetWidth;
-
-            // Add the title input to the header container
-            let titleInput = document.createElement('input');
-            titleInput.setAttribute('type', 'text');
-            titleInput.setAttribute('value', title);
-            titleInput.className = 'title-input';
-            headerContainer.appendChild(titleInput);
-
-            // Add resize container and handle
-            let resizeContainer = document.createElement('div');
-            resizeContainer.className = 'resize-container';
-            div.appendChild(resizeContainer);
-
-            let resizeHandle = document.createElement('div');
-            resizeHandle.className = 'resize-handle';
-            resizeContainer.appendChild(resizeHandle);
+    let innerContent = document.createElement('div');
+    innerContent.className = 'content';
+    for (let c of content) {
+        innerContent.appendChild(c);
+    }
+    div.appendChild(innerContent);
 
 
-            let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
-            setResizeEventListeners(resizeHandle, node);
-            observeContentResize(innerContent, div);
-            div.win = node;
-            return rewindowify(node);
+    odiv.setAttribute("data-init", "window");
+    div.setAttribute("class", "window");
+
+    div.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (event.altKey) {
+            div.classList.toggle('selected');
         }
+    });
+
+    let dropdown = document.querySelector('.dropdown');
+
+    div.addEventListener('mousedown', function () {
+        autopilotSpeed = 0;
+        dropdown.classList.add('no-select');
+
+        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+        for (let i = 0; i < allWrapperDivs.length; i++) {
+            allWrapperDivs[i].classList.add('no-select');
+        }
+    });
+
+    div.addEventListener('mouseup', function () {
+        dropdown.classList.remove('no-select');
+
+        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+        for (let i = 0; i < allWrapperDivs.length; i++) {
+            allWrapperDivs[i].classList.remove('no-select');
+        }
+    });
+
+    window.addEventListener('mouseup', function () {
+        dropdown.classList.remove('no-select');
+
+        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
+        for (let i = 0; i < allWrapperDivs.length; i++) {
+            allWrapperDivs[i].classList.remove('no-select');
+        }
+    });
+
+    // Calculate the width of buttons
+    let buttonsWidth = w.offsetWidth;
+
+    // Add the title input to the header container
+    let titleInput = document.createElement('input');
+    titleInput.setAttribute('type', 'text');
+    titleInput.setAttribute('value', title);
+    titleInput.className = 'title-input';
+    headerContainer.appendChild(titleInput);
+
+    // Add resize container and handle
+    let resizeContainer = document.createElement('div');
+    resizeContainer.className = 'resize-container';
+    div.appendChild(resizeContainer);
+
+    let resizeHandle = document.createElement('div');
+    resizeHandle.className = 'resize-handle';
+    resizeContainer.appendChild(resizeHandle);
+
+
+    let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
+    setResizeEventListeners(resizeHandle, node);
+    observeContentResize(innerContent, div);
+    div.win = node;
+    return rewindowify(node);
+}
 
 function rewindowify(node) {
     node.push_extra("window");
@@ -423,113 +423,113 @@ function extractScalingFactors(element) {
 
 var isPanning = false;
 
-        function setResizeEventListeners(resizeHandle, node) {
-            const inverse2DMatrix = (matrix) => {
-                const det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
-                if (det === 0) {
-                    return null;
-                }
-                const invDet = 1 / det;
-                return [
-                    matrix[3] * invDet,
-                    -matrix[1] * invDet,
-                    -matrix[2] * invDet,
-                    matrix[0] * invDet,
-                ];
-            };
-
-            const getDivInverseTransformMatrix = (div) => {
-                const transform = window.getComputedStyle(div).transform;
-                if (transform === 'none') {
-                    return [1, 0, 0, 1];
-                }
-                const matrix = transform
-                    .split('(')[1]
-                    .split(')')[0]
-                    .split(',')
-                    .map(parseFloat)
-                    .slice(0, 4);
-                return inverse2DMatrix(matrix);
-            };
-
-            let windowDiv = resizeHandle.parentElement.parentElement;
-            let startX;
-            let startY;
-            let startWidth;
-            let startHeight;
-
-            let isMouseMoving = false;
-
-            const handleMouseMove = (event) => {
-                if (!event.buttons) {
-                    handleMouseUp();
-                    return;
-                }
-                isMouseMoving = true;
-
-                // Extract scaling factors from the accumulated transform matrix
-                const {
-                    scaleX,
-                    scaleY
-                } = extractScalingFactors(windowDiv);
-
-                // Calculate the change in position of the mouse considering the scaling factors
-                const dx = 2 * (event.pageX - startX) / scaleX;
-                const dy = 2 * (event.pageY - startY) / scaleY;
-
-                const content = windowDiv.querySelector('.content');
-                const minWidth = content ? content.offsetWidth + 0 : 100;
-                const minHeight = content ? content.offsetHeight + 35 : 100;
-                const newWidth = Math.max(startWidth + dx, minWidth);
-                const newHeight = Math.max(startHeight + dy, minHeight);
-                windowDiv.style.width = `${newWidth}px`;
-                windowDiv.style.height = `${newHeight}px`;
-            };
-
-            const handleMouseUp = () => {
-                isMouseMoving = false;
-                // Remove event listeners when mouse is released
-                removeEventListeners();
-            };
-
-            const addEventListeners = () => {
-                // Listen for mousemove and mouseup on the entire document
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-            };
-
-            const removeEventListeners = () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-
-            resizeHandle.addEventListener('mousedown', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                startX = event.pageX;
-                startY = event.pageY;
-                startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
-                startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
-
-                addEventListeners();
-            });
-
-            resizeHandle.addEventListener('mouseenter', addEventListeners);
-
-            resizeHandle.addEventListener('mouseleave', (event) => {
-                if (!event.buttons) {
-                    document.body.style.cursor = 'auto';
-                    removeEventListeners();
-                }
-            });
-
-            windowDiv.addEventListener('mouseleave', (event) => {
-                if (!event.buttons) {
-                    document.body.style.cursor = 'auto';
-                    removeEventListeners();
-                }
-            });
+function setResizeEventListeners(resizeHandle, node) {
+    const inverse2DMatrix = (matrix) => {
+        const det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+        if (det === 0) {
+            return null;
         }
+        const invDet = 1 / det;
+        return [
+            matrix[3] * invDet,
+            -matrix[1] * invDet,
+            -matrix[2] * invDet,
+            matrix[0] * invDet,
+        ];
+    };
+
+    const getDivInverseTransformMatrix = (div) => {
+        const transform = window.getComputedStyle(div).transform;
+        if (transform === 'none') {
+            return [1, 0, 0, 1];
+        }
+        const matrix = transform
+            .split('(')[1]
+            .split(')')[0]
+            .split(',')
+            .map(parseFloat)
+            .slice(0, 4);
+        return inverse2DMatrix(matrix);
+    };
+
+    let windowDiv = resizeHandle.parentElement.parentElement;
+    let startX;
+    let startY;
+    let startWidth;
+    let startHeight;
+
+    let isMouseMoving = false;
+
+    const handleMouseMove = (event) => {
+        if (!event.buttons) {
+            handleMouseUp();
+            return;
+        }
+        isMouseMoving = true;
+
+        // Extract scaling factors from the accumulated transform matrix
+        const {
+            scaleX,
+            scaleY
+        } = extractScalingFactors(windowDiv);
+
+        // Calculate the change in position of the mouse considering the scaling factors
+        const dx = 2 * (event.pageX - startX) / scaleX;
+        const dy = 2 * (event.pageY - startY) / scaleY;
+
+        const content = windowDiv.querySelector('.content');
+        const minWidth = content ? content.offsetWidth + 0 : 100;
+        const minHeight = content ? content.offsetHeight + 35 : 100;
+        const newWidth = Math.max(startWidth + dx, minWidth);
+        const newHeight = Math.max(startHeight + dy, minHeight);
+        windowDiv.style.width = `${newWidth}px`;
+        windowDiv.style.height = `${newHeight}px`;
+    };
+
+    const handleMouseUp = () => {
+        isMouseMoving = false;
+        // Remove event listeners when mouse is released
+        removeEventListeners();
+    };
+
+    const addEventListeners = () => {
+        // Listen for mousemove and mouseup on the entire document
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const removeEventListeners = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    resizeHandle.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        startX = event.pageX;
+        startY = event.pageY;
+        startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
+        startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
+
+        addEventListeners();
+    });
+
+    resizeHandle.addEventListener('mouseenter', addEventListeners);
+
+    resizeHandle.addEventListener('mouseleave', (event) => {
+        if (!event.buttons) {
+            document.body.style.cursor = 'auto';
+            removeEventListeners();
+        }
+    });
+
+    windowDiv.addEventListener('mouseleave', (event) => {
+        if (!event.buttons) {
+            document.body.style.cursor = 'auto';
+            removeEventListeners();
+        }
+    });
+}
 
 
 function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
@@ -560,7 +560,7 @@ function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
     resizeObserver.observe(windowDiv);
 }
 
- // Set the textarea's height according to its scrollHeight and maxHeight
+// Set the textarea's height according to its scrollHeight and maxHeight
 function setTextAreaHeight(textarea, maxHeight) {
     // Calculate the bottom position of the textarea within the viewport
     const textareaBottom = textarea.getBoundingClientRect().bottom;
@@ -624,7 +624,7 @@ function adjustTextareaElement(node, element) {
     adjustHeight();
 
     node.isResizing = false;
-    
+
     node.observer = new ResizeObserver(adjustHeight);
     node.observer.observe(element);
 
@@ -639,70 +639,70 @@ function adjustTextareaElement(node, element) {
 
 
 
-        function put(e, p, s = 1) {
-            let svgbb = svg.getBoundingClientRect();
-            e.style.position = "absolute";
-            e.style.transform = "scale(" + s + "," + s + ")";
-            p = fromZtoUV(p);
-            if (p.minus(new vec2(0.5, 0.5)).mag2() > 16) {
-                e.style.display = "none";
-            } else {
-                e.style.display = "initial";
-            }
-            let w = Math.min(svgbb.width, svgbb.height);
-            let off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
-            p.x = w * p.x - (off - svgbb.right) / 2;
-            p.y = w * p.y - (off - svgbb.bottom) / 2;
-            let bb = e.getBoundingClientRect();
-            p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
-            e.style.left = p.x + "px";
-            e.style.top = p.y + "px";
+function put(e, p, s = 1) {
+    let svgbb = svg.getBoundingClientRect();
+    e.style.position = "absolute";
+    e.style.transform = "scale(" + s + "," + s + ")";
+    p = fromZtoUV(p);
+    if (p.minus(new vec2(0.5, 0.5)).mag2() > 16) {
+        e.style.display = "none";
+    } else {
+        e.style.display = "initial";
+    }
+    let w = Math.min(svgbb.width, svgbb.height);
+    let off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
+    p.x = w * p.x - (off - svgbb.right) / 2;
+    p.y = w * p.y - (off - svgbb.bottom) / 2;
+    let bb = e.getBoundingClientRect();
+    p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
+    e.style.left = p.x + "px";
+    e.style.top = p.y + "px";
 
 
-            //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
-            //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
-            //e.style['vertical-align']= 'middle';
-            //e.style['text-align']= 'center';
+    //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
+    //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
+    //e.style['vertical-align']= 'middle';
+    //e.style['text-align']= 'center';
 
+}
+
+const NodeExtensions = {
+    "window": (node, a) => {
+        rewindowify(node);
+    },
+    "textarea": (node, o) => {
+        let e = node.content;
+        for (let w of o.p) {
+            e = e.children[w];
         }
-
-        const NodeExtensions = {
-            "window": (node, a) => {
-                rewindowify(node);
-            },
-            "textarea": (node, o) => {
-                let e = node.content;
-                for (let w of o.p) {
-                    e = e.children[w];
+        let p = o.p;
+        e.value = o.v;
+        node.push_extra_cb((n) => {
+            return {
+                f: "textarea",
+                a: {
+                    p: p,
+                    v: e.value
                 }
-                let p = o.p;
-                e.value = o.v;
-                node.push_extra_cb((n) => {
-                    return {
-                        f: "textarea",
-                        a: {
-                            p: p,
-                            v: e.value
-                        }
-                    };
-                });
-            },
-        }
+            };
+        });
+    },
+}
 
 
-        var movingNode = undefined;
-        let prevNode = undefined;
-        var NodeUUID = 0;
-        var nodeMap = {};
-        var draggedNode = null;
-        var mousedownNode = undefined;
+var movingNode = undefined;
+let prevNode = undefined;
+var NodeUUID = 0;
+var nodeMap = {};
+var draggedNode = null;
+var mousedownNode = undefined;
 
-        function nextUUID() {
-            while (nodeMap[NodeUUID] !== undefined) {
-                NodeUUID++;
-            }
-            return NodeUUID;
-        }
+function nextUUID() {
+    while (nodeMap[NodeUUID] !== undefined) {
+        NodeUUID++;
+    }
+    return NodeUUID;
+}
 class Node {
     constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
         this.anchor = new vec2(0, 0);
@@ -866,7 +866,7 @@ class Node {
         if (this.followingAiCursor && this.aiCursor) {
             let finalPosition = this.aiCursor.initialPosition.plus(this.aiCursor.updatePosition);
             this.pos = toDZ(finalPosition);
-        } 
+        }
         let g = mandGrad(settings.iterations, this.pos);
         //g.y *= -1; //why?
         this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
@@ -955,71 +955,71 @@ class Node {
         }*/
     }
     onwheel(event) {
-                if (nodeMode) {
-                    let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
-                    let targetWindow = event.target.closest('.window');
+        if (nodeMode) {
+            let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
+            let targetWindow = event.target.closest('.window');
 
-                    // Check if the event target is a selected window
-                    if (targetWindow && targetWindow.classList.contains('selected')) {
-                        // Get all selected windows
-                        const selectedWindows = document.querySelectorAll('.window.selected');
+            // Check if the event target is a selected window
+            if (targetWindow && targetWindow.classList.contains('selected')) {
+                // Get all selected windows
+                const selectedWindows = document.querySelectorAll('.window.selected');
 
-                        // Scale all selected windows
-                        selectedWindows.forEach((selectedWindow) => {
-                            let winNode = selectedWindow.win;
+                // Scale all selected windows
+                selectedWindows.forEach((selectedWindow) => {
+                    let winNode = selectedWindow.win;
 
-                            // Modify the scaling logic for selected windows here
-                            winNode.scale *= amount;
-                            winNode.pos = winNode.pos.lerpto(toZ(mousePos), 1 - amount);
+                    // Modify the scaling logic for selected windows here
+                    winNode.scale *= amount;
+                    winNode.pos = winNode.pos.lerpto(toZ(mousePos), 1 - amount);
 
-                            // Scale edges connected to the selected window
-                            winNode.edges.forEach((edge) => {
-                                edge.scaleEdge(amount);
-                            });
-                        });
-                    } else {
-                        // Scale the current window
-                        this.scale *= amount;
-                        this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
-                    }
-
-                    cancel(event);
-                }
-            }
-            remove() {
-                let dels = [];
-                for (let n of nodes) {
-                    for (let e of n.edges) {
-                        if (e.pts.includes(this)) {
-                            dels.push(e);
-                        }
-                    }
-                }
-                for (let e of dels) {
-                    e.remove();
-                }
-
-                // Remove this node from the edges array of any nodes it was connected to
-                for (let n of nodes) {
-                    n.edges = n.edges.filter(edge => !edge.pts.includes(this));
-                }
-
-                let index = nodes.indexOf(this);
-                if (index !== -1) {
-                    nodes.splice(index, 1);
-                }
-                if (nodeMap[this.uuid] === this) {
-                    delete nodeMap[this.uuid];
-                }
-
-                this.removed = true;
-                this.content.remove();
+                    // Scale edges connected to the selected window
+                    winNode.edges.forEach((edge) => {
+                        edge.scaleEdge(amount);
+                    });
+                });
+            } else {
+                // Scale the current window
+                this.scale *= amount;
+                this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
             }
 
+            cancel(event);
         }
-        let htmlnodes_parent = document.getElementById("nodes");
-        let htmlnodes = htmlnodes_parent.children;
-        let htmledges = document.getElementById("edges");
+    }
+    remove() {
+        let dels = [];
+        for (let n of nodes) {
+            for (let e of n.edges) {
+                if (e.pts.includes(this)) {
+                    dels.push(e);
+                }
+            }
+        }
+        for (let e of dels) {
+            e.remove();
+        }
+
+        // Remove this node from the edges array of any nodes it was connected to
+        for (let n of nodes) {
+            n.edges = n.edges.filter(edge => !edge.pts.includes(this));
+        }
+
+        let index = nodes.indexOf(this);
+        if (index !== -1) {
+            nodes.splice(index, 1);
+        }
+        if (nodeMap[this.uuid] === this) {
+            delete nodeMap[this.uuid];
+        }
+
+        this.removed = true;
+        this.content.remove();
+    }
+
+}
+let htmlnodes_parent = document.getElementById("nodes");
+let htmlnodes = htmlnodes_parent.children;
+let htmledges = document.getElementById("edges");
 
 function edgeFromJSON(o, nodeMap) {
     let pts = o.p.map((k) => nodeMap[k]);
@@ -1047,167 +1047,167 @@ function edgeFromJSON(o, nodeMap) {
     edges.push(e);
     return e;
 }
-        class Edge {
-            constructor(pts, length = 0.6, strength = 0.1, style = {
-                stroke: "red",
-                "stroke-width": "0.01",
-                fill: "red"
-            }) {
-                this.pts = pts;
-                this.length = length;
-                this.strength = strength;
-                this.style = style;
-                this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                for (const [key, value] of Object.entries(style)) {
-                    this.html.setAttribute(key, value);
-                }
-                htmledges.appendChild(this.html);
-                this.attach();
+class Edge {
+    constructor(pts, length = 0.6, strength = 0.1, style = {
+        stroke: "red",
+        "stroke-width": "0.01",
+        fill: "red"
+    }) {
+        this.pts = pts;
+        this.length = length;
+        this.strength = strength;
+        this.style = style;
+        this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        for (const [key, value] of Object.entries(style)) {
+            this.html.setAttribute(key, value);
+        }
+        htmledges.appendChild(this.html);
+        this.attach();
 
-                this.maxWidth = 0.05;
-            }
-            scaleEdge(amount) {
-                this.length *= amount;
-            }
-            dataObj() {
-                let o = {};
-                o.l = this.length;
-                o.s = this.strength;
-                o.g = this.style;
-                o.p = this.pts.map((n) => n.uuid);
-                return o;
-            }
-            attach() {
-                this.html.onwheel = this.onwheel.bind(this);
-                this.html.onmouseover = this.onmouseover.bind(this);
-                this.html.onmouseout = this.onmouseout.bind(this);
-                this.html.ondblclick = this.ondblclick.bind(this);
-            }
-            stress() {
-                let avg = this.center();
-                return this.pts.reduce((t, n, i, a) => {
-                    return t + n.pos.minus(avg).mag() - this.length;
-                }, 0) / (this.length + 1);
-            }
-            center() {
-                return this.pts.reduce((t, n, i, a) => {
-                    return t.plus(n.pos);
-                }, new vec2(0, 0)).unscale(this.pts.length);
-            }
-            draw() {
-                this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
-                this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
+        this.maxWidth = 0.05;
+    }
+    scaleEdge(amount) {
+        this.length *= amount;
+    }
+    dataObj() {
+        let o = {};
+        o.l = this.length;
+        o.s = this.strength;
+        o.g = this.style;
+        o.p = this.pts.map((n) => n.uuid);
+        return o;
+    }
+    attach() {
+        this.html.onwheel = this.onwheel.bind(this);
+        this.html.onmouseover = this.onmouseover.bind(this);
+        this.html.onmouseout = this.onmouseout.bind(this);
+        this.html.ondblclick = this.ondblclick.bind(this);
+    }
+    stress() {
+        let avg = this.center();
+        return this.pts.reduce((t, n, i, a) => {
+            return t + n.pos.minus(avg).mag() - this.length;
+        }, 0) / (this.length + 1);
+    }
+    center() {
+        return this.pts.reduce((t, n, i, a) => {
+            return t.plus(n.pos);
+        }, new vec2(0, 0)).unscale(this.pts.length);
+    }
+    draw() {
+        this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
+        this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
-                const stressValue = Math.max(this.stress(), 0.01); // Make sure stressValue never goes below 0.01
-                let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
-                wscale = Math.min(wscale, this.maxWidth);
-                let path = "M ";
-                let c = this.center();
-                let validPath = true;
+        const stressValue = Math.max(this.stress(), 0.01); // Make sure stressValue never goes below 0.01
+        let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
+        wscale = Math.min(wscale, this.maxWidth);
+        let path = "M ";
+        let c = this.center();
+        let validPath = true;
 
-                for (let n of this.pts) {
-                    let r = n.scale * wscale;
-                    let minusC = n.pos.minus(c);
-                    let rotated = minusC.rot90();
+        for (let n of this.pts) {
+            let r = n.scale * wscale;
+            let minusC = n.pos.minus(c);
+            let rotated = minusC.rot90();
 
-                    if (rotated.x !== 0 || rotated.y !== 0) {
-                        let left = rotated.normed(r);
+            if (rotated.x !== 0 || rotated.y !== 0) {
+                let left = rotated.normed(r);
 
-                        // Check if coordinates are not NaN
-                        if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
-                            path += toSVG(n.pos.minus(left)).str();
-                            path += " L ";
-                            path += toSVG(left.plus(n.pos)).str() + " ";
-                        } else {
-                            validPath = false;
-                            break;
-                        }
-                    }
-                }
-
-                // Check if the first point's coordinates are not NaN
-                let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
-                if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
-                    path += " " + toSVG(firstPoint).str() + "z";
+                // Check if coordinates are not NaN
+                if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
+                    path += toSVG(n.pos.minus(left)).str();
+                    path += " L ";
+                    path += toSVG(left.plus(n.pos)).str() + " ";
                 } else {
                     validPath = false;
+                    break;
                 }
-
-                // Only set the 'd' attribute if the path is valid
-                if (validPath) {
-                    this.html.setAttribute("d", path);
-                }
-            }
-            step(dt) {
-                if (dt === undefined || isNaN(dt)) {
-                    dt = 0;
-                } else {
-                    if (dt > 1) {
-                        dt = 1;
-                    }
-                }
-                let avg = this.center();
-                for (let n of this.pts) {
-                    let d = n.pos.minus(avg);
-                    // Calculate the force only if the distance is greater than the desired length
-                    if (d.mag() > this.length) {
-                        let f = d.scale(1 - this.length / (d.mag() + 1e-300));
-                        n.force = n.force.plus(f.scale(-this.strength));
-                    }
-                }
-                this.draw();
-            }
-            onwheel(event) {
-                if (nodeMode) {
-                    let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
-                    this.length *= amount;
-                    let avg = this.center();
-                    for (let n of this.pts) {
-                        n.pos = n.pos.minus(avg).scale(amount).plus(avg);
-                    }
-                    if (this.pts[0] !== undefined) {
-                        this.pts[0].updateEdgeData();
-                    }
-                    cancel(event);
-                }
-            }
-            onmouseover(event) {
-                this.mouseIsOver = true;
-            }
-            onmouseout(event) {
-                this.mouseIsOver = false;
-            }
-            ondblclick(event) {
-                if (nodeMode) {
-                    this.remove();
-                    cancel(event);
-                }
-            }
-            remove() {
-                // Remove the edge from the global edge array
-                let index = edges.indexOf(this);
-                if (index !== -1) {
-                    edges.splice(index, 1);
-                }
-
-                // Remove this edge from both connected nodes' edges arrays
-                this.pts.forEach((node) => {
-                    index = node.edges.indexOf(this);
-                    if (index !== -1) {
-                        node.edges.splice(index, 1);
-                        node.updateEdgeData();
-                    }
-                });
-
-                // Remove the edge from the DOM
-                this.html.remove();
             }
         }
 
-        var nodes = [];
-        var edges = [];
-        var nodeMode_v = 0;
-        var nodeMode = 0;
+        // Check if the first point's coordinates are not NaN
+        let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
+        if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
+            path += " " + toSVG(firstPoint).str() + "z";
+        } else {
+            validPath = false;
+        }
+
+        // Only set the 'd' attribute if the path is valid
+        if (validPath) {
+            this.html.setAttribute("d", path);
+        }
+    }
+    step(dt) {
+        if (dt === undefined || isNaN(dt)) {
+            dt = 0;
+        } else {
+            if (dt > 1) {
+                dt = 1;
+            }
+        }
+        let avg = this.center();
+        for (let n of this.pts) {
+            let d = n.pos.minus(avg);
+            // Calculate the force only if the distance is greater than the desired length
+            if (d.mag() > this.length) {
+                let f = d.scale(1 - this.length / (d.mag() + 1e-300));
+                n.force = n.force.plus(f.scale(-this.strength));
+            }
+        }
+        this.draw();
+    }
+    onwheel(event) {
+        if (nodeMode) {
+            let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
+            this.length *= amount;
+            let avg = this.center();
+            for (let n of this.pts) {
+                n.pos = n.pos.minus(avg).scale(amount).plus(avg);
+            }
+            if (this.pts[0] !== undefined) {
+                this.pts[0].updateEdgeData();
+            }
+            cancel(event);
+        }
+    }
+    onmouseover(event) {
+        this.mouseIsOver = true;
+    }
+    onmouseout(event) {
+        this.mouseIsOver = false;
+    }
+    ondblclick(event) {
+        if (nodeMode) {
+            this.remove();
+            cancel(event);
+        }
+    }
+    remove() {
+        // Remove the edge from the global edge array
+        let index = edges.indexOf(this);
+        if (index !== -1) {
+            edges.splice(index, 1);
+        }
+
+        // Remove this edge from both connected nodes' edges arrays
+        this.pts.forEach((node) => {
+            index = node.edges.indexOf(this);
+            if (index !== -1) {
+                node.edges.splice(index, 1);
+                node.updateEdgeData();
+            }
+        });
+
+        // Remove the edge from the DOM
+        this.html.remove();
+    }
+}
+
+var nodes = [];
+var edges = [];
+var nodeMode_v = 0;
+var nodeMode = 0;
 
 
 
@@ -1274,66 +1274,66 @@ function loadnet(text, clobber, createEdges = true) {
     }
 }
 
-        function searchNodesBy(searchTerm) {
-            let keywords = searchTerm.toLowerCase().split(' ');
-            let matched = [];
-            for (let n of nodes) {
-                let numMatches = 0;
-                for (let keyword of keywords) {
-                    if ([...n.searchStrings()].join().toLowerCase().includes(keyword)) {
-                        numMatches++;
-                    }
-                }
-                if (numMatches > 0) {
-                    n.content.classList.add("search_matched");
-                    n.content.classList.remove("search_nomatch");
-                    matched.push({
-                        node: n,
-                        numMatches: numMatches
-                    });
-                } else {
-                    n.content.classList.remove("search_matched");
-                    n.content.classList.add("search_nomatch");
-                }
-            }
-            matched.sort((a, b) => b.numMatches - a.numMatches);
-            return matched.map(m => m.node);
-        }
-
-        function clearSearch() {
-            for (let n of nodes) {
-                n.content.classList.remove("search_matched");
-                n.content.classList.remove("search_nomatch");
+function searchNodesBy(searchTerm) {
+    let keywords = searchTerm.toLowerCase().split(' ');
+    let matched = [];
+    for (let n of nodes) {
+        let numMatches = 0;
+        for (let keyword of keywords) {
+            if ([...n.searchStrings()].join().toLowerCase().includes(keyword)) {
+                numMatches++;
             }
         }
+        if (numMatches > 0) {
+            n.content.classList.add("search_matched");
+            n.content.classList.remove("search_nomatch");
+            matched.push({
+                node: n,
+                numMatches: numMatches
+            });
+        } else {
+            n.content.classList.remove("search_matched");
+            n.content.classList.add("search_nomatch");
+        }
+    }
+    matched.sort((a, b) => b.numMatches - a.numMatches);
+    return matched.map(m => m.node);
+}
 
-        let inp = document.getElementById("Searchbar")
-        inp.addEventListener("input", function () {
-            let res = document.getElementById("search-results")
-            if (inp.value) {
-                res.style.display = "block";
-                let ns = searchNodesBy(inp.value);
-                let resdiv = res.children[0];
-                resdiv.innerHTML = "";
-                for (let n of ns) {
-                    let c = document.createElement("a")
-                    c.appendChild(document.createTextNode(n.uuid + ""));
-                    c.addEventListener("click", (function (event) {
-                        this.zoom_to();
-                        autopilotSpeed = settings.autopilotSpeed;
-                    }).bind(n));
-                    c.addEventListener("dblclick", (function (event) {
-                        this.zoom_to();
-                        skipAutopilot();
-                        autopilotSpeed = settings.autopilotSpeed;
-                    }).bind(n));
-                    resdiv.appendChild(c);
-                }
-            } else {
-                res.style.display = "none"
-                clearSearch();
-            }
-        });
+function clearSearch() {
+    for (let n of nodes) {
+        n.content.classList.remove("search_matched");
+        n.content.classList.remove("search_nomatch");
+    }
+}
+
+let inp = document.getElementById("Searchbar")
+inp.addEventListener("input", function () {
+    let res = document.getElementById("search-results")
+    if (inp.value) {
+        res.style.display = "block";
+        let ns = searchNodesBy(inp.value);
+        let resdiv = res.children[0];
+        resdiv.innerHTML = "";
+        for (let n of ns) {
+            let c = document.createElement("a")
+            c.appendChild(document.createTextNode(n.uuid + ""));
+            c.addEventListener("click", (function (event) {
+                this.zoom_to();
+                autopilotSpeed = settings.autopilotSpeed;
+            }).bind(n));
+            c.addEventListener("dblclick", (function (event) {
+                this.zoom_to();
+                skipAutopilot();
+                autopilotSpeed = settings.autopilotSpeed;
+            }).bind(n));
+            resdiv.appendChild(c);
+        }
+    } else {
+        res.style.display = "none"
+        clearSearch();
+    }
+});
 
 function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     stroke: "none",
@@ -1364,218 +1364,218 @@ function connectRandom(n) {
     }
 }
 
-        var gen = iter();
+var gen = iter();
 
-        function frame() {
-            gen.next();
-            setTimeout(frame, 100);
+function frame() {
+    gen.next();
+    setTimeout(frame, 100);
+}
+const panInput = document.getElementById("pan");
+const zoomInput = document.getElementById("zoom");
+let coordsLive = true;
+const coords = document.getElementById("coordinates");
+panInput.addEventListener("input", (e) => {
+    const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)\s*,?\s*([+-]?i?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
+    const m = panInput.value.match(r);
+    coordsLive = false;
+    if (m === null) return;
+    pan = new vec2(parseFloat(m[0]), parseFloat(m[6].replace(/[iI]/, "")));
+});
+zoomInput.addEventListener("input", (e) => {
+    const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
+    const m = zoomInput.value.match(r);
+    coordsLive = false;
+    if (m === null) return;
+    const z = parseFloat(m);
+    if (z !== 0) {
+        zoom = zoom.scale(z / zoom.mag());
+    }
+});
+for (const k of ["paste", "mousemove", "mousedown", "dblclick", "click"]) {
+    panInput.addEventListener(k, (e) => {
+        cancel(e);
+    })
+    zoomInput.addEventListener(k, (e) => {
+        cancel(e);
+    })
+}
+//frame();
+var mousePathPos;
+var current_time = undefined;
+let regenAmount = 0;
+let regenDebt = 0;
+let avgfps = 0;
+let panToI = new vec2(0, 0);
+let panToI_prev = undefined;
+
+function nodeStep(time) {
+    let autopilot_travelDist = 0;
+    let newPan = pan;
+    if (autopilotReferenceFrame && autopilotSpeed !== 0) {
+        if (panToI_prev === undefined) {
+            panToI_prev = autopilotReferenceFrame.pos.scale(1);
         }
-        const panInput = document.getElementById("pan");
-        const zoomInput = document.getElementById("zoom");
-        let coordsLive = true;
-        const coords = document.getElementById("coordinates");
-        panInput.addEventListener("input", (e) => {
-            const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)\s*,?\s*([+-]?i?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
-            const m = panInput.value.match(r);
-            coordsLive = false;
-            if (m === null) return;
-            pan = new vec2(parseFloat(m[0]), parseFloat(m[6].replace(/[iI]/, "")));
-        });
-        zoomInput.addEventListener("input", (e) => {
-            const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
-            const m = zoomInput.value.match(r);
-            coordsLive = false;
-            if (m === null) return;
-            const z = parseFloat(m);
-            if (z !== 0) {
-                zoom = zoom.scale(z / zoom.mag());
-            }
-        });
-        for (const k of ["paste", "mousemove", "mousedown", "dblclick", "click"]) {
-            panInput.addEventListener(k, (e) => {
-                cancel(e);
-            })
-            zoomInput.addEventListener(k, (e) => {
-                cancel(e);
-            })
+        panToI = panToI.scale(1 - settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
+        newPan = pan.scale(1 - autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
+        panToI_prev = autopilotReferenceFrame.pos.scale(1);
+    } else {
+        newPan = pan.scale(1 - autopilotSpeed).plus(panTo.scale(autopilotSpeed));
+        panToI_prev = undefined;
+    }
+    autopilot_travelDist = pan.minus(newPan).mag() / zoom.mag();
+    if (autopilot_travelDist > settings.autopilotMaxSpeed) {
+        newPan = pan.plus(newPan.minus(pan).scale(settings.autopilotMaxSpeed / autopilot_travelDist));
+        const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed / autopilot_travelDist + 1e-300) / 10) * 2;
+        zoom = zoom.scale(1 - speedCoeff * autopilotSpeed);
+        //*Math.log(autopilot_travelDist/settings.autopilotMaxSpeed));
+    } else {
+        zoom = zoom.scale(1 - autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
+    }
+    pan = newPan;
+    //zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
+    //pan = pan.scale(0.9).plus(pan_to.scale(0.1));
+    if (coordsLive) {
+        panInput.value = pan.ctostring();
+        zoomInput.value = zoom.mag() + "";
+    }
+    //const inpColor = scol(Math.log(zoom.mag()),undefined,64,128);
+    //coords.style.color = inpColor;
+    updateViewbox();
+    if (mousePath == "") {
+        mousePathPos = toZ(mousePos);
+        mousePath = "M " + toSVG(mousePathPos).str() + " L ";
+    }
+    for (let i = 0; i < settings.orbitStepRate; i++) {
+        //let g = mandGrad(settings.iterations,mousePathPos);
+        //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
+
+        mousePathPos = mand_step(mousePathPos, toZ(mousePos));
+
+        //let p = findPeriod(mousePathPos);
+        //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
+        if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60)
+            mousePath += toSVG(mousePathPos).str() + " ";
+
+
+    }
+    let width = zoom.mag() * 0.0005 * SVGzoom;
+
+    if (nodeMode && prevNode !== undefined) {
+        svg_mousePath.setAttribute("d", "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
+        width *= 50; // This will increase the width when connecting nodes. Adjust as needed.
+    } else {
+        svg_mousePath.setAttribute("d", mousePath);
+    }
+
+    // Moved the check to clear prevNode outside of the if-else block
+    if (!nodeMode && prevNode !== undefined) {
+        prevNode = undefined;
+
+        // Clear the mouse path
+        mousePath = "";
+        svg_mousePath.setAttribute("d", "");
+    }
+
+    svg_mousePath.setAttribute("stroke-width", width + "");
+    if (current_time === undefined) {
+        current_time = time;
+    }
+    let dt = time - current_time;
+    current_time = time;
+    if (dt > 0) {
+        const alpha = Math.exp(-1 * dt / 1000);
+        avgfps = avgfps * alpha + (1 - alpha) * 1000 / dt;
+    }
+    document.getElementById("debug_layer").children[1].textContent = "fps:" + avgfps;
+    document.getElementById("fps").textContent = Math.round(avgfps).toString() + " fps";
+
+    dt *= (1 - nodeMode_v) ** 5;
+    for (let n of nodes) {
+        n.step(dt);
+        let d = toZ(mousePos).minus(n.pos);
+        //n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
+    }
+    for (let e of edges) {
+        e.step(dt); //line 2703
+    }
+    regenDebt = Math.min(16, regenDebt + lerp(settings.regenDebtAdjustmentFactor, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
+    for (; regenDebt > 0; regenDebt--) {
+        render_hair(Math.random() * settings.renderSteps);
+    }
+    regenAmount = 0;
+    nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
+    window.requestAnimationFrame(nodeStep);
+}
+nodeStep();
+
+
+//connectRandom(10);
+
+
+document.addEventListener('wheel', (event) => {
+    // Get the element that the user is scrolling on
+    let targetElement = event.target;
+
+    // Check if the target is a textarea and if so, ignore the zoom logic
+    if (targetElement.tagName.toLowerCase() === 'textarea') {
+        return;
+    }
+    if (event.getModifierState(settings.rotateModifier)) {
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let amount = event.wheelDelta * settings.rotateModifierSpeed;
+        let p = toZ(new vec2(event.pageX, event.pageY));
+        let zc = p.minus(pan);
+        // p = zoom*center+pan = zoom'*center+pan'
+        // zoom' = zoom*rot
+        // pan' = pan + (zoom*center-zoom*rot*center)
+        //      = pan + (1-rot) * zoom*center
+        let r = new vec2(Math.cos(amount), Math.sin(amount));
+        zoom = zoom.cmult(r);
+        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
+        cancel(event);
+        return;
+    }
+    if (settings.scroll === "zoom") {
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let dest = toZ(mousePos);
+        regenAmount += Math.abs(event.wheelDelta);
+        let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
+        zoom = zoom.scale(amount);
+        pan = dest.scale(1 - amount).plus(pan.scale(amount));
+        cancel(event);
+    } else if (settings.scroll === "pan") {
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let dest = toZ(mousePos);
+        let dp;
+        let amount;
+        if (event.ctrlKey) {
+            dp = new vec2(0, 0);
+            amount = event.deltaY * settings.zoomSpeed;
+        } else {
+            dp = toDZ(new vec2(event.deltaX, event.deltaY).scale(settings.panSpeed));
+            amount = event.deltaZ * settings.zoomSpeed;
         }
-        //frame();
-        var mousePathPos;
-        var current_time = undefined;
-        let regenAmount = 0;
-        let regenDebt = 0;
-        let avgfps = 0;
-        let panToI = new vec2(0, 0);
-        let panToI_prev = undefined;
-
-        function nodeStep(time) {
-            let autopilot_travelDist = 0;
-            let newPan = pan;
-            if (autopilotReferenceFrame && autopilotSpeed !== 0) {
-                if (panToI_prev === undefined) {
-                    panToI_prev = autopilotReferenceFrame.pos.scale(1);
-                }
-                panToI = panToI.scale(1 - settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
-                newPan = pan.scale(1 - autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
-                panToI_prev = autopilotReferenceFrame.pos.scale(1);
-            } else {
-                newPan = pan.scale(1 - autopilotSpeed).plus(panTo.scale(autopilotSpeed));
-                panToI_prev = undefined;
-            }
-            autopilot_travelDist = pan.minus(newPan).mag() / zoom.mag();
-            if (autopilot_travelDist > settings.autopilotMaxSpeed) {
-                newPan = pan.plus(newPan.minus(pan).scale(settings.autopilotMaxSpeed / autopilot_travelDist));
-                const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed / autopilot_travelDist + 1e-300) / 10) * 2;
-                zoom = zoom.scale(1 - speedCoeff * autopilotSpeed);
-                //*Math.log(autopilot_travelDist/settings.autopilotMaxSpeed));
-            } else {
-                zoom = zoom.scale(1 - autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
-            }
-            pan = newPan;
-            //zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
-            //pan = pan.scale(0.9).plus(pan_to.scale(0.1));
-            if (coordsLive) {
-                panInput.value = pan.ctostring();
-                zoomInput.value = zoom.mag() + "";
-            }
-            //const inpColor = scol(Math.log(zoom.mag()),undefined,64,128);
-            //coords.style.color = inpColor;
-            updateViewbox();
-            if (mousePath == "") {
-                mousePathPos = toZ(mousePos);
-                mousePath = "M " + toSVG(mousePathPos).str() + " L ";
-            }
-            for (let i = 0; i < settings.orbitStepRate; i++) {
-                //let g = mandGrad(settings.iterations,mousePathPos);
-                //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
-
-                mousePathPos = mand_step(mousePathPos, toZ(mousePos));
-
-                //let p = findPeriod(mousePathPos);
-                //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
-                if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60)
-                    mousePath += toSVG(mousePathPos).str() + " ";
+        regenAmount += Math.hypot(event.deltaX, event.deltaY, event.deltaZ);
+        amount = Math.exp(amount)
+        zoom = zoom.scale(amount);
+        pan = dest.scale(1 - amount).plus(pan.scale(amount)).plus(dp);
+        cancel(event);
+        event.preventDefault();
+    }
+});
 
 
-            }
-            let width = zoom.mag() * 0.0005 * SVGzoom;
-
-            if (nodeMode && prevNode !== undefined) {
-                svg_mousePath.setAttribute("d", "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
-                width *= 50; // This will increase the width when connecting nodes. Adjust as needed.
-            } else {
-                svg_mousePath.setAttribute("d", mousePath);
-            }
-
-            // Moved the check to clear prevNode outside of the if-else block
-            if (!nodeMode && prevNode !== undefined) {
-                prevNode = undefined;
-
-                // Clear the mouse path
-                mousePath = "";
-                svg_mousePath.setAttribute("d", "");
-            }
-
-            svg_mousePath.setAttribute("stroke-width", width + "");
-            if (current_time === undefined) {
-                current_time = time;
-            }
-            let dt = time - current_time;
-            current_time = time;
-            if (dt > 0) {
-                const alpha = Math.exp(-1 * dt / 1000);
-                avgfps = avgfps * alpha + (1 - alpha) * 1000 / dt;
-            }
-            document.getElementById("debug_layer").children[1].textContent = "fps:" + avgfps;
-            document.getElementById("fps").textContent = Math.round(avgfps).toString() + " fps";
-
-            dt *= (1 - nodeMode_v) ** 5;
-            for (let n of nodes) {
-                n.step(dt);
-                let d = toZ(mousePos).minus(n.pos);
-                //n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
-            }
-            for (let e of edges) {
-                e.step(dt); //line 2703
-            }
-            regenDebt = Math.min(16, regenDebt + lerp(settings.regenDebtAdjustmentFactor, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
-            for (; regenDebt > 0; regenDebt--) {
-                render_hair(Math.random() * settings.renderSteps);
-            }
-            regenAmount = 0;
-            nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
-            window.requestAnimationFrame(nodeStep);
-        }
-        nodeStep();
-
-
-        //connectRandom(10);
-
-
-        document.addEventListener('wheel', (event) => {
-            // Get the element that the user is scrolling on
-            let targetElement = event.target;
-
-            // Check if the target is a textarea and if so, ignore the zoom logic
-            if (targetElement.tagName.toLowerCase() === 'textarea') {
-                return;
-            }
-            if (event.getModifierState(settings.rotateModifier)) {
-                autopilotSpeed = 0;
-                coordsLive = true;
-                let amount = event.wheelDelta * settings.rotateModifierSpeed;
-                let p = toZ(new vec2(event.pageX, event.pageY));
-                let zc = p.minus(pan);
-                // p = zoom*center+pan = zoom'*center+pan'
-                // zoom' = zoom*rot
-                // pan' = pan + (zoom*center-zoom*rot*center)
-                //      = pan + (1-rot) * zoom*center
-                let r = new vec2(Math.cos(amount), Math.sin(amount));
-                zoom = zoom.cmult(r);
-                pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
-                cancel(event);
-                return;
-            }
-            if (settings.scroll === "zoom") {
-                autopilotSpeed = 0;
-                coordsLive = true;
-                let dest = toZ(mousePos);
-                regenAmount += Math.abs(event.wheelDelta);
-                let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
-                zoom = zoom.scale(amount);
-                pan = dest.scale(1 - amount).plus(pan.scale(amount));
-                cancel(event);
-            } else if (settings.scroll === "pan") {
-                autopilotSpeed = 0;
-                coordsLive = true;
-                let dest = toZ(mousePos);
-                let dp;
-                let amount;
-                if (event.ctrlKey) {
-                    dp = new vec2(0, 0);
-                    amount = event.deltaY * settings.zoomSpeed;
-                } else {
-                    dp = toDZ(new vec2(event.deltaX, event.deltaY).scale(settings.panSpeed));
-                    amount = event.deltaZ * settings.zoomSpeed;
-                }
-                regenAmount += Math.hypot(event.deltaX, event.deltaY, event.deltaZ);
-                amount = Math.exp(amount)
-                zoom = zoom.scale(amount);
-                pan = dest.scale(1 - amount).plus(pan.scale(amount)).plus(dp);
-                cancel(event);
-                event.preventDefault();
-            }
-        });
-
-
-        let mouseDown = false;
-        let mouseDownPos = new vec2(0, 0);
-        addEventListener("mousedown", (event) => {
-            autopilotSpeed = 0;
-            mouseDownPos = mousePos.scale(1);
-            mouseDown = true;
-            cancel(event);
-        });
+let mouseDown = false;
+let mouseDownPos = new vec2(0, 0);
+addEventListener("mousedown", (event) => {
+    autopilotSpeed = 0;
+    mouseDownPos = mousePos.scale(1);
+    mouseDown = true;
+    cancel(event);
+});
 addEventListener("mouseup", (event) => {
     mouseDown = false;
     if (movingNode !== undefined) {
@@ -1867,7 +1867,7 @@ function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight
     resizeObserver.observe(parentDiv);
     return resizeObserver;
 }
-        
+
 function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
     let t = document.createElement("input");
     t.setAttribute("type", "text");
@@ -1943,196 +1943,196 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         highlightNodeSection(title, myCodeMirror);
     };
 
-            if (sx !== undefined) {
-                x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
-                y = x.y;
-                x = x.x;
+    if (sx !== undefined) {
+        x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
+        y = x.y;
+        x = x.x;
+    }
+
+    if (x !== undefined) {
+        node.pos.x = x;
+    }
+
+    if (y !== undefined) {
+        node.pos.y = y;
+    }
+
+    node.push_extra_cb((node) => {
+        return {
+            f: "textarea",
+            a: {
+                p: [0, 0, 1],
+                v: t.value
             }
+        };
+    })
 
-            if (x !== undefined) {
-                node.pos.x = x;
+    node.push_extra_cb((node) => {
+        return {
+            f: "textarea",
+            a: {
+                p: [0, 1, 0],
+                v: n.value
             }
+        };
+    })
 
-            if (y !== undefined) {
-                node.pos.y = y;
-            }
-
-            node.push_extra_cb((node) => {
-                return {
-                    f: "textarea",
-                    a: {
-                        p: [0, 0, 1],
-                        v: t.value
-                    }
-                };
-            })
-
-            node.push_extra_cb((node) => {
-                return {
-                    f: "textarea",
-                    a: {
-                        p: [0, 1, 0],
-                        v: n.value
-                    }
-                };
-            })
-
-            return node;
-        }
+    return node;
+}
 
 
 //Touchpad controls (WIP)
 
-        let touches = new Map();
+let touches = new Map();
 
-        addEventListener("touchstart", (ev) => {
-            //pan = pan.plus(new vec2(0,1))
-            for (let i = 0; i < ev.changedTouches.length; i++) {
-                const touch = ev.changedTouches.item(i);
-                touches.set(touch.identifier, {
-                    prev: touch,
-                    now: touch
-                });
-            }
-        }, false);
-        addEventListener("touchcancel", (ev) => {
-            for (let i = 0; i < ev.changedTouches.length; i++) {
-                const touch = ev.changedTouches.item(i);
-                touches.delete(touch.identifier);
-            }
-        }, false);
-        addEventListener("touchend", (ev) => {
-            //pan = pan.plus(new vec2(0,-1))
-            switch (touches.size) {
-                case 2: //tap to zoom
-                    if (ev.changedTouches.length == 1) {
-                        const id = ev.changedTouches.item(0).identifier;
-                        const t = touches.get(id);
-                        if (t && t.prev == t.now) { //hasn't moved
-                            const ts = [...touches.keys()];
-                            const other = touches.get(ts[0] === id ? ts[1] : ts[0])
-                            const {
-                                s,
-                                o
-                            } = windowScaleAndOffset();
-                            const amount = Math.exp(-(other.now.clientY - t.now.clientY) / s);
-                            const dest = toZ(new vec2(other.now.clientX, other.now.clientY));
-                            zoom = zoom.scale(amount);
-                            pan = dest.scale(1 - amount).plus(pan.scale(amount));
-                        }
-                    }
-                    break;
-
-            }
-            for (let i = 0; i < ev.changedTouches.length; i++) {
-                const touch = ev.changedTouches.item(i);
-                touches.delete(touch.identifier);
-            }
-        }, false);
-        addEventListener("touchmove", (ev) => {
-            for (let i = 0; i < ev.changedTouches.length; i++) {
-                const touch = ev.changedTouches.item(i);
-                touches.set(touch.identifier, {
-                    prev: touches.get(touch.identifier)?.now,
-                    now: touch
-                });
-            }
-            switch (touches.size) {
-                case 1:
-                    autopilotSpeed = 0;
-                    coordsLive = true;
-                    const t = [...touches.values()][0];
-                    pan = pan.plus(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
-                    cancel(ev);
-                    break;
-                case 2:
-                /*
-                const pts = [...touches.values()];
-                const p1p = toS(new vec2(pts[0].prev.clientX,pts[0].prev.clientY));
-                const p2p = toS(new vec2(pts[1].prev.clientX,pts[1].prev.clientY));
-                const p1n = toS(new vec2(pts[0].now.clientX,pts[0].now.clientY));
-                const p2n = toS(new vec2(pts[1].now.clientX,pts[1].now.clientY));
-                //want to find new zoom,pan such that
-                // old toZ(p1p) = new toZ(p1n)
-                // old toZ(p2p) = new toZ(p2n)
-                //
-                //  toZ(x) ≈ x*zoom + pan
-                //
-                // so, we want zoom' pan' s.t.
-                //  p1p*zoom + pan = p1n*zoom' + pan'
-                //  p2p*zoom + pan = p2n*zoom' + pan'
-                //
-                //  (p2p-p1p) * zoom = (p2n-p1n) * zoom'
-                //  (p1p+p2p)*zoom + 2pan = (p1p+p2p)*zoom' + 2pan'
-                //
-                //  zoom' = zoom * (p2p-p1p)/(p2n-p1n)
-                //  pan' = pan + (p1p+p2p)*zoom/2 - (p1p+p2p)*zoom'/2
-                //       = pan + (p1p+p2p)*(zoom - zoom')/2
-                const nzoom = zoom.cmult( p2p.minus(p1p).cdiv( p2n.minus(p1n)));
-                pan = pan.plus(p2p.plus(p1p).cmult(zoom.minus(nzoom)).scale(0.5));
-                zoom = nzoom;
-
-
-                ev.preventDefault();
-                cancel(ev);
-                break;
-                */
-                default:
-                    break;
-            }
-
-
-        }, false);
-
-
-
-
-        var gestureStartParams = {
-            rotation: 0,
-            x: 0,
-            y: 0,
-            scale: 0,
-            zoom: new vec2(),
-            pan: new vec2()
-        };
-        addEventListener("gesturestart", (e) => {
-            e.preventDefault();
-            //console.log(e);
-            gestureStartParams.rotation = e.rotation;
-            gestureStartParams.scale = e.scale;
-            gestureStartParams.x = e.pageX;
-            gestureStartParams.y = e.pageY;
-            gestureStartParams.zoom = zoom;
-            gestureStartParams.pan = pan;
-
+addEventListener("touchstart", (ev) => {
+    //pan = pan.plus(new vec2(0,1))
+    for (let i = 0; i < ev.changedTouches.length; i++) {
+        const touch = ev.changedTouches.item(i);
+        touches.set(touch.identifier, {
+            prev: touch,
+            now: touch
         });
-        addEventListener("gesturechange", (e) => {
-            e.preventDefault();
-            //console.log(e);
-            let d_theta = e.rotation - gestureStartParams.rotation;
-            let d_scale = e.scale;
-            let r = -e.rotation * settings.gestureRotateSpeed;
-            pan = gestureStartParams.pan;
-            zoom = gestureStartParams.zoom;
-            let r_center = toZ(new vec2(e.pageX, e.pageY));
-            let s = 0;
-            zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r), Math.sin(r)));
-            if (e.scale !== 0) {
-                let s = 1 / e.scale;
-                zoom = zoom.scale(s);
-                regenAmount += Math.abs(Math.log(s)) * settings.maxLines;
+    }
+}, false);
+addEventListener("touchcancel", (ev) => {
+    for (let i = 0; i < ev.changedTouches.length; i++) {
+        const touch = ev.changedTouches.item(i);
+        touches.delete(touch.identifier);
+    }
+}, false);
+addEventListener("touchend", (ev) => {
+    //pan = pan.plus(new vec2(0,-1))
+    switch (touches.size) {
+        case 2: //tap to zoom
+            if (ev.changedTouches.length == 1) {
+                const id = ev.changedTouches.item(0).identifier;
+                const t = touches.get(id);
+                if (t && t.prev == t.now) { //hasn't moved
+                    const ts = [...touches.keys()];
+                    const other = touches.get(ts[0] === id ? ts[1] : ts[0])
+                    const {
+                        s,
+                        o
+                    } = windowScaleAndOffset();
+                    const amount = Math.exp(-(other.now.clientY - t.now.clientY) / s);
+                    const dest = toZ(new vec2(other.now.clientX, other.now.clientY));
+                    zoom = zoom.scale(amount);
+                    pan = dest.scale(1 - amount).plus(pan.scale(amount));
+                }
             }
-            let dest = r_center;
-            let amount = s;
-            let dp = r_center.minus(gestureStartParams.pan);
-            pan = gestureStartParams.pan.plus(
-                dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
-            //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
+            break;
 
+    }
+    for (let i = 0; i < ev.changedTouches.length; i++) {
+        const touch = ev.changedTouches.item(i);
+        touches.delete(touch.identifier);
+    }
+}, false);
+addEventListener("touchmove", (ev) => {
+    for (let i = 0; i < ev.changedTouches.length; i++) {
+        const touch = ev.changedTouches.item(i);
+        touches.set(touch.identifier, {
+            prev: touches.get(touch.identifier)?.now,
+            now: touch
         });
-        addEventListener("gestureend", (e) => {
-            e.preventDefault();
-        });
+    }
+    switch (touches.size) {
+        case 1:
+            autopilotSpeed = 0;
+            coordsLive = true;
+            const t = [...touches.values()][0];
+            pan = pan.plus(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
+            cancel(ev);
+            break;
+        case 2:
+        /*
+        const pts = [...touches.values()];
+        const p1p = toS(new vec2(pts[0].prev.clientX,pts[0].prev.clientY));
+        const p2p = toS(new vec2(pts[1].prev.clientX,pts[1].prev.clientY));
+        const p1n = toS(new vec2(pts[0].now.clientX,pts[0].now.clientY));
+        const p2n = toS(new vec2(pts[1].now.clientX,pts[1].now.clientY));
+        //want to find new zoom,pan such that
+        // old toZ(p1p) = new toZ(p1n)
+        // old toZ(p2p) = new toZ(p2n)
+        //
+        //  toZ(x) ≈ x*zoom + pan
+        //
+        // so, we want zoom' pan' s.t.
+        //  p1p*zoom + pan = p1n*zoom' + pan'
+        //  p2p*zoom + pan = p2n*zoom' + pan'
+        //
+        //  (p2p-p1p) * zoom = (p2n-p1n) * zoom'
+        //  (p1p+p2p)*zoom + 2pan = (p1p+p2p)*zoom' + 2pan'
+        //
+        //  zoom' = zoom * (p2p-p1p)/(p2n-p1n)
+        //  pan' = pan + (p1p+p2p)*zoom/2 - (p1p+p2p)*zoom'/2
+        //       = pan + (p1p+p2p)*(zoom - zoom')/2
+        const nzoom = zoom.cmult( p2p.minus(p1p).cdiv( p2n.minus(p1n)));
+        pan = pan.plus(p2p.plus(p1p).cmult(zoom.minus(nzoom)).scale(0.5));
+        zoom = nzoom;
+
+
+        ev.preventDefault();
+        cancel(ev);
+        break;
+        */
+        default:
+            break;
+    }
+
+
+}, false);
+
+
+
+
+var gestureStartParams = {
+    rotation: 0,
+    x: 0,
+    y: 0,
+    scale: 0,
+    zoom: new vec2(),
+    pan: new vec2()
+};
+addEventListener("gesturestart", (e) => {
+    e.preventDefault();
+    //console.log(e);
+    gestureStartParams.rotation = e.rotation;
+    gestureStartParams.scale = e.scale;
+    gestureStartParams.x = e.pageX;
+    gestureStartParams.y = e.pageY;
+    gestureStartParams.zoom = zoom;
+    gestureStartParams.pan = pan;
+
+});
+addEventListener("gesturechange", (e) => {
+    e.preventDefault();
+    //console.log(e);
+    let d_theta = e.rotation - gestureStartParams.rotation;
+    let d_scale = e.scale;
+    let r = -e.rotation * settings.gestureRotateSpeed;
+    pan = gestureStartParams.pan;
+    zoom = gestureStartParams.zoom;
+    let r_center = toZ(new vec2(e.pageX, e.pageY));
+    let s = 0;
+    zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r), Math.sin(r)));
+    if (e.scale !== 0) {
+        let s = 1 / e.scale;
+        zoom = zoom.scale(s);
+        regenAmount += Math.abs(Math.log(s)) * settings.maxLines;
+    }
+    let dest = r_center;
+    let amount = s;
+    let dp = r_center.minus(gestureStartParams.pan);
+    pan = gestureStartParams.pan.plus(
+        dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
+    //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
+
+});
+addEventListener("gestureend", (e) => {
+    e.preventDefault();
+});
 
 
 // Check if a string is valid JSON
@@ -2145,7 +2145,7 @@ function isJSON(str) {
     return true;
 }
 
-        //todo patches for zoom in
+//todo patches for zoom in
 
 // Check if the user's message is a URL
 const isUrl = (text) => {
@@ -2173,7 +2173,7 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
-        //Drag and Drop
+//Drag and Drop
 
 let isDraggingIcon = false;
 let initialMousePosition = null;
@@ -2288,7 +2288,7 @@ function dropHandler(ev) {
 
     if (data && isJSON(data)) {
         const parsedData = JSON.parse(data);
-        
+
         if (parsedData.type === 'icon') {
             // Handle the icon drop
             handleIconDrop(ev, parsedData.iconName);
@@ -2329,218 +2329,218 @@ function dropHandler(ev) {
             return;
         }
     }
-            let files = [];
-            if (ev.dataTransfer.items) {
-                // Use DataTransferItemList interface to access the file(s)
-                [...ev.dataTransfer.items].forEach((item, i) => {
-                    // If dropped items aren't files, reject them
-                    if (item.kind === 'file') {
-                        const file = item.getAsFile();
-                        files.push(file);
-                        console.log(`… file[${i}].name = ${file.name}`);
-                    }
-                });
-            } else {
-                // Use DataTransfer interface to access the file(s)
-                [...ev.dataTransfer.files].forEach((file, i) => {
-                    files.push(file)
-                    console.log(`… file[${i}].name = ${file.name}`);
-                });
+    let files = [];
+    if (ev.dataTransfer.items) {
+        // Use DataTransferItemList interface to access the file(s)
+        [...ev.dataTransfer.items].forEach((item, i) => {
+            // If dropped items aren't files, reject them
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                files.push(file);
+                console.log(`… file[${i}].name = ${file.name}`);
             }
-            console.log(files);
-            //https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
-            if (FileReader && files && files.length) {
-                for (let i = 0; i < files.length; i++) {
+        });
+    } else {
+        // Use DataTransfer interface to access the file(s)
+        [...ev.dataTransfer.files].forEach((file, i) => {
+            files.push(file)
+            console.log(`… file[${i}].name = ${file.name}`);
+        });
+    }
+    console.log(files);
+    //https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
+    if (FileReader && files && files.length) {
+        for (let i = 0; i < files.length; i++) {
 
-                    let reader = new FileReader();
+            let reader = new FileReader();
 
-                    let baseType;
-                    if (files[i].type) {
-                        baseType = files[i].type.split("/")[0];
-                    } else if (files[i].name.toLowerCase().endsWith(".txt")) {
-                        baseType = "text";
-                    } else if (files[i].name.toLowerCase().endsWith(".md")) {
-                        baseType = "markdown";
-                    } else {
-                        console.log("Unhandled file type:", files[i]);
-                        baseType = "unknown";
+            let baseType;
+            if (files[i].type) {
+                baseType = files[i].type.split("/")[0];
+            } else if (files[i].name.toLowerCase().endsWith(".txt")) {
+                baseType = "text";
+            } else if (files[i].name.toLowerCase().endsWith(".md")) {
+                baseType = "markdown";
+            } else {
+                console.log("Unhandled file type:", files[i]);
+                baseType = "unknown";
+            }
+
+            let url = URL.createObjectURL(files[i]);
+            let img;
+            let content = [];
+
+            let add = function (scale) {
+                let node = windowify(files[i].name, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
+                /*node.push_extra_cb((node) => { //superceeded by new rewindowify (todo)
+                  return {
+                    f: "textarea",
+                    a: {
+                      p: [0, 1],
+                      v: files[i].name.value
                     }
+                  };
+                })*/
+                htmlnodes_parent.appendChild(node.content);
+                registernode(node);
+                node.followingMouse = 1;
+                node.draw();
+                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            }
+            console.log("loading " + baseType);
+            switch (baseType) {
+                case "image":
+                    img = document.createElement('img');
+                    img.ondragstart = (e) => false;
+                    content = [
+                        img
+                    ];
+                    img.style = "display: block";
+                    img.onload = function () {
+                        let s = 512 / Math.hypot(img.naturalWidth, img.naturalHeight);
+                        //img.style.transform = "scale("+s+","+s+")";
+                        img.width = img.naturalWidth * s;
+                        img.height = img.naturalHeight * s;
+                        add(1);
+                        URL.revokeObjectURL(img.src);
+                    }
+                    img.src = url;
+                    break;
+                case "audio":
+                    img = new Audio();
+                    img.setAttribute("controls", "");
+                    //let c = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    //c.setAttribute("viewBox","0 0 128 64");
+                    //let name = document.createElementNS("http://www.w3.org/2000/svg","text");
+                    //name.setAttribute("x","0");name.setAttribute("y","0");
+                    //name.appendChild(document.createTextNode(files[i].name));
+                    //c.appendChild(name);
+                    img.style = "display: block";
+                    content = [
+                        img
+                    ];
+                    add(1);
+                    //div.appendChild(c);
+                    img.src = url;
+                    break;
+                case "video":
+                    img = document.createElement('video');
+                    img.style = "display: block";
+                    img.setAttribute("controls", "");
+                    content = [
+                        img
+                    ];
+                    add(1);
+                    img.src = url;
+                    break;
+                case "text":
+                    reader.onload = function (e) {
+                        let text = e.target.result;
+                        let node = createNodeFromWindow(files[i].name, text);
+                    }
+                    reader.readAsText(files[i]);
+                    break;
+                case "markdown":
+                    let mdReader = new FileReader();
+                    mdReader.onload = function (e) {
+                        let mdText = e.target.result;
+                        let htmlContent = marked.parse(mdText, { mangle: false, headerIds: false });
+                        let node = createTextNode(files[i].name, '');
 
-                    let url = URL.createObjectURL(files[i]);
-                    let img;
-                    let content = [];
+                        let htmlContainer = document.createElement('div');
+                        htmlContainer.innerHTML = htmlContent;
+                        htmlContainer.style.maxWidth = '1000px';
+                        htmlContainer.style.overflow = 'auto';
+                        htmlContainer.style.height = '1400px';
+                        htmlContainer.style.backgroundColor = '#222226'; // Set background color
 
-                    let add = function (scale) {
-                        let node = windowify(files[i].name, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-                        /*node.push_extra_cb((node) => { //superceeded by new rewindowify (todo)
-                          return {
-                            f: "textarea",
-                            a: {
-                              p: [0, 1],
-                              v: files[i].name.value
-                            }
-                          };
-                        })*/
+                        // Check if there is a textarea being appended, if there is remove it.
+                        if (node.content.children[0].children[1].getElementsByTagName('textarea').length > 0) {
+                            node.content.children[0].children[1].removeChild(node.content.children[0].children[1].getElementsByTagName('textarea')[0]);
+                        }
+
+                        node.content.children[0].children[1].appendChild(htmlContainer);
                         htmlnodes_parent.appendChild(node.content);
-                        registernode(node);
-                        node.followingMouse = 1;
-                        node.draw();
-                        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
                     }
-                    console.log("loading " + baseType);
-                    switch (baseType) {
-                        case "image":
-                            img = document.createElement('img');
-                            img.ondragstart = (e) => false;
-                            content = [
-                                img
-                            ];
-                            img.style = "display: block";
-                            img.onload = function () {
-                                let s = 512 / Math.hypot(img.naturalWidth, img.naturalHeight);
-                                //img.style.transform = "scale("+s+","+s+")";
-                                img.width = img.naturalWidth * s;
-                                img.height = img.naturalHeight * s;
-                                add(1);
-                                URL.revokeObjectURL(img.src);
-                            }
-                            img.src = url;
-                            break;
-                        case "audio":
-                            img = new Audio();
-                            img.setAttribute("controls", "");
-                            //let c = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                            //c.setAttribute("viewBox","0 0 128 64");
-                            //let name = document.createElementNS("http://www.w3.org/2000/svg","text");
-                            //name.setAttribute("x","0");name.setAttribute("y","0");
-                            //name.appendChild(document.createTextNode(files[i].name));
-                            //c.appendChild(name);
-                            img.style = "display: block";
-                            content = [
-                                img
-                            ];
-                            add(1);
-                            //div.appendChild(c);
-                            img.src = url;
-                            break;
-                        case "video":
-                            img = document.createElement('video');
-                            img.style = "display: block";
-                            img.setAttribute("controls", "");
-                            content = [
-                                img
-                            ];
-                            add(1);
-                            img.src = url;
-                            break;
-                        case "text":
-                            reader.onload = function (e) {
-                                let text = e.target.result;
-                                let node = createNodeFromWindow(files[i].name, text);
-                            }
-                            reader.readAsText(files[i]);
-                            break;
-                        case "markdown":
-                            let mdReader = new FileReader();
-                            mdReader.onload = function (e) {
-                                let mdText = e.target.result;
-                                let htmlContent = marked.parse(mdText, { mangle: false, headerIds: false });
-                                let node = createTextNode(files[i].name, '');
+                    mdReader.readAsText(files[i]);
+                    break;
+                case "application": // Handle PDF files
+                    if (files[i].type.endsWith("pdf")) {
+                        let reader = new FileReader();
+                        reader.readAsArrayBuffer(files[i]);
 
-                                let htmlContainer = document.createElement('div');
-                                htmlContainer.innerHTML = htmlContent;
-                                htmlContainer.style.maxWidth = '1000px';
-                                htmlContainer.style.overflow = 'auto';
-                                htmlContainer.style.height = '1400px';
-                                htmlContainer.style.backgroundColor = '#222226'; // Set background color
+                        reader.onload = function () {
+                            let url = URL.createObjectURL(new Blob([reader.result], { type: 'application/pdf' }));
+                            let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
+                            node.fileName = files[i].name; // Store file name in node
+                            htmlnodes_parent.appendChild(node.content);
+                            node.followingMouse = 1;
+                            node.draw();
+                            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                        };
 
-                                // Check if there is a textarea being appended, if there is remove it.
-                                if (node.content.children[0].children[1].getElementsByTagName('textarea').length > 0) {
-                                    node.content.children[0].children[1].removeChild(node.content.children[0].children[1].getElementsByTagName('textarea')[0]);
-                                }
-
-                                node.content.children[0].children[1].appendChild(htmlContainer);
-                                htmlnodes_parent.appendChild(node.content);
-                            }
-                            mdReader.readAsText(files[i]);
-                            break;
-                        case "application": // Handle PDF files
-                            if (files[i].type.endsWith("pdf")) {
-                                let reader = new FileReader();
-                                reader.readAsArrayBuffer(files[i]);
-
-                                reader.onload = function () {
-                                    let url = URL.createObjectURL(new Blob([reader.result], { type: 'application/pdf' }));
-                                    let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
-                                    node.fileName = files[i].name; // Store file name in node
-                                    htmlnodes_parent.appendChild(node.content);
-                                    node.followingMouse = 1;
-                                    node.draw();
-                                    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-                                };
-
-                                reader.onerror = function (err) {
-                                    console.error('Error reading PDF file:', err);
-                                };
-                            }
-                            break;
+                        reader.onerror = function (err) {
+                            console.error('Error reading PDF file:', err);
+                        };
                     }
-                }
-            } else {
-                // fallback -- perhaps submit the input to an iframe and temporarily store
-                // them on the server until the user's session ends.
-                console.log("FileReader not supported or no files");
+                    break;
             }
+        }
+    } else {
+        // fallback -- perhaps submit the input to an iframe and temporarily store
+        // them on the server until the user's session ends.
+        console.log("FileReader not supported or no files");
+    }
 }
 
 
-        function registernode(node) {
-            let id = nodes.length;
-            let div = node.content;
-            /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
-            div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
-            div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
-            div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
-            nodes.push(node);
-            nodeMap[node.uuid] = node;
-        }
+function registernode(node) {
+    let id = nodes.length;
+    let div = node.content;
+    /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+    div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+    div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+    div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+    nodes.push(node);
+    nodeMap[node.uuid] = node;
+}
 
-        function dragOverHandler(ev) {
-            ev.preventDefault();
-        }
+function dragOverHandler(ev) {
+    ev.preventDefault();
+}
 
-        function nodemousedown(id) {
-            if (id < nodes.length) {
-                nodes[id].mousedown();
-            }
-        }
+function nodemousedown(id) {
+    if (id < nodes.length) {
+        nodes[id].mousedown();
+    }
+}
 
-        function nodemouseup(id) {
-            if (id < nodes.length) {
-                nodes[id].mouseup();
-            }
-        }
+function nodemouseup(id) {
+    if (id < nodes.length) {
+        nodes[id].mouseup();
+    }
+}
 
-        function nodemousemove(id) {
-            if (id < nodes.length) {
-                nodes[id].mousemove();
-            }
-        }
+function nodemousemove(id) {
+    if (id < nodes.length) {
+        nodes[id].mousemove();
+    }
+}
 
-        function nodeclick(id) {
-            if (id < nodes.length) {
-                nodes[id].mouseclick();
-            }
-        }
+function nodeclick(id) {
+    if (id < nodes.length) {
+        nodes[id].mouseclick();
+    }
+}
 
 
-        function cancel(event) {
-            if (event.stopPropagation) {
-                event.stopPropagation(); // W3C model
-            } else {
-                event.cancelBubble = true; // IE model
-            }
-        }
+function cancel(event) {
+    if (event.stopPropagation) {
+        event.stopPropagation(); // W3C model
+    } else {
+        event.cancelBubble = true; // IE model
+    }
+}
 
 //Paste event listener...
 
@@ -2579,9 +2579,9 @@ addEventListener("paste", (event) => {
     }
 });
 
-        addEventListener("paste", (event) => {
-            if (event.target.tagName.toLowerCase() === "textarea") {
-                event.stopPropagation();
-                //console.log("Paste disabled for textarea");
-            }
-        }, true);
+addEventListener("paste", (event) => {
+    if (event.target.tagName.toLowerCase() === "textarea") {
+        event.stopPropagation();
+        //console.log("Paste disabled for textarea");
+    }
+}, true);
