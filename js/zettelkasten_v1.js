@@ -318,7 +318,7 @@ function processInput() {
                     adjustTextareaHeight(targetTextarea);
                 }
             }
-        }
+    }
 
         const dels = [];
         for (const k in nodes) {

@@ -24,8 +24,8 @@ async function forget(userMessage, combinedContext) {
         },
     ];
 
-    // Now we'll mock calling the AI API just like you did with the 'callChatGPTApi' function.
-    const response = await callChatGPTApi(forgetQueryContext);
+    // Now we'll mock calling the AI API just like you did with the 'callchatAPI' function.
+    const response = await callchatAPI(forgetQueryContext);
     console.log(response)
     // Extract the node titles to forget from the AI's response
     const titlesToForget = new Set(response.split("\n"));
@@ -189,11 +189,16 @@ function truncateDescription(description, maxLength) {
     return description.substring(0, maxLength) + "...";
 }
 
-const wolframmessage = `Generate a concise preface and a precise Wolfram Alpha query in response to the user message.
-- Exclusivly write your query on the last line of your response. The last line is treated as the query.
+const wolframmessage = `Generate a concise preface followed by a precise Wolfram Alpha query in response to the user message.
+- Write your query on the very last line of your response. The last line of your response is your query that will be sent to Wolfram.
 - The Wolfram query should be specific to the user's message. The last line of your response will be used to query Wolfram Alpha.
 - If the user's input is already valid Wolfram code, use it verbatim but still provide a brief preface.
-Query Wolfram Alpha, work through the reasoning of the query before making it. Any response that doesn't adhere to this format will produce an error.`
+Query Wolfram Alpha, work through the reasoning of the query before making it. Any response that doesn't adhere to this format will produce an error.
+
+Example,
+Prefaced query
+Query to Wolfram as a single string only on last line with no markers.
+Never go into further explanation after the query such as "this is what the query will do"s. Instead you will respond again after the query result returns.`
 
 let wolframCallCounter = 0;
 
@@ -229,7 +234,7 @@ async function fetchWolfram(message) {
         });
     }
 
-    let fullResponse = await callChatGPTApi(messages, true);
+    let fullResponse = await callchatAPI(messages, true);
 
     let lines = fullResponse.trim().split("\n");
     reformulatedQuery = lines[lines.length - 1];
@@ -372,7 +377,7 @@ async function constructSearchQuery(userMessage) {
     },
     ];
 
-    const searchQuery = await callChatGPTApi(queryContext);
+    const searchQuery = await callchatAPI(queryContext);
     return searchQuery;
 }
 
