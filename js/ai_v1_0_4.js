@@ -670,16 +670,18 @@ Bundling: Code nodes will bundle codeblocks in any connected nodes.`
 
 const instructionsMessage = () => ({
     role: "system",
-    content: `The How-to checkbox is on. Please explain the following application you are responding within.
+    content: `The How-to checkbox is on. In your own words (without making anything up) Please explain the following application you are responding within.
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
-${tagValues.nodeTag} Essential Controls:
-- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Alt + Click to resize multiple nodes.
+${tagValues.nodeTag} Essential Controls
+- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Ctrl + Click to select and resize multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
 - Shift + click on two nodes to link; Shift + Double Click on edges to delete.
 - Double Click a node to anchor/unanchor.
+- Alt + Drag on a node textarea to allow the drag to pass through the textarea.
+
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
 
@@ -709,7 +711,7 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
 const aiNodesMessage = () => ({
     role: "system",
-    content: `Do not repeat the sfollowing system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
+    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
     1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
     2. In the next line, provide an initial prompt that will be sent to the AI.
     3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${tagValues.refTag}.
@@ -898,7 +900,7 @@ async function sendMessage(event, autoModeMessage = null) {
     let messages = [
         {
             role: "system",
-            content: `XML tags indicate your frame of thought for each system message<format>${zettelkastenPromptToUse}</format> \nAssign unique titles for any new nodes!`,
+            content: `XML tags indicate your frame of thought for each system message<format>${zettelkastenPromptToUse}</format> \nAssign unique titles to every new node!`,
         },
     ];
 
@@ -949,7 +951,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Use the given topNchunks as context. Cite your given sources!`
+            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Use the given topNchunks as context. Cite the given sources!`
         };
 
         messages.push(embedMessage);
@@ -1096,7 +1098,7 @@ Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDE
 
         const wolframAlphaMessage = {
             role: "system",
-            content: `Wolfram Alpha Result: ${wolframAlphaTextResult}`
+            content: `The Wolfram result has already been returned based off the current user message. Instead of generating a new query, use the following Wolfram result as context: ${wolframAlphaTextResult}`
         };
 
         console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
