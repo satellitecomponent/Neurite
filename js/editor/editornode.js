@@ -364,17 +364,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         wrapperDiv.removeChild(overlay);
     });
 
-    if (windowElement) {
-        const resizeObserver = new ResizeObserver(() => {
-            let parentWidth = windowElement.clientWidth;
-            let parentHeight = windowElement.clientHeight;
-
-            iframeElement.style.width = parentWidth + 'px';
-            iframeElement.style.height = parentHeight + 'px';
-        });
-
-        resizeObserver.observe(windowElement);
-    }
 
         // Generate a unique identifier for the iframe using the node's uuid
     iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier

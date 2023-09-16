@@ -1,3 +1,41 @@
+async function appendWithDelay(content, node, delay) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            node.aiResponseTextArea.value += content;
+            node.aiResponseTextArea.dispatchEvent(new Event("input"));
+            resolve();
+        }, delay);
+    });
+}
+
+async function handleStreamingForLLMnode(response, node) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let fullResponse = "";
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done || !node.shouldContinue) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let contentMatch;
+        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+            const content = JSON.parse('"' + contentMatch[1] + '"');
+            if (!node.shouldContinue) break;
+
+            if (content.trim() !== "[DONE]") {
+                await appendWithDelay(content, node, 30);
+            }
+            fullResponse += content; // append content to fullResponse
+            buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
+        }
+    }
+    return fullResponse; // return the entire response
+}
+
+
 let previousContent = "";
 
 async function callchatLLMnode(messages, node, stream = false) {
@@ -66,43 +104,13 @@ async function callchatLLMnode(messages, node, stream = false) {
             return;
         }
 
-        async function appendWithDelay(content, node, delay) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    node.aiResponseTextArea.value += content;
-                    node.aiResponseTextArea.dispatchEvent(new Event("input"));
-                    resolve();
-                }, delay);
-            });
-        }
-
         if (stream) {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let buffer = "";
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done || !node.shouldContinue) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                let contentMatch;
-                while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-                    const content = JSON.parse('"' + contentMatch[1] + '"');
-                    if (!node.shouldContinue) break;
-
-                    if (content.trim() !== "[DONE]") {
-                        await appendWithDelay(content, node, 30);  // Append the AI's response to the textarea
-                    }
-
-                    buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-                }
-            }
+            fullResponse = await handleStreamingForLLMnode(response, node);
+            return fullResponse
         } else {
             const data = await response.json();
-            console.log("Token usage:", data.usage);
-            node.aiResponseTextArea.innerText += `${data.choices[0].message.content.trim()}`; 
+            fullResponse = `${data.choices[0].message.content.trim()}`;
+            node.aiResponseTextArea.innerText += fullResponse;
             node.aiResponseTextArea.dispatchEvent(new Event("input"));
         }
     } catch (error) {
@@ -303,7 +311,10 @@ Context: Follow any recieved instructions from all connected nodes.`
     }
 
     // In your main function, check if searchQuery is null before proceeding with the Google search
-    const searchQuery = await constructSearchQuery(node.latestUserMessage);
+    const nodeSpecificRecentContext = getLastPromptsAndResponses(2, 150, node.id);
+
+    // Use the node-specific recent context when calling constructSearchQuery
+    const searchQuery = await constructSearchQuery(node.latestUserMessage, nodeSpecificRecentContext);
     if (searchQuery === null) {
         return; // Return early if a link node was created directly
     }
@@ -372,65 +383,42 @@ Context: Follow any recieved instructions from all connected nodes.`
         messages.push(embedMessage);
     }
 
-    let wolframData;
-
-    if (document.getElementById("enable-wolfram-alpha").checked) {
-        wolframData = await fetchWolfram(node.latestUserMessage);
-    }
-
-    if (wolframData) {
-        const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
-
-        let content = [table];
-        let scale = 1; // You can adjust the scale as needed
-
-        let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-        htmlnodes_parent.appendChild(node.content);
-        registernode(node);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-
-        const wolframAlphaMessage = {
-            role: "system",
-            content: `Wolfram Alpha Result: ${wolframAlphaTextResult}`
-        };
-
-        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
-        messages.push(wolframAlphaMessage);
-    }
-
     let allConnectedNodesData = getAllConnectedNodesData(node, true);
+
+    // Sort the array to prioritize trimming LLM nodes first
+    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
 
     let totalTokenCount = getTokenCount(messages);
     let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-
     const maxContextSize = document.getElementById('max-context-size-slider').value;
 
     let messageTrimmed = false;
 
-    let infoString = allConnectedNodesData.map(info => info.replace("Text Content:", "")).join("\n\n"); // Remove 'Text Content:' tag from each info and concatenate
-    let infoWithIntro = "Remember this: The following are nodes that have been manually connected to your chat interface.\n" + infoString;
+    // Build the infoString step-by-step, checking tokens as we go
+    let infoList = allConnectedNodesData.map(info => info.data.replace("Text Content:", ""));
+    let infoString = "";
+    let infoIntro = "Remember this: The following are nodes that have been manually connected to your chat interface.\n";
 
-    let infoTokenCount = getTokenCount([{ content: infoWithIntro }]);
-    if (infoTokenCount <= remainingTokens && totalTokenCount + infoTokenCount <= maxContextSize) {
-        remainingTokens -= infoTokenCount;
-        totalTokenCount += infoTokenCount;
-        messages.push({
-            role: "system",
-            content: infoWithIntro
-        });
-    } else {
-        let trimmedInfo = trimToTokenCount(infoWithIntro, Math.min(remainingTokens, maxContextSize - totalTokenCount));
-        let trimmedInfoTokenCount = getTokenCount([{ content: trimmedInfo }]);
-        remainingTokens -= trimmedInfoTokenCount;
-        totalTokenCount += trimmedInfoTokenCount;
-        messages.push({
-            role: "system",
-            content: trimmedInfo
-        });
-        messageTrimmed = true;
+    for (let i = 0; i < infoList.length; i++) {
+        let tempString = infoString + "\n\n" + infoList[i];
+        let tempIntroString = infoIntro + tempString;
+        let tempTokenCount = getTokenCount([{ content: tempIntroString }]);
+
+        if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
+            infoString = tempString;
+            remainingTokens -= tempTokenCount;
+            totalTokenCount += tempTokenCount;
+        } else {
+            messageTrimmed = true;
+            break;  // Stop adding more info since we've reached the limit
+        }
     }
+
+    let finalInfoString = infoIntro + infoString;
+    messages.push({
+        role: "system",
+        content: finalInfoString
+    });
 
     if (messageTrimmed) {
         messages.push({
@@ -446,16 +434,50 @@ Context: Follow any recieved instructions from all connected nodes.`
     contextSize = Math.min(remainingTokens, maxContextSize);
 
     // Update the value of getLastPromptsAndResponses
-    const lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
+    let lastPromptsAndResponses;
+    if (!document.getElementById("enable-wolfram-alpha").checked) {
+        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
+    }
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
     node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
     // Trigger the input event programmatically
     node.aiResponseTextArea.dispatchEvent(new Event('input'));
 
+    let wolframData;
+    if (document.getElementById("enable-wolfram-alpha").checked) {
+        const wolframContext = getLastPromptsAndResponses(2, 300, node.id);
+        wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
+    }
+
+    if (wolframData) {
+        const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
+
+        let content = [table];
+        let scale = 1;
+
+        let wolframNode = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
+        htmlnodes_parent.appendChild(wolframNode.content);
+        registernode(wolframNode);
+        wolframNode.followingMouse = 1;
+        wolframNode.draw();
+        wolframNode.mouseAnchor = toDZ(new vec2(0, -wolframNode.content.offsetHeight / 2 + 6));
+
+        const wolframAlphaMessage = {
+            role: "system",
+            content: `The Wolfram result has already been returned based off the current user message. Instead of generating a new query, use the following Wolfram result as context: ${wolframAlphaTextResult}`
+        };
+
+        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
+        messages.push(wolframAlphaMessage);
+
+        // Redefine lastPromptsAndResponses here
+        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
+    }
+
     messages.push({
         role: "system",
-        content: `Conversation history:${lastPromptsAndResponses}` //Recent conversation removed from webLLM.ts
+        content: `Conversation history:${lastPromptsAndResponses}`
     });
 
     messages.push({
@@ -1428,7 +1450,7 @@ function getAllConnectedNodesData(node, filterAfterLLM = false) {
 
     traverseConnectedNodes(node, currentNode => {
         let currentNodeData = getNodeData(currentNode);
-        allConnectedNodesData.push(currentNodeData);
+        allConnectedNodesData.push({ data: currentNodeData, isLLM: currentNode.isLLM });
     }, filterAfterLLM);
 
     return allConnectedNodesData;

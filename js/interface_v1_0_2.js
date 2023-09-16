@@ -217,10 +217,12 @@ function expandNode(node, div, circle) {
     div.collapsed = false;
 }
 
+
 function windowify(title, content, pos, scale, iscale, link) {
     let odiv = document.createElement('div');
     let div = document.createElement('div');
     let buttons = document.getElementById("elements").children[0];
+    let dropdown = document.querySelector('.dropdown');
     let w = buttons.cloneNode(true);
     w.className = 'button-container';
     // Create a header container for buttons and title input
@@ -245,12 +247,10 @@ function windowify(title, content, pos, scale, iscale, link) {
 
     div.addEventListener('click', (event) => {
         event.stopPropagation();
-        if (event.altKey) {
+        if (event.ctrlKey) {
             div.classList.toggle('selected');
         }
     });
-
-    let dropdown = document.querySelector('.dropdown');
 
     div.addEventListener('mousedown', function () {
         autopilotSpeed = 0;
@@ -1942,6 +1942,48 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
         const title = node.getTitle();
         highlightNodeSection(title, myCodeMirror);
     };
+
+    let isDragging = false;
+
+    // Handle mousedown
+    n.addEventListener('mousedown', function (event) {
+        if (event.altKey && !event.forwarded) {
+            event.preventDefault();
+            n.style.userSelect = "none";
+            isDragging = true;
+            forwardEvent('mousedown', n.parentNode, event);
+        }
+    });
+
+    // Handle mousemove
+    document.addEventListener('mousemove', function (event) {
+        if (isDragging && event.altKey && !event.forwarded) {
+            forwardEvent('mousemove', n.parentNode, event);
+        }
+    });
+
+    // Handle mouseup
+    document.addEventListener('mouseup', function (event) {
+        if (isDragging && !event.forwarded) {
+            n.style.userSelect = "";
+            isDragging = false;
+            forwardEvent('mouseup', n.parentNode, event);
+        }
+    });
+
+    // Forwards the event to another element
+    function forwardEvent(eventName, elem, originalEvent) {
+        const forwardedEvent = new MouseEvent(eventName, {
+            bubbles: true,
+            cancelable: true,
+            clientX: originalEvent.clientX,
+            clientY: originalEvent.clientY,
+            altKey: originalEvent.altKey,
+            shiftKey: originalEvent.shiftKey,
+        });
+        forwardedEvent.forwarded = true;
+        elem.dispatchEvent(forwardedEvent);
+    }
 
     if (sx !== undefined) {
         x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
