@@ -189,36 +189,33 @@ function truncateDescription(description, maxLength) {
     return description.substring(0, maxLength) + "...";
 }
 
-const wolframmessage = `Generate a concise preface followed by a precise Wolfram Alpha query in response to the user message.
-- Write your query on the very last line of your response. The last line of your response is your query that will be sent to Wolfram.
-- The Wolfram query should be specific to the user's message. The last line of your response will be used to query Wolfram Alpha.
-- If the user's input is already valid Wolfram code, use it verbatim but still provide a brief preface.
-Query Wolfram Alpha, work through the reasoning of the query before making it. Any response that doesn't adhere to this format will produce an error.
-
-Example,
-Prefaced query
-Query to Wolfram as a single string only on last line with no markers.
-Never go into further explanation after the query such as "this is what the query will do"s. Instead you will respond again after the query result returns.`
+const wolframmessage = `Based off the user message, logically arrive at a valid query to Wolfram Alpha.
+- Quotation marks delimit the Wolfram Query that is extracted from your response.
+- Ensure the query will return a relevant result from Wolfram. (If the user message is not a valid Wolfram Query, reformulate until it is.)
+- Utilize Wolfram Syntax or formats known to be valid.
+- Display your reasoning.`
 
 let wolframCallCounter = 0;
 
-async function fetchWolfram(message) {
+async function fetchWolfram(message, isAINode = false, node = null, wolframContext = "") {
     let wolframAlphaResult = "not-enabled";
     let wolframAlphaTextResult = "";
-    let reformulatedQuery = "";
 
-    recentcontext = getLastPromptsAndResponses(2, 300);
+    // Initialize recentcontext based on node or default zettelkasten logic
+    const recentcontext = wolframContext || getLastPromptsAndResponses(2, 300);
 
-    // Increment the Wolfram call counter
-    wolframCallCounter++;
+    if (!isAINode) {
+        // Increment the Wolfram call counter
+        wolframCallCounter++;
 
-    // Insert the tag and unique title to the note-input 
-    myCodeMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        // Insert the tag and unique title to the note-input 
+        myCodeMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+    }
 
     let messages = [
         {
             role: "system",
-            content: `<wolfram>${wolframmessage}</wolfram>`
+            content: `${wolframmessage}`
         },
         {
             role: "user",
@@ -230,15 +227,38 @@ async function fetchWolfram(message) {
     if (recentcontext.trim() !== "") {
         messages.splice(1, 0, {
             role: "system",
-            content: `The following recent conversation may provide further context for generating your Wolfram query; \n ${recentcontext},`
+            content: `Conversation history; \n ${recentcontext},`
         });
     }
 
-    let fullResponse = await callchatAPI(messages, true);
+    let fullResponse;
+    if (isAINode && node) {
+        fullResponse = await callchatLLMnode(messages, node, true);  // calling the LLM node version
 
-    let lines = fullResponse.trim().split("\n");
-    reformulatedQuery = lines[lines.length - 1];
-    let preface = lines.slice(0, lines.length - 1).join("\n");
+        // Add a line break to node.aiResponseDiv after the call is complete
+        node.aiResponseDiv.innerHTML += '<br />';
+    } else {
+        fullResponse = await callchatAPI(messages, true);  // existing call
+    }
+
+    // The regular expression to match text between quotation marks
+    const regex = /"([^"]*)"/g;
+
+    let reformulatedQuery = "";
+    let matches = [];
+    let match;
+
+    // While loop to get all matches
+    while ((match = regex.exec(fullResponse)) !== null) {
+        matches.push(match[1]);
+    }
+
+    // Get the last match, i.e., the reformulated query
+    if (matches.length > 0) {
+        reformulatedQuery = matches[matches.length - 1];
+    }
+
+    let preface = fullResponse.replace(`"${reformulatedQuery}"`, "").trim();
 
     // Append an additional new line
     myCodeMirror.replaceRange(`\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
@@ -340,7 +360,7 @@ async function performSearch(searchQuery) {
     }
 }
 
-async function constructSearchQuery(userMessage) {
+async function constructSearchQuery(userMessage, recentContext = null) {
     // If the user's message is a URL, use it as the search query and create a link node
     if (isUrl(userMessage)) {
         document.getElementById("prompt").value = ''; // Clear the textarea
@@ -361,11 +381,11 @@ async function constructSearchQuery(userMessage) {
 
 
 
-    recentcontext = getLastPromptsAndResponses(2, 150);
+    recentContext = recentContext || getLastPromptsAndResponses(2, 150);
 
     const queryContext = [{
         role: "system",
-        content: `The following recent conversation may provide further context for generating your search query; \n ${recentcontext},`
+        content: `The following recent conversation may provide further context for generating your search query; \n ${recentContext},`
     },
     {
         role: "system",
