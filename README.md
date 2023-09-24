@@ -82,14 +82,16 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
  
 `Alt + double click` to create an Ai node.
 
-Or, drag in different node types from the dropdown.
+`Alt + drag` textareas to arrange the node rather than highlighting text.
 
-`Organization Tips`
+Or, drag in nodes from the dropdown.
 
-- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will just overlap and be too big.
+`UI Tips`
+
+- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will not have any space to spread out and be too big relative to the fractal.
 - When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
 - Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
-- The AI tab has controls for token limit, temperature, number of searched nodes sent as context, and length of recent conversation sent.
+- The AI tab has controls for token limit, temperature, number of searched nodes sent as context, and length of recent conversation sent. (You may need to turn up the token count for longer conversations.)
 - Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
 ## FractalGPT
 
