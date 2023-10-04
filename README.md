@@ -338,7 +338,9 @@ High-Speed Gardening (71_001.jpg):
 
 Artist: The style is reminiscent of Ed Ruscha. Ruscha's work often combines text and image, often with a touch of humor or irony.
 Description: This piece juxtaposes the phrase "HIGH-SPEED GARDENING" with an image of what appears to be a tranquil field at sunrise or sunset. The shadow of the text gives a 3D effect as if the words are hovering above the landscape. The concept itself seems to be a play on our modern need for speed and efficiency even in traditionally slow-paced activities like gardening.
-Figurative Painting (Ernst Ludwig Kirchner):
+Figurative Painting 
+
+(Ernst Ludwig Kirchner):
 
 Artist: As indicated, this is a piece by Ernst Ludwig Kirchner, a German expressionist painter and printmaker.
 Description: This work is emblematic of Kirchner's style, with its bold colors and sharp, angular lines. The figures depicted have elongated features and are painted in vibrant colors. Their facial expressions appear somewhat melancholic. Kirchner's use of color to convey emotion and his somewhat distorted representation of the human figure are key characteristics of his work.
