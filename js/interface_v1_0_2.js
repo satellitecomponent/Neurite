@@ -1860,7 +1860,7 @@ function bundleWebContent(nodesInfo) {
     let jsContent = [];
 
     for (let nodeInfoObj of nodesInfo) {
-        console.log(nodeInfoObj); // Log the entire object here
+        //console.log(nodeInfoObj); // Log the entire object here
         let nodeInfo = nodeInfoObj.data;
 
         if (typeof nodeInfo !== "string") {

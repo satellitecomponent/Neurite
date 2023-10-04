@@ -1070,12 +1070,12 @@ ${isBracketLinks ? `${tagValues.refTag}Idea C${getClosingBracket(tagValues.refTa
             role: "user",
             content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
 Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
+Self-Prompting is enabled, on the last line, end your response with ${PROMPT_IDENTIFIER} Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
         });
     } else {
         messages.push({
             role: "user",
-            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
+            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, one the last line, end your response with ${PROMPT_IDENTIFIER} message to continue the conversation` : ""}`,
         });
     }
 

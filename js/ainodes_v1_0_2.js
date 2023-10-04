@@ -200,9 +200,10 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `Control: You (AI) sets topics, shares interests, and introduce new subjects without being prompted to.
+            content: `Lets set topics, share interests, and introduce new subjects.
 Format: The last line of your response will be extracted and sent to any connected Ai.
-Context: Follow any recieved instructions from all connected nodes.`
+Ensure your extracted last line will progress the conversation by introducing new avenues of exploration or delving deeper into existing topics.
+Context: Follow any received instructions from all connected nodes.`
         });
     }
 
@@ -395,7 +396,7 @@ Context: Follow any recieved instructions from all connected nodes.`
     // Build the infoString step-by-step, checking tokens as we go
     let infoList = allConnectedNodesData.map(info => info.data.replace("Text Content:", ""));
     let infoString = "";
-    let infoIntro = "Remember this: The following are nodes that have been manually connected to your chat interface.\n";
+    let infoIntro = "Remember this: The following are all nodes that have been manually connected to your chat interface.\n";
 
     for (let i = 0; i < infoList.length; i++) {
         let tempString = infoString + "\n\n" + infoList[i];
