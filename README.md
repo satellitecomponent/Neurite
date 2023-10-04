@@ -388,7 +388,7 @@ Neurite's framework provides a digital playground that mirrors the complexities 
 
 `Prompt`
 
-I am glad you can see images now! I am very excited to explore your new ability in the context of Neurite. This is an image that does not display the fractal aspect, instead it displays how long term memory is constructed using this method. Give a detailed an in depth response. Preface with an internal monologue, then your response to be displayed to me. 
+I am glad you can see images now! I am very excited to explore your new ability in the context of Neurite. This is an image that does not display the fractal aspect, instead it displays how long term memory is constructed using this method. Give a detailed and in depth response. Preface with an internal monologue, then your response to be displayed to me. 
 
 `Internal Monologue:`
 
