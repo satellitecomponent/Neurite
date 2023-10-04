@@ -70,8 +70,8 @@ function toggleNodeState(nodeOrTitle, cm, event) {
         if (title) hideNodeText(title, cm); // Hide node text in CodeMirror
     }
 
-    // Check if the CTRL key is being held
-    if (event && event.ctrlKey) {
+    // Check if the alt key is being held
+    if (event && event.altKey) {
         let allConnectedNodes = getAllConnectedNodes(node);
         allConnectedNodes.forEach(connectedNode => {
             toggleNodeState(connectedNode, cm); // Pass the connected node
@@ -79,9 +79,18 @@ function toggleNodeState(nodeOrTitle, cm, event) {
     }
 }
 
+let originalSizes = new Map();  // A map to store original sizes keyed by node
+
 function collapseNode(node) {
     return function (event) {
         let div = node.content.querySelector('.window');
+
+        if (!originalSizes.has(node)) {
+            originalSizes.set(node, {
+                width: getComputedStyle(div).width,
+                height: getComputedStyle(div).height
+            });
+        }
         let titleInput = div.querySelector('.title-input');
         let headerContainer = div.querySelector('.header-container');
 
@@ -170,11 +179,14 @@ function collapseNode(node) {
 }
 
 function expandNode(node, div, circle) {
+    if (originalSizes.has(node)) {
+        const originalSize = originalSizes.get(node);
+        div.style.width = originalSize.width;
+        div.style.height = originalSize.height;
+    }
     // Reset the window properties
     div.style.display = '';
     div.style.borderRadius = '';
-    div.style.width = div.originalSize ? div.originalSize.width + 'px' : '';
-    div.style.height = div.originalSize ? div.originalSize.height + 'px' : '';
     div.style.backgroundColor = '';
     div.style.borderColor = '';
     div.style.boxShadow = '';
@@ -217,6 +229,20 @@ function expandNode(node, div, circle) {
     div.collapsed = false;
 }
 
+let altHeld = false;
+
+// Global event listeners to set the altHeld flag
+document.addEventListener('keydown', function (event) {
+    if (event.altKey) {
+        altHeld = true;
+    }
+});
+
+document.addEventListener('keyup', function (event) {
+    if (!event.altKey) {
+        altHeld = false;
+    }
+});
 
 function windowify(title, content, pos, scale, iscale, link) {
     let odiv = document.createElement('div');
@@ -225,11 +251,18 @@ function windowify(title, content, pos, scale, iscale, link) {
     let dropdown = document.querySelector('.dropdown');
     let w = buttons.cloneNode(true);
     w.className = 'button-container';
+
     // Create a header container for buttons and title input
     let headerContainer = document.createElement('div');
     headerContainer.className = 'header-container';
     headerContainer.appendChild(w);
 
+    // Modify the onmousedown function to check for the Alt key
+    headerContainer.onmousedown = function (event) {
+        if (event.altKey) {
+            cancel(event);  // Prevent dragging if Alt key is pressed
+        }
+    };
 
     div.appendChild(headerContainer);
     odiv.appendChild(div);
@@ -289,6 +322,35 @@ function windowify(title, content, pos, scale, iscale, link) {
     titleInput.setAttribute('value', title);
     titleInput.className = 'title-input';
     headerContainer.appendChild(titleInput);
+
+    titleInput.addEventListener('paste', function (event) {
+        event.stopPropagation();
+    });
+
+    let isDragging = false;
+    let isMouseDown = false;
+
+    titleInput.addEventListener('mousedown', function (event) {
+        isMouseDown = true;
+    });
+
+    titleInput.addEventListener('mousemove', function (event) {
+        if (isMouseDown) {
+            isDragging = true;
+        }
+        if (isDragging && !altHeld) {
+            titleInput.selectionStart = titleInput.selectionEnd;  // Reset the selection
+        }
+    });
+
+    document.addEventListener('mouseup', function (event) {
+        isDragging = false;
+        isMouseDown = false;
+    });
+
+    titleInput.addEventListener('mouseleave', function (event) {
+        isDragging = false;
+    });
 
     // Add resize container and handle
     let resizeContainer = document.createElement('div');
@@ -493,7 +555,7 @@ function setResizeEventListeners(resizeHandle, node) {
     };
 
     const addEventListeners = () => {
-        // Listen for mousemove and mouseup on the entire document
+        removeEventListeners();
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
     };
@@ -514,7 +576,12 @@ function setResizeEventListeners(resizeHandle, node) {
         addEventListeners();
     });
 
-    resizeHandle.addEventListener('mouseenter', addEventListeners);
+    resizeHandle.addEventListener('mouseenter', () => {
+        if (isMouseMoving) return;
+        startX = event.pageX;
+        startY = event.pageY;
+        addEventListeners();
+    });
 
     resizeHandle.addEventListener('mouseleave', (event) => {
         if (!event.buttons) {
@@ -566,6 +633,11 @@ function setTextAreaHeight(textarea, maxHeight) {
     const textareaBottom = textarea.getBoundingClientRect().bottom;
     const viewportHeight = window.innerHeight;
 
+    // Case when client rect is not found
+    if (textareaBottom === 0) {
+        return;
+    }
+
     // Check if textarea is near the bottom of the viewport
     if (textareaBottom + 10 > viewportHeight) {
         textarea.style.overflowY = 'auto';
@@ -602,9 +674,28 @@ function attachMouseEvents(node, element) {
  * Function used for programmatic interaction in zettelkasten.js
  */
 function adjustTextareaHeight(textarea) {
+    const maxHeight = textarea.getAttribute('data-max-height') || 300;
+    const epsilon = 50; // Tolerance in pixels
+
     requestAnimationFrame(() => {
-        const maxHeight = textarea.getAttribute('data-max-height') || 300;
+        // Record the current scroll position
+        const previousScrollHeight = textarea.scrollHeight;
+        const previousScrollTop = textarea.scrollTop;
+
+        // Adjust textarea height
         setTextAreaHeight(textarea, maxHeight);
+
+        // Calculate the new scroll position
+        const newScrollHeight = textarea.scrollHeight;
+        const dScroll = newScrollHeight - previousScrollHeight;
+
+        // Update the scrollTop only if we are close to the bottom
+        if (Math.abs(previousScrollTop - (previousScrollHeight - textarea.clientHeight)) < epsilon) {
+            textarea.scrollTop = newScrollHeight - textarea.clientHeight;
+        } else {
+            // Preserve the scrollTop to keep the view stable
+            textarea.scrollTop = previousScrollTop + dScroll;
+        }
     });
 }
 
@@ -789,6 +880,8 @@ class Node {
             a: args
         });
     }
+
+
     draw() {
         put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
 
@@ -805,40 +898,6 @@ class Node {
         }
         this.content.setAttribute("data-node_extras", JSON.stringify(se));
     }
-    zoom_to_fit(margin = 1) {
-        let bb = this.content.getBoundingClientRect();
-        let svgbb = svg.getBoundingClientRect();
-        let so = windowScaleAndOffset();
-        let aspect = svgbb.width / svgbb.height;
-        let scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
-        this.zoom_by(1 / scale);
-    }
-    zoom_by(s = 1) {
-        panTo = new vec2(0, 0); //this.pos;
-        let gz = ((s) ** (-1 / settings.zoomContentExp));
-        zoomTo = zoom.unscale(gz ** 0.5);
-        autopilotReferenceFrame = this;
-        panToI = new vec2(0, 0);
-    }
-    zoom_to(s = 1) {
-        panTo = new vec2(0, 0); //this.pos;
-        let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
-        zoomTo = zoom.unscale(gz ** 0.5);
-        autopilotReferenceFrame = this;
-        panToI = new vec2(0, 0);
-    }
-    addEdge(edge) {
-        this.edges.push(edge);
-        this.updateEdgeData();
-    }
-    updateEdgeData() {
-        let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
-        this.content.setAttribute("data-edges", es);
-    }
-    getTitle() {
-        return this.content.getAttribute('data-title');
-    }
-
 
     step(dt) {
         if (dt === undefined || isNaN(dt)) {
@@ -882,6 +941,33 @@ class Node {
         //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
         this.draw();
     }
+
+
+
+
+    zoom_to_fit(margin = 1) {
+        let bb = this.content.getBoundingClientRect();
+        let svgbb = svg.getBoundingClientRect();
+        let so = windowScaleAndOffset();
+        let aspect = svgbb.width / svgbb.height;
+        let scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
+        this.zoom_by(1 / scale);
+    }
+    zoom_by(s = 1) {
+        panTo = new vec2(0, 0); //this.pos;
+        let gz = ((s) ** (-1 / settings.zoomContentExp));
+        zoomTo = zoom.unscale(gz ** 0.5);
+        autopilotReferenceFrame = this;
+        panToI = new vec2(0, 0);
+    }
+    zoom_to(s = 1) {
+        panTo = new vec2(0, 0); //this.pos;
+        let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
+        zoomTo = zoom.unscale(gz ** 0.5);
+        autopilotReferenceFrame = this;
+        panToI = new vec2(0, 0);
+    }
+
     searchStrings() {
         function* search(e) {
             yield e.textContent;
@@ -923,7 +1009,19 @@ class Node {
             if (prevNode === undefined) {
                 prevNode = this;
             } else {
-                connectDistance(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2);
+                // Get titles once and store them in variables
+                const thisTitle = this.getTitle();
+                const prevNodeTitle = prevNode.getTitle();
+
+                // Check conditions before calling addEdgeToZettelkasten
+                if (thisTitle !== prevNodeTitle && this.isTextNode && prevNode.isTextNode) {
+                    addEdgeToZettelkasten(prevNodeTitle, thisTitle, myCodeMirror);
+                } else {
+                    // If conditions are not met, call the original connectDistance
+                    connectDistance(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2, undefined, true);
+                }
+
+                // Reset prevNode
                 prevNode = undefined;
             }
         }
@@ -986,6 +1084,25 @@ class Node {
             cancel(event);
         }
     }
+
+    addEdge(edge) {
+        this.edges.push(edge);
+        this.updateEdgeData();
+    }
+    updateEdgeData() {
+        let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+        this.content.setAttribute("data-edges", es);
+    }
+    getTitle() {
+        return this.content.getAttribute('data-title');
+    }
+    removeEdges() {
+        for (let i = this.edges.length - 1; i >= 0; i--) {
+            this.edges[i].remove();
+            this.edges.splice(i, 1);
+        }
+    }
+
     remove() {
         let dels = [];
         for (let n of nodes) {
@@ -1179,10 +1296,21 @@ class Edge {
     }
     ondblclick(event) {
         if (nodeMode) {
+            // Capture the titles and textNode flags of the connected nodes for later use
+            const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
+
             this.remove();
+
+            // only if both nodes have the isTextNode flag
+            if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
+                removeEdgeFromZettelkasten(connectedNodes[0].title, connectedNodes[1].title);
+            }
+
+            // Prevent the event from propagating further
             cancel(event);
         }
     }
+
     remove() {
         // Remove the edge from the global edge array
         let index = edges.indexOf(this);
@@ -1235,7 +1363,8 @@ function adjustTextareaHeightToContent(nodes) {
         let textarea = node.content.querySelector('textarea');
         if (textarea) {
             textarea.style.height = 'auto'; // Temporarily shrink to content
-            textarea.style.height = (textarea.scrollHeight) + 'px'; // Set to full content height
+            const maxHeight = 300; // Maximum height in pixels
+            textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'; // Set to full content height or max height
         }
     }
 }
@@ -1730,16 +1859,23 @@ function bundleWebContent(nodesInfo) {
     let cssContent = [];
     let jsContent = [];
 
-    for (let nodeInfo of nodesInfo) {
-        let re = /Text Content: (.*?)$/gs;
-        let contentMatch = re.exec(nodeInfo);
+    for (let nodeInfoObj of nodesInfo) {
+        console.log(nodeInfoObj); // Log the entire object here
+        let nodeInfo = nodeInfoObj.data;
 
-        if (!contentMatch || contentMatch.length < 2) {
+        if (typeof nodeInfo !== "string") {
+            console.warn('Data is not a string:', nodeInfo);
+            continue;
+        }
+
+        let splitContent = nodeInfo.split("Text Content:", 2);
+
+        if (splitContent.length < 2) {
             console.warn('No content found for node');
             continue;
         }
 
-        let content = contentMatch[1];
+        let content = splitContent[1].trim();
         let codeBlocks = content.matchAll(/```(.*?)\n([\s\S]*?)```/gs);
 
         for (let block of codeBlocks) {
@@ -1787,7 +1923,7 @@ function handleCodeButton(button, textarea, node) {
                 if (language === 'python') {
                     allPythonCode += '\n' + code;
                 } else if (language === 'html' || language === 'css' || language === 'javascript' || language === '') {
-                    allWebCode.push(`Text Content: \n\`\`\`${language}\n${code}\n\`\`\``);
+                    allWebCode.push({ data: `Text Content: \n\`\`\`${language}\n${code}\n\`\`\`` });
                 }
             }
 
@@ -1868,6 +2004,28 @@ function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight
     return resizeObserver;
 }
 
+// Function that listens for undo and redo key combinations on a textarea
+function captureUndoRedoEvents(textarea, codeMirrorInstance) {
+    textarea.addEventListener('keydown', function (event) {
+        if (event.ctrlKey || event.metaKey) {
+            if (event.key === 'z') {
+                if (event.shiftKey) {
+                    // Redo for Ctrl+Shift+Z
+                    codeMirrorInstance.redo();
+                } else {
+                    // Undo for Ctrl+Z
+                    codeMirrorInstance.undo();
+                }
+                event.preventDefault();  // Prevent the default undo/redo behavior in the textarea
+            } else if (event.key === 'y') {
+                // Redo for Ctrl+Y
+                codeMirrorInstance.redo();
+                event.preventDefault();  // Prevent the default redo behavior in the textarea
+            }
+        }
+    });
+}
+
 function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
     let t = document.createElement("input");
     t.setAttribute("type", "text");
@@ -1882,6 +2040,8 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     n.setAttribute("size", "11");
     n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4;");
     n.style.display = "block";
+
+    captureUndoRedoEvents(n, noteInput);
 
     let elements = [n];
 
@@ -2018,6 +2178,8 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
             }
         };
     })
+
+    node.isTextNode = true;
 
     return node;
 }
@@ -2343,8 +2505,6 @@ function dropHandler(ev) {
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
             //console.log(`Dropped div "${title}": "${content}"`);
 
-            let addCheckbox = false;
-
             if (title === 'Code Block') {
                 // Split the content into lines
                 let lines = content.split('\n');
@@ -2358,7 +2518,7 @@ function dropHandler(ev) {
                 // If the first line exists, add the backticks directly before it. If not, just start with backticks
                 content = (lines[0] ? "```" + lines[0] : "```") + "\n" + lines.slice(1).join('\n') + "\n```";
 
-                addCheckbox = true;
+                shouldAddCodeButton = true;
             }
 
 

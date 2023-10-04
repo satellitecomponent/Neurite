@@ -18,16 +18,19 @@ document.addEventListener('dblclick', function (e) {
     }
 });
 
-// Function to create a user-friendly date and time string
 function getDefaultTitle() {
     const date = new Date();
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    let dateString = date.toLocaleString(undefined, options);
-    const timeComponents = dateString.split(', ').pop().split(' ');
-    const timeWithoutAmPm = timeComponents[0];
-    const amPm = timeComponents[1];
-    const formattedTime = `${timeWithoutAmPm}:${date.getMilliseconds()} ${amPm}`;
-    dateString = dateString.replace(timeComponents.join(' '), formattedTime);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+    const amPm = hour >= 12 ? 'PM' : 'AM';
+
+    // Create a string in the format "YYYY-MM-DD HH:MM:SS.sss AM/PM"
+    const dateString = `${year}/${month}/${day} ${hour}:${minute}:${second}.${milliseconds} ${amPm}`;
     return dateString;
 }
 

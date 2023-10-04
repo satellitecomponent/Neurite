@@ -74,31 +74,31 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
             // Fetch all textareas directly in the node content.
             const contentElements = node.content.querySelectorAll("textarea");
             const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
-            // console.log("Content:", content);
+            /* console.log("Content:", content);
 
-            //     const connectedNodesInfo = node.edges
-            //    ? node.edges.map((edge) => {
-            //         if (edge.nodeA && edge.nodeB) {
-            //              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
-            //              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
-            //                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
-            //          } else {
-            //              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-            //           }
-            //       }).join("\n")
-            //          : '';
-            //
-            //      const edgeInfo = node.edges
-            //           .map((edge) => {
-            //               if (edge.nodeA && edge.nodeB) {
-            //                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
-            //               } else {
-            //                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-            //               }
-            //           }).join("\n");
+                 const connectedNodesInfo = node.edges
+                ? node.edges.map((edge) => {
+                     if (edge.nodeA && edge.nodeB) {
+                          const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
+                          return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
+                              }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
+                      } else {
+                          return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+                       }
+                   }).join("\n")
+                      : '';
+            
+                  const edgeInfo = node.edges
+                       .map((edge) => {
+                           if (edge.nodeA && edge.nodeB) {
+                               return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
+                           } else {
+                               return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+                           }
+                      }).join("\n"); 
             const createdAt = node.createdAt;
 
-            //UUID: ${node.uuid}\n       Creation Time: ${createdAt}
+            UUID: ${node.uuid}\n       Creation Time: ${createdAt} */ 
 
             return `${tagValues.nodeTag} ${title}\n ${contents.join("\n")}`;
         })
@@ -189,7 +189,7 @@ function truncateDescription(description, maxLength) {
     return description.substring(0, maxLength) + "...";
 }
 
-const wolframmessage = `Based off the user message, logically arrive at a valid query to Wolfram Alpha.
+const wolframmessage = `Based off the user message, arrive at a valid query to Wolfram Alpha.
 - Quotation marks delimit the Wolfram Query that is extracted from your response.
 - Ensure the query will return a relevant result from Wolfram. (If the user message is not a valid Wolfram Query, reformulate until it is.)
 - Utilize Wolfram Syntax or formats known to be valid.
@@ -1120,6 +1120,8 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
 
     // Initialize the resize observer
     observeContentResize(windowDiv, iframeWrapper, displayWrapper);
+
+    node.isLink = true;
 
     return node;
 }

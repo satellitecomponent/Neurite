@@ -266,6 +266,7 @@ Context: Follow any recieved instructions from all connected nodes.`
     }
 
 
+    const nodeSpecificRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
     let wikipediaSummaries;
     let keywordsArray = [];
@@ -275,7 +276,7 @@ Context: Follow any recieved instructions from all connected nodes.`
 
         // Call generateKeywords function to get keywords
         const count = 3; // Change the count value as needed
-        keywordsArray = await generateKeywords(node.latestUserMessage, count);
+        keywordsArray = await generateKeywords(node.latestUserMessage, count, nodeSpecificRecentContext);
 
         // Join the keywords array into a single string
         keywords = keywordsArray.join(' ');
@@ -309,9 +310,6 @@ Context: Follow any recieved instructions from all connected nodes.`
     if (document.getElementById("wiki-checkbox").checked) {
         messages.push(wikipediaMessage);
     }
-
-    // In your main function, check if searchQuery is null before proceeding with the Google search
-    const nodeSpecificRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
     // Use the node-specific recent context when calling constructSearchQuery
     const searchQuery = await constructSearchQuery(node.latestUserMessage, nodeSpecificRecentContext);
@@ -1004,7 +1002,26 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let aiResponseDiv = document.createElement("div");
     aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;  // Assign unique id to each aiResponseDiv
     aiResponseDiv.classList.add('custom-scrollbar');
-    aiResponseDiv.onmousedown = cancel; // Prevent dragging
+
+    // Modify the onmousedown function to check for the Alt key
+    aiResponseDiv.onmousedown = function (event) {
+        if (!event.altKey) {
+            cancel(event); // Prevent dragging if Alt key is NOT pressed
+        }
+    };
+
+    // Disable text highlighting when Alt key is down and re-enable when it's up
+    document.addEventListener('keydown', function (event) {
+        if (event.altKey) {
+            aiResponseDiv.style.userSelect = 'none';
+        }
+    });
+
+    document.addEventListener('keyup', function (event) {
+        if (!event.altKey) {
+            aiResponseDiv.style.userSelect = 'text';
+        }
+    });
     aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 530px; height: 450px; overflow-y: auto; overflow-x: hidden; resize: both; word-wrap: break-word; user-select: none; padding-left: 25px; padding-right: 25px; line-height: 1.75;");
     aiResponseDiv.addEventListener('mouseenter', function () {
         aiResponseDiv.style.userSelect = "text";
