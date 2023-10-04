@@ -80,6 +80,7 @@ function haltResponse() {
         controller.abort();
         aiResponding = false;
         shouldContinue = false;
+        isFirstAutoModeMessage = true;  // Set the isFirstAutoModeMessage to true here
         document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
         document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
     }
@@ -546,9 +547,20 @@ function clearSearchHighlights(nodesArray) {
 
 
 
-async function generateKeywords(message, count) {
-    // Get last prompts and responses
-    const lastPromptsAndResponses = getLastPromptsAndResponses(2, 150);
+async function generateKeywords(message, count, specificContext = null) {
+    // Use node-specific context if provided, otherwise get general context
+    const lastPromptsAndResponses = specificContext || getLastPromptsAndResponses(2, 150);
+
+    // Check if lastPromptsAndResponses is empty, null, undefined, or just white spaces/new lines
+    const isEmpty = !lastPromptsAndResponses || !/\S/.test(lastPromptsAndResponses);
+
+    // Check if Wikipedia is enabled
+    const wikipediaEnabled = isWikipediaEnabled();
+
+    // If lastPromptsAndResponses is empty and Wikipedia is not enabled, return default keywords
+    if (isEmpty) {
+        return ['n/a', 'n/a', 'n/a'];
+    }
 
     // Prepare the messages array
     const messages = [
@@ -612,14 +624,22 @@ async function calculateRelevanceScores(summaries, searchTermEmbedding) {
     return summaries;
 }
 
+let isBracketLinks = false;
+
 const tagValues = {
     get nodeTag() {
         return document.getElementById("node-tag").value;
     },
     get refTag() {
-        return document.getElementById("ref-tag").value;
+        const refValue = document.getElementById("ref-tag").value;
+        isBracketLinks = Object.keys(bracketsMap).includes(refValue);
+        return refValue;
     }
-}
+};
+
+const getClosingBracket = (openingBracket) => {
+    return bracketsMap[openingBracket];
+};
 
 const codeMessage = () => ({
     role: "system",
@@ -633,11 +653,11 @@ ${tagValues.nodeTag} HTML/JS Code Title
 1. Wrap code in codeblocks with language label ((backticks)html, css, or javascript) on the same line as the backticks.
 2. JS runs in iframe, can't access parent DOM.
 3. Create full document in one node or connect via tags.
-${tagValues.refTag} Titles of nodes (html, js, css) to connect that should be bundled. Avoid connecting code to non-code.
+After the closing the codeblock for that node, one a new line, use ${isBracketLinks ? `${tagValues.refTag} bracketed titles of nodes (html, js, css)${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} followed by titles of nodes (html, js, css)`} to connect and bundle. Avoid connecting code to non-code.
 
 ${tagValues.nodeTag} Python Code Title
 1. Wrap code in 'python' triple backtick blocks.
-2. Use Pyodide-compatible libraries.
+2. Use Pyodide-compatible libraries. Ensure output to the HTML environment.
 3. Visuals? Output as base64 in HTML img tags. Ex:
 base64_string = base64.b64encode(buf.read()).decode('utf-8')
 output_html(f'<img src="data:image/png;base64,{base64_string}"/>')
@@ -714,7 +734,7 @@ const aiNodesMessage = () => ({
     content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
     1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
     2. In the next line, provide an initial prompt that will be sent to the AI.
-    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${tagValues.refTag}.
+    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${isBracketLinks ? `${tagValues.refTag}Titles of LLM nodes to connect${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Tites of nodes to connect to the LLM`}
     
     Example:
     LLM: Understanding AI
@@ -728,35 +748,18 @@ const aiNodesMessage = () => ({
 
 
 const zettelkastenPrompt = () => {
-    const codeSnippet = `
-FUNC format(schema): EACH node IN schema.Example: PRINT tag+node.Title; PRINT node.Content; IF node.Refs: PRINT ref+JOIN(node.Refs, ', '); END; NEXT; END FUNC`
+    const { refTag, nodeTag } = tagValues;
+    const closeBracket = getClosingBracket(refTag);
 
-    return `You are responding within a fractal mind mapping interface that parses your response via the following format. Ensure your response aligns with the format output of the given schema.${codeSnippet}`;
+    const refSnippet = isBracketLinks
+        ? `EACH ref IN node.Refs: PRINT ${refTag} + ref + ${closeBracket}; END;`
+        : `PRINT ${refTag} + JOIN(node.Refs, ', ');`;
+
+    return `You are responding within a fractal second brain that parses your response via the following format. Please always format your response according to output of the given schema.
+    FUNC format(schema): 
+      EACH node IN schema, PRINT ${nodeTag} + node.Title; PRINT node.Content; ${refSnippet}; 
+    NEXT node In schema; END FUNC`;
 };
-
-let MAX_CHUNK_SIZE = 400;
-
-const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
-const maxChunkSizeValue = document.getElementById('maxChunkSizeValue');
-
-// Display the initial slider value
-maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
-
-// Update the current slider value (each time you drag the slider handle)
-maxChunkSizeSlider.oninput = function () {
-    MAX_CHUNK_SIZE = this.value;
-    maxChunkSizeValue.textContent = this.value;
-}
-
-let topN = 5;
-const topNSlider = document.getElementById('topNSlider');
-const topNValue = document.getElementById('topNValue');
-
-topNSlider.addEventListener('input', function () {
-    topN = this.value;
-    topNValue.textContent = this.value;
-});
-
 
 let isFirstMessage = true; // Initial value set to true
 let originalUserMessage = null;
@@ -768,8 +771,6 @@ document.getElementById("auto-mode-checkbox").addEventListener("change", functio
         isFirstAutoModeMessage = true;
     }
 });
-
-
 
 
 async function sendMessage(event, autoModeMessage = null) {
@@ -790,8 +791,15 @@ async function sendMessage(event, autoModeMessage = null) {
     }
     const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
-    document.getElementById("prompt").value = ''; // Clear the textarea
+    promptElement = document.getElementById("prompt");
+    promptElement.value = ''; // Clear the textarea
     latestUserMessage = message;
+    const promptEvent = new Event('input', {
+        'bubbles': true,
+        'cancelable': true
+    });
+
+    promptElement.dispatchEvent(promptEvent);
 
 
     if (isAutoModeEnabled && originalUserMessage === null) {
@@ -1021,29 +1029,34 @@ async function sendMessage(event, autoModeMessage = null) {
 
 
     const commonInstructions = `Generate a response to the user query using the following format:
-1. Start distinct ideas with "${tagValues.nodeTag}". The title should capture the essence.
-2. Use multiple nodes in every response.
-3. Describe in plain text after the title. No numbered lists or lengthy paragraphs.
-4. Link related nodes with "${tagValues.refTag}", followed by comma-separated nodes.
-5. Define references after every node unless none are required.
+1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a distinct idea.
+2. Within each response, use links to build a network of granular rhizomatic notes.
+3. Link (connect) related nodes using ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${getClosingBracket(tagValues.refTag)}` : ` followed by csv note titles.`} Links connect the content and note heading above them to each referenced node.
+4. Define references after every node/note.
 
-NOTE:
-- Use the example below ONLY for format. Don't replicate its content.
-- Each response should introduce new information.
-- Avoid repetitive and generic titles. Each title should be unique.
-- Stay aligned with the user's query.
 
-Example (This is what FUNCTION formatFromSchema(schema) outputs.):
-${tagValues.nodeTag} Topics
-Descriptive content here.
+${tagValues.nodeTag} NOTE
+- Notes (nodes) are created using ${tagValues.nodeTag} and linked using ${tagValues.refTag}.
+- Create connections between notes.
+- Each title should be unique. Avoid repetitive and generic titles.
 
-${tagValues.nodeTag} Note Taking
-Info here.
-${tagValues.refTag} Topics, Connect Ideas
+Exemplify the format of this Content Agnostic Example (Below is an overview of what FUNCTION formatFromSchema(schema) outputs.):
+${tagValues.nodeTag} Concept A
+Description of A.
+${isBracketLinks ? `${tagValues.refTag}Principle B${getClosingBracket(tagValues.refTag)} ${tagValues.refTag}Element D${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Principle B, Element D`}
 
-${tagValues.nodeTag} Connect Ideas
-Info here.
-${tagValues.refTag} Note Taking,`;
+${tagValues.nodeTag} Principle B
+Text of B.
+${isBracketLinks ? `${tagValues.refTag}Concept A${getClosingBracket(tagValues.refTag)} ${tagValues.refTag}Idea C${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Concept A, Idea C`}
+
+${tagValues.nodeTag} Idea C
+Synthesis of A and B.
+${isBracketLinks ? `${tagValues.refTag}Principle B${getClosingBracket(tagValues.refTag)} ${tagValues.refTag}Concept A${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Principle B, Concept A`}
+
+${tagValues.nodeTag} Element D
+Functions within D.
+${isBracketLinks ? `${tagValues.refTag}Idea C${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Idea C`}`;
+
 
     // Add Common Instructions as a separate system message
     messages.push({
@@ -1057,12 +1070,12 @@ ${tagValues.refTag} Note Taking,`;
             role: "user",
             content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
 Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
+Self-Prompting is enabled, on the last line, end your response with ${PROMPT_IDENTIFIER} Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to progress the conversation (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
         });
     } else {
         messages.push({
             role: "user",
-            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, end your response with a new line, then, ${PROMPT_IDENTIFIER} [message to continue the conversation]` : ""}`,
+            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, one the last line, end your response with ${PROMPT_IDENTIFIER} message to continue the conversation` : ""}`,
         });
     }
 
