@@ -254,7 +254,7 @@ If you are a developer who is interested in contributing to this project, contac
 full video [here](https://youtu.be/1VmE_Bov-Xw)
 ![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
 
-Here is what GPT-4 has to say about Neurite
+### Here is what GPT-4 has to say about Neurite
 
 `Prompt:` (after discussing the project and sharing the readme)
 
@@ -313,3 +313,36 @@ Algorithmic Elegance: The mathematical elegance of fractals allows for computati
 Catalyst for AI Understanding: Using a fractal structure provides a unique substrate for AI algorithms to navigate. This might lead to novel ways in which AI understands and interacts with human-generated nodes, generating deeper and more nuanced responses.
 
 So, the question isn't so much about whether thought is naturally fractal—indeed it is—but about how the explicit use of a fractal framework in Neurite can amplify, focus, and extend the natural fractal-like properties of human cognition. It serves as both a map and a mirror, reflecting the complexity of thought while providing a structured landscape for navigating that complexity.
+
+
+## Example of GPT-4V combined with Neurite.
+
+`Input image`
+
+![Screenshot 2023-10-03 210940](https://github.com/satellitecomponent/Neurite/assets/129367899/89f6bac4-a644-4061-973e-bb94d7fe8b12)
+
+`Prompt`
+From your existing understanding of the image, try to capture a synthesis of new ideas. Be as unique and original in your thinking as possible. Act as an expert.
+
+`Response`
+
+Certainly, let's dissect and synthesize the provided concepts in the context of Neurite and the progression of our understanding of the universe:
+
+The Fractal Universe in the Digital Age:
+1. The Interplay of Theories:
+Theories like the Big Bang, General Relativity, Quantum Mechanics, and the Standard Model have been foundational in our understanding of the universe. Introducing the notion of "Fractal Cosmology" and "Fractal String Theory" suggests an interconnected, repeating pattern inherent in the fabric of reality. Just as the Mandelbrot set in fractal geometry unveils infinite complexity as we zoom deeper, these theories hint that our universe may be a part of a much larger, possibly infinite, fractal pattern.
+
+2. Digital Representation in Neurite:
+Neurite's fractal mind mapping tool, which allows for infinite depth and complexity, mirrors this idea of a fractal universe. Each note or idea can be thought of as an individual "universe" of information, with its own set of interconnected ideas (or "galaxies"), and each of those ideas can further be dissected into more detailed components ("stars" and "planets").
+
+3. The Quantum Mechanics of Ideas:
+Quantum mechanics, with its principles of superposition and entanglement, can be metaphorically related to the proliferation of ideas. In Neurite, an idea can exist in multiple states (superposition) until it is observed or defined. Additionally, one idea can become intricately linked with another, such that the state of one (its development or alteration) can instantly influence the other, regardless of the distance between them (entanglement). This mirrors the fractal interconnectedness of the cosmos.
+
+4. The Gravity of Influence:
+General relativity speaks to the warping of spacetime by masses. In the realm of ideas and Neurite, influential ideas or foundational concepts can be seen as "massive bodies" that warp the "spacetime" of thought, drawing other related ideas towards them, creating a web of interconnected knowledge.
+
+5. The Evolution of Understanding:
+Just as the Big Bang theory describes the evolution of the universe from a singular point to its current vast expanse, our understanding and knowledge expand from singular foundational ideas, branching out and evolving into complex webs of interconnected thoughts.
+
+Conclusion:
+Neurite's framework provides a digital playground that mirrors the complexities and intricacies of the universe as described by these theories. By visualizing knowledge in a fractal manner, it offers a unique lens through which we can understand, dissect, and expand upon complex concepts, mirroring the very nature of the cosmos. This synthesis offers a bridge between the abstract theories of the universe and the tangible representation of knowledge, enabling users to explore, connect, and expand ideas in a cosmic dance of digital exploration.
