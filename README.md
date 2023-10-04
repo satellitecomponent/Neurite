@@ -317,7 +317,42 @@ So, the question isn't so much about whether thought is naturally fractal—inde
 
 ## Example of GPT-4V combined with Neurite.
 
-`Input image`
+`Input Image`
+
+![Screenshot 2023-10-03 213637](https://github.com/satellitecomponent/Neurite/assets/129367899/02340d81-0cc2-4f64-844c-c04281ef5e5c)
+
+`Prompt`
+
+who are the artists? describe the work in depth
+
+`Response`
+
+From the images you provided, and based on their distinct styles, I recognize some of the artworks and can provide an analysis:
+
+Large Panoramic Artwork (960x0.webp):
+
+Artist: This appears to be Claude Monet's "Water Lilies." Monet, a founder of French Impressionist painting, was renowned for his plein air landscape painting.
+Description: This expansive piece showcases a pond filled with lilies, rendered with dappled light and reflections. The artist's brushstrokes are both swift and deliberate, capturing the ever-changing nature of water and light. The colors range from soft blues to purples, with touches of green and pink from the lily pads and flowers. Monet's exploration of light and color culminates in this series, as he sought to capture the same scene under different conditions of light and seasons.
+High-Speed Gardening (71_001.jpg):
+
+Artist: The style is reminiscent of Ed Ruscha. Ruscha's work often combines text and image, often with a touch of humor or irony.
+Description: This piece juxtaposes the phrase "HIGH-SPEED GARDENING" with an image of what appears to be a tranquil field at sunrise or sunset. The shadow of the text gives a 3D effect as if the words are hovering above the landscape. The concept itself seems to be a play on our modern need for speed and efficiency even in traditionally slow-paced activities like gardening.
+Figurative Painting (Ernst Ludwig Kirchner):
+
+Artist: As indicated, this is a piece by Ernst Ludwig Kirchner, a German expressionist painter and printmaker.
+Description: This work is emblematic of Kirchner's style, with its bold colors and sharp, angular lines. The figures depicted have elongated features and are painted in vibrant colors. Their facial expressions appear somewhat melancholic. Kirchner's use of color to convey emotion and his somewhat distorted representation of the human figure are key characteristics of his work.
+Sculptures (Huma-Bhabha_Flash-Art_06.jpg):
+
+Artist: The file name suggests this is the work of Huma Bhabha, a Pakistani-American sculptor known for her raw, somewhat post-apocalyptic sculptures.
+Description: The sculptures are a mix of humanoid and alien, created from what seems like a combination of found materials, wood, clay, and possibly metal. They combine elements of the ancient and the futuristic, creating a sense of timelessness. The use of different materials adds a tactile element to the sculptures, with the viewer being able to discern the roughness of wood or the smoothness of polished metal.
+Sculpture & Fabric Art (25HAMMONS-superJumbo.jpg):
+
+Artist: The style and materials are reminiscent of David Hammons, an African-American artist known for his provocative works that touch upon themes of race, poverty, and the African-American experience.
+Description: On the left, there's a sculpture that seems to be made of various metal and found parts, bound together to form a figure. The golden, rusted hue of the metal gives the figure a sense of age and wear. On the right, a piece of draped red fabric is presented as an artwork, evoking feelings of warmth, protection, and possibly referencing themes of shelter or covering.
+Each piece offers a deep dive into the artist's mindset and the cultural context in which they were working. Their choice of color, medium, and subject matter all provide insights into their intentions and the messages they wished to convey.
+
+
+`Input Image`
 
 ![Screenshot 2023-10-03 210940](https://github.com/satellitecomponent/Neurite/assets/129367899/89f6bac4-a644-4061-973e-bb94d7fe8b12)
 
@@ -346,3 +381,54 @@ Just as the Big Bang theory describes the evolution of the universe from a singu
 
 Conclusion:
 Neurite's framework provides a digital playground that mirrors the complexities and intricacies of the universe as described by these theories. By visualizing knowledge in a fractal manner, it offers a unique lens through which we can understand, dissect, and expand upon complex concepts, mirroring the very nature of the cosmos. This synthesis offers a bridge between the abstract theories of the universe and the tangible representation of knowledge, enabling users to explore, connect, and expand ideas in a cosmic dance of digital exploration.
+
+`Input Image`
+
+![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
+
+`Prompt`
+
+I am glad you can see images now! I am very excited to explore your new ability in the context of Neurite. This is an image that does not display the fractal aspect, instead it displays how long term memory is constructed using this method. Give a detailed an in depth response. Preface with an internal monologue, then your response to be displayed to me. 
+
+`Internal Monologue:`
+
+The image illustrates a comprehensive architecture for the Neurite tool, showcasing the intricate mechanism of how long-term memory is constructed within an AI environment. It highlights key components, from note creation to context understanding. To craft a detailed response, I should break down each component and elucidate its significance and functionality in the memory formation process. Given the user's context of Neurite and their focus on the most effective solutions, I should ensure that my explanation not only interprets the depicted system but also offers constructive insights to refine or optimize the illustrated components.
+
+`Response:`
+
+Neurite Long-Term Memory Architecture Breakdown:
+
+Notes:
+
+Function: Central to the system, notes capture individual ideas within a conversation, both from the user and the AI.
+Significance: By compartmentalizing information into discrete notes, it ensures clarity and makes indexing, searching, and recalling more efficient.
+Vector Embedding:
+
+Function: Each note, once generated, undergoes a transformation into a higher dimensional vector via an embedding model (possibly OpenAI's).
+Significance: Embeddings capture the semantic essence of notes, facilitating precise comparisons and retrievals.
+AI Response:
+
+Function: AI breaks its output into multiple notes, aligning with the Zettelkasten format which promotes granular, interconnected knowledge.
+Significance: This modular approach boosts conceptual reasoning and reinforces the AI's capacity for a "long-term memory".
+Local Storage:
+
+Function: Serves as a reservoir for notes as well as a database for external content like webpages/PDFs.
+Significance: By storing data locally, it ensures swift access and avoids redundant data generation.
+Cosine Similarity:
+
+Function: Conducts similarity assessments among stored vector embeddings to retrieve the top-n relevant notes or content chunks.
+Significance: Facilitates context-aware responses by the AI, enabling it to pull from a reservoir of previous interactions and content.
+Context Window:
+
+Function: Provides the AI a glimpse into the ongoing context, anchoring its responses to the most recent interactions.
+Significance: Ensures that the AI remains contextually aligned and responsive to the user's evolving line of inquiry.
+User Prompt and API Calls:
+
+Function: Drives the AI's actions. Based on user prompts, the AI can generate keywords, construct search queries, or make API calls to fetch relevant information.
+Significance: Amplifies the AI's utility by connecting it to external knowledge bases (e.g., Wolfram, Google, Wikipedia) and allowing dynamic interactions.
+Constructive Insights:
+
+Embedding Optimization: Consider refining the embedding process to handle various types of content, ensuring that the semantic richness of videos, audio, or images is also captured effectively.
+Cosine Similarity Refinement: Implement a tiered retrieval system, starting with the most recent interactions and progressively searching older notes to maintain relevance.
+Context Window Expansion: Depending on computational resources, gradually increase the context window's size to hold longer conversations, enhancing the depth of understanding.
+By seamlessly integrating these components, Neurite aspires to construct a rich, interconnected web of long-term memories, ensuring AI responses are not only contextually relevant but also deeply insightful.
