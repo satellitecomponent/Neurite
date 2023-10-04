@@ -333,6 +333,7 @@ Large Panoramic Artwork (960x0.webp):
 
 Artist: This appears to be Claude Monet's "Water Lilies." Monet, a founder of French Impressionist painting, was renowned for his plein air landscape painting.
 Description: This expansive piece showcases a pond filled with lilies, rendered with dappled light and reflections. The artist's brushstrokes are both swift and deliberate, capturing the ever-changing nature of water and light. The colors range from soft blues to purples, with touches of green and pink from the lily pads and flowers. Monet's exploration of light and color culminates in this series, as he sought to capture the same scene under different conditions of light and seasons.
+
 High-Speed Gardening (71_001.jpg):
 
 Artist: The style is reminiscent of Ed Ruscha. Ruscha's work often combines text and image, often with a touch of humor or irony.
@@ -341,10 +342,12 @@ Figurative Painting (Ernst Ludwig Kirchner):
 
 Artist: As indicated, this is a piece by Ernst Ludwig Kirchner, a German expressionist painter and printmaker.
 Description: This work is emblematic of Kirchner's style, with its bold colors and sharp, angular lines. The figures depicted have elongated features and are painted in vibrant colors. Their facial expressions appear somewhat melancholic. Kirchner's use of color to convey emotion and his somewhat distorted representation of the human figure are key characteristics of his work.
+
 Sculptures (Huma-Bhabha_Flash-Art_06.jpg):
 
 Artist: The file name suggests this is the work of Huma Bhabha, a Pakistani-American sculptor known for her raw, somewhat post-apocalyptic sculptures.
 Description: The sculptures are a mix of humanoid and alien, created from what seems like a combination of found materials, wood, clay, and possibly metal. They combine elements of the ancient and the futuristic, creating a sense of timelessness. The use of different materials adds a tactile element to the sculptures, with the viewer being able to discern the roughness of wood or the smoothness of polished metal.
+
 Sculpture & Fabric Art (25HAMMONS-superJumbo.jpg):
 
 Artist: The style and materials are reminiscent of David Hammons, an African-American artist known for his provocative works that touch upon themes of race, poverty, and the African-American experience.
