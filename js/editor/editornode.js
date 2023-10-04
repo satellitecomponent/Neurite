@@ -96,35 +96,36 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             line-height: 30px;
         }
 
-        .CodeMirror {
-            font-size: 12px;
-            height: calc(100% - 32px); /* Adjusted for label height */
-            width: 100%;
-            position: absolute; /* Take full height of parent */
-            bottom: 0; /* Align to the bottom of the container */
-            overflow: hidden; /* Hide scrollbars */
-        }
+.CodeMirror {
+    font-size: 12px;
+    height: calc(100% - 32px); /* Adjusted for label height */
+    width: 100%;
+    position: absolute; /* Take full height of parent */
+    bottom: 0; /* Align to the bottom of the container */
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+}
 
-        .CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
-            background: #222226 !important;
-        }
+.CodeMirror-simplescroll-horizontal {
+    display: none !important; /* Hide horizontal scrollbar */
+}
 
-            .CodeMirror-simplescroll-horizontal div, .CodeMirror-simplescroll-vertical div {
-                background: #3f3f3f !important;
-                border: 1px solid #555555;
-                width: 6px !important;
-            }
+.CodeMirror-simplescroll-vertical {
+    background: #222226 !important;
+}
 
-        .CodeMirror-simplescroll-scrollbar div:hover {
-            background: #555 !important;
-        }
+.CodeMirror-simplescroll-vertical div {
+    background: #3f3f3f !important;
+    border: 1px solid #555555;
+    width: 6px !important;
+}
 
-            .CodeMirror-simplescroll-scrollbar div:hover {
-                background: #555 !important;
-            }
-        .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
-            background-color: #222226;
-        }
+.CodeMirror-simplescroll-scrollbar div:hover {
+    background: #555 !important;
+}
+
+.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+    background-color: #222226;
+}
 
         .custom-scrollbar::-webkit-scrollbar {
             width: 10px;
@@ -345,24 +346,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
 
 
     let node = addNodeAtNaturalScale(title, [wrapperDiv]); // Use the wrapper div here
-
-    // Locate the .window parent container
-    let windowElement = wrapperDiv.closest('.window');
-
-    // Create overlay div
-    let overlay = document.createElement('div');
-    overlay.classList.add('overlay');
-
-    // Attach dragstart and dragend events to windowElement
-    windowElement.addEventListener('mousedown', (e) => {
-        // Place overlay above iframe
-        wrapperDiv.appendChild(overlay);
-    });
-
-    windowElement.addEventListener('mouseup', (e) => {
-        // Remove overlay
-        wrapperDiv.removeChild(overlay);
-    });
 
 
         // Generate a unique identifier for the iframe using the node's uuid

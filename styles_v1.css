@@ -984,6 +984,13 @@ select-replacer > div:first-child {
 .inline-container {
     display: inline-block;
     vertical-align: middle;
+    margin-right: 3px;
+}
+
+.flex-container {
+    width: 90%;
+    display: flex;
+    align-items: center;
 }
 
 #LocalLLMselect {
@@ -1191,8 +1198,12 @@ input[type=range] {
     }
 
     /* Operators & Properties */
-    .cm-s-default .cm-operator, .cm-s-default .cm-property {
+    .cm-s-default .cm-operator {
         color: #67cdcc !important;
+    }
+
+    .cm-s-default .cm-property {
+        color: #ff5733 !important; /* You can set this to any color you'd like */
     }
 
     /* Numbers */
@@ -1270,25 +1281,6 @@ input[type=range] {
     background-color: #222226;
 }
 
-.loader {
-    border: 5px solid #222226; /* Dark grey */
-    border-top: 5px solid #006BB6; /* Blue */
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 .model-dropdown {
     width: 123px;
 }
@@ -1325,6 +1317,62 @@ input[type=range] {
 
 .error-x-mark-right {
     transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.loader {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes scaleDown {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(0);
+    }
+}
+
+.initial-animation {
+    animation: scaleDown 8s forwards;
+}
+
+.loader-fillBackground {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    position: relative;
+    overflow: hidden;
+    animation: spin 2s linear infinite;
+}
+
+.loader-fill {
+    background-color: #006BB6; /* Blue */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.35s;
 }
 
 .status-icons-container {

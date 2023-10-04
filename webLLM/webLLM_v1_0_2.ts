@@ -64,6 +64,14 @@ const appConfig = {
     "use_web_worker": true
 }
 
+declare global {
+    interface Window {
+        generateLocalLLMResponse: any;
+        callWebLLMGeneric: (messages: any[]) => Promise<string>;
+        updateLoadingIcon: (percentage: number) => void;
+    }
+}
+
 
 async function initializeLLM(model) {
     chat = new webllm.ChatWorkerClient(new Worker(
@@ -71,30 +79,29 @@ async function initializeLLM(model) {
         { type: 'module' }
     ));
 
-    let lastReportLength = 0; // Store the length of the last report
-
     chat.setInitProgressCallback((report: webllm.InitProgressReport) => {
-        // Get the current content from CodeMirror
-        let currentContent = noteInput.getValue();
-        // Remove the last report
-        currentContent = currentContent.substring(0, currentContent.length - lastReportLength);
-        // Append the new report
-        currentContent += report.text + "\n";
-        // Set the updated content back into CodeMirror
-        noteInput.setValue(currentContent);
-        // Store the length of the new report
-        lastReportLength = report.text.length + 1; // +1 for the newline
+        // Use a regex to extract the percentage from the report text
+        const percentageMatch = report.text.match(/\b(\d+)% completed\b/);
+        const finishedLoadingMatch = report.text.match(/Finish loading on WebGPU/);
+
+        if (percentageMatch) {
+            const percentage = Number(percentageMatch[1]);
+            // Update the loading icon with the extracted percentage
+            window.updateLoadingIcon(percentage);
+        } else if (finishedLoadingMatch) {
+            // Handle the finished loading case
+            window.updateLoadingIcon(100);
+        }
     });
 
-    // Pass the appConfig to the reload function
     await chat.reload(model, undefined, appConfig);
     chat.currentModel = model;
     llmInitialized = true;
 }
 
 document.getElementById('downloadAiButton').addEventListener('click', async () => {
-    const loadingIcon = document.getElementById('loadingIcon');
-    const aiLoadingIcon = document.getElementById('aiLoadingIcon');
+    const loadingIcon = document.getElementById('filledLoadingIcon');
+    const aiLoadingIcon = document.getElementById('aiFilledLoadingIcon');
     const errorIcon = document.getElementById('errorIcon');
     const aiErrorIcon = document.getElementById('aiErrorIcon');
     const selectedModel = (document.getElementById('LocalLLMselect') as HTMLInputElement).value;
@@ -246,14 +253,6 @@ document.getElementById('prompt-form').addEventListener('submit', async (event) 
     (promptInput as HTMLInputElement).value = ''; // Clear the prompt input
 });
 
-
-
-declare global {
-    interface Window {
-        generateLocalLLMResponse: any;
-        callWebLLMGeneric: (messages: any[]) => Promise<string>;
-    }
-}
 
 let messageQueue = [];
 let isProcessing = false;
