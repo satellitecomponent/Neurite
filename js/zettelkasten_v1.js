@@ -277,7 +277,6 @@ const refTag = refTagInput.value;
                 // Save cursor position
                 let cursorPosition = textarea.selectionStart;
 
-                // Get line numbers for the start and end of this node section
                 const { startLineNo, endLineNo } = getNodeSectionRange(name, noteInput);
 
                 let originalValue = noteInput.getValue();
@@ -291,24 +290,24 @@ const refTag = refTagInput.value;
                 noteInput.setValue(newValue);
                 noteInput.refresh();
 
-                // Update the textarea value to force a re-render
-                textarea.value = body;
-
                 // Explicitly update the edges (references)
                 const nodeLines = body.split('\n');
                 for (const line of nodeLines) {
                     if (line.startsWith(refTag)) {
-                        this.handleReferenceLine(line, node.title, nodes, false);  // Pass false to avoid duplication
+                        this.handleReferenceLine(line, node.title, nodes, false);
                     }
                 }
-                // Restore cursor position
+
+                // Update the textarea value AFTER handling the references
+                textarea.value = body;
+
+                // Restore cursor position AFTER handling the references
                 textarea.setSelectionRange(cursorPosition, cursorPosition);
 
                 const linesAboveCursor = body.substr(0, cursorPosition).split("\n");
                 const lineOffset = linesAboveCursor.length - 1;
                 const charPosition = linesAboveCursor[lineOffset].length;
 
-                // Scroll to the title, accounting for the line offset and character position within the textarea
                 scrollToTitle(node.title, noteInput, lineOffset, charPosition);
             }
         }
