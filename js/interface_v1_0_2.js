@@ -633,14 +633,11 @@ function setTextAreaHeight(textarea, maxHeight) {
     const textareaBottom = textarea.getBoundingClientRect().bottom;
     const viewportHeight = window.innerHeight;
 
-    // Case when client rect is not found
-    if (textareaBottom === 0) {
-        return;
-    }
+    // Define a margin from the bottom (e.g., 30 pixels)
+    const bottomMargin = 30;
 
-    // Check if textarea is near the bottom of the viewport
-    if (textareaBottom + 10 > viewportHeight) {
-        textarea.style.overflowY = 'auto';
+    // If the bottom of the textarea (including the margin) is beyond the viewport
+    if (textareaBottom + bottomMargin > viewportHeight) {
         return;
     }
 
