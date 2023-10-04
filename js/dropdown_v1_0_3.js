@@ -7,9 +7,57 @@ var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     theme: 'default',
 });
 
+function captureDocumentUndoRedoEventsAndApplyToCodeMirror(codeMirrorInstance) {
+    document.addEventListener('keydown', function (event) {
+        const targetTagName = event.target.tagName.toLowerCase();
+
+        if (event.target.closest('.CodeMirror')) {
+            return;  // Exit function if the event target is CodeMirror
+        }
+
+        if ((event.ctrlKey || event.metaKey) &&  // Works for both Ctrl (Windows/Linux) and Cmd (macOS)
+            !event.target.closest('.dropdown') &&
+            targetTagName !== 'textarea') {
+
+            let didOperation = false;
+
+            if (event.key === 'z') {
+                if (event.shiftKey) {
+                    // Redo for Ctrl+Shift+Z or Cmd+Shift+Z
+                    codeMirrorInstance.redo();
+                    didOperation = true;
+                } else {
+                    // Undo for Ctrl+Z or Cmd+Z
+                    codeMirrorInstance.undo();
+                    didOperation = true;
+                }
+            } else if (event.key === 'y') {
+                // Redo for Ctrl+Y or Cmd+Y
+                codeMirrorInstance.redo();
+                didOperation = true;
+            }
+
+            if (didOperation) {
+                event.preventDefault();  // Prevent the default undo/redo behavior in the document
+                setTimeout(() => codeMirrorInstance.refresh(), 0);  // Refresh the CodeMirror instance
+            }
+        }
+    });
+}
+
+captureDocumentUndoRedoEventsAndApplyToCodeMirror(myCodeMirror);
+
 // Get the viewport dimensions
-let maxWidth = window.innerWidth * 0.9;
-let maxHeight = window.innerHeight * 0.7;
+let maxWidth, maxHeight;
+
+function updateMaxDimensions() {
+    maxWidth = window.innerWidth * 0.9;
+    maxHeight = window.innerHeight * 0.7;
+}
+
+// Update max dimensions initially and on window resize
+updateMaxDimensions();
+window.addEventListener("resize", updateMaxDimensions);
 
 // Horizontal drag handle
 let zetHorizDragHandle = document.getElementById("zetHorizDragHandle");
@@ -18,6 +66,7 @@ let initialX;
 let initialWidth;
 
 zetHorizDragHandle.addEventListener("mousedown", function (event) {
+    updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsHorizResizing = true;
     initialX = event.clientX;
     let cmElement = myCodeMirror.getWrapperElement();
@@ -39,15 +88,19 @@ zetHorizDragHandle.addEventListener("mousedown", function (event) {
 
 function zetHandleHorizMouseMove(event) {
     if (zetIsHorizResizing) {
-        let dx = event.clientX - initialX;
-        let cmElement = myCodeMirror.getWrapperElement();
-        let newWidth = initialWidth - dx;
+        requestAnimationFrame(() => {
+            // Calculate the difference in the x position
+            let dx = event.clientX - initialX;
+            let cmElement = myCodeMirror.getWrapperElement();
+            let newWidth = initialWidth - dx;
 
-        if (newWidth > 50 && newWidth <= maxWidth) {
-            cmElement.style.width = newWidth + "px";
-            document.getElementById('prompt').style.width = newWidth + 'px';
-            myCodeMirror.refresh();
-        }
+            // Update the width if within the boundaries
+            if (newWidth > 50 && newWidth <= maxWidth) {
+                cmElement.style.width = newWidth + "px";
+                document.getElementById('prompt').style.width = newWidth + 'px';
+                myCodeMirror.refresh();
+            }
+        });
     }
 }
 
@@ -58,6 +111,7 @@ let initialY;
 let initialHeight;
 
 zetVertDragHandle.addEventListener("mousedown", function (event) {
+    updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsVertResizing = true;
     initialY = event.clientY;
     let cmElement = myCodeMirror.getWrapperElement();
@@ -79,14 +133,18 @@ zetVertDragHandle.addEventListener("mousedown", function (event) {
 
 function zetHandleVertMouseMove(event) {
     if (zetIsVertResizing) {
-        let dy = event.clientY - initialY;
-        let cmElement = myCodeMirror.getWrapperElement();
-        let newHeight = initialHeight + dy;
+        requestAnimationFrame(() => {
+            // Calculate the difference in the y position
+            let dy = event.clientY - initialY;
+            let cmElement = myCodeMirror.getWrapperElement();
+            let newHeight = initialHeight + dy;
 
-        if (newHeight > 50 && newHeight <= maxHeight) {
-            cmElement.style.height = newHeight + "px";
-            myCodeMirror.refresh();
-        }
+            // Update the height if within the boundaries
+            if (newHeight > 50 && newHeight <= maxHeight) {
+                cmElement.style.height = newHeight + "px";
+                myCodeMirror.refresh();
+            }
+        });
     }
 }
 
@@ -150,9 +208,33 @@ myCodeMirror.display.wrapper.style.borderStyle = 'inset';
 myCodeMirror.display.wrapper.style.borderColor = '#8882';
 myCodeMirror.display.wrapper.style.fontSize = '15px';
 myCodeMirror.getWrapperElement().style.resize = "vertical";
+
+
+const bracketsMap = {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '<': '>',
+    '((': '))',
+    '[[': ']]',
+    '{{': '}}',
+    '<<': '>>',
+    '«': '»',      // Guillemet
+    '/*': '*/',
+    '<!--': '-->',
+    '#[': ']#',
+    '<%': '%>',
+    '(*': '*)',
+    '`': '`',
+    '```': '```',  
+    '${': '}',
+    '|': '|'
+};
+
+const sortedBrackets = Object.keys(bracketsMap).sort((a, b) => b.length - a.length);
+
 var nodeInput = document.getElementById('node-tag');
 var refInput = document.getElementById('ref-tag');
-
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
@@ -173,9 +255,9 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
         },
         token: function (stream, state) {
             if (stream.sol()) {
-                let match = stream.match(/```(html|css|(js|javascript)|python)/, false); // Updated regex
+                let match = stream.match(/```(html|css|(js|javascript)|python)/, false);
                 if (match && match[1]) {
-                    state.inBlock = match[1] === "javascript" ? "js" : match[1]; // Normalize "javascript" to "js"
+                    state.inBlock = match[1] === "javascript" ? "js" : match[1];
                     state.subState = CodeMirror.startState({ 'html': htmlMixedMode, 'css': cssMode, 'js': jsMode, 'python': pythonMode }[state.inBlock]);
                     stream.skipToEnd();
                     return "string";
@@ -194,17 +276,34 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
                 return ({ 'html': htmlMixedMode, 'css': cssMode, 'js': jsMode, 'python': pythonMode }[state.inBlock]).token(stream, state.subState);
             }
 
-            if (stream.match(node)) {
-                return "node";
-            }
-            if (stream.match(ref)) {
-                return "ref";
-            }
             if (stream.match(Prompt)) {
                 return "Prompt";
             }
 
-            stream.skipToEnd();
+            if (stream.match(node)) {
+                return "node";
+            }
+
+            // Check the refTag in the bracketsMap
+            if (bracketsMap[ref]) {
+                if (stream.match(ref, false)) {  // Check for the opening bracket
+                    stream.match(ref);  // Consume the opening bracket
+                    return "ref";
+                }
+
+                const closingBracket = bracketsMap[ref];
+                if (stream.match(closingBracket, false)) {  // Check for the corresponding closing bracket
+                    stream.match(closingBracket);  // Consume the closing bracket
+                    return "ref";
+                }
+            } else {
+                // If refTag isn't in the bracketsMap, match it directly
+                if (stream.match(ref)) {
+                    return "ref";
+                }
+            }
+
+            stream.next();
             return null;
         },
     };
@@ -334,18 +433,6 @@ function getNodeSectionRange(title, cm) {
     let startLineNo = nodeLineNo;
     let endLineNo = nextNodeLineNo - 1; // Default end line is the line just before the next node
 
-    // Get the reference tag from the global variable
-    const refTag = document.getElementById('ref-tag').value;
-
-    // Search for reference tag between the found node line and the next node line
-    for (let i = startLineNo; i < nextNodeLineNo; i++) {
-        const lineText = cm.getLine(i);
-        if (lineText.startsWith(refTag)) {
-            endLineNo = i; // If reference tag is found, set end line to that line, including it
-            break;
-        }
-    }
-
     return { startLineNo, endLineNo };
 }
 
@@ -434,10 +521,148 @@ function deleteNodeByTitle(title) {
     }
 }
 
+function getNodeTitleLine(title, cm) {
+    const lowerCaseTitle = title.toLowerCase();
+    for (const [mapTitle, mapLineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+        if (mapTitle.toLowerCase() === lowerCaseTitle) {
+            return mapLineNo;
+        }
+    }
+    return null;
+}
+
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function removeEdgeFromZettelkasten(title1, title2) {
+    if (!title1 || !title2) {
+        console.error("One or both titles are empty or undefined.");
+        return;
+    }
+
+    const refTag = refInput.value;
+    const nodeTag = nodeInput.value;
+    const lineCount = myCodeMirror.lineCount();
+    const titles = [title1, title2];
+
+    const closingBracket = bracketsMap[refTag];
+
+    titles.forEach((title) => {
+        const nodeLine = getNodeTitleLine(title, myCodeMirror);
+        if (nodeLine !== null) {
+            for (let j = nodeLine + 1; j < lineCount; j++) {
+                let nextLine = myCodeMirror.getLine(j);
+                if (nextLine.startsWith(nodeTag)) break;
+
+                let escapedRefTag = escapeRegExp(refTag);
+                let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
+
+                if (lineHasRefTag) {
+                    titles.forEach((innerTitle) => {
+                        if (title === innerTitle) {
+                            return; // Skip if the title matches innerTitle
+                        }
+                        let escapedInnerTitle = escapeRegExp(innerTitle);
+
+                        let regExp;
+                        if (closingBracket) {
+                            regExp = new RegExp(`(${escapedRefTag}\\s*${escapedInnerTitle}\\s*${escapeRegExp(closingBracket)})|(,?\\s*${escapedInnerTitle}\\s*,?)`, 'g');
+                        } else {
+                            regExp = new RegExp(`(${escapedRefTag}\\s*${escapedInnerTitle}\\s*${escapedRefTag})|(,?\\s*${escapedInnerTitle}\\s*,?)`, 'g');
+                        }
+
+                        nextLine = nextLine.replace(regExp, (match, p1, p2) => {
+                            if (p1) {
+                                return '';
+                            } else if (p2) {
+                                return p2.startsWith(',') ? ',' : '';
+                            }
+                        }).trim();
+
+                        // Remove trailing commas and spaces
+                        nextLine = nextLine.replace(/,\s*$/, '').trim();
+
+                        if (closingBracket) {
+                            let emptyBracketsRegExp = new RegExp(`${escapedRefTag}\\s*${escapeRegExp(closingBracket)}`, 'g');
+                            if (emptyBracketsRegExp.test(nextLine)) {
+                                nextLine = nextLine.replace(emptyBracketsRegExp, '');
+                            }
+                        } else {
+                            let lonelyRefTag = new RegExp(`^${escapedRefTag}\\s*$`);
+                            if (lonelyRefTag.test(nextLine)) {
+                                nextLine = '';
+                            }
+                        }
+
+                        myCodeMirror.replaceRange(nextLine, { line: j, ch: 0 }, { line: j, ch: myCodeMirror.getLine(j).length });
+                    });
+                }
+            }
+        }
+    });
+
+    myCodeMirror.refresh();
+}
+
+// Flag to control recursion
+let isEdgeBeingAdded = false;
+
+function addEdgeToZettelkasten(fromTitle, toTitle, cm) {
+    if (!fromTitle || !toTitle) {
+        console.error("One or both titles are empty or undefined.");
+        return;
+    }
+    // Prevent recursive addition of edges
+    if (isEdgeBeingAdded) {
+        return;
+    }
+
+    isEdgeBeingAdded = true;
+
+    const appendOrCreateTag = (range, tagLineStart, newTag, tagPrefix = "", useCSV = false) => {
+        const lineToAppend = cm.getLine(range.endLineNo);
+        const isEmptyLine = lineToAppend.trim() === "";
+
+        if (tagLineStart !== null) {
+            const oldLine = cm.getLine(tagLineStart);
+            if (!oldLine.includes(newTag)) {
+                const separator = useCSV ? ', ' : ' ';
+                cm.replaceRange(`${oldLine}${separator}${newTag}`, { line: tagLineStart, ch: 0 }, { line: tagLineStart, ch: oldLine.length });
+            }
+        } else if (isEmptyLine) {
+            cm.replaceRange(`\n${tagPrefix}${newTag}\n`, { line: range.endLineNo, ch: 0 });
+        } else {
+            cm.replaceRange(`\n${tagPrefix}${newTag}\n`, { line: range.endLineNo + 1, ch: 0 });
+        }
+    };
+
+    const fromRange = getNodeSectionRange(fromTitle, cm);
+    const refTag = document.getElementById('ref-tag').value;
+    let tagLineStart = null;
+
+    for (let i = fromRange.startLineNo; i <= fromRange.endLineNo; i++) {
+        const lineText = cm.getLine(i);
+        if (lineText.startsWith(refTag)) {
+            tagLineStart = i;
+            break;
+        }
+    }
+
+    const closingBracket = bracketsMap[refTag];
+
+    if (closingBracket) {
+        appendOrCreateTag(fromRange, tagLineStart, `${refTag}${toTitle}${closingBracket}`);
+    } else {
+        appendOrCreateTag(fromRange, tagLineStart, toTitle, `${refTag} `, true);
+    }
+    isEdgeBeingAdded = false;
+}
+
 myCodeMirror.on("mousedown", function (cm, event) {
     var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
     const token = cm.getTokenAt(pos);
-    console.log(token.type);
+    //console.log(token.type);
 
     if (token.type && token.type.includes("node")) {
         const lineContent = cm.getLine(pos.line);
@@ -1321,3 +1546,42 @@ colorPicker.addEventListener("input", function () {
 
 // Manually dispatch the input event
 colorPicker.dispatchEvent(new Event("input"));
+
+        //ai.js dropdown interaction
+let MAX_CHUNK_SIZE = 400;
+
+const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
+const maxChunkSizeValue = document.getElementById('maxChunkSizeValue');
+
+// Display the initial slider value
+maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
+
+// Update the current slider value (each time you drag the slider handle)
+maxChunkSizeSlider.oninput = function () {
+    MAX_CHUNK_SIZE = this.value;
+    maxChunkSizeValue.textContent = this.value;
+}
+
+let topN = 5;
+const topNSlider = document.getElementById('topNSlider');
+const topNValue = document.getElementById('topNValue');
+
+topNSlider.addEventListener('input', function () {
+    topN = this.value;
+    topNValue.textContent = this.value;
+});
+
+function updateLoadingIcon(percentage) {
+    const loaderFills = document.querySelectorAll('.loader-fill');
+
+    loaderFills.forEach(loaderFill => {
+        // Set a timeout to remove the initial animation class after 8 seconds
+        setTimeout(() => {
+            loaderFill.classList.remove('initial-animation');
+        }, 8000); // 8000 milliseconds = 8 seconds
+
+        // Scale from 0 to 1 based on the percentage
+        const scale = percentage / 100;
+        loaderFill.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    });
+}

@@ -137,6 +137,9 @@
                                     <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
                                     <div class="status-icons-container">
                                         <div class="loader" id="aiLoadingIcon" style="display:none;"></div>
+                                        <div class="loader-fillBackground" id="aiFilledLoadingIcon" style="display:none;">
+                                            <div class="loader-fill initial-animation"></div>
+                                        </div>
                                         <div class="error-icon-css" id="aiErrorIcon" style="display:none;">
                                             <div class="error-x-mark">
                                                 <span class="error-x-mark-left"></span>
@@ -158,7 +161,7 @@
                                     </div>
                                 </div>
                                 <div class="input-group" style="margin-top: 10px;">
-                                    <textarea id="prompt" rows="1" onkeydown="handleKeyDown(event);" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
+                                    <textarea id="prompt" class="custom-scrollbar" rows="1" onkeydown="handleKeyDown(event);" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
                                 </div>
                             </div>
                         </form>
@@ -231,7 +234,12 @@
 
                             <div class="settingsSlider">
                                 <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
-                                <input type="range" id="maxLinesSlider" min="0" max="1024" step="1">
+                                <input type="range"
+                                       id="maxLinesSlider"
+                                       min="0"
+                                       max="1024"
+                                       step="1"
+                                       title="Requires zooming until refresh to decrease max lines">
                             </div>
 
                             <div class="settingsSlider">
@@ -392,11 +400,11 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <input type="text" id="node-tag" class="tags" value="node:" style="width:80px;" />
+                                    <input type="text" id="node-tag" class="tags" value="##" style="width:80px;" />
                                     <label for="node-tag">Node Tag</label>
                                 </td>
                                 <td>
-                                    <input type="text" id="ref-tag" class="tags" value="ref:" style="width:80px;" />
+                                    <input type="text" id="ref-tag" class="tags" value="[[" style="width:80px;" />
                                     <label for="ref-tag">Reference Tag</label>
                                 </td>
                             </tr>
@@ -409,30 +417,37 @@
                         <!--<div>
         <button id="ai-cursor-button">Enable Ai Cursor</button>
     </div>-->
-                        <div class="inline-container">
-                            <input type="checkbox" id="localLLM">
-                            <label for="localLLM">:</label>
-                        </div>
-                        <button id="downloadAiButton" class="key-button">INSTALL</button>
-                        <div class="inline-container">
-                            <select id="LocalLLMselect" class="model-dropdown custom-select">
-                                <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
-                                <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
-                                <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
-                                <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
-                                <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
-                                <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
-                            </select>
-                        </div>
-                        <div class="inline-container">
-                            <div class="loader" id="loadingIcon" style="display:none;"></div>
-                        </div>
-                        <div class="inline-container">
-                            <div id="errorIcon" style="display:none;">
-                                <div class="error-icon-css">
-                                    <div class="error-x-mark">
-                                        <span class="error-x-mark-left"></span>
-                                        <span class="error-x-mark-right"></span>
+                        <div class="flex-container">
+                            <div class="inline-container">
+                                <input type="checkbox" id="localLLM">
+                                <label for="localLLM">:</label>
+                            </div>
+                            <button id="downloadAiButton" class="key-button">INSTALL</button>
+                            <div class="inline-container">
+                                <select id="LocalLLMselect" class="model-dropdown custom-select">
+                                    <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
+                                    <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
+                                    <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
+                                    <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
+                                    <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
+                                    <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
+                                </select>
+                            </div>
+                            <div class="inline-container">
+                                <div class="loader" id="loadingIcon" style="display:none;"></div>
+                            </div>
+                            <div class="inline-container">
+                                <div class="loader-fillBackground" id="filledLoadingIcon" style="display:none;">
+                                    <div class="loader-fill initial-animation"></div>
+                                </div>
+                            </div>
+                            <div class="inline-container">
+                                <div id="errorIcon" style="display:none;">
+                                    <div class="error-icon-css">
+                                        <div class="error-x-mark">
+                                            <span class="error-x-mark-left"></span>
+                                            <span class="error-x-mark-right"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
