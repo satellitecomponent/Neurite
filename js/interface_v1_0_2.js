@@ -280,7 +280,7 @@ function windowify(title, content, pos, scale, iscale, link) {
 
     div.addEventListener('click', (event) => {
         event.stopPropagation();
-        if (event.ctrlKey) {
+        if (event.ctrlKey && nodeMode === 1) {
             div.classList.toggle('selected');
         }
     });
