@@ -694,7 +694,7 @@ const instructionsMessage = () => ({
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
 ${tagValues.nodeTag} Essential Controls
-- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Ctrl + Click to select and resize multiple nodes.
+- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Ctrl + Shift + Click to select and resize multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.

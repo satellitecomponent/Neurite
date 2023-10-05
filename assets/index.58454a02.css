@@ -966,10 +966,10 @@ select-replacer > div:first-child {
                 border: none;
             }
         /* Existing CSS */
-        .selected {
-            background-color: #bbb; /* Or any other color */
-            color: #222226;
-        }
+.selected {
+    background-color: #8b8b8b; /* Or any other color */
+    color: #222226;
+}
 
         /* New CSS */
         #key-list p:hover {
