@@ -1,17 +1,10 @@
-var nodeTagInput;
-var refTagInput;
+
 var myCodeMirror;
 let llmNodeCreated = false;
 const noteInput = myCodeMirror;
 let nodefromWindow = false;
 let followMouseFromWindow = false;
 let shouldAddCodeButton = false;
-
-
-nodeTagInput = document.getElementById('node-tag');
-refTagInput = document.getElementById('ref-tag');
-const nodeTag = nodeTagInput.value;
-const refTag = refTagInput.value;
 
 
 {
@@ -40,7 +33,7 @@ const refTag = refTagInput.value;
 
     function nodeRE(name = undefined, tag_prefix = undefined) {
         if (tag_prefix === undefined) {
-            tag_prefix = nodeTagInput.value;
+            tag_prefix = nodeTag;
         }
         if (name === undefined) {
             return new RegExp("(\\n|^)" + RegExp.escape(tag_prefix));
@@ -70,8 +63,8 @@ const refTag = refTagInput.value;
         //(\n|^)(((#node:)[\t ]*from[\t ]*)|((#ref:)([^,\n]+,)*[\t ]*from[\t ]*(,[^,\n]+)*))(?=(\n|$))
         //$1$4$6$7 to$8$9
         const fe = RegExp.escape(from);
-        const nodeRE = "(" + RegExp.escape(nodeTagInput.value) + ")[\\t ]*" + fe + "[\\t ]*";
-        const refRE = "(" + RegExp.escape(refTagInput.value) + ")([^,\\n]+,)*[\\t ]*" + fe + "[\\t ]*(,[^,\\n]+)*";
+        const nodeRE = "(" + RegExp.escape(nodeTag) + ")[\\t ]*" + fe + "[\\t ]*";
+        const refRE = "(" + RegExp.escape(refTag) + ")([^,\\n]+,)*[\\t ]*" + fe + "[\\t ]*(,[^,\\n]+)*";
         const tag = "((" + nodeRE + ")|(" + refRE + "))";
         const re = new RegExp("(\n|^)" + tag + "(?=(\n|$))", "g");
         const replacer = (match, p1, p2, p3, p4, p5, p6, p7, p8, p9, offset, string, groups) => {
@@ -81,7 +74,6 @@ const refTag = refTagInput.value;
     }
 
     function addNodeTagToZettelkasten(title, content = null) {
-        const nodeTag = tagValues.nodeTag;  // Using the getter to always get the current value
         const nodeTagLine = nodeTag + ' ' + title;
         let currentZettelkastenValue = noteInput.getValue();
 
@@ -125,9 +117,6 @@ const refTag = refTagInput.value;
 
         //Main if else loop
         processInput() {
-
-            const nodeTag = nodeTagInput.value;
-            const refTag = refTagInput.value;
 
             initializeNodes(nodes);
 
