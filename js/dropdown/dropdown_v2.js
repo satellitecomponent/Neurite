@@ -1,4 +1,33 @@
-﻿const PROMPT_IDENTIFIER = "Prompt:";
+﻿var nodeTagInput;
+var refTagInput;
+
+// Globally available variables for the tags
+var nodeTag = "";
+var refTag = "";
+
+nodeTagInput = document.getElementById('node-tag');
+refTagInput = document.getElementById('ref-tag');
+
+nodeTag = nodeTagInput.value;
+refTag = refTagInput.value;
+
+// Event listeners for the input changes to keep the global variables updated
+nodeTagInput.addEventListener('input', function () {
+    nodeTag = nodeTagInput.value;
+});
+
+refTagInput.addEventListener('input', function () {
+    refTag = refTagInput.value;
+});
+
+
+const PROMPT_IDENTIFIER = "Prompt:";
+
+
+
+
+
+
 
 var textarea = document.getElementById('note-input');
 var myCodeMirror = CodeMirror.fromTextArea(textarea, {
@@ -310,8 +339,8 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
 });
 
 function updateMode() {
-    var node = nodeInput.value;
-    var ref = refInput.value;
+    var node = nodeTag;
+    var ref = refTag;
     myCodeMirror.setOption("mode", { name: "custom", node: node, ref: ref });
     myCodeMirror.refresh();
 }
@@ -350,8 +379,8 @@ function identifyNodeTitles() {
     // Clear previous node titles
     nodeTitles = [];
     myCodeMirror.eachLine((line) => {
-        if (line.text.startsWith(nodeInput.value)) {
-            let title = line.text.split(nodeInput.value)[1].trim();
+        if (line.text.startsWith(nodeTag)) {
+            let title = line.text.split(nodeTag)[1].trim();
             // Remove comma if exists
             if (title.endsWith(',')) {
                 title = title.slice(0, -1);
@@ -369,8 +398,8 @@ function updateNodeTitleToLineMap() {
 
     let currentNodeTitleLineNo = null;
     myCodeMirror.eachLine((line) => {
-        if (line.text.startsWith(nodeInput.value)) {
-            const title = line.text.split(nodeInput.value)[1].trim();
+        if (line.text.startsWith(nodeTag)) {
+            const title = line.text.split(nodeTag)[1].trim();
             currentNodeTitleLineNo = line.lineNo();  // Store the line number of the "node:" line
             nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
         }
@@ -504,10 +533,10 @@ function deleteNodeByTitle(title) {
         // Iterate from the start line until the next node or reference tag is found
         for (let i = startLineNo + 1; i < myCodeMirror.lineCount(); i++) {
             const lineText = myCodeMirror.getLine(i);
-            if (lineText.startsWith(nodeInput.value)) {
+            if (lineText.startsWith(nodeTag)) {
                 break; // Found the next node tag, so stop here
             }
-            if (lineText.startsWith(refInput.value)) {
+            if (lineText.startsWith(refTag)) {
                 endLineNo = i; // Extend the end line to include the reference line
                 break; // Found the reference tag, so stop here
             }
@@ -540,9 +569,6 @@ function removeEdgeFromZettelkasten(title1, title2) {
         console.error("One or both titles are empty or undefined.");
         return;
     }
-
-    const refTag = refInput.value;
-    const nodeTag = nodeInput.value;
     const lineCount = myCodeMirror.lineCount();
     const titles = [title1, title2];
 
@@ -666,7 +692,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
     if (token.type && token.type.includes("node")) {
         const lineContent = cm.getLine(pos.line);
-        const title = lineContent.split(nodeInput.value)[1].trim(); // Title is the rest of the text after the node tag
+        const title = lineContent.split(nodeTag)[1].trim(); // Title is the rest of the text after the node tag
         if (title) toggleNodeState(title, cm, event); // Pass the event object here
         return; // Skip the rest of the handler if the click is on a node tag
     }
@@ -715,7 +741,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
         // Check if the click is on a line that starts with 'node:'
         const lineText = cm.getLine(pos.line);
-        const nodeInputValue = nodeInput.value;  // add ':' at the end
+        const nodeInputValue = nodeTag;  // add ':' at the end
         if (lineText.startsWith(nodeInputValue)) {
             // If the click is on the 'node:' line but not within the marked text, set the cursor position
             cm.setCursor(pos);
