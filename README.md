@@ -46,7 +46,7 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides WYSIWYG (What You See Is What You Get), bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-based hyperlinking (Zettelkasten) methodology. This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
+Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-based hyperlinking (Zettelkasten) methodology. This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
 - **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected in the Mind Map.
 - **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element - but as an interactive generative landscape, offering the ability to zoom between detailed and broad views of your data.
