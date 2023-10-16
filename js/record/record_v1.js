@@ -112,8 +112,46 @@ function handleBlob(blob) {
     video.style.width = '800px';  // Adjust as needed
     video.style.height = 'auto';  // This will maintain aspect ratio
 
-    // Create a node with the video
-    const content = [video];
+    // Create a download link for the video
+    const videoDownloadLink = document.createElement('a');
+    videoDownloadLink.href = url;
+    videoDownloadLink.download = "neuriterecord.webm";
+
+    // Set fixed width and height for the button to create a square around the SVG
+    videoDownloadLink.style.width = "40px";  // Width of the SVG + some padding
+    videoDownloadLink.style.height = "40px";
+    videoDownloadLink.style.display = "flex";  // Use flexbox to center the SVG
+    videoDownloadLink.style.alignItems = "center";
+    videoDownloadLink.style.justifyContent = "center";
+    videoDownloadLink.style.borderRadius = "5px";  // Optional rounded corners
+    videoDownloadLink.style.transition = "background-color 0.2s";  // Smooth transition for hover and active states
+    videoDownloadLink.style.cursor = "pointer";  // Indicate it's clickable
+
+    // Handle hover and active states using inline event listeners
+    videoDownloadLink.onmouseover = function () {
+        this.style.backgroundColor = "#e6e6e6";  // Lighter color on hover
+    }
+    videoDownloadLink.onmouseout = function () {
+        this.style.backgroundColor = "";  // Reset on mouse out
+    }
+    videoDownloadLink.onmousedown = function () {
+        this.style.backgroundColor = "#cccccc";  // Middle color on click (mousedown)
+    }
+    videoDownloadLink.onmouseup = function () {
+        this.style.backgroundColor = "#e6e6e6";  // Back to hover color on mouse release
+    }
+
+    // Clone the SVG from the HTML
+    const downloadSVG = document.querySelector('#download-icon').cloneNode(true);
+    downloadSVG.style.display = "inline";  // Make the cloned SVG visible
+
+    // Append the SVG to the download link and set link styles
+    videoDownloadLink.appendChild(downloadSVG);
+    videoDownloadLink.style.textDecoration = "none"; // to remove underline
+    videoDownloadLink.style.color = "#000";  // Set color for SVG
+
+    // Update the content array to include both the video and download link
+    const content = [video, videoDownloadLink];
     const scale = 1; // You can adjust the scale as needed
     const node = windowify("Recorded Video", content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
     htmlnodes_parent.appendChild(node.content);

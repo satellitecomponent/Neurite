@@ -20,7 +20,7 @@ document.addEventListener('dblclick', function (e) {
 
 function getDefaultTitle() {
     const date = new Date();
-    const year = date.getFullYear();
+    const year = String(date.getFullYear()).slice(-2); // Extracting last two digits of the year
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
     const day = String(date.getDate()).padStart(2, '0');
     const hour = String(date.getHours()).padStart(2, '0');
@@ -29,8 +29,8 @@ function getDefaultTitle() {
     const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
     const amPm = hour >= 12 ? 'PM' : 'AM';
 
-    // Create a string in the format "YYYY-MM-DD HH:MM:SS.sss AM/PM"
-    const dateString = `${year}/${month}/${day} ${hour}:${minute}:${second}.${milliseconds} ${amPm}`;
+    // Create a string in the format "YY-MM-DD HH:MM:SS.sss"
+    const dateString = `${year}/${month}/${day} ${hour}:${minute}:${second}.${milliseconds}`;
     return dateString;
 }
 
@@ -43,4 +43,30 @@ function createNodeFromWindow(title = null, content = null, followMouse = false)
         followMouseFromWindow = true;
     }
     addNodeTagToZettelkasten(defaultTitle, content);
+}
+
+function addNodeTagToZettelkasten(title, content = null) {
+    const nodeTagLine = nodeTag + ' ' + title;
+    let currentZettelkastenValue = noteInput.getValue();
+
+    // Check if the content ends with a newline and add one or two newlines accordingly
+    if (currentZettelkastenValue.endsWith('\n')) {
+        currentZettelkastenValue += '\n' + nodeTagLine;
+    } else {
+        currentZettelkastenValue += '\n\n' + nodeTagLine;
+    }
+
+    // Add content if given
+    if (content) {
+        currentZettelkastenValue += '\n' + content;
+    }
+
+    // Set processAll to true
+    processAll = true;
+
+    noteInput.setValue(currentZettelkastenValue);
+    noteInput.refresh();
+
+    // Reset processAll to false
+    processAll = false;
 }

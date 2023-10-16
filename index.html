@@ -17,6 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/mode/overlay.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/mode/loadmode.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/runmode/runmode.js"></script>
 
     <!-- Modes -->
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/meta.js"></script>
@@ -42,7 +43,7 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
   <script type="module" crossorigin src="./assets/index.5bff41e7.js"></script>
-  <link rel="stylesheet" href="./assets/index.58454a02.css">
+  <link rel="stylesheet" href="./assets/index.1c7a111d.css">
 </head>
 
 <body id="body">
@@ -412,8 +413,8 @@
                     <!-- Fourth tab content here -->
                     <div class="submenu">
                         <!--<div>
-        <button id="ai-cursor-button">Enable Ai Cursor</button>
-    </div>-->
+                            <button id="ai-cursor-button">Enable Ai Cursor</button>
+                        </div>-->
                         <div class="flex-container">
                             <div class="inline-container">
                                 <input type="checkbox" id="localLLM">
@@ -684,7 +685,13 @@
         </defs>
     </svg>
 
-    <script>
+    <svg id="download-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <path d="M7,10 L12,15 L17,10" fill="none" stroke="currentColor" stroke-width="2"></path>
+        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2"></line>
+        <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"></line>
+    </svg>
+
+    <!--<script>
         window.onload = function () {
             var input = document.createElement("input");
             input.type = "file";
@@ -697,27 +704,59 @@
             // Append the input field to the body (or any other container you prefer)
             document.body.appendChild(input);
         }
-    </script>
+    </script>-->
 
-    <script src="js/dropdown/dropdown_v2.js"></script>
+
+    <script src="js/globals.js"></script>
+
+    <script src="js/dropdown/savenet.js"></script>
+    <script src="js/dropdown/dropdown_v2_0_1.js"></script>
+    <script src="js/zettelkasten/zetcodemirror.js"></script>
+
+
     <script src="js/mandelbrot/mandelbrot_v1_0_1.js"></script>
+
     <script src="js/zettelkasten/zettelkasten_v2.js"></script>
 
     <script defer type="module" src="./embeddings.js"></script>
 
+    <script src="js/interface/nodemode.js"></script>
+    <script src="js/interface/window.js"></script>
 
     <script src="js/interface/interface_v2.js"></script>
+
+    <script src="js/interface/connect.js"></script>
+    <script src="js/interface/search.js"></script>
+    <script src="js/interface/togglenodestate.js"></script>
+    <script src="js/interface/bundlecode.js"></script>
+    <script src="js/interface/handledrop.js"></script>
+
+
     <script src="js/editor/editornode.js"></script>
 
     
 
+    <script src="js/ai/prompts.js"></script>
+
     <script src="js/ainodes/ainodes_v2.js"></script>
+    <script src="js/ainodes/ainodemessage.js"></script>
+
     <script src="js/ai/ai_v2.js"></script>
+    <script src="js/ai/aimessage.js"></script>
+    <script src="js/ai/aihelpers.js"></script>
 
     <!--<script src="js/aicursor.js"></script>-->
 
     <script src="js/searchapi/searchapi_v2.js"></script>
+    <script src="js/searchapi/filternodes.js"></script>
+    <script src="js/searchapi/wikipedia.js"></script>
+    <script src="js/searchapi/embeddingsdb.js"></script>
+    <script src="js/searchapi/wolframapi.js"></script>
+
     <script src="js/createnodes/createnodes_v2.js"></script>
+    <script src="js/createnodes/nodedef.js"></script>
+    <script src="js/createnodes/contenteditable.js"></script>
+
     <script src="js/record/record_v1.js"></script>
 
 </body>
