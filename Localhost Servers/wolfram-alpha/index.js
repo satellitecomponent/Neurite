@@ -1,18 +1,18 @@
-const express = require("express");
-const app = express();
-const axios = require("axios");
-const cors = require("cors");
+import express from 'express';
+import axios from 'axios';
+import cors from 'cors';
 
+const app = express();
 const PORT = process.env.PORT || 3000;
-const WOLFRAM_API_URL = "https://api.wolframalpha.com/v2/query";
+const WOLFRAM_API_URL = 'https://api.wolframalpha.com/v2/query';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
-    origin: "*",
-    methods: "POST",
-    allowedHeaders: "Content-Type",
+    origin: '*',
+    methods: 'POST',
+    allowedHeaders: 'Content-Type',
 };
 
 app.use(cors(corsOptions));

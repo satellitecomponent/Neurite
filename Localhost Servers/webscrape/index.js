@@ -18,6 +18,7 @@ const db = new sqlite3.Database(':memory:', (err) => {
     console.log('Connected to the in-memory SQlite database.');
 });
 
+
 // Create necessary tables
 db.serialize(() => {
     db.run('CREATE TABLE embeddings (key TEXT PRIMARY KEY, embedding TEXT, source TEXT)');

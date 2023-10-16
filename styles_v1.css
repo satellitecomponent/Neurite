@@ -21,7 +21,8 @@
     transition: background-color 0.3s ease;
     width: 60px;
     height: 60px;
-    background-color: #222226;
+    background-color: rgb(50 51 62 / 50%);
+    backdrop-filter: blur(3px);
 }
 
     .collapsed-anchor:hover {
@@ -30,7 +31,7 @@
 
 
 .collapsed-circle.collapsed-anchor {
-    background-color: #6b6279 !important;
+    background-color: rgba(107, 98, 121, 40%) !important;
     border: none;
 }
 
@@ -46,7 +47,7 @@
     flex-direction: column;
     align-items: baseline;
     border: none;
-    background-color: rgb(50 51 62 / 80%);
+    background-color: rgb(50 51 62 / 70%);
     -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
     -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
     box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
@@ -54,6 +55,7 @@
     position: relative;
     /* Set initial width and height */
     width: fit-content;
+    max-width: fit-content;
     height: fit-content;
     border: 1px solid rgba(0, 0, 0, 0);
     z-index: 2;
@@ -62,7 +64,6 @@
 
 .window-anchored {
     background-color: rgb(111 105 121 / 74%);
-    /* Change this to the desired color */
 }
 
             .window-anchored::before {
@@ -73,7 +74,7 @@
                 left: -1px;
                 right: -1px;
                 bottom: -1px;
-                border: 2px solid #bbb;
+                border: 2px solid #555;
                 pointer-events: none;
                 z-index: 1;
             }
@@ -92,6 +93,39 @@
             z-index: 1;
         }
 
+.editable-div {
+    border: 2px solid #8882;
+    border-bottom: 1px solid #8882;
+    width: 100%;
+    height: calc(100%);
+    max-height: 300px;
+    max-width: 266px;
+    overflow: auto;
+    padding: 10px;
+    margin: 0px;
+    box-sizing: border-box;
+    white-space: pre-wrap; /* This will ensure text wrapping and preserve whitespace */
+    word-wrap: break-word; /* This will break long words to the next line */
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    background-color: #222229;
+    border-radius: 0; /* This will remove rounded edges */
+    transition: border-bottom 0.6s ease, border-left 0.6s ease, background-color 0.6s ease; /* This adds a smooth transition effect */
+}
+
+/* Firefox-specific style */
+@-moz-document url-prefix() {
+    .editable-div {
+        max-width: 276px;
+    }
+}
+
+.editable-div:focus {
+    outline: none; /* Removes default browser outline */
+    border-bottom: 1px solid #464646;
+    border-left: 2px solid #464646;
+    background-color: #201F28;
+}
 
 
 .button-container {
@@ -109,7 +143,11 @@
 
 .no-select {
     user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ and Edge */
 }
+
 .title-input {
     flex-grow: 1;
     flex-shrink: 1;
@@ -318,6 +356,7 @@
             top: 100%; /* modify if needed */
             right: 0; /* modify if needed */
             background: rgba(60, 59, 66, 0.7);
+            backdrop-filter: blur(6px);
             border-top-right-radius: 8px;
             border-bottom-left-radius: 8px;
             overflow: visible;
@@ -1605,6 +1644,7 @@ input[type=range] {
     width: auto;
     height: auto;
     background: rgba(60, 59, 66, 0.7);
+    backdrop-filter: blur(6px);
     display: none; /* Initially hidden */
     padding-left: 5px;
     padding-right: 5px;
@@ -1617,6 +1657,7 @@ input[type=range] {
     margin-left: 0px; /* negative margin */
     z-index: 100;
 }
+
 
     .node-panel.open {
         display: flex;
