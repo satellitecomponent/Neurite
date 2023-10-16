@@ -1,14 +1,17 @@
 
 var myCodeMirror;
-let llmNodeCreated = false;
+
 const noteInput = myCodeMirror;
+
+let llmNodeCreated = false;
 let nodefromWindow = false;
 let followMouseFromWindow = false;
 let shouldAddCodeButton = false;
 
 
-{
 
+{
+    //start of enclosure
     const nodes = {};
     const nodeLines = {};
     const draggableWindows = document.querySelectorAll('.window');
@@ -73,26 +76,6 @@ let shouldAddCodeButton = false;
         return (s) => replaceInBrackets(s.replace(re, replacer), from, to);
     }
 
-    function addNodeTagToZettelkasten(title, content = null) {
-        const nodeTagLine = nodeTag + ' ' + title;
-        let currentZettelkastenValue = noteInput.getValue();
-
-        // Check if the content ends with a newline and add one or two newlines accordingly
-        if (currentZettelkastenValue.endsWith('\n')) {
-            currentZettelkastenValue += '\n' + nodeTagLine;
-        } else {
-            currentZettelkastenValue += '\n\n' + nodeTagLine;
-        }
-
-        // Add content if given
-        if (content) {
-            currentZettelkastenValue += '\n' + content;
-        }
-
-        noteInput.setValue(currentZettelkastenValue); // Assuming noteInput is the object to manipulate zettelkasten
-        noteInput.refresh();
-    }
-
     function initializeNodes(nodes) {
         for (const key in nodes) {
             if (nodes[key].nodeObject.removed) {
@@ -109,39 +92,96 @@ let shouldAddCodeButton = false;
 
     class ZettelkastenProcessor {
         constructor() {
+            this.prevNoteInputLines = [];
+
             noteInput.on('change', this.processInput.bind(this));
             nodeTagInput.addEventListener('input', this.processInput.bind(this));
             refTagInput.addEventListener('input', this.processInput.bind(this));
         }
 
+        findFirstChangedLine(lines) {
+            return lines.findIndex((line, i) => line !== this.prevNoteInputLines[i]) || Math.min(this.prevNoteInputLines.length, lines.length);
+        }
 
-        //Main if else loop
-        processInput() {
+        findChangedNode(lines) {
+            const firstChangedLine = this.findFirstChangedLine(lines);
 
-            initializeNodes(nodes);
+            const nodeTitleRegex = new RegExp(`^${nodeTag}\\s*(.*)$`);
 
-            const lines = noteInput.getValue().split('\n');
-            let currentNodeTitle = '';
-            let processingNode = false; // New flag to check if we're inside a node block
+            for (let i = firstChangedLine; i >= 0; i--) {
+                if (typeof lines[i] === 'undefined') {
+                    break;  // Exit loop if the line is undefined
+                }
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-
-                if (line.startsWith(nodeTag)) {
-                    processingNode = true;
-                    currentNodeTitle = this.handleNode(line, i, nodeLines, nodes, currentNodeTitle);
-                } else if (line.startsWith("LLM:")) {
-                    currentNodeTitle = this.handleLLM(line, i, nodeLines, nodes, currentNodeTitle, addLLMNodeInputListener);
-                } else if (nodes[currentNodeTitle] && nodes[currentNodeTitle].isLLM) {
-                    currentNodeTitle = this.handleLLMPromptLine(line, nodeTag, refTag, currentNodeTitle, nodes);
-                } else if (line.includes(refTag)) {
-                    let processingNode = false;
-                    this.handleReferenceLine(line, currentNodeTitle, nodes);
-                } else if (processingNode && currentNodeTitle !== '') {
-                    this.handleTextWithoutTags(line, currentNodeTitle, nodes);
+                const match = lines[i].match(nodeTitleRegex);
+                if (match) {
+                    return getNodeByTitle(match[1].trim());  // Return the node object
                 }
             }
+            return null;  // If no matching node is found, return null or another default value
+        }
 
+        processInput() {
+            initializeNodes(nodes);
+            const lines = noteInput.getValue().split('\n');
+            let currentNodeTitle = '';
+
+            lines.forEach((line, index) => {
+                currentNodeTitle = this.processLine(line, index, nodes, currentNodeTitle);
+            });
+
+            if (!processAll) {
+                this.processChangedNode(lines, nodes);
+            }
+
+            this.cleanupNodes(nodes, nodeLines);
+            this.prevNoteInputLines = lines.slice();
+        }
+
+        processLine(line, index, nodes, currentNodeTitle) {
+            const currentNode = nodes[currentNodeTitle];
+            if (line.startsWith(nodeTag)) {
+                return this.handleNode(line, index, nodeLines, nodes, currentNodeTitle);
+            }
+
+            if (line.startsWith(LLM_TAG)) {
+                return this.handleLLM(line, index, nodeLines, nodes, currentNodeTitle, this.addLLMNodeInputListener);
+            }
+
+            if (currentNode && currentNode.isLLM) {
+                return this.handleLLMPromptLine(line, nodeTag, refTag, currentNodeTitle, nodes);
+            }
+
+            if (processAll) {
+                this.handlePlainTextAndReferences(line, currentNodeTitle, nodes);
+            }
+
+            return currentNodeTitle;
+        }
+
+        handlePlainTextAndReferences(line, currentNodeTitle, nodes) {
+            this.removeStaleReferences(currentNodeTitle, nodes);
+
+            if (line.includes(refTag)) {
+                this.handleReferenceLine(line, currentNodeTitle, nodes);
+            } else if (nodes[currentNodeTitle]) {
+                this.handleTextWithoutTags(line, currentNodeTitle, nodes);
+            }
+        }
+
+        processChangedNode(lines, nodes) {
+            const changedNode = this.findChangedNode(lines);
+            if (changedNode) {
+                const changedNodeTitle = changedNode.getTitle();
+                const { startLineNo, endLineNo } = getNodeSectionRange(changedNodeTitle, noteInput);
+
+                for (let i = startLineNo + 1; i <= endLineNo; i++) {
+                    this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes);
+                }
+            }
+        }
+
+        cleanupNodes(nodes, nodeLines) {
             this.deleteInactiveNodes(nodes);
             this.deleteInactiveNodeLines(nodeLines);
         }
@@ -209,6 +249,10 @@ let shouldAddCodeButton = false;
         createTitleInputEventHandler(node, nodes, noteInput, nodeLines) {
             return (e) => {
                 const inputElement = node.nodeObject.content.children[0].children[0].children[1];
+                if (e.target !== inputElement) {
+                    return;
+                }
+
                 let newName = inputElement.value.trim().replace(",", "");
 
                 // If a count was previously added, attempt to remove it
@@ -260,11 +304,11 @@ let shouldAddCodeButton = false;
         getHandleNodeBodyInputEvent(node) {
             return (e) => {
                 const textarea = node.nodeObject.content.children[0].children[1].children[0];
+                if (e.target !== textarea) {
+                    return;
+                }
                 let body = textarea.value;
                 const name = node.title;
-
-                // Save cursor position
-                let cursorPosition = textarea.selectionStart;
 
                 const { startLineNo, endLineNo } = getNodeSectionRange(name, noteInput);
 
@@ -283,29 +327,39 @@ let shouldAddCodeButton = false;
                 const nodeLines = body.split('\n');
                 for (const line of nodeLines) {
                     if (line.startsWith(refTag)) {
-                        this.handleReferenceLine(line, node.title, nodes, false);
+                        this.handleReferenceLine(line, node.title, nodes, false); // Set shouldAppend to false to avoid duplication of plain text.
                     }
                 }
 
                 // Update the textarea value AFTER handling the references
                 textarea.value = body;
 
-                // Restore cursor position AFTER handling the references
-                textarea.setSelectionRange(cursorPosition, cursorPosition);
+            }
+        }
 
-                const linesAboveCursor = body.substr(0, cursorPosition).split("\n");
-                const lineOffset = linesAboveCursor.length - 1;
-                const charPosition = linesAboveCursor[lineOffset].length;
+        removeStaleReferences(currentNodeTitle, nodes) {
+            const currentNode = nodes[currentNodeTitle];
+            if (!currentNode) return;
 
-                scrollToTitle(node.title, noteInput, lineOffset, charPosition);
+            const currentEdges = new Set(currentNode.edges.keys());
+            for (const edge of currentEdges) {
+                if (!currentNode.plainText.includes(edge)) {
+                    const edgeObject = currentNode.edges.get(edge);
+                    if (edgeObject) { // Check if object exists before calling remove
+                        edgeObject.remove();
+                        currentNode.edges.delete(edge);
+                    }
+                }
             }
         }
 
         handleReferenceLine(line, currentNodeTitle, nodes, shouldAppend = true) {
+            const currentNode = nodes[currentNodeTitle];
+            if (!currentNode) return;
+
             let residualLine = '';
             let references = [];
 
-            // If refTag is in bracketsMap, handle it as a bracketed reference.
             if (sortedBrackets.includes(refTag)) {
                 const closingBracket = bracketsMap[refTag];
                 if (line.includes(closingBracket)) {
@@ -314,26 +368,19 @@ let shouldAddCodeButton = false;
                     references = extracted.references;
                 }
             } else {
-                // Otherwise, handle it as a non-bracketed (CSV) reference.
                 references = line.substr(refTag.length).split(',').map(ref => ref.trim());
-                residualLine = ''; // Assume there is no residual line in this case.
             }
 
             this.handleRefTags(references, currentNodeTitle, nodes);
 
+            // Build plain text for node after tags.
+            if (shouldAppend) {
+                const linesToAdd = [currentNode.plainText, line].filter(Boolean);
+                currentNode.plainText = linesToAdd.join('\n');
 
-            // This is to display links from the Zettelkasten in the note textarea (not ideal for vector embeddings) to fix issues with replacing node body text.
-            if (nodes[currentNodeTitle]) {
-                if (nodes[currentNodeTitle].plainText !== '' && shouldAppend) {
-                    nodes[currentNodeTitle].plainText += '\n';
-                }
-                if (shouldAppend) {
-                    nodes[currentNodeTitle].plainText += line;  // Append the full line with the refTag
-                }
-                const targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
-                targetTextarea.value = nodes[currentNodeTitle].plainText;
-
-                adjustTextareaHeight(targetTextarea);
+                const targetTextarea = currentNode.nodeObject.content.children[0].children[1].children[0];
+                targetTextarea.value = currentNode.plainText;
+                // adjustTextareaHeight(targetTextarea); // Uncomment if needed
             }
         }
 
@@ -394,23 +441,24 @@ let shouldAddCodeButton = false;
         }
 
         handleTextWithoutTags(line, currentNodeTitle, nodes) {
+            let node = nodes[currentNodeTitle];
             let targetTextarea;
-            if (nodes[currentNodeTitle].isLLM) {
-                targetTextarea = nodes[currentNodeTitle].nodeObject.promptTextArea;
+            if (node.isLLM) {
+                targetTextarea = node.nodeObject.promptTextArea;
             } else {
-                targetTextarea = nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0];
+                targetTextarea = node.nodeObject.content.children[0].children[1].children[0];
             }
 
-            //if (!nodes[currentNodeTitle].skipNewLine && nodes[currentNodeTitle].plainText !== '') {
-            if (nodes[currentNodeTitle].plainText !== '') {
-                nodes[currentNodeTitle].plainText += '\n';  // this will add a newline only if skipNewLine is false
+            if (node.plainText !== '') {
+                node.plainText += '\n';
             }
+            //console.log(`Event triggered for node: ${node.title}`);
+            node.plainText += line;
+            targetTextarea.value = node.plainText;
+            targetTextarea.dispatchEvent(new Event('change'));
+            //adjustTextareaHeight(targetTextarea);
 
-            nodes[currentNodeTitle].plainText += line;
-            targetTextarea.value = nodes[currentNodeTitle].plainText;
-
-            adjustTextareaHeight(targetTextarea);
-            nodes[currentNodeTitle].skipNewLine = false;
+            node.skipNewLine = false;
         }
 
         deleteInactiveNodes(nodes) {
@@ -519,33 +567,5 @@ let shouldAddCodeButton = false;
     const zettelkastenProcessor = new ZettelkastenProcessor(noteInput, nodeTagInput, refTagInput);
 
     //end of enclosure
-}
-
-
-
-function connectDistance(na, nb, linkStrength = .1, linkStyle = {
-    stroke: "none",
-    "stroke-width": "0.005",
-    fill: "lightcyan",
-    opacity: "0.5"
-}) {
-    // Calculate the distance between the two nodes
-    const dx = nb.pos.x - na.pos.x;
-    const dy = nb.pos.y - na.pos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Check if edge already exists
-    const existingEdge = na.edges.find(edge => edge.pts.includes(nb) && nb.edges.includes(edge));
-    if (existingEdge) {
-        return existingEdge;
-    }
-
-    let edge = new Edge([na, nb], distance, linkStrength, linkStyle);
-
-    na.edges.push(edge);
-    nb.edges.push(edge);
-
-    edges.push(edge);
-    return edge;
 }
 
