@@ -426,8 +426,8 @@ function getNodeText() {
             const titleInput = node.content.querySelector("input.title-input");
             const contentWrapper = node.content.querySelector("div.content");
             const contentElement = contentWrapper ? contentWrapper.querySelector("textarea") : null;
-            const contentText = contentElement ? contentElement.value : '';
-
+            const contentText = node.content.innerText.trim();
+            //console.log(`contentText`, contentText)
             nodes.push({
                 ...node,
                 searchStrings: [

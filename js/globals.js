@@ -188,5 +188,3 @@ class LRUCache {
         this.cache.set(key, value);
     }
 }
-
-const MAX_CACHE_SIZE = 100;
