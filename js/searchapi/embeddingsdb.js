@@ -83,6 +83,7 @@ function cosineSimilarity(vecA, vecB) {
     return dotProduct / (vecAMagnitude * vecBMagnitude);
 }
 
+const MAX_CACHE_SIZE = 300;
 
 const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
@@ -135,6 +136,11 @@ async function embeddedSearch(searchTerm) {
     for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
 
+        // Skip if the node does not have the flag `isTextNode = true`
+        if (!n.isTextNode) {
+            continue;
+        }
+
         const titleMatchScore = n.searchStrings[0].toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
         const contentMatchScore = keywords.filter(keyword => {
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
@@ -163,11 +169,12 @@ async function embeddedSearch(searchTerm) {
             matched.push({
                 node: n,
                 title: n.title,
-                content: n.content.innerText,
+                content: n.content.innerText.trim(),
                 weightedTitleScore: weightedTitleScore,
                 weightedContentScore: weightedContentScore,
                 similarity: cosineSimilarity,
             });
+            //console.log(`embeddings`, n.content.innerText.trim())
         }
     }
 

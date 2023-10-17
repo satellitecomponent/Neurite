@@ -4,7 +4,7 @@
 async function forget(userMessage, combinedContext) {
     // Trim the combinedContext to remove leading and trailing whitespaces and new lines, then check if it's empty.
     if (!combinedContext.trim()) {
-        console.log("Combined context is empty or just newlines. Skipping API call.");
+        //console.log("Combined context is empty or just newlines. Skipping API call.");
         return new Set(); // Return an empty Set since no titles are to be forgotten.
     }
 
@@ -70,9 +70,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
                 return null;
             }
 
-            // Fetch all textareas directly in the node content.
-            const contentElements = node.content.querySelectorAll("textarea");
-            const contents = Array.from(contentElements).map(contentElement => contentElement && contentElement.value !== "" ? contentElement.value : "No content found");
+            const contents = node.content.innerText.trim();
             /* console.log("Content:", content);
 
                  const connectedNodesInfo = node.edges
@@ -99,7 +97,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
 
             UUID: ${node.uuid}\n       Creation Time: ${createdAt} */
 
-            return `${tagValues.nodeTag} ${title}\n ${contents.join("\n")}`;
+            return `${tagValues.nodeTag} ${title}\n ${contents}`;
         })
         .filter(content => content !== null); // Remove nulls
 }
