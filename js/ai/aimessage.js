@@ -228,6 +228,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // Use helper function to get the content
     const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag);
+    //console.log(nodeContents);
     topMatchedNodesContent = nodeContents.join("\n\n");
 
     // If forgetting is enabled, extract titles to forget
@@ -250,7 +251,7 @@ async function sendMessage(event, autoModeMessage = null) {
         if (!document.getElementById("instructions-checkbox").checked) {
             messages.splice(1, 0, {
                 role: "system",
-                content: `Semantically relevant notes retrieved from the second brain:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, and connected knowledge from the given topmatchednodes.`,
+                content: `Semantically relevant notes retrieved. Branch new, unique notes off of the following existing top matched nodes.:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, and connected knowledge from the given topmatchednodes.`,
             });
         }
     }

@@ -106,36 +106,34 @@ const aiNodesMessage = () => ({
 
 
 const zettelkastenPrompt = () => {
-    const { refTag, nodeTag } = tagValues;
-    const closeBracket = getClosingBracket(refTag);
-
-    const refSnippet = isBracketLinks
-        ? `EACH ref IN node.Refs: PRINT ${refTag} + ref + ${closeBracket}; END;`
-        : `PRINT ${refTag} + JOIN(node.Refs, ', ');`;
-
-    return `You are responding within a fractal second brain that creates and connects notes by parsing tags within the following format. Please always format your response according to output of the given schema.
-    FUNC format(schema): 
-      EACH node IN schema, PRINT ${nodeTag} + node.Title; PRINT node.Content; ${refSnippet}; 
-    NEXT node In schema; END FUNC`;
+    const { refTag, nodeTag } = tagValues, closeBracket = getClosingBracket(refTag), nodeTitleMap = new Set();
+    const refSnippet = isBracketLinks ? `EACH ref IN node.Refs: PRINT ${refTag}+ref.node+${closeBracket}; END;` : `PRINT ${refTag}+JOIN(node.Refs, ', ');`;
+    return `FUNC format(schema): EACH node IN schema:
+let title = node.Title; IF node.title IN nodes.titles THEN node.title = genUniqueTitle(); PRINT ${nodeTag}+title;
+PRINT node.Content;
+${refSnippet};
+NEXT node In schema;
+END FUNC`;
 };
 
 const getCommonInstructions = (tagValues, isBracketLinks) => {
     const closeBracket = getClosingBracket(tagValues.refTag);
 
-    return `Generate a response to the user query that always maintains the following format:
+    return `To participate, generate a response that always maintains the following format:
 1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a distinct idea.
-    - Ensure unique titles. Never assign duplicate titles. Always branch unique note titles.
+    - Ensure unique titles. Iterate until a unique note title is found.
 2. Within each response, use links to build a network of granular rhizomatic notes.
 3. Link (connect) related nodes using ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
     - Links connect the referenced title's note to the first found "${tagValues.nodeTag} Note Title" above them.
-4. Define references after every node/note.
+4. Intersperse references between all notes. Create logical connections between notes.
 
-${tagValues.nodeTag} NOTE
+${tagValues.nodeTag} Remember
 - Notes (nodes) are created using ${tagValues.nodeTag} and linked using ${tagValues.refTag}.
 - Create connections between notes.
-- Each title should be unique. Avoid repetitive and generic titles.
+- Each title should be unique. Avoid repeated or generic titles.
+${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
 
-Exemplify the format of this Content Agnostic Example (Below is an overview of what FUNCTION formatFromSchema(schema) outputs.):
+Exemplify the format of the below Content Agnostic Example (This is what FUNC format(schema) outputs.):
 ${tagValues.nodeTag} Concept A
 Description of A.
 ${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Element D${closeBracket}` : `${tagValues.refTag} Principle B, Element D`}
@@ -148,7 +146,5 @@ ${tagValues.nodeTag} Idea C
 Synthesis of A and B.
 ${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Concept A${closeBracket}` : `${tagValues.refTag} Principle B, Concept A`}
 
-${tagValues.nodeTag} Element D
-Functions within D.
-${isBracketLinks ? `${tagValues.refTag}Idea C${closeBracket}` : `${tagValues.refTag} Idea C`}`;
+etc... `;
 };

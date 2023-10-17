@@ -588,7 +588,7 @@ const nodeResponseHandlers = new Map();
 let llmNodeCount = 0;
 
 
-
+/*
 document.getElementById("localLLM").addEventListener("change", function () {
     let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
     for (let i = 0; i < llmNodes.length; i++) {
@@ -601,3 +601,4 @@ document.getElementById("localLLM").addEventListener("change", function () {
         }
     }
 });
+*/
