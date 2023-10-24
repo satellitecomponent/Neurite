@@ -45,16 +45,16 @@ let shouldAddCodeButton = false;
     }
 
     function replaceInBrackets(s, from, to) {
-        const open = '[';
-        const close = ']';
+        const open = refTag;
+        const close = getClosingBracket(refTag);
 
         let index = s.indexOf(open);
         while (index !== -1) {
             const closeIndex = s.indexOf(close, index);
             if (closeIndex !== -1) {
-                const insideBrackets = s.substring(index + 1, closeIndex).trim();
+                const insideBrackets = s.substring(index + open.length, closeIndex).trim();
                 if (insideBrackets === from.trim()) {
-                    s = s.substring(0, index + 1) + to + s.substring(closeIndex);
+                    s = s.substring(0, index + open.length) + to + s.substring(closeIndex);
                 }
             }
             index = s.indexOf(open, index + 1);
@@ -127,7 +127,7 @@ let shouldAddCodeButton = false;
             let currentNodeTitle = '';
 
             lines.forEach((line, index) => {
-                currentNodeTitle = this.processLine(line, index, nodes, currentNodeTitle);
+                currentNodeTitle = this.processLine(line, lines, index, nodes, currentNodeTitle);
             });
 
             //Below is an optimzation that was removed due to syncing of hidden textarea in node being lost.
@@ -141,7 +141,7 @@ let shouldAddCodeButton = false;
             processAll = false;
         }
 
-        processLine(line, index, nodes, currentNodeTitle) {
+        processLine(line, lines, index, nodes, currentNodeTitle) {
             const currentNode = nodes[currentNodeTitle];
             if (line.startsWith(nodeTag)) {
                 return this.handleNode(line, index, nodeLines, nodes, currentNodeTitle);
@@ -156,22 +156,25 @@ let shouldAddCodeButton = false;
             }
 
             if (processAll) {
-                this.handlePlainTextAndReferences(line, currentNodeTitle, nodes);
+                // Call handlePlainTextAndReferences without the start and end lines
+                this.handlePlainTextAndReferences(line, currentNodeTitle, nodes, null, null, lines);
             }
 
             return currentNodeTitle;
         }
 
-        handlePlainTextAndReferences(line, currentNodeTitle, nodes) {
+        handlePlainTextAndReferences(line, currentNodeTitle, nodes, startLine = null, endLine = null, lines = null) {
             this.removeStaleReferences(currentNodeTitle, nodes);
 
             if (line.includes(refTag)) {
-                this.handleReferenceLine(line, currentNodeTitle, nodes);
+                // If startLine and endLine are null, handleReferenceLine will use its default behavior
+                this.handleReferenceLine(line, currentNodeTitle, nodes, lines, true, startLine, endLine);
             } else if (nodes[currentNodeTitle]) {
                 this.handleTextWithoutTags(line, currentNodeTitle, nodes);
             }
         }
 
+        // Updated to handle processChangedNode
         processChangedNode(lines, nodes) {
             const changedNode = this.findChangedNode(lines);
             if (changedNode) {
@@ -179,7 +182,7 @@ let shouldAddCodeButton = false;
                 const { startLineNo, endLineNo } = getNodeSectionRange(changedNodeTitle, noteInput);
 
                 for (let i = startLineNo + 1; i <= endLineNo; i++) {
-                    this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes);
+                    this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes, startLineNo, endLineNo, lines);
                 }
             }
         }
@@ -251,6 +254,7 @@ let shouldAddCodeButton = false;
         //Syncs node titles and Zettelkasten
         createTitleInputEventHandler(node, nodes, noteInput, nodeLines) {
             return (e) => {
+                processAll = true;
                 const inputElement = node.nodeObject.content.children[0].children[0].children[1];
                 if (e.target !== inputElement) {
                     return;
@@ -330,13 +334,13 @@ let shouldAddCodeButton = false;
                 const nodeLines = body.split('\n');
                 for (const line of nodeLines) {
                     if (line.startsWith(refTag)) {
-                        this.handleReferenceLine(line, node.title, nodes, false); // Set shouldAppend to false to avoid duplication of plain text.
+                        // Passing startLineNo and endLineNo for more explicit reference handling
+                        this.handleReferenceLine(line, node.title, nodes, lines, false, startLineNo, endLineNo);
                     }
                 }
 
                 // Update the textarea value AFTER handling the references
                 textarea.value = body;
-
             }
         }
 
@@ -356,35 +360,59 @@ let shouldAddCodeButton = false;
             }
         }
 
-        handleReferenceLine(line, currentNodeTitle, nodes, shouldAppend = true) {
+        extractAllReferencesFromRange(startLine, endLine, lines) {
+            let allReferences = [];
+            for (let i = startLine; i <= endLine; i++) {
+                const line = lines[i];
+                if (line.startsWith(refTag)) {
+                    const extractedRefs = this.extractReferencesFromLine(line);
+                    allReferences.push(...extractedRefs);
+                }
+            }
+            return allReferences;
+        }
+
+        // Modified handleReferenceLine to use optional given range or generate one if not provided
+        handleReferenceLine(line, currentNodeTitle, nodes, lines, shouldAppend = true, startLineIndex = null, endLineIndex = null) {
             const currentNode = nodes[currentNodeTitle];
             if (!currentNode) return;
 
-            let residualLine = '';
-            let references = [];
+            let allReferences;
 
-            if (sortedBrackets.includes(refTag)) {
-                const closingBracket = bracketsMap[refTag];
-                if (line.includes(closingBracket)) {
-                    const extracted = this.extractBracketedReferences(line, refTag, closingBracket);
-                    residualLine = extracted.residualLine;
-                    references = extracted.references;
-                }
+            if (startLineIndex !== null && endLineIndex !== null) {
+                allReferences = this.extractAllReferencesFromRange(startLineIndex, endLineIndex, lines);
             } else {
-                references = line.substr(refTag.length).split(',').map(ref => ref.trim());
+                // Get node section range dynamically if not provided
+                const { startLineNo, endLineNo } = getNodeSectionRange(currentNodeTitle, noteInput);
+                allReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines); // +1 to skip the title
             }
 
-            this.handleRefTags(references, currentNodeTitle, nodes);
+            this.handleRefTags(allReferences, currentNodeTitle, nodes);
 
-            // Build plain text for node after tags.
+            // Build plain text for node after tags
             if (shouldAppend) {
                 const linesToAdd = [currentNode.plainText, line].filter(Boolean);
                 currentNode.plainText = linesToAdd.join('\n');
 
                 const targetTextarea = currentNode.nodeObject.content.children[0].children[1].children[0];
                 targetTextarea.value = currentNode.plainText;
-                // adjustTextareaHeight(targetTextarea); // Uncomment if needed
             }
+        }
+
+        extractReferencesFromLine(line) {
+            let references = [];
+
+            if (sortedBrackets.includes(refTag)) {
+                const closingBracket = bracketsMap[refTag];
+                if (line.includes(closingBracket)) {
+                    const extracted = this.extractBracketedReferences(line, refTag, closingBracket);
+                    references = extracted.references;
+                }
+            } else {
+                references = line.substr(refTag.length).split(',').map(ref => ref.trim());
+            }
+
+            return references;
         }
 
         //Creates edges based of given reference titles.
