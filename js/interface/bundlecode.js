@@ -129,10 +129,25 @@ function bundleWebContent(nodesInfo) {
     };
 }
 
-function handleCodeButton(button, textarea, node) {
+function syncContent(node) {
+    const editableDiv = node.content.querySelector('div[contenteditable]');
+    const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
+
+    if (editableDiv && hiddenTextarea) {
+        hiddenTextarea.value = editableDiv.innerText;
+    } else {
+        console.warn('Either editableDiv or hiddenTextarea is missing');
+    }
+}
+
+async function handleCodeButton(button, textarea, node) {
     button.onclick = async function () {
+        // Explicitly sync the content before using it
+        syncContent(node);
+
         if (button.innerHTML === 'Render Code') {
             node.contentEditableDiv.style.display = "none";
+
             let re = /```(.*?)\n([\s\S]*?)```/gs;
             let codeBlocks = textarea.value.matchAll(re);
 

@@ -506,7 +506,7 @@
 
                             <div class="settingsSlider">
                                 <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
-                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="1" max="32000" value="2000">
+                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
                             </div>
 
                             <div class="settingsSlider">
@@ -515,9 +515,8 @@
                             </div>
 
                             <div class="settingsSlider">
-                                <label for="max-context-size-slider">Context Size:</label>
-                                <span id="max-context-size-display">32000</span>
-                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="32000" value="555">
+                                <span id="max-context-size-display">2000</span>
+                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
                             </div>
 
                             <div class="settingsSlider">
@@ -693,6 +692,16 @@
         <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2"></line>
         <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"></line>
     </svg>
+
+    <svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#A6A6A6" class="bi bi-sliders2" viewBox="0 0 16 16" display="none">
+        <path fill-rule="evenodd" d="M10.5 1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4H1.5a.5.5 0 0 1 0-1H10V1.5a.5.5 0 0 1 .5-.5ZM12 3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Zm-6.5 2A.5.5 0 0 1 6 6v1.5h8.5a.5.5 0 0 1 0 1H6V10a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8Zm9.5 2a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V13H1.5a.5.5 0 0 1 0-1H10v-1.5a.5.5 0 0 1 .5-.5Zm1.5 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Z" />
+    </svg>
+
+
+    <svg id="aiNodeSettingsIcon" display="none" class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25"/>
+  </svg>
+    
 
     <!--<script>
         window.onload = function () {

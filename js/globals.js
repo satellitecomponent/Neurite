@@ -103,7 +103,7 @@ refTagInput.addEventListener('input', function () {
 
 const LLM_TAG = "LLM:";
 
-let processAll = false;
+let processAll = false;//set to true until made more robust.
 
 const bracketsMap = {
     '(': ')',
@@ -187,4 +187,14 @@ class LRUCache {
         }
         this.cache.set(key, value);
     }
+}
+
+function encodeHTML(str) {
+    return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function decodeHTML(html) {
+    let txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
 }

@@ -118,7 +118,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search Results displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> Always remember to follow the <format> message",
+        content: "Google Search RESULTS displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> CITE your sources! Always REMEMBER to follow the <format> message",
     };
 
 
@@ -195,7 +195,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched snippets of text from extracted webpages:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Provide relevant information from the given <topNchunks>. Cite sources!`
+            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Provide RELEVANT information from the given <topNchunks>. CITE sources!`
         };
 
         messages.push(embedMessage);
@@ -220,6 +220,7 @@ async function sendMessage(event, autoModeMessage = null) {
     // Use the embeddedSearch function to find the top matched nodes based on the keywords
     clearSearchHighlights(nodesArray); // Clear previous search highlights
     const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
+    //console.log(topMatchedNodes);
     for (const node of topMatchedNodes) {
         node.content.classList.add("search_matched");
     }
@@ -251,7 +252,7 @@ async function sendMessage(event, autoModeMessage = null) {
         if (!document.getElementById("instructions-checkbox").checked) {
             messages.splice(1, 0, {
                 role: "system",
-                content: `Semantically relevant notes retrieved. Branch new, unique notes off of the following existing top matched nodes.:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>Synthesize missing, novel, and connected knowledge from the given topmatchednodes.`,
+                content: `Semantically RELEVANT NOTES retrieved. BRANCH UNIQUE notes OFF OF the following ALREADY EXISTING nodes.:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>SYNTHESIZE missing, novel, and connected KNOWLEDGE from the given topmatchednodes.`,
             });
         }
     }
@@ -260,7 +261,7 @@ async function sendMessage(event, autoModeMessage = null) {
         // Add the recent dialogue message only if the context is not empty
         messages.splice(2, 0, {
             role: "system",
-            content: `Previous note history: <context>${context}</context>`,
+            content: `CONVERSATION HISTORY: <context>${context}</context>`,
         });
     }
 
@@ -280,12 +281,12 @@ async function sendMessage(event, autoModeMessage = null) {
             role: "user",
             content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
 Original ${PROMPT_IDENTIFIER} ${originalUserMessage}
-Self-Prompting is enabled, on the last line, end your response with ${PROMPT_IDENTIFIER} Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to continue the flow of ideas (Consider if the original ${PROMPT_IDENTIFIER} has been accomplished while also branching into novel insights and topics)]`,
+Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDENTIFIER} Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to continue the flow of ideas (Consider if the original ${PROMPT_IDENTIFIER} has been ACCOMPLISHED while also branching into NOVEL INSIGHTS and UNIQUE TOPICS)]`,
         });
     } else {
         messages.push({
             role: "user",
-            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is enabled, on the last line, end your response with ${PROMPT_IDENTIFIER} message to continue the flow of ideas` : ""}`,
+            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is ENABLED, on the last line, END your response with ${PROMPT_IDENTIFIER} message to continue the FLOW of ideas` : ""}`,
         });
     }
 
@@ -321,7 +322,7 @@ Self-Prompting is enabled, on the last line, end your response with ${PROMPT_IDE
 
         const wolframAlphaMessage = {
             role: "system",
-            content: `The Wolfram result has already been returned based off the current user message. Instead of generating a new query, use the following Wolfram result as context: ${wolframAlphaTextResult}`
+            content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
         };
 
         console.log("wolframAlphaTextResult:", wolframAlphaTextResult);

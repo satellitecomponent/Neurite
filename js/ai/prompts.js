@@ -119,18 +119,19 @@ END FUNC`;
 const getCommonInstructions = (tagValues, isBracketLinks) => {
     const closeBracket = getClosingBracket(tagValues.refTag);
 
-    return `To participate, generate a response that always maintains the following format:
-1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a distinct idea.
-    - Ensure unique titles. Iterate until a unique note title is found.
-2. Within each response, use links to build a network of granular rhizomatic notes.
-3. Link (connect) related nodes using ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
-    - Links connect the referenced title's note to the first found "${tagValues.nodeTag} Note Title" above them.
-4. Intersperse references between all notes. Create logical connections between notes.
+    return `TO PARTICIPATE, ALWAYS MAINTAIN THE BELOW FORMAT:
+1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a DISTINCT idea.
+    - ENSURE UNIQUE TITLES. ITERATE until a UNIQUE note title is found.
+2. Within EACH response, use LINKS to BUILD a NETWORK of GRANULAR RHIZOMATIC notes.
+3. LINK (connect) related nodes using ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
+    - Links CONNECT the REFERENCED title's note to the first found "${tagValues.nodeTag} Note Title" ABOVE the REFERENCE. This means each ${tagValues.nodeTag}
+    - REFERENCES are DEFINED for EACH NOTE at ANY POINT in your response.
+4. INTERSPERSE references between ALL notes. Create logical CONNECTIONS BETWEEN notes.
 
-${tagValues.nodeTag} Remember
+${tagValues.nodeTag} REMEMBER
 - Notes (nodes) are created using ${tagValues.nodeTag} and linked using ${tagValues.refTag}.
-- Create connections between notes.
-- Each title should be unique. Avoid repeated or generic titles.
+- DO create CONNECTIONS BETWEEN notes AS OPPOSED TO ONLY at the END of your response.
+- Each title will be UNIQUE from other NOTES. AVOID REPEATED or GENERIC titles.
 ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
 
 Exemplify the format of the below Content Agnostic Example (This is what FUNC format(schema) outputs.):
@@ -146,5 +147,5 @@ ${tagValues.nodeTag} Idea C
 Synthesis of A and B.
 ${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Concept A${closeBracket}` : `${tagValues.refTag} Principle B, Concept A`}
 
-etc... `;
+etc...`;
 };

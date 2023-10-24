@@ -27,13 +27,6 @@ if (!RegExp.escape) {
     };
 }
 
-
-var mousePos = new vec2(0, 0);
-var mousePath = "";
-
-var zoom = new vec2(1.5, 0); //bigger is further out
-var pan = new vec2(-0.3, 0);
-
 var zoomTo = new vec2(4, 0);
 var panTo = new vec2(0, 0);
 var autopilotReferenceFrame = undefined;
@@ -395,27 +388,69 @@ class Node {
 
 }
 
-
-const nodeTitleCache = new LRUCache(50); 
-
 function getNodeByTitle(title) {
     const lowerCaseTitle = title.toLowerCase();
+    let matchingNodes = [];
 
-    // Try to get the node from the cache
-    const cachedNode = nodeTitleCache.get(lowerCaseTitle);
-    if (cachedNode) {
-        return cachedNode;
-    }
-
-    // If not in cache, search through all nodes
     for (let n of nodes) {
         let nodeTitle = n.getTitle();
-        if (nodeTitle && nodeTitle.toLowerCase() === lowerCaseTitle) {
-            nodeTitleCache.set(lowerCaseTitle, n); // Store this node in the cache
-            return n;
+
+        if (nodeTitle !== null && nodeTitle.toLowerCase() === lowerCaseTitle) {
+            matchingNodes.push(n);
         }
     }
-    return null;
+
+    // Debugging: Show all matching nodes and their count
+    //console.log(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
+    //console.log("Matching nodes:", matchingNodes);
+
+    return matchingNodes.length > 0 ? matchingNodes[0] : null;
+}
+
+function getTextareaContentForNode(node) {
+    if (!node || !node.content) {
+        console.warn('Node or node.content is not available');
+        return null;
+    }
+
+    const editableDiv = node.content.querySelector('div[contenteditable]');
+    const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
+
+    // Check if contentEditable is hidden, and if so, unhide before sync
+    const wasHidden = editableDiv.style.display === "none";
+    if (wasHidden) {
+        editableDiv.style.display = "";
+    }
+
+    // Explicitly sync the content
+    syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
+
+    // Hide again if it was hidden before
+    if (wasHidden) {
+        editableDiv.style.display = "none";
+    }
+
+    hiddenTextarea.dispatchEvent(new Event('input'));
+    // Now get the textarea content
+    if (hiddenTextarea) {
+        return hiddenTextarea.value;
+    } else {
+        console.warn('Textarea not found in node');
+        return null;
+    }
+}
+
+function testNodeText(title) {
+    const node = getNodeByTitle(title);
+    if (node) {
+        console.log(`Fetching text for node with title: ${title}`);
+        const text = getTextareaContentForNode(node);
+        console.log(`Text fetched: ${text}`);
+        return text;
+    } else {
+        console.warn(`Node with title ${title} not found`);
+        return null;
+    }
 }
 
 function getNodeText() {
@@ -423,17 +458,25 @@ function getNodeText() {
     for (const child of htmlnodes_parent.children) {
         if (child.firstChild && child.firstChild.win) {
             const node = child.firstChild.win;
+
             const titleInput = node.content.querySelector("input.title-input");
-            const contentWrapper = node.content.querySelector("div.content");
-            const contentElement = contentWrapper ? contentWrapper.querySelector("textarea") : null;
-            const contentText = node.content.innerText.trim();
-            //console.log(`contentText`, contentText)
+            if (titleInput) {
+                //console.log('Found title input:', titleInput.value); // Debugging line
+            } else {
+                console.log('Title input not found'); // Debugging line
+            }
+
+            const contentText = getTextareaContentForNode(node);
+            if (contentText) {
+               // console.log('Found content text:', contentText); // Debugging line
+            } else {
+                console.log('Content text not found'); // Debugging line
+            }
+
             nodes.push({
                 ...node,
-                searchStrings: [
-                    titleInput ? titleInput.value : '',
-                    contentText ? contentText : ''
-                ]
+                titleInput: titleInput ? titleInput.value : '',
+                contentText: contentText ? contentText : ''
             });
         }
     }

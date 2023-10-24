@@ -130,12 +130,15 @@ let shouldAddCodeButton = false;
                 currentNodeTitle = this.processLine(line, index, nodes, currentNodeTitle);
             });
 
-            if (!processAll) {
+            //Below is an optimzation that was removed due to syncing of hidden textarea in node being lost.
+            if (!processAll) { 
                 this.processChangedNode(lines, nodes);
             }
 
             this.cleanupNodes(nodes, nodeLines);
             this.prevNoteInputLines = lines.slice();
+
+            processAll = false;
         }
 
         processLine(line, index, nodes, currentNodeTitle) {

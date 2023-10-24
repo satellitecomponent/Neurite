@@ -5,7 +5,9 @@ let svg_bg = svg.getElementById("bg");
 let svg_viewmat = svg.getElementById("viewmatrix");
 let svg_mousePath = svg.getElementById("mousePath");
 var svg_viewbox_size = 65536;
+
 let time = () => (current_time === undefined) ? 0 : current_time;
+
 class vec2 {
     constructor(x, y) {
         if (typeof x === "object") {
@@ -165,6 +167,11 @@ class vec2 {
     }
 }
 
+var mousePos = new vec2(0, 0);
+var mousePath = "";
+var zoom = new vec2(1.5, 0); //bigger is further out
+var pan = new vec2(-0.3, 0);
+
 function lerp(a, b, t) {
     return a * (1 - t) + b * t;
 }
@@ -294,9 +301,6 @@ function recalc_svg() {
         node.removeChild(node.lastChild);
     }
 }
-
-
-
 
 
 document.getElementById("body").addEventListener("mousedown", (event) => {

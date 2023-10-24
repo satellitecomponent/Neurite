@@ -100,10 +100,6 @@ function checkOtherModel(selectElement) {
     }
 }
 
-document.getElementById('max-tokens-slider').addEventListener('input', function (e) {
-    document.getElementById('max-tokens-display').innerText = e.target.value;
-});
-
 
 // Extract the prompt from the last message
 function extractLastPrompt() {
@@ -146,14 +142,4 @@ async function getLastLineFromTextArea(textArea) {
     const text = textArea.value;
     const lines = text.split('\n');
     return lines[lines.length - 1];
-}
-
-function encodeHTML(str) {
-    return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function decodeHTML(html) {
-    let txt = document.createElement('textarea');
-    txt.innerHTML = html;
-    return txt.value;
 }

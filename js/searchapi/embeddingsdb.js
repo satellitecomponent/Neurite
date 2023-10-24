@@ -101,16 +101,11 @@ async function embeddedSearch(searchTerm) {
     let matched = [];
 
     const fetchNodeEmbedding = async (node) => {
-        //console.log('Node:', node);  // DEBUG
-        //console.log('Node content:', node.content);  // DEBUG
+        const titleText = node.titleInput;
+        const contentText = node.contentText;
 
-        const titleElement = node.content.querySelector(".title-input");
-        const contentElement = node.content.querySelector("textarea");
-        const titleText = titleElement ? titleElement.value : '';
-        const contentText = contentElement ? contentElement.value : '';
-
-        //console.log('Extracted title text:', titleText);  // DEBUG
-        // console.log('Extracted content text:', contentText);  // DEBUG
+       // console.log('Extracted title text:', titleText);  // DEBUG
+       // console.log('Extracted content text:', contentText);  // DEBUG
 
         const fullText = titleText + ' ' + contentText;
 
@@ -132,22 +127,25 @@ async function embeddedSearch(searchTerm) {
     const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
 
     //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
+for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
 
-    for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
+    // Skip if the node does not have the flag `isTextNode = true`
+    if (!n.isTextNode) {
+        continue;
+    }
 
-        // Skip if the node does not have the flag `isTextNode = true`
-        if (!n.isTextNode) {
-            continue;
-        }
+    // Updated to use new property names
+    const titleMatchScore = n.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
 
-        const titleMatchScore = n.searchStrings[0].toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
-        const contentMatchScore = keywords.filter(keyword => {
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            return n.searchStrings[1].match(regex);
-        }).length;
-        const weightedTitleScore = titleMatchScore * 10;
-        const weightedContentScore = contentMatchScore;
+    // Updated to use new property names
+    const contentMatchScore = keywords.filter(keyword => {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+        return n.contentText.match(regex);
+    }).length;
+
+    const weightedTitleScore = titleMatchScore * 10;
+    const weightedContentScore = contentMatchScore;
 
         const nodeEmbedding = nodeEmbeddings[i];
 

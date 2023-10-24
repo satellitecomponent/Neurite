@@ -770,7 +770,6 @@
 }
 
 select-replacer > div:first-child {
-    white-space: nowrap;
     overflow: hidden;
     position: relative; /* Makes sure the pseudo-element is relative to this element */
     padding-right: 46px;
@@ -836,6 +835,7 @@ select-replacer > div:first-child {
 }
 
     .options-replacer div {
+        white-space: normal;
         padding: 5px 10px;
     }
 
@@ -1213,7 +1213,7 @@ input[type=range] {
 .CodeMirror-linenumbers div {
     color: black !important;
 }
-/* Syntax Highlighting - Mimics our Prism.js theme */
+/* Syntax Highlighting - Mimics our Prism.js Tomorrow theme */
 
 /* General */
 .CodeMirror {
@@ -1221,28 +1221,48 @@ input[type=range] {
     min-width: 266px;
     resize: none !important;
 }
-
+/* Background and Text */
 .cm-s-default {
-    color: #ccc !important;
+    color: #cccccc !important;
 }
 
-    /* Keywords & Built-ins */
-    .cm-s-default .cm-keyword, .cm-s-default .cm-builtin {
-        color: #cc99cd !important;
+    /* Keywords */
+    .cm-s-default .cm-keyword {
+        color: #cc99cc !important;
     }
 
-    /* Definitions & Variables */
-    .cm-s-default .cm-def, .cm-s-default .cm-variable, .cm-s-default .cm-variable-2, .cm-s-default .cm-variable-3 {
-        color: #ccc !important;
+    /* Built-ins */
+    .cm-s-default .cm-builtin {
+        color: #cc99cc !important;
     }
 
-    /* Operators & Properties */
+    /* Variables */
+    .cm-s-default .cm-variable {
+        color: #f8f8f2 !important;
+    }
+
+    /* Variables 2 and 3 (often these are local and global variables) */
+    .cm-s-default .cm-variable-2 {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-variable-3 {
+        color: #f8f8f2 !important;
+    }
+
+    /* Function Definitions */
+    .cm-s-default .cm-def {
+        color: #f08d49 !important;
+    }
+
+    /* Operators */
     .cm-s-default .cm-operator {
-        color: #67cdcc !important;
+        color: #66cccc !important;
     }
 
-    .cm-s-default .cm-property {
-        color: #ff5733 !important; /* You can set this to any color you'd like */
+    /* Punctuation */
+    .cm-s-default .cm-punctuation {
+        color: #cccccc !important;
     }
 
     /* Numbers */
@@ -1251,18 +1271,14 @@ input[type=range] {
     }
 
     /* Strings */
-    .cm-s-default .cm-string, .cm-s-default .cm-string-2 {
+    .cm-s-default .cm-string,
+    .cm-s-default .cm-string-2 {
         color: #7ec699 !important;
     }
 
     /* Comments */
     .cm-s-default .cm-comment {
-        color: #999 !important;
-    }
-
-    /* Punctuation */
-    .cm-s-default .cm-punctuation {
-        color: #ccc !important;
+        color: #999999 !important;
     }
 
     /* Atoms */
@@ -1270,19 +1286,55 @@ input[type=range] {
         color: #95cecc !important;
     }
 
-    /* Qualifiers & Types */
-    .cm-s-default .cm-qualifier, .cm-s-default .cm-type {
-        color: #8c5896 !important;
+    /* Types */
+    .cm-s-default .cm-type {
+        color: #cc99cc !important;
     }
 
-    /* Tags & Attributes */
+    /* Qualifiers */
+    .cm-s-default .cm-qualifier {
+        color: #cc99cc !important;
+    }
+
+    /* Tags */
     .cm-s-default .cm-tag {
         color: #e2777a !important;
     }
 
+    /* Attributes */
     .cm-s-default .cm-attribute {
-        color: #cc99cd !important;
+        color: #cc99cc !important;
     }
+
+    /* Meta and Others */
+    .cm-s-default .cm-meta {
+        color: #55b5db !important;
+    }
+
+    .cm-s-default .cm-property {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-header {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-quote {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-link {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-error {
+        color: #f2777a !important;
+    }
+
+    .cm-s-default .cm-bracket {
+        color: #f8f8f2 !important;
+    }
+
 
 /*Hide codemirror node text*/
 .hidden-text {
@@ -1447,6 +1499,27 @@ input[type=range] {
     gap: 10px;
 }
 
+.ainode-settings-container {
+    display: grid;
+    position: absolute; /* Doesn't affect existing elements */
+    z-index: 100; /* High z-index to overlay other elements */
+    top: 70px; /* Slightly more distance from top than from sides */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Adjust for perfect centering */
+    width: 90%;
+    height: 54%;
+    background-color: rgba(0.2, 0.2, 0.2, 0.3); /* Transparent blurred dark greyscale */
+    backdrop-filter: blur(10px); /* Blur effect */
+    border-radius: 10px; /* Slightly rounded corners */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Horizontal offset, Vertical offset, Blur, Color */
+
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-rows: repeat(4, 1fr); /* 4 rows */
+    grid-auto-flow: column;
+    gap: 15px; /* Gap between each element */
+    padding: 20px; /* Padding around the edges */
+}
+
 .settingsSlider {
     background-color: #222226;
     padding: 5px;
@@ -1454,7 +1527,27 @@ input[type=range] {
     display: flex;
     flex-direction: column;
     justify-content: left;
+    width: 90%;
 }
+
+textarea[id^='custom-instructions-textarea-'] {
+    bottom: 8px;
+    position: absolute;
+    margin: 10px; /* Outer spacing */
+    background-color: #222226; /* Background color */
+    color: #bbb; /* Text color, assuming you want white text */
+    padding: 10px; /* Inner spacing */
+    font-size: 14px; /* Text size */
+    width: 60%; /* Full width */
+    height: 60%;
+    resize: none; /* Turn off the resize handle */
+}
+
+    textarea[id^='custom-instructions-textarea-']:focus {
+        outline: none; /* Removes default browser outline */
+        border: 1px solid #bbb;
+        border-radius: 3px;
+    }
 
 .code-block-container {
     width: 88%; /* Add width to the parent container */
@@ -1519,6 +1612,7 @@ input[type=range] {
     padding: 4px 10px 4px 12px;
     border-radius: 10px;
     margin: 15px auto;
+    margin-right: 15px;
     display: inline-block;
     width: auto;
     max-width: 80%;
@@ -1593,6 +1687,26 @@ input[type=range] {
     transform: scale(1.05);
     transform-origin: left center;
     transition: transform 0.3s ease;
+}
+
+.custom-textarea {
+    background-color: #222226;
+    color: inherit;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    height: 70px;
+    overflow-y: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+    user-select: none;
+}
+
+.custom-textarea:focus {
+    outline: none;
+    border: 1px solid #bbb;
+    border-radius: 3px;
 }
 
 .copy-btn {
