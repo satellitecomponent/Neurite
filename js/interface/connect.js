@@ -77,18 +77,24 @@ function getNodeData(node) {
     const titleElement = node.content.querySelector("input.title-input");
     const title = titleElement ? titleElement.value : "No title found";
     const createdAt = node.createdAt;
+    const isLLM = node.isLLM;  // Assuming you have this flag set on the node object.
 
     if (!createdAt) {
         console.warn(`getNodeData: Creation time for node ${node.uuid} is not defined.`);
     }
 
+    if (isLLM) {
+        // Handle AI nodes
+        const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.id);
+        const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nLast Prompts and Responses:${lastPromptsAndResponses}`;
+        return nodeInfo;
+    }
+
     // Check if the node contains an iframe editor
     let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
     if (iframeElement) {
-        // Get the iframe content window
+        // Handle iframe editor content
         let iframeWindow = iframeElement.contentWindow;
-
-        // Retrieve the content from the editors
         let htmlContent = iframeWindow.htmlEditor.getValue();
         let cssContent = iframeWindow.cssEditor.getValue();
         let jsContent = iframeWindow.jsEditor.getValue();
@@ -98,18 +104,15 @@ function getNodeData(node) {
             `Text Content: \n\`\`\`html\n${htmlContent}\n\`\`\`\n` +
             `\`\`\`css\n${cssContent}\n\`\`\`\n` +
             `\`\`\`javascript\n${jsContent}\n\`\`\``;
-
         return nodeInfo;
     } else {
-        // Existing functionality for non-iframe nodes
-        const contentElements = node.content.querySelectorAll("textarea");
-        let contents = [];
-        contentElements.forEach(contentElement => {
-            const content = contentElement ? contentElement.value : "No content found";
-            contents.push(content);
-        });
-
-        const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contents.join("\n")}`;
+        // Handle regular text content
+        let contentText = getTextareaContentForNode(node);
+        if (!contentText) {
+            console.warn('No content found for node');
+            return null;
+        }
+        const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
         return nodeInfo;
     }
 }

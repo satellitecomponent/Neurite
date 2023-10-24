@@ -181,7 +181,7 @@ window.addEventListener("resize", function () {
     myCodeMirror.refresh();
 });
 
-function setupCustomDropdown(select) {
+function setupCustomDropdown(select, aiNode = false) {
     // Create the main custom dropdown container
     let selectReplacer = document.createElement('div');
     selectReplacer.className = 'select-replacer closed'; // add 'closed' class by default
@@ -195,14 +195,29 @@ function setupCustomDropdown(select) {
     let optionsReplacer = document.createElement('div');
     optionsReplacer.className = 'options-replacer';
 
+    // Reference to local LLM Checkbox
+    let localLLMCheckbox = document.getElementById("localLLM");
+
     // Create individual options
     Array.from(select.options).forEach((option, index) => {
         let optionDiv = document.createElement('div');
         optionDiv.innerText = option.innerText;
+        optionDiv.setAttribute('data-value', option.value);
 
         // Highlight the selected option
         if (select.selectedIndex === index) {
             optionDiv.classList.add('selected');
+        }
+
+        if (aiNode) {  // AI node specific logic
+            // Initial visibility based on checkbox state
+            if (option.value === 'OpenAi' ||
+                (option.value.startsWith('gpt-') && !localLLMCheckbox.checked) ||
+                (!option.value.startsWith('gpt-') && localLLMCheckbox.checked)) {
+                optionDiv.style.display = 'block';
+            } else {
+                optionDiv.style.display = 'none';
+            }
         }
 
         optionDiv.addEventListener('click', function (event) {
@@ -291,16 +306,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-
+// Function for custom slider background
+function setSliderBackground(slider) {
+    const min = slider.min ? parseFloat(slider.min) : 0;
+    const max = slider.max ? parseFloat(slider.max) : 100;
+    const value = slider.value ? parseFloat(slider.value) : 0;
+    const percentage = (value - min) / (max - min) * 100;
+    slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
+}
 
 document.querySelectorAll('input[type=range]').forEach(function (slider) {
-    function setSliderBackground(slider) {
-        const min = slider.min ? parseFloat(slider.min) : 0;
-        const max = slider.max ? parseFloat(slider.max) : 100;
-        const value = slider.value ? parseFloat(slider.value) : 0;
-        const percentage = (value - min) / (max - min) * 100;
-        slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
-    }
 
     // Set the background color split initially
     setSliderBackground(slider);
@@ -709,16 +724,58 @@ topNSlider.addEventListener('input', function () {
     topNValue.textContent = this.value;
 });
 
-const maxContextSizeSlider = document.getElementById("max-context-size-slider");
-const maxContextSizeDisplay = document.getElementById("max-context-size-display");
+function autoContextTokenSync(tokenSlider, contextSlider) {
+    let lastUserSetRatio = parseInt(contextSlider.value, 10) / parseInt(contextSlider.max, 10);
+    let isProgrammaticChange = false;
 
-// Display the default slider value
-maxContextSizeDisplay.innerHTML = maxContextSizeSlider.value;
+    // Listen to changes on tokenSlider
+    tokenSlider.addEventListener('input', function () {
+        const newMaxTokens = parseInt(this.value, 10);
+        contextSlider.max = newMaxTokens;
 
-// Update the current slider value (each time you drag the slider handle)
-maxContextSizeSlider.oninput = function () {
-    maxContextSizeDisplay.innerHTML = this.value;
+        // Calculate the new value based on the last user-set ratio and the new max
+        const newContextValue = Math.round(lastUserSetRatio * newMaxTokens);
+
+        // Make the change and indicate that it's a programmatic change
+        isProgrammaticChange = true;
+        contextSlider.value = newContextValue;
+        isProgrammaticChange = false;
+
+        // Force a UI update for contextSlider
+        contextSlider.dispatchEvent(new Event('input'));
+    });
+
+    // Listen to changes on contextSlider
+    contextSlider.addEventListener('input', function () {
+        // Update the last user-set ratio, but only if the change was not programmatic
+        if (!isProgrammaticChange) {
+            lastUserSetRatio = parseInt(this.value, 10) / parseInt(this.max, 10);
+        }
+    });
 }
+
+// Usage
+const maxTokensSlider = document.getElementById('max-tokens-slider');
+const maxContextSizeSlider = document.getElementById('max-context-size-slider');
+
+autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
+
+// UI updates for max tokens
+const maxTokensDisplay = document.getElementById('max-tokens-display');
+maxTokensSlider.addEventListener('input', function () {
+    maxTokensDisplay.innerText = this.value;
+});
+
+// UI updates for max context size
+const maxContextSizeDisplay = document.getElementById('max-context-size-display');
+maxContextSizeSlider.addEventListener('input', function () {
+    const maxContextValue = parseInt(this.value, 10);
+    const maxContextMax = parseInt(this.max, 10);
+    const ratio = Math.round((maxContextValue / maxContextMax) * 100);
+    maxContextSizeDisplay.innerText = `Context: ${ratio}% \n(${maxContextValue} tokens)`;
+});
+
+maxContextSizeSlider.dispatchEvent(new Event('input'));
 
 function updateLoadingIcon(percentage) {
     const loaderFills = document.querySelectorAll('.loader-fill');

@@ -36,9 +36,36 @@ Order keywords by relevance, starting with a word from the current message.`,
 
     // Call the API
     const keywords = await callchatAPI(messages);
-    console.log(keywords)
+    console.log(`Keywords:`, keywords);
     // Return the keywords
     return keywords.split(',').map(k => k.trim());
+}
+
+// Function to check if Google Search is enabled
+function isGoogleSearchEnabled(nodeIndex = null) {
+    const globalCheckbox = document.getElementById("google-search-checkbox");
+    if (globalCheckbox && globalCheckbox.checked) return true;
+
+    if (nodeIndex !== null) {
+        const aiCheckbox = document.getElementById(`google-search-checkbox-${nodeIndex}`);
+        if (aiCheckbox && aiCheckbox.checked) return true;
+    }
+
+    return false;
+}
+
+// Function to check if Embed (Data) is enabled
+function isEmbedEnabled(nodeIndex = null) {
+    const globalCheckbox = document.getElementById("embed-checkbox");
+    if (globalCheckbox && globalCheckbox.checked) return true;
+
+    // Check for AI node-specific checkboxes only if nodeIndex is provided
+    if (nodeIndex !== null) {
+        const aiCheckbox = document.getElementById(`embed-checkbox-${nodeIndex}`);
+        if (aiCheckbox && aiCheckbox.checked) return true;
+    }
+
+    return false;
 }
 
 
@@ -70,23 +97,25 @@ async function performSearch(searchQuery) {
     }
 }
 
-async function constructSearchQuery(userMessage, recentContext = null) {
+async function constructSearchQuery(userMessage, recentContext = null, node = null) {
     // If the user's message is a URL, use it as the search query and create a link node
     if (isUrl(userMessage)) {
         document.getElementById("prompt").value = ''; // Clear the textarea
-        let node = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
+        let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
 
-        htmlnodes_parent.appendChild(node.content);
+        htmlnodes_parent.appendChild(linkNode.content);
         // Attach the node to the user's mouse
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        linkNode.followingMouse = 1;
+        linkNode.draw();
+        linkNode.mouseAnchor = toDZ(new vec2(0, -linkNode.content.offsetHeight / 2 + 6));
 
         return null; // Return null to indicate that no further processing is necessary
     }
-    const embedCheckbox = document.getElementById("embed-checkbox");
-    if (!isGoogleSearchEnabled() && (!embedCheckbox || !embedCheckbox.checked)) {
-        return "not-enabled"; // Return an empty string or any default value when search is disabled
+    let nodeIndex = node ? node.index : null;
+    //console.log(nodeIndex);
+    // Adjust to account for both Google Search and Embed
+    if (!isGoogleSearchEnabled(nodeIndex) && !isEmbedEnabled(nodeIndex)) {
+        return "not-enabled"; // Return a default value when search is disabled
     }
 
 
@@ -140,15 +169,6 @@ async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
 
     // Return the top N search results
     return searchResultEmbeddings.slice(0, topN).map(resultEmbedding => resultEmbedding.result);
-}
-
-
-
-
-
-function isGoogleSearchEnabled() {
-    const googleSearchCheckbox = document.getElementById("google-search-checkbox");
-    return googleSearchCheckbox && googleSearchCheckbox.checked;
 }
 
 

@@ -322,6 +322,15 @@ function setResizeEventListeners(resizeHandle, node) {
             }
             contentEditable.style.maxWidth = `${newWidth}px`
         }
+
+        // Find the aiNodeWrapperDiv for this specific node. Use a more specific selector if needed.
+        const aiNodeWrapperDiv = windowDiv.querySelector('.ainodewrapperDiv');
+
+        // If aiNodeWrapperDiv exists, set its dimensions
+        if (aiNodeWrapperDiv) {
+            aiNodeWrapperDiv.style.width = `${newWidth}px`;
+            aiNodeWrapperDiv.style.height = `${newHeight}px`;
+        }
     };
 
     const handleMouseUp = () => {

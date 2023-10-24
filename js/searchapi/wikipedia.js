@@ -1,8 +1,16 @@
 
 
-function isWikipediaEnabled() {
-    const checkbox = document.getElementById("wiki-checkbox");
-    return checkbox.checked;
+// Function to check if Wikipedia is enabled
+function isWikipediaEnabled(nodeIndex = null) {
+    const globalCheckbox = document.getElementById("wiki-checkbox");
+    if (globalCheckbox && globalCheckbox.checked) return true;
+
+    if (nodeIndex !== null) {
+        const aiCheckbox = document.getElementById(`wiki-checkbox-${nodeIndex}`);
+        if (aiCheckbox && aiCheckbox.checked) return true;
+    }
+
+    return false;
 }
 
 function sampleSummaries(summaries, top_n_links) {
