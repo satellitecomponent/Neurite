@@ -12,7 +12,7 @@ myCodeMirror.getWrapperElement().addEventListener('keydown', function (e) {
 
 // For right-click context menu set processAll to true in case of a paste event.
 myCodeMirror.getWrapperElement().addEventListener('contextmenu', function (e) {
-    console.log('Context menu opened, setting processAll to true');
+    //console.log('Context menu opened, setting processAll to true');
     processAll = true;
 });
 
