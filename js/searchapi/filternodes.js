@@ -70,9 +70,11 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
                 return null;
             }
 
-            const contents = node.content.innerText.trim();
-            /* console.log("Content:", content);
+            fullNodeObject = getNodeByTitle(title.toLowerCase());
 
+            const contents = getTextareaContentForNode(fullNodeObject);
+            //console.log(contents);
+            /* 
                  const connectedNodesInfo = node.edges
                 ? node.edges.map((edge) => {
                      if (edge.nodeA && edge.nodeB) {

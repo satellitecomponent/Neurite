@@ -4,23 +4,39 @@ async function sendLLMNodeMessage(node, message = null) {
         return;
     }
 
-    const maxTokensSlider = document.getElementById('max-tokens-slider');
+    const nodeIndex = node.index;
+
+    const maxTokensSlider = document.getElementById(`node-max-tokens-${nodeIndex}`);
+    //Initalize count for message trimming
     let contextSize = 0;
 
+    //Use Prompt area if message is not passed.
     node.latestUserMessage = message ? message : node.promptTextArea.value;
     // Clear the prompt textarea
     node.promptTextArea.value = '';
     node.promptTextArea.dispatchEvent(new Event('input'));
 
+    //Initialize messages array.
     let messages = [
         {
             role: "system",
-            content: "You (Ai) are responding in an Ai node. All connected nodes are shared in the 'remember this' system message. Triple backtick and label any codeblocks"
+            content: "YOU (Ai) are responding in an Ai node. CONNECTED NODES are SHARED as system messages. Triple backtick and label any codeblocks"
         },
     ];
 
+    // Fetch the content from the custom instructions textarea using the nodeIndex
+    const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
+    const customInstructions = customInstructionsTextarea ? customInstructionsTextarea.value.trim() : "";
 
-    // Check if all conneceted nodes should be sent or just nodes up to the first ai node in each branch. connecteed nodes (default)
+    // Append custom instructions if they exist.
+    if (customInstructions.length > 0) {
+        messages.push({
+            role: "system",
+            content: `RETRIEVE INSIGHTS FROM and ADHERE TO the following user-defined CUSTOM INSTRUCTIONS: ${customInstructions}`
+        });
+    }
+
+    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connecteed nodes (default)
     const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
 
     // Choose the function based on checkbox state
@@ -38,9 +54,9 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `Format: The last line of your response will be extracted and sent to any connected Ai.
-Ask insightful, thought-provoking, and relevant questions that will deepen the conversation.
-Remember to follow any received instructions from all connected nodes.`
+            content: `The LAST LINE of your response will be EXTRACTED and SENT to any CONNECTED Ai.
+Ask INSIGHTFUL, THOUGHT-PROVOKING, and RELEVANT questions that will provide DEPTH to the CONVERSATION.
+REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
         });
     }
 
@@ -109,7 +125,7 @@ Remember to follow any received instructions from all connected nodes.`
         }
     }
 
-    if (document.getElementById("code-checkbox").checked) {
+    if (document.getElementById(`code-checkbox-${nodeIndex}`).checked) {
         messages.push(aiNodeCodeMessage());
     }
 
@@ -118,17 +134,17 @@ Remember to follow any received instructions from all connected nodes.`
     }
 
 
-    const nodeSpecificRecentContext = getLastPromptsAndResponses(2, 150, node.id);
+    const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
     let wikipediaSummaries;
     let keywordsArray = [];
     let keywords = '';
 
-    if (isWikipediaEnabled()) {
+    if (isWikipediaEnabled(nodeIndex)) {
 
         // Call generateKeywords function to get keywords
         const count = 3; // Change the count value as needed
-        keywordsArray = await generateKeywords(node.latestUserMessage, count, nodeSpecificRecentContext);
+        keywordsArray = await generateKeywords(node.latestUserMessage, count, truncatedRecentContext);
 
         // Join the keywords array into a single string
         keywords = keywordsArray.join(' ');
@@ -160,12 +176,12 @@ Remember to follow any received instructions from all connected nodes.`
             } END OF SUMMARIES`
     };
 
-    if (document.getElementById("wiki-checkbox").checked) {
+    if (isWikipediaEnabled(nodeIndex)) {
         messages.push(wikipediaMessage);
     }
 
     // Use the node-specific recent context when calling constructSearchQuery
-    const searchQuery = await constructSearchQuery(node.latestUserMessage, nodeSpecificRecentContext);
+    const searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
     if (searchQuery === null) {
         return; // Return early if a link node was created directly
     }
@@ -173,7 +189,7 @@ Remember to follow any received instructions from all connected nodes.`
     let searchResultsData = null;
     let searchResults = [];
 
-    if (isGoogleSearchEnabled()) {
+    if (isGoogleSearchEnabled(nodeIndex)) {
         searchResultsData = await performSearch(searchQuery);
     }
 
@@ -192,17 +208,15 @@ Remember to follow any received instructions from all connected nodes.`
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search Results displayed to user:" + searchResultsContent
+        content: "Google Search RESULTS displayed to user:" + searchResultsContent
     };
 
-    if (document.getElementById("google-search-checkbox").checked) {
+    if (document.getElementById(`google-search-checkbox-${nodeIndex}`).checked) {
         messages.push(googleSearchMessage);
     }
 
-    const embedCheckbox = document.getElementById("embed-checkbox");
-
-    if (embedCheckbox && embedCheckbox.checked) {
-        const aiSuggestedSearch = await constructSearchQuery(node.latestUserMessage);
+    if (isEmbedEnabled(nodeIndex)) {
+        const aiSuggestedSearch = await searchQuery;
         const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
 
         // Group the chunks by their source (stripping the chunk number from the key)
@@ -228,7 +242,7 @@ Remember to follow any received instructions from all connected nodes.`
 
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} matched chunks of text from extracted webpages:\n` + topNChunksContent + `\n Use the given chunks as context. Cite your sources!`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Use the given chunks as context. CITE your sources!`
         };
 
         messages.push(embedMessage);
@@ -236,40 +250,47 @@ Remember to follow any received instructions from all connected nodes.`
 
     let allConnectedNodesData = getAllConnectedNodesData(node, true);
 
-    // Sort the array to prioritize trimming LLM nodes first
-    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
-
     let totalTokenCount = getTokenCount(messages);
     let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-    const maxContextSize = document.getElementById('max-context-size-slider').value;
+    const maxContextSize = document.getElementById(`node-max-context-${nodeIndex}`).value;
 
+    let textNodeInfo = [];
+    let llmNodeInfo = [];
     let messageTrimmed = false;
 
-    // Build the infoString step-by-step, checking tokens as we go
-    let infoList = allConnectedNodesData.map(info => info.data.replace("Text Content:", ""));
-    let infoString = "";
-    let infoIntro = "The following are all nodes that have been manually connected to your chat interface.\n";
+    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);  // Prioritize LLM nodes
 
-    for (let i = 0; i < infoList.length; i++) {
-        let tempString = infoString + "\n\n" + infoList[i];
-        let tempIntroString = infoIntro + tempString;
-        let tempTokenCount = getTokenCount([{ content: tempIntroString }]);
+    allConnectedNodesData.forEach(info => {
+        let tempInfoList = info.isLLM ? llmNodeInfo : textNodeInfo;
+        let tempString = tempInfoList.join("\n\n") + "\n\n" + info.data.replace("Text Content:", "");
+        let tempTokenCount = getTokenCount([{ content: tempString }]);
 
         if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
-            infoString = tempString;
+            tempInfoList.push(info.data.replace("Text Content:", ""));
             remainingTokens -= tempTokenCount;
             totalTokenCount += tempTokenCount;
         } else {
             messageTrimmed = true;
-            break;  // Stop adding more info since we've reached the limit
         }
+    });
+
+    // For Text Nodes
+    if (textNodeInfo.length > 0) {
+        let intro = "Text nodes CONNECTED to your interface:";
+        messages.push({
+            role: "system",
+            content: intro + "\n\n" + textNodeInfo.join("\n\n")
+        });
     }
 
-    let finalInfoString = infoIntro + infoString;
-    messages.push({
-        role: "system",
-        content: finalInfoString
-    });
+    // For LLM Nodes
+    if (llmNodeInfo.length > 0) {
+        let intro = "ALL AI nodes you are CONVERSING with:";
+        messages.push({
+            role: "system",
+            content: intro + "\n\n" + llmNodeInfo.join("\n\n")
+        });
+    }
 
     if (messageTrimmed) {
         messages.push({
@@ -286,9 +307,7 @@ Remember to follow any received instructions from all connected nodes.`
 
     // Update the value of getLastPromptsAndResponses
     let lastPromptsAndResponses;
-    if (!document.getElementById("enable-wolfram-alpha").checked) {
-        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
-    }
+    lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.id);
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
     node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
@@ -296,7 +315,7 @@ Remember to follow any received instructions from all connected nodes.`
     node.aiResponseTextArea.dispatchEvent(new Event('input'));
 
     let wolframData;
-    if (document.getElementById("enable-wolfram-alpha").checked) {
+    if (document.getElementById(`enable-wolfram-alpha-checkbox-${nodeIndex}`).checked) {
         const wolframContext = getLastPromptsAndResponses(2, 300, node.id);
         wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
     }
@@ -316,21 +335,25 @@ Remember to follow any received instructions from all connected nodes.`
 
         const wolframAlphaMessage = {
             role: "system",
-            content: `The Wolfram result has already been returned based off the current user message. Instead of generating a new query, use the following Wolfram result as context: ${wolframAlphaTextResult}`
+            content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
         };
 
         console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
         messages.push(wolframAlphaMessage);
 
-        // Redefine lastPromptsAndResponses here
+        // Redefine lastPromptsAndResponses after Wolfram's response.
         lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
     }
 
-    messages.push({
-        role: "system",
-        content: `Conversation history:${lastPromptsAndResponses}`
-    });
+    if (lastPromptsAndResponses.trim().length > 0) {
+        messages.push({
+            role: "system",
+            content: `CONVERSATION HISTORY:${lastPromptsAndResponses}`
+        });
+    }
 
+
+    //Finally, send the user message last.
     messages.push({
         role: "user",
         content: node.latestUserMessage
@@ -343,8 +366,8 @@ Remember to follow any received instructions from all connected nodes.`
     let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
 
     // Get the loading and error icons
-    let aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
-    let aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
+    let aiLoadingIcon = document.getElementById(`aiLoadingIcon-${nodeIndex}`);
+    let aiErrorIcon = document.getElementById(`aiErrorIcon-${nodeIndex}`);
 
     // Hide the error icon and show the loading icon
     aiErrorIcon.style.display = 'none'; // Hide error icon
@@ -357,8 +380,11 @@ Remember to follow any received instructions from all connected nodes.`
         return allConnectedNodes.some(n => n.isLLMNode);
     }
 
+    const selectedModel = LocalLLMSelect.value;
+    console.log('Selected Model:', selectedModel);
+
     // Local LLM call
-    if (document.getElementById("localLLM").checked && LocalLLMSelect.value !== 'OpenAi') {
+    if (document.getElementById("localLLM").checked && selectedModel !== 'OpenAi') {
         window.generateLocalLLMResponse(node, messages)
             .then(async (fullMessage) => {
                 node.aiResponding = false;
@@ -376,7 +402,7 @@ Remember to follow any received instructions from all connected nodes.`
             });
     } else {
         // AI call
-        callchatLLMnode(messages, node, true)
+        callchatLLMnode(messages, node, true, selectedModel)
             .finally(async () => {
                 node.aiResponding = false;
                 aiLoadingIcon.style.display = 'none';

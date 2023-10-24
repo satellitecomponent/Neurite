@@ -12,8 +12,8 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     n.onmousedown = cancel;
     n.setAttribute("type", "text");
     n.setAttribute("size", "11");
-    n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4;");
-    n.style.display = "none";
+    n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4; display: none;");
+    n.style.position = "absolute";
 
     let elements = [n];
 
@@ -55,10 +55,9 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
 
     let node = addNodeAtNaturalScale(name, [n]); // Just add the textarea for now
 
+    let windowDiv = node.content.querySelector('.window');  // Find the .content div
     let editableDiv = createContentEditableDiv(n);  // Define editableDiv here
     node.contentEditableDiv = editableDiv;  // Assign it to the node's property
-
-    let windowDiv = node.content.querySelector('.window');  // Find the .content div
     windowDiv.appendChild(editableDiv);  // Append the contentEditable div to .content div
 
     // Store the callback to set up the button onclick handler.
@@ -396,7 +395,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             aiResponseDiv.style.userSelect = 'text';
         }
     });
-    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 530px; height: 450px; overflow-y: auto; overflow-x: hidden; resize: both; word-wrap: break-word; user-select: none; padding-left: 25px; padding-right: 25px; line-height: 1.75;");
+    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 100%; height: 80%; overflow-y: auto; overflow-x: hidden; resize: none; word-wrap: break-word; user-select: none; line-height: 1.75;");
     aiResponseDiv.addEventListener('mouseenter', function () {
         aiResponseDiv.style.userSelect = "text";
     });
@@ -415,9 +414,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
     promptTextArea.id = `nodeprompt-${llmNodeCount}`;
-    promptTextArea.classList.add('custom-scrollbar');
+    promptTextArea.classList.add('custom-scrollbar', 'custom-textarea'); // Add the class here
     promptTextArea.onmousedown = cancel;  // Prevent dragging
-    promptTextArea.setAttribute("style", "background-color: #222226; color: inherit; border: inset; border-color: #8882; width: 100%; height: 70px; overflow-y: hidden; padding: 10px; box-sizing: border-box; resize: none; user-select: none;");
     promptTextArea.addEventListener('input', autoGrow);
     promptTextArea.addEventListener('mouseenter', function () {
         promptTextArea.style.userSelect = "text";
@@ -474,11 +472,46 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
         this.style.backgroundColor = '#ddd';
     });
 
+    // Create settings button
+    const aiNodeSettingsButton = document.createElement('button');
+    aiNodeSettingsButton.type = "button";
+    aiNodeSettingsButton.id = 'aiNodeSettingsButton';
+    aiNodeSettingsButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+
+    // Clone the SVG element
+    const settingsIcon = document.getElementById('aiNodeSettingsIcon').cloneNode(true);
+    settingsIcon.style.display = 'inline-block';
+
+    // Append the SVG to the button
+    aiNodeSettingsButton.appendChild(settingsIcon);
+
+    // Initialize the button's active state as false
+    aiNodeSettingsButton.isActive = false;
+
+    // Add event listeners
+    aiNodeSettingsButton.addEventListener('mouseover', function () {
+        this.style.backgroundColor = this.isActive ? '#888' : '#ddd';
+    });
+    aiNodeSettingsButton.addEventListener('mouseout', function () {
+        this.style.backgroundColor = this.isActive ? '#888' : '#222226';
+    });
+    aiNodeSettingsButton.addEventListener('mousedown', function () {
+        this.style.backgroundColor = '#888';
+    });
+    aiNodeSettingsButton.addEventListener('mouseup', function () {
+        this.style.backgroundColor = this.isActive ? '888' : '#ddd';
+    });
+    aiNodeSettingsButton.addEventListener('click', function (event) {
+        this.isActive = !this.isActive;  // Toggle the active state
+        toggleSettings(event, aiNodeSettingsContainer);  // Call your existing function
+        // Set the background color based on the new active state
+        this.style.backgroundColor = this.isActive ? '#888' : '#ddd';
+    });
 
     // Create the loader and error icons container
     let statusIconsContainer = document.createElement("div");
     statusIconsContainer.className = 'status-icons-container';
-    statusIconsContainer.style.cssText = 'position: absolute; top: 15px; right: 80px; width: 20px; height: 20px;';
+    statusIconsContainer.style.cssText = 'position: absolute; top: 40px; right: 80px; width: 20px; height: 20px;';
 
     // Create the loader icon
     let aiLoadingIcon = document.createElement("div");
@@ -515,6 +548,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let buttonDiv = document.createElement("div");
     buttonDiv.appendChild(sendButton);
     buttonDiv.appendChild(regenerateButton);
+    buttonDiv.appendChild(aiNodeSettingsButton);
     buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; margin-top: 4px;";
 
     // Create the promptDiv with relative position
@@ -527,54 +561,69 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     promptDiv.appendChild(buttonDiv);
 
     // Wrap elements in a div
-    let wrapperDiv = document.createElement("div");
-    wrapperDiv.className = 'wrapperDiv';
-    wrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
+    let ainodewrapperDiv = document.createElement("div");
+    ainodewrapperDiv.className = 'ainodewrapperDiv';
+    ainodewrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
+    ainodewrapperDiv.style.width = "580px";
+    ainodewrapperDiv.style.height = "560px";
 
-    wrapperDiv.appendChild(aiResponseTextArea);
-    wrapperDiv.appendChild(aiResponseDiv);
-    wrapperDiv.appendChild(promptDiv);
+    ainodewrapperDiv.appendChild(aiResponseTextArea);
+    ainodewrapperDiv.appendChild(aiResponseDiv);
+    ainodewrapperDiv.appendChild(promptDiv);
 
-    // Create the Local LLM dropdown
-    let LocalLLMSelect = document.createElement("select");
-    LocalLLMSelect.id = `dynamicLocalLLMselect-${llmNodeCount}`;
-    LocalLLMSelect.classList.add('inline-container');
-    LocalLLMSelect.style.backgroundColor = "#222226";
-    LocalLLMSelect.style.border = "none";
+    const initialTemperature = document.getElementById('model-temperature').value;
+    const initialMaxTokens = document.getElementById('max-tokens-slider').value;
+    const initialMaxContextSize = document.getElementById('max-context-size-slider').value;
 
-    let localLLMCheckbox = document.getElementById("localLLM");
+    // Create and configure the settings
+    const LocalLLMSelect = createAndConfigureLocalLLMDropdown(llmNodeCount);
+    const temperatureSliderContainer = createSlider(`node-temperature-${llmNodeCount}`, 'Temperature', initialTemperature, 0, 1, 0.1);
+    const maxTokensSliderContainer = createSlider(`node-max-tokens-${llmNodeCount}`, 'Max Tokens', initialMaxTokens, 10, 16000, 1);
+    const maxContextSizeSliderContainer = createSlider(`node-max-context-${llmNodeCount}`, 'Max Context', initialMaxContextSize, 1, initialMaxTokens, 1);
+
+    // Fetch the actual slider input from the containers
+    const maxTokensSlider = maxTokensSliderContainer.querySelector('input[type=range]');
+    const maxContextSizeSlider = maxContextSizeSliderContainer.querySelector('input[type=range]');
+
+    // Fetch the corresponding label for the maxContextSizeSlider
+    const maxContextSizeLabel = maxContextSizeSliderContainer.querySelector('label');
+
+    // Use the autoContextTokenSync function to handle the synchronization
+    autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
+
+    // Add an event listener to the maxContextSizeSlider to update its label with percentage
+    maxContextSizeSlider.addEventListener('input', function () {
+        const maxContextValue = parseInt(this.value, 10);
+        const maxContextMax = parseInt(this.max, 10);
+        const ratio = Math.round((maxContextValue / maxContextMax) * 100);
+        maxContextSizeLabel.innerText = `Context: ${ratio}% \n(${maxContextValue} tokens) `;
+    });
+    // Trigger the input event programmatically
+    maxContextSizeSlider.dispatchEvent(new Event('input'));
+
+    // Create settings container
+    const aiNodeSettingsContainer = createSettingsContainer();
 
 
-    // Options for the dropdown
-    let option1 = new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, true);
-    let option2 = new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, false);
-    let option3 = new Option('Llama 2 7B f32', 'Llama-2-7b-chat-hf-q4f32_1', false, false);
-    let option4 = new Option('Llama 2 13B f32', 'Llama-2-13b-chat-hf-q4f32_1', false, false);
-    let option5 = new Option('Llama 2 70B f16', 'Llama-2-70b-chat-hf-q4f16_1', false, false);
-    let option6 = new Option('WizardCoder 15B f32', '"WizardCoder-15B-V1.0-q4f32_1', false, false);
-    let option7 = new Option('OpenAI', 'OpenAi', false, false);
+    // Add the dropdown (LocalLLMSelect) into settings container
+    aiNodeSettingsContainer.appendChild(LocalLLMSelect);  // LocalLLMSelect is the existing dropdown
+    aiNodeSettingsContainer.appendChild(temperatureSliderContainer);
+    aiNodeSettingsContainer.appendChild(maxTokensSliderContainer);
+    aiNodeSettingsContainer.appendChild(maxContextSizeSliderContainer);
 
-    LocalLLMSelect.add(option1, undefined);
-    LocalLLMSelect.add(option2, undefined);
-    LocalLLMSelect.add(option3, undefined);
-    //LocalLLMSelect.add(option4, undefined);
-    LocalLLMSelect.add(option5, undefined);
-    //LocalLLMSelect.add(option6, undefined);
-    LocalLLMSelect.add(option7, undefined);
+    const firstSixOptions = allOptions.slice(0, 6);
+    const checkboxArray1 = createCheckboxArray(llmNodeCount, firstSixOptions);
+    aiNodeSettingsContainer.appendChild(checkboxArray1);
 
-    // Append dropdown to the div
-    wrapperDiv.appendChild(LocalLLMSelect);
-    setupCustomDropdown(LocalLLMSelect);
+    const customInstructionsTextarea = createCustomInstructionsTextarea(llmNodeCount);
+    aiNodeSettingsContainer.appendChild(customInstructionsTextarea);
 
-    // Find the parent .select-container after the setupCustomDropdown function
-    let selectContainer = LocalLLMSelect.closest('.select-container');
+    setupCustomDropdown(LocalLLMSelect, true);
 
-    if (localLLMCheckbox.checked) {
-        selectContainer.style.display = "block";
-    } else {
-        selectContainer.style.display = "none";
-    }
+    // Add settings container to the ainodewrapperDiv
+    ainodewrapperDiv.appendChild(aiNodeSettingsContainer);
 
+   
     // Pass this div to addNodeAtNaturalScale
     let node = addNodeAtNaturalScale(name, []);
 
@@ -582,8 +631,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let windowDiv = node.content.querySelector(".window");
     windowDiv.style.resize = 'both';
 
-    // Append the wrapperDiv to windowDiv of the node
-    windowDiv.appendChild(wrapperDiv);
+    // Append the ainodewrapperDiv to windowDiv of the node
+    windowDiv.appendChild(ainodewrapperDiv);
 
     // Additional configurations
     node.aiResponseTextArea = aiResponseTextArea;
@@ -600,7 +649,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.LocalLLMSelectID = `dynamicLocalLLMselect-${llmNodeCount}`;
     node.index = llmNodeCount;
     node.isLLMNode = true;
-    node.wrapperDiv = wrapperDiv;
+    node.ainodewrapperDiv = ainodewrapperDiv;
     node.shouldAppendQuestion = false;
     node.aiResponseHalted = false;
 
@@ -644,6 +693,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
 
+    const haltCheckbox = checkboxArray1.querySelector(`input[id="halt-questions-checkbox-${llmNodeCount}"]`);
+
     node.haltResponse = function () {
         if (this.aiResponding) {
             // AI is responding, so we want to stop it
@@ -678,7 +729,20 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             }
             this.aiResponseHalted = true;
         }
+        // Update the checkbox to reflect the halted state
+        if (haltCheckbox) {
+            haltCheckbox.checked = true;
+        }
     };
+
+    if (haltCheckbox) {
+        haltCheckbox.addEventListener('change', function () {
+            node.aiResponseHalted = this.checked;
+            if (this.checked) {
+                node.haltResponse();
+            }
+        });
+    }
 
     node.regenerateResponse = function () {
         if (!this.aiResponding) {
@@ -695,7 +759,14 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Add event listeners to buttons
     sendButton.addEventListener("click", function (e) {
         e.preventDefault();
-        node.aiResponseHalted = false; // Reset the flag
+
+        // Reset the flag and uncheck the checkbox
+        node.aiResponseHalted = false;
+
+        if (haltCheckbox) {
+            haltCheckbox.checked = false;
+        }
+
         sendLLMNodeMessage(node);
     });
 
@@ -725,4 +796,182 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.isLLM = true;
 
     return node;
+}
+
+function conditionalStopPropagation(event) {
+    if (!altHeld) {
+        event.stopPropagation();
+    }
+}
+
+function createSettingsContainer() {
+    const settingsContainer = document.createElement('div');
+    settingsContainer.className = 'ainode-settings-container';
+    settingsContainer.style.display = 'none';  // Initially hidden
+
+    // Add the listener for mousedown event
+    settingsContainer.addEventListener('mousedown', conditionalStopPropagation, false);
+
+    // Add the listener for dblclick event
+    settingsContainer.addEventListener('dblclick', conditionalStopPropagation, false);
+
+    return settingsContainer;
+}
+
+// Function to toggle the settings container
+function toggleSettings(event, settingsContainer) {
+    event.stopPropagation();
+    const display = settingsContainer.style.display;
+    settingsContainer.style.display = display === 'none' || display === '' ? 'grid' : 'none';
+}
+
+
+function createSlider(id, label, initialValue, min, max, step) {
+    const sliderDiv = document.createElement('div');
+    sliderDiv.classList.add('slider-container');
+
+    const sliderLabel = document.createElement('label');
+    sliderLabel.setAttribute('for', id);
+    sliderLabel.innerText = `${label}: ${initialValue}`;
+
+    const sliderInput = document.createElement('input');
+    sliderInput.type = 'range';
+    sliderInput.id = id;
+
+    // First, set the min and max
+    sliderInput.min = min;
+    sliderInput.max = max;
+
+    // Then, set the step and initial value
+    sliderInput.step = step;
+    sliderInput.value = initialValue;
+
+    // Event listener to update label when the slider value changes
+    sliderInput.addEventListener('input', function () {
+        sliderLabel.innerText = `${label}: ${this.value}`;
+        setSliderBackground(sliderInput);  // Add custom background
+    });
+
+    sliderDiv.appendChild(sliderLabel);
+    sliderDiv.appendChild(sliderInput);
+
+    sliderInput.dispatchEvent(new Event('input'));
+
+    return sliderDiv;
+}
+
+
+
+function createAndConfigureLocalLLMDropdown(llmNodeCount) {
+    // Create the Local LLM dropdown
+    let LocalLLMSelect = document.createElement("select");
+    LocalLLMSelect.id = `dynamicLocalLLMselect-${llmNodeCount}`;
+    LocalLLMSelect.classList.add('inline-container');
+    LocalLLMSelect.style.backgroundColor = "#222226";
+    LocalLLMSelect.style.border = "none";
+
+    let localLLMCheckbox = document.getElementById("localLLM");
+
+    // Create an array to store the options
+    let options = [
+        new Option('OpenAI', 'OpenAi', false, true),
+        new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, false),
+        new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, false),
+        new Option('Llama 2 7B f32', 'Llama-2-7b-chat-hf-q4f32_1', false, false),
+        //new Option('Llama 2 13B f32', 'Llama-2-13b-chat-hf-q4f32_1', false, false),
+        new Option('Llama 2 70B f16', 'Llama-2-70b-chat-hf-q4f16_1', false, false),
+        //new Option('WizardCoder 15B f32', '"WizardCoder-15B-V1.0-q4f32_1', false, false),
+        new Option('gpt-3.5-turbo', 'gpt-3.5-turbo', false, false),
+        new Option('gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k', false, false),
+        new Option('gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613', false, false),
+        new Option('gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-16k-0613', false, false),
+        new Option('gpt-4', 'gpt-4', false, false),
+        new Option('gpt-4-0613', 'gpt-4-0613', false, false)
+    ];
+
+    // Add options to the select
+    options.forEach((option, index) => {
+        LocalLLMSelect.add(option, index);
+    });
+
+    // Initial setup based on checkbox state
+    options.forEach((option) => {
+        if (option.value === 'OpenAi' || option.value.startsWith('gpt-')) {
+            option.hidden = false;  // Always show
+        } else {
+            option.hidden = !localLLMCheckbox.checked;  // Show or hide based on checkbox initial state
+        }
+    });
+
+    // Add change event listener to the checkbox
+    localLLMCheckbox.addEventListener('change', function () {
+        options.forEach((option) => {
+            if (option.value === 'OpenAi' || option.value.startsWith('gpt-')) {
+                option.hidden = false;  // Always show
+            } else {
+                option.hidden = !this.checked;  // Show or hide based on checkbox
+            }
+        });
+
+        // Also update the visibility of custom options
+        const customOptions = document.querySelectorAll('.options-replacer div');
+        customOptions.forEach((customOption) => {
+            const value = customOption.getAttribute('data-value');
+            if (value === 'OpenAi' || value.startsWith('gpt-')) {
+                customOption.style.display = 'block';  // Always show
+            } else {
+                customOption.style.display = this.checked ? 'block' : 'none';  // Show or hide based on checkbox
+            }
+        });
+    });
+
+    return LocalLLMSelect;
+}
+
+const allOptions = [
+    { id: 'google-search', label: 'Search' },
+    { id: 'code', label: 'Code' },
+    { id: 'halt-questions', label: 'Halt' },
+    { id: 'embed', label: 'Data' },
+    { id: 'enable-wolfram-alpha', label: 'Wolfram' },
+    { id: 'wiki', label: 'Wiki' }
+];
+
+// Function to create a checkbox array with a subset of options
+function createCheckboxArray(llmNodeCount, subsetOptions) {
+    const checkboxArrayDiv = document.createElement('div');
+    checkboxArrayDiv.className = 'checkboxarray';
+
+    for (const option of subsetOptions) {
+        const checkboxDiv = document.createElement('div');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `${option.id}-checkbox-${llmNodeCount}`;
+        checkbox.name = `${option.id}-checkbox-${llmNodeCount}`;
+
+        const label = document.createElement('label');
+        label.setAttribute('for', checkbox.id);
+        label.innerText = option.label;
+
+        checkboxDiv.appendChild(checkbox);
+        checkboxDiv.appendChild(label);
+        checkboxArrayDiv.appendChild(checkboxDiv);
+    }
+
+    return checkboxArrayDiv;
+}
+
+function createCustomInstructionsTextarea(llmNodeCount) {
+    const textareaDiv = document.createElement('div');
+    textareaDiv.className = 'textarea-container';
+
+    const textarea = document.createElement('textarea');
+    textarea.id = `custom-instructions-textarea-${llmNodeCount}`;
+    textarea.className = 'custom-scrollbar';  // Apply the custom-scrollbar class here
+    textarea.placeholder = 'Enter custom instructions here...';
+
+    textareaDiv.appendChild(textarea);
+
+    return textareaDiv;
 }

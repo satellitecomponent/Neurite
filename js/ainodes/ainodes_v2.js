@@ -38,7 +38,7 @@ async function handleStreamingForLLMnode(response, node) {
 
 let previousContent = "";
 
-async function callchatLLMnode(messages, node, stream = false) {
+async function callchatLLMnode(messages, node, stream = false, selectedModel = null) {
     // Reset shouldContinue
     node.shouldContinue = true;
 
@@ -69,17 +69,20 @@ async function callchatLLMnode(messages, node, stream = false) {
     let signal = node.controller.signal;
 
     // Add the signal to your fetch request options
-    const temperature = document.getElementById('model-temperature').value;
+    const temperature = document.getElementById(`node-temperature-${node.index}`).value;
+    const max_tokens = document.getElementById(`node-max-tokens-${node.index}`).value;
     const modelSelect = document.getElementById('model-select');
-    const modelInput = document.getElementById('model-input');
-    const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
-    let max_tokens = document.getElementById('max-tokens-slider').value;
+    const globalModelInput = document.getElementById('model-input');
+
+    const defaultModel = modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
+    const modelToUse = selectedModel && selectedModel.startsWith('gpt') ? selectedModel : defaultModel;
+
 
     const requestOptions = {
         method: "POST",
         headers: headers,
         body: JSON.stringify({
-            model: model,
+            model: modelToUse,
             messages: messages,
             max_tokens: parseInt(max_tokens),
             temperature: parseFloat(temperature),
@@ -87,6 +90,8 @@ async function callchatLLMnode(messages, node, stream = false) {
         }),
         signal: signal,
     };
+
+   // console.log("Request Options: ", JSON.stringify(requestOptions, null, 2));
 
     try {
         const response = await fetch(API_URL, requestOptions);
@@ -106,6 +111,7 @@ async function callchatLLMnode(messages, node, stream = false) {
 
         if (stream) {
             fullResponse = await handleStreamingForLLMnode(response, node);
+            //console.log("Full API Response:", fullResponse);
             return fullResponse
         } else {
             const data = await response.json();
@@ -113,6 +119,7 @@ async function callchatLLMnode(messages, node, stream = false) {
             node.aiResponseTextArea.innerText += fullResponse;
             node.aiResponseTextArea.dispatchEvent(new Event("input"));
         }
+
     } catch (error) {
         // Check if the error is because of the abort operation
         if (error.name === 'AbortError') {
