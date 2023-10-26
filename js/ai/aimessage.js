@@ -71,7 +71,6 @@ async function sendMessage(event, autoModeMessage = null) {
     const firstKeyword = splitKeywords[0];
     // Convert the keywords string into an array by splitting on spaces
 
-
     let wikipediaSummaries;
 
     if (isWikipediaEnabled()) {
@@ -171,27 +170,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     if (embedCheckbox && embedCheckbox.checked) {
         const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
-
-        // Group the chunks by their source (stripping the chunk number from the key)
-        const groupedChunks = relevantChunks.reduce((acc, chunk) => {
-            // Separate the source and the chunk number
-            const [source, chunkNumber] = chunk.source.split('_chunk_');
-            if (!acc[source]) acc[source] = [];
-            acc[source].push({
-                text: chunk.text.substring(0, MAX_CHUNK_SIZE),
-                number: parseInt(chunkNumber), // Parse chunkNumber to an integer
-                relevanceScore: chunk.relevanceScore,
-            });
-            return acc;
-        }, {});
-
-        // Construct the topNChunksContent
-        const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
-            // Sort the chunks by their chunk number for each source
-            chunks.sort((a, b) => a.number - b.number);
-            const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
-            return `[Source: ${source}]\n${chunksContent}\n`;
-        }).join('\n');
+        const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
 
         const embedMessage = {
             role: "system",
@@ -308,17 +287,8 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
     }
 
     if (wolframData) {
-        const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
-
-        let content = [table];
-        let scale = 1; // You can adjust the scale as needed
-
-        let node = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-        htmlnodes_parent.appendChild(node.content);
-        registernode(node);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        const { wolframAlphaTextResult } = wolframData;
+        createWolframNode(wolframData);
 
         const wolframAlphaMessage = {
             role: "system",

@@ -409,12 +409,22 @@ function getNodeByTitle(title) {
 
 function getTextareaContentForNode(node) {
     if (!node || !node.content) {
-        console.warn('Node or node.content is not available');
+       // console.warn('Node or node.content is not available');
+        return null;
+    }
+
+    if (!node.isTextNode) {
+       // console.warn('Node is not a text node. Skipping text area and editable div logic.');
         return null;
     }
 
     const editableDiv = node.content.querySelector('div[contenteditable]');
     const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
+
+    if (!editableDiv || !hiddenTextarea) {
+        console.warn('Either editableDiv or hiddenTextarea is not found.');
+        return null;
+    }
 
     // Check if contentEditable is hidden, and if so, unhide before sync
     const wasHidden = editableDiv.style.display === "none";

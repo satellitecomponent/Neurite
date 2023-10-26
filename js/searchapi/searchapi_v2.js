@@ -44,11 +44,18 @@ Order keywords by relevance, starting with a word from the current message.`,
 // Function to check if Google Search is enabled
 function isGoogleSearchEnabled(nodeIndex = null) {
     const globalCheckbox = document.getElementById("google-search-checkbox");
-    if (globalCheckbox && globalCheckbox.checked) return true;
 
+    // Check for AI node-specific checkboxes only if nodeIndex is provided
     if (nodeIndex !== null) {
         const aiCheckbox = document.getElementById(`google-search-checkbox-${nodeIndex}`);
-        if (aiCheckbox && aiCheckbox.checked) return true;
+        if (aiCheckbox) {
+            return aiCheckbox.checked;
+        }
+    }
+
+    // If we are here, it means no node-specific checkbox was found or nodeIndex was not provided
+    if (globalCheckbox) {
+        return globalCheckbox.checked;
     }
 
     return false;
@@ -57,12 +64,18 @@ function isGoogleSearchEnabled(nodeIndex = null) {
 // Function to check if Embed (Data) is enabled
 function isEmbedEnabled(nodeIndex = null) {
     const globalCheckbox = document.getElementById("embed-checkbox");
-    if (globalCheckbox && globalCheckbox.checked) return true;
 
     // Check for AI node-specific checkboxes only if nodeIndex is provided
     if (nodeIndex !== null) {
         const aiCheckbox = document.getElementById(`embed-checkbox-${nodeIndex}`);
-        if (aiCheckbox && aiCheckbox.checked) return true;
+        if (aiCheckbox) {
+            return aiCheckbox.checked;
+        }
+    }
+
+    // If we are here, it means no node-specific checkbox was found or nodeIndex was not provided
+    if (globalCheckbox) {
+        return globalCheckbox.checked;
     }
 
     return false;
