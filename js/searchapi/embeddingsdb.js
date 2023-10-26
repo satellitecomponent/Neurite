@@ -628,3 +628,23 @@ async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-00
     }
     return chunkEmbeddings;
 }
+
+function groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE) {
+    // Group the chunks by their source (stripping the chunk number from the key)
+    const groupedChunks = relevantChunks.reduce((acc, chunk) => {
+        const [source, chunkNumber] = chunk.source.split('_chunk_');
+        if (!acc[source]) acc[source] = [];
+        acc[source].push({
+            text: chunk.text.substring(0, MAX_CHUNK_SIZE),
+            number: parseInt(chunkNumber),
+            relevanceScore: chunk.relevanceScore,
+        });
+        return acc;
+    }, {});
+
+    // Construct the topNChunksContent
+    return Object.entries(groupedChunks).map(([source, chunks]) => {
+        chunks.sort((a, b) => a.number - b.number);
+        return `[Source: ${source}]\n${chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
+    }).join('\n');
+}
