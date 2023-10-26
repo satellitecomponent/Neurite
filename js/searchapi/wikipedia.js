@@ -3,11 +3,18 @@
 // Function to check if Wikipedia is enabled
 function isWikipediaEnabled(nodeIndex = null) {
     const globalCheckbox = document.getElementById("wiki-checkbox");
-    if (globalCheckbox && globalCheckbox.checked) return true;
 
+    // Check for AI node-specific checkboxes only if nodeIndex is provided
     if (nodeIndex !== null) {
         const aiCheckbox = document.getElementById(`wiki-checkbox-${nodeIndex}`);
-        if (aiCheckbox && aiCheckbox.checked) return true;
+        if (aiCheckbox) {
+            return aiCheckbox.checked;
+        }
+    }
+
+    // If we are here, it means no node-specific checkbox was found or nodeIndex was not provided
+    if (globalCheckbox) {
+        return globalCheckbox.checked;
     }
 
     return false;

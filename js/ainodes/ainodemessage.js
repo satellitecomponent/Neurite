@@ -1,3 +1,4 @@
+
 async function sendLLMNodeMessage(node, message = null) {
     if (node.aiResponding) {
         console.log('AI is currently responding. Please wait for the current response to complete before sending a new message.');
@@ -60,70 +61,6 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
         });
     }
 
-    const clickQueues = {};  // Contains a click queue for each AI node
-
-    async function processClickQueue(nodeId) {
-        const queue = clickQueues[nodeId] || [];
-        while (true) {
-            if (queue.length > 0) {
-                const connectedNode = queue[0].connectedNode;
-
-                // If the node is not connected or the response is halted, 
-                // break out of the loop to stop processing this node's queue.
-                if (!updateConnectedAiNodeState() || connectedNode.aiResponseHalted) {
-                    break;
-                }
-
-                // Check if AI is not responding to attempt the click again
-                if (!connectedNode.aiResponding) {
-                    const { sendButton } = queue.shift();
-                    sendButton.click();
-                }
-            }
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-    }
-
-    async function questionConnectedAiNodes(lastLine) {
-        for (const connectedNode of allConnectedNodes) {
-            if (connectedNode.isLLMNode) {
-                let uniqueNodeId = connectedNode.index;
-
-                // Check if the AI response is halted for the node or the connectedNode
-                if (connectedNode.aiResponseHalted || node.aiResponseHalted) {
-                    console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
-                    continue;
-                }
-
-                let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
-                let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
-
-                if (!promptElement || !sendButton) {
-                    console.error(`Elements for ${uniqueNodeId} are not found`);
-                    continue;
-                }
-
-                if (promptElement instanceof HTMLTextAreaElement) {
-                    promptElement.value += `\n${lastLine}`;
-                } else if (promptElement instanceof HTMLDivElement) {
-                    promptElement.innerHTML += `<br>${lastLine}`;
-                } else {
-                    console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
-                }
-
-                promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
-
-                // Initialize the click queue for this node if it doesn't exist
-                if (!clickQueues[uniqueNodeId]) {
-                    clickQueues[uniqueNodeId] = [];
-                    processClickQueue(uniqueNodeId);  // Start processing this node's click queue
-                }
-
-                // Add to the node's specific click queue
-                clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
-            }
-        }
-    }
 
     if (document.getElementById(`code-checkbox-${nodeIndex}`).checked) {
         messages.push(aiNodeCodeMessage());
@@ -132,7 +69,6 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     if (document.getElementById("instructions-checkbox").checked) {
         messages.push(instructionsMessage());
     }
-
 
     const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
@@ -148,9 +84,6 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
 
         // Join the keywords array into a single string
         keywords = keywordsArray.join(' ');
-
-
-
         const keywordString = keywords.replace("Keywords: ", "");
         const splitKeywords = keywordString.split(',').map(k => k.trim());
         const firstKeyword = splitKeywords[0];
@@ -200,8 +133,6 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
 
     displaySearchResults(searchResults);
 
-
-
     const searchResultsContent = searchResults.map((result, index) => {
         return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
     }).join('\n');
@@ -218,27 +149,7 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     if (isEmbedEnabled(nodeIndex)) {
         const aiSuggestedSearch = await searchQuery;
         const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
-
-        // Group the chunks by their source (stripping the chunk number from the key)
-        const groupedChunks = relevantChunks.reduce((acc, chunk) => {
-            // Separate the source and the chunk number
-            const [source, chunkNumber] = chunk.source.split('_chunk_');
-            if (!acc[source]) acc[source] = [];
-            acc[source].push({
-                text: chunk.text.substring(0, MAX_CHUNK_SIZE),
-                number: parseInt(chunkNumber), // Parse chunkNumber to an integer
-                relevanceScore: chunk.relevanceScore,
-            });
-            return acc;
-        }, {});
-
-        // Construct the topNChunksContent
-        const topNChunksContent = Object.entries(groupedChunks).map(([source, chunks]) => {
-            // Sort the chunks by their chunk number for each source
-            chunks.sort((a, b) => a.number - b.number);
-            const chunksContent = chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n');
-            return `[Source: ${source}]\n${chunksContent}\n`;
-        }).join('\n');
+        const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
 
         const embedMessage = {
             role: "system",
@@ -305,7 +216,7 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     // calculate contextSize again
     contextSize = Math.min(remainingTokens, maxContextSize);
 
-    // Update the value of getLastPromptsAndResponses
+    // Init value of getLastPromptsAndResponses
     let lastPromptsAndResponses;
     lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.id);
 
@@ -321,17 +232,8 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     }
 
     if (wolframData) {
-        const { table, wolframAlphaTextResult, reformulatedQuery } = wolframData;
-
-        let content = [table];
-        let scale = 1;
-
-        let wolframNode = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-        htmlnodes_parent.appendChild(wolframNode.content);
-        registernode(wolframNode);
-        wolframNode.followingMouse = 1;
-        wolframNode.draw();
-        wolframNode.mouseAnchor = toDZ(new vec2(0, -wolframNode.content.offsetHeight / 2 + 6));
+        const { wolframAlphaTextResult } = wolframData;
+        createWolframNode(wolframData);
 
         const wolframAlphaMessage = {
             role: "system",
@@ -380,6 +282,10 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
         return allConnectedNodes.some(n => n.isLLMNode);
     }
 
+    const clickQueues = {};  // Contains a click queue for each AI node
+    // Initiates helper functions for aiNode Message loop.
+    const aiNodeMessageLoop = new AiNodeMessageLoop(node, allConnectedNodes, clickQueues);
+
     const selectedModel = LocalLLMSelect.value;
     console.log('Selected Model:', selectedModel);
 
@@ -393,7 +299,7 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
                 hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
 
                 if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                    await questionConnectedAiNodes(fullMessage);
+                    await aiNodeMessageLoop.questionConnectedAiNodes(fullMessage);
                 }
             })
             .catch((error) => {
@@ -411,12 +317,80 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
 
                 if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
                     const lastLine = await getLastLineFromTextArea(node.aiResponseTextArea);
-                    await questionConnectedAiNodes(lastLine);
+                    await aiNodeMessageLoop.questionConnectedAiNodes(lastLine);
                 }
             })
             .catch((error) => {
                 console.error(`An error occurred while getting response: ${error}`);
                 aiErrorIcon.style.display = 'block';
             });
+    }
+}
+
+class AiNodeMessageLoop {
+    constructor(node, allConnectedNodes, clickQueues) {
+        this.node = node;
+        this.allConnectedNodes = allConnectedNodes;
+        this.clickQueues = clickQueues || {}; // If clickQueues is not passed, initialize as an empty object
+    }
+
+    async processClickQueue(nodeId) {
+        const queue = this.clickQueues[nodeId] || [];
+        while (true) {
+            if (queue.length > 0) {
+                const connectedNode = queue[0].connectedNode;
+
+                // If the node is not connected or the response is halted, 
+                // break out of the loop to stop processing this node's queue.
+                if (connectedNode.aiResponseHalted) {
+                    break;
+                }
+
+                // Check if AI is not responding to attempt the click again
+                if (!connectedNode.aiResponding) {
+                    const { sendButton } = queue.shift();
+                    sendButton.click();
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+
+    async questionConnectedAiNodes(lastLine) {
+        for (const connectedNode of this.allConnectedNodes) {
+            if (connectedNode.isLLMNode) {
+                let uniqueNodeId = connectedNode.index;
+
+                if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
+                    console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
+                    continue;
+                }
+
+                let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
+                let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
+
+                if (!promptElement || !sendButton) {
+                    console.error(`Elements for ${uniqueNodeId} are not found`);
+                    continue;
+                }
+
+                if (promptElement instanceof HTMLTextAreaElement) {
+                    promptElement.value += `\n${lastLine}`;
+                } else if (promptElement instanceof HTMLDivElement) {
+                    promptElement.innerHTML += `<br>${lastLine}`;
+                } else {
+                    console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+                }
+
+                promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+
+                if (!this.clickQueues[uniqueNodeId]) {
+                    this.clickQueues[uniqueNodeId] = [];
+                    this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
+                }
+
+                this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+            }
+        }
     }
 }
