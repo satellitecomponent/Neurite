@@ -43,7 +43,7 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
   <script type="module" crossorigin src="./assets/index.5bff41e7.js"></script>
-  <link rel="stylesheet" href="./assets/index.7875c330.css">
+  <link rel="stylesheet" href="./assets/index.f0a02bbe.css">
 </head>
 
 <body id="body">
@@ -205,13 +205,13 @@
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
-                        <div class="settingsSlider" style="margin-bottom: 10px;">
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
                             <label style="white-space: nowrap;">
                                 z <sup id="exponent_value" style="color: powderblue">2</sup> + c
                             </label>
                             <input id="exponent" type="range" min="1" max="8" value="2">
                         </div>
-                        <div class="settingsSlider" style="margin-bottom: 10px;">
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
                             <div style="display:flex; justify-content: space-between;">
                                 <div id="quality_value">Quality</div>
                                 <div id="fps">fps:?? (is javascript enabled?)</div>
@@ -542,7 +542,7 @@
                         <!--<input type="file" id="fileInput" />
                         <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
-                        <div class="settingsSlider" style="margin-bottom: 10px;">
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
                             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
                         </div>
@@ -729,26 +729,28 @@
 
     <script defer type="module" src="./embeddings.js"></script>
 
-    <script src="js/interface/nodemode.js"></script>
+    <script src="js/nodes/nodemode.js"></script>
     <script src="js/interface/window.js"></script>
 
     <script src="js/interface/interface_v2.js"></script>
 
     <script src="js/interface/connect.js"></script>
     <script src="js/interface/search.js"></script>
-    <script src="js/interface/togglenodestate.js"></script>
+
+    <script src="js/nodes/togglenodestate.js"></script>
+
     <script src="js/interface/bundlecode.js"></script>
     <script src="js/interface/handledrop.js"></script>
 
 
-    <script src="js/editor/editornode.js"></script>
+    <script src="js/nodes/editor/editornode.js"></script>
 
     
 
     <script src="js/ai/prompts.js"></script>
 
-    <script src="js/ainodes/ainodes_v2.js"></script>
-    <script src="js/ainodes/ainodemessage.js"></script>
+    <script src="js/nodes/ainodes/ainodes_v2.js"></script>
+    <script src="js/nodes/ainodes/ainodemessage.js"></script>
 
     <script src="js/ai/ai_v2.js"></script>
     <script src="js/ai/aimessage.js"></script>
@@ -762,9 +764,9 @@
     <script src="js/searchapi/embeddingsdb.js"></script>
     <script src="js/searchapi/wolframapi.js"></script>
 
-    <script src="js/createnodes/createnodes_v2.js"></script>
-    <script src="js/createnodes/nodedef.js"></script>
-    <script src="js/createnodes/contenteditable.js"></script>
+    <script src="js/nodes/createnodes/createnodes_v2.js"></script>
+    <script src="js/nodes/createnodes/nodedef.js"></script>
+    <script src="js/nodes/createnodes/contenteditable.js"></script>
 
     <script src="js/record/record_v1.js"></script>
 

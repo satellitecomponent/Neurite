@@ -1,9 +1,12 @@
 function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     // Create the wrapper div
-    let wrapperDiv = document.createElement('div');
-    wrapperDiv.style.width = '800px'; // Set width of the wrapper
-    wrapperDiv.style.height = '400px'; // Set height of the wrapper 
-    wrapperDiv.style.overflow = 'none';
+    let editorWrapperDiv = document.createElement('div');
+    editorWrapperDiv.className = 'editorWrapperDiv'; 
+    editorWrapperDiv.style.width = '800px'; // Set width of the wrapper
+    editorWrapperDiv.style.height = '400px'; // Set height of the wrapper 
+    editorWrapperDiv.style.overflow = 'none';
+    editorWrapperDiv.style.position = 'relative';
+
 
     let htmlContent = `<!DOCTYPE html>
 <html lang="en" class="custom-scrollbar">
@@ -31,25 +34,26 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         }
 
         body {
-            background-color: #1f1f21;
+            background-color: transparent;
             margin: 0;
             padding: 0px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow: hidden;
         }
 
         #editor-wrapper {
             box-sizing: border-box;
             display: flex;
             justify-content: space-between;
-            height: 90vh;
-            width: calc(100% - 20px); /* 10px margin on left and right side */
-            max-width: 1200px;
-            margin-bottom: 0px;
-            margin-left: 10px; /* Left margin */
-            resize: vertical; /* Allows vertical resizing */
+            height: 95vh;
+            width: 96%; /* 10px margin on left and right side */
+            max-width: 100%;
+            margin-top: 10px;
+            margin-left: 15px; /* Left margin */
             overflow: hidden; /* Contains the children */
+            resize:none;
         }
 
         .draggable-bar {
@@ -68,7 +72,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         #vertical-resize-handle {
             height: 5px;
             width: 100%;
-            cursor: ns-resize;
             background-color: #262737; /* You can style this to match your theme */
         }
 
@@ -79,7 +82,7 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         .editor-container {
             height: 100%; /* Take full height of parent */
             margin: 0px 0px;
-            background-color: #222226;
+            background-color: transparent;
             padding: 0px;
             position: relative; /* Ensuring the child takes this height */
             flex: none; /* Ensure equal space division */
@@ -94,65 +97,39 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             display: inline;
             margin: 0;
             line-height: 30px;
+            user-select: none;
         }
 
-.CodeMirror {
-    font-size: 12px;
-    height: calc(100% - 32px); /* Adjusted for label height */
-    width: 100%;
-    position: absolute; /* Take full height of parent */
-    bottom: 0; /* Align to the bottom of the container */
-    overflow-x: hidden; /* Hide horizontal scrollbar */
-}
-
-.CodeMirror-simplescroll-horizontal {
-    display: none !important; /* Hide horizontal scrollbar */
-}
-
-.CodeMirror-simplescroll-vertical {
-    background: #222226 !important;
-}
-
-.CodeMirror-simplescroll-vertical div {
-    background: #3f3f3f !important;
-    border: 1px solid #555555;
-    width: 6px !important;
-}
-
-.CodeMirror-simplescroll-scrollbar div:hover {
-    background: #555 !important;
-}
-
-.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
-    background-color: #222226;
-}
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+        .CodeMirror {
+            font-size: 12px;
+            height: calc(100% - 32px); /* Adjusted for label height */
+            width: 100%;
+            position: absolute; /* Take full height of parent */
+            bottom: 0; /* Align to the bottom of the container */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #3f3f3f;
+        .CodeMirror-simplescroll-horizontal {
+            display: none !important; /* Hide horizontal scrollbar */
         }
 
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #555;
+        .CodeMirror-simplescroll-vertical {
+            background: #222226 !important;
+        }
+
+            .CodeMirror-simplescroll-vertical div {
+                background: #3f3f3f !important;
+                border: 1px solid #555555;
+                width: 6px !important;
             }
 
-        .custom-scrollbar::-webkit-scrollbar-corner {
-            background: transparent;
-            border: none;
+        .CodeMirror-simplescroll-scrollbar div:hover {
+            background: #555 !important;
         }
 
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #888 transparent;
+        .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+            background-color: #222226;
         }
-
-            .custom-scrollbar:hover {
-                scrollbar-color: #555 transparent;
-            }
 
         .no-select {
             user-select: none;
@@ -163,7 +140,7 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
 </head>
 <body>
     <div id="editor-container-wrapper" class="editorcontainer">
-        <div id="editor-wrapper" class="custom-scrollbar">
+        <div id="editor-wrapper">
             <div class="editor-container">
                 <div class="editor-label">html</div>
                 <div id="htmlEditor"></div>
@@ -181,7 +158,7 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         </div>
         <div id="vertical-resize-handle"></div>
     </div>
-        <script>
+    <script>
             var htmlEditor = CodeMirror(document.getElementById('htmlEditor'), {
                 mode: 'htmlmixed', theme: 'dracula', lineNumbers: true, lineWrapping: false, scrollbarStyle: 'simple'
             });
@@ -210,29 +187,47 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
             let initialWidths;
             let initialX;
 
+        function onMouseMoveLeft(e) {
+            const dx = e.clientX - initialX;
+            const totalWidth = editorContainers[0].parentElement.offsetWidth;
+            let newHtmlWidth = Math.min(totalWidth - 20, initialWidths.htmlWidth + dx);
+            let newCssWidth = totalWidth - newHtmlWidth - initialWidths.jsWidth;
+            let newJsWidth = initialWidths.jsWidth;
 
-            function onMouseMoveLeft(e) {
-                const dx = e.clientX - initialX;
-                const newHtmlWidth = initialWidths.htmlWidth + dx;
-                const newCssWidth = initialWidths.cssWidth - dx;
-
-                if (newHtmlWidth > 10 && newCssWidth > 10) {
-                    editorContainers[0].style.width = newHtmlWidth + 'px';
-                    editorContainers[1].style.width = newCssWidth + 'px';
-                }
+            if (newHtmlWidth <= 10) {
+                newHtmlWidth = 10;
             }
 
-            function onMouseMoveRight(e) {
-                const dx = e.clientX - initialX;
-                const newJsWidth = initialWidths.jsWidth - dx;
-                const newCssWidth = initialWidths.cssWidth + dx;
-
-                if (newJsWidth > 10 && newCssWidth > 10) {
-                    editorContainers[2].style.width = newJsWidth + 'px';
-                    editorContainers[1].style.width = newCssWidth + 'px';
-                }
+            if (newCssWidth <= 10) {
+                newCssWidth = 10;
+                newJsWidth = totalWidth - newHtmlWidth - newCssWidth;
             }
 
+            editorContainers[0].style.width = newHtmlWidth + 'px';
+            editorContainers[1].style.width = newCssWidth + 'px';
+            editorContainers[2].style.width = newJsWidth + 'px';
+        }
+
+        function onMouseMoveRight(e) {
+            const dx = e.clientX - initialX;
+            const totalWidth = editorContainers[0].parentElement.offsetWidth;
+            let newJsWidth = Math.min(totalWidth - 20, initialWidths.jsWidth - dx);
+            let newCssWidth = totalWidth - newJsWidth - initialWidths.htmlWidth;
+            let newHtmlWidth = initialWidths.htmlWidth;
+
+            if (newJsWidth <= 10) {
+                newJsWidth = 10;
+            }
+
+            if (newCssWidth <= 10) {
+                newCssWidth = 10;
+                newHtmlWidth = totalWidth - newCssWidth - newJsWidth;
+            }
+
+            editorContainers[0].style.width = newHtmlWidth + 'px';
+            editorContainers[1].style.width = newCssWidth + 'px';
+            editorContainers[2].style.width = newJsWidth + 'px';
+        }
             function onMouseDown(e) {
                 initialX = e.clientX;
                 initialWidths = {
@@ -258,83 +253,78 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
                 document.removeEventListener('mouseup', onMouseUp);
             }
 
-            draggableBars.forEach(bar => bar.addEventListener('mousedown', onMouseDown));
+        draggableBars.forEach(bar => bar.addEventListener('mousedown', onMouseDown));
 
-            // Function to update editor widths
-            function updateEditorWidth() {
-                const editorWrapperWidth = editorContainers[0].parentElement.offsetWidth;
-                const newWidth = (editorWrapperWidth - draggableBarWidths) / 3;
+        // Function to recalculate draggable bar widths when resizing
+        function updateDraggableBarWidths() {
+            return Array.from(draggableBars).reduce((total, bar) => total + bar.offsetWidth, 0);
+        }
+
+        // Initialize isResized flag to false
+        let isResized = false;
+
+        // Function to update editor widths
+        function updateEditorWidth() {
+            const editorWrapperWidth = editorContainers[0].parentElement.offsetWidth;
+            const newDraggableBarWidths = updateDraggableBarWidths(); // Update the widths of draggable bars
+            const totalCurrentWidths = Array.from(editorContainers).reduce((total, el) => total + el.offsetWidth, 0);
+            const availableWidth = editorWrapperWidth - newDraggableBarWidths;
+
+            if (!isResized) {
+                // First-time call: Initialize all editors to a uniform width
+                const newWidth = availableWidth / 3;
                 editorContainers.forEach(container => container.style.width = newWidth + 'px');
-                refreshEditors();
+                isResized = true;  // Set the flag to true after the first invocation
+            } else {
+                // Subsequent calls: Proportionally adjust the width of each editor
+                const scalingFactor = availableWidth / totalCurrentWidths;
+                editorContainers.forEach(container => {
+                    const newWidth = container.offsetWidth * scalingFactor;
+                    container.style.width = newWidth + 'px';
+                });
             }
+
+            refreshEditors(); // Refresh the editors
+        }
+
+        // Event listener to update editor widths on window resize
+        window.addEventListener('resize', updateEditorWidth);
 
             // Initial call to set the size
             updateEditorWidth();
 
-            var verticalResizeHandle = document.getElementById('vertical-resize-handle');
-            var editorWrapper = document.getElementById('editor-wrapper');
-            var startY;
-            var startHeight;
-
-            function onVerticalDragStart(e) {
-                startY = e.clientY;
-                startHeight = editorWrapper.offsetHeight;
-                document.body.classList.add('vertical-dragging');
-                document.addEventListener('mousemove', onVerticalDragMove);
-                document.addEventListener('mouseup', onVerticalDragEnd);
-            }
-
-            function onVerticalDragMove(e) {
-                var dy = e.clientY - startY;
-                var newHeight = startHeight + dy;
-                editorWrapper.style.height = newHeight + 'px';
-                refreshEditors(); // Refresh the editors to update their size
-            }
-
-            function onVerticalDragEnd() {
-                document.body.classList.remove('vertical-dragging');
-                document.removeEventListener('mousemove', onVerticalDragMove);
-                document.removeEventListener('mouseup', onVerticalDragEnd);
-            }
-
-            verticalResizeHandle.addEventListener('mousedown', onVerticalDragStart);
-        </script>
+          
+    </script>
 </body>
 </html>`;
 
-    const customScrollbarStyles = `
-    <style>
-        body::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+    let iframeScript = `
+<script>
+    document.addEventListener('keydown', function(event) {
+        let nodeMode = 0;
+        if(event.altKey && event.shiftKey) {
+            nodeMode = 1;
         }
-        body::-webkit-scrollbar-thumb {
-            background: #3f3f3f;
-        }
-        body::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        body {
-            scrollbar-width: thin;
-            scrollbar-color: #888 transparent;
-        }
-        body:hover {
-            scrollbar-color: #555 transparent;
-        }
-    </style>
+        window.parent.postMessage({ altHeld: event.altKey, shiftHeld: event.shiftKey, nodeMode: nodeMode }, '*');
+        if(event.altKey) event.preventDefault();  // Prevent default behavior only for Alt and Alt+Shift
+    });
+
+    document.addEventListener('keyup', function(event) {
+        window.parent.postMessage({ altHeld: event.altKey, shiftHeld: event.shiftKey, nodeMode: 0 }, '*');
+        if(!event.altKey) event.preventDefault();
+    });
+</script>
 `;
 
-
-    // Concatenate the CSS with the HTML
-    htmlContent += customScrollbarStyles;
+    htmlContent += iframeScript;
 
     // Create the iframe element with a data URI as the src attribute
     let iframeElement = document.createElement('iframe');
     iframeElement.style.overflow = `none`;
-    iframeElement.style.width = '100%';
-    iframeElement.style.height = '100%';
+    iframeElement.style.width = '800px';
+    iframeElement.style.height = '390px';
     iframeElement.style.border = '0';
-    iframeElement.style.background = '#222226';
+    iframeElement.style.background = 'transparent';
     iframeElement.sandbox = 'allow-same-origin allow-scripts';
     iframeElement.src = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
 
@@ -342,12 +332,34 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
     iframeElement.srcdoc = htmlContent;
 
     // Append the iframe to the wrapper div
-    wrapperDiv.appendChild(iframeElement);
+    editorWrapperDiv.appendChild(iframeElement);
 
 
-    let node = addNodeAtNaturalScale(title, [wrapperDiv]); // Use the wrapper div here
+    // Create the overlay div dynamically
+    let overlay = document.createElement('div');
+    overlay.id = "editorOverlay";
+    overlay.style.position = "absolute";  // Position relative to editorWrapperDiv
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";  // 100% of editorWrapperDiv
+    overlay.style.height = "100%";  // 100% of editorWrapperDiv
+    overlay.style.zIndex = "9999";
+    overlay.style.backgroundColor = "transparent";
+    overlay.style.display = "none";  // Initially hidden
 
+    // Append the overlay to the editorWrapperDiv
+    editorWrapperDiv.appendChild(overlay);
 
+    // Add this overlay to the global overlays array
+    overlays.push(overlay);
+
+    let node = addNodeAtNaturalScale(title, [editorWrapperDiv]); // Use the wrapper div here
+
+    iframeElement.onload = function () {
+        iframeElement.contentWindow.addEventListener('click', function () {
+            node.followingMouse = 0;
+        });
+    };
         // Generate a unique identifier for the iframe using the node's uuid
     iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier
 

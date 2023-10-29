@@ -866,7 +866,7 @@ document.addEventListener('wheel', (event) => {
         }
         targetElement = targetElement.parentElement;
     }
-    if (event.getModifierState(settings.rotateModifier)) {
+    if (nodeMode !== 1 && event.getModifierState(settings.rotateModifier)) {
         autopilotSpeed = 0;
         coordsLive = true;
         let amount = event.wheelDelta * settings.rotateModifierSpeed;

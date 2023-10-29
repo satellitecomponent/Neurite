@@ -46,18 +46,45 @@ var settings = {
 
 //interface
 
+const overlays = [];
+
+const autoToggleAllOverlays = () => {
+    for (const overlay of overlays) {
+        if (altHeld || nodeMode === 1) {
+            overlay.style.display = 'block';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+};
+
 let altHeld = false;
 
 // Global event listeners to set the altHeld flag
 document.addEventListener('keydown', function (event) {
     if (event.altKey) {
         altHeld = true;
+        autoToggleAllOverlays();
+        event.preventDefault();  // Prevent default behavior like focusing on the iframe
     }
 });
 
 document.addEventListener('keyup', function (event) {
     if (!event.altKey) {
         altHeld = false;
+        autoToggleAllOverlays();
+    }
+});
+
+window.addEventListener('message', function (event) {
+    if (typeof event.data.altHeld !== 'undefined') {
+        altHeld = event.data.altHeld;
+        autoToggleAllOverlays();
+    }
+    if (typeof event.data.nodeMode !== 'undefined') {
+        nodeMode = event.data.nodeMode;
+    } else {
+        nodeMode = 0;
     }
 });
 
