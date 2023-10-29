@@ -30,6 +30,7 @@ addEventListener("keydown", (event) => {
         if (settings.nodeModeTrigger === "down" && !isCapsLockMode) {
             nodeMode = 1;
             toggleNodeModeState();
+            autoToggleAllOverlays();
         } else if (settings.nodeModeTrigger === "toggle" || isCapsLockMode) {
             toggleNodeMode();
         }
@@ -48,6 +49,7 @@ addEventListener("keyup", (event) => {
 
         nodeMode = 0;
         toggleNodeModeState();
+        autoToggleAllOverlays();
         cancel(event);
     }
 });
