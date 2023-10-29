@@ -1530,6 +1530,12 @@ input[type=range] {
     width: 90%;
 }
 
+    .settingsSlider.centered {
+        width: 256px; /* or whatever width you need */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
 textarea[id^='custom-instructions-textarea-'] {
     bottom: 8px;
     position: absolute;

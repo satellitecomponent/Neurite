@@ -287,6 +287,10 @@ function setResizeEventListeners(resizeHandle, node) {
 
     let isMouseMoving = false;
 
+    // Find these elements once and store them for later use.
+    const editorWrapperDiv = windowDiv.querySelector('.editorWrapperDiv');
+    const editorIframe = editorWrapperDiv ? editorWrapperDiv.querySelector('iframe') : null;
+
     const handleMouseMove = (event) => {
         if (!event.buttons) {
             handleMouseUp();
@@ -331,6 +335,19 @@ function setResizeEventListeners(resizeHandle, node) {
             aiNodeWrapperDiv.style.width = `${newWidth}px`;
             aiNodeWrapperDiv.style.height = `${newHeight}px`;
         }
+
+        if (editorWrapperDiv) {
+            const newEditorWidth = Math.max(startWidth + dx, 350);  //350 min width
+            const newEditorHeight = Math.max(startHeight + dy, 200);  //200 min height
+
+            // Set the new dimensions for the editor wrapper div
+            editorWrapperDiv.style.width = `${newEditorWidth}px`;
+            editorWrapperDiv.style.height = `${newEditorHeight}px`;
+
+            // Optional: You might want to update the iframe size here as well
+            editorIframe.style.width = `${newEditorWidth}px`;
+            editorIframe.style.height = `${newEditorHeight - 10}px`;
+        }
     };
 
     const handleMouseUp = () => {
@@ -338,6 +355,13 @@ function setResizeEventListeners(resizeHandle, node) {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
         document.body.style.cursor = 'auto'; // Reset the cursor style
+
+        // Re-enable pointer events on iframe
+        if (editorWrapperDiv) {
+            if (editorIframe) {
+                editorIframe.style.pointerEvents = 'auto';
+            }
+        }
     };
 
     resizeHandle.addEventListener('mousedown', (event) => {
@@ -351,6 +375,13 @@ function setResizeEventListeners(resizeHandle, node) {
         isMouseMoving = true; // Flag to indicate that a resize operation is in progress
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
+
+        // Disable pointer events on iframe
+        if (editorWrapperDiv) {
+            if (editorIframe) {
+                editorIframe.style.pointerEvents = 'none';
+            }
+        }
     });
 }
 
