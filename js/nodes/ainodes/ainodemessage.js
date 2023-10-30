@@ -172,16 +172,23 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);  // Prioritize LLM nodes
 
     allConnectedNodesData.forEach(info => {
-        let tempInfoList = info.isLLM ? llmNodeInfo : textNodeInfo;
-        let tempString = tempInfoList.join("\n\n") + "\n\n" + info.data.replace("Text Content:", "");
-        let tempTokenCount = getTokenCount([{ content: tempString }]);
+        if (info.data && info.data.replace) { // Make sure info.data exists and has a replace method
+            let tempInfoList = info.isLLM ? llmNodeInfo : textNodeInfo;
+            let cleanedData = info.data.replace("Text Content:", "");
 
-        if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
-            tempInfoList.push(info.data.replace("Text Content:", ""));
-            remainingTokens -= tempTokenCount;
-            totalTokenCount += tempTokenCount;
-        } else {
-            messageTrimmed = true;
+            // Only proceed if cleanedData contains text
+            if (cleanedData.trim()) {
+                let tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
+                let tempTokenCount = getTokenCount([{ content: tempString }]);
+
+                if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
+                    tempInfoList.push(cleanedData);
+                    remainingTokens -= tempTokenCount;
+                    totalTokenCount += tempTokenCount;
+                } else {
+                    messageTrimmed = true;
+                }
+            }
         }
     });
 
