@@ -143,3 +143,14 @@ async function getLastLineFromTextArea(textArea) {
     const lines = text.split('\n');
     return lines[lines.length - 1];
 }
+
+// Function to extract text within quotations
+async function getQuotedText(text) {
+    const regex = /"([^"]*)"/g;
+    let matches = [];
+    let match;
+    while (match = regex.exec(text)) {
+        matches.push(match[1]);
+    }
+    return matches.length ? matches : null;
+}
