@@ -18,10 +18,13 @@ async function sendLLMNodeMessage(node, message = null) {
     node.promptTextArea.dispatchEvent(new Event('input'));
 
     //Initialize messages array.
+    let nodeTitle = node.getTitle();
+    let aiIdentity = nodeTitle ? `${nodeTitle} (Ai)` : "Ai";
+
     let messages = [
         {
             role: "system",
-            content: "YOU (Ai) are responding in an Ai node. CONNECTED NODES are SHARED as system messages. Triple backtick and label any codeblocks"
+            content: `YOU (${aiIdentity}) are responding within an Ai node. CONNECTED NODES are SHARED as system messages. Triple backtick and label any codeblocks`
         },
     ];
 
@@ -55,9 +58,10 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `The LAST LINE of your response will be EXTRACTED and SENT to any CONNECTED Ai.
-Ask INSIGHTFUL, THOUGHT-PROVOKING, and RELEVANT questions that will provide DEPTH to the CONVERSATION.
-REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
+            content: `"Quotations" are used to QUERY the WEB of CONNECTED AI nodes.
+ARCHITECT profound, mission-critical QUERIES to Ai nodes.
+SYNTHESIZE cross-disciplinary CONVERSATIONS.
+Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
         });
     }
 
@@ -160,7 +164,6 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     }
 
     let allConnectedNodesData = getAllConnectedNodesData(node, true);
-
     let totalTokenCount = getTokenCount(messages);
     let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
     const maxContextSize = document.getElementById(`node-max-context-${nodeIndex}`).value;
@@ -169,26 +172,14 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
     let llmNodeInfo = [];
     let messageTrimmed = false;
 
-    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);  // Prioritize LLM nodes
+    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
 
     allConnectedNodesData.forEach(info => {
-        if (info.data && info.data.replace) { // Make sure info.data exists and has a replace method
+        if (info.data && info.data.replace) {
             let tempInfoList = info.isLLM ? llmNodeInfo : textNodeInfo;
-            let cleanedData = info.data.replace("Text Content:", "");
-
-            // Only proceed if cleanedData contains text
-            if (cleanedData.trim()) {
-                let tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
-                let tempTokenCount = getTokenCount([{ content: tempString }]);
-
-                if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
-                    tempInfoList.push(cleanedData);
-                    remainingTokens -= tempTokenCount;
-                    totalTokenCount += tempTokenCount;
-                } else {
-                    messageTrimmed = true;
-                }
-            }
+            [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
+                info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize
+            );
         }
     });
 
@@ -323,8 +314,19 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
                 hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
 
                 if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                    const lastLine = await getLastLineFromTextArea(node.aiResponseTextArea);
-                    await aiNodeMessageLoop.questionConnectedAiNodes(lastLine);
+                    const aiResponseText = node.aiResponseTextArea.value;
+                    const quotedTexts = await getQuotedText(aiResponseText);
+
+                    let textToSend;
+                    if (quotedTexts) {
+                        // Use the last quoted text; or you can decide to use the first, or all.
+                        textToSend = quotedTexts[quotedTexts.length - 1];
+                    } else {
+                        // Fallback to last line if no quoted text is found
+                        textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
+                    }
+
+                    await aiNodeMessageLoop.questionConnectedAiNodes(textToSend);
                 }
             })
             .catch((error) => {
@@ -332,6 +334,25 @@ REMEMBER to FOLLOW CUSTOM INSTRUCTIONS and REFERENCE CONNECTED TEXT NODES.`
                 aiErrorIcon.style.display = 'block';
             });
     }
+}
+
+function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize) {
+    let cleanedData = info.data.replace("Text Content:", "");
+
+    if (cleanedData.trim()) {
+        let tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
+        let tempTokenCount = getTokenCount([{ content: tempString }]);
+
+        if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
+            tempInfoList.push(cleanedData);
+            remainingTokens -= tempTokenCount;
+            totalTokenCount += tempTokenCount;
+            return [remainingTokens, totalTokenCount, false];
+        } else {
+            return [remainingTokens, totalTokenCount, true];
+        }
+    }
+    return [remainingTokens, totalTokenCount, false];
 }
 
 class AiNodeMessageLoop {
