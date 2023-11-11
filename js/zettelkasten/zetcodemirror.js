@@ -158,7 +158,7 @@ myCodeMirror.on("cursorActivity", function (cm) {
 
 myCodeMirror.display.wrapper.style.backgroundColor = '#222226';
 myCodeMirror.display.wrapper.style.width = '265px';
-myCodeMirror.display.wrapper.style.height = '45vh';
+myCodeMirror.display.wrapper.style.height = '49vh';
 myCodeMirror.display.wrapper.style.borderStyle = 'inset';
 myCodeMirror.display.wrapper.style.borderColor = '#8882';
 myCodeMirror.display.wrapper.style.fontSize = '15px';
@@ -376,6 +376,11 @@ function highlightNodeSection(title, cm) {
         CodeMirror.Pos(endLineNo, cm.getLine(endLineNo).length),
         { className: 'current-node-section' }
     );
+}
+
+function scrollToLine(myCodeMirror, lineNumber) {
+    // Scroll to the specified line
+    myCodeMirror.scrollIntoView({ line: lineNumber, ch: 0 }, 30);
 }
 
 function scrollToTitle(title, cm, lineOffset = 0, chPosition = 0) {
