@@ -146,6 +146,42 @@ app.get('/fetch-web-page-text', (req, res) => {
     });
 });
 
+app.post('/fetch-embeddings-by-keys', async (req, res) => {
+    const keys = req.body.keys;
+    if (!Array.isArray(keys)) {
+        return res.status(400).json({ error: 'Keys must be an array.' });
+    }
+
+    // Modify the placeholders to use the LIKE operator
+    const placeholders = keys.map(() => '?').join(', ');
+    const query = `SELECT embeddings.key, embeddings.embedding, embeddings.source, webpage_text.text 
+                   FROM embeddings 
+                   JOIN webpage_text ON embeddings.key = webpage_text.url 
+                   WHERE ` + keys.map(() => 'embeddings.key LIKE ?').join(' OR ');
+
+    // Here we define the callback function
+    const callback = (err, rows) => {
+        if (err) {
+            console.error('Database error:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+
+        // Map the rows to a format that includes parsed JSON embeddings
+        const result = rows.map(row => ({
+            key: row.key,
+            embedding: JSON.parse(row.embedding), // Assuming 'embedding' is stored as a JSON string
+            source: row.source,
+            text: row.text // Assuming 'text' is a plain string, not a JSON string
+        }));
+
+        res.json(result);
+    };
+
+    // Perform the query, passing the wildcard-prefixed keys and the newly defined callback as arguments
+    db.all(query, keys.map(key => `${key.split('_chunk_')[0]}%`), callback);
+});
+
 app.get('/fetch-all-embeddings', (req, res) => {
     db.all('SELECT key, embedding, source, text FROM embeddings INNER JOIN webpage_text ON embeddings.key = webpage_text.url', (err, rows) => {
         if (err) {

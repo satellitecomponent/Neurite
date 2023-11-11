@@ -169,9 +169,14 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
     if (embedCheckbox && embedCheckbox.checked) {
-        const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, false);
+        // Obtain relevant keys based on the user message
+        const relevantKeys = await getRelevantKeys(message, null, searchQuery);
+
+        // Get relevant chunks based on the relevant keys
+        const relevantChunks = await getRelevantChunks(searchQuery, searchResults, topN, relevantKeys);
         const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
 
+        // Construct the embed message
         const embedMessage = {
             role: "system",
             content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Provide RELEVANT information from the given <topNchunks>. CITE sources!`
@@ -273,10 +278,18 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
-        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        let lineBeforeAppend = myCodeMirror.lastLine();
+        scrollToLine(myCodeMirror, lineBeforeAppend); // Scroll to the line before the prompt
+        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(lineBeforeAppend));
+        scrollToLine(myCodeMirror, lineBeforeAppend + 1); // Scroll to the line just after the prompt
+        userScrolledUp = false;
         isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
-        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
+        let lineBeforeAppend = myCodeMirror.lastLine();
+        scrollToLine(myCodeMirror, lineBeforeAppend); // Scroll to the line before the prompt
+        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
+        scrollToLine(myCodeMirror, lineBeforeAppend + 1); // Scroll to the new last line
+        userScrolledUp = false;
     }
 
 

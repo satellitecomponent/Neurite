@@ -39,9 +39,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>-->
-
-
+    <!-- Pyodide -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
+
 </head>
 
 <body id="body">
@@ -167,35 +167,35 @@
                             </div>
                         </form>
                         <br />
-                        <div class="zet-container">
+                        <div class="zet-container" title="Zettelkasten">
                             <div id="zetHorizDragHandle" class="zet-drag-handle-horiz"></div>
                             <div id="zetVertDragHandle" class="zet-drag-handle-vert"></div>
                             <textarea id="note-input" class="zettelkasten" rows="10" cols="50"></textarea>
                         </div>
 
                         <div class="checkboxarray">
-                            <div>
+                            <div title="Enable Web Search Results">
                                 <input type="checkbox" id="google-search-checkbox" name="enable-search">
                                 <label for="google-search-checkbox">Search</label>
 
                             </div>
-                            <div>
+                            <div title="Enable Code Instructions and Buttons">
                                 <input type="checkbox" id="code-checkbox" name="code-checkbox">
                                 <label for="code-checkbox">Code</label>
                             </div>
-                            <div>
+                            <div title="Self-Prompted AI">
                                 <input type="checkbox" id="auto-mode-checkbox">
                                 <label for="auto-mode-checkbox">Auto</label>
                             </div>
-                            <div>
+                            <div title="Retrieve Document Snippets and send to AI">
                                 <input type="checkbox" id="embed-checkbox">
                                 <label for="embed-checkbox">Data</label>
                             </div>
-                            <div>
+                            <div title="Query Wolfram Alpha">
                                 <input type="checkbox" id="enable-wolfram-alpha" name="enable-wolfram-alpha">
                                 <label for="enable-wolfram-alpha">Wolfram</label>
                             </div>
-                            <div>
+                            <div title="Query Wikipedia">
                                 <input type="checkbox" id="wiki-checkbox">
                                 <label for="wiki-checkbox">Wiki</label>
 
@@ -419,12 +419,12 @@
                             <button id="ai-cursor-button">Enable Ai Cursor</button>
                         </div>-->
                         <div class="flex-container">
-                            <div class="inline-container">
+                            <div class="inline-container" title="Enable Local Ai Features">
                                 <input type="checkbox" id="localLLM">
                                 <label for="localLLM">:</label>
                             </div>
-                            <button id="downloadAiButton" class="key-button">INSTALL</button>
-                            <div class="inline-container">
+                            <button id="downloadAiButton" class="key-button" title="Install Local AI Models into Browser Cache">INSTALL</button>
+                            <div class="inline-container" title="Select Local Model">
                                 <select id="LocalLLMselect" class="model-dropdown custom-select">
                                     <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
                                     <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
@@ -490,13 +490,16 @@
                             <label for="model-select" style="margin-right: 10px;">Select Model:</label>
                             <div class="dropdown-container">
                                 <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
-                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
-                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-turbo-0613</option>
-                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-turbo-16k-0613</option>
+                                    <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
+                                    <option value="gpt-4-1106-preview">gpt-4-1106</option>
                                     <option value="gpt-4">gpt-4</option>
                                     <option value="gpt-4-0613">gpt-4-0613</option>
-                                    <option value="other">Other...</option>
+                                    <option value="gpt-4-vision-preview">gpt-4-vision</option>
+                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
+                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-16k</option>
+                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-0613</option>
+                                    <!-- <option value="other">Other...</option> -->
                                 </select>
                                 <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
                             </div>
@@ -504,22 +507,22 @@
                         <br />
                         <div class="gridLayout">
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
                                 <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
                                 <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
                             </div>
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
                                 <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
                                 <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
                             </div>
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
                                 <span id="max-context-size-display">2000</span>
                                 <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
                             </div>
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Number of Notes Retrieved from Neurite and Sent to AI">
                                 <label id="node-slider-label">Top 3 <br />nodes</label>
                                 <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
                             </div>
@@ -531,32 +534,31 @@
                     <!-- Extract tab content here -->
                     <div class="submenu">
                         <label for="inputKeyExtract">Key:</label><br>
-                        <input type="text" id="inputKeyExtract" name="inputKeyExtract"><br>
+                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
                         <label for="inputTextExtract">Text:</label><br>
-                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten"></textarea><br>
+                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
                         <div class="button-container">
-                            <button id="chunkAndStoreButton" class="linkbuttons">Store Key & Text</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons">Delete Key(s)</button>
+                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
                         </div>
-                        <strong><p style="font-weight: bold;">Stored Keys</p></strong>
-                        <div id="key-list" class="scrollable-list">
+                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
                             <!-- Stored keys will be dynamically added here -->
                         </div>
                         <!--<input type="file" id="fileInput" />
                         <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
                             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
                         </div>
                         <div class="gridLayout">
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
                                 <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
-                                <input type="range" min="1" max="4096" value="256" class="slider" id="maxChunkSizeSlider">
+                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
                             </div>
 
-                            <div class="settingsSlider">
+                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
                                 <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
                                 <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
                             </div>
@@ -693,15 +695,15 @@
         <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"></line>
     </svg>
 
-    <svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#A6A6A6" class="bi bi-sliders2" viewBox="0 0 16 16" display="none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#A6A6A6" class="bi bi-sliders2" viewBox="0 0 16 16" display="none">
         <path fill-rule="evenodd" d="M10.5 1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4H1.5a.5.5 0 0 1 0-1H10V1.5a.5.5 0 0 1 .5-.5ZM12 3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Zm-6.5 2A.5.5 0 0 1 6 6v1.5h8.5a.5.5 0 0 1 0 1H6V10a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8Zm9.5 2a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V13H1.5a.5.5 0 0 1 0-1H10v-1.5a.5.5 0 0 1 .5-.5Zm1.5 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Z" />
     </svg>
 
 
     <svg id="aiNodeSettingsIcon" display="none" class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25"/>
-  </svg>
-    
+        <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25" />
+    </svg>
+
 
     <!--<script>
         window.onload = function () {
@@ -737,7 +739,7 @@
 
     <script src="js/interface/interface_v2.js"></script>
 
-    <script src="js/interface/connect.js"></script>
+    <script src="js/nodes/connect.js"></script>
     <script src="js/interface/search.js"></script>
 
     <script src="js/nodes/togglenodestate.js"></script>
@@ -758,6 +760,7 @@
     <script src="js/ai/ai_v2.js"></script>
     <script src="js/ai/aimessage.js"></script>
     <script src="js/ai/aihelpers.js"></script>
+    <script src="js/ai/vision.js"></script>
 
     <!--<script src="js/aicursor.js"></script>-->
 
@@ -765,6 +768,8 @@
     <script src="js/searchapi/filternodes.js"></script>
     <script src="js/searchapi/wikipedia.js"></script>
     <script src="js/searchapi/embeddingsdb.js"></script>
+    <script src="js/searchapi/codeparser/parsemirror.js"></script>
+    <script src="js/searchapi/codeparser/gitparsed.js"></script>
     <script src="js/searchapi/wolframapi.js"></script>
 
     <script src="js/nodes/createnodes/createnodes_v2.js"></script>

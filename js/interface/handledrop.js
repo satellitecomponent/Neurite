@@ -214,21 +214,24 @@ function dropHandler(ev) {
             console.log("loading " + baseType);
             switch (baseType) {
                 case "image":
-                    img = document.createElement('img');
-                    img.ondragstart = (e) => false;
-                    content = [
-                        img
-                    ];
-                    img.style = "display: block";
-                    img.onload = function () {
-                        let s = 512 / Math.hypot(img.naturalWidth, img.naturalHeight);
-                        //img.style.transform = "scale("+s+","+s+")";
-                        img.width = img.naturalWidth * s;
-                        img.height = img.naturalHeight * s;
-                        add(1);
-                        URL.revokeObjectURL(img.src);
-                    }
-                    img.src = url;
+                    // We use a FileReader to read the dropped file and convert it to a Data URL (base64)
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        let base64DataUrl = e.target.result;
+                        let imageElement = document.createElement('img');
+                        imageElement.src = base64DataUrl;
+
+                        // Once the image is loaded, create the node
+                        imageElement.onload = function () {
+                            let node = createImageNode(imageElement, files[i].name);
+                            // Append the node to the DOM here, as the image data is now ready
+                            htmlnodes_parent.appendChild(node.content);
+                            node.followingMouse = 1;
+                            node.draw();
+                            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                        };
+                    };
+                    reader.readAsDataURL(files[i]); // Read the file as a Data URL
                     break;
                 case "audio":
                     img = new Audio();

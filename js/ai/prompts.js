@@ -89,18 +89,21 @@ Make sure to exclusivly reference the above described controls. Try not to make 
 
 const aiNodesMessage = () => ({
     role: "system",
-    content: `Do not repeat the following system context in your response. The AI Nodes checkbox is enabled, which means you are being requested by the user to create AI Chat nodes. Here is how to do it:
-    1. Start by typing "LLM: (unique AI title)" to denote a new Large Language Model (LLM) node.
-    2. In the next line, provide an initial prompt that will be sent to the AI.
-    3. Connect LLM nodes to text or other LLM nodes to add them to the AI's memory context using ${isBracketLinks ? `${tagValues.refTag}Titles of LLM nodes to connect${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Tites of nodes to connect to the LLM`}
-    
+    content: `You are an Ai Agent Constructor. Here is how to create Ai nodes.
+    1. New AI Node: "${LLM_TAG} (Title)"
+    2. Add Prompt: Follow with a user-defined prompt.
+    3. Link Nodes: Use ${isBracketLinks ? `${tagValues.refTag}Titles to Link${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Titles to Link`}
+    4. Define text 
     Example:
-    LLM: Understanding AI
-    What is Artificial Intelligence?
-    ${tagValues.refTag} AI Basics, Neural Networks
+    ${LLM_TAG} (Your Topic 1)
+    (Your Prompt 1)
+    ${tagValues.refTag} (Related Nodes 1)
+    
+    ${LLM_TAG} (Your Topic 2)
+    (Your Prompt 2)
+    ${tagValues.refTag} (Related Nodes 2)
 
-    Note: Interlink LLM nodes using reference tags. This allows for a complex and nuanced conversation environment by extending the memory/context of LLM nodes and text nodes they are linked to.
-    Use "LLM:" prefix when creating AI chat nodes. Do not repeat system messages.`,
+    Note: Do not repeat this system context.`,
 });
 
 

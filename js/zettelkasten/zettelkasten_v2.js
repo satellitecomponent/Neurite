@@ -364,7 +364,8 @@ let shouldAddCodeButton = false;
             let allReferences = [];
             for (let i = startLine; i <= endLine; i++) {
                 const line = lines[i];
-                if (line.startsWith(refTag)) {
+                // Only proceed if line is defined
+                if (line && line.includes(refTag)) {
                     const extractedRefs = this.extractReferencesFromLine(line);
                     allReferences.push(...extractedRefs);
                 }
@@ -379,7 +380,8 @@ let shouldAddCodeButton = false;
 
             let allReferences;
 
-            if (startLineIndex !== null && endLineIndex !== null) {
+            // Check if the startLineIndex and endLineIndex are within the bounds of the lines array
+            if (startLineIndex !== null && endLineIndex !== null && startLineIndex >= 0 && endLineIndex < lines.length) {
                 allReferences = this.extractAllReferencesFromRange(startLineIndex, endLineIndex, lines);
             } else {
                 // Get node section range dynamically if not provided
@@ -415,7 +417,7 @@ let shouldAddCodeButton = false;
             return references;
         }
 
-        //Creates edges based of given reference titles.
+        //Creates edges based off given reference titles.
         handleRefTags(references, currentNodeTitle, nodes) {
             const thisNode = nodes[currentNodeTitle];
 

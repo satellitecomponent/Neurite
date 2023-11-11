@@ -74,6 +74,10 @@ function getConnectedNodes(node) {
 }
 
 function getNodeData(node) {
+    if (node.isImageNode) {
+        //console.log(`Skipping image node ${node.uuid}`);
+        return null;
+    }
     const titleElement = node.content.querySelector("input.title-input");
     const title = titleElement ? titleElement.value : "No title found";
     const createdAt = node.createdAt;

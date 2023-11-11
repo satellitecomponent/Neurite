@@ -35,7 +35,7 @@ Order keywords by relevance, starting with a word from the current message.`,
     ];
 
     // Call the API
-    const keywords = await callchatAPI(messages);
+    const keywords = await callchatAPI(messages, false, 0);
     console.log(`Keywords:`, keywords);
     // Return the keywords
     return keywords.split(',').map(k => k.trim());
@@ -141,7 +141,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     },
     {
         role: "system",
-        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used for both a Google Programable Search and an embedded vector search to find relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results."
+        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used as a Google Programable Search and an embedded vector search that finds relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results."
     },
     {
         role: "user",
@@ -149,7 +149,8 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     },
     ];
 
-    const searchQuery = await callchatAPI(queryContext);
+    const searchQuery = await callchatAPI(queryContext, false, 0);
+    console.log("Search Query", searchQuery);
     return searchQuery;
 }
 

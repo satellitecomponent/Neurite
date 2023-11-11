@@ -1,11 +1,30 @@
 
+
+const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
+
+
 function getTokenCount(messages) {
     let tokenCount = 0;
     messages.forEach(message => {
-        // match words, numbers, punctuations and whitespace
-        let tokens = message.content.match(/[\w]+|[^\s\w]/g);
-        if (tokens !== null) {
-            tokenCount += tokens.length;
+        // Check if content is a string (text message)
+        if (typeof message.content === 'string') {
+            let tokens = message.content.match(/[\w]+|[^\s\w]/g);
+            tokenCount += tokens ? tokens.length : 0;
+        }
+        // If content is an array, we look for text entries to count tokens
+        else if (Array.isArray(message.content)) {
+            message.content.forEach(item => {
+                // Only count tokens for text entries
+                if (item.type === 'text' && typeof item.text === 'string') {
+                    let tokens = item.text.match(/[\w]+|[^\s\w]/g);
+                    tokenCount += tokens ? tokens.length : 0;
+                }
+                // For image entries, we need to add the predefined token cost
+                if (item.type === 'image_url') {
+                    // Add the token cost for images
+                    tokenCount += TOKEN_COST_PER_IMAGE;
+                }
+            });
         }
     });
     return tokenCount;

@@ -172,10 +172,12 @@ function expandNode(node, div, circle) {
 
     // Logic to handle the button's visibility after node expansion
     let button = div.querySelector('.code-button');
-    if (node.addCodeButton || (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked)) {
-        button.style.display = "block";
-    } else {
-        button.style.display = "none";
+    if (button) { // Check if the button exists
+        if (node.addCodeButton || (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked)) {
+            button.style.display = "block";
+        } else {
+            button.style.display = "none";
+        }
     }
 
     // Transfer the .window-anchored class from circle to node.content if present
