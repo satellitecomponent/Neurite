@@ -21,12 +21,33 @@ async function sendLLMNodeMessage(node, message = null) {
     let nodeTitle = node.getTitle();
     let aiIdentity = nodeTitle ? `${nodeTitle} (Ai)` : "Ai";
 
+
     let messages = [
         {
             role: "system",
             content: `YOU (${aiIdentity}) are responding within an Ai node. CONNECTED NODES are SHARED as system messages. Triple backtick and label any codeblocks`
         },
     ];
+
+    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
+
+    const LocalLLMSelectValue = LocalLLMSelect.value;
+    let selectedModel;
+
+    // Determine which model to use based on LocalLLMSelect's value
+    if (LocalLLMSelectValue === 'OpenAi') {
+        const globalModelSelect = document.getElementById('model-select');
+        const globalModelSelectValue = globalModelSelect.value;
+        // If the LocalLLMSelect is set to 'OpenAi', use the value from the global model select
+        selectedModel = globalModelSelectValue;
+    } else {
+        // Otherwise, use the LocalLLMSelect's value
+        selectedModel = LocalLLMSelectValue;
+    }
+
+    const isVisionModel = selectedModel.includes('gpt-4-vision');
+    const isAssistant = selectedModel.includes('1106');
+    console.log('Selected Model:', selectedModel, "Vision", isVisionModel, "Assistant", isAssistant);
 
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
@@ -58,10 +79,10 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `"Quotations" are used to QUERY the WEB of CONNECTED AI nodes.
+            content: `LAST LINE of your response PROMPTS CONNECTED Ai nodes.
 ARCHITECT profound, mission-critical QUERIES to Ai nodes.
 SYNTHESIZE cross-disciplinary CONVERSATIONS.
-Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
+Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
         });
     }
 
@@ -150,11 +171,15 @@ Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
         messages.push(googleSearchMessage);
     }
 
-    if (isEmbedEnabled(nodeIndex)) {
-        const aiSuggestedSearch = await searchQuery;
-        const relevantChunks = await getRelevantChunks(aiSuggestedSearch, searchResults, topN, false);
+    if (isEmbedEnabled(node.index)) {
+        // Obtain relevant keys based on the user message and recent context
+        const relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery);
+
+        // Get relevant chunks based on the relevant keys
+        const relevantChunks = await getRelevantChunks(node.latestUserMessage, searchResults, topN, relevantKeys);
         const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
 
+        // Construct the embed message
         const embedMessage = {
             role: "system",
             content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Use the given chunks as context. CITE your sources!`
@@ -170,6 +195,30 @@ Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
 
     let textNodeInfo = [];
     let llmNodeInfo = [];
+    let imageNodeInfo = [];
+
+    const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
+
+
+    if (isVisionModel) {
+        allConnectedNodes.forEach(connectedNode => {
+            if (connectedNode.isImageNode) {
+                const imageData = getImageNodeData(connectedNode);
+                if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
+                    // Construct an individual message for each image
+                    messages.push({
+                        role: 'user',
+                        content: [imageData] // Contains only the image data
+                    });
+                    remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
+                } else {
+                    console.warn('Not enough tokens to include the image:', connectedNode);
+                }
+            }
+        });
+    }
+
+
     let messageTrimmed = false;
 
     allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
@@ -263,8 +312,6 @@ Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
     node.aiResponding = true;
     node.userHasScrolled = false;
 
-    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
-
     // Get the loading and error icons
     let aiLoadingIcon = document.getElementById(`aiLoadingIcon-${nodeIndex}`);
     let aiErrorIcon = document.getElementById(`aiErrorIcon-${nodeIndex}`);
@@ -283,9 +330,6 @@ Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
     const clickQueues = {};  // Contains a click queue for each AI node
     // Initiates helper functions for aiNode Message loop.
     const aiNodeMessageLoop = new AiNodeMessageLoop(node, allConnectedNodes, clickQueues);
-
-    const selectedModel = LocalLLMSelect.value;
-    console.log('Selected Model:', selectedModel);
 
     // Local LLM call
     if (document.getElementById("localLLM").checked && selectedModel !== 'OpenAi') {
@@ -315,16 +359,9 @@ Take INITIATIVE to DECIDE the TOPIC of FOCUS.`
 
                 if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
                     const aiResponseText = node.aiResponseTextArea.value;
-                    const quotedTexts = await getQuotedText(aiResponseText);
+//                    const quotedTexts = await getQuotedText(aiResponseText);
 
-                    let textToSend;
-                    if (quotedTexts) {
-                        // Use the last quoted text; or you can decide to use the first, or all.
-                        textToSend = quotedTexts[quotedTexts.length - 1];
-                    } else {
-                        // Fallback to last line if no quoted text is found
-                        textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
-                    }
+                    textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
 
                     await aiNodeMessageLoop.questionConnectedAiNodes(textToSend);
                 }

@@ -35,21 +35,20 @@ async function captureScreenshot() {
     // Stop all tracks in the media stream to end it
     mediaStream.getTracks().forEach(track => track.stop());
 
-    // Create an img element with the data from the canvas
+    // After stopping the media stream
     const img = document.createElement('img');
-    img.src = canvas.toDataURL('image/png', 1.0); // The second argument adjusts the output image quality from 0.0 to 1.0. 
-    img.style.width = '800px';  // Adjust as needed
-    img.style.height = 'auto';  // This will maintain aspect ratio
+    img.src = canvas.toDataURL('image/png', 1.0);
+    img.style.width = '800px';
+    img.style.height = 'auto';
 
-    // Create a node with the image
-    const content = [img];
-    const scale = 1; // You can adjust the scale as needed
-    const node = windowify("Screenshot", content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-    htmlnodes_parent.appendChild(node.content);
-    registernode(node);
-    node.followingMouse = 1;
-    node.draw();
-    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    // Wait for the img to load before creating the node
+    img.onload = function () {
+        const node = createImageNode(img, "Screenshot"); // Pass the img element, not an array
+        htmlnodes_parent.appendChild(node.content);
+        node.followingMouse = 1;
+        node.draw();
+        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    };
 }
 
 

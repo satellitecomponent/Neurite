@@ -517,7 +517,6 @@ function openTab(tabId, element) {
         const firstTab = document.querySelector(".tabcontent");
 
         dropdownContent.addEventListener("paste", function (e) {
-            cancel(e);
         });
         dropdownContent.addEventListener("wheel", function (e) {
             cancel(e);

@@ -199,70 +199,49 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     extractButton.addEventListener("click", async function () {
         let dotCount = 0;
 
-        // Start the dot animation
         const dotInterval = setInterval(() => {
-            dotCount = (dotCount + 1) % 4; // Cycle dotCount between 0 and 3
+            dotCount = (dotCount + 1) % 4;
             extractButton.textContent = "Extracting" + ".".repeat(dotCount);
-        }, 500); // Update every 500 milliseconds
+        }, 500);
 
-        let storageKey = link; // Default to link (blob URL)
-
-        if (node && node.fileName) { // Check if fileName property exists
-            storageKey = node.fileName; // Use fileName as storage key if available
+        let storageKey = link;
+        if (node && node.fileName) {
+            storageKey = node.fileName;
         }
 
         async function processExtraction(text, storageKey) {
-            // Chunk the extracted text
-            const chunkedText = chunkText(text, MAX_CHUNK_SIZE, overlapSize);
-
-            // Fetch embeddings for the chunked text
-            const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
-
             extractButton.textContent = "Storing...";
-
-            // Store the embeddings in the database along with the extracted text
-            await storeEmbeddingsAndChunksInDatabase(storageKey, chunkedText, chunkedEmbeddings);
-
+            await storeTextData(storageKey, text);
             extractButton.textContent = "Extracted";
         }
 
-        setTimeout(async function () {
-            try {
-                if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
-                    const loadingTask = pdfjsLib.getDocument(link);
-                    loadingTask.promise.then(async (pdf) => {
-                        let extractedText = '';
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-                            extractedText += textContent.items.map(item => item.str).join(' ');
-                        }
-                        await processExtraction(extractedText, storageKey);
-                    }).catch(error => {
-                        console.error('Error reading PDF:', error);
-                        extractButton.textContent = "Extract Failed";
-                    });
-                } else {
-                    const response = await fetch('http://localhost:4000/proxy?url=' + encodeURIComponent(link));
-                    if (response.ok) {
-                        const extractedText = await response.text();
-                        await processExtraction(extractedText, link);
-                    } else {
-                        console.error('Failed to extract text:', response.statusText);
-                        extractButton.textContent = "Extract Failed";
-                        alert("Failed to connect to the local server. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
+        try {
+            if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
+                const loadingTask = pdfjsLib.getDocument(link);
+                loadingTask.promise.then(async (pdf) => {
+                    let extractedText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        extractedText += textContent.items.map(item => item.str).join(' ');
                     }
-                }
-            } catch (error) {
-                console.error('Error during extraction:', error);
-                extractButton.textContent = "Extract Failed";
-                alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
-            } finally {
-                // Stop the dot animation
-                clearInterval(dotInterval);
+                    await processExtraction(extractedText, storageKey);
+                }).catch(error => {
+                    console.error('Error reading PDF:', error);
+                    extractButton.textContent = "Extract Failed";
+                });
+            } else {
+                await fetchAndStoreWebPageContent(link);
+                extractButton.textContent = "Extracted";
             }
-        }, 500);
+        } catch (error) {
+            console.error('Error during extraction:', error);
+            extractButton.textContent = "Extract Failed";
+            alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
+        } finally {
+            clearInterval(dotInterval);
+        }
     });
 
     //display through proxy
@@ -395,7 +374,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
             aiResponseDiv.style.userSelect = 'text';
         }
     });
-    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 100%; height: 80%; overflow-y: auto; overflow-x: hidden; resize: none; word-wrap: break-word; user-select: none; line-height: 1.75;");
+    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 100%; max-height: 80%; height: 80%; overflow-y: auto; overflow-x: hidden; resize: none; word-wrap: break-word; user-select: none; line-height: 1.75;");
     aiResponseDiv.addEventListener('mouseenter', function () {
         aiResponseDiv.style.userSelect = "text";
     });
@@ -882,11 +861,14 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
         new Option('Llama 2 70B f16', 'Llama-2-70b-chat-hf-q4f16_1', false, false),
         //new Option('WizardCoder 15B f32', '"WizardCoder-15B-V1.0-q4f32_1', false, false),
         new Option('gpt-3.5-turbo', 'gpt-3.5-turbo', false, false),
-        new Option('gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k', false, false),
-        new Option('gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613', false, false),
-        new Option('gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-16k-0613', false, false),
+        //new Option('gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k', false, false),
+        //new Option('gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613', false, false),
+        new Option('gpt-3.5-16k-0613', 'gpt-3.5-turbo-16k-0613', false, false),
         new Option('gpt-4', 'gpt-4', false, false),
-        new Option('gpt-4-0613', 'gpt-4-0613', false, false)
+        new Option('gpt-4-0613', 'gpt-4-0613', false, false),
+        new Option('gpt-4-vision', 'gpt-4-vision-preview', false, false),
+        new Option('gpt-3.5-1106', 'gpt-3.5-turbo-1106', false, false),
+        new Option('gpt-4-1106', 'gpt-4-1106-preview', false, false)
     ];
 
     // Add options to the select
@@ -974,4 +956,41 @@ function createCustomInstructionsTextarea(llmNodeCount) {
     textareaDiv.appendChild(textarea);
 
     return textareaDiv;
+}
+
+function createImageNode(imageSrc, title, isUrl = false) {
+    let node;
+
+    // If isUrl is true, we assume imageSrc is a direct URL to an image.
+    if (isUrl) {
+        node = addNodeAtNaturalScale(title, imageSrc); // Assuming this function takes a URL or base64 data
+        node.isImageNode = true;
+        node.imageUrl = imageSrc;
+        console.log("URL Found", node.imageUrl);
+    } else {
+        // If isUrl is false, we assume imageSrc is an HTMLImageElement that needs conversion
+        if (!(imageSrc instanceof HTMLImageElement) || !imageSrc.src) {
+            console.error('createImageNode was called without a valid image element or src');
+            return null;
+        }
+
+        node = addNodeAtNaturalScale(title, imageSrc); // Assuming this function takes a URL or base64 data
+        node.isImageNode = true;
+        node.imageData = null; // Placeholder for base64 data
+
+        // Determine whether the source is a blob URL or a Data URL (base64)
+        if (imageSrc.src.startsWith('blob:')) {
+            // Convert blob URL to base64 because the OpenAI API cannot access blob URLs
+            convertImageToBase64(imageSrc.src, base64String => {
+                node.imageData = base64String;
+                console.log("Image converted to base64", base64String);
+            });
+        } else {
+            // If it's not a blob, we can use the src directly (data URL or external URL)
+            node.imageUrl = imageSrc.src;
+            console.log("Image URL or Data URL found", imageSrc.src);
+        }
+    }
+
+    return node;
 }

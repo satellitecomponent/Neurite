@@ -62,7 +62,7 @@ async function handleStreamingResponse(response) {
     return streamedResponse;
 }
 
-function getAPIParams(messages, stream) {
+function getAPIParams(messages, stream, customTemperature) {
     const API_KEY = document.getElementById("api-key-input").value;
     if (!API_KEY) {
         alert("Please enter your API key");
@@ -73,7 +73,8 @@ function getAPIParams(messages, stream) {
     headers.append("Content-Type", "application/json");
     headers.append("Authorization", `Bearer ${API_KEY}`);
 
-    const temperature = document.getElementById('model-temperature').value;
+    const temperature = customTemperature !== null ? customTemperature
+        : parseFloat(document.getElementById('model-temperature').value);
     const modelSelect = document.getElementById('model-select');
     const modelInput = document.getElementById('model-input');
     const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
@@ -85,13 +86,13 @@ function getAPIParams(messages, stream) {
             model,
             messages,
             max_tokens: parseInt(max_tokens),
-            temperature: parseFloat(temperature),
+            temperature,
             stream
         })
     };
 }
 
-async function callchatAPI(messages, stream = false) {
+async function callchatAPI(messages, stream = false, customTemperature = null) {
     shouldContinue = true;
 
     // Update aiResponding and the button
@@ -108,7 +109,7 @@ async function callchatAPI(messages, stream = false) {
     console.log("Token count for messages:", getTokenCount(messages));
 
     const API_URL = "https://api.openai.com/v1/chat/completions";
-    const params = getAPIParams(messages, stream);
+    const params = getAPIParams(messages, stream, customTemperature);
     if (!params) return;
 
     controller = new AbortController();

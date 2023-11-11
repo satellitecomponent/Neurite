@@ -128,7 +128,7 @@ refTagInput.addEventListener('input', function () {
     refTag = refTagInput.value;
 });
 
-const LLM_TAG = "LLM:";
+const LLM_TAG = "AI:";
 
 let processAll = false;//set to true until made more robust.
 
