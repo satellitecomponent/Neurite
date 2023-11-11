@@ -1,7 +1,7 @@
 # `Neurite`
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-![Neurite2](https://github.com/satellitecomponent/Neurite/assets/129367899/73c66088-8029-413b-8da0-4c6968436639)
+![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
 
 ## `Introduction`
 
@@ -151,6 +151,10 @@ Above is an example of conversation history being shared between GPT-4 and a Loc
   - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because...
     - **Context Cut-Off:** ...once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.
 - **Related Research:** [Conversational Swarm Intelligence Paper](https://arxiv.org/abs/2309.03220)
+
+  
+![Neurite2](https://github.com/satellitecomponent/Neurite/assets/129367899/73c66088-8029-413b-8da0-4c6968436639)
+
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) currently supports OpenAi, LLama 2, Red Pajamas 3B, and Vicuna 7B.
 - webLLM runs Ai models directly in browser on the GPU or CPU.
