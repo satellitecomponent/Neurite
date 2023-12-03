@@ -88,6 +88,7 @@ Or, drag in nodes from the dropdown.
 
 `UI Tips`
 
+- Talk to [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. 
 - Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will not have any space to spread out and be too big relative to the fractal.
 - When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
 - Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
