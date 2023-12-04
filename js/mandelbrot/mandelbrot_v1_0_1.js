@@ -584,26 +584,42 @@ function random_screen_pt_z() {
 }
 
 
+// https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+// Standard Normal variate using Box-Muller transform.
+function gaussianRandom2() {
+    const u = 1 - Math.random(); // Converting [0,1) to (0,1]
+    const v = Math.random();
+    const m = Math.sqrt( -2.0 * Math.log( u ) )
+    return new vec2( m * Math.cos( 2.0 * Math.PI * v ) , m * Math.sin( 2.0 * Math.PI * v ));
+}
 
+
+
+var flashlight_stdev = 0.1;
+var flashlight_fraction = 0.5;
 function render_hair(n) {
     let iters = settings.iterations;
     let maxLines = getMaxLines();
     let tries = 1;
     let pt;
-    do {
-        pt = random_screen_pt_z();
-        for (let i = (1 - Math.random() ** 2) * (tries * 4); i > 1; i--) {
-            let gz = mandGrad(iters, pt)
-            pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
-            //if (mand_i(pt,iters) > iters){
-            //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
-            //}
-        }
-        tries--;
-    } while (tries > 0 && mand_i(pt, iters) > iters)
-    /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
-        return;
-    }*/
+    if (Math.random() > flashlight_fraction){
+        do {
+            pt = random_screen_pt_z();
+            for (let i = (1 - Math.random() ** 2) * (tries * 4); i > 1; i--) {
+                let gz = mandGrad(iters, pt)
+                pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
+                //if (mand_i(pt,iters) > iters){
+                //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+                //}
+            }
+            tries--;
+        } while (tries > 0 && mand_i(pt, iters) > iters)
+        /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
+          return;
+          }*/
+    }else{
+        pt = gaussianRandom2().scale(flashlight_stdev).cmult(zoom).cadd(toZ(mousePos));
+    }
 
     //let level = mandelbrott_dist(256,pt);
     //let width = 1/(level+5)**2;
