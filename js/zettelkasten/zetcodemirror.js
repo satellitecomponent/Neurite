@@ -624,7 +624,7 @@ function handleTitleClick(title, cm) {
             node.zoom_to_fit();
             zoomTo = zoomTo.scale(1.5);
         } else {
-            // Use alternative zoom method if the bounding rectangle does not exist (allows best of both options, i.e. zoomto with exact height calculations when available, and when not currenetly in the viewport, a set value.)
+            // Use alternative zoom method if the bounding rectangle does not exist (allows best of both options, i.e. zoomto with exact height calculations when available, and when not currently in the viewport, a set value.)
             node.zoom_to(.5);
         }
         autopilotSpeed = settings.autopilotSpeed;

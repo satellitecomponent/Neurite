@@ -854,7 +854,12 @@ nodeStep();
 //connectRandom(10);
 
 
+let userZoomAdjustment = 1; // Default: no zoom adjustment
+let userPanAdjustment = new vec2(0, 0); // Default: no pan adjustment
+
 document.addEventListener('wheel', (event) => {
+    isAnimating = false;
+
     // Get the element that the user is scrolling on
     let targetElement = event.target;
 
@@ -888,6 +893,7 @@ document.addEventListener('wheel', (event) => {
         let dest = toZ(mousePos);
         regenAmount += Math.abs(event.wheelDelta);
         let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
+        userZoomAdjustment *= amount;
         zoom = zoom.scale(amount);
         pan = dest.scale(1 - amount).plus(pan.scale(amount));
         cancel(event);
@@ -931,9 +937,11 @@ addEventListener("mouseup", (event) => {
 });
 addEventListener("mousemove", (event) => {
     if (mouseDown) {
+        isAnimating = false;
         autopilotSpeed = 0;
         coordsLive = true;
         let delta = mousePos.minus(mouseDownPos);
+        userPanAdjustment = userPanAdjustment.plus(toDZ(delta));
         pan = pan.minus(toDZ(delta));
         regenAmount += delta.mag() * 0.25;
         mouseDownPos = mousePos.scale(1);

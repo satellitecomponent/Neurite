@@ -728,3 +728,85 @@ function findInfimum(iters, z, c = undefined) {
         z: bestz
     };
 }
+
+/* This code could be further adapted to create a movement feature that is limited to the perimeter of the Mandelbrot Set.
+
+function calculatePixelSpacing(svgElement) {
+// Extract scaling factors based on the current zoom level and SVG dimensions
+const scalingFactors = extractScalingFactors(svgElement);
+
+// Base spacing at the default zoom level (no zoom)
+const baseSpacing = 10; // This can be adjusted based on the level of detail desired
+
+// Adjust the spacing based on the zoom scale
+// Assuming that scalingFactors.scaleX and scaleY are proportional to the zoom level
+const adjustedSpacing = baseSpacing / Math.max(scalingFactors.scaleX, scalingFactors.scaleY);
+
+return adjustedSpacing;
+}
+
+    
+function isMandelbrotPixel(c, maxIter, escapeRadius) {
+let z = new vec2(0, 0);
+
+for (let i = 0; i < maxIter; i++) {
+    if (z.mag2() > escapeRadius) {
+        return false; // The point escapes, not part of the set
+    }
+    z = z.cmult(z).plus(c);
+}
+return true; // The point does not escape, part of the set
+}
+
+function isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius) {
+let c = toZ(new vec2(x, y));
+let isCurrentPixelInSet = isMandelbrotPixel(c, iters, escapeRadius);
+
+// Check neighboring pixels
+for (let dx = -pixelSpacing; dx <= pixelSpacing; dx += pixelSpacing) {
+    for (let dy = -pixelSpacing; dy <= pixelSpacing; dy += pixelSpacing) {
+        if (dx === 0 && dy === 0) continue; // Skip the current pixel
+
+        let neighborC = toZ(new vec2(x + dx, y + dy));
+        let isNeighborInSet = isMandelbrotPixel(neighborC, iters, escapeRadius);
+
+        if (isCurrentPixelInSet !== isNeighborInSet) {
+            return true; // Boundary found between inside and outside
+        }
+    }
+}
+return false;
+}
+
+function renderPerimeter(svgElement) {
+let iters = settings.iterations;
+let escapeRadius = 4;
+let pixelSpacing = calculatePixelSpacing(svgElement);
+
+for (let x = 0; x < window.innerWidth; x += pixelSpacing) {
+    for (let y = 0; y < window.innerHeight; y += pixelSpacing) {
+        let c = toZ(new vec2(x, y));
+        if (isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius)) {
+            // Convert back to screen coordinates and apply scaling
+            let screenCoords = fromZ(c);
+            screenCoords = screenCoords.scale(perimeterScaleFactor);
+
+            markBoundaryPoint(screenCoords.x, screenCoords.y, svgElement);
+        }
+    }
+}
+}
+
+function markBoundaryPoint(x, y, svgElement) {
+let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+circle.setAttribute("cx", x);
+circle.setAttribute("cy", y);
+circle.setAttribute("r", 2 * perimeterScaleFactor); // Apply scaling to the radius as well
+circle.setAttribute("fill", "red");
+circle.classList.add("perimeter-point");
+svgElement.appendChild(circle);
+}
+
+let svgElement = document.getElementById("svg_bg");
+renderPerimeter(svgElement);
+*/

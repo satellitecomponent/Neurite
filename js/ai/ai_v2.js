@@ -62,7 +62,7 @@ async function handleStreamingResponse(response) {
     return streamedResponse;
 }
 
-function getAPIParams(messages, stream, customTemperature) {
+function getAPIParams(messages, stream, customTemperature, modelOverride = null) {
     const API_KEY = document.getElementById("api-key-input").value;
     if (!API_KEY) {
         alert("Please enter your API key");
@@ -77,7 +77,7 @@ function getAPIParams(messages, stream, customTemperature) {
         : parseFloat(document.getElementById('model-temperature').value);
     const modelSelect = document.getElementById('model-select');
     const modelInput = document.getElementById('model-input');
-    const model = modelSelect.value === 'other' ? modelInput.value : modelSelect.value;
+    const model = modelOverride || (modelSelect.value === 'other' ? modelInput.value : modelSelect.value);
     let max_tokens = document.getElementById('max-tokens-slider').value;
 
     return {
@@ -159,4 +159,69 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
         document.getElementById("aiLoadingIcon").style.display = 'none';
     }
+}
+
+
+        // UI agnostic api call
+
+async function callAiApi({ messages, stream = false, customTemperature = null, API_URL, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
+    const params = getAPIParams(messages, stream, customTemperature, modelOverride);
+    console.log("Message Array", messages);
+    if (!params) {
+        onError("API key is missing.");
+        return;
+    }
+
+    let controller = new AbortController();
+    let requestOptions = {
+        method: "POST",
+        headers: params.headers,
+        body: params.body,
+        signal: controller.signal,
+    };
+
+    onBeforeCall();  // Pre API call UI updates
+
+    try {
+        const response = await fetch(API_URL, requestOptions);
+        if (!response.ok) throw await response.json();
+
+        let responseData = '';
+        if (stream) {
+            responseData = await streamAiResponse(response, onStreamingResponse);
+        } else {
+            const data = await response.json();
+            responseData = data.choices[0].message.content.trim();
+        }
+
+        return responseData;
+    } catch (error) {
+        console.error("Error:", error);
+        onError(error.message || error);
+    } finally {
+        onAfterCall();  // Post API call UI updates
+    }
+}
+
+async function streamAiResponse(response, onStreamingResponse) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let streamedResponse = "";
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let contentMatch;
+        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+            const content = JSON.parse('"' + contentMatch[1] + '"');
+            onStreamingResponse(content);  // UI update for each content piece
+            streamedResponse += content;
+            buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
+        }
+    }
+
+    return streamedResponse;
 }

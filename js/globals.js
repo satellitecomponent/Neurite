@@ -1,4 +1,6 @@
 
+window.startedViaPlaywright = window.startedViaPlaywright || false;
+
 var settings = {
     zoomSpeed: 0.0005,
     panSpeed: 1,
@@ -34,7 +36,8 @@ var settings = {
     buttonGraphics: {
         hover: ["RGB(100,100,100)", "RGB(200,200,255)"],
         click: ["RGB(70,70,70)", "RGB(100,100,100)"],
-        initial: ["none", "RGB(170,170,170)"]
+        initial: ["none", "RGB(170,170,170)"],
+        focus: ["none", "RGB(200,200,255)"] // Assuming this is your focus state
     },
 
     maxDist: 4,
@@ -168,6 +171,8 @@ var myCodeMirror = CodeMirror.fromTextArea(textarea, {
     scrollbarStyle: 'simple',
     theme: 'default',
 });
+
+window.myCodemirror = myCodeMirror;
 
 document.addEventListener("DOMContentLoaded", function() {
     // Check if CodeMirror instance exists
