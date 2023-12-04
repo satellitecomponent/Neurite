@@ -302,7 +302,7 @@ function recalc_svg(oldSVGpan,oldSVGzoom) {
         let coord = 0;
         let r = [];
         for (let p of parts){
-            if (!isNaN(Number(p))){
+            if (p.length && !isNaN(Number(p))){
                 let c = coord?'y':'x';
                 p = Number(p)/oldSVGzoom + oldSVGpan[c];
                 p = (p-SVGpan[c])*SVGzoom;
