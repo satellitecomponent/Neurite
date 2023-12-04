@@ -310,6 +310,7 @@ function recalc_svg(oldSVGpan,oldSVGzoom) {
             r.push(p);
         }
         c.setAttribute("d",r.join(" "));
+        c.setAttribute("stroke-width",c.getAttribute("stroke-width")*SVGzoom/oldSVGzoom);
     }
 }
 
