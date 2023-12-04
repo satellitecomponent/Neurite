@@ -237,10 +237,11 @@ function updateViewbox() {
     let d = zm * 2 * SVGzoom;
     let r = zoom.ang();
     //let rotCenter = fromZ(pan);// = {let s = window.innerWidth; return new vec2(.5*s,.5*s);}
-
+    let oldSVGzoom = SVGzoom;
+    let oldSVGpan = SVGpan;
+    
     let recalc = false;
     if (d < Math.abs(recenterThreshold * lc.x) || d < Math.abs(recenterThreshold * lc.y)) {
-        let oldPan = SVGpan;
         SVGpan = pan.scale(1);
         lc = toSVG(toZ(new vec2(0, 0)));
         //console.log("recentering...");
@@ -252,7 +253,7 @@ function updateViewbox() {
         recalc = true;
     }
     if (recalc) {
-        recalc_svg();
+        recalc_svg(oldSVGpan,oldSVGzoom);
     }
 
     let c = toSVG(pan); //center of rotation
@@ -293,12 +294,22 @@ function toSVG(coords) {
     return coords.minus(SVGpan).scale(SVGzoom);
 }
 
-function recalc_svg() {
-    //todo
-    //placeholder:
+function recalc_svg(oldSVGpan,oldSVGzoom) {
     let node = svg_bg;
-    while (node.firstChild) {
-        node.removeChild(node.lastChild);
+    for (let c of node.children){
+        let path = c.getAttribute("d");
+        let parts = path.split(/[, ]+/g);
+        let coord = 0;
+        let r = [];
+        for (let p of parts){
+            if (!isNaN(Number(p))){
+                let c = coord?'y':'x';
+                p = Number(p)/oldSVGzoom + oldSVGpan[c];
+                p = (p-SVGpan[c])*SVGzoom;
+            }
+            r.push(p);
+        }
+        c.setAttribute("d",r.join(" "));
     }
 }
 
