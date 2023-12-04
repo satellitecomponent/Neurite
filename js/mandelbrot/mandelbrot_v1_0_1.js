@@ -306,6 +306,7 @@ function recalc_svg(oldSVGpan,oldSVGzoom) {
                 let c = coord?'y':'x';
                 p = Number(p)/oldSVGzoom + oldSVGpan[c];
                 p = (p-SVGpan[c])*SVGzoom;
+                coord = 1-coord;
             }
             r.push(p);
         }
@@ -692,7 +693,7 @@ function render_hair(n) {
     pathn.setAttribute("stroke-opacity", "" + opacity);
     pathn.setAttribute("d", r);
     svg_bg.appendChild(pathn);
-    if (svg_bg.children.length > maxLines) {
+    while (svg_bg.children.length > maxLines) {
         svg_bg.removeChild(svg_bg.children[0]);
     }
 }
