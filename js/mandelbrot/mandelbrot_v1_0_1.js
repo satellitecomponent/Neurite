@@ -311,9 +311,6 @@ function recalc_svg(oldSVGpan,oldSVGzoom) {
         }
         c.setAttribute("d",r.join(" "));
     }
-    while (node.firstChild) {
-        node.removeChild(node.lastChild);
-    }
 }
 
 
