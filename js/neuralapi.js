@@ -193,10 +193,13 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, durati
         const targetZoom = zoom.scale(newZoomMagnitude / zoom.mag());
         const targetPan = new vec2(newPanReal, newPanImaginary);
 
+        autopilotSpeed = 0.1
         try {
             animateTransition(0, 1, duration, (t) => {
-            zoom = linterpolateVec2(startZoom.clog(), targetZoom.clog(), t).cexp();
-            pan = interpolateVec2(pan, targetPan, t);
+            //zoom = linterpolateVec2(startZoom.clog(), targetZoom.clog(), t).cexp();
+            //pan = interpolateVec2(pan, targetPan, t);
+                zoomTo = targetZoom;
+                panTo = targetPan;
             }, easeInOutCubic, () => {
                 activeAnimationsCount--; // Decrement on animation completion
                 console.log("Animation completed, count:", activeAnimationsCount);
