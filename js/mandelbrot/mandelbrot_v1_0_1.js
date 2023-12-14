@@ -596,8 +596,7 @@ function gaussianRandom2() {
 
 
 
-var flashlight_stdev = 0.1;
-var flashlight_fraction = 0.5;
+
 function render_hair(n) {
     let iters = settings.iterations;
     let maxLines = getMaxLines();
@@ -757,6 +756,44 @@ function findInfimum(iters, z, c = undefined) {
         z: bestz
     };
 }
+
+function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", "spike"]) {
+    let points = [];
+
+    if (methods.includes("cardioid")) {
+        // Generate points for the main cardioid
+        for (let i = 0; i < numPoints; i++) {
+            let theta = (i / numPoints) * 2 * Math.PI;
+            let r = (1 - Math.cos(theta)) / 2;
+            let x = r * Math.cos(theta) + 0.25;
+            let y = r * Math.sin(theta);
+            points.push({ x, y });
+        }
+    }
+
+    if (methods.includes("disk")) {
+        // Generate points for the period-2 disk
+        for (let i = 0; i < numPoints; i++) {
+            let theta = (i / numPoints) * 2 * Math.PI;
+            let r = 0.25;
+            let x = r * Math.cos(theta) - 1;
+            let y = r * Math.sin(theta);
+            points.push({ x, y });
+        }
+    }
+
+    if (methods.includes("spike")) {
+        // Generate points along the negative real axis spike
+        for (let i = 0; i < numPoints; i++) {
+            let x = -2 + (2 * i / numPoints); // Range from -2 to 0
+            let y = 0; // Imaginary part is close to zero
+            points.push({ x, y });
+        }
+    }
+
+    return points;
+}
+
 
 /* This code could be further adapted to create a movement feature that is limited to the perimeter of the Mandelbrot Set.
 

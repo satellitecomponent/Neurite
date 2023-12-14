@@ -12,9 +12,9 @@ var settings = {
     nodeModeTrigger: "down", //"toggle"
 
     //slider adjustment
-    maxLines: 36,
+    maxLines: 128,
     renderWidthMult: 0.3, //1,
-    regenDebtAdjustmentFactor: 0.37,
+    regenDebtAdjustmentFactor: 1,
 
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,
@@ -46,6 +46,10 @@ var settings = {
     innerOpacity: 1,
     outerOpacity: 1
 }
+
+var flashlight_stdev = 0.25; // this is the radius of the flashlight
+var flashlight_fraction = 0.73; // this is what fraction of samples are diverted to the flashlight
+
 
 //interface
 

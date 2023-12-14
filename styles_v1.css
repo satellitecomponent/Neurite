@@ -362,33 +362,33 @@
             .menu-button.open .menu-icon::after {
                 transform: translateY(-6px) rotate(-45deg);
             }
-
 .dropdown-content {
     position: absolute;
-    top: 100%; /* modify if needed */
-    right: 0; /* modify if needed */
+    top: 100%;
+    right: 0;
     background: #2f2e3996;
     backdrop-filter: blur(6px);
     border-top-right-radius: 8px;
     border-bottom-left-radius: 8px;
-    overflow: visible;
-    display: none;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
     z-index: 1;
-    margin-top: -38px; /* negative margin */
-    margin-right: -5px; /* negative margin */
+    margin-top: -38px;
+    margin-right: -5px;
+    transform: translateY(-200%); /* Start off screen */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
 }
 
-            .dropdown-content.open {
-                display: block;
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                grid-template-rows: 1fr;
-                grid-column-gap: 0px;
-                grid-row-gap: 0px;
-                -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-                -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-                box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-            }
+    .dropdown-content.open {
+        transform: translateY(0%); /* Slide in to view */
+    }
 
         .submenu {
             padding: 10px;
@@ -438,7 +438,7 @@
         .Searchbar {
             background-color: #222226;
             color: #bbb;
-            width: 150px;
+            width: 100%;
             border: inset;
             border-color: #8882;
         }
@@ -521,8 +521,7 @@
             color: #bbb;
             border: inset;
             border-color: #8882;
-            width: 270px;
-            min-width: 270px;
+            width: 100px;
             padding: 10px;
             box-sizing: border-box;
             resize: none;
@@ -550,7 +549,7 @@
             }
 
                 #prompt-form button[type="submit"]:hover {
-                    background-color: #45a049;
+                    background-color: #528f4c;
                     color: #222226;
                 }
 
@@ -888,6 +887,11 @@ select-replacer > div:first-child {
 
     .custom-scrollbar:hover {
         scrollbar-color: #555 transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-button {
+        color: red;
+        background-color: red;
     }
 
         .key-button {
@@ -1481,6 +1485,7 @@ input[type=range] {
     height: 24px; /* Height of the icons */
     margin-right: -30px; /* Space between icons and buttons */
     margin-left: 10px;
+    pointer-events: none; /* Disables pointer events */
 }
 
 .color-picker-container {
@@ -1774,19 +1779,30 @@ textarea[id^='custom-instructions-textarea-'] {
     height: auto;
     background: #2f2e3996;
     backdrop-filter: blur(6px);
-    display: none; /* Initially hidden */
+    display: flex; /* Change to flex for initial layout */
     padding-left: 5px;
     padding-right: 5px;
     padding-top: 20px;
     padding-bottom: 5px;
-    flex-direction: column; /* Stack children vertically */
-    align-items: flex-start; /* Align children to the start of the container */
-
+    flex-direction: column;
+    align-items: flex-start;
     border-bottom-right-radius: 8px;
-    margin-top: 0px; /* negative margin */
-    margin-left: 0px; /* negative margin */
+    border-top-left-radius: 8px;
     z-index: 100;
+    transform: translateX(-200%); /* Start off-screen to the left */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
+    overflow: hidden; /* Hide overflow */
+    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    margin-top: 10px;
+    margin-left: 12px;
 }
+
+    .node-panel.open {
+        transform: translateX(0%); /* Slide in to view */
+        width: fit-content; /* Adjust width to fit the content */
+    }
 
 .icon-row {
     display: flex;
@@ -1796,10 +1812,14 @@ textarea[id^='custom-instructions-textarea-'] {
     margin-bottom: 10px;
 }
 
-.node-panel.open {
+.function-call-container {
     display: flex;
-    width: fit-content; /* Adjust width to fit the content */
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
 }
+
+
 
 .node-panel .neurite-function-cm-style {
     background-color: transparent;
@@ -1813,7 +1833,6 @@ textarea[id^='custom-instructions-textarea-'] {
     /* Style the wrapper as per your requirements */
     padding: 10px;
     margin: 0px;
-    background-color: rgb(0 0 0 / 22%); /* Example background color */
     color: white; /* Example text color */
     border-top: 1px solid #131313; /* Example border */
     border-bottom: 1px solid #131313; /* Example border */
@@ -1822,12 +1841,7 @@ textarea[id^='custom-instructions-textarea-'] {
 }
 
 
-.function-call-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 300px;
-}
+
 
 .toggle-function-panel {
     cursor: pointer;
@@ -1888,7 +1902,7 @@ textarea[id^='custom-instructions-textarea-'] {
     transition: all 0.3s ease;
     overflow-y: auto;
     max-height: fit-content; /* Adjust as needed */
-    background: rgba(42, 42, 54, 0.2); /* Example background */
+    /* background: rgba(42, 42, 54, 0.2);  Example background */
     width: 100%; /* Match the width of the function call container */
     overflow: hidden;
     height: 0px;
@@ -1909,8 +1923,9 @@ textarea[id^='custom-instructions-textarea-'] {
 .function-call-list {
     height: 150px;
     max-height: 150px;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
+    /* direction: rtl; /* Right-to-left to move scrollbar to the left */
 }
 
 
@@ -1922,8 +1937,8 @@ textarea[id^='custom-instructions-textarea-'] {
         border-left: 1px solid RGB(200,200,255);
         background-color: #222226;
         color: #8a8a8d;
-        display: flex; /* Using flexbox for better alignment */
-        align-items: center; /* Vertically center the contents */
+        display: block; /* Change to block to stack elements vertically */
+        word-wrap: break-word; /* Ensure text wraps and doesn't overflow */
     }
 
 .func-error-icon {
@@ -1940,6 +1955,7 @@ textarea[id^='custom-instructions-textarea-'] {
 
         .function-call-list > div.active-state {
             background-color: #17171a; /* Slightly darker grey for active state */
+            color: RGB(200,200,255);
         }
 
         .function-call-list > div.error-item {
@@ -1956,6 +1972,10 @@ textarea[id^='custom-instructions-textarea-'] {
                 background-color: #1a0606; /* Darker, more intense red for active state */
                 color: #9f7777;
             }
+.error-log {
+    color: #922b47 !important;
+}
+
 
 .function-prompt-textarea {
     overflow-y: hidden;
@@ -1983,18 +2003,22 @@ textarea[id^='custom-instructions-textarea-'] {
 }
 
 #function-run-button:hover {
-    background-color: #ddd;
+    background-color: #8a3e19;
     color: #222226;
 }
 
 #function-send-button:hover {
-    background-color: #45a049; /* Different color for send button */
+    background-color: #528f4c; /* Different color for send button */
     color: #222226;
 }
 
 #function-regen-button:hover {
     background-color: #d3d3d3; /* Light grey for regen button */
     color: #222226;
+}
+
+.cm-neurite-function-name {
+    color: #8e8eff !important;
 }
 
 .icon-content {

@@ -58,6 +58,9 @@ async function handleStreamingResponse(response) {
         }
     }
 
+    // Resolve the neuritePromptZettelkasten promise.
+    resolveAiMessageIfAppropriate(streamedResponse);
+
     // Return the complete streamed response
     return streamedResponse;
 }
@@ -131,6 +134,7 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
                 console.error("Max attempts reached. Stopping further API calls.");
                 shouldContinue = false;
                 controller.abort();
+                resolveAiMessageIfAppropriate("Error: " + errorData.error.message, true); // pass error as true.
                 return "An error occurred while processing your request.";
             }
         } else {
@@ -142,6 +146,7 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
             return currentResponse;
         } else {
             const data = await response.json();
+             // Do not resolve the neuritePromptZettelkasten promise here as these are hidden responses.
             console.log("Token usage:", data.usage);
             return data.choices[0].message.content.trim();
         }
@@ -152,6 +157,7 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         if (failCounter >= MAX_FAILS) {
             console.error("Max attempts reached. Stopping further API calls.");
             shouldContinue = false;
+            resolveAiMessageIfAppropriate("Error: " + error.message, true); // pass error as true
             return "An error occurred while processing your request.";
         }
     } finally {
@@ -164,6 +170,8 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
 
         // UI agnostic api call
 
+let currentController = null;
+
 async function callAiApi({ messages, stream = false, customTemperature = null, API_URL, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
     const params = getAPIParams(messages, stream, customTemperature, modelOverride);
     console.log("Message Array", messages);
@@ -172,12 +180,12 @@ async function callAiApi({ messages, stream = false, customTemperature = null, A
         return;
     }
 
-    let controller = new AbortController();
+    currentController = new AbortController();
     let requestOptions = {
         method: "POST",
         headers: params.headers,
         body: params.body,
-        signal: controller.signal,
+        signal: currentController.signal,
     };
 
     onBeforeCall();  // Pre API call UI updates
@@ -200,6 +208,20 @@ async function callAiApi({ messages, stream = false, customTemperature = null, A
         onError(error.message || error);
     } finally {
         onAfterCall();  // Post API call UI updates
+    }
+}
+
+function haltFunctionAi() {
+    if (currentController) {
+        currentController.abort();
+        currentController = null;
+
+        isAiProcessing = false;  // Ensure the state is updated
+
+        // Use global functionSendSvg if it's always the correct element
+        if (functionSendSvg) {
+            functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
+        }
     }
 }
 

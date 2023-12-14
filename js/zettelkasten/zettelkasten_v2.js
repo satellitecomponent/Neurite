@@ -130,7 +130,6 @@ let shouldAddCodeButton = false;
                 currentNodeTitle = this.processLine(line, lines, index, nodes, currentNodeTitle);
             });
 
-            //Below is an optimzation that was removed due to syncing of hidden textarea in node being lost.
             if (!processAll) { 
                 this.processChangedNode(lines, nodes);
             }
@@ -260,50 +259,29 @@ let shouldAddCodeButton = false;
                     return;
                 }
 
-                let newName = inputElement.value.trim().replace(",", "");
-
-                // If a count was previously added, attempt to remove it
-                if (node.countAdded) {
-                    const updatedTitle = newName.replace(/\(\d+\)$/, '').trim();
-                    if (updatedTitle !== newName) {
-                        newName = updatedTitle;
-                        inputElement.value = newName;
-                        node.countAdded = false;
-                    }
-                }
+                let newName = getUniqueNodeTitle(inputElement.value, nodes, node.countAdded);
+                inputElement.value = newName;
 
                 const name = node.title;
-                if (newName === node.title) {
+                if (newName === name) {
                     return;
                 }
 
                 delete nodes[name];
-                let countAdded = false;
-                if (nodes[newName]) {
-                    let count = 2;
-                    while (nodes[newName + "(" + count + ")"]) {
-                        count++;
-                    }
-                    newName += "(" + count + ")";
-                    inputElement.value = newName;
-                    countAdded = true;
-                }
-
                 nodes[newName] = node;
                 node.title = newName;
+                node.countAdded = /\(\d+\)$/.test(newName);
 
                 // Set cursor position to before the count if a count was added
-                if (countAdded) {
+                if (node.countAdded) {
                     const cursorPosition = newName.indexOf("(");
                     inputElement.setSelectionRange(cursorPosition, cursorPosition);
                 }
 
-                node.countAdded = countAdded;
-
-                const f = renameNode(name, inputElement.value);
+                const f = renameNode(name, newName);
                 noteInput.setValue(f(noteInput.getValue()));
                 noteInput.refresh();
-                scrollToTitle(node.title, noteInput);
+                scrollToTitle(newName, noteInput);
             };
         }
 
@@ -602,3 +580,21 @@ let shouldAddCodeButton = false;
     //end of enclosure
 }
 
+function getUniqueNodeTitle(baseTitle, nodes, removeExistingCount = false) {
+    let newName = baseTitle.trim().replace(",", "");
+
+    // Remove existing count if needed
+    if (removeExistingCount) {
+        newName = newName.replace(/\(\d+\)$/, '').trim();
+    }
+
+    if (!nodes[newName]) {
+        return newName;
+    }
+
+    let counter = 2;
+    while (nodes[`${newName}(${counter})`]) {
+        counter++;
+    }
+    return `${newName}(${counter})`;
+}

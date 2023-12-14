@@ -67,16 +67,15 @@ async function callVisionModel(messages, onStreamComplete) {
         customTemperature: null, // Or specify a custom temperature if needed
         API_URL: "https://api.openai.com/v1/chat/completions",
         onBeforeCall: () => {
-            functionLoadingIcon.style.display = 'block';
-            functionErrorIcon.style.display = 'none';
-            functionSendSvg.innerHTML = `<use xlink:href="#pause-icon"></use>`;
+            isAiProcessing = true;
+            updateUiForProcessing();
         },
         onStreamingResponse: (content) => {
             neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
         },
         onAfterCall: () => {
-            functionLoadingIcon.style.display = 'none';
-            functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
+            isAiProcessing = false;
+            updateUiForIdleState();
             if (onStreamComplete) onStreamComplete(); // Call the callback after streaming is complete
         },
         onError: (error) => {

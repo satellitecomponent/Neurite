@@ -26,7 +26,7 @@ async function sendMessage(event, autoModeMessage = null) {
         // If local LLM is checked, don't do anything.
         return false;
     }
-    const isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
+    let isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
     promptElement = document.getElementById("prompt");
     promptElement.value = ''; // Clear the textarea
@@ -331,6 +331,8 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
             console.error('AI response was undefined');
         }
     }
+
+    isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
     // Only continue if shouldContinue flag is true and auto mode checkbox is checked
     if (shouldContinue && isAutoModeEnabled) {

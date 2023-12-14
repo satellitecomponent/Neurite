@@ -14,39 +14,52 @@ const functionCallPanel = nodePanel.querySelector('.function-call-panel');
 
 const functionLoadingIcon = document.getElementById('functionLoadingIcon');
 const functionErrorIcon = document.getElementById('functionErrorIcon');
-const functionPrompt = document.getElementById('function-prompt');
+
 //buttons
 
 const functionSendButton = document.getElementById('function-send-button');
 const functionRegenButton = document.getElementById('function-regen-button');
 
 
-CodeMirror.defineMode("jsCodeBlocks", function (config, parserConfig) {
+CodeMirror.defineMode("ignoreCodeBlocks", function (config) {
     var jsMode = CodeMirror.getMode(config, { name: "javascript" });
-    var overlay = {
+
+    return {
         token: function (stream, state) {
+            // Skip code block markers
             if (stream.match("```")) {
-                state.inCodeBlock = !state.inCodeBlock;
+                stream.skipToEnd();
                 return null;
             }
-            if (state.inCodeBlock) {
-                return jsMode.token(stream, state.jsState);
+
+            // Extract and match the next word token
+            if (stream.match(/^\w+/)) {
+                var currentToken = stream.current();
+                if (functionNameList.includes(currentToken)) {
+                    return "neurite-function-name"; // Custom style for function names
+                }
+                stream.backUp(currentToken.length); // Back up to reprocess this token in jsMode
             }
-            while (stream.next() != null && !stream.match('```', false)) { }
-            return null;
+
+            // Use JavaScript mode for all other text
+            return jsMode.token(stream, state.jsState);
         },
         startState: function () {
             return {
-                inCodeBlock: false,
                 jsState: CodeMirror.startState(jsMode)
             };
-        }
+        },
+        copyState: function (state) {
+            return {
+                jsState: CodeMirror.copyState(jsMode, state.jsState)
+            };
+        },
+        // Other necessary methods from jsMode (if needed)
     };
-    return CodeMirror.overlayMode(jsMode, overlay);
 });
 
 const neuriteFunctionCM = CodeMirror.fromTextArea(document.getElementById('neurite-function-cm'), {
-    mode: "jsCodeBlocks",  // Set the custom mode
+    mode: "ignoreCodeBlocks", // Use the custom mode
     lineNumbers: false,
     lineWrapping: true,
     scrollbarStyle: 'simple',
@@ -63,12 +76,6 @@ function updateNeuriteFunctionCMContent(content) {
 }
 
 
-
-
-const functionSendSvg = functionSendButton.querySelector('svg');
-functionSendButton.addEventListener('click', () => {
-    requestFunctionCall();
-});
 
 
 // Function to toggle the visibility of the function call panel
@@ -105,30 +112,176 @@ document.addEventListener('DOMContentLoaded', () => {
     functionCallPanel.classList.add('hidden');
 });
 
+// Global log collector
+let logCollector = [];
 
-async function runNeuriteCode() {
+function runNeuriteCode() {
     const code = neuriteFunctionCM.getValue();
     const codeBlocks = extractCodeBlocks(code);
     const codeToRun = codeBlocks.length > 0 ? codeBlocks.join('\n') : code;
 
     clearActiveStates();
 
+    // Generate the default title and initialize the log collector
+    const defaultTitle = generateTitleForCode(codeToRun);
+    logCollector = [defaultTitle];
+
+    // Custom log function
+    function customLog(...args) {
+        const logOutput = args.map(arg => {
+            if (arg instanceof Error) {
+                return `<span class="error-log">${arg.message}</span>`;
+            } else if (typeof arg === 'object') {
+                return JSON.stringify(arg);
+            } else {
+                return String(arg);
+            }
+        }).join(' ');
+        logCollector.push(logOutput);
+        updateTitleWithLogs();
+    }
+
+    // Function to update title based on collected logs
+    function updateTitleWithLogs() {
+        const title = logCollector.join(' \n');
+        updateFunctionCallItem(title, itemId);
+    }
+
+    let itemId;
+
+    // Save the original window.onerror
+    const originalOnError = window.onerror;
+
+    // Set up a global error handler
+    window.onerror = function (message, source, lineno, colno, error) {
+        customLog(`${message}`, error);
+        return false;
+    };
+
     try {
-        eval(codeToRun);
-        //onFunctionCalled('Custom Code', 'Executed Successfully');
-        addFunctionCallItem(generateTitleForCode(codeToRun), code);
-        neuriteFunctionCM.setValue(''); // Clear the CodeMirror
+        // Setup custom console
+        const customCodeToRun = `(function(originalConsole, customLog) {
+            const console = {
+                ...originalConsole,
+                log: function(...args) {
+                    originalConsole.log(...args);
+                    customLog(...args);
+                },
+                error: function(...args) {
+                    originalConsole.error(...args);
+                    customLog(...args);
+                }
+            };
+            ${codeToRun}
+        })(console, customLog);`;
+
+        const result = eval(customCodeToRun);
+        itemId = addFunctionCallItem(defaultTitle, code);
+
+        // Handle the final result
+        if (result !== undefined) {
+            logCollector.push(JSON.stringify(result));
+        }
     } catch (error) {
         console.error('Error executing code:', error);
-        addFunctionCallItem(`Error: ${error.message}`, code, true); // Set isError to true
-        neuriteFunctionCM.setValue(''); // Clear the CodeMirror
+        itemId = addFunctionCallItem(`${error.message}`, code, true);
+    }
+
+    // Cleanup
+    window.onerror = originalOnError;
+    updateTitleWithLogs();
+    neuriteFunctionCM.setValue('');
+}
+
+// Function to update the UI with the current title
+function updateFunctionCallItem(title, itemId, error = null) {
+    const item = document.querySelector(`[data-item-id="${itemId}"]`);
+
+    if (item) {
+        // Update the innerHTML of the item
+        item.innerHTML = title.replace(/\n/g, '<br>');
+
+        // Update callData with the new title
+        const callData = JSON.parse(item.getAttribute('data-call-data'));
+        callData.functionName = title.replace(/<br>/g, '\n'); // Convert <br> back to \n for the data structure
+        item.setAttribute('data-call-data', JSON.stringify(callData));
+
+        // Style error logs if there's an error
+        if (error) {
+            const errorLogs = item.getElementsByClassName('error-log');
+            for (const errorLog of errorLogs) {
+                errorLog.style.color = '#cb1b1b'; // Style for error logs
+            }
+        }
+
+        item.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 }
 
+
+function formatResultAsTitle(result) {
+    let titleString;
+
+    if (typeof result === 'object' && result !== null) {
+        try {
+            titleString = JSON.stringify(result);
+        } catch {
+            titleString = '[Complex Object]';
+        }
+    } else if (typeof result === 'undefined') {
+        titleString = 'undefined';
+    } else if (typeof result === 'symbol') {
+        titleString = 'Symbol';
+    } else if (typeof result === 'bigint') {
+        titleString = `BigInt (${result.toString()})`;
+    } else if (Array.isArray(result)) {
+        titleString = '[Array]';
+    } else if (typeof result === 'function') {
+        titleString = `Function ${result.name || '(anonymous)'}`;
+    } else if (result instanceof Error) {
+        titleString = `Error (${result.message})`;
+    } else {
+        titleString = result.toString();
+    }
+
+    // Truncate the title if it's too long
+    if (titleString.length > 200) {
+        titleString = titleString.substring(0, 197) + '...';
+    }
+
+    return `Result: ${titleString}`;
+}
+
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 function addFunctionCallItem(functionName, code, isError = false) {
+    const currentCoords = neuriteGetMandelbrotCoords(); // Get current coordinates
+
     const item = document.createElement('div');
-    item.textContent = `${functionName}`;
+    item.classList.add('function-call-item');
+
+    // Generate a UUID for the item
+    const itemId = generateUUID(); // Implement this function to generate a UUID
+    item.setAttribute('data-item-id', itemId);
+
+    // Replace newline characters with <br> tags for HTML rendering
+    const formattedFunctionName = functionName.replace(/\n/g, '<br>');
+    item.innerHTML = formattedFunctionName;
     item.originalText = code;
+
+    // Store code along with the current zoom and pan
+    const callData = {
+        code: code,
+        zoom: currentCoords.zoom,
+        pan: currentCoords.pan,
+        functionName: functionName
+    };
+    item.setAttribute('data-call-data', JSON.stringify(callData));
 
     // Add a specific class if it's an error
     if (isError) {
@@ -168,11 +321,11 @@ function addFunctionCallItem(functionName, code, isError = false) {
         }
     });
 
-    // Append the item to the list
     functionCallList.appendChild(item);
-
-    // Scroll the newly added item into view
     item.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+    // Return the UUID for further reference
+    return itemId;
 }
 
 // Function to clear active states from all items
@@ -185,30 +338,28 @@ function clearActiveStates() {
 }
 
 function generateTitleForCode(code) {
-    // Extract the first line of the code
-    const firstLine = code.split('\n')[0].trim();
+    // Regular expressions for block and line comments
+    const blockCommentRegex = /\/\*([\s\S]*?)\*\//;
+    const lineCommentRegex = /\/\/(.*)/;
 
+    // Find matches for both comment types
+    const blockMatch = code.match(blockCommentRegex);
+    const lineMatch = code.match(lineCommentRegex);
+
+    // Determine the positions of the matches
+    const blockCommentPos = blockMatch ? blockMatch.index : -1;
+    const lineCommentPos = lineMatch ? code.indexOf(lineMatch[0]) : -1;
+
+    // Use the comment that appears first in the code
     let title;
-    if (firstLine.startsWith('/*')) {
-        // Find the closing */ for block comments
-        const endCommentIndex = code.indexOf('*/');
-        if (endCommentIndex !== -1) {
-            // Extract the comment, removing /* and */
-            title = code.substring(2, endCommentIndex).trim();
-        } else {
-            // If there's no closing */, use the whole line
-            title = firstLine.slice(2).trim();
-        }
-    } else if (firstLine.startsWith('//')) {
-        // Extract single-line comment, removing //
-        title = firstLine.slice(2).trim();
-    } else {
-        // Use the first line as is
-        title = firstLine;
+    if (blockCommentPos !== -1 && (blockCommentPos < lineCommentPos || lineCommentPos === -1)) {
+        title = blockMatch[1].trim();
+    } else if (lineCommentPos !== -1) {
+        title = lineMatch[1].trim();
     }
 
     // If no title is extracted, use a default title with timestamp
-    return title || `${new Date().toLocaleString()}`;
+    return title || `Code executed at ${new Date().toLocaleString()}`;
 }
 
 const functionRunButton = document.getElementById('function-run-button');
