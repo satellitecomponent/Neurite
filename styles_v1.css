@@ -63,21 +63,21 @@
 }
 
 .window-anchored {
-    background-color: rgb(111 105 121 / 74%);
+    background-color: #1a1921bf;
 }
 
-            .window-anchored::before {
-                content: "";
-                display: block;
-                position: absolute;
-                top: -1px;
-                left: -1px;
-                right: -1px;
-                bottom: -1px;
-                border: 2px solid #555;
-                pointer-events: none;
-                z-index: 1;
-            }
+    .window-anchored::before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        border: 2px solid #1a1a1a;
+        pointer-events: none;
+        z-index: 1;
+    }
 
 
         .window.selected::before {
@@ -137,9 +137,7 @@
     justify-content: space-between;
 }
 
-.windowbutton {
-    cursor: pointer;
-}
+
 
 .no-select {
     user-select: none;
@@ -148,24 +146,44 @@
     -ms-user-select: none; /* IE10+ and Edge */
 }
 
+.header-container {
+    display: flex;
+    justify-content: flex-end; /* Align items to the end (right) of the container */
+    width: 100%; /* Make sure this takes up the full width of the parent container */
+    margin-bottom: 2px;
+    z-index: 1;
+}
+
+.windowbutton {
+    cursor: pointer;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+}
+
 .title-input {
     flex-grow: 1;
     flex-shrink: 1;
     color: #bbb;
     background: none !important;
     border-style: solid;
-    border-width: 3px 3px 0px 0;
+    border-width: 2px 5px 0px 0;
     border-color: #aaa;
-    transform: translate(-2%, 10%);
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-left: -7px;
     z-index: 150;
 }
 
-            .title-input:focus {
-                border-color: #bbb;
-                /* Change the border color when the input is focused */
-                outline: none;
-                /* Remove the default outline */
-            }
+    .title-input:focus {
+        border-color: RGB(200,200,255);
+        color: lightgrey;
+        /* Change the border color when the input is focused */
+        outline: none;
+        /* Remove the default outline */
+    }
 
 .hide-except-title > *:not(.title-input) {
     display: none;
@@ -178,13 +196,7 @@
     text-align: center; /* Centers the text */
 }
 
-.header-container {
-    display: flex;
-    justify-content: flex-end; /* Align items to the end (right) of the container */
-    width: 100%; /* Make sure this takes up the full width of the parent container */
-    margin-bottom: 2px;
-    z-index: 1;
-}
+
 
 .container-for-textarea-and-pre {
     position: relative;
@@ -350,33 +362,33 @@
             .menu-button.open .menu-icon::after {
                 transform: translateY(-6px) rotate(-45deg);
             }
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #2f2e3996;
+    backdrop-filter: blur(6px);
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    z-index: 1;
+    margin-top: -38px;
+    margin-right: -5px;
+    transform: translateY(-200%); /* Start off screen */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
+}
 
-        .dropdown-content {
-            position: absolute;
-            top: 100%; /* modify if needed */
-            right: 0; /* modify if needed */
-            background: rgba(60, 59, 66, 0.7);
-            backdrop-filter: blur(6px);
-            border-top-right-radius: 8px;
-            border-bottom-left-radius: 8px;
-            overflow: visible;
-            display: none;
-            z-index: 1;
-            margin-top: -38px; /* negative margin */
-            margin-right: -5px; /* negative margin */
-        }
-
-            .dropdown-content.open {
-                display: block;
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                grid-template-rows: 1fr;
-                grid-column-gap: 0px;
-                grid-row-gap: 0px;
-                -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-                -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-                box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-            }
+    .dropdown-content.open {
+        transform: translateY(0%); /* Slide in to view */
+    }
 
         .submenu {
             padding: 10px;
@@ -426,7 +438,7 @@
         .Searchbar {
             background-color: #222226;
             color: #bbb;
-            width: 150px;
+            width: 100%;
             border: inset;
             border-color: #8882;
         }
@@ -509,8 +521,7 @@
             color: #bbb;
             border: inset;
             border-color: #8882;
-            width: 270px;
-            min-width: 270px;
+            width: 100px;
             padding: 10px;
             box-sizing: border-box;
             resize: none;
@@ -538,7 +549,7 @@
             }
 
                 #prompt-form button[type="submit"]:hover {
-                    background-color: #45a049;
+                    background-color: #528f4c;
                     color: #222226;
                 }
 
@@ -878,6 +889,11 @@ select-replacer > div:first-child {
         scrollbar-color: #555 transparent;
     }
 
+    .custom-scrollbar::-webkit-scrollbar-button {
+        color: red;
+        background-color: red;
+    }
+
         .key-button {
             z-index: 1;
             padding: 2px 2px;
@@ -1017,10 +1033,6 @@ select-replacer > div:first-child {
             color: #222226;
         }
 
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-        }
 .inline-container {
     display: inline-block;
     vertical-align: middle;
@@ -1473,6 +1485,7 @@ input[type=range] {
     height: 24px; /* Height of the icons */
     margin-right: -30px; /* Space between icons and buttons */
     margin-left: 10px;
+    pointer-events: none; /* Disables pointer events */
 }
 
 .color-picker-container {
@@ -1764,27 +1777,252 @@ textarea[id^='custom-instructions-textarea-'] {
     top: 0;
     width: auto;
     height: auto;
-    background: rgba(60, 59, 66, 0.7);
+    background: #2f2e3996;
     backdrop-filter: blur(6px);
-    display: none; /* Initially hidden */
+    display: flex; /* Change to flex for initial layout */
     padding-left: 5px;
     padding-right: 5px;
     padding-top: 20px;
-    padding-bottom: 15px;
-    flex-direction: row; /* Ensure children are stacked vertically */
-    align-items: center; /* Center children horizontally */
+    padding-bottom: 5px;
+    flex-direction: column;
+    align-items: flex-start;
     border-bottom-right-radius: 8px;
-    margin-top: 0px; /* negative margin */
-    margin-left: 0px; /* negative margin */
+    border-top-left-radius: 8px;
     z-index: 100;
+    transform: translateX(-200%); /* Start off-screen to the left */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
+    overflow: hidden; /* Hide overflow */
+    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    margin-top: 10px;
+    margin-left: 12px;
+}
+
+    .node-panel.open {
+        transform: translateX(0%); /* Slide in to view */
+        width: fit-content; /* Adjust width to fit the content */
+    }
+
+.icon-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start; /* Align icons to the start */
+    margin-bottom: 10px;
+}
+
+.function-call-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
 }
 
 
-    .node-panel.open {
-        display: flex;
+
+.node-panel .neurite-function-cm-style {
+    background-color: transparent;
+    max-height: 300px; /* Maximum height */
+    height: 300px;
+    padding:10px;
+    /* Add any other styles you need */
+}
+
+.function-prompt-wrapper {
+    /* Style the wrapper as per your requirements */
+    padding: 10px;
+    margin: 0px;
+    color: white; /* Example text color */
+    border-top: 1px solid #131313; /* Example border */
+    border-bottom: 1px solid #131313; /* Example border */
+    height: fit-content;
+    width: 100%;
+}
+
+
+
+
+.toggle-function-panel {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute children evenly */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    width: 100%;
+    height: 10px;
+    padding: 0 10px; /* Add padding to space out the items */
+}
+
+.icon-wrapper {
+    flex-grow: 0; /* Prevent growing to keep icon centered */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-icon {
+    display: inline-block;
+    fill: #555;
+    transition: transform 0.5s ease, fill 0.3s ease;
+    width: 13px;
+    height: 20px;
+}
+
+.bar {
+    flex-grow: 1; /* Allow bars to take up available space */
+    max-width: 20%;
+    height: 2px;
+    background-color: #424242; /* Default color */
+    align-self: center; /* Vertically align with the icon */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.function-call-panel:not(.hidden) + .toggle-function-panel .icon-wrapper .toggle-icon {
+    transform: scaleY(-1);
+}
+
+.toggle-function-panel:hover .toggle-icon svg path {
+    stroke: RGB(200,200,255);
+}
+
+.toggle-function-panel:hover .toggle-icon {
+    transform: scale(1.1); /* Increase size slightly */
+}
+
+.toggle-function-panel:hover .bar {
+    background-color: #555; /* Change color on hover */
+}
+
+
+.function-call-panel {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    max-height: fit-content; /* Adjust as needed */
+    /* background: rgba(42, 42, 54, 0.2);  Example background */
+    width: 100%; /* Match the width of the function call container */
+    overflow: hidden;
+    height: 0px;
+    display: none;
+    padding: 0; /* Reset any padding */
+}
+
+
+    .function-call-panel.hidden {
+        margin-top: 0; /* Eliminate margin when hidden */
+        margin-bottom: 0; /* Eliminate margin when hidden */
     }
 
+.hidden {
+    display: none;
+}
+
+.function-call-list {
+    height: 150px;
+    max-height: 150px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* direction: rtl; /* Right-to-left to move scrollbar to the left */
+}
+
+
+/* Example style for function call list items */
+    .function-call-list > div {
+        padding: 5px;
+        padding-left: 13px;
+        margin: 10px;
+        border-left: 1px solid RGB(200,200,255);
+        background-color: #222226;
+        color: #8a8a8d;
+        display: block; /* Change to block to stack elements vertically */
+        word-wrap: break-word; /* Ensure text wraps and doesn't overflow */
+    }
+
+.func-error-icon {
+    margin-right: 10px; /* Add space between the icon and the text */
+    margin-left: -2px;
+    vertical-align: middle; /* Vertically align the icon */
+    stroke: #87253e;
+}
+
+        .function-call-list > div.hover-state {
+            background-color: #404052; /* Light grey background on hover */
+            cursor: pointer;
+        }
+
+        .function-call-list > div.active-state {
+            background-color: #17171a; /* Slightly darker grey for active state */
+            color: RGB(200,200,255);
+        }
+
+        .function-call-list > div.error-item {
+            background-color: #44000069;
+            color: #8c7474;
+            border-left: 1px solid #aa1111;
+        }
+
+            .function-call-list > div.error-item:hover {
+                background-color: #603030; /* Warmer, lighter red for hover */
+            }
+
+            .function-call-list > div.error-item.active-state {
+                background-color: #1a0606; /* Darker, more intense red for active state */
+                color: #9f7777;
+            }
+.error-log {
+    color: #922b47 !important;
+}
+
+
+.function-prompt-textarea {
+    overflow-y: hidden;
+    flex-grow: 1;
+    background-color: #222226;
+    color: #bbb;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.function-button {
+    z-index: 1;
+    padding: 4px 4px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    color: white;
+    border: inset;
+    border-color: #8882;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#function-run-button:hover {
+    background-color: #8a3e19;
+    color: #222226;
+}
+
+#function-send-button:hover {
+    background-color: #528f4c; /* Different color for send button */
+    color: #222226;
+}
+
+#function-regen-button:hover {
+    background-color: #d3d3d3; /* Light grey for regen button */
+    color: #222226;
+}
+
+.cm-neurite-function-name {
+    color: #8e8eff !important;
+}
+
 .icon-content {
+    flex-grow: 0;
     flex-shrink: 0;
     width: 49px;
     height: 33px;

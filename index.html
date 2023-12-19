@@ -70,45 +70,121 @@
 
 
 
-    <div class="dropdown">
+    <div class="dropdown" id="dropdowndiv">
         <div class="menu-button">
-            <div class="menu-icon"></div>
+            <div class="menu-icon" id="menu-icon"></div>
         </div>
 
         <div class="node-panel">
-            <div class="icon-content">
-                <div class="panel-icon edges-icon" title="Freeze and Connect Nodes (Hold Shift)">
-                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" style="transform: translateX(-1px);" aria-hidden="true">
-                        <use xlink:href="#edges-icon-symbol"></use>
-                    </svg>
+            <div class="icon-row">
+                <div class="icon-content">
+                    <div class="panel-icon edges-icon" title="Freeze and Connect Nodes (Hold Shift)">
+                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" style="transform: translateX(-1px);" aria-hidden="true">
+                            <use xlink:href="#edges-icon-symbol"></use>
+                        </svg>
+                    </div>
+                </div>
+                <div class="icon-content">
+                    <div class="panel-icon note-icon" title="Create Note (Shift + Double Click)">
+                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                            <use xlink:href="#note-icon-symbol"></use>
+                        </svg>
+                    </div>
+                </div>
+                <div class="icon-content">
+                    <div class="panel-icon ai-icon" title="Ai Note (ALT/Option + Double Click)">
+                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                            <use xlink:href="#ai-icon-symbol"></use>
+                        </svg>
+                    </div>
+                </div>
+                <div class="icon-content">
+                    <div class="panel-icon link-icon" title="Display Link">
+                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                            <use xlink:href="#link-icon-symbol"></use>
+                        </svg>
+                    </div>
+                </div>
+                <div class="icon-content">
+                    <div class="panel-icon code-icon" title="Create Code Editor (Shift + ALT/Option + Double Click)">
+                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
+                            <use xlink:href="#code-icon-symbol"></use>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="icon-content">
-                <div class="panel-icon note-icon" title="Create Note (Shift + Double Click)">
-                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
-                        <use xlink:href="#note-icon-symbol"></use>
-                    </svg>
+
+            <!-- New container for the function call panel and its toggle button -->
+            <div class="function-call-container">
+
+                <!-- Sub-dropdown for function calls -->
+                <div class="function-call-panel hidden">
+                    <!-- Function call list -->
+                    <div class="function-call-list custom-scrollbar">
+                        <!-- Function call items will be added here dynamically -->
+                    </div>
+
+                    <!-- Function prompt wrapper -->
+                    <div class="function-prompt-wrapper">
+                        <!-- Function prompt input -->
+                        <div style="display: flex;">
+                            <!-- Run function button -->
+                            <button id="function-run-button" class="function-button">
+                                <svg width="18" height="18">
+                                    <use xlink:href="#function-button"></use>
+                                </svg>
+                            </button>
+
+
+
+                            <div class="input-group" style="display: flex; position: relative; width: 60%;">
+                                <textarea id="function-prompt" class="custom-scrollbar function-prompt-textarea" rows="1" oninput="autoGrow(event);" placeholder="Set Task..." required></textarea>
+
+                                <div class="status-icons-container" style="position: absolute; right: 42px; top: 50%; transform: translateY(-50%);">
+                                    <!-- Status icons here -->
+                                    <div class="loader" id="functionLoadingIcon" style="display:none;"></div>
+
+                                    <div class="error-icon-css" id="functionErrorIcon" style="display:none;">
+                                        <div class="error-x-mark">
+                                            <span class="error-x-mark-left"></span>
+                                            <span class="error-x-mark-right"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="function-send-button" class="function-button">
+                                <svg width="18" height="18" class="function-send-svg">
+                                    <use xlink:href="#play-icon"></use>
+                                </svg>
+                            </button>
+
+                            <!-- Regenerate button -->
+                            <button id="function-regen-button" class="function-button">
+                                <svg width="18" height="18">
+                                    <use xlink:href="#refresh-icon"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CodeMirror container -->
+                    <div class="function-codemirror-container">
+                        <textarea id="neurite-function-cm"></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="icon-content">
-                <div class="panel-icon ai-icon" title="Ai Note (ALT/Option + Double Click)">
-                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
-                        <use xlink:href="#ai-icon-symbol"></use>
-                    </svg>
-                </div>
-            </div>
-            <div class="icon-content">
-                <div class="panel-icon link-icon" title="Display Link">
-                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
-                        <use xlink:href="#link-icon-symbol"></use>
-                    </svg>
-                </div>
-            </div>
-            <div class="icon-content">
-                <div class="panel-icon code-icon" title="Create Code Editor (Shift + ALT/Option + Double Click)">
-                    <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
-                        <use xlink:href="#code-icon-symbol"></use>
-                    </svg>
+                <!-- Toggle button for function call panel -->
+                <div class="toggle-function-panel" onclick="toggleFunctionCallPanel()">
+                    <div class="bar left-bar"></div>
+                    <div class="icon-wrapper">
+                        <!-- Wrapper for the icon only -->
+                        <div class="toggle-icon">
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bar right-bar"></div>
                 </div>
             </div>
         </div>
@@ -134,35 +210,45 @@
                     <div class="submenu">
                         <form id="prompt-form" onsubmit="sendMessage(event);">
                             <div>
-                                <div style="display: flex; align-items: center;">
+                                <!-- First Row: Search Bar -->
+                                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                    <!-- Added margin for spacing -->
                                     <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
-                                    <div class="status-icons-container">
-                                        <div class="loader" id="aiLoadingIcon" style="display:none;"></div>
-                                        <div class="loader-fillBackground" id="aiFilledLoadingIcon" style="display:none;">
-                                            <div class="loader-fill initial-animation"></div>
-                                        </div>
-                                        <div class="error-icon-css" id="aiErrorIcon" style="display:none;">
-                                            <div class="error-x-mark">
-                                                <span class="error-x-mark-left"></span>
-                                                <span class="error-x-mark-right"></span>
+                                </div>
+
+                                <!-- Second Row: Prompt Form -->
+                                <div style="display: flex;">
+                                    <!-- Input Group with flex layout and relative positioning -->
+                                    <div class="input-group" style="display: flex; position: relative; width: 208px;">
+                                        <!-- Textarea for main prompt -->
+                                        <textarea id="prompt" class="custom-scrollbar" rows="1" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
+
+                                        <!-- Status icons positioned similarly to function prompt -->
+                                        <div class="status-icons-container" style="position: absolute; right: 42px; top: 50%; transform: translateY(-50%);">
+                                            <!-- Status icons (Loader and Error) -->
+                                            <div class="loader" id="aiLoadingIcon" style="display:none;"></div>
+                                            <div class="error-icon-css" id="aiErrorIcon" style="display:none;">
+                                                <div class="error-x-mark">
+                                                    <span class="error-x-mark-left"></span>
+                                                    <span class="error-x-mark-right"></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="btn-group" style="margin-left: 10px;">
-                                        <button type="submit">
-                                            <svg width="18" height="18">
-                                                <use xlink:href="#play-icon"></use>
-                                            </svg>
-                                        </button>
-                                        <button id="regen-button" type="button">
-                                            <svg width="18" height="18">
-                                                <use xlink:href="#refresh-icon"></use>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="input-group" style="margin-top: 10px;">
-                                    <textarea id="prompt" class="custom-scrollbar" rows="1" onkeydown="handleKeyDown(event);" oninput="autoGrow(event);" placeholder="Enter prompt..." required></textarea>
+
+                                    <!-- Run button (Play icon) -->
+                                    <button type="submit">
+                                        <svg width="18" height="18">
+                                            <use xlink:href="#play-icon"></use>
+                                        </svg>
+                                    </button>
+
+                                    <!-- Regenerate button (Refresh icon) -->
+                                    <button id="regen-button" type="button">
+                                        <svg width="18" height="18">
+                                            <use xlink:href="#refresh-icon"></use>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -219,13 +305,13 @@
                                 <div id="quality_value">Quality</div>
                                 <div id="fps">fps:?? (is javascript enabled?)</div>
                             </div>
-                            <input id="quality" type="range" min="0" max="100" value="2">
+                            <input id="quality" type="range" min="0" max="100" value="16">
                         </div>
                         <div class="gridLayout">
 
                             <div class="settingsSlider">
                                 <label for="length">Length: <span id="length_value"></span></label>
-                                <input id="length" type="range" min="0" max="100" value="65">
+                                <input id="length" type="range" min="0" max="100" value="50">
                             </div>
 
                             <div class="settingsSlider">
@@ -238,14 +324,23 @@
                                 <input type="range"
                                        id="maxLinesSlider"
                                        min="0"
-                                       max="1024"
+                                       max="2048"
                                        step="1"
-                                       title="Requires zooming until refresh to decrease max lines">
+                                       title="Set the removal limit for number of lines displayed">
                             </div>
 
                             <div class="settingsSlider">
                                 <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
                                 <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
+                            </div>
+                            <div class="settingsSlider" title="Set the strength of line generation around your mouse.">
+                                <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
+                                <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
+                            </div>
+
+                            <div class="settingsSlider" title="Set the radius of line generation around your mouse">
+                                <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
+                                <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
                             </div>
 
                         </div>
@@ -262,6 +357,10 @@
                                 <div class="color-picker-item">
                                     <label for="bColor">B</label>
                                     <input type="color" id="bColor" name="bColor" value="#0000FF">
+                                </div>
+                                <div class="color-picker-item">
+                                    <label for="colorPicker">BG</label>
+                                    <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226;">
                                 </div>
                             </div>
                             <br />
@@ -291,21 +390,6 @@
 
                                 </div>
                             </div>
-                        </div>
-                        <div id="bgpick">
-                            <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226; margin-top:5px">
-                            <label for="colorPicker"> Background Color</label>
-                        </div>
-                        <br />
-                        <button id="screenshotButton" class="key-button">Screenshot</button>
-                        <button id="recordButton" class="key-button">Record</button>
-                        <br />
-                        <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
-                            pan:
-                            <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
-                            <br />
-                            zoom:
-                            <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
                         </div>
                     </div>
                 </div>
@@ -490,9 +574,9 @@
                             <label for="model-select" style="margin-right: 10px;">Select Model:</label>
                             <div class="dropdown-container">
                                 <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                    <option value="gpt-4">gpt-4</option>
                                     <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
                                     <option value="gpt-4-1106-preview">gpt-4-1106</option>
-                                    <option value="gpt-4">gpt-4</option>
                                     <option value="gpt-4-0613">gpt-4-0613</option>
                                     <option value="gpt-4-vision-preview">gpt-4-vision</option>
                                     <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
@@ -578,8 +662,22 @@
                             <a id="clear-unsure-button">no</a>
                             <a id="clear-sure-button">yes</a>
                         </div>
-                        <br />
                         <div style="text-align: center;">
+                            <button id="screenshotButton" class="key-button">Screenshot</button>
+                            <button id="recordButton" class="key-button">Record</button>
+                            <br />
+                            <br />
+                            <button id="saveCoordinatesBtn" class="key-button">Save Coordinates</button>
+                            <br />
+                            <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
+                                pan
+                                <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
+                                <br />
+                                zoom
+                                <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
+                            </div>
+                            <br />
+                            <br />
                             <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
                         </div>
                     </div>
@@ -686,6 +784,11 @@
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M1 1.8c0-.442.32-.8.714-.8h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H1.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 1 16.2V1.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H8.857c-.394 0-.714-.358-.714-.8V1.8Z" clip-rule="evenodd" />
                 </svg>
             </symbol>
+            <symbol id="function-button" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 12">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M9 5 5 1 1 5m8 6L5 7l-4 4" />
+                </svg>
+            </symbol>
         </defs>
     </svg>
 
@@ -702,6 +805,11 @@
 
     <svg id="aiNodeSettingsIcon" display="none" class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
         <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25" />
+    </svg>
+
+
+    <svg id="funcErrorIcon" width="20" height="20" style="display: none;" class="w-[24px] h-[24px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
     </svg>
 
 
@@ -725,12 +833,15 @@
 
     <script src="js/dropdown/savenet.js"></script>
     <script src="js/dropdown/dropdown_v2_0_1.js"></script>
+
     <script src="js/zettelkasten/zetcodemirror.js"></script>
+    <script src="js/zettelkasten/zettelkasten_v2.js"></script>
+
+
+
 
 
     <script src="js/mandelbrot/mandelbrot_v1_0_1.js"></script>
-
-    <script src="js/zettelkasten/zettelkasten_v2.js"></script>
 
     <script defer type="module" src="/embeddings.js"></script>
 
@@ -777,6 +888,10 @@
     <script src="js/nodes/createnodes/contenteditable.js"></script>
 
     <script src="js/record/record_v1.js"></script>
+    <script src="js/neuralapi.js"></script>
+    <script src="js/functioncall/functioncallingpanel.js"></script>
+    <script src="js/functioncall/neuraltelemetryprompt.js"></script>
+    <script src="js/functioncall/requestfunctioncall.js"></script>
 
 </body>
 

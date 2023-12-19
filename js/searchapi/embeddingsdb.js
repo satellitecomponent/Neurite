@@ -88,8 +88,9 @@ const MAX_CACHE_SIZE = 300;
 const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
 
-async function embeddedSearch(searchTerm) {
-    const maxNodes = document.getElementById('node-count-slider').value;
+async function embeddedSearch(searchTerm, maxNodesOverride = null) {
+    // Use maxNodesOverride if provided, otherwise use the slider value
+    const maxNodes = maxNodesOverride !== null ? maxNodesOverride : document.getElementById('node-count-slider').value;
     let keywords = searchTerm.toLowerCase().split(/,\s*/);
 
     const nodes = getNodeText();

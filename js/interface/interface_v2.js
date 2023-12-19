@@ -470,24 +470,18 @@ function getNodeText() {
             const node = child.firstChild.win;
 
             const titleInput = node.content.querySelector("input.title-input");
-            if (titleInput) {
-                //console.log('Found title input:', titleInput.value); // Debugging line
-            } else {
-                console.log('Title input not found'); // Debugging line
-            }
+            //console.log(`Title Input for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, titleInput); // Debugging line
 
             const contentText = getTextareaContentForNode(node);
-            if (contentText) {
-               // console.log('Found content text:', contentText); // Debugging line
-            } else {
-                console.log('Content text not found'); // Debugging line
-            }
+            //console.log(`Content Text for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, contentText); // Debugging line
 
             nodes.push({
                 ...node,
                 titleInput: titleInput ? titleInput.value : '',
                 contentText: contentText ? contentText : ''
             });
+        } else {
+            console.warn('Node or child.firstChild.win not found'); // Debugging line
         }
     }
     return nodes;
@@ -854,7 +848,12 @@ nodeStep();
 //connectRandom(10);
 
 
+let userZoomAdjustment = 1; // Default: no zoom adjustment
+let userPanAdjustment = new vec2(0, 0); // Default: no pan adjustment
+
 document.addEventListener('wheel', (event) => {
+    isAnimating = false;
+
     // Get the element that the user is scrolling on
     let targetElement = event.target;
 
@@ -888,6 +887,7 @@ document.addEventListener('wheel', (event) => {
         let dest = toZ(mousePos);
         regenAmount += Math.abs(event.wheelDelta);
         let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
+        userZoomAdjustment *= amount;
         zoom = zoom.scale(amount);
         pan = dest.scale(1 - amount).plus(pan.scale(amount));
         cancel(event);
@@ -931,9 +931,11 @@ addEventListener("mouseup", (event) => {
 });
 addEventListener("mousemove", (event) => {
     if (mouseDown) {
+        isAnimating = false;
         autopilotSpeed = 0;
         coordsLive = true;
         let delta = mousePos.minus(mouseDownPos);
+        userPanAdjustment = userPanAdjustment.plus(toDZ(delta));
         pan = pan.minus(toDZ(delta));
         regenAmount += delta.mag() * 0.25;
         mouseDownPos = mousePos.scale(1);
