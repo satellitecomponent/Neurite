@@ -370,7 +370,7 @@
     backdrop-filter: blur(6px);
     border-top-right-radius: 8px;
     border-bottom-left-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: 1fr;

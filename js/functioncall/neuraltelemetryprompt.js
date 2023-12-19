@@ -63,6 +63,11 @@ class NeuralTelemetry {
             };
         });
     }
+
+    // Method to get the list of currently saved views
+    getListOfSavedViews() {
+        return listSavedViews();
+    }
 }
 
 const neuralTelemetry = new NeuralTelemetry();
@@ -75,9 +80,9 @@ function testGetLastFunctionCalls(n) {
 function createTelemetryPrompt(neuralTelemetry, vision = false) {
     const mandelbrotCoords = neuralTelemetry.getCurrentMandelbrotCoords();
     const currentEquation = neuralTelemetry.getCurrentEquation();
-
     const historyCount = 3;
     const lastFunctionCalls = neuralTelemetry.getLastFunctionCalls(historyCount);
+    const savedViewsList = neuralTelemetry.getListOfSavedViews();
 
     let telemetryPrompt = `/* Current Zoom: ${mandelbrotCoords.zoom}, Current Pan: ${mandelbrotCoords.pan}, Current Equation: ${currentEquation}`;
 
@@ -89,6 +94,14 @@ function createTelemetryPrompt(neuralTelemetry, vision = false) {
         if (nodeTitles.length > 0) {
             telemetryPrompt += `, Note Titles: ${nodeTitles.join(', ')}`;
         }
+    }
+
+    // Append the list of saved views with their coordinates
+    if (savedViewsList.length > 0) {
+        const formattedViews = savedViewsList.map(view => {
+            return `{Title: "${view.title}", Coordinates: Zoom ${view.coordinates.zoom}, Pan ${view.coordinates.pan}}`;
+        });
+        telemetryPrompt += `, Saved Views: ${formattedViews.join(' | ')}`;
     }
 
     // Append the history of function calls
@@ -106,9 +119,11 @@ Last ${historyCount} Function Calls: ${formattedCalls.join(' END ')}`;
     return telemetryPrompt;
 }
 
+//eventually add functionality for each example to randomize saved mandelbrot locations on each use.
+
 const functionObjects = {
     performSequence: {
-        title: "async function performSequence(animations) {",
+        title: "async function neuritePerformSequence(animations) {",
         mainDemo: `/* In the animations array, each animation is an array where the first element is the function to be called,
 the second element is an array of arguments for that function,
 and the optional third element is the delay after the function call. */`,
@@ -152,8 +167,7 @@ async function neuriteExploreSequence() {
     }
 }
 
-// Call the function to start the sequence
-neuriteExploreSequence();`
+neuriteExploreSequence()`
         ],
         options: { neuralApi: true, vision: true }
     },
@@ -180,18 +194,35 @@ neuriteExploreSequence();`
         title: "function neuriteAddNote(nodeTitle, nodeText) {",
         mainDemo: `// Adds a note to the Zettelkasten with a specified title and content.`,
         examples: [
-            "addNote('Holomorphic Dynamics?', 'What is it?');",
-            "addNote('Imaginary Numbers...', 'Can you explain this to me?');"
+            "addNote('Holomorphic Dynamics?', 'Text explanation here...'); // Define a relevant title and text content",
+            "addNote('Imaginary Numbers', 'Explanation here...');"
+        ],
+        options: { neuralApi: true, vision: true }
+    },
+    searchNotes: {
+        title: "async function neuriteSearchNotes(searchTerm, maxNodesOverride = null) {",
+        mainDemo: `// Returns an array of node objects, sorted by relevance to the search term. Optionally set the number of nodes to return.`,
+        examples: [
+            "neuriteSearchNotes(`Relevant Query`)",
+            ""
         ],
         options: { neuralApi: true, vision: false }
     },
     zoomToNodeTitle: {
-        title: "function neuriteZoomToNodeTitle(nodeTitle, zoomLevel = 1.0) {",
-        mainDemo: `// Accepts exact titles of nodes`,
+        title: "function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {",
+        mainDemo: `// Accepts exact titles of nodes, or nodes retrieved from searchNotes`,
         examples: [
             "zoomToNodeTitle('Holomorphic Dynamics?', 1.0);"
         ],
-        options: { neuralApi: true, vision: false }
+        options: { neuralApi: true, vision: true }
+    },
+    searchAndZoom: {
+        title: "async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {",
+        mainDemo: `// Accepts a search term. Automatically zooms to each resulting Node`,
+        examples: [
+            "searchAndZoom('Relevant Query');"
+        ],
+        options: { neuralApi: true, vision: true }
     },
     callMovementAi: {
         title: "function neuriteCallMovementAi(movementIntention, totalIterations = 1) {",
@@ -201,15 +232,15 @@ neuriteExploreSequence();`
             "callMovementAi('Navigate existing notes.', 4);",
             "callMovementAi('Explore new areas', 3);"
         ],
-        options: { neuralApi: true, vision: true }
+        options: { neuralApi: true, vision: false }
     },
     promptZettelkasten: {
         title: "function neuritePromptZettelkasten(message) {",
         mainDemo: `// Triggers a prompt to the Zettelkasten AI for generating notes based on the given message.`,
         examples: [
             "promptZettelkasten('Define 10 notes that branch off ...'); // Fill ... with a relevant existing note title.",
-            "promptZettelkasten('Take notes on ...'); // Fill ... with a relevant topic",
-            "promptZettelkasten('Synthesize a critical dialogue from the following topics ..'); // Fill ... with relevant topics"
+            "promptZettelkasten('Take notes on ...');",
+            "promptZettelkasten('Synthesize a critical dialogue from the following topics ..');"
         ],
         options: { neuralApi: true, vision: false }
     },
@@ -218,7 +249,7 @@ neuriteExploreSequence();`
         mainDemo: `/* Takes a message to the user as an argument.
 Returns the user response as a string*/`,
         examples: [
-            "getUserResponse('How are you?'); // Try to go beyond small talk"
+            "const userResponse = getUserResponse('How are you?'); // Try to go beyond small talk"
         ],
         options: { neuralApi: true, vision: false }
     },
@@ -230,7 +261,7 @@ Returns the user response as a string*/`,
         ],
         options: { neuralApi: true, vision: true }
     },
-    resetView: {
+    performSequence2: {
         title: "Advanced use of neuritePerformSequence(animations)",
         mainDemo: `// You can create multiple sequences, and use any N neuritefunction in a sequence.`,
         examples: [
@@ -239,8 +270,8 @@ async function initialSequence() {
     const initialAnimations = [
         // Set Mandelbrot coordinates and add a note
         [setMandelbrotCoords, [0.00013713634721725833, -0.024035092371998055, 0.7268549248591437, 0.1, true], 1000],
-        [addNote, ['Holomorphic Dynamics?', 'What is it?'], 500],
-        [zoomToNodeTitle, ['Holomorphic Dynamics?', { zoomfactor: 1 }], 1000],
+        [addNote, ['Holomorphic Dynamics', 'Tell me more...'], 500],
+        [zoomToNodeTitle, ['Holomorphic Dynamics', { zoomfactor: 1 }], 1000],
         [movement, [[], { zoomFactor: 1.2 }, { deltaX: -500, deltaY: -400 }, {}, 4000], 2000],
 
         [addNote, ['Imaginary Numbers...', 'Can you explain this to me?'], 500],
@@ -313,16 +344,17 @@ function constructPromptWithFunctions(functions, forVision = false) {
 }
 
 function functionBasePrompt() {
-    return `/* Neurite API Interaction Script
-You write code that is executed with access to our fractal mind mapping interface, Neurite.
+    return `/* Neurite API Documentation
+You write code that is executed within the fractal mind mapping interface, Neurite.
 
-REMEMBER, creativity, format, substance, etc... As you are a transformer architecture, each task is a chance at computation. UTILIZE available JAVASCRIPT FUNCTIONALITY*/`;
+REMEMBER, creativity, format, substance, etc... As you are a transformer architecture, each token generation is a chance to grow computational context. UTILIZE available JAVASCRIPT FUNCTIONALITY*/`;
 }
 
 function neuralApiPrompt() {
     let prompt = functionBasePrompt();
     prompt += constructPromptWithFunctions(functionObjects, false);
     prompt += `\n/* The creation of text notes and prompts to the zettelkasten can be called BOTH inside and/or outside of Neurite's async function performSequence(animations)
+For example, you can either use promptZettelkasten within a performSequence such that there are no animations during the response, or call promptZettelkasten outside of a performSequence such that the Ai response and movements coordinate.
 The setting of coords, movement, zoomToTitle, etc. are ALWAYS CALLED within performSequence */`;
     return prompt;
 }
@@ -331,7 +363,7 @@ function visionPrompt() {
     let prompt = functionBasePrompt();
     prompt += constructPromptWithFunctions(functionObjects, true);
     prompt += `\n/* Vision Specific Guidelines */\n
-You TAKE ACTION based off the provided SCREENSHOTS of Neurite's interface. REFERENCE your current TELEMETRY and UTILIZE available FUNCTION CALLS within Neurite.`;
+You TAKE ACTION based off the provided SCREENSHOTS of Neurite's interface.`;
     return prompt;
 }
 
@@ -340,5 +372,5 @@ const neuriteNeuralApiPrompt = neuralApiPrompt();
 const neuriteNeuralVisionPrompt = visionPrompt();
 
 // Example console log
-//console.log(neuriteNeuralApiPrompt);
+console.log(neuriteNeuralApiPrompt);
 //console.log(neuriteNeuralVisionPrompt);

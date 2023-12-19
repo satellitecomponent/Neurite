@@ -333,7 +333,6 @@
                                 <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
                                 <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
                             </div>
-
                             <div class="settingsSlider" title="Set the strength of line generation around your mouse.">
                                 <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
                                 <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
@@ -575,11 +574,11 @@
                             <label for="model-select" style="margin-right: 10px;">Select Model:</label>
                             <div class="dropdown-container">
                                 <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                    <option value="gpt-4">gpt-4</option>
                                     <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
                                     <option value="gpt-4-1106-preview">gpt-4-1106</option>
                                     <option value="gpt-4-0613">gpt-4-0613</option>
                                     <option value="gpt-4-vision-preview">gpt-4-vision</option>
-                                    <option value="gpt-4">gpt-4</option>
                                     <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
                                     <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                                     <option value="gpt-3.5-turbo-16k">gpt-3.5-16k</option>
@@ -666,6 +665,9 @@
                         <div style="text-align: center;">
                             <button id="screenshotButton" class="key-button">Screenshot</button>
                             <button id="recordButton" class="key-button">Record</button>
+                            <br />
+                            <br />
+                            <button id="saveCoordinatesBtn" class="key-button">Save Coordinates</button>
                             <br />
                             <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
                                 pan

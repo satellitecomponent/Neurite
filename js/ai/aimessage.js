@@ -194,20 +194,15 @@ async function sendMessage(event, autoModeMessage = null) {
     const maxContextSize = document.getElementById('max-context-size-slider').value;
     const contextSize = Math.min(remainingTokens, maxContextSize);
 
-    // Get the context
+// Get the context
     context = getLastPromptsAndResponses(100, contextSize);
     let topMatchedNodesContent = "";
 
     // Use the helper function to extract titles
     let existingTitles = extractTitlesFromContent(context, nodeTag);
 
-    // Use the embeddedSearch function to find the top matched nodes based on the keywords
-    clearSearchHighlights(nodesArray); // Clear previous search highlights
-    const topMatchedNodes = await embeddedSearch(keywords, nodesArray);
-    //console.log(topMatchedNodes);
-    for (const node of topMatchedNodes) {
-        node.content.classList.add("search_matched");
-    }
+    // Replace the original search and highlight code with neuriteSearchNotes
+    const topMatchedNodes = await neuriteSearchNotes(keywords);
 
     let titlesToForget = new Set();
 
@@ -280,7 +275,7 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
         let lineBeforeAppend = myCodeMirror.lastLine();
         scrollToLine(myCodeMirror, lineBeforeAppend); // Scroll to the line before the prompt
-        myCodeMirror.replaceRange(`\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(lineBeforeAppend));
+        myCodeMirror.replaceRange(`\n\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(lineBeforeAppend));
         scrollToLine(myCodeMirror, lineBeforeAppend + 1); // Scroll to the line just after the prompt
         userScrolledUp = false;
         isFirstAutoModeMessage = false;

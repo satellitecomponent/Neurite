@@ -259,31 +259,53 @@ let shouldAddCodeButton = false;
                     return;
                 }
 
-                let newName = getUniqueNodeTitle(inputElement.value, nodes, node.countAdded);
-                inputElement.value = newName;
+                let newName = inputElement.value.trim().replace(",", "");
+
+                // If a count was previously added, attempt to remove it
+                if (node.countAdded) {
+                    const updatedTitle = newName.replace(/\(\d+\)$/, '').trim();
+                    if (updatedTitle !== newName) {
+                        newName = updatedTitle;
+                        inputElement.value = newName;
+                        node.countAdded = false;
+                    }
+                }
 
                 const name = node.title;
-                if (newName === name) {
+                if (newName === node.title) {
                     return;
                 }
 
                 delete nodes[name];
+                let countAdded = false;
+                if (nodes[newName]) {
+                    let count = 2;
+                    while (nodes[newName + "(" + count + ")"]) {
+                        count++;
+                    }
+                    newName += "(" + count + ")";
+                    inputElement.value = newName;
+                    countAdded = true;
+                }
+
                 nodes[newName] = node;
                 node.title = newName;
-                node.countAdded = /\(\d+\)$/.test(newName);
 
                 // Set cursor position to before the count if a count was added
-                if (node.countAdded) {
+                if (countAdded) {
                     const cursorPosition = newName.indexOf("(");
                     inputElement.setSelectionRange(cursorPosition, cursorPosition);
                 }
 
-                const f = renameNode(name, newName);
+                node.countAdded = countAdded;
+
+                const f = renameNode(name, inputElement.value);
                 noteInput.setValue(f(noteInput.getValue()));
                 noteInput.refresh();
-                scrollToTitle(newName, noteInput);
+                scrollToTitle(node.title, noteInput);
             };
         }
+
 
         //Syncs node text and Zettelkasten
         getHandleNodeBodyInputEvent(node) {

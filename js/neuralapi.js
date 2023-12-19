@@ -219,14 +219,21 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
 
             try {
                 animateTransition(0, 1, duration, (t) => {
+                    // Regular animation steps
                     zoomTo = targetZoom;
                     panTo = targetPan;
                 }, easeInOutCubic, () => {
+                    // Completion callback
                     activeAnimationsCount--;
                     autopilotSpeed = 0;
                     console.log("Animation completed, count:", activeAnimationsCount);
-                    resolve(); // Resolve the promise on completion
+                    resolve();
                 }, () => {
+                    // Bailout condition
+                    if (autopilotSpeed === 0) {
+                        console.log("Animation interrupted by user interaction.");
+                        return true; // Indicate that the animation should be terminated
+                    }
                     return zoom.closeEnough(targetZoom, autopilotThreshold) && pan.closeEnough(targetPan, autopilotThreshold);
                 });
             } catch (error) {
@@ -253,6 +260,125 @@ vec2.prototype.closeEnough = function (target, autopilotThreshold) {
     return this.minus(target).mag() < autopilotThreshold;
 };
 
+
+function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
+    return new Promise((resolve) => {
+        activeAnimationsCount++;
+        autopilotReferenceFrame = undefined;
+        let node;
+
+        // First check if the argument is a node object
+        if (typeof nodeOrTitle === 'object' && nodeOrTitle !== null) {
+            node = nodeOrTitle; // Use the node object directly
+        } else if (typeof nodeOrTitle === 'string') {
+            const cm = window.myCodemirror;
+            node = scrollToTitle(nodeOrTitle, cm); // Find the node by title
+        } else {
+            console.error("Invalid argument. Must be a node title or a node object.");
+            resolve();
+            return;
+        }
+
+        if (node) {
+            let bb = node.content.getBoundingClientRect();
+            if (bb && bb.width > 0 && bb.height > 0) {
+                node.zoom_to_fit();
+                zoomTo = zoomTo.scale(1.5);
+            } else {
+                node.zoom_to(0.5);
+            }
+            autopilotSpeed = settings.autopilotSpeed;
+        }
+
+        let intervalCheck;
+        const checkForInterruption = () => {
+            if (autopilotSpeed === 0) {
+                console.log("Animation interrupted by user interaction.");
+                clearInterval(intervalCheck);
+                activeAnimationsCount--;
+                resolve();
+            }
+        };
+
+        intervalCheck = setInterval(checkForInterruption, 100); // Check every 100 milliseconds
+
+        // Use a 3-second timeout to end animation
+        setTimeout(() => {
+            clearInterval(intervalCheck); // Clear interval check regardless of the state
+            if (autopilotSpeed !== 0) {
+                //console.log("Animation completed normally.");
+            }
+            activeAnimationsCount--;
+            resolve();
+        }, 3000); // 3 seconds
+    });
+}
+
+async function neuriteSearchNotes(searchTerm, maxNodesOverride = null) {
+    const nodesArray = Object.values(nodes); // Assuming this contains full node objects
+
+    // Clear previous search highlights
+    clearSearchHighlights(nodesArray); // Clears "search_matched" class from all nodes
+
+    // Find matched nodes (partial nodes) using the search term
+    const matchedPartialNodes = await embeddedSearch(searchTerm, maxNodesOverride);
+
+    // Initialize an array to hold the full matched nodes
+    const fullMatchedNodes = [];
+
+    // Iterate over each partial matched node
+    for (const partialNode of matchedPartialNodes) {
+        // Find the corresponding full node in nodesArray using the uuid
+        const fullNode = nodesArray.find(n => n.uuid === partialNode.uuid);
+
+        // If the full node is found
+        if (fullNode) {
+            // Add "search_matched" class for highlighting
+            if (fullNode.content) {
+                fullNode.content.classList.add("search_matched");
+            }
+
+            // Add the full node to the array of matched nodes
+            fullMatchedNodes.push(fullNode);
+            console.log(`fullNode`, fullNode);
+        }
+    }
+
+    // Return the array of full matched nodes
+    return fullMatchedNodes;
+}
+
+
+async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            activeAnimationsCount++;
+
+            // Search for nodes based on the searchTerm
+            const matchedNodes = await neuriteSearchNotes(searchTerm, maxNodesOverride);
+
+            // Loop through each matched node and zoom to it
+            for (const node of matchedNodes) {
+                await neuriteZoomToNodeTitle(node, zoomLevel);
+
+                // Wait for the specified delay before moving to the next node
+                await new Promise(r => setTimeout(r, delayBetweenNodes));
+            }
+
+            activeAnimationsCount--;
+            console.log("Search and Zoom sequence completed!", activeAnimationsCount);
+            resolve(); // Resolve the promise when the sequence is completed
+        } catch (error) {
+            console.error("An error occurred during the Search and Zoom sequence:", error);
+            activeAnimationsCount--;
+            reject(error); // Reject the promise in case of an error
+        }
+    });
+}
+
+
+// Example usage
+// neuriteSearchAndZoom("desired search term", null, 1.0, 3000);
 
 function neuriteResetView(animate = true, duration = 2000) {
     return new Promise((resolve, reject) => {
@@ -316,6 +442,11 @@ function neuriteReceiveCurrentView() {
     // Prompt user for a title for the saved view
     const title = prompt("Enter a title for the saved view:");
 
+    // Check if the user cancelled the prompt
+    if (title === null) {
+        return null; // Return null to indicate cancellation
+    }
+
     // Return an object containing the title, standard format, and function call
     return {
         title: title,
@@ -324,28 +455,113 @@ function neuriteReceiveCurrentView() {
     };
 }
 
+// https://www.mrob.com/pub/muency/colloquialnames.html
 
 const defaultSavedViews = [
-    // Example format for each saved view
     {
-        title: "Default View 1",
-        standardCoords: { zoom: "1.0", pan: "0.0+i0.0" },
-        functionCall: "setMandelbrotCoords(1.0, 0.0, 0.0, true, 0.1);"
+        "title": "// Seahorse Valley West",
+        "standardCoords": {
+            "zoom": "0.0000017699931315047657",
+            "pan": "-0.7677840466850392+i-0.10807751495298584"
+        },
+        "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1, true);"
     },
-    // Add more predefined views here
+    {
+        "title": "// Double Scepter Valley",
+        "standardCoords": {
+            "zoom": "0.000017687394673278873",
+            "pan": "-0.13115417841259247+i-0.8429048341831951"
+        },
+        "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1, true);"
+    },
+    {
+        "title": "// Quad Spiral Valley",
+        "standardCoords": {
+            "zoom": "6.622764227402511e-7",
+            "pan": "0.35871212237104466+i0.614868924400545"
+        },
+        "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1, true);"
+    },
+    {
+        "title": "// North Radical",
+        "standardCoords": {
+            "zoom": "0.01666349480736333",
+            "pan": "-0.17757277666659035+i-1.0860005295937438"
+        },
+        "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1, true);"
+    },
+    {
+        "title": "// South Radical",
+        "standardCoords": {
+            "zoom": "0.022493365230716315",
+            "pan": "-0.17709676066268798+i1.0856909324960642"
+        },
+        "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1, true);"
+    },
+    {
+        "title": "// Shepherds Crook",
+        "standardCoords": {
+            "zoom": "0.000029460494639545112",
+            "pan": "-0.7450088997859019+i-0.11300333384642439"
+        },
+        "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1, true);"
+    },
+    {
+        "title": "// Triple Spiral Valley",
+        "standardCoords": {
+            "zoom": "0.0002361832763705042",
+            "pan": "-0.15629012673807463+i0.6534879139112698"
+        },
+        "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1, true);"
+    }
 ];
 
 function generateCopyPasteSavedViews() {
     return JSON.stringify(savedViews, null, 2);
 }
 
-let savedViews = [...defaultSavedViews];
+let savedViews;
+
+function updateSavedViewsCache() {
+    localStorage.setItem('savedViews', JSON.stringify(savedViews));
+}
+
+function getSavedViewsFromCache() {
+    const cachedViews = localStorage.getItem('savedViews');
+    return cachedViews ? JSON.parse(cachedViews) : null;
+}
+
+// Function to initialize saved views
+function initializeSavedViews() {
+    const cachedViews = getSavedViewsFromCache();
+    savedViews = cachedViews ? cachedViews : [...defaultSavedViews];
+}
+
+initializeSavedViews();
 
 function neuriteSaveCurrentView() {
     const view = neuriteReceiveCurrentView();
+
+    if (view === null) {
+        console.log("View save cancelled by user.");
+        return;
+    }
+
     savedViews.push(view);
     console.log("View saved:", view.title);
+
+    // Update the browser cache
+    updateSavedViewsCache();
+
+    // Update button text temporarily
+    const saveButton = document.getElementById('saveCoordinatesBtn');
+    saveButton.textContent = 'Saved!';
+    setTimeout(() => saveButton.textContent = 'Save Coordinates', 1000);
 }
+
+document.getElementById('saveCoordinatesBtn').addEventListener('click', function () {
+    neuriteSaveCurrentView();
+});
 
 
 
@@ -370,7 +586,12 @@ function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
 }
 
 function listSavedViews() {
-    return savedViews.map(v => v.title);
+    return savedViews.map(view => {
+        return {
+            title: view.title,
+            coordinates: view.standardCoords
+        };
+    });
 }
 
 function selectAndReturnToSavedView(animate = true, speed = 0.1) {
@@ -430,14 +651,6 @@ function shuffleArray(array) {
     return array;
 }
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
 
 function neuriteCaptureScreenshot() {
     if (window.startedViaPlaywright) {
@@ -459,8 +672,11 @@ function neuriteCaptureScreenshot() {
     }
 }
 
+function neuriteDelay(delay) {
+    return new Promise(resolve => setTimeout(resolve, delay));
+}
 
-
+// Verbose Schema
 async function neuriteAnimationQueue(animations) {
     for (const animation of animations) {
         const { action, params, delayBefore = 0, delayAfter = 0 } = animation;
@@ -481,6 +697,7 @@ async function neuriteAnimationQueue(animations) {
     }
 }
 
+// Enchanced to reduce size of request format.
 async function neuriteQueueAnimations(animations) {
     // Artificially increment the animation count
     activeAnimationsCount++;
@@ -548,6 +765,7 @@ async function neuriteReturnScreenshot() {
         }
     });
 }
+
 
 async function neuriteCallMovementAi(movementIntention, totalIterations = 1, currentIteration = 0) {
     if (currentIteration < totalIterations) {
@@ -656,38 +874,6 @@ function neuriteZoomToNodeTitle(nodeTitle, zoomLevel = 1.5) {
 */
 
 
-function neuriteZoomToNodeTitle(nodeTitle, zoomLevel = 1.0) {
-    return new Promise((resolve, reject) => {
-        activeAnimationsCount++;
-        autopilotReferenceFrame = undefined;
-        const cm = window.myCodemirror;
-        // Scroll to the title
-        const node = scrollToTitle(nodeTitle, cm);
-        if (node) {
-            let bb = node.content.getBoundingClientRect();
-
-            // Check if the bounding rectangle exists
-            if (bb && bb.width > 0 && bb.height > 0) {
-                // Zoom to fit the node if the bounding rectangle exists
-                node.zoom_to_fit();
-                zoomTo = zoomTo.scale(1.5);
-            } else {
-                // Use alternative zoom method if the bounding rectangle does not exist
-                node.zoom_to(.5);
-            }
-            autopilotSpeed = settings.autopilotSpeed;
-        }
-
-        // Resolve the promise after 4 seconds
-        setTimeout(() => {
-            activeAnimationsCount--;
-            autopilotSpeed = 0;
-            autopilotReferenceFrame = undefined;
-            console.log("Animation completed, count:", activeAnimationsCount);
-            resolve();
-        }, 4000);
-    });
-}
 
 let resolveAiMessage;
 let aiMessagePromise;
@@ -747,6 +933,7 @@ function neuriteGetUserResponse(message) {
 
 function neuriteAddNote(nodeTitle, nodeText) {
     return new Promise((resolve) => {
+        activeAnimationsCount++;
         let formattedNodeTitle = nodeTitle.replace(/\n/g, ' ');
         formattedNodeTitle = neuriteGetUniqueNodeTitle(formattedNodeTitle);
 
@@ -775,8 +962,11 @@ function neuriteAddNote(nodeTitle, nodeText) {
 
         scrollToTitle(formattedNodeTitle, codeMirror); // returns the node
 
-        // Resolve the promise after a short timeout
-        setTimeout(() => resolve(formattedNodeTitle), 300);
+        // Resolve the promise and decrement the active animations count after a short timeout
+        setTimeout(() => {
+            resolve(formattedNodeTitle);
+            activeAnimationsCount--;  // Decrement the count here
+        }, 300);
     });
 }
 
@@ -815,7 +1005,7 @@ registerFunctions([
     {
         baseFunctionName: 'neuriteAddNote',
         baseFunction: neuriteAddNote,
-        alternateNames: ['addNote', 'createNote', 'zettelkastenAddNote']
+        alternateNames: ['addNote', 'createNote', 'zettelkastenAddNote', `promptNote`]
     },
     {
         baseFunctionName: 'neuritePromptZettelkasten',
@@ -824,13 +1014,13 @@ registerFunctions([
     },
     {
         baseFunctionName: 'neuriteGetUserResponse',
-        baseFunction: neuriteMovement,
+        baseFunction: neuriteGetUserResponse,
         alternateNames: ['getUserResponse', 'promptUser', 'requestUserResponse']
     },
     {
         baseFunctionName: 'neuriteZoomToNodeTitle',
         baseFunction: neuriteZoomToNodeTitle,
-        alternateNames: ['zoomToNodeTitle', 'focusNode', 'zoomToNote']
+        alternateNames: ['zoomToNodeTitle', 'focusNode', 'zoomToNote', 'zoomToNoteByTitle', `zoomToNode`]
     },
     {
         baseFunctionName: 'neuriteCallMovementAi',
@@ -840,7 +1030,7 @@ registerFunctions([
     {
         baseFunctionName: 'neuriteQueueAnimations',
         baseFunction: neuriteQueueAnimations,
-        alternateNames: ['queueAnimations', 'performSequence', 'sequenceAnimations']
+        alternateNames: ['queueAnimations', 'performSequence', 'neuritePerformSequence']
     },
     {
         baseFunctionName: 'neuriteResetView',
@@ -850,15 +1040,33 @@ registerFunctions([
     {
         baseFunctionName: 'neuriteSetMandelbrotCoords',
         baseFunction: neuriteSetMandelbrotCoords,
-        alternateNames: ['setMandelbrotCoords', 'updateMandelbrotPosition', 'changeMandelbrotCoords']
+        alternateNames: ['setMandelbrotCoords', 'updateMandelbrotPosition', 'mandelbrotCoords']
     },
     {
         baseFunctionName: 'neuriteMovement',
         baseFunction: neuriteMovement,
         alternateNames: ['movement', 'startMovement', 'performMovement']
+    },
+    {
+        baseFunctionName: 'neuriteDelay',
+        baseFunction: neuriteDelay,
+        alternateNames: ['delay', 'setDelay']
+    },
+    {
+        baseFunctionName: 'neuriteSearchNotes',
+        baseFunction: neuriteSearchNotes,
+        alternateNames: ['searchNotes', 'returnSearchedNodes', `returnRelevantNodes`]
+    },
+    {
+        baseFunctionName: 'neuriteSearchAndZoom',
+        baseFunction: neuriteSearchAndZoom,
+        alternateNames: ['searchAndZoom', 'searchZoom', `zoomToRelevantNodes`]
     }
+
     // Add any additional functions and their alternate names here...
 ]);
+
+
 
 function buildFunctionNameList() {
     let allFunctionNames = [];

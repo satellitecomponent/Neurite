@@ -22,9 +22,25 @@ functionPrompt.addEventListener('keydown', (event) => {
     }
 });
 
+// Define a global variable to store the most recent message
+let mostRecentFunctionMessage = "";
+
+// Event listener for the regen button
+functionRegenButton.addEventListener('click', () => {
+    // Set the function prompt's value to the most recent message
+    functionPrompt.value = mostRecentFunctionMessage;
+});
+
+// Function to update the most recent message
+function updateMostRecentMessage(newMessage) {
+    mostRecentFunctionMessage = newMessage;
+}
+
+// Function to handle new message requests
 async function requestFunctionCall() {
     let userMessage = functionPrompt.value.trim();
-
+    // Update the most recent message
+    updateMostRecentMessage(userMessage);
     // If the textarea is empty, prompt the user for input
     if (userMessage === '') {
         userMessage = prompt("Enter message:");

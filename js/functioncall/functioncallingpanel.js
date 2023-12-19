@@ -75,7 +75,23 @@ function updateNeuriteFunctionCMContent(content) {
     neuriteFunctionCM.refresh();
 }
 
+let userScrolledUpFunctionPanel = false;
 
+// Scroll event listener
+neuriteFunctionCM.on("scroll", function () {
+    var scrollInfo = neuriteFunctionCM.getScrollInfo();
+    var atBottom = scrollInfo.height - scrollInfo.top - scrollInfo.clientHeight < 1;
+    userScrolledUpFunctionPanel = !atBottom;
+});
+
+// Change event listener
+neuriteFunctionCM.on("change", function () {
+    if (!userScrolledUpFunctionPanel) {
+        // Scroll to the bottom
+        var scrollInfo = neuriteFunctionCM.getScrollInfo();
+        neuriteFunctionCM.scrollTo(null, scrollInfo.height);
+    }
+});
 
 
 // Function to toggle the visibility of the function call panel
