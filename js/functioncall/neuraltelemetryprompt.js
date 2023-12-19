@@ -372,5 +372,5 @@ const neuriteNeuralApiPrompt = neuralApiPrompt();
 const neuriteNeuralVisionPrompt = visionPrompt();
 
 // Example console log
-console.log(neuriteNeuralApiPrompt);
+//console.log(neuriteNeuralApiPrompt);
 //console.log(neuriteNeuralVisionPrompt);
