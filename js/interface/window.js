@@ -67,9 +67,6 @@ function windowify(title, content, pos, scale, iscale, link) {
         }
     });
 
-    // Calculate the width of buttons
-    let buttonsWidth = w.offsetWidth;
-
     // Add the title input to the header container
     let titleInput = document.createElement('input');
     titleInput.setAttribute('type', 'text');
@@ -141,14 +138,23 @@ function rewindowify(node) {
         e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
     }
 
+    // Retrieve title input from the node
+    let titleInput = node.content.querySelector('.title-input');
+
+
     function ui(e, cb = (() => { }), s = "fill") {
         e.onmouseenter = (ev) => {
             set(e, "hover", s);
-        }
+        };
         e.onmouseleave = (ev) => {
-            set(e, "initial", s);
+            // Check if title input is focused and set the state accordingly
+            if (titleInput.matches(':focus')) {
+                set(e, "focus", s);  // Use the "focus" state when title input is focused
+            } else {
+                set(e, "initial", s); // Otherwise, use the "initial" state
+            }
             e.ready = false;
-        }
+        };
         e.onmousedown = (ev) => {
             set(e, "click", s);
             e.ready = true;
@@ -189,6 +195,33 @@ function rewindowify(node) {
             node.stopFollowingMouse();
         }
     });
+
+    // Function to update SVG fill or stroke color based on focus
+    function updateSvgStrokeColor(focused) {
+        let fillColor = focused ? settings.buttonGraphics.focus[1] : settings.buttonGraphics.initial[1];
+        let strokeColor = focused ? settings.buttonGraphics.focus[1] : settings.buttonGraphics.initial[1];
+
+        let del = node.content.querySelector("#button-delete");
+        let fs = node.content.querySelector("#button-fullscreen");
+        let col = node.content.querySelector("#button-collapse");
+
+        del.children[1].setAttribute('fill', fillColor);
+        fs.children[1].setAttribute('fill', fillColor);
+        col.children[1].setAttribute('stroke', strokeColor);
+    }
+
+
+    // Add focus and blur event listeners to the title input
+    if (titleInput) {
+        titleInput.addEventListener('focus', function () {
+            updateSvgStrokeColor(true);
+        });
+
+        titleInput.addEventListener('blur', function () {
+            updateSvgStrokeColor(false);
+        });
+    }
+
 
     return node;
 }

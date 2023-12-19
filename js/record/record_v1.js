@@ -2,53 +2,54 @@ let mediaStream = null;
 let mediaRecorder = null;
 let recordedChunks = [];
 
-async function captureScreenshot() {
-    // Capture the media stream of the screen
-    mediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { width: 1920, height: 1080 }
-    });
-
-    // Create a video element to receive the stream
+async function captureScreenToBase64() {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const video = document.createElement('video');
-    video.style.display = 'none';
-    video.srcObject = mediaStream;
+    video.srcObject = stream;
     video.autoplay = true;
+    video.style.display = 'none';
 
-    // Wait for the video to start playing
-    await new Promise((resolve) => video.onplaying = resolve);
+    return new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
-    // Create a canvas to capture a frame from the video
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = video.videoWidth * dpr;
-    canvas.height = video.videoHeight * dpr;
-    canvas.style.width = `${video.videoWidth}px`;
-    canvas.style.height = `${video.videoHeight}px`;
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
-    // Ensure all drawing operations are scaled
-    context.scale(dpr, dpr);
+            // Stop all tracks in the media stream to end it
+            stream.getTracks().forEach(track => track.stop());
 
-    // Draw a frame onto the canvas
-    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            resolve(canvas.toDataURL('image/png', 1.0));
+        };
 
-    // Stop all tracks in the media stream to end it
-    mediaStream.getTracks().forEach(track => track.stop());
+        video.onerror = (error) => {
+            console.error('Error capturing video:', error);
+            reject(error);
+        };
+    });
+}
 
-    // After stopping the media stream
-    const img = document.createElement('img');
-    img.src = canvas.toDataURL('image/png', 1.0);
-    img.style.width = '800px';
-    img.style.height = 'auto';
+async function captureScreenshot() {
+    try {
+        const base64Image = await captureScreenToBase64();
 
-    // Wait for the img to load before creating the node
-    img.onload = function () {
-        const node = createImageNode(img, "Screenshot"); // Pass the img element, not an array
-        htmlnodes_parent.appendChild(node.content);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-    };
+        const img = new Image();
+        img.src = base64Image;
+        img.style.width = '800px';
+        img.style.height = 'auto';
+
+        img.onload = function () {
+            const node = createImageNode(img, "Screenshot");
+            htmlnodes_parent.appendChild(node.content);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        };
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
 
@@ -166,7 +167,7 @@ async function stopRecording() {
     mediaStream.getTracks().forEach(track => track.stop());
 }
 
-document.getElementById('screenshotButton').addEventListener('click', captureScreenshot);
+//screenshot button moved to neuralapi.js
 document.getElementById('recordButton').addEventListener('click', () => {
     // If we're currently recording, stop recording
     if (mediaRecorder && mediaRecorder.state === 'recording') {

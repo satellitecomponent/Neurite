@@ -11,6 +11,16 @@ async function sendLLMNodeMessage(node, message = null) {
     //Initalize count for message trimming
     let contextSize = 0;
 
+    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connecteed nodes (default)
+    const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
+
+    // Choose the function based on checkbox state
+    let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
+
+    // Determine if there are any connected AI nodes
+    let hasConnectedAiNode = allConnectedNodes.some(n => n.isLLMNode);
+
+
     //Use Prompt area if message is not passed.
     node.latestUserMessage = message ? message : node.promptTextArea.value;
     // Clear the prompt textarea
@@ -29,26 +39,28 @@ async function sendLLMNodeMessage(node, message = null) {
         },
     ];
 
-    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID); // Use node property to get the correct select element
-
+    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID);
     const LocalLLMSelectValue = LocalLLMSelect.value;
     let selectedModel;
 
-    // Determine which model to use based on LocalLLMSelect's value
-    if (LocalLLMSelectValue === 'OpenAi') {
-        const globalModelSelect = document.getElementById('model-select');
-        const globalModelSelectValue = globalModelSelect.value;
-        // If the LocalLLMSelect is set to 'OpenAi', use the value from the global model select
-        selectedModel = globalModelSelectValue;
-    } else {
-        // Otherwise, use the LocalLLMSelect's value
-        selectedModel = LocalLLMSelectValue;
+    // Logic for dynamic model switching based on connected nodes
+    const hasImageNodes = allConnectedNodes.some(node => node.isImageNode);
+    selectedModel = determineModel(LocalLLMSelectValue, hasImageNodes);
+
+    function determineModel(LocalLLMValue, hasImageNodes) {
+        if (hasImageNodes) {
+            return 'gpt-4-vision-preview'; // Switch to vision model if image nodes are present
+        } else if (LocalLLMValue === 'OpenAi') {
+            const globalModelSelect = document.getElementById('model-select');
+            return globalModelSelect.value; // Use global model selection
+        } else {
+            return LocalLLMValue; // Use the local model selection
+        }
     }
 
     const isVisionModel = selectedModel.includes('gpt-4-vision');
     const isAssistant = selectedModel.includes('1106');
     console.log('Selected Model:', selectedModel, "Vision", isVisionModel, "Assistant", isAssistant);
-
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
     const customInstructions = customInstructionsTextarea ? customInstructionsTextarea.value.trim() : "";
@@ -60,15 +72,6 @@ async function sendLLMNodeMessage(node, message = null) {
             content: `RETRIEVE INSIGHTS FROM and ADHERE TO the following user-defined CUSTOM INSTRUCTIONS: ${customInstructions}`
         });
     }
-
-    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connecteed nodes (default)
-    const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
-
-    // Choose the function based on checkbox state
-    let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
-
-    // Determine if there are any connected AI nodes
-    let hasConnectedAiNode = allConnectedNodes.some(n => n.isLLMNode);
 
     if (hasConnectedAiNode) {
         node.shouldAppendQuestion = true;

@@ -30,7 +30,7 @@ function connectRandom(n) {
 }
 */
 
-function connectDistance(na, nb, linkStrength = .1, linkStyle = {
+function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     stroke: "none",
     "stroke-width": "0.005",
     fill: "lightcyan",
