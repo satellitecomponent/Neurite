@@ -130,7 +130,6 @@ let shouldAddCodeButton = false;
                 currentNodeTitle = this.processLine(line, lines, index, nodes, currentNodeTitle);
             });
 
-            //Below is an optimzation that was removed due to syncing of hidden textarea in node being lost.
             if (!processAll) { 
                 this.processChangedNode(lines, nodes);
             }
@@ -306,6 +305,7 @@ let shouldAddCodeButton = false;
                 scrollToTitle(node.title, noteInput);
             };
         }
+
 
         //Syncs node text and Zettelkasten
         getHandleNodeBodyInputEvent(node) {
@@ -602,3 +602,21 @@ let shouldAddCodeButton = false;
     //end of enclosure
 }
 
+function getUniqueNodeTitle(baseTitle, nodes, removeExistingCount = false) {
+    let newName = baseTitle.trim().replace(",", "");
+
+    // Remove existing count if needed
+    if (removeExistingCount) {
+        newName = newName.replace(/\(\d+\)$/, '').trim();
+    }
+
+    if (!nodes[newName]) {
+        return newName;
+    }
+
+    let counter = 2;
+    while (nodes[`${newName}(${counter})`]) {
+        counter++;
+    }
+    return `${newName}(${counter})`;
+}

@@ -237,10 +237,11 @@ function updateViewbox() {
     let d = zm * 2 * SVGzoom;
     let r = zoom.ang();
     //let rotCenter = fromZ(pan);// = {let s = window.innerWidth; return new vec2(.5*s,.5*s);}
-
+    let oldSVGzoom = SVGzoom;
+    let oldSVGpan = SVGpan;
+    
     let recalc = false;
     if (d < Math.abs(recenterThreshold * lc.x) || d < Math.abs(recenterThreshold * lc.y)) {
-        let oldPan = SVGpan;
         SVGpan = pan.scale(1);
         lc = toSVG(toZ(new vec2(0, 0)));
         //console.log("recentering...");
@@ -252,7 +253,7 @@ function updateViewbox() {
         recalc = true;
     }
     if (recalc) {
-        recalc_svg();
+        recalc_svg(oldSVGpan,oldSVGzoom);
     }
 
     let c = toSVG(pan); //center of rotation
@@ -293,12 +294,24 @@ function toSVG(coords) {
     return coords.minus(SVGpan).scale(SVGzoom);
 }
 
-function recalc_svg() {
-    //todo
-    //placeholder:
+function recalc_svg(oldSVGpan,oldSVGzoom) {
     let node = svg_bg;
-    while (node.firstChild) {
-        node.removeChild(node.lastChild);
+    for (let c of node.children){
+        let path = c.getAttribute("d");
+        let parts = path.split(/[, ]+/g);
+        let coord = 0;
+        let r = [];
+        for (let p of parts){
+            if (p.length && !isNaN(Number(p))){
+                let c = coord?'y':'x';
+                p = Number(p)/oldSVGzoom + oldSVGpan[c];
+                p = (p-SVGpan[c])*SVGzoom;
+                coord = 1-coord;
+            }
+            r.push(p);
+        }
+        c.setAttribute("d",r.join(" "));
+        c.setAttribute("stroke-width",c.getAttribute("stroke-width")*SVGzoom/oldSVGzoom);
     }
 }
 
@@ -572,26 +585,41 @@ function random_screen_pt_z() {
 }
 
 
+// https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+// Standard Normal variate using Box-Muller transform.
+function gaussianRandom2() {
+    const u = 1 - Math.random(); // Converting [0,1) to (0,1]
+    const v = Math.random();
+    const m = Math.sqrt( -2.0 * Math.log( u ) )
+    return new vec2( m * Math.cos( 2.0 * Math.PI * v ) , m * Math.sin( 2.0 * Math.PI * v ));
+}
+
+
+
 
 function render_hair(n) {
     let iters = settings.iterations;
     let maxLines = getMaxLines();
     let tries = 1;
     let pt;
-    do {
-        pt = random_screen_pt_z();
-        for (let i = (1 - Math.random() ** 2) * (tries * 4); i > 1; i--) {
-            let gz = mandGrad(iters, pt)
-            pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
-            //if (mand_i(pt,iters) > iters){
-            //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
-            //}
-        }
-        tries--;
-    } while (tries > 0 && mand_i(pt, iters) > iters)
-    /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
-        return;
-    }*/
+    if (Math.random() > flashlight_fraction){
+        do {
+            pt = random_screen_pt_z();
+            for (let i = (1 - Math.random() ** 2) * (tries * 4); i > 1; i--) {
+                let gz = mandGrad(iters, pt)
+                pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
+                //if (mand_i(pt,iters) > iters){
+                //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+                //}
+            }
+            tries--;
+        } while (tries > 0 && mand_i(pt, iters) > iters)
+        /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
+          return;
+          }*/
+    }else{
+        pt = gaussianRandom2().scale(flashlight_stdev).cmult(zoom).cadd(toZ(mousePos));
+    }
 
     //let level = mandelbrott_dist(256,pt);
     //let width = 1/(level+5)**2;
@@ -664,7 +692,7 @@ function render_hair(n) {
     pathn.setAttribute("stroke-opacity", "" + opacity);
     pathn.setAttribute("d", r);
     svg_bg.appendChild(pathn);
-    if (svg_bg.children.length > maxLines) {
+    while (svg_bg.children.length > maxLines) {
         svg_bg.removeChild(svg_bg.children[0]);
     }
 }
@@ -728,3 +756,123 @@ function findInfimum(iters, z, c = undefined) {
         z: bestz
     };
 }
+
+function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", "spike"]) {
+    let points = [];
+
+    if (methods.includes("cardioid")) {
+        // Generate points for the main cardioid
+        for (let i = 0; i < numPoints; i++) {
+            let theta = (i / numPoints) * 2 * Math.PI;
+            let r = (1 - Math.cos(theta)) / 2;
+            let x = r * Math.cos(theta) + 0.25;
+            let y = r * Math.sin(theta);
+            points.push({ x, y });
+        }
+    }
+
+    if (methods.includes("disk")) {
+        // Generate points for the period-2 disk
+        for (let i = 0; i < numPoints; i++) {
+            let theta = (i / numPoints) * 2 * Math.PI;
+            let r = 0.25;
+            let x = r * Math.cos(theta) - 1;
+            let y = r * Math.sin(theta);
+            points.push({ x, y });
+        }
+    }
+
+    if (methods.includes("spike")) {
+        // Generate points along the negative real axis spike
+        for (let i = 0; i < numPoints; i++) {
+            let x = -2 + (2 * i / numPoints); // Range from -2 to 0
+            let y = 0; // Imaginary part is close to zero
+            points.push({ x, y });
+        }
+    }
+
+    return points;
+}
+
+
+/* This code could be further adapted to create a movement feature that is limited to the perimeter of the Mandelbrot Set.
+
+function calculatePixelSpacing(svgElement) {
+// Extract scaling factors based on the current zoom level and SVG dimensions
+const scalingFactors = extractScalingFactors(svgElement);
+
+// Base spacing at the default zoom level (no zoom)
+const baseSpacing = 10; // This can be adjusted based on the level of detail desired
+
+// Adjust the spacing based on the zoom scale
+// Assuming that scalingFactors.scaleX and scaleY are proportional to the zoom level
+const adjustedSpacing = baseSpacing / Math.max(scalingFactors.scaleX, scalingFactors.scaleY);
+
+return adjustedSpacing;
+}
+
+    
+function isMandelbrotPixel(c, maxIter, escapeRadius) {
+let z = new vec2(0, 0);
+
+for (let i = 0; i < maxIter; i++) {
+    if (z.mag2() > escapeRadius) {
+        return false; // The point escapes, not part of the set
+    }
+    z = z.cmult(z).plus(c);
+}
+return true; // The point does not escape, part of the set
+}
+
+function isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius) {
+let c = toZ(new vec2(x, y));
+let isCurrentPixelInSet = isMandelbrotPixel(c, iters, escapeRadius);
+
+// Check neighboring pixels
+for (let dx = -pixelSpacing; dx <= pixelSpacing; dx += pixelSpacing) {
+    for (let dy = -pixelSpacing; dy <= pixelSpacing; dy += pixelSpacing) {
+        if (dx === 0 && dy === 0) continue; // Skip the current pixel
+
+        let neighborC = toZ(new vec2(x + dx, y + dy));
+        let isNeighborInSet = isMandelbrotPixel(neighborC, iters, escapeRadius);
+
+        if (isCurrentPixelInSet !== isNeighborInSet) {
+            return true; // Boundary found between inside and outside
+        }
+    }
+}
+return false;
+}
+
+function renderPerimeter(svgElement) {
+let iters = settings.iterations;
+let escapeRadius = 4;
+let pixelSpacing = calculatePixelSpacing(svgElement);
+
+for (let x = 0; x < window.innerWidth; x += pixelSpacing) {
+    for (let y = 0; y < window.innerHeight; y += pixelSpacing) {
+        let c = toZ(new vec2(x, y));
+        if (isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius)) {
+            // Convert back to screen coordinates and apply scaling
+            let screenCoords = fromZ(c);
+            screenCoords = screenCoords.scale(perimeterScaleFactor);
+
+            markBoundaryPoint(screenCoords.x, screenCoords.y, svgElement);
+        }
+    }
+}
+}
+
+function markBoundaryPoint(x, y, svgElement) {
+let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+circle.setAttribute("cx", x);
+circle.setAttribute("cy", y);
+circle.setAttribute("r", 2 * perimeterScaleFactor); // Apply scaling to the radius as well
+circle.setAttribute("fill", "red");
+circle.classList.add("perimeter-point");
+svgElement.appendChild(circle);
+}
+
+let svgElement = document.getElementById("svg_bg");
+renderPerimeter(svgElement);
+*/

@@ -59,3 +59,29 @@ function getImageNodeData(node) {
     // If there's no image data or URL, return null or an appropriate placeholder
     return null;
 }
+
+async function callVisionModel(messages, onStreamComplete) {
+    callAiApi({
+        messages: messages,
+        stream: true, // Assuming streaming is not required for vision model
+        customTemperature: null, // Or specify a custom temperature if needed
+        API_URL: "https://api.openai.com/v1/chat/completions",
+        onBeforeCall: () => {
+            isAiProcessing = true;
+            updateUiForProcessing();
+        },
+        onStreamingResponse: (content) => {
+            neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
+        },
+        onAfterCall: () => {
+            isAiProcessing = false;
+            updateUiForIdleState();
+            if (onStreamComplete) onStreamComplete(); // Call the callback after streaming is complete
+        },
+        onError: (error) => {
+            functionErrorIcon.style.display = 'block';
+            console.error("Error:", error);
+        },
+        modelOverride: 'gpt-4-vision-preview' // Override model to use gpt-4-vision-preview
+    });
+}

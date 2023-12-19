@@ -534,6 +534,7 @@ function openTab(tabId, element) {
             menuButton.classList.toggle("open");
             dropdownContent.classList.toggle("open");
             nodePanel.classList.toggle("open");
+
             // If the dropdown is opened, manually set the first tab to active and display its content
             if (dropdownContent.classList.contains("open")) {
                 var tablinks = document.getElementsByClassName("tablink");
@@ -684,6 +685,44 @@ setRenderQuality(getQuality());
             }
             document.getElementById("exponent_value").textContent = v;
         })
+
+
+// Function to update the flashlight strength and its display
+function updateFlashlightStrength() {
+    var strengthSlider = document.getElementById('flashlightStrength');
+    flashlight_fraction = parseFloat(strengthSlider.value);
+    document.getElementById('flashlightStrength_value').textContent = flashlight_fraction.toFixed(3);
+}
+
+// Function to update the flashlight radius and its display
+function updateFlashlightRadius() {
+    var radiusSlider = document.getElementById('flashlightRadius');
+    flashlight_stdev = parseFloat(radiusSlider.value);
+    document.getElementById('flashlightRadius_value').textContent = flashlight_stdev.toFixed(3);
+}
+
+// Adding event listeners to the sliders
+document.getElementById('flashlightStrength').addEventListener('input', updateFlashlightStrength);
+document.getElementById('flashlightRadius').addEventListener('input', updateFlashlightRadius);
+
+// Function to trigger an input event on a slider
+function triggerInputEvent(sliderId) {
+    var event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+    });
+    var slider = document.getElementById(sliderId);
+    slider.dispatchEvent(event);
+}
+
+// Setting the initial values of the sliders
+document.getElementById('flashlightStrength').value = flashlight_fraction;
+document.getElementById('flashlightRadius').value = flashlight_stdev;
+
+// Triggering the input event to refresh the sliders and update the display
+triggerInputEvent('flashlightStrength');
+triggerInputEvent('flashlightRadius');
+
         const submenuBtn = document.querySelector('.submenu-btn');
 
 document.getElementById('node-count-slider').addEventListener('input', function () {

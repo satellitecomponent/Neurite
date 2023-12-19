@@ -20,7 +20,7 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     let buttonCallback = null;
 
     let button = document.createElement("button");
-    button.innerHTML = "Render Code";
+    button.innerHTML = "Run Code";
     button.classList.add("code-button");
 
     // Initially hide the button
