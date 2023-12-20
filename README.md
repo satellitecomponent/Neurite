@@ -17,10 +17,12 @@ Why?
 
 Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
-Nodes encompass text, images, videos, code, or AI agents — and interweave within a personalized microcosm of your thoughts and inspirations.
+Neurite is unique in its ability to display the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal generation persists and regenerates as you interact!
+
+Nodes represent text, images, videos, code, or AI agents -- threading together a personalized microcosm of your thoughts and inspirations.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It provides a multifaceted landscape for complex thinking, stimulating creative exploration across ever-branching fractal pathways.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for thoughts and their ever-branching fractal pathways.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -38,18 +40,21 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 2. [Synchronized Knowledge Management](#synchronized-knowledge-management)
 3. [How to Use Neurite](#how-to-use-neurite)
 4. [FractalGPT](#fractalgpt)
-5. [Local Ai](#local-ai)
-6. [User Guide](#user-guide)
-7. [Local Server Setup](#local-server-setup)
-8. [Future of Neurite](#future-of-neurite)
-9. [Contact](#contact)
+5. [Neural API](#neural-api)
+6. [Local Ai](#local-ai)
+7. [User Guide](#user-guide)
+8. [Local Server Setup](#local-server-setup)
+9. [Future of Neurite](#future-of-neurite)
+10. [Contact](#contact)
 
 ## `Synchronized Knowledge Management`
 
 Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-based hyperlinking (Zettelkasten) methodology. This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
-- **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected in the Mind Map.
-- **Dynamic Fractal Backdrop**: The Mandelbrot fractal acts not just as an aesthetic element - but as an interactive generative landscape, offering the ability to zoom between detailed and broad views of your data.
+![notepanel](https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea)
+
+- **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
+- **Dynamic Fractal Backdrop**: The Mandelbrot fractal is not just as an aesthetic element - fractals are the interactive open-world landscape for multi-media composition.
 - **Zoom-to-Node**: Navigate through your Zettelkasten notes and zoom directly to their corresponding nodes within the Mandelbrot set.
 
 Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both the granular and macroscopic perspectives of your information.
@@ -59,11 +64,13 @@ Custom `node:` and `ref:` tags can be set in the ? tab of the main dropdown.
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, or i-frame content - directly into the Mandelbrot set. 
+### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly into the Mandelbrot set. 
 
 Drag and drop local files or web content straight into the fractal.
 
 Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links embeds them into an iframe if supported by the host.
+
+- Talk to [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. 
 
 ### `Controls`
   *Full controls are listed in the ? tab within Neurite's main dropdown.
@@ -87,20 +94,19 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
 Or, drag in nodes from the dropdown.
 
 `UI Tips`
-
-- Talk to [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. 
-- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will not have any space to spread out and be too big relative to the fractal.
+- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will not have any space to spread out and become too big relative to the fractal.
 - When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
 - Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
 - The AI tab has controls for token limit, temperature, number of searched nodes sent as context, and length of recent conversation sent. (You may need to turn up the token count for longer conversations.)
 - Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
-## FractalGPT
+## `FractalGPT`
 
 ### `Not your typical chat interface`
 - **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory through our biomimetic interface.
 - **Limitless AI Agents:** Create and connect an endless number of individual chat windows, or let the AI take notes from above.
 - **Fractal Interface:** Utilize a custom fractal environment designed for Iterative Exploratory Learning.
-- **Custom Tool Creation:**  Connect nodes that contain code blocks together to run html/css/js in an iframe, or Python via Pyodide.
+- **Custom Tool Creation**  Connect nodes that contain code blocks together to run html/css/js in an iframe, or Python via Pyodide.
+- **Neurite Function Calling** Call Neurite functions from within Neurite, and let the Ai take full control with context from the newly released Neural API
 
 ### `Modular Conversation`
 
@@ -112,7 +118,7 @@ In Neurite, you don't just interact with AI; you grow its contextual memory, tha
 - **Intuitive Note Navigation:** Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.
 
 ### `Unbounded AI Exploration`
-An open world generative landscape for thought integrated with cutting edge artificial intelligence.
+An open world generative landscape for thought integrated with artificial intelligence.
 
 Connect to the AI using an OpenAI API key or from directly within your browser via [webLLM](https://mlc.ai/web-llm/). Let the Mandelbrot set shape the endless topology for your mind-map, guiding it into an interconnected tapestry of thoughts, references, and creativity.
 
@@ -132,6 +138,37 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/ddcfe933-84d1-422
 - **Wolfram Alpha Results**: Experience our unique implementation of integrating Wolfram with AI.
 
 All API keys can be input through the AI tab in the menu dropdown.
+
+## `Neural API`
+<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="movementapi" width="300">
+
+The newest addition to Neurite is our function calling panel.
+
+This feature allows you to execute Neurite's code from within Neurite itself.
+
+Included with the function calling panel is our Neural API. The Neural API is a growing collection of existing features within Neurite, made accesible, chainable, and easy to set. The current features include,
+- Animate movements through the Mandelbrot set
+- Determine exact coordinates to zoom to
+- Call GPT 4 Vision to determine the next movement. (set number of iterations)
+- Create notes
+- Prompt the Zettelkasten Ai
+- Prompt the user
+- Search and Zoom to Notes
+
+You can call on GPT to construct the sequences of function calls itself. It has access to the documentation.
+
+All of these features can be called as a sequence or as decided by your code.
+
+For the current documentation, try calling ...
+
+```javascript
+const neuralAPI = neuralApiPrompt();
+console.log(neuralAPI);
+```
+
+... the current Neural API documentation will display in your call history for the function calling panel and your browser console.
+
+There will be more information on this soon. This is a new feature in its initial release.
 
 ## `Local Ai`
 
