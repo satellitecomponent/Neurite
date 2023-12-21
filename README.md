@@ -19,10 +19,10 @@ Fractals are not just an aesthetic choice, their inner logic is ingrained into a
 
 Neurite is unique in its ability to display the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal generation persists and regenerates as you interact!
 
-Nodes represent text, images, videos, code, or AI agents -- threading together a personalized microcosm of your thoughts and inspirations.
+Nodes representing text, images, videos, code, or AI agents -- thread a personalized microcosm of your thoughts and inspirations.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for thoughts and their ever-branching fractal pathways.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for the ever branching fractal pathways of thought.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -142,11 +142,11 @@ All API keys can be input through the AI tab in the menu dropdown.
 ## `Neural API`
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="movementapi" width="300">
 
-The newest addition to Neurite is our function calling panel.
+The newest update to Neurite is our function calling panel.
 
-This feature allows you to execute Neurite's code from within Neurite itself.
+This feature is terminal that allows you to execute Neurite's code from within Neurite itself.
 
-Included with the function calling panel is our Neural API. The Neural API is a growing collection of existing features within Neurite, made accesible, chainable, and easy to set. The current features include,
+Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include,
 - Animate movements through the Mandelbrot set
 - Determine exact coordinates to zoom to
 - Call GPT 4 Vision to determine the next movement. (set number of iterations)
@@ -159,14 +159,14 @@ You can call on GPT to construct the sequences of function calls itself. It has 
 
 All of these features can be called as a sequence or as decided by your code.
 
-For the current documentation, try calling ...
+For the current documentation, try calling the below from within the function panel...
 
 ```javascript
 const neuralAPI = neuralApiPrompt();
 console.log(neuralAPI);
 ```
 
-... the current Neural API documentation will display in your call history for the function calling panel and your browser console.
+... the current Neural API documentation will display in your call history for the function calling panel as well as in your browser console.
 
 There will be more information on this soon. This is a new feature in its initial release.
 
