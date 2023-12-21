@@ -22,7 +22,7 @@ Neurite is unique in its ability to display the Mandelbrot set in real time. Mov
 Nodes representing text, images, videos, code, or AI agents -- thread a personalized microcosm of your thoughts and inspirations.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for the ever branching fractal pathways of thought.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for the ever branching pathways of thought.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
