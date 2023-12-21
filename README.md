@@ -54,7 +54,7 @@ Neurite provides markdown formatted, bi-directional synchronization between UI-f
 ![notepanel](https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea)
 
 - **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
-- **Dynamic Fractal Backdrop**: The Mandelbrot fractal is not just as an aesthetic element - fractals are the interactive open-world landscape for multi-media composition.
+- **Dynamic Fractal Backdrop**: The Mandelbrot fractal is not just an aesthetic element - fractals are the interactive open-world landscape for multi-media composition.
 - **Zoom-to-Node**: Navigate through your Zettelkasten notes and zoom directly to their corresponding nodes within the Mandelbrot set.
 
 Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both the granular and macroscopic perspectives of your information.
