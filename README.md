@@ -19,10 +19,10 @@ Fractals are not just an aesthetic choice, their inner logic is ingrained into a
 
 Neurite is unique in its ability to display the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal generation persists and regenerates as you interact!
 
-Nodes representing text, images, videos, code, or AI agents -- thread a personalized microcosm of your thoughts and inspirations.
+Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
 
 ### `Complexity Inspires Creativity`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for the ever branching pathways of thought.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It is a multifaceted landscape for ever branching pathways of thought.
 
 ### **Available through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/)
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -33,7 +33,7 @@ See the User Guide for instructions on running locally
 
 🌱 This is an open-source project in active development, we are looking to grow our team! 🚧
 
-feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
+feel free to join our [Discord](https://discord.gg/d7p3zZp3)!
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
@@ -49,15 +49,17 @@ feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-based hyperlinking (Zettelkasten) methodology. This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
+Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-focused hyperlinking (Zettelkasten) methodology.
+
+This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
 ![notepanel](https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea)
 
 - **Bi-Directional Sync**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
-- **Dynamic Fractal Backdrop**: The Mandelbrot fractal is not just an aesthetic element - fractals are the interactive open-world landscape for multi-media composition.
-- **Zoom-to-Node**: Navigate through your Zettelkasten notes and zoom directly to their corresponding nodes within the Mandelbrot set.
+- **Dynamic Fractal Backdrop**: The Mandelbrot fractal is not just an aesthetic element - fractals set the stage for an interactive open-world landscape of multi-media composition.
+- **Zoom-to-Node**: Navigate through your notes from within the Zettelkasten, and zoom directly to their corresponding nodes within the Mandelbrot set. Conversely, clicking the fullscreen of a text node navigates to the corresponding note in the Zettelkasten.
 
-Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity is further elevated by the ability to zoom directly to specific nodes within the Mandelbrot set from the Zettelkasten, offering unprecedented control over both the granular and macroscopic perspectives of your information.
+Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity offers unprecedented control over both the granular and macroscopic perspectives of your information.
 
 Custom `node:` and `ref:` tags can be set in the ? tab of the main dropdown.
 
@@ -113,7 +115,7 @@ Or, drag in nodes from the dropdown.
 In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:
 
 - **Structured Memory Mapping:** Anchor the AI's thought process as notes within an evolving fractal mind map.
-- **Graph your AI Conversations:** Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for further processing to construct the Ai's memory.
+- **Graph your AI Conversations:** Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for the history and chains of your conversation to dynamically construct the Ai's memory.
 - **Interactive Fractal Network:** Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.
 - **Intuitive Note Navigation:** Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.
 
@@ -168,7 +170,7 @@ console.log(neuralAPI);
 
 ... the current Neural API documentation will display in your call history for the function calling panel as well as in your browser console.
 
-There will be more information on this soon. This is a new feature in its initial release.
+There will be more information on this soon. This is a new feature in initial release.
 
 ## `Local Ai`
 
@@ -178,12 +180,12 @@ Above is an example of conversation history being shared between GPT-4 and a Loc
 
 ### Ai Nodes allow for the creation of an arbitrary number of Ai Agents with the ability to connect memories together.
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
-- Connected Ai nodes will now send messages to one another. This is still in an early expirmental state. (`Hold Shift and Click` two node windows to connect them together)
+- Connected Ai nodes will now send messages to one another. This has been improved but contains endless possiblities. (`Hold Shift and Click` two node windows to connect them together)
 - Supports Local and OpenAi models concurrently.
 
 ### Inter-AI Communication
 - **Message Looping:** Initiate conversational loops among connected AI nodes.
-- **Prompt Generation:** Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to other connected nodes.
+- **Prompt Generation:** Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.
 - **Unique & Shared Instructions:**
   - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
   - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because...
@@ -239,11 +241,11 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 
 
 ### `Notes`
-- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming you to the node you are looking for. The navigational experience isn't just a convenience; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
+- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
 - Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. This is still in an early state.
-- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
+- Zettelkasten and Mind Mapping: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be worked with from a variety of different scales and interfaces. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. In Neurite, you don't have to choose between either approach. Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 
-The Zettelkasten note taking method accesses tapestry of thought reasoning for Ai, all within our innovate real-time Mandelbrot visualization.
+Neurite realizes tapestry of thought reasoning for Ai, all within our innovative real-time Mandelbrot visualization.
 
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
@@ -267,11 +269,15 @@ The Zettelkasten note taking method accesses tapestry of thought reasoning for A
 - VR
 - deeper fractal zoom
 
+✅ Global Function Calling
+  
+✅ Global Function Calling
+
 🔄 Ai cursor control
   
 ✅ color selection
 
-✅ adjust width, length, max lines, speed
+✅ adjust fractal generation (width, length, max lines, speed)
 
 ✅ screen recording
 
@@ -290,7 +296,7 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-417
 
 ## `Contact`
 
-If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/hnY8UpeE22) 🔗
+If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/d7p3zZp3) 🔗
 
 ![Neuritereadme4fps360](https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e)
 full video [here](https://youtu.be/1VmE_Bov-Xw)
