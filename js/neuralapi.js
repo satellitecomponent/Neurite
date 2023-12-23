@@ -1010,7 +1010,7 @@ registerFunctions([
     {
         baseFunctionName: 'neuritePromptZettelkasten',
         baseFunction: neuritePromptZettelkasten,
-        alternateNames: ['promptZettelkasten', 'zettelkastenPrompt', 'promptZettelkastenAi', 'callZettelkastenAi']
+        alternateNames: ['promptZettelkasten', 'zettelkastenPrompt', 'promptZettelkastenAi', 'callZettelkastenAi', `zettelkastenAi`]
     },
     {
         baseFunctionName: 'neuriteGetUserResponse',
@@ -1061,7 +1061,7 @@ registerFunctions([
         baseFunctionName: 'neuriteSearchAndZoom',
         baseFunction: neuriteSearchAndZoom,
         alternateNames: ['searchAndZoom', 'searchZoom', `zoomToRelevantNodes`]
-    }
+    },
 
     // Add any additional functions and their alternate names here...
 ]);

@@ -890,8 +890,8 @@ select-replacer > div:first-child {
     }
 
     .custom-scrollbar::-webkit-scrollbar-button {
-        color: red;
-        background-color: red;
+        color: transparent;
+        background-color: transparent;
     }
 
         .key-button {
