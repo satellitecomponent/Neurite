@@ -49,7 +49,7 @@ feel free to join our [Discord](https://discord.gg/d7p3zZp3)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind Mapping interactivity, and text-focused hyperlinking (Zettelkasten) methodology.
+Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind-Mapping and text-based hyperlinking (Zettelkasten).
 
 This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
