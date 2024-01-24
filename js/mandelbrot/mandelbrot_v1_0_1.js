@@ -343,6 +343,24 @@ document.getElementById("body").addEventListener("mouseleave", (event) => {
 function mand_step(z, c) {
     return z.cmult(z).cadd(c);
 }
+
+/*
+
+function mand_step(z, c) {
+    // Randomly alter 'c' to introduce perturbations
+    if (Math.random() < 0.1) { // 10% chance to alter
+        c = c.plus(new vec2(Math.random() * 0.01 - 0.005, Math.random() * 0.01 - 0.005));
+    }
+    return z.cmult(z).cadd(c);
+}
+//Not yet functioning well.
+function mand_step(z, c, iteration) {
+    if (iteration > 50) { // After 50 iterations, alter the pattern
+        return z.cmult(z).cadd(c.scale(Math.sin(iteration * 0.1)));
+    }
+    return z.cmult(z).cadd(c);
+} */
+
 //function mand_step(z,c){return z.cpow(new vec2(time()/8/120/10+1,0)).cadd(c);}
 //function mand_step(z,c){return z.cmult(z).cadd(z.x==0&&z.y==0?c:c.cdiv(z));}
 //function mand_step(z,c){return z.cmult(z).cadd(c).map(Math.abs);}

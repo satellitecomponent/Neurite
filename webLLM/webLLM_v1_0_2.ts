@@ -183,7 +183,7 @@ const getServerResponse = async (message: string): Promise<string | null> => {
 };
 
 // Call this function on page refresh to determine if the server is available
-checkServerAvailability();
+//checkServerAvailability();
 
 document.getElementById('prompt-form').addEventListener('submit', async (event) => {
     const localLLMCheckbox = document.getElementById("localLLM");

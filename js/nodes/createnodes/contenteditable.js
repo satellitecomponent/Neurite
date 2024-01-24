@@ -148,4 +148,3 @@ function addEventsToContentEditable(editableDiv, textarea, node) {
         event.stopPropagation();
     });
 }
-

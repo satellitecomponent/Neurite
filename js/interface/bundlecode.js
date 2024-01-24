@@ -145,7 +145,7 @@ async function handleCodeButton(button, textarea, node) {
         // Explicitly sync the content before using it
         syncContent(node);
 
-        if (button.innerHTML === 'Render Code') {
+        if (button.innerHTML === 'Run Code') {
             node.contentEditableDiv.style.display = "none";
 
             let re = /```(.*?)\n([\s\S]*?)```/gs;
@@ -176,37 +176,36 @@ async function handleCodeButton(button, textarea, node) {
                 console.log('Python code executed, result:', result);
             }
 
-            if (allWebCode.length > 0) {
-                let allConnectedNodesInfo = getAllConnectedNodesData(node);
-                allConnectedNodesInfo.push(...allWebCode);
-                let bundledContent = bundleWebContent(allConnectedNodesInfo);
+            let allConnectedNodesInfo = getAllConnectedNodesData(node);
+            allConnectedNodesInfo.push(...allWebCode);
+            let bundledContent = bundleWebContent(allConnectedNodesInfo);
 
-                if (textarea.htmlView) {
-                    textarea.htmlView.remove();
-                }
-
-                textarea.htmlView = document.createElement("iframe");
-                textarea.htmlView.style.border = "none";
-                textarea.htmlView.style.boxSizing = "border-box";
-                textarea.htmlView.style.width = "100%";
-                textarea.htmlView.style.height = "100%";
-
-                textarea.htmlView.onmousedown = function (event) {
-                    event.stopPropagation();
-                };
-
-                textarea.parentNode.insertBefore(textarea.htmlView, textarea.nextSibling);
-
-                textarea.htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
-
-                let windowDiv = textarea.htmlView.parentNode;
-                while (windowDiv && (!windowDiv.win || !windowDiv.classList.contains('window'))) {
-                    windowDiv = windowDiv.parentNode;
-                }
-                if (windowDiv) {
-                    observeParentResize(windowDiv, textarea.htmlView);
-                }
+            if (textarea.htmlView) {
+                textarea.htmlView.remove();
             }
+
+            textarea.htmlView = document.createElement("iframe");
+            textarea.htmlView.style.border = "none";
+            textarea.htmlView.style.boxSizing = "border-box";
+            textarea.htmlView.style.width = "100%";
+            textarea.htmlView.style.height = "100%";
+
+            textarea.htmlView.onmousedown = function (event) {
+                event.stopPropagation();
+            };
+
+            textarea.parentNode.insertBefore(textarea.htmlView, textarea.nextSibling);
+
+            textarea.htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
+
+            let windowDiv = textarea.htmlView.parentNode;
+            while (windowDiv && (!windowDiv.win || !windowDiv.classList.contains('window'))) {
+                windowDiv = windowDiv.parentNode;
+            }
+            if (windowDiv) {
+                observeParentResize(windowDiv, textarea.htmlView);
+            }
+
 
             button.innerHTML = 'Code Text';
             button.style.backgroundColor = '#717171';
@@ -220,7 +219,7 @@ async function handleCodeButton(button, textarea, node) {
                 textarea.pythonView.style.display = "none";
                 textarea.pythonView.innerHTML = "";
             }
-            button.innerHTML = 'Render Code';
+            button.innerHTML = 'Run Code';
             button.style.backgroundColor = '';
         }
     };
