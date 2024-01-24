@@ -101,6 +101,9 @@ const defaultMovements = {
     panDown: { panParams: { deltaX: 0, deltaY: 150 } },
     zoomIn: { zoomParams: { zoomFactor: 0.3 } },
     zoomOut: { zoomParams: { zoomFactor: 3 } },
+    rotateClockwise: { rotateParams: { rotationAngle: 90 } },
+    rotateCounterClockwise: { rotateParams: { rotationAngle: -90 } },
+    rotate180: { rotateParams: { rotationAngle: 180 } },
     // Add more default movements as needed
 };
 
@@ -226,6 +229,7 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
                     // Completion callback
                     activeAnimationsCount--;
                     autopilotSpeed = 0;
+                    autopilotReferenceFrame = undefined;
                     console.log("Animation completed, count:", activeAnimationsCount);
                     resolve();
                 }, () => {
@@ -295,6 +299,8 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
             if (autopilotSpeed === 0) {
                 console.log("Animation interrupted by user interaction.");
                 clearInterval(intervalCheck);
+                autopilotSpeed = 0;
+                autopilotReferenceFrame = undefined;
                 activeAnimationsCount--;
                 resolve();
             }
@@ -309,6 +315,8 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
                 //console.log("Animation completed normally.");
             }
             activeAnimationsCount--;
+            autopilotSpeed = 0;
+            autopilotReferenceFrame = undefined;
             resolve();
         }, 3000); // 3 seconds
     });
