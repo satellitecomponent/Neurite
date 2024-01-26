@@ -5,7 +5,7 @@
 
 This is a dev branch. For more informatino on contributing,
 
-feel free to join our [Discord](https://discord.gg/hnY8UpeE22)!
+feel free to join our [Discord](https://discord.gg/3PM8c2ha)!
 
 🚧 `Neurite is in active development.` 🚧 
 
