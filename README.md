@@ -13,19 +13,19 @@
 
 **Inspired by chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape creative thinking. To do this, we are developing a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.**
 
-### Why Fractals? 
+### `Why Fractals?`
 
 Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question. Neurite speaks in the language of iteration. The project seeks to grow scale independent landscapes where complexity unfolds seamlessly from imagination.
 
-### First of its Kind Fractal Zoom
+### `First of its Kind Fractal Zoom`
 
 Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal generation persists and regenerates as you interact! 
 
 We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
-### Why Nodes?
+### `Why Nodes?`
 
 Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
 
@@ -59,7 +59,7 @@ feel free to join our [Discord](https://discord.gg/3PM8c2ha)!
 
 ## `Synchronized Knowledge Management`
 
-Neurite provides markdown formatted, bi-directional synchronization between UI-focused Mind-Mapping and text-based hyperlinking (Zettelkasten).
+[Neurite](https://satellitecomponent.github.io/Neurite/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and [Zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
 
 This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
 
