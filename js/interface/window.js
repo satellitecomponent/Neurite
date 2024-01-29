@@ -11,13 +11,6 @@ function windowify(title, content, pos, scale, iscale, link) {
     headerContainer.className = 'header-container';
     headerContainer.appendChild(w);
 
-    // Modify the onmousedown function to check for the Alt key
-    headerContainer.onmousedown = function (event) {
-        if (event.altKey) {
-            cancel(event);  // Prevent dragging if Alt key is pressed
-        }
-    };
-
     div.appendChild(headerContainer);
     odiv.appendChild(div);
 
@@ -32,76 +25,12 @@ function windowify(title, content, pos, scale, iscale, link) {
     odiv.setAttribute("data-init", "window");
     div.setAttribute("class", "window");
 
-    div.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (event.ctrlKey && nodeMode === 1) {
-            div.classList.toggle('selected');
-        }
-    });
-
-    div.addEventListener('mousedown', function () {
-        autopilotSpeed = 0;
-        dropdown.classList.add('no-select');
-
-        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-        for (let i = 0; i < allWrapperDivs.length; i++) {
-            allWrapperDivs[i].classList.add('no-select');
-        }
-    });
-
-    div.addEventListener('mouseup', function () {
-        dropdown.classList.remove('no-select');
-
-        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-        for (let i = 0; i < allWrapperDivs.length; i++) {
-            allWrapperDivs[i].classList.remove('no-select');
-        }
-    });
-
-    window.addEventListener('mouseup', function () {
-        dropdown.classList.remove('no-select');
-
-        let allWrapperDivs = document.getElementsByClassName('wrapperDiv');
-        for (let i = 0; i < allWrapperDivs.length; i++) {
-            allWrapperDivs[i].classList.remove('no-select');
-        }
-    });
-
     // Add the title input to the header container
     let titleInput = document.createElement('input');
     titleInput.setAttribute('type', 'text');
     titleInput.setAttribute('value', title);
     titleInput.className = 'title-input';
     headerContainer.appendChild(titleInput);
-
-    titleInput.addEventListener('paste', function (event) {
-        event.stopPropagation();
-    });
-
-    let isDragging = false;
-    let isMouseDown = false;
-
-    titleInput.addEventListener('mousedown', function (event) {
-        isMouseDown = true;
-    });
-
-    titleInput.addEventListener('mousemove', function (event) {
-        if (isMouseDown) {
-            isDragging = true;
-        }
-        if (isDragging && !altHeld) {
-            titleInput.selectionStart = titleInput.selectionEnd;  // Reset the selection
-        }
-    });
-
-    document.addEventListener('mouseup', function (event) {
-        isDragging = false;
-        isMouseDown = false;
-    });
-
-    titleInput.addEventListener('mouseleave', function (event) {
-        isDragging = false;
-    });
 
     // Add resize container and handle
     let resizeContainer = document.createElement('div');
@@ -114,13 +43,114 @@ function windowify(title, content, pos, scale, iscale, link) {
 
 
     let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
-    setResizeEventListeners(resizeHandle, node);
-    observeContentResize(innerContent, div);
+
     div.win = node;
     return rewindowify(node);
 }
 
+function initWindow(node) {
+    let headerContainer = node.content.querySelector('.header-container');
+    node.headerContainer = headerContainer;
+
+    let windowDiv = node.content.querySelector(".window")
+    node.windowDiv = windowDiv;
+
+    let innerContent = node.windowDiv.querySelector('.content');
+    node.innerContent = innerContent;
+
+    const dropdown = document.querySelector('.dropdown');
+    node.dropdown = dropdown;
+
+    const wrapperDivs = document.getElementsByClassName('wrapperDiv');
+    node.wrapperDivs = wrapperDivs;
+
+
+    let resizeHandle = node.content.querySelector('.resize-handle');
+    setResizeEventListeners(resizeHandle, node);
+
+    let titleInput = node.content.querySelector('.title-input');
+    node.titleInput = titleInput;
+
+    addWindowEventListeners(node)
+}
+
+function addWindowEventListeners(node) {
+    setupHeaderContainerListeners(node.headerContainer);
+    setupWindowDivListeners(node);
+    setupTitleInputListeners(node.titleInput);
+    setupResizeHandleListeners(node);
+    observeContentResize(node.innerContent, node.windowDiv);
+}
+
+function setupHeaderContainerListeners(headerContainer) {
+    headerContainer.onmousedown = function (event) {
+        if (event.altKey) {
+            cancel(event); // Prevent dragging if Alt key is pressed
+        }
+    };
+}
+
+function setupWindowDivListeners(node) {
+    const windowDiv = node.windowDiv;
+    const dropdown = node.dropdown;
+    const wrapperDivs = node.wrapperDivs;
+
+    windowDiv.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (event.ctrlKey && nodeMode === 1) {
+            windowDiv.classList.toggle('selected');
+        }
+    });
+
+    windowDiv.addEventListener('mousedown', () => {
+        autopilotSpeed = 0;
+        dropdown.classList.add('no-select');
+        Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
+    });
+
+    windowDiv.addEventListener('mouseup', () => {
+        dropdown.classList.remove('no-select');
+        Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
+    });
+
+    window.addEventListener('mouseup', () => {
+        dropdown.classList.remove('no-select');
+        Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
+    });
+}
+
+function setupTitleInputListeners(titleInput) {
+    let isDragging = false;
+    let isMouseDown = false;
+
+    titleInput.addEventListener('paste', (event) => event.stopPropagation());
+
+    titleInput.addEventListener('mousedown', () => { isMouseDown = true; });
+
+    titleInput.addEventListener('mousemove', (event) => {
+        if (isMouseDown) { isDragging = true; }
+        if (isDragging && !altHeld) {
+            titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        isMouseDown = false;
+    });
+
+    titleInput.addEventListener('mouseleave', () => { isDragging = false; });
+}
+
+function setupResizeHandleListeners(node) {
+    const resizeHandle = node.windowDiv.querySelector('.resize-handle');
+    setResizeEventListeners(resizeHandle, node);
+}
+
+
 function rewindowify(node) {
+    initWindow(node)
+
     node.push_extra("window");
     let w = node.content;
 
@@ -133,14 +163,12 @@ function rewindowify(node) {
     let col = w.querySelector("#button-collapse");
     col.classList.add('windowbutton');
 
+    let titleInput = node.titleInput;
+
     function set(e, v, s = "fill") {
         e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
         e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
     }
-
-    // Retrieve title input from the node
-    let titleInput = node.content.querySelector('.title-input');
-
 
     function ui(e, cb = (() => { }), s = "fill") {
         e.onmouseenter = (ev) => {

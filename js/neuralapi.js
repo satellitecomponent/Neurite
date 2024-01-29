@@ -1089,6 +1089,8 @@ function buildFunctionNameList() {
 }
 
 // Initialize and build the list
-initializeFunctionMappings();
-const functionNameList = buildFunctionNameList();
-//console.log(functionNameList);
+document.addEventListener('DOMContentLoaded', (event) => {
+    initializeFunctionMappings();
+    const functionNameList = buildFunctionNameList();
+    // console.log(functionNameList);
+});

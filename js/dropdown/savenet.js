@@ -1,11 +1,15 @@
 ﻿document.getElementById("save-button").addEventListener("click", function () {
-    nodes.map((n) => n.updateEdgeData());
-    let s = document.getElementById("nodes").innerHTML;
-    let title = prompt("Enter a title for this save:");
+    let zettelkastenContent = window.myCodemirror.getValue();
+    let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
 
+    nodes.map((n) => n.updateEdgeData());
+    let nodeData = document.getElementById("nodes").innerHTML;
+    let saveData = nodeData + zettelkastenSaveElement;  // Combine Zettelkasten content with node data
+
+    let title = prompt("Enter a title for this save:");
     if (title) {
         let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-        saves.push({ title: title, data: s });
+        saves.push({ title: title, data: saveData });
 
         try {
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -13,7 +17,7 @@
         } catch (e) {
             // localStorage quota exceeded
             if (confirm("Local storage is full, download the data as a .txt file?")) {
-                downloadData(title, s);
+                downloadData(title, JSON.stringify({ data: s, zettelkastenSave: zettelkastenContent }));
             }
         }
     }
@@ -200,6 +204,8 @@ for (let n of nodes) {
 }
 
 function clearnet() {
+    llmNodeCount = 0;
+
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
     }
@@ -225,8 +231,25 @@ function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
     }
+
     let d = document.createElement("div");
     d.innerHTML = text;
+
+    // Clear the existing content in myCodeMirror
+    window.myCodemirror.setValue('');
+
+    // Extract Zettelkasten content
+    let zettelkastenSaveElement = d.querySelector("#zettelkasten-save");
+    if (zettelkastenSaveElement) {
+        let zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
+        console.log("Zettelkasten Content:", zettelkastenContent);
+        processAll = true;
+        window.myCodemirror.setValue(zettelkastenContent);
+    }
+
+    // Remove the Zettelkasten save element to process the rest of the nodes
+    zettelkastenSaveElement?.remove();
+
     let newNodes = [];
     for (let n of d.children) {
         let node = new Node(undefined, n, true, undefined, createEdges);
@@ -239,18 +262,37 @@ function loadnet(text, clobber, createEdges = true) {
         htmlnodes_parent.appendChild(n.content);
     }
 
-    adjustTextareaHeightToContent(newNodes);
+    //adjustTextareaHeightToContent(newNodes);
     for (let n of newNodes) {
-        n.init(nodeMap); //2 pass for connections
+        n.init(nodeMap); // Initialize the node
+        reconstructSavedNode(n); // Reconstruct the saved node
     }
-    for (let n of newNodes) {
-        // Restore the title
-        let titleInput = n.content.querySelector('.title-input');
-        if (titleInput) {
-            let savedTitle = n.content.getAttribute('data-title');
-            if (savedTitle) {
-                titleInput.value = savedTitle;
-            }
+}
+
+function reconstructSavedNode(node) {
+    // Restore the title
+    let titleInput = node.content.querySelector('.title-input');
+    if (titleInput) {
+        let savedTitle = node.content.getAttribute('data-title');
+        if (savedTitle) {
+            titleInput.value = savedTitle;
         }
+    }
+
+    if (node.isTextNode) {
+        initTextNode(node)
+    }
+
+    if (node.isLLM) {
+        llmNodeCount++;
+        initAiNode(node);
+    }
+
+    if (node.isLink) {
+        initLinkNode(node);
+    }
+
+    if (isEditorNode(node)) {
+        initEditorNode(node)
     }
 }

@@ -200,6 +200,9 @@ const tagValues = {
     }
 };
 
+// nodedef.js ainodemessage.js
+let llmNodeCount = 0;
+
 //ai.js and interface.js
 class LRUCache {
     constructor(maxSize) {
@@ -233,4 +236,18 @@ function decodeHTML(html) {
     let txt = document.createElement('textarea');
     txt.innerHTML = html;
     return txt.value;
+}
+
+//editornode.js
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }

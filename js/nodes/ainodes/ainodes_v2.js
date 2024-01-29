@@ -592,9 +592,6 @@ class ResponseHandler {
 const nodeResponseHandlers = new Map();
 
 
-let llmNodeCount = 0;
-
-
 /*
 document.getElementById("localLLM").addEventListener("change", function () {
     let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
