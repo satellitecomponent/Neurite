@@ -43,7 +43,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.673308c0.js"></script>
-  <link rel="stylesheet" href="./assets/index.cdd7e035.css">
+  <link rel="stylesheet" href="./assets/index.9605e874.css">
 </head>
 
 <body id="body">
@@ -287,6 +287,124 @@
                         </div>
                     </div>
                 </div>
+                <div id="tab4" class="tabcontent">
+                    <!-- Fourth tab content here -->
+                    <div class="submenu">
+                        <!--<div>
+                <button id="ai-cursor-button">Enable Ai Cursor</button>
+            </div>-->
+                        <div class="flex-container">
+                            <div class="inline-container" title="Enable Local Ai Features">
+                                <input type="checkbox" id="localLLM">
+                                <label for="localLLM">:</label>
+                            </div>
+                            <button id="downloadAiButton" class="key-button" title="Install Local AI Models into Browser Cache">INSTALL</button>
+                            <div class="inline-container" title="Select Local Model">
+                                <select id="LocalLLMselect" class="model-dropdown custom-select">
+                                    <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
+                                    <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
+                                    <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
+                                    <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
+                                    <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
+                                    <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
+                                </select>
+                            </div>
+                            <div class="inline-container">
+                                <div class="loader" id="loadingIcon" style="display:none;"></div>
+                            </div>
+                            <div class="inline-container">
+                                <div class="loader-fillBackground" id="filledLoadingIcon" style="display:none;">
+                                    <div class="loader-fill initial-animation"></div>
+                                </div>
+                            </div>
+                            <div class="inline-container">
+                                <div id="errorIcon" style="display:none;">
+                                    <div class="error-icon-css">
+                                        <div class="error-x-mark">
+                                            <span class="error-x-mark-left"></span>
+                                            <span class="error-x-mark-right"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        <input type="checkbox" id="local-embeddings-checkbox">
+                        <label for="local-embeddings-checkbox">: Local Embeddings</label>
+                        <br />
+                        <br />
+                        <div class="api-container">
+                            <div class="api-inputs">
+                                <div>
+                                    <label for="api-key-input">OpenAI API Key:</label>
+                                    <input type="password" id="api-key-input">
+                                </div>
+                                <div class="google-key-input">
+                                    <label for="googleApiKey">Google API Key:</label>
+                                    <input type="password" id="googleApiKey">
+                                </div>
+                                <div class="google-key-input">
+                                    <label for="googleSearchEngineId">Search Engine ID:</label>
+                                    <input type="password" id="googleSearchEngineId">
+                                </div>
+                                <div class="wolfram-key-input">
+                                    <label for="wolframApiKey">Wolfram API Key:</label>
+                                    <input type="password" id="wolframApiKey">
+                                </div>
+                            </div>
+
+                            <div class="api-buttons">
+                                <button class="key-button" onclick="saveKeys()">Save Keys</button>
+                                <button class="key-button" onclick="clearKeys()">Clear Keys</button>
+                                <button class="key-button" id="saveToFileButton" onclick="saveKeysToFile()">Keys .txt</button>
+                                <button class="key-button" id="loadFromFileButton" onclick="loadKeysFromFile()">Load Keys</button>
+                            </div>
+                        </div>
+                        <br />
+                        <div style="display: flex; justify-content: space-evenly; align-items: center; ">
+                            <label for="model-select" style="margin-right: 10px;">Select Model:</label>
+                            <div class="dropdown-container">
+                                <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                    <option value="gpt-4">gpt-4</option>
+                                    <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
+                                    <option value="gpt-4-1106-preview">gpt-4-1106</option>
+                                    <option value="gpt-4-0613">gpt-4-0613</option>
+                                    <option value="gpt-4-vision-preview">gpt-4-vision</option>
+                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
+                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-16k</option>
+                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-0613</option>
+                                    <!-- <option value="other">Other...</option> -->
+                                </select>
+                                <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
+                            </div>
+                        </div>
+                        <br />
+                        <div class="gridLayout">
+
+                            <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
+                                <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
+                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
+                            </div>
+
+                            <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
+                                <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
+                                <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
+                            </div>
+
+                            <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
+                                <span id="max-context-size-display">2000</span>
+                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
+                            </div>
+
+                            <div class="settingsSlider" title="Number of Notes Retrieved from Neurite and Sent to AI">
+                                <label id="node-slider-label">Top 3 <br />nodes</label>
+                                <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
 
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
@@ -386,6 +504,84 @@
                                     </div>
 
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tabExtract" class="tabcontent">
+                    <!-- Extract tab content here -->
+                    <div class="submenu">
+                        <label for="inputKeyExtract">Key:</label><br>
+                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
+                        <label for="inputTextExtract">Text:</label><br>
+                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
+                        <div class="button-container">
+                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
+                        </div>
+                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
+                            <!-- Stored keys will be dynamically added here -->
+                        </div>
+                        <!--<input type="file" id="fileInput" />
+            <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                        <br />
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
+                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
+                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+                        </div>
+                        <div class="gridLayout">
+
+                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
+                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
+                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+                            </div>
+
+                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
+                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
+                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab6" class="tabcontent">
+                    <div class="submenu">
+                        <div id="saved-networks-container" class="scrollable-list"></div>
+
+                        <input id="save-or-load" type="text" placeholder="save data..." style="width: 257px;" />
+                        <div class="top-section">
+                            <div class="buttons-left">
+                                <a id="save-button">Save</a>
+                                <a id="load-button">Load</a>
+                                <a id="clear-button">Clear</a>
+                                <div id="clear-sure" style="display:none">
+                                    <a id="clear-unsure-button">no</a>
+                                    <a id="clear-sure-button">yes</a>
+                                </div>
+                            </div>
+                            <div id="savedCoordinatesContainerTop" class="saved-coordinates-container"></div>
+                        </div>
+
+                        <div id="savedCoordinatesContainer" class="saved-coordinates-container"></div>
+
+                        <div class="bottom-section">
+                            <div id="savedCoordinatesContainerBottom" class="saved-coordinates-container"></div>
+                            <div class="buttons-right">
+                                <a id="saveCoordinatesBtn">Store Coordinates</a>
+                                <a id="deleteCoordinatesBtn">Delete Coordinates</a>
+                            </div>
+                        </div>
+
+                        <div id="coordinates" class="coordinates-container">
+                            <div class="coordinate-field">
+                                <span>pan</span>
+                                <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
+                            </div>
+                            <div class="coordinate-field">
+                                <span>zoom</span>
+                                <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
                             </div>
                         </div>
                     </div>
@@ -502,195 +698,13 @@
                         </table>
                     </div>
                 </div>
-                <div id="tab4" class="tabcontent">
-                    <!-- Fourth tab content here -->
-                    <div class="submenu">
-                        <!--<div>
-                            <button id="ai-cursor-button">Enable Ai Cursor</button>
-                        </div>-->
-                        <div class="flex-container">
-                            <div class="inline-container" title="Enable Local Ai Features">
-                                <input type="checkbox" id="localLLM">
-                                <label for="localLLM">:</label>
-                            </div>
-                            <button id="downloadAiButton" class="key-button" title="Install Local AI Models into Browser Cache">INSTALL</button>
-                            <div class="inline-container" title="Select Local Model">
-                                <select id="LocalLLMselect" class="model-dropdown custom-select">
-                                    <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
-                                    <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
-                                    <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
-                                    <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
-                                    <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
-                                    <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
-                                </select>
-                            </div>
-                            <div class="inline-container">
-                                <div class="loader" id="loadingIcon" style="display:none;"></div>
-                            </div>
-                            <div class="inline-container">
-                                <div class="loader-fillBackground" id="filledLoadingIcon" style="display:none;">
-                                    <div class="loader-fill initial-animation"></div>
-                                </div>
-                            </div>
-                            <div class="inline-container">
-                                <div id="errorIcon" style="display:none;">
-                                    <div class="error-icon-css">
-                                        <div class="error-x-mark">
-                                            <span class="error-x-mark-left"></span>
-                                            <span class="error-x-mark-right"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <br />
-                        <input type="checkbox" id="local-embeddings-checkbox">
-                        <label for="local-embeddings-checkbox">: Local Embeddings</label>
-                        <br />
-                        <br />
-                        <div class="api-container">
-                            <div class="api-inputs">
-                                <div>
-                                    <label for="api-key-input">OpenAI API Key:</label>
-                                    <input type="password" id="api-key-input">
-                                </div>
-                                <div class="google-key-input">
-                                    <label for="googleApiKey">Google API Key:</label>
-                                    <input type="password" id="googleApiKey">
-                                </div>
-                                <div class="google-key-input">
-                                    <label for="googleSearchEngineId">Search Engine ID:</label>
-                                    <input type="password" id="googleSearchEngineId">
-                                </div>
-                                <div class="wolfram-key-input">
-                                    <label for="wolframApiKey">Wolfram API Key:</label>
-                                    <input type="password" id="wolframApiKey">
-                                </div>
-                            </div>
 
-                            <div class="api-buttons">
-                                <button class="key-button" onclick="saveKeys()">Save Keys</button>
-                                <button class="key-button" onclick="clearKeys()">Clear Keys</button>
-                                <button class="key-button" id="saveToFileButton" onclick="saveKeysToFile()">Keys .txt</button>
-                                <button class="key-button" id="loadFromFileButton" onclick="loadKeysFromFile()">Load Keys</button>
-                            </div>
-                        </div>
-                        <br />
-                        <div style="display: flex; justify-content: space-evenly; align-items: center; ">
-                            <label for="model-select" style="margin-right: 10px;">Select Model:</label>
-                            <div class="dropdown-container">
-                                <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
-                                    <option value="gpt-4">gpt-4</option>
-                                    <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
-                                    <option value="gpt-4-1106-preview">gpt-4-1106</option>
-                                    <option value="gpt-4-0613">gpt-4-0613</option>
-                                    <option value="gpt-4-vision-preview">gpt-4-vision</option>
-                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
-                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-16k</option>
-                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-0613</option>
-                                    <!-- <option value="other">Other...</option> -->
-                                </select>
-                                <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
-                            </div>
-                        </div>
-                        <br />
-                        <div class="gridLayout">
 
-                            <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
-                                <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
-                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
-                            </div>
-
-                            <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
-                                <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
-                                <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
-                            </div>
-
-                            <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
-                                <span id="max-context-size-display">2000</span>
-                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
-                            </div>
-
-                            <div class="settingsSlider" title="Number of Notes Retrieved from Neurite and Sent to AI">
-                                <label id="node-slider-label">Top 3 <br />nodes</label>
-                                <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-                <div id="tabExtract" class="tabcontent">
-                    <!-- Extract tab content here -->
-                    <div class="submenu">
-                        <label for="inputKeyExtract">Key:</label><br>
-                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
-                        <label for="inputTextExtract">Text:</label><br>
-                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
-                        <div class="button-container">
-                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
-                        </div>
-                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
-                            <!-- Stored keys will be dynamically added here -->
-                        </div>
-                        <!--<input type="file" id="fileInput" />
-                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
-                        <br />
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
-                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
-                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
-                        </div>
-                        <div class="gridLayout">
-
-                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
-                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
-                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
-                            </div>
-
-                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
-                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
-                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-                <div id="tab6" class="tabcontent">
-                    <div class="submenu">
-                        <div id="saved-networks-container" class="scrollable-list"></div>
-
-                        <input id="save-or-load" type="text" placeholder="save data..." style="width: 244px;" />
-                        <a id="save-button">Save</a>
-                        <a id="load-button">Load</a>
-                        <a id="clear-button">Clear</a>
-                        <div id="clear-sure" style="display:none">
-                            <a id="clear-unsure-button">no</a>
-                            <a id="clear-sure-button">yes</a>
-                        </div>
-
-                        <div style="text-align: center;">
-                            <div id="savedCoordinatesContainer"></div>
-                            <a id="saveCoordinatesBtn" style="text-align: end;">Store Coordinates</a>
-                            <a id="deleteCoordinatesBtn" style="text-align: end;">Delete Coordinates</a>
-                            <div id="coordinates" style="background-color: none; color: none; position: inherit; display: initial; left: 0px; top: 0px;">
-                                <div class="coordinate-field">
-                                    <span>pan</span>
-                                    <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
-                                </div>
-                                <div class="coordinate-field">
-                                    <span>zoom</span>
-                                    <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
     <a id="nodes">
-<!--         Save-Data .txt        -->
+<!--         Save-Data .txt              -->
     </a>
     <!--iframe id="inlineFrameExample"
             title="Inline Frame Example"
