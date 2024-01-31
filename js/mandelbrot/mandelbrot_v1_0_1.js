@@ -318,6 +318,7 @@ function recalc_svg(oldSVGpan,oldSVGzoom) {
 
 document.getElementById("body").addEventListener("mousedown", (event) => {
     isPanning = true;
+    deselectCoordinate();
     document.body.style.userSelect = "none"; // Disable text selection
 }, false);
 

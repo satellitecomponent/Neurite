@@ -305,17 +305,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let selects = document.querySelectorAll('select.custom-select');
     selects.forEach(setupCustomDropdown);
 
-    // Close dropdowns if clicked outside
-    window.addEventListener('click', function (event) {
-        if (!event.target.matches('.select-replacer > div')) {
-            let replacers = document.querySelectorAll('.options-replacer');
-            replacers.forEach(replacer => {
-                replacer.classList.remove('show');
-                replacer.parentNode.classList.add('closed');
-            });
-        }
-    });
-
     let modelSelect = document.querySelector('#model-select');
     if (modelSelect) {
         handleModelSelectChange(modelSelect); // Add specific change listener
