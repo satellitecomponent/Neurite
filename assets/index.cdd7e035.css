@@ -418,11 +418,28 @@
             width: 200px;
         }
 
-        input[type="text"i] {
-            padding: 1px 2px;
-            background-color: #222226;
-            color: #bbb;
-        }
+input[type="text"i] {
+    padding: 1px 2px;
+    background-color: #222226; /* Dark background */
+    color: #bbb; /* Light text color for contrast */
+    font-size: 16px; /* Standard readable font size */
+    width: 100%; /* Full-width to fit container */
+    box-sizing: border-box; /* Include padding in width calculation */
+    outline: none; /* Remove default focus outline */
+    /* Add a subtle border for focused state for accessibility */
+    transition: border-color 0.3s; /* Smooth transition for the border color */
+}
+    /* Change border color on focus for visibility */
+input [type="text"i]:focus {
+    border-color: #555; /* Slightly lighter border for focus */
+}
+
+/* Minimal change on hover for interactivity */
+input[type="text"i]:hover {
+    background-color: #1e1e22; /* Slightly lighter background on hover */
+}
+
+}
 
         .submenu-btn {
             display: flex;
@@ -590,6 +607,16 @@
     margin: 0;
 }
 
+.coordinate-field {
+    display: flex;
+    align-items: center; /* Aligns items vertically in the center */
+    justify-content: flex-start; /* Aligns items to the start of the flex container */
+}
+
+    .coordinate-field span {
+        margin-right: 10px; /* Adds space between the label and the input field */
+    }
+
 .divider {
     display: flex;
     align-items: center;
@@ -745,12 +772,12 @@
             background-color: #222226;
         }
 
-        th,
-        td {
-            padding: 15px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
+th,
+td {
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #5d5d5d;
+}
 
 .select-replacer.closed {
     white-space: nowrap; /* Prevent wrapping of selected option text */
@@ -995,14 +1022,15 @@ select-replacer > div:first-child {
             
         }
 
-        .scrollable-list {
-            height: 149px; /* Adjust this value based on how tall you want your list to be */
-            width: 250px;
-            overflow-y: auto;
-            border: 1px solid #000;
-            padding: 5px;
-            margin-top: 10px;
-        }
+.scrollable-list {
+    height: 149px; /* Adjust this value based on how tall you want your list to be */
+    width: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #000;
+    padding: 5px;
+    margin-top: 10px;
+}
 
             .scrollable-list::-webkit-scrollbar {
                 width: 8px;
@@ -1052,10 +1080,51 @@ select-replacer > div:first-child {
 
 #saved-networks-container div {
     margin: 5px 0;
+    overflow-x: hidden;
 }
 
 #saved-networks-container button {
     margin-right: 10px;
+}
+
+.selected-save {
+    background-color: #3b484d; /* Example style */
+    transform: scale(1.05); /* Slightly enlarge the selected save */
+    transition: transform 0.3s ease;
+}
+
+#savedCoordinatesContainer {
+    /* Set height to auto to allow height expansion */
+    height: 140px;
+    /* Allow elements to wrap */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+    #savedCoordinatesContainer div {
+        /* Styling for each saved view element */
+        background-color: #282828; /* Dark grey */
+        margin: 0; /* No spacing between elements */
+        padding: 3px;
+        border-radius: 0; /* No rounded corners */
+        /* Display settings */
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+.saved-coordinate-item {
+    cursor: pointer; /* Change cursor to indicate clickability */
+    transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+#savedCoordinatesContainer .saved-coordinate-item:hover {
+    background-color: #555; /* Darken on hover */
+}
+
+#savedCoordinatesContainer .selected-coordinate {
+    background-color: #444; /* Different color to indicate selection */
+    color: white;
 }
 
 .highlight {

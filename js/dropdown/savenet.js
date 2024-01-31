@@ -1,11 +1,15 @@
 ﻿document.getElementById("save-button").addEventListener("click", function () {
-    nodes.map((n) => n.updateEdgeData());
-    let s = document.getElementById("nodes").innerHTML;
-    let title = prompt("Enter a title for this save:");
+    let zettelkastenContent = window.myCodemirror.getValue();
+    let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
 
+    nodes.map((n) => n.updateEdgeData());
+    let nodeData = document.getElementById("nodes").innerHTML;
+    let saveData = nodeData + zettelkastenSaveElement;  // Combine Zettelkasten content with node data
+
+    let title = prompt("Enter a title for this save:");
     if (title) {
         let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-        saves.push({ title: title, data: s });
+        saves.push({ title: title, data: saveData });
 
         try {
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -13,7 +17,7 @@
         } catch (e) {
             // localStorage quota exceeded
             if (confirm("Local storage is full, download the data as a .txt file?")) {
-                downloadData(title, s);
+                downloadData(title, JSON.stringify({ data: s, zettelkastenSave: zettelkastenContent }));
             }
         }
     }
@@ -30,6 +34,8 @@ function downloadData(title, data) {
     }, 1);
 }
 
+let selectedSaveIndex = null; // Global variable to track the selected save
+
 function updateSavedNetworks() {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
     let container = document.getElementById("saved-networks-container");
@@ -37,6 +43,11 @@ function updateSavedNetworks() {
 
     for (let [index, save] of saves.entries()) {
         let div = document.createElement("div");
+
+        // Add a class to the div if it's the selected save
+        if (index === selectedSaveIndex) {
+            div.classList.add("selected-save");
+        }
         let titleInput = document.createElement("input");
         let data = document.createElement("span");
         let loadButton = document.createElement("button");
@@ -46,7 +57,7 @@ function updateSavedNetworks() {
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = "none"
-        titleInput.style.width = "134px"
+        titleInput.style.width = "125px"
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -55,11 +66,14 @@ function updateSavedNetworks() {
         data.textContent = save.data;
         data.style.display = "none";
 
-        loadButton.textContent = "Load";
+        loadButton.textContent = "Select";
         loadButton.className = 'linkbuttons';
         loadButton.addEventListener('click', function () {
             document.getElementById("save-or-load").value = data.textContent;
+            selectedSaveIndex = index; // Update the selected save index
+            updateSavedNetworks(); // Refresh the UI
         });
+
 
         deleteButton.textContent = "X";
         deleteButton.className = 'linkbuttons';
@@ -177,13 +191,16 @@ document.getElementById("clear-button").addEventListener("click", function () {
 });
 document.getElementById("clear-unsure-button").addEventListener("click", function () {
     document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "clear";
+    document.getElementById("clear-button").text = "Clear";
 });
 document.getElementById("clear-sure-button").addEventListener("click", function () {
     clearnet();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "clear";
+    document.getElementById("clear-button").text = "Clear";
 });
+
+
+
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
     alert('Local storage has been cleared.');
@@ -200,17 +217,26 @@ for (let n of nodes) {
 }
 
 function clearnet() {
+    // Remove all edges
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
     }
+
+    // Remove all nodes
     while (nodes.length > 0) {
         nodes[nodes.length - 1].remove();
     }
+
+    // Reset LLM node count
+    llmNodeCount = 0;
+
+    // Clear the CodeMirror content
+    window.myCodemirror.setValue('');
 }
 
 //this is a quick fix to retain textarea height, the full fix requires all event listeners to be attatched to each node.
 
-function adjustTextareaHeightToContent(nodes) {
+/* function adjustTextareaHeightToContent(nodes) {
     for (let node of nodes) {
         let textarea = node.content.querySelector('textarea');
         if (textarea) {
@@ -219,14 +245,26 @@ function adjustTextareaHeightToContent(nodes) {
             textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'; // Set to full content height or max height
         }
     }
-}
+} */
 
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
     }
+
     let d = document.createElement("div");
     d.innerHTML = text;
+
+    // Temporarily store Zettelkasten content but don't set it in myCodeMirror yet
+    let zettelkastenSaveElement = d.querySelector("#zettelkasten-save");
+    let zettelkastenContent;
+    if (zettelkastenSaveElement) {
+        zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
+        //console.log("Zettelkasten Content:", zettelkastenContent);
+        // Remove the Zettelkasten save element to process the rest of the nodes
+        zettelkastenSaveElement.remove();
+    }
+
     let newNodes = [];
     for (let n of d.children) {
         let node = new Node(undefined, n, true, undefined, createEdges);
@@ -239,18 +277,43 @@ function loadnet(text, clobber, createEdges = true) {
         htmlnodes_parent.appendChild(n.content);
     }
 
-    adjustTextareaHeightToContent(newNodes);
     for (let n of newNodes) {
-        n.init(nodeMap); //2 pass for connections
+        n.init(nodeMap); // Initialize the node
+        reconstructSavedNode(n); // Reconstruct the saved node
     }
-    for (let n of newNodes) {
-        // Restore the title
-        let titleInput = n.content.querySelector('.title-input');
-        if (titleInput) {
-            let savedTitle = n.content.getAttribute('data-title');
-            if (savedTitle) {
-                titleInput.value = savedTitle;
-            }
+
+    // Now that nodes are restored, set Zettelkasten content in myCodeMirror
+    if (zettelkastenContent) {
+        processAll = true;
+        restoreZettelkastenEvent = true;
+        window.myCodemirror.setValue(zettelkastenContent);
+    }
+}
+
+function reconstructSavedNode(node) {
+    // Restore the title
+    let titleInput = node.content.querySelector('.title-input');
+    if (titleInput) {
+        let savedTitle = node.content.getAttribute('data-title');
+        if (savedTitle) {
+            titleInput.value = savedTitle;
         }
+    }
+
+    if (node.isTextNode) {
+        initTextNode(node)
+    }
+
+    if (node.isLLM) {
+        llmNodeCount++;
+        initAiNode(node);
+    }
+
+    if (node.isLink) {
+        initLinkNode(node);
+    }
+
+    if (isEditorNode(node)) {
+        initEditorNode(node)
     }
 }

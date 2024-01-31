@@ -1,13 +1,4 @@
-function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    // Create the wrapper div
-    let editorWrapperDiv = document.createElement('div');
-    editorWrapperDiv.className = 'editorWrapperDiv'; 
-    editorWrapperDiv.style.width = '800px'; // Set width of the wrapper
-    editorWrapperDiv.style.height = '400px'; // Set height of the wrapper 
-    editorWrapperDiv.style.overflow = 'none';
-    editorWrapperDiv.style.position = 'relative';
-
-
+function createEditorInterface() {
     let htmlContent = `<!DOCTYPE html>
 <html lang="en" class="custom-scrollbar">
 <head>
@@ -316,7 +307,18 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
 </script>
 `;
 
-    htmlContent += iframeScript;
+        // Combine and return the full HTML content
+    return htmlContent + iframeScript;
+}
+
+function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
+    // Create the wrapper div
+    let editorWrapperDiv = document.createElement('div');
+    editorWrapperDiv.className = 'editorWrapperDiv'; 
+    editorWrapperDiv.style.width = '800px'; // Set width of the wrapper
+    editorWrapperDiv.style.height = '400px'; // Set height of the wrapper 
+    editorWrapperDiv.style.overflow = 'none';
+    editorWrapperDiv.style.position = 'relative';
 
     // Create the iframe element with a data URI as the src attribute
     let iframeElement = document.createElement('iframe');
@@ -326,10 +328,6 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
     iframeElement.style.border = '0';
     iframeElement.style.background = 'transparent';
     iframeElement.sandbox = 'allow-same-origin allow-scripts';
-    iframeElement.src = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
-
-
-    iframeElement.srcdoc = htmlContent;
 
     // Append the iframe to the wrapper div
     editorWrapperDiv.appendChild(iframeElement);
@@ -350,16 +348,8 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
     // Append the overlay to the editorWrapperDiv
     editorWrapperDiv.appendChild(overlay);
 
-    // Add this overlay to the global overlays array
-    overlays.push(overlay);
-
     let node = addNodeAtNaturalScale(title, [editorWrapperDiv]); // Use the wrapper div here
 
-    iframeElement.onload = function () {
-        iframeElement.contentWindow.addEventListener('click', function () {
-            node.followingMouse = 0;
-        });
-    };
         // Generate a unique identifier for the iframe using the node's uuid
     iframeElement.setAttribute('identifier', 'editor-' + node.uuid); // Store the identifier
 
@@ -368,5 +358,91 @@ function createEditorNode(title = '', sx = undefined, sy = undefined, x = undefi
         node.title.value = title;
     }
 
+    node.isEditorNode = true;
+
+    node.editorSaveData = null;
+
+    initEditorNode(node)
+
     return node;
+}
+
+function isEditorNode(node) {
+    // First, check if the isEditorNode flag is set and true
+    if (node.isEditorNode) {
+        return true;
+    }
+
+    // Fallback: Check for an iframe with a specific identifier
+    const iframeIdentifier = node.content.querySelector('iframe[identifier^="editor-"]');
+
+    return Boolean(iframeIdentifier);
+}
+
+
+function initEditorNode(node) {
+    let overlay = node.content.querySelector(`.editorWrapperDiv #editorOverlay`)
+    overlays.push(overlay);
+
+    let iframeElement = node.content.querySelector('.editorWrapperDiv iframe');
+    node.iframeElement = iframeElement;
+
+    iframeElement.onload = function () {
+        let iframeWindow = iframeElement.contentWindow;
+        if (iframeWindow.htmlEditor && iframeWindow.cssEditor && iframeWindow.jsEditor) {
+            // Debounce function to limit how often we save the editor content
+            const debounceSave = debounce(() => saveEditorContent(node), 300);
+
+            // Set up event listeners for change in each editor
+            iframeWindow.htmlEditor.on('change', debounceSave);
+            iframeWindow.cssEditor.on('change', debounceSave);
+            iframeWindow.jsEditor.on('change', debounceSave);
+        }
+
+        iframeElement.contentWindow.addEventListener('click', function () {
+            node.followingMouse = 0;
+        });
+
+        setTimeout(() => restoreEditorContent(node), 500); // Delay restoration
+    };
+
+    let htmlContent = createEditorInterface();
+    iframeElement.src = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+    iframeElement.srcdoc = htmlContent;
+}
+
+function saveEditorContent(node) {
+    let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
+    if (iframeElement && iframeElement.contentWindow) {
+        let iframeWindow = iframeElement.contentWindow;
+        node.editorSaveData = {
+            html: iframeWindow.htmlEditor.getValue(),
+            css: iframeWindow.cssEditor.getValue(),
+            js: iframeWindow.jsEditor.getValue()
+        };
+        //console.log('Editor content saved:', node.editorSaveData);
+    }
+}
+
+function restoreEditorContent(node) {
+    if (!node.editorSaveData) {
+        console.log('No saved editor data found for node.');
+        return;
+    }
+
+    let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
+    if (iframeElement && iframeElement.contentWindow) {
+        try {
+            //console.log(`save data`, node.editorSaveData);
+
+            let iframeWindow = iframeElement.contentWindow;
+            iframeWindow.htmlEditor.setValue(node.editorSaveData.html || '');
+            iframeWindow.cssEditor.setValue(node.editorSaveData.css || '');
+            iframeWindow.jsEditor.setValue(node.editorSaveData.js || '');
+        } catch (error) {
+            console.error('Error restoring editor content:', error);
+        }
+    } else {
+        console.warn('No iframe editor found for node.');
+    }
 }

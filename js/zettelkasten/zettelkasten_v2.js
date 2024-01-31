@@ -89,7 +89,6 @@ let shouldAddCodeButton = false;
     }
 
 
-
     class ZettelkastenProcessor {
         constructor() {
             this.prevNoteInputLines = [];
@@ -138,6 +137,7 @@ let shouldAddCodeButton = false;
             this.prevNoteInputLines = lines.slice();
 
             processAll = false;
+            restoreZettelkastenEvent = false;
         }
 
         processLine(line, lines, index, nodes, currentNodeTitle) {
@@ -195,6 +195,20 @@ let shouldAddCodeButton = false;
         //Creates nodes either from the Zettelkasten or the window.
         handleNode(line, i, nodeLines, nodes, currentNodeTitle) {
             currentNodeTitle = line.substr(nodeTag.length).trim();
+
+            if (restoreZettelkastenEvent) {
+                let savedNode = getNodeByTitle(currentNodeTitle);
+
+                if (savedNode) {
+                    const node = this.establishZettelkastenNode(savedNode, currentNodeTitle, nodeLines, nodes, noteInput);
+                    nodeLines[i] = node;
+                    nodes[currentNodeTitle] = node;
+                    return currentNodeTitle;
+                } else {
+                    console.log("No existing node found for title:", currentNodeTitle);
+                }
+            }
+
             if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
                 if (nodeLines[i] && !nodeLines[i].nodeObject.removed) {
                     const node = nodes[currentNodeTitle] = nodeLines[i];
@@ -206,36 +220,21 @@ let shouldAddCodeButton = false;
                     node.nodeObject.content.children[0].children[0].children[1].value = currentNodeTitle;
                 } else {
                     let nodeObject;
-                    if (nodefromWindow) { //flag set in createnodefromwindow in createnodes.js
+                    if (nodefromWindow) {
                         nodeObject = createTextNode(currentNodeTitle, '', undefined, undefined, undefined, undefined, shouldAddCodeButton);
                         shouldAddCodeButton = false;
-                        nodefromWindow = false; // Reset the flag
-                        if (followMouseFromWindow) { //flag set in createnodefromwindow in createnodes.js
+                        nodefromWindow = false;
+                        if (followMouseFromWindow) {
                             nodeObject.followingMouse = 1;
-                            followMouseFromWindow = false; // Reset this flag as well
+                            followMouseFromWindow = false;
                         }
                     } else {
                         nodeObject = createTextNode(currentNodeTitle, '', (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8);
                     }
 
-                    const node = nodeLines[i] = nodes[currentNodeTitle] = {
-                        title: currentNodeTitle,
-                        plainText: '',
-                        ref: '',
-                        live: true,
-                        nodeObject: nodeObject,
-                        edges: new Map(),
-                        lineNum: i,
-                    };
-
-                    //Event Listeners to handle sync between Node textarea and Codemirror.
-                    //Handles sync between changes to each node title input and the Zettelkasten
-                    const titleInputEventHandler = this.createTitleInputEventHandler(nodeLines[i], nodes, noteInput, nodeLines);
-                    node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', titleInputEventHandler);
-
-                    // Handles sync between inputs to each node textarea and the Zettelkasten
-                    const bodyHandler = this.getHandleNodeBodyInputEvent(node);
-                    node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', bodyHandler);
+                    const node = this.establishZettelkastenNode(nodeObject, currentNodeTitle, nodeLines, nodes, noteInput);
+                    nodeLines[i] = node;
+                    nodes[currentNodeTitle] = node;
                 }
             } else {
                 nodes[currentNodeTitle].plainText = "";
@@ -249,6 +248,36 @@ let shouldAddCodeButton = false;
             }
             return currentNodeTitle;
         }
+
+        establishZettelkastenNode(domNode, currentNodeTitle, nodeLines, nodes, noteInput) {
+            if (!domNode) {
+                console.warn('DOM node is undefined, cannot establish Zettelkasten node.');
+                return null;
+            }
+
+            const node = {
+                title: currentNodeTitle,
+                plainText: '',
+                ref: '',
+                live: true,
+                nodeObject: domNode,
+                edges: new Map(),
+                lineNum: null
+            };
+
+            this.attachContentEventListenersToNode(node, nodes, noteInput, nodeLines);
+
+            return node;
+        }
+
+        attachContentEventListenersToNode(node, nodes, noteInput, nodeLines) {
+            const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, noteInput, nodeLines);
+            node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', titleInputEventHandler);
+
+            const bodyHandler = this.getHandleNodeBodyInputEvent(node);
+            node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', bodyHandler);
+        }
+
 
         //Syncs node titles and Zettelkasten
         createTitleInputEventHandler(node, nodes, noteInput, nodeLines) {
