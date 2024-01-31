@@ -195,8 +195,33 @@ function setupCustomDropdown(select, aiNode = false) {
     let optionsReplacer = document.createElement('div');
     optionsReplacer.className = 'options-replacer';
 
+    // Append the options container to the main dropdown container
+    selectReplacer.appendChild(optionsReplacer);
+
+
+    // Replace the original select with the custom dropdown
+    let container = document.createElement('div');
+    container.className = 'select-container';
+    select.parentNode.insertBefore(container, select);
+    container.appendChild(selectReplacer);
+    container.appendChild(select);
+    select.style.display = 'none'; // Hide the original select
+
+    addEventListenersToCustomDropdown(select, aiNode);
+
+}
+
+function addEventListenersToCustomDropdown(select, aiNode) {
+    let container = select.parentNode;
+    let selectReplacer = container.querySelector('.select-replacer');
+    let optionsReplacer = selectReplacer.querySelector('.options-replacer');
+    let selectedDiv = selectReplacer.querySelector('div');
+
     // Reference to local LLM Checkbox
     let localLLMCheckbox = document.getElementById("localLLM");
+
+    // Toggle dropdown on click
+    let isPendingFrame = false;
 
     // Create individual options
     Array.from(select.options).forEach((option, index) => {
@@ -244,12 +269,6 @@ function setupCustomDropdown(select, aiNode = false) {
         optionsReplacer.appendChild(optionDiv);
     });
 
-    // Append the options container to the main dropdown container
-    selectReplacer.appendChild(optionsReplacer);
-
-    // Toggle dropdown on click
-    let isPendingFrame = false;
-
     selectReplacer.addEventListener('click', function (event) {
         // Get all the select containers
         const selectContainers = document.querySelectorAll('.select-container');
@@ -280,14 +299,6 @@ function setupCustomDropdown(select, aiNode = false) {
             }
         }
     });
-
-    // Replace the original select with the custom dropdown
-    let container = document.createElement('div');
-    container.className = 'select-container';
-    select.parentNode.insertBefore(container, select);
-    container.appendChild(selectReplacer);
-    container.appendChild(select);
-    select.style.display = 'none'; // Hide the original select
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -304,7 +315,39 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    let modelSelect = document.querySelector('#model-select');
+    if (modelSelect) {
+        handleModelSelectChange(modelSelect); // Add specific change listener
+
+        // Restore selection from local storage
+        const storedValue = localStorage.getItem('selectedModel');
+        if (storedValue) {
+            modelSelect.value = storedValue;
+
+            // Update the custom dropdown display to show the stored value
+            let selectedDiv = modelSelect.parentNode.querySelector('.select-replacer > div');
+            if (selectedDiv) {
+                selectedDiv.innerText = modelSelect.options[modelSelect.selectedIndex].innerText;
+            }
+        }
+    }
 });
+
+
+
+function handleModelSelectChange(selectElement) {
+    selectElement.addEventListener('change', function () {
+        // Save the selected value in local storage
+        localStorage.setItem('selectedModel', this.value);
+
+        // If you have a corresponding custom dropdown display, update it
+        const customDisplayDiv = this.parentNode.querySelector('.select-replacer > div');
+        if (customDisplayDiv) {
+            customDisplayDiv.innerText = this.options[this.selectedIndex].innerText;
+        }
+    });
+}
 
 // Function for custom slider background
 function setSliderBackground(slider) {

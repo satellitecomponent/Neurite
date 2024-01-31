@@ -118,7 +118,9 @@ class Node {
     }
     json() {
         return JSON.stringify(this, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras" || k === "aiResponseEditor" || k === "aiCursor") {
+            if (k === "content" || k === "edges" || k === "save_extras" ||
+                k === "aiResponseEditor" || k === "aiCursor" || k === "responseHandler" ||
+                k === "windowDiv") { // Exclude windowDiv as well
                 return undefined;
             }
             return v;
