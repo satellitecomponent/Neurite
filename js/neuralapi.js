@@ -561,6 +561,9 @@ function neuriteSaveCurrentView() {
     // Update the browser cache
     updateSavedViewsCache();
 
+    // Refresh the display of saved coordinates
+    displaySavedCoordinates();
+
     // Update button text temporarily
     const saveButton = document.getElementById('saveCoordinatesBtn');
     saveButton.textContent = 'Saved!';
@@ -570,7 +573,6 @@ function neuriteSaveCurrentView() {
 document.getElementById('saveCoordinatesBtn').addEventListener('click', function () {
     neuriteSaveCurrentView();
 });
-
 
 
 function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
@@ -1089,8 +1091,6 @@ function buildFunctionNameList() {
 }
 
 // Initialize and build the list
-document.addEventListener('DOMContentLoaded', (event) => {
-    initializeFunctionMappings();
-    const functionNameList = buildFunctionNameList();
-    // console.log(functionNameList);
-});
+initializeFunctionMappings();
+const functionNameList = buildFunctionNameList();
+//console.log(functionNameList);

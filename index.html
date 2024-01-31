@@ -493,12 +493,15 @@
                                     <label for="ref-tag">Reference Tag</label>
                                 </td>
                             </tr>
-                            <!-- <tr>
+                            <tr>
                                 <td>
-                                    <label for="randomnessSlider">Randomize: </label>
-                                    <input type="range" id="randomnessSlider" min="0" max="0.01" step="0.0001" value="0">
+                                    <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
                                 </td>
-                            </tr> -->
+                                <td>
+                                    <button id="screenshotButton" class="key-button">Screenshot</button>
+                                    <button id="recordButton" class="key-button">Record</button>
+                                </td>
+                            </tr>
                         </table>
                     </div>
                 </div>
@@ -658,33 +661,31 @@
                 </div>
                 <div id="tab6" class="tabcontent">
                     <div class="submenu">
-                        <br />
                         <div id="saved-networks-container" class="scrollable-list"></div>
-                        <a id="save-button">Save</a>
+
                         <input id="save-or-load" type="text" placeholder="save data..." style="width: 244px;" />
+                        <a id="save-button">Save</a>
                         <a id="load-button">Load</a>
                         <a id="clear-button">Clear</a>
                         <div id="clear-sure" style="display:none">
                             <a id="clear-unsure-button">no</a>
                             <a id="clear-sure-button">yes</a>
                         </div>
+
                         <div style="text-align: center;">
-                            <button id="screenshotButton" class="key-button">Screenshot</button>
-                            <button id="recordButton" class="key-button">Record</button>
-                            <br />
-                            <br />
-                            <button id="saveCoordinatesBtn" class="key-button">Save Coordinates</button>
-                            <br />
-                            <div id="coordinates" style="background-color: none;background-color: none; color:none; position: inherit; display: initial; left: 0px; top: 0px;">
-                                pan
-                                <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
-                                <br />
-                                zoom
-                                <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
+                            <div id="savedCoordinatesContainer"></div>
+                            <a id="saveCoordinatesBtn" style="text-align: end;">Store Coordinates</a>
+                            <a id="deleteCoordinatesBtn" style="text-align: end;">Delete Coordinates</a>
+                            <div id="coordinates" style="background-color: none; color: none; position: inherit; display: initial; left: 0px; top: 0px;">
+                                <div class="coordinate-field">
+                                    <span>pan</span>
+                                    <input id="pan" type="text" value="0+0i" style="background:none; border:none;" size="28" />
+                                </div>
+                                <div class="coordinate-field">
+                                    <span>zoom</span>
+                                    <input id="zoom" type="text" value="1" style="background:none; border:none;" size="25" />
+                                </div>
                             </div>
-                            <br />
-                            <br />
-                            <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
                         </div>
                     </div>
                 </div>
@@ -692,7 +693,7 @@
         </div>
     </div>
     <a id="nodes">
-        <!-- Copy all text to personal storage -->
+<!--         Save-Data .txt        -->
     </a>
     <!--iframe id="inlineFrameExample"
             title="Inline Frame Example"
@@ -839,6 +840,8 @@
 
     <script src="js/dropdown/savenet.js"></script>
     <script src="js/dropdown/dropdown_v2_0_1.js"></script>
+    <script src="js/dropdown/displaysavedcoords.js"></script>
+
 
     <script src="js/zettelkasten/zetcodemirror.js"></script>
     <script src="js/zettelkasten/zettelkasten_v2.js"></script>
@@ -895,6 +898,8 @@
 
     <script src="js/record/record_v1.js"></script>
     <script src="js/neuralapi.js"></script>
+
+
     <script src="js/functioncall/functioncallingpanel.js"></script>
     <script src="js/functioncall/neuraltelemetryprompt.js"></script>
     <script src="js/functioncall/requestfunctioncall.js"></script>

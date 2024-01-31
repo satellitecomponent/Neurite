@@ -139,6 +139,8 @@ const LLM_TAG = "AI:";
 
 let processAll = false;//set to true until made more robust.
 
+let restoreZettelkastenEvent = false; 
+
 const bracketsMap = {
     '(': ')',
     '[': ']',

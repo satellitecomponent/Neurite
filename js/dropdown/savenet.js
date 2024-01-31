@@ -34,6 +34,8 @@ function downloadData(title, data) {
     }, 1);
 }
 
+let selectedSaveIndex = null; // Global variable to track the selected save
+
 function updateSavedNetworks() {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
     let container = document.getElementById("saved-networks-container");
@@ -41,6 +43,11 @@ function updateSavedNetworks() {
 
     for (let [index, save] of saves.entries()) {
         let div = document.createElement("div");
+
+        // Add a class to the div if it's the selected save
+        if (index === selectedSaveIndex) {
+            div.classList.add("selected-save");
+        }
         let titleInput = document.createElement("input");
         let data = document.createElement("span");
         let loadButton = document.createElement("button");
@@ -50,7 +57,7 @@ function updateSavedNetworks() {
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = "none"
-        titleInput.style.width = "134px"
+        titleInput.style.width = "125px"
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -59,11 +66,14 @@ function updateSavedNetworks() {
         data.textContent = save.data;
         data.style.display = "none";
 
-        loadButton.textContent = "Load";
+        loadButton.textContent = "Select";
         loadButton.className = 'linkbuttons';
         loadButton.addEventListener('click', function () {
             document.getElementById("save-or-load").value = data.textContent;
+            selectedSaveIndex = index; // Update the selected save index
+            updateSavedNetworks(); // Refresh the UI
         });
+
 
         deleteButton.textContent = "X";
         deleteButton.className = 'linkbuttons';
@@ -181,13 +191,16 @@ document.getElementById("clear-button").addEventListener("click", function () {
 });
 document.getElementById("clear-unsure-button").addEventListener("click", function () {
     document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "clear";
+    document.getElementById("clear-button").text = "Clear";
 });
 document.getElementById("clear-sure-button").addEventListener("click", function () {
     clearnet();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "clear";
+    document.getElementById("clear-button").text = "Clear";
 });
+
+
+
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
     alert('Local storage has been cleared.');
@@ -204,19 +217,26 @@ for (let n of nodes) {
 }
 
 function clearnet() {
-    llmNodeCount = 0;
-
+    // Remove all edges
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
     }
+
+    // Remove all nodes
     while (nodes.length > 0) {
         nodes[nodes.length - 1].remove();
     }
+
+    // Reset LLM node count
+    llmNodeCount = 0;
+
+    // Clear the CodeMirror content
+    window.myCodemirror.setValue('');
 }
 
 //this is a quick fix to retain textarea height, the full fix requires all event listeners to be attatched to each node.
 
-function adjustTextareaHeightToContent(nodes) {
+/* function adjustTextareaHeightToContent(nodes) {
     for (let node of nodes) {
         let textarea = node.content.querySelector('textarea');
         if (textarea) {
@@ -225,7 +245,7 @@ function adjustTextareaHeightToContent(nodes) {
             textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'; // Set to full content height or max height
         }
     }
-}
+} */
 
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
@@ -235,20 +255,15 @@ function loadnet(text, clobber, createEdges = true) {
     let d = document.createElement("div");
     d.innerHTML = text;
 
-    // Clear the existing content in myCodeMirror
-    window.myCodemirror.setValue('');
-
-    // Extract Zettelkasten content
+    // Temporarily store Zettelkasten content but don't set it in myCodeMirror yet
     let zettelkastenSaveElement = d.querySelector("#zettelkasten-save");
+    let zettelkastenContent;
     if (zettelkastenSaveElement) {
-        let zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
-        console.log("Zettelkasten Content:", zettelkastenContent);
-        processAll = true;
-        window.myCodemirror.setValue(zettelkastenContent);
+        zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
+        //console.log("Zettelkasten Content:", zettelkastenContent);
+        // Remove the Zettelkasten save element to process the rest of the nodes
+        zettelkastenSaveElement.remove();
     }
-
-    // Remove the Zettelkasten save element to process the rest of the nodes
-    zettelkastenSaveElement?.remove();
 
     let newNodes = [];
     for (let n of d.children) {
@@ -262,10 +277,16 @@ function loadnet(text, clobber, createEdges = true) {
         htmlnodes_parent.appendChild(n.content);
     }
 
-    //adjustTextareaHeightToContent(newNodes);
     for (let n of newNodes) {
         n.init(nodeMap); // Initialize the node
         reconstructSavedNode(n); // Reconstruct the saved node
+    }
+
+    // Now that nodes are restored, set Zettelkasten content in myCodeMirror
+    if (zettelkastenContent) {
+        processAll = true;
+        restoreZettelkastenEvent = true;
+        window.myCodemirror.setValue(zettelkastenContent);
     }
 }
 

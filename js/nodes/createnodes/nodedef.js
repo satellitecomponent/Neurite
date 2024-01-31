@@ -222,6 +222,8 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     return node;
 }
 
+// To-Do: Find method to refresh saves of link nodes before the save update.
+
 function initLinkNode(node) {
     let displayWrapper = node.content.querySelector(".display-wrapper");
     node.displayWrapper = displayWrapper;
@@ -443,10 +445,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let sendButton = document.createElement("button");
     sendButton.type = "submit";
     sendButton.id = `prompt-form-${llmNodeCount}`;
-    sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;"; sendButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#45a049';
-        this.style.color = '#222226';
-    });
+    sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+
     sendButton.innerHTML = `
     <svg width="24" height="24">
         <use xlink:href="#play-icon"></use>
@@ -595,6 +595,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.savedCheckboxStates = {};
     node.savedCustomInstructions = '';
     node.savedLLMSelection = '';
+    node.savedTextContent = '';
     
 
     initAiNode(node);
@@ -809,6 +810,11 @@ function setupAiNodeSendButtonListeners(node) {
     let sendButton = node.sendButton;
 
     let haltCheckbox = node.haltCheckbox;
+
+    sendButton.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#45a049';
+        this.style.color = '#222226';
+    });
 
     sendButton.addEventListener('mouseout', function () {
         this.style.backgroundColor = '#222226';
@@ -1172,14 +1178,17 @@ function setupAiNodeCheckBoxArrayListeners(node) {
     const checkboxes = node.content.querySelectorAll('.checkboxarray input[type="checkbox"]');
 
     checkboxes.forEach(checkbox => {
-        // Restore the saved state
-        const savedState = node.savedCheckboxStates[checkbox.id];
-        if (savedState !== undefined) {
+        // Check if savedCheckboxStates exists and then restore the saved state
+        if (node.savedCheckboxStates && node.savedCheckboxStates.hasOwnProperty(checkbox.id)) {
+            const savedState = node.savedCheckboxStates[checkbox.id];
             checkbox.checked = savedState;
         }
 
         // Attach event listener to save state on change
         checkbox.addEventListener('change', () => {
+            if (!node.savedCheckboxStates) {
+                node.savedCheckboxStates = {};
+            }
             node.savedCheckboxStates[checkbox.id] = checkbox.checked;
         });
     });
