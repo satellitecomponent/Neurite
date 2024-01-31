@@ -595,6 +595,29 @@ function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
     }
 }
 
+function neuriteDeleteSavedView(index) {
+    // Check if the index is within bounds
+    if (index !== null && savedViews[index]) {
+        // Remove the selected view from the array
+        savedViews.splice(index, 1);
+
+        // Update the cache
+        updateSavedViewsCache();
+
+        // Refresh the display of saved coordinates
+        displaySavedCoordinates();
+
+        // Log the deletion
+        console.log("View deleted at index:", index);
+
+        // Reset the selected coordinate index and div if needed
+        selectedCoordinateIndex = null;
+        selectedCoordinateDiv = null;
+    } else {
+        console.error('No coordinate at index for deletion:', index);
+    }
+}
+
 function listSavedViews() {
     return savedViews.map(view => {
         return {

@@ -410,6 +410,7 @@
 
                 .submenu a:hover {
                     background-color: #ddd;
+                    color: #222226;
                 }
 
         input[type="range"] {
@@ -611,6 +612,11 @@ input[type="text"i]:hover {
     display: flex;
     align-items: center; /* Aligns items vertically in the center */
     justify-content: flex-start; /* Aligns items to the start of the flex container */
+    background-color: #222226;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 4px;
+    margin-bottom: 3px;
 }
 
     .coordinate-field span {
@@ -1024,12 +1030,12 @@ select-replacer > div:first-child {
 
 .scrollable-list {
     height: 149px; /* Adjust this value based on how tall you want your list to be */
-    width: 250px;
+    width: 255px;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid #000;
     padding: 5px;
     margin-top: 10px;
+    border-top: 2px solid #727272;
 }
 
             .scrollable-list::-webkit-scrollbar {
@@ -1088,29 +1094,103 @@ select-replacer > div:first-child {
 }
 
 .selected-save {
-    background-color: #3b484d; /* Example style */
+    background-color: #3b484d;
     transform: scale(1.05); /* Slightly enlarge the selected save */
     transition: transform 0.3s ease;
 }
 
-#savedCoordinatesContainer {
-    /* Set height to auto to allow height expansion */
-    height: 140px;
+
+
+.top-section, .bottom-section {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.buttons-left, .buttons-right {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+}
+
+.buttons-right {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    border-left: 2px solid #727272;
+    background-color: #222226;
+}
+
+.buttons-left {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    width: 45%;
+    background-color: #222226;
+    border-left: 2px solid #727272; /* Thin left border */
+    border-bottom: 2px solid #727272; /* Thin bottom border */
+    margin-bottom: 15px;
+}
+
+.coordinates-container {
+    background-color: #222226; /* Replace with your desired background color */
+    border-top: 2px solid #727272;
+    border-right: 2px solid #727272;
+    border-left: none;
+    border-bottom: none; /* Add if you want a border at the bottom as well */
+    border-radius: 0px 15px 0 0;
+    overflow: hidden;
+    padding-top: 5px;
+}
+
+
+/* General styles for all containers */
+.saved-coordinates-container {
     /* Allow elements to wrap */
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
 }
 
-    #savedCoordinatesContainer div {
-        /* Styling for each saved view element */
-        background-color: #282828; /* Dark grey */
-        margin: 0; /* No spacing between elements */
-        padding: 3px;
-        border-radius: 0; /* No rounded corners */
-        /* Display settings */
-        white-space: nowrap;
-        font-size: 12px;
+#savedCoordinatesContainer {
+    /* Specific styles for the main container */
+    height: 140px;
+    align-items: flex-start;
+}
+
+#savedCoordinatesContainerTop {
+    /* Specific styles for the top container */
+    align-items: center;
+    height: 90px;
+    justify-content: flex-end;
+}
+
+#savedCoordinatesContainerBottom {
+    /* Specific styles for the bottom container */
+    align-items: center;
+    height: 60px;
+    width: 45%;
+}
+
+.saved-coordinate-item {
+    /* Styling for each saved view element */
+    background-color: #282828;
+    margin-right: 6px;
+    padding: 3px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+    /* Hover state */
+    .saved-coordinate-item:hover {
+        background-color: #555;
+        color: #bbb;
+        transform: scale(1.1);
+    }
+
+    /* Selected state - increased specificity */
+    .saved-coordinate-item.selected-coordinate {
+        background-color: #333041;
+        color: white;
+        transform: scale(1); /* Return scale to normal for selected items */
     }
 
 .saved-coordinate-item {
@@ -1118,14 +1198,7 @@ select-replacer > div:first-child {
     transition: background-color 0.3s; /* Smooth transition for background color */
 }
 
-#savedCoordinatesContainer .saved-coordinate-item:hover {
-    background-color: #555; /* Darken on hover */
-}
 
-#savedCoordinatesContainer .selected-coordinate {
-    background-color: #444; /* Different color to indicate selection */
-    color: white;
-}
 
 .highlight {
     border: 2px dashed #aaa;

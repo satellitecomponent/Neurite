@@ -885,6 +885,8 @@ document.addEventListener('wheel', (event) => {
     }
     if (settings.scroll === "zoom") {
         autopilotSpeed = 0;
+        deselectCoordinate();
+
         coordsLive = true;
         let dest = toZ(mousePos);
         regenAmount += Math.abs(event.wheelDelta);
