@@ -276,7 +276,7 @@ function setupLinkNodeDisplayButtonListeners(node) {
     let button = node.iframeButton;
     let link = node.link;
     let extractButton = node.extractButton;
-    const windowDiv = node.window;
+    const windowDiv = node.windowDiv;
     const buttonsWrapper = node.content.querySelector(".buttons-wrapper");
 
     displayButton.addEventListener("click", async function () {
@@ -392,7 +392,7 @@ function setupLinkNodeIframeButtonListeners(node) {
     const iframeWrapper = node.iframeWrapper;
     const linkWrapper = node.linkWrapper;
     const link = node.linkUrl;
-    const windowDiv = node.window;
+    const windowDiv = node.windowDiv;
     const buttonsWrapper = node.content.querySelector(".buttons-wrapper");
 
     let iframe = iframeWrapper.querySelector("iframe");
@@ -812,7 +812,7 @@ function setupAiNodeSendButtonListeners(node) {
     let haltCheckbox = node.haltCheckbox;
 
     sendButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#45a049';
+        this.style.backgroundColor = '#293e34';
         this.style.color = '#222226';
     });
 
@@ -854,18 +854,16 @@ function setupAiNodeRegenerateButtonListeners(node) {
     let regenerateButton = node.regenerateButton;
 
     regenerateButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#ddd';
-        this.style.color = '#222226';
+        this.style.backgroundColor = '#333';
     });
     regenerateButton.addEventListener('mouseout', function () {
         this.style.backgroundColor = '#222226';
-        this.style.color = '#ddd';
     });
     regenerateButton.addEventListener('mousedown', function () {
         this.style.backgroundColor = '#45a049';
     });
     regenerateButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = '#ddd';
+        this.style.backgroundColor = '#222226';
     });
 
 
@@ -897,22 +895,22 @@ function setupAiNodeSettingsButtonListeners(node) {
     let aiNodeSettingsContainer = node.content.querySelector('.ainode-settings-container');
 
     aiNodeSettingsButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = this.isActive ? '#888' : '#ddd';
+        this.style.backgroundColor = this.isActive ? '#152233' : '#333';
     });
     aiNodeSettingsButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = this.isActive ? '#888' : '#222226';
+        this.style.backgroundColor = this.isActive ? '#162e50' : '#222226';
     });
     aiNodeSettingsButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = '#888';
+        this.style.backgroundColor = '#162e50';
     });
     aiNodeSettingsButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = this.isActive ? '888' : '#ddd';
+        this.style.backgroundColor = this.isActive ? '#162e50' : '#333';
     });
     aiNodeSettingsButton.addEventListener('click', function (event) {
         this.isActive = !this.isActive;  // Toggle the active state
         toggleSettings(event, aiNodeSettingsContainer);  // Call your existing function
         // Set the background color based on the new active state
-        this.style.backgroundColor = this.isActive ? '#888' : '#ddd';
+        this.style.backgroundColor = this.isActive ? '#162e50' : '#333';
     });
 
     // Add the listener for mousedown event

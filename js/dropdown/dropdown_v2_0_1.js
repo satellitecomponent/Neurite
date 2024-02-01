@@ -526,6 +526,13 @@ function handleKeyDown(event) {
     return true;
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const promptInput = document.getElementById('prompt');
+    if (promptInput) {
+        promptInput.addEventListener('keydown', handleKeyDown);
+    }
+});
+
         function autoGrow(event) {
             const textarea = event.target;
             // Temporarily make the height 'auto' so the scrollHeight is not affected by the current height
