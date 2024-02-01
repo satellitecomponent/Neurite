@@ -208,14 +208,12 @@
                 <div id="tab1" class="tabcontent">
                     <!-- First tab content here -->
                     <div class="submenu">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <!-- Added margin for spacing -->
+                            <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
+                        </div>
                         <form id="prompt-form" onsubmit="sendMessage(event);">
                             <div>
-                                <!-- First Row: Search Bar -->
-                                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                                    <!-- Added margin for spacing -->
-                                    <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
-                                </div>
-
                                 <!-- Second Row: Prompt Form -->
                                 <div style="display: flex;">
                                     <!-- Input Group with flex layout and relative positioning -->
@@ -792,22 +790,22 @@
         <defs>
             <symbol id="play-icon" viewBox="0 0 24 24">
                 <svg class="w-[25px] h-[25px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 12 16">
-                    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M11 1v14m-8.336-.479 6.5-5.774a1 1 0 0 0 0-1.494l-6.5-5.774A1 1 0 0 0 1 2.227v11.546a1 1 0 0 0 1.664.748Z" />
+                    <path stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M11 1v14m-8.336-.479 6.5-5.774a1 1 0 0 0 0-1.494l-6.5-5.774A1 1 0 0 0 1 2.227v11.546a1 1 0 0 0 1.664.748Z" />
                 </svg>
             </symbol>
             <symbol id="refresh-icon" viewBox="0 0 24 24">
                 <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
-                    <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97" />
+                    <path id="refresh-icon-path" stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M16 1v5h-5M2 19v-5h5m10-4a8 8 0 0 1-14.947 3.97M1 10a8 8 0 0 1 14.947-3.97" />
                 </svg>
             </symbol>
             <symbol id="pause-icon" viewBox="0 0 24 24">
                 <svg class="w-[25px] h-[25px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 12 18">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M1 1.8c0-.442.32-.8.714-.8h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H1.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 1 16.2V1.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H8.857c-.394 0-.714-.358-.714-.8V1.8Z" clip-rule="evenodd" />
+                    <path stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M1 1.8c0-.442.32-.8.714-.8h1.429c.394 0 .714.358.714.8v14.4c0 .442-.32.8-.714.8H1.714a.678.678 0 0 1-.505-.234A.851.851 0 0 1 1 16.2V1.8Zm7.143 0c0-.442.32-.8.714-.8h1.429c.19 0 .37.084.505.234.134.15.209.354.209.566v14.4c0 .442-.32.8-.714.8H8.857c-.394 0-.714-.358-.714-.8V1.8Z" clip-rule="evenodd" />
                 </svg>
             </symbol>
             <symbol id="function-button" viewBox="0 0 24 24">
                 <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 12">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M9 5 5 1 1 5m8 6L5 7l-4 4" />
+                    <path stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M9 5 5 1 1 5m8 6L5 7l-4 4" />
                 </svg>
             </symbol>
         </defs>
@@ -825,7 +823,7 @@
 
 
     <svg id="aiNodeSettingsIcon" display="none" class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-        <path stroke="#bbb" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25" />
+        <path stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7.75 4H19M7.75 4a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 4h2.25m13.5 6H19m-2.25 0a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 10h11.25m-4.5 6H19M7.75 16a2.25 2.25 0 0 1-4.5 0m4.5 0a2.25 2.25 0 0 0-4.5 0M1 16h2.25" />
     </svg>
 
 

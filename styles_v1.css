@@ -557,7 +557,7 @@ input[type="text"i]:hover {
         }
 
             #prompt-form button:hover {
-                background-color: #ddd;
+                background-color: #333;
                 color: #222226
             }
 
@@ -567,7 +567,7 @@ input[type="text"i]:hover {
             }
 
                 #prompt-form button[type="submit"]:hover {
-                    background-color: #528f4c;
+                    background-color: #293e34;
                     color: #222226;
                 }
 
@@ -2152,19 +2152,20 @@ textarea[id^='custom-instructions-textarea-'] {
 }
 
 #function-run-button:hover {
-    background-color: #8a3e19;
+    background-color: #58271c;
     color: #222226;
 }
 
 #function-send-button:hover {
-    background-color: #528f4c; /* Different color for send button */
+    background-color: #293e34; /* Different color for send button */
     color: #222226;
 }
 
 #function-regen-button:hover {
-    background-color: #d3d3d3; /* Light grey for regen button */
-    color: #222226;
+    background-color: #333; /* Light grey for regen button */
 }
+
+
 
 .cm-neurite-function-name {
     color: #8e8eff !important;
