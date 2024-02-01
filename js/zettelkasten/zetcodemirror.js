@@ -1,20 +1,8 @@
 myCodeMirror.on('beforeChange', function (cm, changeObj) {
+    // Record change events fur custom undo/redo
     cm.changeGeneration(true);
 });
 
-// For keyboard-based paste events set processAll to true to allow for the Zettelkasten processor to handle any amount of nodes.
-myCodeMirror.getWrapperElement().addEventListener('keydown', function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        //console.log('Keyboard paste detected');
-        processAll = true;
-    }
-});
-
-// For right-click context menu set processAll to true in case of a paste event.
-myCodeMirror.getWrapperElement().addEventListener('contextmenu', function (e) {
-    //console.log('Context menu opened, setting processAll to true');
-    processAll = true;
-});
 
 // Call updateNodeTitleToLineMap whenever the CodeMirror content changes
 myCodeMirror.on("change", function () {

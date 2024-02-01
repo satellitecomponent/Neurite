@@ -364,8 +364,31 @@ addEventListener("paste", (event) => {
 });
 
 addEventListener("paste", (event) => {
-    if (event.target.tagName.toLowerCase() === "textarea") {
+    let codeMirrorWrapper = window.myCodeMirror.getWrapperElement();
+    if (codeMirrorWrapper.contains(event.target)) {
+        //console.log('Paste detected in CodeMirror');
+
+        // Use setTimeout to defer the execution until after the paste event
+        setTimeout(() => {
+            processAll = true;
+            console.log('processAll set to true after paste in CodeMirror');
+
+            // Simulate a minor change in content to trigger an input event
+            const cursorPos = window.myCodeMirror.getCursor();
+            window.myCodeMirror.replaceRange(' ', cursorPos); // Insert a temporary space
+            window.myCodeMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
+
+            //console.log('Triggered input event in CodeMirror');
+
+            // Additional logic as required
+        }, 0);
         event.stopPropagation();
-        //console.log("Paste disabled for textarea");
+    } else {
+        // Check for other textarea or input elements
+        let targetTag = event.target.tagName.toLowerCase();
+        if (targetTag === "textarea" || targetTag === "input") {
+            event.stopPropagation();
+            //console.log("Paste disabled for textarea and input");
+        }
     }
 }, true);

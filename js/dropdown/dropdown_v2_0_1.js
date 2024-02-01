@@ -347,16 +347,55 @@ function setSliderBackground(slider) {
     slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
 }
 
-document.querySelectorAll('input[type=range]').forEach(function (slider) {
 
+document.querySelectorAll('input[type=range]').forEach(function (slider) {
     // Set the background color split initially
     setSliderBackground(slider);
 
-    // Update background color split when the slider value changes
+    // Update background color split and save slider values when the slider value changes
     slider.addEventListener('input', function () {
         setSliderBackground(slider);
     });
 });
+
+
+// Function to save the value of a specific slider or color picker
+function saveInputValue(input) {
+    const savedValues = localStorage.getItem('inputValues');
+    const inputValues = savedValues ? JSON.parse(savedValues) : {};
+
+    inputValues[input.id] = input.value;
+    localStorage.setItem('inputValues', JSON.stringify(inputValues));
+}
+
+const debouncedSaveInputValue = debounce(function (input) {
+    saveInputValue(input);
+    //console.log(`saved`);
+}, 300);
+
+document.querySelectorAll('#tab2 input[type="range"], .color-picker-container input[type="color"]').forEach(function (input) {
+    input.addEventListener('input', function () {
+        debouncedSaveInputValue(input);
+    });
+});
+
+function restoreInputValues() {
+    const savedValues = localStorage.getItem('inputValues');
+    if (savedValues) {
+        const inputValues = JSON.parse(savedValues);
+        document.querySelectorAll('#tab2 input[type="range"], .color-picker-container input[type="color"]').forEach(input => {
+            if (input.id in inputValues) {
+                input.value = inputValues[input.id];
+                // Trigger the input event for both sliders and color pickers
+                setTimeout(() => {
+                    input.dispatchEvent(new Event('input'));
+                }, 100);
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', restoreInputValues);
 
 
 document.getElementById('model-temperature').addEventListener('input', updateLabel);
@@ -661,6 +700,26 @@ function setRenderWidthMult(v) {
     settings.renderWidthMult = v;
 }
 
+function getRenderWidthMult() {
+    const sliderValue = parseFloat(document.getElementById("renderWidthMultSlider").value);
+
+    let transformedValue;
+    if (sliderValue <= 50) {
+        // More granularity in lower range
+        transformedValue = sliderValue / 5;
+    } else {
+        // Less granularity in higher range
+        transformedValue = 10 + ((sliderValue - 50) * 2);
+    }
+
+    return transformedValue;
+}
+document.getElementById("renderWidthMultSlider").addEventListener("input", (e) => {
+    let adjustedValue = getRenderWidthMult();
+    setRenderWidthMult(adjustedValue);
+    document.getElementById("renderWidthMultValue").textContent = adjustedValue.toFixed(2);
+});
+
 function setRenderLength(l) {
     let f = settings.renderStepSize * settings.renderSteps / l;
     //settings.renderStepSize /= f;
@@ -680,15 +739,7 @@ document.getElementById("maxLinesSlider").addEventListener("input", (e) => {
     document.getElementById("maxLinesValue").textContent = + v;
 });
 
-function getRenderWidthMult() {
-    let v = document.getElementById("renderWidthMultSlider").value;
-    return v;
-}
-document.getElementById("renderWidthMultSlider").addEventListener("input", (e) => {
-    let v = getRenderWidthMult();
-    setRenderWidthMult(v);
-    document.getElementById("renderWidthMultValue").textContent = v;
-});
+
 
 function setRenderQuality(n) {
     let q = 1 / n;

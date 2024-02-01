@@ -574,26 +574,13 @@ document.getElementById('saveCoordinatesBtn').addEventListener('click', function
     neuriteSaveCurrentView();
 });
 
-
-function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
-    if (savedView && savedView.standardCoords) {
-        // Extract real and imaginary parts from pan
-        const panParts = savedView.standardCoords.pan.split('+i');
-        const panReal = parseFloat(panParts[0]);
-        const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
-
-        // Call neuriteSetMandelbrotCoords with the parsed coordinates
-        neuriteSetMandelbrotCoords(
-            parseFloat(savedView.standardCoords.zoom),
-            panReal,
-            panImaginary,
-            animate,
-            speed
-        );
+document.getElementById('deleteCoordinatesBtn').addEventListener('click', function () {
+    if (selectedCoordinateIndex !== null) {
+        neuriteDeleteSavedView(selectedCoordinateIndex);
     } else {
-        console.log("Saved view not found or invalid:", savedView);
+        alert('No coordinate selected for deletion.');
     }
-}
+});
 
 function neuriteDeleteSavedView(index) {
     // Check if the index is within bounds
@@ -615,6 +602,27 @@ function neuriteDeleteSavedView(index) {
         selectedCoordinateDiv = null;
     } else {
         console.error('No coordinate at index for deletion:', index);
+    }
+}
+
+
+function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
+    if (savedView && savedView.standardCoords) {
+        // Extract real and imaginary parts from pan
+        const panParts = savedView.standardCoords.pan.split('+i');
+        const panReal = parseFloat(panParts[0]);
+        const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
+
+        // Call neuriteSetMandelbrotCoords with the parsed coordinates
+        neuriteSetMandelbrotCoords(
+            parseFloat(savedView.standardCoords.zoom),
+            panReal,
+            panImaginary,
+            animate,
+            speed
+        );
+    } else {
+        console.log("Saved view not found or invalid:", savedView);
     }
 }
 
