@@ -3,7 +3,7 @@ let selectedCoordinateIndex = null; // Global variable to keep track of the sele
 
 function distributeCoordinates(savedViews) {
     const mainCount = Math.round(savedViews.length * 0.50); // 50% for main
-    const topCount = Math.round(savedViews.length * 0.30); // 35% for top
+    const topCount = Math.round(savedViews.length * 0.32); // 32% for top
     // For the bottom, we use the remaining views
     const bottomCount = savedViews.length - mainCount - topCount; // 15% for bottom
 
@@ -64,14 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSavedViewsCache();
 
     displaySavedCoordinates();
-});
-
-document.getElementById('deleteCoordinatesBtn').addEventListener('click', function () {
-    if (selectedCoordinateIndex !== null) {
-        neuriteDeleteSavedView(selectedCoordinateIndex);
-    } else {
-        alert('No coordinate selected for deletion.');
-    }
 });
 
 function deselectCoordinate() {

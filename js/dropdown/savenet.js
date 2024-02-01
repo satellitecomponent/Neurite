@@ -1,27 +1,72 @@
-﻿document.getElementById("save-button").addEventListener("click", function () {
+﻿
+function handleSaveConfirmation(title, saveData, existingTitle) {
+    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    const existingSaves = saves.filter(save => save.title === title);
+
+    if (existingSaves.length > 0 && !existingTitle) {
+        let confirmMessage = existingSaves.length === 1 ?
+            `A save with the title "${title}" already exists. Click 'OK' to overwrite, or 'Cancel' to create a duplicate.` :
+            `${existingSaves.length} saves with the title "${title}" already exist. Click 'OK' to overwrite all, or 'Cancel' to create a duplicate.`;
+
+        if (confirm(confirmMessage)) {
+            // Overwrite logic - update all saves with the matching title
+            saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
+            console.log(`Updated all saves with title: ${title}`);
+        } else {
+            // Duplicate logic
+            let newTitle = title;
+            saves.push({ title: newTitle, data: saveData });
+            console.log(`Created duplicate save: ${newTitle}`);
+            title = newTitle; // Update title to reflect new save
+        }
+    } else {
+        // Add new save
+        saves.push({ title: title, data: saveData });
+        console.log(`Created new save: ${title}`);
+    }
+
+    try {
+        localStorage.setItem("saves", JSON.stringify(saves));
+        updateSavedNetworks();
+    } catch (e) {
+        if (confirm("Local storage is full, download the data as a .txt file?")) {
+            downloadData(title, JSON.stringify({ data: saveData, zettelkastenSave: zettelkastenContent }));
+        }
+    }
+}
+
+function collectAdditionalSaveObjects() {
+    // Collecting slider values
+    const inputValues = localStorage.getItem('inputValues') || '{}';
+    const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
+
+    // Collecting saved views
+    const savedViewsString = JSON.stringify(savedViews);
+    const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
+
+    // Combine both slider values and saved views in one string
+    return savedInputValues + savedViewsElement;
+}
+
+function neuriteSaveEvent(existingTitle = null) {
+    nodes.map((n) => n.updateEdgeData());
+    let nodeData = document.getElementById("nodes").innerHTML;
+
     let zettelkastenContent = window.myCodemirror.getValue();
     let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
 
-    nodes.map((n) => n.updateEdgeData());
-    let nodeData = document.getElementById("nodes").innerHTML;
-    let saveData = nodeData + zettelkastenSaveElement;  // Combine Zettelkasten content with node data
+    let additionalSaveData = collectAdditionalSaveObjects();
+    let saveData = nodeData + zettelkastenSaveElement + additionalSaveData;
 
-    let title = prompt("Enter a title for this save:");
+    let title = existingTitle || prompt("Enter a title for this save:");
     if (title) {
-        let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-        saves.push({ title: title, data: saveData });
-
-        try {
-            localStorage.setItem("saves", JSON.stringify(saves));
-            updateSavedNetworks();
-        } catch (e) {
-            // localStorage quota exceeded
-            if (confirm("Local storage is full, download the data as a .txt file?")) {
-                downloadData(title, JSON.stringify({ data: s, zettelkastenSave: zettelkastenContent }));
-            }
-        }
+        handleSaveConfirmation(title, saveData, existingTitle);
     }
-});
+}
+
+// Attach the neuriteSaveEvent to the save button
+document.getElementById("save-button").addEventListener("click", () => neuriteSaveEvent());
+
 
 function downloadData(title, data) {
     var blob = new Blob([data], { type: 'text/plain' });
@@ -141,7 +186,7 @@ let container = document.getElementById("saved-networks-container");
 });
 
 // Handle the drop
-container.addEventListener('drop', handleDrop, false);
+container.addEventListener('drop', handleSavedNetworksDrop, false);
 
 function preventDefaults(e) {
     e.preventDefault();
@@ -156,7 +201,7 @@ function unhighlight(e) {
     container.classList.remove('highlight');
 }
 
-function handleDrop(e) {
+function handleSavedNetworksDrop(e) {
     let dt = e.dataTransfer;
     let file = dt.files[0];
 
@@ -247,6 +292,32 @@ function clearnet() {
     }
 } */
 
+function restoreAdditionalSaveObjects(d) {
+
+    let savedViewsElement = d.querySelector("#saved-views");
+    if (savedViewsElement) {
+        let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
+        savedViews = JSON.parse(savedViewsContent);
+        if (savedViews) {
+            // Update the cache
+            updateSavedViewsCache();
+
+            displaySavedCoordinates();
+        }
+        savedViewsElement.remove();
+    }
+
+    let sliderValuesElement = d.querySelector("#saved-input-values");
+    if (sliderValuesElement) {
+        const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
+        localStorage.setItem('inputValues', sliderValuesContent);
+        sliderValuesElement.remove();
+    }
+
+    // Restore sliders immediately after their values have been set
+    restoreInputValues();
+}
+
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
         clearnet();
@@ -265,6 +336,8 @@ function loadnet(text, clobber, createEdges = true) {
         zettelkastenSaveElement.remove();
     }
 
+    restoreAdditionalSaveObjects(d);
+
     let newNodes = [];
     for (let n of d.children) {
         let node = new Node(undefined, n, true, undefined, createEdges);
@@ -282,7 +355,6 @@ function loadnet(text, clobber, createEdges = true) {
         reconstructSavedNode(n); // Reconstruct the saved node
     }
 
-    // Now that nodes are restored, set Zettelkasten content in myCodeMirror
     if (zettelkastenContent) {
         processAll = true;
         restoreZettelkastenEvent = true;
