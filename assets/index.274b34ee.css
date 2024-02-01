@@ -1118,14 +1118,19 @@ select-replacer > div:first-child {
     background-color: #222226;
 }
 
+.top-section {
+    display: flex;
+    flex-direction: row; /* Align children in a row */
+}
+
 .buttons-left {
     display: flex;
     flex-direction: column; /* Stack buttons vertically */
-    width: 45%;
+    width: 100px; /* Fixed width */
     background-color: #222226;
-    border-left: 2px solid #727272; /* Thin left border */
-    border-bottom: 2px solid #727272; /* Thin bottom border */
-    margin-bottom: 15px;
+    border-left: 2px solid #727272;
+    border-bottom: 2px solid #727272;
+    position: fixed;
 }
 
 .coordinates-container {
@@ -1151,6 +1156,7 @@ select-replacer > div:first-child {
     /* Specific styles for the main container */
     height: 140px;
     align-items: flex-start;
+    margin-top: 5px;
 }
 
 #savedCoordinatesContainerTop {
@@ -1158,13 +1164,14 @@ select-replacer > div:first-child {
     align-items: center;
     height: 90px;
     justify-content: flex-end;
+    margin-left: 100px; /* Same as the width of .buttons-left */
 }
 
 #savedCoordinatesContainerBottom {
     /* Specific styles for the bottom container */
-    align-items: center;
+    align-items: flex-start;
     height: 60px;
-    width: 45%;
+    width: 43%;
 }
 
 .saved-coordinate-item {
