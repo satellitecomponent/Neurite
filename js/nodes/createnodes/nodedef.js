@@ -36,6 +36,7 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     let editableDiv = createContentEditableDiv(n);  // Define editableDiv here
 
     windowDiv.appendChild(editableDiv);  // Append the contentEditable div to .content div
+    windowDiv.appendChild(button);
 
     node.addCodeButton = addCodeButton;
 
@@ -120,6 +121,7 @@ function setupCodeCheckboxListener(button, addCodeButton) {
                 button.style.display = "block";
                 return;
             }
+            //console.log(button, `button`);
             button.style.display = event.target.checked ? "block" : "none";
         });
 
@@ -633,6 +635,7 @@ function initAiNode(node) {
     node.localLLMSelect = localLLMSelect;
 
     // Setup event listeners
+    setupAiResponseTextAreaListener(node);
     setupAiNodeResponseDivListeners(node);
     setupAiNodePromptTextAreaListeners(node);
     setupAiNodeSendButtonListeners(node);
@@ -652,6 +655,8 @@ function initAiNode(node) {
     nodeResponseHandlers.set(node, responseHandler); // map response handler to node
 
     node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
+    responseHandler.restoreAiResponseDiv()
+
 
     node.haltResponse = () => aiNodeHaltResponse(node);
 }
@@ -774,6 +779,26 @@ function setupAiNodeResponseDivListeners(node) {
     // ... other event listeners for aiResponseDiv ...
 }
 
+// Function to handle setup of aiResponseTextArea listener
+function setupAiResponseTextAreaListener(node) {
+    const aiResponseTextArea = node.content.querySelector('[id^="LLMnoderesponse-"]');
+    node.aiResponseTextArea = aiResponseTextArea;
+
+    // Restore saved text content if available
+    if (node.savedTextContent !== undefined) {
+        aiResponseTextArea.value = node.savedTextContent;
+    }
+
+    // Function to save text content
+    const saveTextContent = () => {
+        node.savedTextContent = aiResponseTextArea.value;
+    };
+
+    // Attach debounced event listener
+    aiResponseTextArea.addEventListener('input', debounce(saveTextContent, 300));
+}
+
+
 function setupAiNodePromptTextAreaListeners(node) {
     let promptTextArea = node.promptTextArea
 
@@ -895,22 +920,22 @@ function setupAiNodeSettingsButtonListeners(node) {
     let aiNodeSettingsContainer = node.content.querySelector('.ainode-settings-container');
 
     aiNodeSettingsButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = this.isActive ? '#152233' : '#333';
+        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
     });
     aiNodeSettingsButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = this.isActive ? '#162e50' : '#222226';
+        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#222226';
     });
     aiNodeSettingsButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = '#162e50';
+        this.style.backgroundColor = 'rgb(28 68 97)';
     });
     aiNodeSettingsButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = this.isActive ? '#162e50' : '#333';
+        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
     });
     aiNodeSettingsButton.addEventListener('click', function (event) {
         this.isActive = !this.isActive;  // Toggle the active state
         toggleSettings(event, aiNodeSettingsContainer);  // Call your existing function
         // Set the background color based on the new active state
-        this.style.backgroundColor = this.isActive ? '#162e50' : '#333';
+        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
     });
 
     // Add the listener for mousedown event

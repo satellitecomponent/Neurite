@@ -43,14 +43,13 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.673308c0.js"></script>
-  <link rel="stylesheet" href="./assets/index.28ab686e.css">
+  <link rel="stylesheet" href="./assets/index.456b3aae.css">
 </head>
 
 <body id="body">
 
     <div ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
         <svg id="svg_bg" viewBox="-128 -128 256 256" width="100%" height="100vh" top="0" left="0" position="fixed">
-            <title>Mandelbrot</title>
             <g id="viewmatrix">
                 <g id="bg" />
                 <path id="mousePath" d="" fill="none" stroke="rgb(50 51 62 / 80%)" stroke-width="0.01" />
@@ -289,8 +288,9 @@
                     <!-- Fourth tab content here -->
                     <div class="submenu">
                         <!--<div>
-                <button id="ai-cursor-button">Enable Ai Cursor</button>
-            </div>-->
+        <button id="ai-cursor-button">Enable Ai Cursor</button>
+    </div>-->
+                        <br />
                         <div class="flex-container">
                             <div class="inline-container" title="Enable Local Ai Features">
                                 <input type="checkbox" id="localLLM">
@@ -326,10 +326,6 @@
                                 </div>
                             </div>
                         </div>
-                        <br />
-                        <input type="checkbox" id="local-embeddings-checkbox">
-                        <label for="local-embeddings-checkbox">: Local Embeddings</label>
-                        <br />
                         <br />
                         <div class="api-container">
                             <div class="api-inputs">
@@ -403,6 +399,59 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="tabExtract" class="tabcontent">
+                    <!-- Extract tab content here -->
+                    <div class="submenu">
+                        <div style="display: flex; justify-content: space-evenly; align-items: center;">
+                            <label for="embeddingsModelSelect">Embeddings:</label><br>
+                            <div class="dropdown-container">
+                                <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
+                                    <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                    <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                    <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                                    <option value="local-embeddings">Local Embeddings</option>
+                                </select>
+                            </div>
+                        </div>
+                        <br>
+                        <!-- Hide the original local embeddings checkbox -->
+                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
+                        <label for="local-embeddings-checkbox" style="display: none;">: Local Embeddings</label>
+                        <label for="inputKeyExtract">Key:</label><br>
+                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
+                        <label for="inputTextExtract">Text:</label><br>
+                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
+                        <div class="button-container">
+                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
+                        </div>
+                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
+                            <!-- Stored keys will be dynamically added here -->
+                        </div>
+                        <!--<input type="file" id="fileInput" />
+    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                        <br />
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
+                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
+                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+                        </div>
+                        <div class="gridLayout">
+
+                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
+                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
+                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+                            </div>
+
+                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
+                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
+                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
 
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
@@ -507,42 +556,6 @@
                     </div>
                 </div>
 
-                <div id="tabExtract" class="tabcontent">
-                    <!-- Extract tab content here -->
-                    <div class="submenu">
-                        <label for="inputKeyExtract">Key:</label><br>
-                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
-                        <label for="inputTextExtract">Text:</label><br>
-                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
-                        <div class="button-container">
-                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
-                        </div>
-                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
-                            <!-- Stored keys will be dynamically added here -->
-                        </div>
-                        <!--<input type="file" id="fileInput" />
-            <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
-                        <br />
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
-                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
-                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
-                        </div>
-                        <div class="gridLayout">
-
-                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
-                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
-                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
-                            </div>
-
-                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
-                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
-                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
 
                 <div id="tab6" class="tabcontent">
                     <div class="submenu">
@@ -814,7 +827,7 @@
         <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2"></line>
     </svg>
 
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#A6A6A6" class="bi bi-sliders2" viewBox="0 0 16 16" display="none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#686868" class="bi bi-sliders2" viewBox="0 0 16 16" display="none">
         <path fill-rule="evenodd" d="M10.5 1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4H1.5a.5.5 0 0 1 0-1H10V1.5a.5.5 0 0 1 .5-.5ZM12 3.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Zm-6.5 2A.5.5 0 0 1 6 6v1.5h8.5a.5.5 0 0 1 0 1H6V10a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8Zm9.5 2a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V13H1.5a.5.5 0 0 1 0-1H10v-1.5a.5.5 0 0 1 .5-.5Zm1.5 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Z" />
     </svg>
 

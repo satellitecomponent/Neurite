@@ -348,7 +348,7 @@ async function neuriteSearchNotes(searchTerm, maxNodesOverride = null) {
 
             // Add the full node to the array of matched nodes
             fullMatchedNodes.push(fullNode);
-            console.log(`fullNode`, fullNode);
+            //console.log(`fullNode`, fullNode);
         }
     }
 
