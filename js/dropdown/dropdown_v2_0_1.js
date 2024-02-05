@@ -302,40 +302,75 @@ function addEventListenersToCustomDropdown(select, aiNode) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Setup for all existing custom-selects
     let selects = document.querySelectorAll('select.custom-select');
-    selects.forEach(setupCustomDropdown);
-
-    let modelSelect = document.querySelector('#model-select');
-    if (modelSelect) {
-        handleModelSelectChange(modelSelect); // Add specific change listener
-
-        // Restore selection from local storage
-        const storedValue = localStorage.getItem('selectedModel');
-        if (storedValue) {
-            modelSelect.value = storedValue;
-
-            // Update the custom dropdown display to show the stored value
-            let selectedDiv = modelSelect.parentNode.querySelector('.select-replacer > div');
-            if (selectedDiv) {
-                selectedDiv.innerText = modelSelect.options[modelSelect.selectedIndex].innerText;
-            }
-        }
-    }
+    selects.forEach(select => setupModelSelect(select, select.id === 'embeddingsModelSelect'));
 });
 
+function setupModelSelect(selectElement, isEmbeddingsSelect = false) {
+    if (selectElement) {
+        setupCustomDropdown(selectElement);
 
-
-function handleModelSelectChange(selectElement) {
-    selectElement.addEventListener('change', function () {
-        // Save the selected value in local storage
-        localStorage.setItem('selectedModel', this.value);
-
-        // If you have a corresponding custom dropdown display, update it
-        const customDisplayDiv = this.parentNode.querySelector('.select-replacer > div');
-        if (customDisplayDiv) {
-            customDisplayDiv.innerText = this.options[this.selectedIndex].innerText;
+        // Restore selection from local storage
+        const storedValue = localStorage.getItem(selectElement.id);
+        if (storedValue) {
+            selectElement.value = storedValue;
+            updateSelectedOptionDisplay(selectElement);
+            if (isEmbeddingsSelect) {
+                checkLocalEmbeddingsCheckbox(selectElement);
+            }
         }
-    });
+
+        // Set change event listener for caching selected value and updating display
+        selectElement.addEventListener('change', function () {
+            localStorage.setItem(this.id, this.value);
+            updateSelectedOptionDisplay(this);
+            if (isEmbeddingsSelect) {
+                checkLocalEmbeddingsCheckbox(this);
+            }
+        });
+    }
+}
+
+function updateSelectedOptionDisplay(selectElement) {
+    // Update the custom dropdown display to show the selected value
+    let selectedDiv = selectElement.parentNode.querySelector('.select-replacer > div');
+    if (selectedDiv) {
+        selectedDiv.innerText = selectElement.options[selectElement.selectedIndex].innerText;
+    }
+
+    // Update highlighting in the custom dropdown options
+    let optionsReplacer = selectElement.parentNode.querySelector('.options-replacer');
+    if (optionsReplacer) {
+        let optionDivs = optionsReplacer.querySelectorAll('div');
+        optionDivs.forEach(div => {
+            if (div.getAttribute('data-value') === selectElement.value) {
+                div.classList.add('selected');
+            } else {
+                div.classList.remove('selected');
+            }
+        });
+    }
+}
+
+function checkLocalEmbeddingsCheckbox(selectElement) {
+    const localEmbeddingsCheckbox = document.getElementById('local-embeddings-checkbox');
+
+    localEmbeddingsCheckbox.checked = selectElement.value === 'local-embeddings';
+}
+
+function handleEmbeddingsSelection(selectElement) {
+    const localEmbeddingsCheckbox = document.getElementById('local-embeddings-checkbox');
+
+    if (selectElement.value === 'local-embeddings') {
+        // Check the hidden checkbox when local embeddings is selected
+        localEmbeddingsCheckbox.checked = true;
+    } else {
+        // Uncheck the hidden checkbox for other selections
+        localEmbeddingsCheckbox.checked = false;
+    }
+
+    // Additional logic here if needed, e.g., saving the selection to localStorage
 }
 
 // Function for custom slider background
@@ -768,14 +803,32 @@ setRenderQuality(getQuality());
         });
 
 
-        document.getElementById("exponent").addEventListener("input", (e) => {
-            let v = e.target.value * 1;
-            mand_step = (z, c) => {
-                return z.ipow(v).cadd(c);
-            }
-            document.getElementById("exponent_value").textContent = v;
-        })
+document.getElementById("exponent").addEventListener("input", (e) => {
+    let v = e.target.value * 1; // Convert to number
+    mand_step = (z, c) => {
+        return z.ipow(v).cadd(c);
+    };
+    document.getElementById("exponent_value").textContent = v;
 
+    // Update maxDist based on exponent
+    settings.maxDist = getMaxDistForExponent(v);
+});
+
+
+function getMaxDistForExponent(exponent) {
+    const exponentToMaxDist = {
+        1: 4,
+        2: 4,
+        3: 1.5,
+        4: 1.25,
+        5: 1,
+        6: 1,
+        7: 1,
+        8: 1
+    };
+
+    return exponentToMaxDist[exponent] || 4; // default to 4 if no mapping found
+}
 
 // Function to update the flashlight strength and its display
 function updateFlashlightStrength() {

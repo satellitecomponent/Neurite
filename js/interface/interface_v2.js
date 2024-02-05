@@ -340,16 +340,24 @@ class Node {
         }
     }
 
+    getTitle() {
+        return this.content.getAttribute('data-title');
+    }
+
+    getEdgeDirectionalities() {
+        return this.edges.map(edge => ({
+            edge: edge,
+            directionality: edge.getDirectionRelativeTo(this)
+        }));
+    }
     addEdge(edge) {
         this.edges.push(edge);
         this.updateEdgeData();
     }
     updateEdgeData() {
         let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+        console.log("Saving edge data:", es); // Debug log
         this.content.setAttribute("data-edges", es);
-    }
-    getTitle() {
-        return this.content.getAttribute('data-title');
     }
     removeEdges() {
         for (let i = this.edges.length - 1; i >= 0; i--) {
@@ -515,6 +523,10 @@ function edgeFromJSON(o, nodeMap) {
     edges.push(e);
     return e;
 }
+
+// Global map to store directionality states of edges
+const edgeDirectionalityMap = new Map();
+
 class Edge {
     constructor(pts, length = 0.6, strength = 0.1, style = {
         stroke: "red",
@@ -532,10 +544,35 @@ class Edge {
         htmledges.appendChild(this.html);
         this.attach();
 
+        this.directionality = { start: null, end: null };
+
         this.maxWidth = 0.05;
+
+        // Predefine the arrow SVG and initially set it to not display
+        this.arrowSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        this.arrowSvg.classList.add('edge-arrow');
+        this.arrowSvg.style.display = 'none';
+
+        htmledges.appendChild(this.arrowSvg);  // Assuming 'htmledges' is your SVG container
+
+        // Predefine the border SVG
+        this.borderSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        this.borderSvg.style.display = 'none';
+        this.borderSvg.classList.add('edge-border');
+        htmledges.insertBefore(this.borderSvg, this.arrowSvg);
+
+
+        this.attachEventListenersToArrow();
+
+        this.edgeKey = this.createEdgeKey(pts);
+        if (edgeDirectionalityMap.has(this.edgeKey)) {
+            this.directionality = edgeDirectionalityMap.get(this.edgeKey);
+        }
+        //console.log("Creating edge with pts:", pts);
+        //console.log("Directionality after assignment:", this.directionality);
     }
-    scaleEdge(amount) {
-        this.length *= amount;
+    createEdgeKey(pts) {
+        return pts.map(p => p.uuid).sort().join('-');
     }
     dataObj() {
         let o = {};
@@ -543,6 +580,14 @@ class Edge {
         o.s = this.strength;
         o.g = this.style;
         o.p = this.pts.map((n) => n.uuid);
+
+        // Simplified directionality data using UUIDs
+        o.directionality = {
+            start: this.directionality.start ? this.directionality.start.uuid : null,
+            end: this.directionality.end ? this.directionality.end.uuid : null
+        };
+
+        o.edgeKey = this.edgeKey;
         return o;
     }
     attach() {
@@ -550,29 +595,60 @@ class Edge {
         this.html.onmouseover = this.onmouseover.bind(this);
         this.html.onmouseout = this.onmouseout.bind(this);
         this.html.ondblclick = this.ondblclick.bind(this);
+        this.html.onclick = this.onclick.bind(this); // Attach click event handler
     }
-    stress() {
-        let avg = this.center();
-        return this.pts.reduce((t, n, i, a) => {
-            return t + n.pos.minus(avg).mag() - this.length;
-        }, 0) / (this.length + 1);
+
+    attachEventListenersToArrow() {
+        // Define a helper function to add the same event listeners to both SVGs
+        const addEventListeners = (svgElement) => {
+            svgElement.addEventListener('wheel', this.onwheel.bind(this));
+            svgElement.addEventListener('mouseover', this.onmouseover.bind(this));
+            svgElement.addEventListener('mouseout', this.onmouseout.bind(this));
+            svgElement.addEventListener('dblclick', this.ondblclick.bind(this));
+            svgElement.addEventListener('click', this.onclick.bind(this));
+        };
+
+        // Attach event listeners to both arrow and border SVGs
+        addEventListeners(this.arrowSvg);
+        addEventListeners(this.borderSvg);
     }
-    center() {
-        return this.pts.reduce((t, n, i, a) => {
-            return t.plus(n.pos);
-        }, new vec2(0, 0)).unscale(this.pts.length);
+    toggleDirection() {
+        // Cycle through directionality states
+        if (this.directionality.start === null) {
+            this.directionality.start = this.pts[0];
+            this.directionality.end = this.pts[1];
+        } else if (this.directionality.start === this.pts[0]) {
+            this.directionality.start = this.pts[1];
+            this.directionality.end = this.pts[0];
+        } else {
+            this.directionality.start = null;
+            this.directionality.end = null;
+        }
+        edgeDirectionalityMap.set(this.edgeKey, this.directionality)
+        //console.log(`directionality`, this.directionality);
+    }
+
+    // Method to check directionality relative to a given node
+    getDirectionRelativeTo(node) {
+        if (this.directionality.start === node) {
+            return "outgoing";
+        } else if (this.directionality.end === node) {
+            return "incoming";
+        }
+        return "none";
     }
     draw() {
         this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
         this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
-        const stressValue = Math.max(this.stress(), 0.01); // Make sure stressValue never goes below 0.01
+        const stressValue = Math.max(this.stress(), 0.01);
         let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
         wscale = Math.min(wscale, this.maxWidth);
         let path = "M ";
         let c = this.center();
         let validPath = true;
 
+        // Constructing the main path
         for (let n of this.pts) {
             let r = n.scale * wscale;
             let minusC = n.pos.minus(c);
@@ -581,7 +657,6 @@ class Edge {
             if (rotated.x !== 0 || rotated.y !== 0) {
                 let left = rotated.normed(r);
 
-                // Check if coordinates are not NaN
                 if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
                     path += toSVG(n.pos.minus(left)).str();
                     path += " L ";
@@ -593,7 +668,7 @@ class Edge {
             }
         }
 
-        // Check if the first point's coordinates are not NaN
+        // Closing the main path
         let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
         if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
             path += " " + toSVG(firstPoint).str() + "z";
@@ -601,9 +676,93 @@ class Edge {
             validPath = false;
         }
 
-        // Only set the 'd' attribute if the path is valid
+
         if (validPath) {
             this.html.setAttribute("d", path);
+
+            if (this.directionality.start && this.directionality.end) {
+                let startPoint = this.directionality.start.pos;
+                let endPoint = this.directionality.end.pos;
+
+                let startScale = this.directionality.start.scale;
+                let endScale = this.directionality.end.scale;
+
+                // Introduce a perspective factor (adjust this value to tweak the effect)
+                let perspectiveFactor = 1; // Range [0, 1], where 0 is no effect and 1 is maximum effect
+
+                // Adjust scales based on the perspective factor
+                let adjustedStartScale = 1 + (startScale - 1) * perspectiveFactor;
+                let adjustedEndScale = 1 + (endScale - 1) * perspectiveFactor;
+
+                // Calculate weights for the midpoint based on adjusted scales
+                let totalAdjustedScale = adjustedStartScale + adjustedEndScale;
+                let startWeight = adjustedEndScale / totalAdjustedScale;
+                let endWeight = adjustedStartScale / totalAdjustedScale;
+
+                // Calculate the weighted midpoint
+                let midPoint = startPoint.scale(startWeight).plus(endPoint.scale(endWeight));
+
+                // Introduce factors for scaling the length and width of the arrow
+                let arrowScaleFactor = 1.2; 
+
+                let arrowLength = ((startScale + endScale) / 2 * wscale * 5) * arrowScaleFactor;
+                let arrowWidth = ((startScale + endScale) / 2 * wscale * 3) * arrowScaleFactor;
+
+                let direction = endPoint.minus(startPoint);
+                let directionNormed = direction.normed(arrowLength);
+                let perp = new vec2(-directionNormed.y, directionNormed.x).normed(arrowWidth);
+
+                // Calculate arrow points relative to the midpoint
+                let arrowBase1 = midPoint.minus(perp);
+                let arrowBase2 = midPoint.plus(perp);
+                let arrowTip = midPoint.plus(directionNormed);
+
+                // Adjustable factor for arrow flipping [0, 1]
+                let arrowFlipFactor = 0.85; // Adjust this value as needed
+
+                // Calculate the adjusted center of the arrow
+                let arrowBaseCenterX = (arrowBase1.x + arrowBase2.x) / 2;
+                let arrowBaseCenterY = (arrowBase1.y + arrowBase2.y) / 2;
+                let arrowCenterX = arrowBaseCenterX * arrowFlipFactor + arrowTip.x * (1 - arrowFlipFactor);
+                let arrowCenterY = arrowBaseCenterY * arrowFlipFactor + arrowTip.y * (1 - arrowFlipFactor);
+                let arrowCenter = new vec2(arrowCenterX, arrowCenterY);
+
+                // Function to rotate a point around a center by 180 degrees
+                function rotatePoint(point, center) {
+                    let dx = point.x - center.x;
+                    let dy = point.y - center.y;
+                    return new vec2(center.x - dx, center.y - dy);
+                }
+
+                // Rotate the arrow points around the adjusted center
+                arrowBase1 = rotatePoint(arrowBase1, arrowCenter);
+                arrowBase2 = rotatePoint(arrowBase2, arrowCenter);
+                arrowTip = rotatePoint(arrowTip, arrowCenter);
+
+                // Arrow path
+                let arrowPath = `M ${toSVG(arrowBase1).str()} L ${toSVG(arrowTip).str()} L ${toSVG(arrowBase2).str()} Z`;
+                this.arrowSvg.setAttribute("d", arrowPath);
+                this.arrowSvg.style.display = '';
+
+                // Calculate the midpoint of the arrow
+                let arrowMidX = (arrowBase1.x + arrowBase2.x + arrowTip.x) / 3;
+                let arrowMidY = (arrowBase1.y + arrowBase2.y + arrowTip.y) / 3;
+                let arrowMidPoint = new vec2(arrowMidX, arrowMidY);
+
+                // Calculate offset for border points
+                const offsetScale = 1.4; // Slightly larger than 1 to make the border bigger
+                let borderBase1 = arrowMidPoint.plus(arrowBase1.minus(arrowMidPoint).scale(offsetScale));
+                let borderBase2 = arrowMidPoint.plus(arrowBase2.minus(arrowMidPoint).scale(offsetScale));
+                let borderTip = arrowMidPoint.plus(arrowTip.minus(arrowMidPoint).scale(offsetScale));
+
+                // Border path
+                let borderPath = `M ${toSVG(borderBase1).str()} L ${toSVG(borderTip).str()} L ${toSVG(borderBase2).str()} Z`;
+                this.borderSvg.setAttribute("d", borderPath);
+                this.borderSvg.style.display = '';
+            } else {
+                this.arrowSvg.style.display = 'none';
+                this.borderSvg.style.display = 'none';
+            }
         }
     }
     step(dt) {
@@ -625,7 +784,25 @@ class Edge {
         }
         this.draw();
     }
-    onwheel(event) {
+    stress() {
+        let avg = this.center();
+        return this.pts.reduce((t, n, i, a) => {
+            return t + n.pos.minus(avg).mag() - this.length;
+        }, 0) / (this.length + 1);
+    }
+    center() {
+        return this.pts.reduce((t, n, i, a) => {
+            return t.plus(n.pos);
+        }, new vec2(0, 0)).unscale(this.pts.length);
+    }
+    scaleEdge(amount) {
+        this.length *= amount;
+    }
+    onclick = (event) => {
+        this.toggleDirection();
+        this.draw(); // Redraw the edge to reflect the new directionality
+    }
+    onwheel = (event) => {
         if (nodeMode) {
             let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
             this.length *= amount;
@@ -639,13 +816,18 @@ class Edge {
             cancel(event);
         }
     }
-    onmouseover(event) {
+    onmouseover = (event) => {
         this.mouseIsOver = true;
+        this.arrowSvg.classList.add('edge-arrow-hover');
+        this.borderSvg.classList.add('edge-border-hover'); // Class for hovered state of the border
     }
-    onmouseout(event) {
+
+    onmouseout = (event) => {
         this.mouseIsOver = false;
+        this.arrowSvg.classList.remove('edge-arrow-hover');
+        this.borderSvg.classList.remove('edge-border-hover'); // Class for normal state of the border
     }
-    ondblclick(event) {
+    ondblclick = (event) => {
         if (nodeMode) {
             // Capture the titles and textNode flags of the connected nodes for later use
             const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
@@ -661,8 +843,9 @@ class Edge {
             cancel(event);
         }
     }
-
     remove() {
+        edgeDirectionalityMap.set(this.edgeKey, this.directionality);
+
         // Remove the edge from the global edge array
         let index = edges.indexOf(this);
         if (index !== -1) {
@@ -678,8 +861,18 @@ class Edge {
             }
         });
 
-        // Remove the edge from the DOM
-        this.html.remove();
+        // Remove SVG elements from the DOM
+        if (this.arrowSvg && this.arrowSvg.parentNode) {
+            this.arrowSvg.parentNode.removeChild(this.arrowSvg);
+        }
+        if (this.borderSvg && this.borderSvg.parentNode) {
+            this.borderSvg.parentNode.removeChild(this.borderSvg);
+        }
+
+        // Remove the main path of the edge
+        if (this.html && this.html.parentNode) {
+            this.html.parentNode.removeChild(this.html);
+        }
     }
 }
 

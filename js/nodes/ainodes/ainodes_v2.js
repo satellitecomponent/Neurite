@@ -187,9 +187,46 @@ class ResponseHandler {
         this.responseCount = 0;
         this.currentResponseEnded = false
 
-        this.node.aiResponseTextArea.addEventListener('input', () => {
-            this.processingQueue = this.processingQueue.then(() => this.handleInput());
-        });
+            // Attach the input event listener for new input
+            this.node.aiResponseTextArea.addEventListener('input', () => {
+                this.processingQueue = this.processingQueue.then(() => this.handleInput());
+            });
+    }
+
+    restoreAiResponseDiv() {
+        // Iterate through each child element in the AI response div
+        const children = this.node.aiResponseDiv.children;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+
+            // Check if the child contains a user-prompt div
+            const userPromptDiv = child.querySelector('.user-prompt');
+            if (userPromptDiv) {
+                // Initialize the user prompt div found within the child
+                this.initUserPromptDiv(userPromptDiv);
+            } else if (child.classList.contains('response-wrapper')) {
+                // For AI responses, find the .ai-response div within the wrapper
+                const responseDiv = child.querySelector('.ai-response');
+                if (responseDiv) {
+                    this.initAiResponseDiv(child); // Pass the wrapper div
+                }
+            } else if (child.classList.contains('code-block-container')) {
+                // For code blocks, pass the container div
+                this.initCodeBlockDiv(child);
+            }
+        }
+    }
+
+    initUserPromptDiv(promptDiv) {
+        this.setupUserPrompt(promptDiv);
+    }
+
+    initAiResponseDiv(responseDiv) {
+        this.setupAiResponse(responseDiv);
+    }
+
+    initCodeBlockDiv(codeBlockDiv) {
+        this.setupCodeBlock(codeBlockDiv);
     }
 
     async handleInput() {
@@ -206,9 +243,17 @@ class ResponseHandler {
                 trimmedNewContent = trimmedNewContent.trimStart();
             }
 
-            if (trimmedNewContent.startsWith(`${PROMPT_IDENTIFIER} `) || trimmedNewContent === `${PROMPT_IDENTIFIER}`) {
-                let promptContent = trimmedNewContent.substring(PROMPT_IDENTIFIER.length).trim();
+            // Find the last occurrence of the prompt identifier in the trimmed content
+            let lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
+            if (lastPromptIndex !== -1) {
+                // Everything after the last prompt identifier is the new prompt content
+                let promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
                 this.handleUserPrompt(promptContent);
+
+                // Commenting out the handling of previous saved content for future use
+                // let previousSavedContent = trimmedNewContent.substring(0, lastPromptIndex).trim();
+                // Handle previous saved content here if needed in the future
+
                 newContent = '';
             } else {
                 if (this.inCodeBlock) {
@@ -281,6 +326,117 @@ class ResponseHandler {
         // Append the outer div to the response area
         this.node.aiResponseDiv.appendChild(outerDiv);
 
+        this.initUserPromptDiv(promptDiv)
+
+        this.responseCount++;  // Increment the response count after each prompt
+    }
+
+    handleMarkdown(markdown) {
+        if ((this.node.aiResponding || this.node.localAiResponding) && markdown.trim().length > 0) {
+            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
+            let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
+            let responseDiv;
+
+            if (lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
+                responseDiv = lastWrapperDiv.querySelector('.ai-response');
+            } else {
+                let handleDiv = document.createElement('div');
+                handleDiv.className = 'drag-handle';
+                handleDiv.innerHTML = `
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            `;
+
+                responseDiv = document.createElement('div');
+                responseDiv.className = 'ai-response';
+
+                let wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'response-wrapper';
+                wrapperDiv.appendChild(handleDiv);
+                wrapperDiv.appendChild(responseDiv);
+
+                
+
+                this.node.aiResponseDiv.appendChild(wrapperDiv);
+
+                this.initAiResponseDiv(responseDiv);
+            }
+
+            responseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
+        }
+    }
+
+    renderCodeBlock(content, isFinal = false) {
+        let encodedContent = encodeHTML(content);
+        let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
+        let decodedContent = decodeHTML(cleanedContent);
+
+        if (!isFinal && this.node.lastBlockId) {
+            let oldBlock = document.getElementById(this.node.lastBlockId);
+            if (oldBlock) {
+                oldBlock.parentNode.removeChild(oldBlock);
+            }
+        }
+
+        let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
+
+        let existingContainerDiv = document.getElementById(codeBlockDivId);
+
+        if (!existingContainerDiv) {
+            existingContainerDiv = document.createElement('div');
+            existingContainerDiv.id = codeBlockDivId;
+            existingContainerDiv.className = "code-block-container";
+            this.node.aiResponseDiv.appendChild(existingContainerDiv);
+
+            let languageLabelDiv = document.createElement('div');
+            languageLabelDiv.className = "language-label";
+            existingContainerDiv.appendChild(languageLabelDiv);
+
+            let existingWrapperDiv = document.createElement('div');
+            existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
+            existingContainerDiv.appendChild(existingWrapperDiv);
+
+            let preDiv = document.createElement('pre');
+            preDiv.className = "code-block";
+            existingWrapperDiv.appendChild(preDiv);
+        }
+
+        let existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
+        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
+
+        let codeElement = document.createElement("code");
+        codeElement.className = `language-${this.currentLanguage}`;
+        codeElement.textContent = decodedContent;
+
+        Prism.highlightElement(codeElement);
+
+        preDiv.innerHTML = '';
+        preDiv.appendChild(codeElement);
+
+        let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
+        languageLabelDiv.innerText = this.currentLanguage;
+        languageLabelDiv.style.display = 'flex';
+        languageLabelDiv.style.justifyContent = 'space-between';
+        languageLabelDiv.style.alignItems = 'center';
+
+        let copyButton = document.createElement('button');
+        copyButton.innerText = 'Copy';
+        copyButton.className = 'copy-btn';
+
+        languageLabelDiv.appendChild(copyButton);
+
+        this.initCodeBlockDiv(existingContainerDiv);
+
+        if (isFinal) {
+            this.node.codeBlockCount++;
+            this.node.lastBlockId = null;
+        } else {
+            this.node.lastBlockId = codeBlockDivId;
+        }
+    }
+
+    setupUserPrompt(promptDiv) {
         // Make the prompt div draggable
         makeDivDraggable(promptDiv, 'Prompt');
 
@@ -382,146 +538,60 @@ class ResponseHandler {
             }
 
         }.bind(this));
-
-        this.responseCount++;  // Increment the response count after each prompt
     }
 
-    handleMarkdown(markdown) {
-        if ((this.node.aiResponding || this.node.localAiResponding) && markdown.trim().length > 0) {
-            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
-            let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
-            let responseDiv;
+    setupAiResponse(responseDiv) {
+        // Find the wrapper and handle divs relative to the responseDiv
+        const wrapperDiv = responseDiv.closest('.response-wrapper');
+        const handleDiv = wrapperDiv.querySelector('.drag-handle');
 
-            if (lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
-                responseDiv = lastWrapperDiv.querySelector('.ai-response');
-            } else {
-                let handleDiv = document.createElement('div');
-                handleDiv.className = 'drag-handle';
-                handleDiv.innerHTML = `
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            `;
+        // Apply logic specific to AI response div
+        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
 
-                responseDiv = document.createElement('div');
-                responseDiv.className = 'ai-response';
+        handleDiv.addEventListener('mouseover', () => {
+            wrapperDiv.classList.add('hovered');
+        });
 
-                let wrapperDiv = document.createElement('div');
-                wrapperDiv.className = 'response-wrapper';
-                wrapperDiv.appendChild(handleDiv);
-                wrapperDiv.appendChild(responseDiv);
-
-                makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
-
-                this.node.aiResponseDiv.appendChild(wrapperDiv);
-
-                handleDiv.addEventListener('mouseover', function () {
-                    wrapperDiv.classList.add('hovered');
-                });
-
-                handleDiv.addEventListener('mouseout', function () {
-                    wrapperDiv.classList.remove('hovered');
-                });
-            }
-
-            responseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
-        }
+        handleDiv.addEventListener('mouseout', () => {
+            wrapperDiv.classList.remove('hovered');
+        });
     }
 
-    renderCodeBlock(content, isFinal = false) {
-        let encodedContent = encodeHTML(content);
-        let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
-        let decodedContent = decodeHTML(cleanedContent);
+    setupCodeBlock(codeBlockDiv) {
+        // Query necessary child elements within the codeBlockDiv
+        const languageLabelDiv = codeBlockDiv.querySelector('.language-label');
+        const copyButton = codeBlockDiv.querySelector('.copy-btn');
+        const preDiv = codeBlockDiv.querySelector('.code-block');
+        const decodedContent = preDiv.textContent; // Assuming the content is within the <pre> tag
 
-        let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
+        // Apply logic specific to code block div
+        makeDivDraggable(codeBlockDiv, 'Code Block', languageLabelDiv);
 
-        if (!isFinal && this.node.lastBlockId) {
-            let oldBlock = document.getElementById(this.node.lastBlockId);
-            if (oldBlock) {
-                oldBlock.parentNode.removeChild(oldBlock);
-            }
-        }
-
-        let existingContainerDiv = document.getElementById(codeBlockDivId);
-
-        if (!existingContainerDiv) {
-            existingContainerDiv = document.createElement('div');
-            existingContainerDiv.id = codeBlockDivId;
-            existingContainerDiv.className = "code-block-container";
-            this.node.aiResponseDiv.appendChild(existingContainerDiv);
-
-            let languageLabelDiv = document.createElement('div');
-            languageLabelDiv.className = "language-label";
-            existingContainerDiv.appendChild(languageLabelDiv);
-
-            let existingWrapperDiv = document.createElement('div');
-            existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
-            existingContainerDiv.appendChild(existingWrapperDiv);
-
-            let preDiv = document.createElement('pre');
-            preDiv.className = "code-block";
-            existingWrapperDiv.appendChild(preDiv);
-
-            makeDivDraggable(existingContainerDiv, 'Code Block', languageLabelDiv);
-        }
-
-        let existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
-        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
-
-        let codeElement = document.createElement("code");
-        codeElement.className = `language-${this.currentLanguage}`;
-        codeElement.textContent = decodedContent;
-
-        Prism.highlightElement(codeElement);
-
-        preDiv.innerHTML = '';
-        preDiv.appendChild(codeElement);
-
-        let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
-        languageLabelDiv.innerText = this.currentLanguage;
-        languageLabelDiv.style.display = 'flex';
-        languageLabelDiv.style.justifyContent = 'space-between';
-        languageLabelDiv.style.alignItems = 'center';
-
-        let copyButton = document.createElement('button');
-        copyButton.innerText = 'Copy';
-        copyButton.className = 'copy-btn';
-        copyButton.onclick = function () {
-            let textarea = document.createElement('textarea');
+        copyButton.onclick = () => {
+            const textarea = document.createElement('textarea');
             textarea.value = decodedContent;
             document.body.appendChild(textarea);
             textarea.select();
 
-            let successfulCopy = document.execCommand('copy');
-            if (successfulCopy) {
+            if (document.execCommand('copy')) {
                 copyButton.innerText = "Copied!";
-                setTimeout(() => {
-                    copyButton.innerText = "Copy";
-                }, 1200);
+                setTimeout(() => copyButton.innerText = "Copy", 1200);
             }
 
             document.body.removeChild(textarea);
         };
 
-        languageLabelDiv.appendChild(copyButton);
-        existingContainerDiv.addEventListener('mouseover', function (event) {
-            if (event.target.classList.contains('language-label') || event.target.classList.contains('copy-btn')) {
-                existingContainerDiv.classList.add('hovered');
+        codeBlockDiv.addEventListener('mouseover', (event) => {
+            if (event.target === languageLabelDiv || event.target === copyButton) {
+                codeBlockDiv.classList.add('hovered');
             }
         });
 
-        existingContainerDiv.addEventListener('mouseout', function (event) {
-            if (event.target.classList.contains('language-label') || event.target.classList.contains('copy-btn')) {
-                existingContainerDiv.classList.remove('hovered');
+        codeBlockDiv.addEventListener('mouseout', (event) => {
+            if (event.target === languageLabelDiv || event.target === copyButton) {
+                codeBlockDiv.classList.remove('hovered');
             }
         });
-
-        if (isFinal) {
-            this.node.codeBlockCount++;
-            this.node.lastBlockId = null;
-        } else {
-            this.node.lastBlockId = codeBlockDivId;
-        }
     }
 
     removeLastResponse() {

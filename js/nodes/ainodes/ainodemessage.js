@@ -11,7 +11,7 @@ async function sendLLMNodeMessage(node, message = null) {
     //Initalize count for message trimming
     let contextSize = 0;
 
-    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connecteed nodes (default)
+    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connected nodes (default)
     const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
 
     // Choose the function based on checkbox state
@@ -237,7 +237,7 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
 
     // For Text Nodes
     if (textNodeInfo.length > 0) {
-        let intro = "Text nodes CONNECTED to your interface:";
+        let intro = "Text nodes CONNECTED to MEMORY:";
         messages.push({
             role: "system",
             content: intro + "\n\n" + textNodeInfo.join("\n\n")
@@ -246,7 +246,7 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
 
     // For LLM Nodes
     if (llmNodeInfo.length > 0) {
-        let intro = "ALL AI nodes you are CONVERSING with:";
+        let intro = "All AI nodes you are CONVERSING with:";
         messages.push({
             role: "system",
             content: intro + "\n\n" + llmNodeInfo.join("\n\n")
@@ -402,6 +402,13 @@ class AiNodeMessageLoop {
         this.clickQueues = clickQueues || {}; // If clickQueues is not passed, initialize as an empty object
     }
 
+    updateConnectedNodes() {
+        const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
+        this.allConnectedNodes = useAllConnectedNodes
+            ? getAllConnectedNodes(this.node)
+            : getAllConnectedNodes(this.node, true);
+    }
+
     async processClickQueue(nodeId) {
         const queue = this.clickQueues[nodeId] || [];
         while (true) {
@@ -425,9 +432,23 @@ class AiNodeMessageLoop {
     }
 
     async questionConnectedAiNodes(lastLine) {
+        // Retrieve edge directionalities for the main node
+        const edgeDirectionalities = this.node.getEdgeDirectionalities();
+
+        this.updateConnectedNodes();
+
         for (const connectedNode of this.allConnectedNodes) {
             if (connectedNode.isLLMNode) {
                 let uniqueNodeId = connectedNode.index;
+
+                // Find the edge directionality related to the connected node
+                const edgeDirectionality = edgeDirectionalities.find(ed => ed.edge.pts.includes(connectedNode));
+
+                // Skip sending message if the directionality is outgoing from the main node
+                if (edgeDirectionality && edgeDirectionality.directionality === "outgoing") {
+                    console.log(`Skipping node ${uniqueNodeId} due to outgoing directionality.`);
+                    continue;
+                }
 
                 if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
                     console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
