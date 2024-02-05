@@ -165,10 +165,6 @@ function updateSavedNetworks() {
 // Call updateSavedNetworks on page load to display previously saved networks
 updateSavedNetworks();
 
-document.getElementById("load-button").addEventListener("click", function () {
-    loadnet(document.getElementById("save-or-load").value, true);
-});
-
 let container = document.getElementById("saved-networks-container");
 
 // Prevent default drag behaviors
@@ -266,6 +262,7 @@ function clearnet() {
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
     }
+    edgeDirectionalityMap.clear();
 
     // Remove all nodes
     while (nodes.length > 0) {
@@ -278,19 +275,6 @@ function clearnet() {
     // Clear the CodeMirror content
     window.myCodemirror.setValue('');
 }
-
-//this is a quick fix to retain textarea height, the full fix requires all event listeners to be attatched to each node.
-
-/* function adjustTextareaHeightToContent(nodes) {
-    for (let node of nodes) {
-        let textarea = node.content.querySelector('textarea');
-        if (textarea) {
-            textarea.style.height = 'auto'; // Temporarily shrink to content
-            const maxHeight = 300; // Maximum height in pixels
-            textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'; // Set to full content height or max height
-        }
-    }
-} */
 
 function restoreAdditionalSaveObjects(d) {
 
@@ -317,6 +301,11 @@ function restoreAdditionalSaveObjects(d) {
     // Restore sliders immediately after their values have been set
     restoreInputValues();
 }
+
+document.getElementById("load-button").addEventListener("click", function () {
+    loadnet(document.getElementById("save-or-load").value, true);
+
+});
 
 function loadnet(text, clobber, createEdges = true) {
     if (clobber) {
@@ -346,12 +335,13 @@ function loadnet(text, clobber, createEdges = true) {
         if (n.dataset.init === "window")
             rewindowify(node);
     }
-    for (let n of newNodes) {
-        htmlnodes_parent.appendChild(n.content);
-    }
+    populateDirectionalityMap(d, nodeMap);
 
     for (let n of newNodes) {
+        htmlnodes_parent.appendChild(n.content);
+
         n.init(nodeMap); // Initialize the node
+
         reconstructSavedNode(n); // Reconstruct the saved node
     }
 
@@ -360,6 +350,24 @@ function loadnet(text, clobber, createEdges = true) {
         restoreZettelkastenEvent = true;
         window.myCodemirror.setValue(zettelkastenContent);
     }
+}
+
+function populateDirectionalityMap(d, nodeMap) {
+    const nodes = Array.from(d.children);
+    nodes.forEach(nodeElement => {
+        if (nodeElement.hasAttribute('data-edges')) {
+            const edgesData = JSON.parse(nodeElement.getAttribute('data-edges'));
+            edgesData.forEach(edgeData => {
+                const edgeKey = edgeData.edgeKey;
+                if (!edgeDirectionalityMap.has(edgeKey)) {
+                    edgeDirectionalityMap.set(edgeKey, {
+                        start: nodeMap[edgeData.directionality.start],
+                        end: nodeMap[edgeData.directionality.end]
+                    });
+                }
+            });
+        }
+    });
 }
 
 function reconstructSavedNode(node) {

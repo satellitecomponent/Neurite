@@ -1,6 +1,9 @@
 
-async function fetchEmbeddings(text, model = "text-embedding-ada-002") {
+async function fetchEmbeddings(text) {
     const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
+    const model = document.getElementById("embeddingsModelSelect").value;
+
+    console.log(`local?`, useLocalEmbeddings, `model`, model);
 
     // If the "Use Local Embeddings" checkbox is checked, use the local model
     if (useLocalEmbeddings && window.generateEmbeddings) {
