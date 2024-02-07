@@ -83,7 +83,7 @@ Drag and drop local files or web content straight into the fractal.
 
 Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links embeds them into an iframe if supported by the host.
 
-- Talk to [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. 
+
 
 ### `Controls`
   *Full controls are listed in the ? tab within Neurite's main dropdown.
@@ -155,9 +155,9 @@ All API keys can be input through the AI tab in the menu dropdown.
 ## `Neural API`
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="movementapi" width="300">
 
-The newest update to Neurite is our function calling panel.
+A recent update to Neurite is our function calling panel.
 
-This feature is terminal that allows you to execute Neurite's code from within Neurite itself.
+This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.
 
 Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include,
 - Animate movements through the Mandelbrot set
@@ -257,7 +257,7 @@ In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI tha
 - Zettelkasten and Mind Mapping: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 
 Neurite realizes tapestry of thought reasoning for Ai, all within our innovative real-time Mandelbrot visualization.
-
+- Talk to [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. 
 
 ![Aidiagram2_1 2 1](https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e)
 - This diagram represents how the AI's response incorporates note-taking to retain a non-linear conversation history.
