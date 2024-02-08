@@ -21,7 +21,7 @@ Fractals act as the cross-disciplinary framework for non-integer dimensional tho
 
 ### `First of its Kind Fractal Zoom`
 
-Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal generation persists and regenerates as you interact! 
+Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal rendering persists and regenerates as you interact! 
 
 We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
