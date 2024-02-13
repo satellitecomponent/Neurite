@@ -96,15 +96,22 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
 
 `Shift` to freeze nodes.
 
-`Double click` to anchor node.
-
 `Hold Shift + click` two nodes to connect.
+
+`Double click` to anchor a node.
  
-`Alt + double click` to create an Ai node.
+`Alt/Option + double click` to create an Ai node.
 
-`Alt + drag` textareas to arrange the node rather than highlighting text.
+`Alt/Option + drag` textareas to arrange the node rather than highlighting text.
 
-Or, drag in nodes from the dropdown.
+`Ctrl + Click` to select nodes
+
+`Ctrl + Drag` to select multiple nodes.
+
+`Arrow Keys` to move selected nodes
+
+`d` to scale selected nodes down, `f` to scale them up (this is a new feature and the controls may change.)
+
 
 `UI Tips`
 - Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, nodes will not have any space to spread out and become too big relative to the fractal.
