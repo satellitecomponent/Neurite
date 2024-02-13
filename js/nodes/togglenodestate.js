@@ -66,9 +66,8 @@ function collapseNode(node) {
                     child.style.display = 'none';
                 }
             });
-
-            div.style.display = 'relative';
-            // Adjust the window to make it look like a circle
+            div.style.display = 'inline-block'; // or 'block' depending on your layout needs
+            //div.style.position = 'relative'; // only if you need specific positioning
             div.style.width = '60px';
             div.style.height = '60px';
             div.style.borderRadius = '50%';
@@ -83,11 +82,12 @@ function collapseNode(node) {
             titleInput.style.position = 'absolute';
             titleInput.style.top = '50%';
             titleInput.style.left = '50%';
-            titleInput.style.transform = 'translate(-50%, -50%)';
+            titleInput.style.transform = 'translate(-47.5%, -59%)';
             titleInput.style.border = 'none';
             titleInput.style.textAlign = 'center';
             titleInput.style.pointerEvents = 'none';
             titleInput.style.fontSize = '25px';
+            titleInput.style.width = 'fit-content';
 
             // Create the circle
             let circle = document.createElement('div');
@@ -193,3 +193,96 @@ function expandNode(node, div, circle) {
 
     div.collapsed = false;
 }
+
+
+
+
+
+//Drag Box Selection
+
+/*
+document.addEventListener('contextmenu', function (event) {
+    if (event.ctrlKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        // Additional logic for when right-click is combined with Ctrl key
+        // ...
+    }
+});
+*/
+let isDraggingDragBox = false;
+let dragBox = null;
+let startX, startY;
+
+document.addEventListener('mousedown', function (event) {
+    if (event.button === 0 && event.ctrlKey) { // Right-click and Ctrl key
+        event.preventDefault();
+        event.stopPropagation();
+        isDraggingDragBox = true;
+        startX = event.pageX;
+        startY = event.pageY;
+
+        dragBox = document.createElement('div');
+        dragBox.className = 'drag-box';
+        dragBox.style.left = `${startX}px`;
+        dragBox.style.top = `${startY}px`;
+        document.body.appendChild(dragBox);
+    }
+});
+
+document.addEventListener('mousemove', function (event) {
+    if (isDraggingDragBox) {
+        event.preventDefault();
+        event.stopPropagation();
+        const currentX = event.pageX;
+        const currentY = event.pageY;
+
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+
+        dragBox.style.width = `${width}px`;
+        dragBox.style.height = `${height}px`;
+
+        dragBox.style.left = `${Math.min(startX, currentX)}px`;
+        dragBox.style.top = `${Math.min(startY, currentY)}px`;
+    }
+});
+
+document.addEventListener('mouseup', function (event) {
+    if (isDraggingDragBox) {
+        isDraggingDragBox = false;
+
+        // Flag to check if any node is selected
+        let isAnyNodeSelected = false;
+
+        // Finalize the drag box bounds
+        dragBoxBounds = {
+            left: parseInt(dragBox.style.left, 10),
+            top: parseInt(dragBox.style.top, 10),
+            right: parseInt(dragBox.style.left, 10) + parseInt(dragBox.style.width, 10),
+            bottom: parseInt(dragBox.style.top, 10) + parseInt(dragBox.style.height, 10)
+        };
+
+        // Check for intersection with node windows and select them
+        Object.values(nodeMap).forEach(node => {
+            const nodeDiv = node.windowDiv; // Assuming this is how you access the windowDiv of a node
+            const rect = nodeDiv.getBoundingClientRect();
+
+            if (rect.left < dragBoxBounds.right && rect.right > dragBoxBounds.left &&
+                rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top) {
+                toggleNodeSelection(node); // Assuming this function handles the selection logic
+                isAnyNodeSelected = true; // Update flag as a node is selected
+            }
+        });
+
+        // If no nodes were selected, clear the current selection
+        if (!isAnyNodeSelected) {
+            clearNodeSelection(); // Assuming this function clears the selection
+        }
+
+        // Clean up
+        dragBox.remove();
+        dragBox = null;
+        dragBoxBounds = null;
+    }
+});

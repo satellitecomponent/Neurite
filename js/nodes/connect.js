@@ -36,18 +36,31 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     fill: "lightcyan",
     opacity: "0.5"
 }) {
+    // Log UUIDs for debugging
+    //console.log(`Connecting: ${na.uuid} to ${nb.uuid}`);
+
+    const existingEdge = na.edges.find(edge =>
+        edge.pts.some(pt => pt.uuid === nb.uuid) &&
+        nb.edges.some(edge => edge.pts.some(pt => pt.uuid === na.uuid))
+    );
+
+    if (existingEdge) {
+        //console.log(`Existing edge found between ${na.uuid} and ${nb.uuid}`);
+        return existingEdge;
+    }
+    // Log positions for debugging
+    //console.log(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
+    //console.log(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
+
     // Calculate the distance between the two nodes
     const dx = nb.pos.x - na.pos.x;
     const dy = nb.pos.y - na.pos.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // Check if edge already exists
-    const existingEdge = na.edges.find(edge => edge.pts.includes(nb) && nb.edges.includes(edge));
-    if (existingEdge) {
-        return existingEdge;
-    }
+    // Half distance to account for radial edge connection.
+    const adjustedDistance = distance * 0.5;
 
-    let edge = new Edge([na, nb], distance, linkStrength, linkStyle);
+    let edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
 
     na.edges.push(edge);
     nb.edges.push(edge);
@@ -78,7 +91,7 @@ function getNodeData(node) {
         //console.log(`Skipping image node ${node.uuid}`);
         return null;
     }
-    const titleElement = node.content.querySelector("input.title-input");
+    const titleElement = node.titleInput;
     const title = titleElement ? titleElement.value : "No title found";
     const createdAt = node.createdAt;
     const isLLM = node.isLLM;  // Assuming you have this flag set on the node object.

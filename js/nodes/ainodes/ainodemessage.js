@@ -7,7 +7,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
     const nodeIndex = node.index;
 
-    const maxTokensSlider = document.getElementById(`node-max-tokens-${nodeIndex}`);
+    const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
     //Initalize count for message trimming
     let contextSize = 0;
 
@@ -334,6 +334,8 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
     // Initiates helper functions for aiNode Message loop.
     const aiNodeMessageLoop = new AiNodeMessageLoop(node, allConnectedNodes, clickQueues);
 
+    const haltCheckbox = node.haltCheckbox;
+
     // Local LLM call
     if (document.getElementById("localLLM").checked && selectedModel !== 'OpenAi') {
         window.generateLocalLLMResponse(node, messages)
@@ -348,6 +350,9 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
                 }
             })
             .catch((error) => {
+                if (haltCheckbox) {
+                    haltCheckbox.checked = true;
+                }
                 console.error(`An error occurred while getting response: ${error}`);
                 aiErrorIcon.style.display = 'block';
             });
@@ -370,6 +375,9 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
                 }
             })
             .catch((error) => {
+                if (haltCheckbox) {
+                    haltCheckbox.checked = true;
+                }
                 console.error(`An error occurred while getting response: ${error}`);
                 aiErrorIcon.style.display = 'block';
             });

@@ -171,7 +171,7 @@ class Node {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
         }
-        if (this.followingAiCursor) {
+        /*if (this.followingAiCursor) {
             let p = toZ(this.aiCursor.position).minus(this.aiCursorAnchor);
             this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
             this.pos = p;
@@ -180,7 +180,7 @@ class Node {
         if (this.followingAiCursor && this.aiCursor) {
             let finalPosition = this.aiCursor.initialPosition.plus(this.aiCursor.updatePosition);
             this.pos = toDZ(finalPosition);
-        }
+        }*/
         let g = mandGrad(settings.iterations, this.pos);
         //g.y *= -1; //why?
         this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
@@ -189,15 +189,76 @@ class Node {
         //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
         if (this.followingMouse) {
             let p = toZ(mousePos).minus(this.mouseAnchor);
-            this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
+            let velocity = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
+
+            this.vel = velocity;
             this.pos = p;
             this.anchor = this.pos;
+
+            // Update the edges of the current node being dragged
+            if (nodeMode === 1) {
+                updateNodeEdgesLength(this);
+            }
+
+            // Check if the current node's UUID is in the selected nodes
+            if (selectedNodeUUIDs.has(this.uuid)) {
+                const selectedNodes = getSelectedNodes();
+                selectedNodes.forEach(node => {
+                    if (node.uuid !== this.uuid && node.anchorForce !== 1) { // Skip the current node and any anchored node
+                        node.vel = velocity;
+
+                        // Update the edges for each selected node
+                        if (nodeMode === 1) {
+                            updateNodeEdgesLength(node);
+                        }
+                    }
+                });
+            }
         }
         //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
         this.draw();
     }
 
+    moveNode(direction, adjustGlobalPan = false) {
+        const forceMagnitude = 0.01; // Base force intensity
+        const adjustedForce = forceMagnitude * this.scale; // Scale the force
 
+        let forceDirection = new vec2(0, 0);
+
+        switch (direction) {
+            case 'up':
+                forceDirection.y = -adjustedForce;
+                break;
+            case 'down':
+                forceDirection.y = adjustedForce;
+                break;
+            case 'left':
+                forceDirection.x = -adjustedForce;
+                break;
+            case 'right':
+                forceDirection.x = adjustedForce;
+                break;
+        }
+
+        // Apply the force to the node
+        this.force = this.force.plus(forceDirection);
+
+        // If adjustGlobalPan is true, adjust the global pan
+        if (adjustGlobalPan) {
+            // Calculate the average zoom level or use the relevant component
+            let zoomLevel = (zoom.x + zoom.y) / 2; // If zoom has both x and y components
+            // let zoomLevel = zoom.x; // If zoom is only based on the x component
+
+            // Calculate the ratio of node scale to zoom level
+            let scaleZoomRatio = this.scale / zoomLevel;
+
+            // Scale the pan adjustment by this ratio
+            let panAdjustment = forceDirection.scale(scaleZoomRatio);
+            pan = pan.plus(panAdjustment);
+        }
+
+        return forceDirection; // Return the applied force direction
+    }
 
 
     zoom_to_fit(margin = 1) {
@@ -310,32 +371,33 @@ class Node {
     onwheel(event) {
         if (nodeMode) {
             let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
-            let targetWindow = event.target.closest('.window');
 
-            // Check if the event target is a selected window
-            if (targetWindow && targetWindow.classList.contains('selected')) {
-                // Get all selected windows
-                const selectedWindows = document.querySelectorAll('.window.selected');
-
-                // Scale all selected windows
-                selectedWindows.forEach((selectedWindow) => {
-                    let winNode = selectedWindow.win;
-
-                    // Modify the scaling logic for selected windows here
-                    winNode.scale *= amount;
-                    winNode.pos = winNode.pos.lerpto(toZ(mousePos), 1 - amount);
-
-                    // Scale edges connected to the selected window
-                    winNode.edges.forEach((edge) => {
-                        edge.scaleEdge(amount);
-                    });
-                });
+            if (autopilotSpeed !== 0 && this.uuid === autopilotReferenceFrame.uuid) {
+                zoomTo = zoomTo.scale(1 / amount);
             } else {
-                // Scale the current window
-                this.scale *= amount;
-                this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
-            }
+                // Scale selected nodes or individual node
+                let targetWindow = event.target.closest('.window');
+                if (targetWindow && targetWindow.classList.contains('selected')) {
+                    const selectedNodes = getSelectedNodes();
+                    selectedNodes.forEach((node) => {
+                        node.scale *= amount;
 
+                        // Only update position if the node is not anchored
+                        if (node.anchorForce !== 1) {
+                            node.pos = node.pos.lerpto(toZ(mousePos), 1 - amount);
+                        }
+
+                        updateNodeEdgesLength(node);
+                    });
+                } else {
+                    this.scale *= amount;
+
+                    // Only update position if not anchored
+                    if (this.anchorForce !== 1) {
+                        this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
+                    }
+                }
+            }
             cancel(event);
         }
     }
@@ -356,7 +418,7 @@ class Node {
     }
     updateEdgeData() {
         let es = JSON.stringify(this.edges.map((e) => e.dataObj()));
-        console.log("Saving edge data:", es); // Debug log
+        //console.log("Saving edge data:", es); // Debug log
         this.content.setAttribute("data-edges", es);
     }
     removeEdges() {
@@ -384,18 +446,62 @@ class Node {
             n.edges = n.edges.filter(edge => !edge.pts.includes(this));
         }
 
+        // Remove the node from the global nodes array
         let index = nodes.indexOf(this);
         if (index !== -1) {
             nodes.splice(index, 1);
         }
+
+        // Remove the node from the nodeMap if it exists
         if (nodeMap[this.uuid] === this) {
             delete nodeMap[this.uuid];
         }
 
+        // Remove the node UUID from the selectedNodeUUIDs set
+        if (selectedNodeUUIDs.has(this.uuid)) {
+            selectedNodeUUIDs.delete(this.uuid);
+        }
+
+        // Mark the node as removed and remove its content
         this.removed = true;
         this.content.remove();
     }
 
+}
+
+// Global or scoped array for selected UUIDs
+let selectedNodeUUIDs = new Set();
+
+// Function to toggle node selection
+function toggleNodeSelection(node) {
+    if (selectedNodeUUIDs.has(node.uuid)) {
+        node.windowDiv.classList.toggle('selected');
+        selectedNodeUUIDs.delete(node.uuid); // Deselect
+        //console.log(`deselected`);
+    } else {
+        node.windowDiv.classList.toggle('selected');
+        selectedNodeUUIDs.add(node.uuid); // Select
+        //console.log(`selected`);
+    }
+}
+
+function clearNodeSelection() {
+    selectedNodeUUIDs.forEach(uuid => {
+        const node = findNodeByUUID(uuid); // Implement this function based on how your nodes are stored
+        if (node) {
+            node.windowDiv.classList.remove('selected');
+        }
+    });
+    selectedNodeUUIDs.clear(); // Clear the set of selected UUIDs
+}
+
+function findNodeByUUID(uuid) {
+    return nodes.find(node => node.uuid === uuid);
+}
+
+function getSelectedNodes() {
+    // Return an array of node objects based on the selected UUIDs
+    return Array.from(selectedNodeUUIDs).map(uuid => nodeMap[uuid]);
 }
 
 function getNodeByTitle(title) {
@@ -428,27 +534,16 @@ function getTextareaContentForNode(node) {
         return null;
     }
 
-    const editableDiv = node.content.querySelector('div[contenteditable]');
-    const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
-
+    const editableDiv = node.contentEditableDiv;
+    const hiddenTextarea = node.textarea;
+    //console.log(editableDiv, hiddenTextarea);
     if (!editableDiv || !hiddenTextarea) {
         console.warn('Either editableDiv or hiddenTextarea is not found.');
         return null;
     }
 
-    // Check if contentEditable is hidden, and if so, unhide before sync
-    const wasHidden = editableDiv.style.display === "none";
-    if (wasHidden) {
-        editableDiv.style.display = "";
-    }
-
     // Explicitly sync the content
     syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
-
-    // Hide again if it was hidden before
-    if (wasHidden) {
-        editableDiv.style.display = "none";
-    }
 
     hiddenTextarea.dispatchEvent(new Event('input'));
     // Now get the textarea content
@@ -524,6 +619,15 @@ function edgeFromJSON(o, nodeMap) {
     return e;
 }
 
+function updateNodeEdgesLength(node) {
+    node.edges.forEach(edge => {
+        const currentLength = edge.currentLength;
+        if (currentLength) {  
+            edge.length = currentLength;
+        }
+    });
+}
+
 // Global map to store directionality states of edges
 const edgeDirectionalityMap = new Map();
 
@@ -535,6 +639,9 @@ class Edge {
     }) {
         this.pts = pts;
         this.length = length;
+        // Additional property to store the current length
+        this.currentLength = this.length;
+
         this.strength = strength;
         this.style = style;
         this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -637,6 +744,11 @@ class Edge {
         }
         return "none";
     }
+    center() {
+        return this.pts.reduce((t, n, i, a) => {
+            return t.plus(n.pos);
+        }, new vec2(0, 0)).unscale(this.pts.length);
+    }
     draw() {
         this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
         this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
@@ -688,7 +800,7 @@ class Edge {
                 let endScale = this.directionality.end.scale;
 
                 // Introduce a perspective factor (adjust this value to tweak the effect)
-                let perspectiveFactor = 1; // Range [0, 1], where 0 is no effect and 1 is maximum effect
+                let perspectiveFactor = 0.5; // Range [0, 1], where 0 is no effect and 1 is maximum effect
 
                 // Adjust scales based on the perspective factor
                 let adjustedStartScale = 1 + (startScale - 1) * perspectiveFactor;
@@ -776,9 +888,14 @@ class Edge {
         let avg = this.center();
         for (let n of this.pts) {
             let d = n.pos.minus(avg);
-            // Calculate the force only if the distance is greater than the desired length
-            if (d.mag() > this.length) {
-                let f = d.scale(1 - this.length / (d.mag() + 1e-300));
+            let dMag = d.mag();
+
+            // Update the current length of the edge
+            this.currentLength = dMag;
+
+            // Apply force to either shorten or lengthen the edge to the desired length
+            if (dMag !== this.length) {
+                let f = d.scale(1 - this.length / (dMag + 1e-300));
                 n.force = n.force.plus(f.scale(-this.strength));
             }
         }
@@ -790,17 +907,8 @@ class Edge {
             return t + n.pos.minus(avg).mag() - this.length;
         }, 0) / (this.length + 1);
     }
-    center() {
-        return this.pts.reduce((t, n, i, a) => {
-            return t.plus(n.pos);
-        }, new vec2(0, 0)).unscale(this.pts.length);
-    }
     scaleEdge(amount) {
         this.length *= amount;
-    }
-    onclick = (event) => {
-        this.toggleDirection();
-        this.draw(); // Redraw the edge to reflect the new directionality
     }
     onwheel = (event) => {
         if (nodeMode) {
@@ -815,6 +923,10 @@ class Edge {
             }
             cancel(event);
         }
+    }
+    onclick = (event) => {
+        this.toggleDirection();
+        this.draw();
     }
     onmouseover = (event) => {
         this.mouseIsOver = true;
@@ -832,11 +944,11 @@ class Edge {
             // Capture the titles and textNode flags of the connected nodes for later use
             const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
 
-            this.remove();
-
             // only if both nodes have the isTextNode flag
             if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
                 removeEdgeFromZettelkasten(connectedNodes[0].title, connectedNodes[1].title);
+            } else {
+                this.remove;
             }
 
             // Prevent the event from propagating further
@@ -937,16 +1049,95 @@ function clearTextSelection() {
     }
 }
 
+function getCentroidOfSelectedNodes() {
+    const selectedNodes = getSelectedNodes();
+    if (selectedNodes.length === 0) return null;
+
+    let sumPos = new vec2(0, 0);
+    selectedNodes.forEach(node => {
+        sumPos = sumPos.plus(node.pos);
+    });
+    return sumPos.scale(1 / selectedNodes.length);
+}
+
+function scaleSelectedNodes(scaleFactor, centralPoint) {
+    const selectedNodes = getSelectedNodes();
+
+    selectedNodes.forEach(node => {
+        // Scale the node
+        node.scale *= scaleFactor;
+
+
+        // Adjust position to maintain relative spacing only if the node is not anchored
+        if (node.anchorForce !== 1) {
+            let directionToCentroid = node.pos.minus(centralPoint);
+            node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
+        }
+
+        updateNodeEdgesLength(node);
+    });
+
+    // If needed, scale the user screen (global zoom)
+    //zoom = zoom.scale(scaleFactor);
+    //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
+}
+
+let prevNodeScale = 1;
+
 function nodeStep(time) {
+    const selectedNodes = getSelectedNodes();
+
+    Object.keys(keyState).forEach(key => {
+        if (keyState[key]) {
+            const direction = directionMap[key];
+
+            if (direction === 'scaleUp' || direction === 'scaleDown') {
+                const scaleFactor = direction === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
+                const centroid = getCentroidOfSelectedNodes();
+                if (centroid) {
+                    scaleSelectedNodes(scaleFactor, centroid);
+                }
+            } else {
+                // Handle directional movement
+                if (selectedNodes.length > 0) {
+                    // Find the node with the largest scale
+                    let largestScaleNode = selectedNodes.reduce((max, node) => node.scale > max.scale ? node : max, selectedNodes[0]);
+
+                    // Apply movement to the node with the largest scale
+                    let forceApplied = largestScaleNode.moveNode(direction, false);
+
+                    // Apply the same force to the remaining nodes
+                    selectedNodes.forEach(node => {
+                        if (node !== largestScaleNode) {
+                            node.force = node.force.plus(forceApplied);
+                        }
+                    });
+                }
+            }
+        }
+    });
+
+
     let autopilot_travelDist = 0;
     let newPan = pan;
+
     if (autopilotReferenceFrame && autopilotSpeed !== 0) {
         if (panToI_prev === undefined) {
             panToI_prev = autopilotReferenceFrame.pos.scale(1);
+            prevNodeScale = autopilotReferenceFrame.scale; // Initialize prevNodeScale
         }
         panToI = panToI.scale(1 - settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
         newPan = pan.scale(1 - autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
         panToI_prev = autopilotReferenceFrame.pos.scale(1);
+
+        if (autopilotReferenceFrame.scale !== prevNodeScale) {
+            let nodeScaleFactor = autopilotReferenceFrame.scale / prevNodeScale;
+
+            // Adjust zoomTo.scale based on nodeScaleFactor
+            zoomTo = zoomTo.scale(nodeScaleFactor);
+
+            prevNodeScale = autopilotReferenceFrame.scale; // Update the previous scale
+        }
     } else {
         newPan = pan.scale(1 - autopilotSpeed).plus(panTo.scale(autopilotSpeed));
         panToI_prev = undefined;
@@ -967,9 +1158,12 @@ function nodeStep(time) {
         panInput.value = pan.ctostring();
         zoomInput.value = zoom.mag() + "";
     }
+
     //const inpColor = scol(Math.log(zoom.mag()),undefined,64,128);
     //coords.style.color = inpColor;
+
     updateViewbox();
+
     if (mousePath == "") {
         mousePathPos = toZ(mousePos);
         mousePath = "M " + toSVG(mousePathPos).str() + " L ";
@@ -1043,8 +1237,6 @@ nodeStep();
 //connectRandom(10);
 
 
-let userZoomAdjustment = 1; // Default: no zoom adjustment
-let userPanAdjustment = new vec2(0, 0); // Default: no pan adjustment
 
 document.addEventListener('wheel', (event) => {
     isAnimating = false;
@@ -1084,7 +1276,6 @@ document.addEventListener('wheel', (event) => {
         let dest = toZ(mousePos);
         regenAmount += Math.abs(event.wheelDelta);
         let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
-        userZoomAdjustment *= amount;
         zoom = zoom.scale(amount);
         pan = dest.scale(1 - amount).plus(pan.scale(amount));
         cancel(event);
@@ -1132,7 +1323,6 @@ addEventListener("mousemove", (event) => {
         autopilotSpeed = 0;
         coordsLive = true;
         let delta = mousePos.minus(mouseDownPos);
-        userPanAdjustment = userPanAdjustment.plus(toDZ(delta));
         pan = pan.minus(toDZ(delta));
         regenAmount += delta.mag() * 0.25;
         mouseDownPos = mousePos.scale(1);

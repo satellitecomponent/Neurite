@@ -90,6 +90,8 @@ function setupHeaderContainerListeners(headerContainer) {
     };
 }
 
+
+
 function setupWindowDivListeners(node) {
     const windowDiv = node.windowDiv;
     const dropdown = node.dropdown;
@@ -97,8 +99,8 @@ function setupWindowDivListeners(node) {
 
     windowDiv.addEventListener('click', (event) => {
         event.stopPropagation();
-        if (event.ctrlKey && nodeMode === 1) {
-            windowDiv.classList.toggle('selected');
+        if (event.ctrlKey) {
+            toggleNodeSelection(node)
         }
     });
 
@@ -340,17 +342,18 @@ function setResizeEventListeners(resizeHandle, node) {
         return inverse2DMatrix(matrix);
     };
 
-    let windowDiv = resizeHandle.parentElement.parentElement;
+    let windowDiv = node.windowDiv;
+    // Find these elements once and store them for later use.
+    const editorWrapperDiv = windowDiv.querySelector('.editorWrapperDiv');
+    const editorIframe = editorWrapperDiv ? editorWrapperDiv.querySelector('iframe') : null;
+
+
     let startX;
     let startY;
     let startWidth;
     let startHeight;
 
     let isMouseMoving = false;
-
-    // Find these elements once and store them for later use.
-    const editorWrapperDiv = windowDiv.querySelector('.editorWrapperDiv');
-    const editorIframe = editorWrapperDiv ? editorWrapperDiv.querySelector('iframe') : null;
 
     const handleMouseMove = (event) => {
         if (!event.buttons) {
@@ -369,7 +372,7 @@ function setResizeEventListeners(resizeHandle, node) {
         const dx = 2 * (event.pageX - startX) / scaleX;
         const dy = 2 * (event.pageY - startY) / scaleY;
 
-        const content = windowDiv.querySelector('.content');
+        const content = node.innerContent;
         const minWidth = content ? content.offsetWidth + 0 : 100;
         const minHeight = content ? content.offsetHeight + 35 : 100;
         const newWidth = Math.max(startWidth + dx, minWidth);
@@ -378,7 +381,7 @@ function setResizeEventListeners(resizeHandle, node) {
         windowDiv.style.width = `${newWidth}px`;
         windowDiv.style.height = `${newHeight}px`;
 
-        const contentEditable = windowDiv.querySelector("[contentEditable='true']");
+        const contentEditable = node.contentEditableDiv;
         if (contentEditable) {
             if (newHeight > 300) {
                 contentEditable.style.maxHeight = `${newHeight}px`;
@@ -388,14 +391,21 @@ function setResizeEventListeners(resizeHandle, node) {
             contentEditable.style.maxWidth = `${newWidth}px`
         }
 
+        const htmlView = node.htmlView;
+        if (htmlView) {
+            htmlView.style.width = '100%';
+            htmlView.style.height = '100%';
+        }
+
         // Find the aiNodeWrapperDiv for this specific node. Use a more specific selector if needed.
-        const aiNodeWrapperDiv = windowDiv.querySelector('.ainodewrapperDiv');
+        const aiNodeWrapperDiv = node.ainodewrapperDiv;
 
         // If aiNodeWrapperDiv exists, set its dimensions
         if (aiNodeWrapperDiv) {
             aiNodeWrapperDiv.style.width = `${newWidth}px`;
             aiNodeWrapperDiv.style.height = `${newHeight}px`;
         }
+
 
         if (editorWrapperDiv) {
             const newEditorWidth = Math.max(startWidth + dx, 350);  //350 min width
@@ -444,6 +454,13 @@ function setResizeEventListeners(resizeHandle, node) {
             }
         }
     });
+}
+
+function resetWindowDivSize(windowDiv) {
+    windowDiv.style.width = 'fit-content';
+    windowDiv.style.height = 'fit-content';
+    windowDiv.style.maxWidth = 'fit-content';
+    windowDiv.style.maxHeight = 'fit-content';
 }
 
 

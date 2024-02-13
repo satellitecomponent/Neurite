@@ -34,6 +34,10 @@
 }
 
 
+.hidden {
+    display: none;
+}
+
 .collapsed-circle {
     display: relative;
     cursor: pointer;
@@ -42,8 +46,8 @@
     height: 60px;
     background-color: rgb(50 51 62 / 50%);
     backdrop-filter: blur(3px);
+    transform: translateY(-3px); /* Adjust the value as needed */
 }
-
     .collapsed-anchor:hover {
         background-color: #555; /* Change to desired hover color */
     }
@@ -52,6 +56,10 @@
 .collapsed-circle.collapsed-anchor {
     background-color: rgba(107, 98, 121, 40%) !important;
     border: none;
+}
+
+.window.selected.collapsed::before {
+    border-radius: 50%;
 }
 
 /* To hide the background color of the window when collapsed */
@@ -98,6 +106,23 @@
         z-index: 1;
     }
 
+    .window-anchored.selected {
+        background-color: #4a669d;
+    }
+
+.drag-box {
+    position: absolute;
+    border: 1px dashed rgba(255, 255, 255, 0.8); /* Adjusted border width and color */
+    background-color: rgba(150, 150, 150, 0.2);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.selected {
+    background-color: #6c7687;
+    color: #222226;
+}
+
 
         .window.selected::before {
             content: "";
@@ -111,6 +136,36 @@
             pointer-events: none;
             z-index: 1;
         }
+
+.node-textarea {
+    background-color: #222226;
+    color: #bbb;
+    overflow-y: scroll;
+    resize: both;
+    width: 259px;
+    line-height: 1.4;
+    display: none; /* Initially hidden */
+    position: absolute;
+}
+
+.html-iframe {
+    border: none;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-width: 50px;
+    min-height: 40px;
+    display: block;
+}
+
+.python-frame {
+    display: block;
+}
+
+    /* Increased specificity for hidden class */
+    .html-iframe.hidden, .python-frame.hidden {
+        display: none;
+    }
 
 .editable-div {
     border: 2px solid #8882;
@@ -411,7 +466,7 @@
 
         .submenu {
             padding: 10px;
-            color: #bbb
+            color: #bbb;
         }
 
             .submenu a {
@@ -1074,11 +1129,7 @@ select-replacer > div:first-child {
                 background: transparent;
                 border: none;
             }
-        /* Existing CSS */
-.selected {
-    background-color: #8b8b8b; /* Or any other color */
-    color: #222226;
-}
+
 
         /* New CSS */
         #key-list p:hover {
@@ -2083,10 +2134,6 @@ textarea[id^='custom-instructions-textarea-'] {
         margin-top: 0; /* Eliminate margin when hidden */
         margin-bottom: 0; /* Eliminate margin when hidden */
     }
-
-.hidden {
-    display: none;
-}
 
 .function-call-list {
     height: 150px;

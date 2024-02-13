@@ -20,6 +20,9 @@ myCodeMirror.on("blur", function () {
     // Disable text selection when the editor loses focus
     myCodeMirror.getWrapperElement().style.userSelect = "none";
 });
+
+
+
 //sync codemirror and textarea
 
 myCodeMirror.on("change", function (instance, changeObj) {
@@ -291,7 +294,7 @@ function updateNodeTitleToLineMap() {
 function getNodeSectionRange(title, cm) {
     const lowerCaseTitle = title.toLowerCase();
     let nodeLineNo;
-    let nextNodeLineNo = cm.lineCount(); // Defaults to the end of the document
+    let nextNodeLineNo = cm.lineCount(); // End of the document
 
     let foundCurrentNode = false;
 
@@ -308,9 +311,17 @@ function getNodeSectionRange(title, cm) {
     }
 
     let startLineNo = nodeLineNo;
-    let endLineNo = nextNodeLineNo - 1; // Default end line is the line just before the next node
+    let endLineNo;
 
-    //console.log("Title:", title, "Start Line:", startLineNo, "End Line:", endLineNo);  // Debug line
+    // Set endLineNo to the last line of the document if this node extends to the end
+    if (nextNodeLineNo === cm.lineCount()) {
+        endLineNo = cm.lineCount() - 1;
+    } else {
+        // Otherwise, the end line is the line just before the next node
+        endLineNo = nextNodeLineNo - 1;
+    }
+
+    //console.log("Title:", title, "Start Line:", startLineNo, "End Line:", endLineNo);
 
     return { startLineNo, endLineNo };
 }
