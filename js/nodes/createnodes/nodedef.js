@@ -1,18 +1,12 @@
 
 
 function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
-    let t = document.createElement("input");
-    t.setAttribute("type", "text");
-    t.setAttribute("value", "untitled");
-    t.setAttribute("style", "background:none; ");
-    t.classList.add("title-input");
-
     let n = document.createElement("textarea");
-    n.classList.add('custom-scrollbar');
+    n.classList.add('custom-scrollbar', 'node-textarea');
     n.onmousedown = cancel;
     n.setAttribute("type", "text");
     n.setAttribute("size", "11");
-    n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4; display: none;");
+    //n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4; display: none;");
     n.style.position = "absolute";
 
     let elements = [n];
@@ -35,6 +29,16 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     let windowDiv = node.windowDiv;  // Find the .content div
     let editableDiv = createContentEditableDiv(n);  // Define editableDiv here
 
+    let htmlView = document.createElement("iframe");
+    htmlView.id = 'html-iframe';
+    htmlView.classList.add('html-iframe', 'hidden'); // Add hidden class
+
+    let pythonView = document.createElement("div");
+    pythonView.id = 'python-frame';
+    pythonView.classList.add('python-frame', 'hidden'); // Add hidden class
+
+    windowDiv.appendChild(htmlView);
+    windowDiv.appendChild(pythonView);
     windowDiv.appendChild(editableDiv);  // Append the contentEditable div to .content div
     windowDiv.appendChild(button);
 
@@ -59,7 +63,7 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
             f: "textarea",
             a: {
                 p: [0, 0, 1],
-                v: t.value
+                v: node.titleInput.value
             }
         };
     })
@@ -91,6 +95,11 @@ function initTextNode(node) {
     let textarea = node.content.querySelector('textarea');
     node.textarea = textarea;
 
+    let htmlView = node.content.querySelector('#html-iframe');
+    node.htmlView = htmlView;
+
+    let pythonView = node.content.querySelector('#python-frame');
+    node.pythonView = pythonView
 
     addEventListenersToTextNode(node)
 }
@@ -99,6 +108,8 @@ function addEventListenersToTextNode(node) {
     let button = node.codeButton;
     let textarea = node.textarea;
     let contentEditableDiv = node.contentEditableDiv
+    let htmlView = node.htmlView
+    let pythonView = node.pythonView;
 
     // Setup for the code checkbox listener
     setupCodeCheckboxListener(button, node.addCodeButton);
@@ -110,7 +121,7 @@ function addEventListenersToTextNode(node) {
     // Reattach the handleCodeButton callback
     if (button && textarea) {
         // Assuming handleCodeButton sets up the button event listener
-        handleCodeButton(button, textarea, node);
+        handleCodeButton(button, textarea, htmlView, pythonView, node);
     }
 }
 
@@ -425,8 +436,6 @@ function setupLinkNodeIframeButtonListeners(node) {
 }
 
 function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    llmNodeCount++;
-
     // Create the AI response textarea
     let aiResponseTextArea = document.createElement("textarea");
     aiResponseTextArea.id = `LLMnoderesponse-${llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
@@ -458,7 +467,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let regenerateButton = document.createElement("button");
     regenerateButton.type = "button";
     regenerateButton.id = "prompt-form";
-    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px; border-radius: 50%;";
     regenerateButton.innerHTML = `
     <svg width="24" height="24">
         <use xlink:href="#refresh-icon"></use>
@@ -535,8 +544,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let ainodewrapperDiv = document.createElement("div");
     ainodewrapperDiv.className = 'ainodewrapperDiv';
     ainodewrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
-    ainodewrapperDiv.style.width = "580px";
-    ainodewrapperDiv.style.height = "560px";
+    ainodewrapperDiv.style.width = "500px";
+    ainodewrapperDiv.style.height = "520px";
 
     ainodewrapperDiv.appendChild(aiResponseTextArea);
     ainodewrapperDiv.appendChild(aiResponseDiv);
@@ -610,6 +619,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 }
 
 function initAiNode(node) {
+    llmNodeCount++;
+
     let ainodewrapperDiv = node.content.querySelector('.ainodewrapperDiv')
     node.ainodewrapperDiv = ainodewrapperDiv;
 
@@ -920,22 +931,22 @@ function setupAiNodeSettingsButtonListeners(node) {
     let aiNodeSettingsContainer = node.content.querySelector('.ainode-settings-container');
 
     aiNodeSettingsButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
+        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
     });
     aiNodeSettingsButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#222226';
+        this.style.backgroundColor = this.isActive ? '#1e3751' : '#222226';
     });
     aiNodeSettingsButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = 'rgb(28 68 97)';
+        this.style.backgroundColor = '#1e3751';
     });
     aiNodeSettingsButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
+        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
     });
     aiNodeSettingsButton.addEventListener('click', function (event) {
         this.isActive = !this.isActive;  // Toggle the active state
         toggleSettings(event, aiNodeSettingsContainer);  // Call your existing function
         // Set the background color based on the new active state
-        this.style.backgroundColor = this.isActive ? 'rgb(28 68 97)' : '#333';
+        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
     });
 
     // Add the listener for mousedown event

@@ -43,7 +43,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.673308c0.js"></script>
-  <link rel="stylesheet" href="./assets/index.456b3aae.css">
+  <link rel="stylesheet" href="./assets/index.d29d4527.css">
 </head>
 
 <body id="body">
@@ -187,7 +187,7 @@
 
         <div class="dropdown-content">
             <div style="display: none;" id="search-results">
-                <div class="submenu">
+                <div class="submenu custom-scrollbar">
 
                 </div>
             </div>
@@ -288,8 +288,8 @@
                     <!-- Fourth tab content here -->
                     <div class="submenu">
                         <!--<div>
-        <button id="ai-cursor-button">Enable Ai Cursor</button>
-    </div>-->
+                    <button id="ai-cursor-button">Enable Ai Cursor</button>
+                </div>-->
                         <br />
                         <div class="flex-container">
                             <div class="inline-container" title="Enable Local Ai Features">
@@ -430,7 +430,7 @@
                             <!-- Stored keys will be dynamically added here -->
                         </div>
                         <!--<input type="file" id="fileInput" />
-    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
                         <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
@@ -651,7 +651,7 @@
                                 <td>Resize a window.</td>
                             </tr>
                             <tr>
-                                <td><strong>CTRL + Shift + Click</strong></td>
+                                <td><strong>CTRL + CLICK or DRAG</strong></td>
                                 <td>Selects multiple nodes. Allows for multiple nodes to be re-scaled</td>
                             </tr>
                             <tr>
@@ -715,7 +715,7 @@
         </div>
     </div>
     <a id="nodes">
-<!--         Save-Data .txt              -->
+        <!--         Save-Data .txt              -->
     </a>
     <!--iframe id="inlineFrameExample"
             title="Inline Frame Example"
@@ -877,6 +877,7 @@
     <script defer type="module" src="./embeddings.js"></script>
 
     <script src="js/nodes/nodemode.js"></script>
+    <script src="js/nodes/movenodes.js"></script>
     <script src="js/interface/window.js"></script>
 
     <script src="js/interface/interface_v2.js"></script>
