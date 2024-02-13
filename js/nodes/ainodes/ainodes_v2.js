@@ -48,12 +48,16 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
     <svg width="24" height="24">
         <use xlink:href="#pause-icon"></use>
     </svg>`;
+    const haltCheckbox = node.haltCheckbox;
 
     console.log("Messages sent to API:", messages);
     console.log("Token count for messages:", getTokenCount(messages));
 
     const API_KEY = document.getElementById("api-key-input").value;
     if (!API_KEY) {
+        if (haltCheckbox) {
+            haltCheckbox.checked = true;
+        }
         alert("Please enter your API key");
         return;
     }
@@ -98,7 +102,11 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
         if (!response.ok) {
             const errorData = await response.json();
             console.error("Error calling ChatGPT API:", errorData);
-            node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+            //node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
+
+            if (haltCheckbox) {
+                haltCheckbox.checked = true;
+            }
 
             // Display error icon and hide loading icon
             const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
@@ -123,10 +131,15 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
     } catch (error) {
         // Check if the error is because of the abort operation
         if (error.name === 'AbortError') {
+            if (haltCheckbox) {
+                haltCheckbox.checked = true;
+            }
             console.log('Fetch request was aborted');
         } else {
             console.error("Error calling ChatGPT API:", error);
-
+            if (haltCheckbox) {
+                haltCheckbox.checked = true;
+            }
             // Display error icon and hide loading icon
             const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
             const aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
@@ -246,14 +259,18 @@ class ResponseHandler {
             // Find the last occurrence of the prompt identifier in the trimmed content
             let lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
             if (lastPromptIndex !== -1) {
-                // Everything after the last prompt identifier is the new prompt content
                 let promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
-                this.handleUserPrompt(promptContent);
-
-                // Commenting out the handling of previous saved content for future use
-                // let previousSavedContent = trimmedNewContent.substring(0, lastPromptIndex).trim();
-                // Handle previous saved content here if needed in the future
-
+                let segments = promptContent.split('```');
+                for (let i = 0; i < segments.length; i++) {
+                    let segment = segments[i].trim();
+                    if (segment) {
+                        if (i % 2 === 0) {
+                            this.handleUserPrompt(segment); // Even segments are regular text
+                        } else {
+                            this.renderCodeBlock(segment, false, true); // Odd segments are code blocks within user prompts
+                        }
+                    }
+                }
                 newContent = '';
             } else {
                 if (this.inCodeBlock) {
@@ -306,6 +323,7 @@ class ResponseHandler {
     }
 
     handleUserPrompt(promptContent) {
+        if (!promptContent) return;
         // Create a new div for the outer container
         let outerDiv = document.createElement('div');
         outerDiv.style.width = '100%';
@@ -317,8 +335,8 @@ class ResponseHandler {
         promptDiv.id = `prompt-${this.responseCount}`;  // Assign a unique ID to each prompt
         promptDiv.contentEditable = false; // Set contentEditable to false when the promptDiv is created
 
-        // Replace newline characters with '<br>' and set as HTML content
-        promptDiv.innerHTML = promptContent.replace(/\n/g, '<br>');
+
+        promptDiv.textContent = promptContent;
 
         // Append the prompt div to the outer div
         outerDiv.appendChild(promptDiv);
@@ -367,7 +385,7 @@ class ResponseHandler {
         }
     }
 
-    renderCodeBlock(content, isFinal = false) {
+    renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
         let encodedContent = encodeHTML(content);
         let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
         let decodedContent = decodeHTML(cleanedContent);
@@ -388,6 +406,11 @@ class ResponseHandler {
             existingContainerDiv.id = codeBlockDivId;
             existingContainerDiv.className = "code-block-container";
             this.node.aiResponseDiv.appendChild(existingContainerDiv);
+
+            // Add a specific identifier or class for user-prompt code blocks
+            if (isUserPromptCodeBlock) {
+                existingContainerDiv.classList.add('user-prompt-codeblock');
+            }
 
             let languageLabelDiv = document.createElement('div');
             languageLabelDiv.className = "language-label";

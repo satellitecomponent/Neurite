@@ -1,49 +1,72 @@
-
-
 let pyodideLoadingPromise = null;
 let pyodide = null;
 let loadedPackages = {};
+let pythonViewMap = new Map();
 
 // List of Python's built-in modules
-let builtinModules = [
-    "io",
-    "base64",
-    // Add more built-in modules here as needed
-];
+let builtinModules = ["io", "base64", "sys"];
 
-async function loadPyodideAndSetup(pythonView) {
+async function loadPyodideAndSetup() {
     let pyodideLoadPromise = loadPyodide({
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.0/full/",
     });
     pyodide = await pyodideLoadPromise;
 
     // Define the JavaScript function to be called from Python
-    function outputHTML(html) {
-        let resultDiv = document.createElement("div");
-        resultDiv.innerHTML = html || '';
-        pythonView.appendChild(resultDiv);
+    function outputHTML(html, identifier) {
+        let pythonView = pythonViewMap.get(identifier);
+        if (pythonView) {
+            let resultDiv = document.createElement("div");
+            resultDiv.innerHTML = html || '';
+            pythonView.appendChild(resultDiv);
+        }
     }
     window.outputHTML = outputHTML;
 
-    // Add the output_html function to Python builtins
     pyodide.runPython(`
+        import io
+        import sys
         from js import window
 
-        def output_html(html):
-            window.outputHTML(html)
+        class CustomStdout(io.StringIO):
+            def __init__(self, identifier):
+                super().__init__()
+                self.identifier = identifier
 
-        __builtins__.output_html = output_html
+            def write(self, string):
+                super().write(string)
+                output_html(string, self.identifier)
+
+        def output_html(html, identifier):
+            window.outputHTML(html, identifier)
+
+        def run_code_and_capture_output(code, identifier):
+            old_stdout = sys.stdout
+            sys.stdout = CustomStdout(identifier)  # Pass identifier to CustomStdout
+            try:
+                result = eval(code)
+                if result is not None:
+                    output_html(str(result), identifier)  # Pass identifier to output_html
+            except:
+                exec(code)
+            finally:
+                sys.stdout = old_stdout
+
+        __builtins__.run_code_and_capture_output = run_code_and_capture_output
     `);
 
     console.log('Pyodide loaded');
 }
 
-async function runPythonCode(code, pythonView) {
+async function runPythonCode(code, pythonView, uuid) {
+    let identifier = uuid; // Retrieve the UUID
+    pythonViewMap.set(identifier, pythonView); // Associate the view with the UUID
+    
     pythonView.innerHTML = "Initializing Pyodide and dependencies...";
 
     if (!pyodide) {
         if (!pyodideLoadingPromise) {
-            pyodideLoadingPromise = loadPyodideAndSetup(pythonView);
+            pyodideLoadingPromise = loadPyodideAndSetup();
         }
         await pyodideLoadingPromise;
     }
@@ -66,11 +89,17 @@ async function runPythonCode(code, pythonView) {
             }
         }
 
-        let result = pyodide.runPython(code);
+        // Pass the UUID when calling Python functions
+        let result = pyodide.runPython(
+            `run_code_and_capture_output('''${code}''', '${identifier}')`
+        );
 
+        pythonViewMap.delete(identifier); // Clean up
         return result;
     } catch (error) {
         return error.message;
+    } finally {
+        currentPythonView = null; // Reset the current Python view
     }
 }
 
@@ -140,87 +169,81 @@ function syncContent(node) {
     }
 }
 
-async function handleCodeButton(button, textarea, node) {
+async function handleCodeButton(button, textarea, htmlView, pythonView, node) {
     button.onclick = async function () {
         // Explicitly sync the content before using it
         syncContent(node);
-
+        const contentEditableDiv = node.contentEditableDiv;
+        const windowDiv = node.windowDiv;
         if (button.innerHTML === 'Run Code') {
-            node.contentEditableDiv.style.display = "none";
+            // Extract initial dimensions for later restoration
+            const computedStyle = window.getComputedStyle(windowDiv);
+            const initialWindowWidth = computedStyle.width;
+            const initialWindowHeight = computedStyle.height;
 
-            let re = /```(.*?)\n([\s\S]*?)```/gs;
-            let codeBlocks = textarea.value.matchAll(re);
+            contentEditableDiv.classList.add('hidden');
 
-            let allPythonCode = '';
-            let allWebCode = [];
-
-            for (let block of codeBlocks) {
-                let language = block[1].trim();
-                let code = block[2];
-
-                if (language === 'python') {
-                    allPythonCode += '\n' + code;
-                } else if (language === 'html' || language === 'css' || language === 'javascript' || language === '') {
-                    allWebCode.push({ data: `Text Content: \n\`\`\`${language}\n${code}\n\`\`\`` });
-                }
-            }
+            let { allPythonCode, allWebCode } = collectCodeBlocks(textarea);
 
             if (allPythonCode !== '') {
-                if (!textarea.pythonView) {
-                    textarea.pythonView = document.createElement("div");
-                    textarea.parentNode.insertBefore(textarea.pythonView, textarea.nextSibling);
-                }
-                textarea.pythonView.style.display = "block";
-                console.log('Running Python code...');
-                let result = await runPythonCode(allPythonCode, textarea.pythonView);
+                pythonView.classList.remove('hidden');
+                let result = await runPythonCode(allPythonCode, pythonView, node.uuid);
                 console.log('Python code executed, result:', result);
             }
 
-            let allConnectedNodesInfo = getAllConnectedNodesData(node);
-            allConnectedNodesInfo.push(...allWebCode);
-            let bundledContent = bundleWebContent(allConnectedNodesInfo);
-
-            if (textarea.htmlView) {
-                textarea.htmlView.remove();
+            if (allWebCode.length > 0) {
+                displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight);
+            } else {
+                htmlView.classList.add('hidden');
             }
-
-            textarea.htmlView = document.createElement("iframe");
-            textarea.htmlView.style.border = "none";
-            textarea.htmlView.style.boxSizing = "border-box";
-            textarea.htmlView.style.width = "100%";
-            textarea.htmlView.style.height = "100%";
-
-            textarea.htmlView.onmousedown = function (event) {
-                event.stopPropagation();
-            };
-
-            textarea.parentNode.insertBefore(textarea.htmlView, textarea.nextSibling);
-
-            textarea.htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
-
-            let windowDiv = textarea.htmlView.parentNode;
-            while (windowDiv && (!windowDiv.win || !windowDiv.classList.contains('window'))) {
-                windowDiv = windowDiv.parentNode;
-            }
-            if (windowDiv) {
-                observeParentResize(windowDiv, textarea.htmlView);
-            }
-
 
             button.innerHTML = 'Code Text';
             button.style.backgroundColor = '#717171';
         } else {
-            node.contentEditableDiv.style.display = "block";
-            if (textarea.htmlView) {
-                textarea.htmlView.style.display = "none";
-                textarea.htmlView.srcdoc = "";
-            }
-            if (textarea.pythonView) {
-                textarea.pythonView.style.display = "none";
-                textarea.pythonView.innerHTML = "";
-            }
+            resetViewsAndContentEditable(node, htmlView, pythonView);
             button.innerHTML = 'Run Code';
             button.style.backgroundColor = '';
         }
     };
+}
+
+function collectCodeBlocks(textarea) {
+    let re = /```(.*?)\n([\s\S]*?)```/gs;
+    let codeBlocks = textarea.value.matchAll(re);
+
+    let allPythonCode = '';
+    let allWebCode = [];
+
+    for (let block of codeBlocks) {
+        let language = block[1].trim();
+        let code = block[2];
+
+        if (language === 'python') {
+            allPythonCode += '\n' + code;
+        } else if (['html', 'css', 'javascript', 'js', ''].includes(language)) {
+            allWebCode.push({ data: `Text Content: \n\`\`\`${language}\n${code}\n\`\`\`` });
+        }
+    }
+
+    return { allPythonCode, allWebCode };
+}
+
+function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
+    let allConnectedNodesInfo = getAllConnectedNodesData(node);
+    allConnectedNodesInfo.push(...allWebCode);
+    let bundledContent = bundleWebContent(allConnectedNodesInfo);
+
+    htmlView.style.width = initialWindowWidth;
+    htmlView.style.height = initialWindowHeight;
+    htmlView.classList.remove('hidden');
+    htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
+}
+
+function resetViewsAndContentEditable(node, htmlView, pythonView) {
+    const windowDiv = node.windowDiv;
+    htmlView.classList.add('hidden');
+    pythonView.classList.add('hidden');
+    node.contentEditableDiv.classList.remove('hidden');
+
+    // Resetting window dimensions is not required as they are not altered
 }

@@ -483,6 +483,13 @@ async function getAllKeys() {
 
 async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
     const allKeys = await getAllKeys();
+
+    // Early return if there are 3 or fewer keys
+    if (allKeys.length <= 3) {
+        return allKeys;
+    }
+
+    // Continue with the rest of the function if there are more than 3 keys
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
 
     const directoryMap = new Map();
@@ -509,7 +516,7 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
     const aiPrompt = [
         {
             role: "system",
-            content: `Determine the filepaths to select. Given the User Message and Search Query "${searchQuery}", (without preface) identify a limit of THREE numbered keys from the list relevant to this context. ONLY GENERATE NUMBERS FOR CORRESPONDING RELEVENT FILEPATH KEYS`
+            content: `Determine the filepaths to select. Given the User Message and Search Query "${searchQuery}", (without preface) identify a limit of THREE numbered keys from the list relevant to this context. GENERATE NUMBERS THAT MAP TO RELEVENT FILEPATH KEYS`
         },
         {
             role: "system",
@@ -533,7 +540,7 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
 
     // Call the AI API with the constructed context
     const aiResponse = await callchatAPI(aiPrompt, false, 0);
-    console.log("Response For File Selection", aiResponse);
+    //console.log("Response For File Selection", aiResponse);
 
     // Use a regular expression to extract numbers from the response
     const numberPattern = /\b\d+\b/g;
@@ -546,7 +553,7 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
     // Map the numbers to the full keys using indexToFileMap
     const relevantKeys = relevantKeyNumbers.map(number => indexToFileMap[number]).filter(key => key !== undefined);
 
-    console.log("Selected Keys", relevantKeys);
+    console.log("Selected Document Keys", relevantKeys);
     return relevantKeys;
 }
 
@@ -655,8 +662,8 @@ async function getRelevantChunks(searchQuery, searchResults, topN, relevantKeys 
     const openaiEmbeddings = calculateSimilarity(filterBySource(relevantEmbeddings, 'openai'), searchQueryEmbedding);
     //console.log("local embeddings", localEmbeddings);
     //console.log("openai embeddings", openaiEmbeddings);
-    // Sort and select top 3N embeddings from each category for more accurate readings when converting
-    const extendedTopN = topN * 3;
+    // Sort and select top 2N embeddings from each category for more accurate readings when converting
+    const extendedTopN = topN * 2;
     const topLocalEmbeddings = localEmbeddings.sort((a, b) => b.similarity - a.similarity).slice(0, extendedTopN);
     const topOpenAIEmbeddings = openaiEmbeddings.sort((a, b) => b.similarity - a.similarity).slice(0, extendedTopN);
 

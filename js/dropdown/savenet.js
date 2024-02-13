@@ -48,9 +48,42 @@ function collectAdditionalSaveObjects() {
     return savedInputValues + savedViewsElement;
 }
 
+const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
+
+function replaceNewLinesInLLMSaveData(nodeData) {
+    let tempDiv = document.createElement('div');
+    tempDiv.innerHTML = nodeData;
+
+    tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
+        try {
+            let nodeJson = JSON.parse(node.getAttribute('data-node_json'));
+            if (nodeJson.isLLM) {
+                node.querySelectorAll('pre').forEach(pre => {
+                    pre.innerHTML = pre.innerHTML.replace(/\n/g, NEWLINE_PLACEHOLDER);
+                });
+            }
+        } catch (error) {
+            console.warn('Error parsing node JSON:', error);
+        }
+    });
+
+    return tempDiv.innerHTML;
+}
+
+function restoreNewLinesInPreElements(nodeElement) {
+    nodeElement.querySelectorAll('pre').forEach(pre => {
+        pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
+    });
+}
+
 function neuriteSaveEvent(existingTitle = null) {
     nodes.map((n) => n.updateEdgeData());
+    clearNodeSelection();
+
     let nodeData = document.getElementById("nodes").innerHTML;
+
+    // Replace new lines in nodeData for LLM nodes
+    nodeData = replaceNewLinesInLLMSaveData(nodeData);
 
     let zettelkastenContent = window.myCodemirror.getValue();
     let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
@@ -258,6 +291,8 @@ for (let n of nodes) {
 }
 
 function clearnet() {
+    clearNodeSelection()
+
     // Remove all edges
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
@@ -332,9 +367,8 @@ function loadnet(text, clobber, createEdges = true) {
         let node = new Node(undefined, n, true, undefined, createEdges);
         newNodes.push(node);
         registernode(node);
-        if (n.dataset.init === "window")
-            rewindowify(node);
     }
+
     populateDirectionalityMap(d, nodeMap);
 
     for (let n of newNodes) {
@@ -385,8 +419,8 @@ function reconstructSavedNode(node) {
     }
 
     if (node.isLLM) {
-        llmNodeCount++;
         initAiNode(node);
+        restoreNewLinesInPreElements(node.aiResponseDiv);
     }
 
     if (node.isLink) {

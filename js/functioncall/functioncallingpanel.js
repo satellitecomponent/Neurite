@@ -1,13 +1,24 @@
 
 // Function to handle various events on the node panel
 function handlePanelEvent(event) {
-    event.stopPropagation(); // Prevents the event from bubbling up to parent elements
+    cancel(event); // Prevents the event from bubbling up to parent elements
+}
+
+function handlePanelMouseMove(event) {
+    // Check if the event target is inside the functionCallPanel
+    if (functionCallPanel.contains(event.target)) {
+        // If the event is inside functionCallPanel, don't stop its propagation
+        return;
+    }
+
+    // For all other elements, stop propagation
+    cancel(event);
 }
 
 // Add event listeners to the node panel for different types of events
 nodePanel.addEventListener('click', handlePanelEvent);
 nodePanel.addEventListener('mousedown', handlePanelEvent); // For drag (mousedown)
-nodePanel.addEventListener('mousemove', handlePanelEvent);
+nodePanel.addEventListener('mousemove', handlePanelMouseMove);
 nodePanel.addEventListener('wheel', handlePanelEvent);     // For scroll (wheel event)
 nodePanel.addEventListener('dragstart', handlePanelEvent); // Prevents dragging from propagating
 nodePanel.addEventListener('dragend', handlePanelEvent);   // Optional, handle end of drag

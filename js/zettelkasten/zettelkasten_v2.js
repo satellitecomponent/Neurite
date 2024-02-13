@@ -89,6 +89,8 @@ let shouldAddCodeButton = false;
     }
 
 
+
+
     class ZettelkastenProcessor {
         constructor() {
             this.prevNoteInputLines = [];
@@ -163,7 +165,7 @@ let shouldAddCodeButton = false;
         }
 
         handlePlainTextAndReferences(line, currentNodeTitle, nodes, startLine = null, endLine = null, lines = null) {
-            this.removeStaleReferences(currentNodeTitle, nodes);
+            //this.removeStaleReferences(currentNodeTitle, nodes);
 
             if (line.includes(refTag)) {
                 // If startLine and endLine are null, handleReferenceLine will use its default behavior
@@ -180,8 +182,22 @@ let shouldAddCodeButton = false;
                 const changedNodeTitle = changedNode.getTitle();
                 const { startLineNo, endLineNo } = getNodeSectionRange(changedNodeTitle, noteInput);
 
-                for (let i = startLineNo + 1; i <= endLineNo; i++) {
+                let nodeContainsReferences = false;
+                let nodeReferencesCleared = false;
+                for (let i = startLineNo + 1; i <= endLineNo && i < lines.length; i++) {
+                    // Process each line and update the nodeContainsReferences flag
                     this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes, startLineNo, endLineNo, lines);
+                    if (lines[i].includes(refTag)) {
+                        nodeContainsReferences = true;
+                        nodeReferencesCleared = false;
+                    }
+                }
+
+                // Clear references if no references are found and they haven't been cleared already
+                if (!nodeContainsReferences && !nodeReferencesCleared) {
+                    this.handleRefTags([], changedNodeTitle, nodes, lines);
+                    nodeReferencesCleared = true; // Indicate that references have been cleared
+                    //console.log(`References cleared for node: ${changedNodeTitle}`);
                 }
             }
         }
@@ -217,7 +233,7 @@ let shouldAddCodeButton = false;
                     }
                     node.title = currentNodeTitle;
                     node.live = true;
-                    node.nodeObject.content.children[0].children[0].children[1].value = currentNodeTitle;
+                    node.nodeObject.titleInput.value = currentNodeTitle;
                 } else {
                     let nodeObject;
                     if (nodefromWindow) {
@@ -238,7 +254,7 @@ let shouldAddCodeButton = false;
                 }
             } else {
                 nodes[currentNodeTitle].plainText = "";
-                nodes[currentNodeTitle].nodeObject.content.children[0].children[1].children[0].value = nodes[currentNodeTitle].plainText;
+                nodes[currentNodeTitle].nodeObject.textarea.value = nodes[currentNodeTitle].plainText;
                 if (nodeLines[nodes[currentNodeTitle].lineNum] === nodes[currentNodeTitle]) {
                     delete nodeLines[nodes[currentNodeTitle].lineNum];
                 }
@@ -271,19 +287,21 @@ let shouldAddCodeButton = false;
         }
 
         attachContentEventListenersToNode(node, nodes, noteInput, nodeLines) {
-            const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, noteInput, nodeLines);
-            node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', titleInputEventHandler);
+            const inputElement = node.nodeObject.titleInput;
+            const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, noteInput, nodeLines, inputElement);
+            inputElement.addEventListener('input', titleInputEventHandler);
 
-            const bodyHandler = this.getHandleNodeBodyInputEvent(node);
-            node.nodeObject.content.children[0].children[1].children[0].addEventListener('input', bodyHandler);
+            const textarea = node.nodeObject.textarea;
+            const bodyHandler = this.getHandleNodeBodyInputEvent(node, textarea);
+            textarea.addEventListener('input', bodyHandler);
         }
 
 
         //Syncs node titles and Zettelkasten
-        createTitleInputEventHandler(node, nodes, noteInput, nodeLines) {
+        createTitleInputEventHandler(node, nodes, noteInput, nodeLines, inputElement) {
             return (e) => {
                 processAll = true;
-                const inputElement = node.nodeObject.content.children[0].children[0].children[1];
+
                 if (e.target !== inputElement) {
                     return;
                 }
@@ -337,9 +355,8 @@ let shouldAddCodeButton = false;
 
 
         //Syncs node text and Zettelkasten
-        getHandleNodeBodyInputEvent(node) {
+        getHandleNodeBodyInputEvent(node, textarea) {
             return (e) => {
-                const textarea = node.nodeObject.content.children[0].children[1].children[0];
                 if (e.target !== textarea) {
                     return;
                 }
@@ -373,22 +390,6 @@ let shouldAddCodeButton = false;
             }
         }
 
-        removeStaleReferences(currentNodeTitle, nodes) {
-            const currentNode = nodes[currentNodeTitle];
-            if (!currentNode) return;
-
-            const currentEdges = new Set(currentNode.edges.keys());
-            for (const edge of currentEdges) {
-                if (!currentNode.plainText.includes(edge)) {
-                    const edgeObject = currentNode.edges.get(edge);
-                    if (edgeObject) { // Check if object exists before calling remove
-                        edgeObject.remove();
-                        currentNode.edges.delete(edge);
-                    }
-                }
-            }
-        }
-
         extractAllReferencesFromRange(startLine, endLine, lines) {
             let allReferences = [];
             for (let i = startLine; i <= endLine; i++) {
@@ -418,7 +419,7 @@ let shouldAddCodeButton = false;
                 allReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines); // +1 to skip the title
             }
 
-            this.handleRefTags(allReferences, currentNodeTitle, nodes);
+            this.handleRefTags(allReferences, currentNodeTitle, nodes, lines);
 
             // Build plain text for node after tags
             if (shouldAppend) {
@@ -446,36 +447,59 @@ let shouldAddCodeButton = false;
             return references;
         }
 
-        //Creates edges based off given reference titles.
-        handleRefTags(references, currentNodeTitle, nodes) {
-            const thisNode = nodes[currentNodeTitle];
-
-            if (!thisNode) {
+        handleRefTags(references, currentNodeTitle, nodes, lines) {
+            const thisNodeWrapper = nodes[currentNodeTitle];
+            if (!thisNodeWrapper || !thisNodeWrapper.nodeObject) {
                 return;
             }
 
-            // Create a Set of current edge keys for easy lookup
-            const currentEdges = new Set(thisNode.edges.keys());
+            //console.log(`currentNodetitle`, currentNodeTitle);
+            const thisNode = thisNodeWrapper.nodeObject;
 
-            // First remove the edges that should no longer exist
-            for (const edge of currentEdges) {
-                if (!references.includes(edge)) {
-                    const edgeObject = thisNode.edges.get(edge);
-                    if (edgeObject) { // Check if object exists before calling remove
-                        edgeObject.remove();
-                        thisNode.edges.delete(edge);
-                    }
-                }
-            }
+            // Initialize set with UUIDs from current node references
+            let allReferenceUUIDs = new Set(references.map(ref => nodes[ref]?.nodeObject?.uuid).filter(uuid => uuid));
 
-            // Then add new edges
-            for (const reference of references) {
-                if (!nodes[reference]) {
-                    continue;
+            // Check if connected nodes contain a reference to the current node
+            const connectedNodes = getConnectedNodes(thisNode);
+            connectedNodes.forEach(node => {
+                const { startLineNo, endLineNo } = getNodeSectionRange(node.getTitle(), noteInput);
+                const nodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines);
+
+                if (nodeReferences.includes(currentNodeTitle)) {
+                    // If the connected node references the current node, add its UUID to the set
+                    const nodeUUID = node.uuid;
+                    allReferenceUUIDs.add(nodeUUID);
                 }
-                thisNode.edges.set(reference, connectDistance(thisNode.nodeObject, nodes[reference].nodeObject));
-            }
+            });
+
+            // Process edges
+            const currentEdges = new Map(thisNode.edges.map(edge => {
+                const otherNode = edge.pts.find(pt => pt.uuid !== thisNode.uuid);
+                return otherNode ? [otherNode.uuid, edge] : [null, edge];
+            }));
+
+            // Remove edges not found in reference UUIDs
+            currentEdges.forEach((edge, uuid) => {
+                if (!allReferenceUUIDs.has(uuid)) {
+                    edge.remove();
+                    currentEdges.delete(uuid);
+                }
+            });
+
+            // Update the node's edges array
+            thisNode.edges = Array.from(currentEdges.values());
+
+            // Add new edges for references
+            references.forEach(reference => {
+                const refUUID = nodes[reference]?.nodeObject?.uuid;
+                if (refUUID && !currentEdges.has(refUUID)) {
+                    const newEdge = connectDistance(thisNode, nodes[reference].nodeObject);
+                    thisNode.edges.push(newEdge);
+                    currentEdges.set(refUUID, newEdge);
+                }
+            });
         }
+
 
         extractBracketedReferences(line, openingBracket, closingBracket) {
             const references = [];
@@ -508,7 +532,7 @@ let shouldAddCodeButton = false;
             if (node.isLLM) {
                 targetTextarea = node.nodeObject.promptTextArea;
             } else {
-                targetTextarea = node.nodeObject.content.children[0].children[1].children[0];
+                targetTextarea = node.nodeObject.textarea;
             }
 
             if (node.plainText !== '') {
