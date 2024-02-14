@@ -948,7 +948,7 @@ class Edge {
             if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
                 removeEdgeFromZettelkasten(connectedNodes[0].title, connectedNodes[1].title);
             } else {
-                this.remove;
+                this.remove();
             }
 
             // Prevent the event from propagating further
