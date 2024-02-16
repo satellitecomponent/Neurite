@@ -159,15 +159,15 @@ async function neuriteExploreSequence() {
     try {
         const animations = [
             // Edge of Scepter Valley (Disc 3)
-            [setMandelbrotCoords, [0.0005, -0.11976554575070869, -0.8386187672227761, 0.1, true], 0],
+            [setMandelbrotCoords, [0.0005, -0.11976554575070869, -0.8386187672227761, 0.1], 0],
             // Zoom in slowly and pan to the right
             [movement, [[], {zoomFactor: 0.2}, { deltaX: 400, deltaY: 100 }, {}, 8000], 2000], // 8000ms for animation + 2000ms additional delay
             // Elephant Valley
-            [setMandelbrotCoords, [0.0000035, 0.2544079756556442, 0.0004361569634536873, 0.1, true], 1000], // 4000ms for animation + 1000ms additional delay
+            [setMandelbrotCoords, [0.0000035, 0.2544079756556442, 0.0004361569634536873, 0.1], 1000], // 4000ms for animation + 1000ms additional delay
             // Zoom in, pan up and left
             [movement, [[], { zoomFactor: 0.1, zoomX: window.innerWidth / 2, zoomY: window.innerHeight / 2 }, { deltaX: -120, deltaY: 100 }, {}, 7000], 2000],
             // Seahorse Valley
-            [setMandelbrotCoords, [0.0005, -0.7683397616890582, -0.10766665853317046, 0.1, true], 1000],
+            [setMandelbrotCoords, [0.0005, -0.7683397616890582, -0.10766665853317046, 0.1], 1000],
             // Zoom out slowly
             [movement, [['zoomOut'], {}, {}, {}, 5000], 1000],
             // Reset the view
@@ -186,11 +186,11 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     setMandelbrotCoords: {
-        title: "function setMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1, animate = true) {",
+        title: "function setMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1) {",
         mainDemo: `// Navigates to exact coordinates.`,
         examples: [
-            "setMandelbrotCoords(0.0005, -0.11976554575070869, -0.8386187672227761, 0.1, true);",
-            "setMandelbrotCoords(0.0000035, 0.2544079756556442, 0.0004361569634536873, 0.1, true);"
+            "setMandelbrotCoords(0.0005, -0.11976554575070869, -0.8386187672227761, 0.1);",
+            "setMandelbrotCoords(0.0000035, 0.2544079756556442, 0.0004361569634536873, 0.1);"
         ],
         options: { neuralApi: true, vision: true }
     },
@@ -284,7 +284,7 @@ Returns the user response as a string*/`,
 async function initialSequence() {
     const initialAnimations = [
         // Set Mandelbrot coordinates and add a note
-        [setMandelbrotCoords, [0.00013713634721725833, -0.024035092371998055, 0.7268549248591437, 0.1, true], 1000],
+        [setMandelbrotCoords, [0.00013713634721725833, -0.024035092371998055, 0.7268549248591437, 0.1], 1000],
         [addNote, ['Holomorphic Dynamics', 'Tell me more...'], 500],
         [zoomToNodeTitle, ['Holomorphic Dynamics', { zoomfactor: 1 }], 1000],
         [movement, [[], { zoomFactor: 1.2 }, { deltaX: -500, deltaY: -400 }, {}, 4000], 2000],
@@ -308,11 +308,11 @@ async function furtherMovementSequence() {
         // Movement with zoom and pan, including rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: 400, deltaY: -500 }, { rotationAngle: 45 }, 3000], 2000],
         // Set Mandelbrot coordinates
-        [setMandelbrotCoords, [0.00008112374184603912, -0.024043983267418786, 0.7261919682847592, 0.1, true], 1000],
+        [setMandelbrotCoords, [0.00008112374184603912, -0.024043983267418786, 0.7261919682847592, 0.1], 1000],
         // Another movement with a different rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: -200, deltaY: -500 }, { rotationAngle: -30 }, 4000], 2000],
         // Set Mandelbrot coordinates
-        [setMandelbrotCoords, [0.000004038913281545681, -0.023793659903068972, 0.7278428617599411, 0.1, true], 1000],
+        [setMandelbrotCoords, [0.000004038913281545681, -0.023793659903068972, 0.7278428617599411, 0.1], 1000],
         // A third movement with yet another rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: -600, deltaY: -500 }, { rotationAngle: 90 }, 3000], 1000],
     ];

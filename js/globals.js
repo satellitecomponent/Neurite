@@ -141,6 +141,8 @@ let processAll = false;//set to true until made more robust.
 
 let restoreZettelkastenEvent = false; 
 
+let bypassZettelkasten = false;
+
 const bracketsMap = {
     '(': ')',
     '[': ']',
