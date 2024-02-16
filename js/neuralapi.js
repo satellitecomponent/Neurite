@@ -1096,7 +1096,7 @@ registerFunctions([
     {
         baseFunctionName: 'neuriteSearchNotes',
         baseFunction: neuriteSearchNotes,
-        alternateNames: ['searchNotes', 'returnSearchedNodes', `returnRelevantNodes`]
+        alternateNames: ['searchNotes', 'returnSearchedNodes', `searchNodes`]
     },
     {
         baseFunctionName: 'neuriteSearchAndZoom',
