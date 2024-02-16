@@ -219,43 +219,33 @@ class Node {
         this.draw();
     }
 
-    moveNode(direction, adjustGlobalPan = false) {
+    moveNode(direction) {
         const forceMagnitude = 0.01; // Base force intensity
         const adjustedForce = forceMagnitude * this.scale; // Scale the force
 
         let forceDirection = new vec2(0, 0);
 
-        switch (direction) {
-            case 'up':
-                forceDirection.y = -adjustedForce;
-                break;
-            case 'down':
-                forceDirection.y = adjustedForce;
-                break;
-            case 'left':
-                forceDirection.x = -adjustedForce;
-                break;
-            case 'right':
-                forceDirection.x = adjustedForce;
-                break;
+        // Check for diagonal movements
+        const isDiagonal = (direction.includes('up') || direction.includes('down')) &&
+            (direction.includes('left') || direction.includes('right'));
+
+        const diagonalAdjustment = isDiagonal ? Math.sqrt(2) : 1;
+
+        if (direction.includes('up')) {
+            forceDirection.y -= adjustedForce / diagonalAdjustment;
+        }
+        if (direction.includes('down')) {
+            forceDirection.y += adjustedForce / diagonalAdjustment;
+        }
+        if (direction.includes('left')) {
+            forceDirection.x -= adjustedForce / diagonalAdjustment;
+        }
+        if (direction.includes('right')) {
+            forceDirection.x += adjustedForce / diagonalAdjustment;
         }
 
         // Apply the force to the node
         this.force = this.force.plus(forceDirection);
-
-        // If adjustGlobalPan is true, adjust the global pan
-        if (adjustGlobalPan) {
-            // Calculate the average zoom level or use the relevant component
-            let zoomLevel = (zoom.x + zoom.y) / 2; // If zoom has both x and y components
-            // let zoomLevel = zoom.x; // If zoom is only based on the x component
-
-            // Calculate the ratio of node scale to zoom level
-            let scaleZoomRatio = this.scale / zoomLevel;
-
-            // Scale the pan adjustment by this ratio
-            let panAdjustment = forceDirection.scale(scaleZoomRatio);
-            pan = pan.plus(panAdjustment);
-        }
 
         return forceDirection; // Return the applied force direction
     }
@@ -331,7 +321,10 @@ class Node {
 
                 // Check conditions before calling addEdgeToZettelkasten
                 if (thisTitle !== prevNodeTitle && this.isTextNode && prevNode.isTextNode) {
+                    // Add edge from prevNode to this node
                     addEdgeToZettelkasten(prevNodeTitle, thisTitle, myCodeMirror);
+                    // Add edge from this node to prevNode
+                    addEdgeToZettelkasten(thisTitle, prevNodeTitle, myCodeMirror);
                 } else {
                     // If conditions are not met, call the original connectDistance
                     connectDistance(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2, undefined, true);
@@ -720,20 +713,51 @@ class Edge {
         addEventListeners(this.borderSvg);
     }
     toggleDirection() {
-        // Cycle through directionality states
+        //console.log(`Current directionality: start=${this.directionality.start ? this.directionality.start.getTitle() : 'null'}, end=${this.directionality.end ? this.directionality.end.getTitle() : 'null'}`);
+
+        // Determine the current state and transition to the next
         if (this.directionality.start === null) {
             this.directionality.start = this.pts[0];
             this.directionality.end = this.pts[1];
         } else if (this.directionality.start === this.pts[0]) {
             this.directionality.start = this.pts[1];
             this.directionality.end = this.pts[0];
-        } else {
+        } else if (this.directionality.start === this.pts[1]) {
+            // Bidirectional
             this.directionality.start = null;
             this.directionality.end = null;
         }
-        edgeDirectionalityMap.set(this.edgeKey, this.directionality)
-        //console.log(`directionality`, this.directionality);
+
+        // Check if both nodes are text nodes
+        if (this.pts[0].isTextNode && this.pts[1].isTextNode) {
+            // Get node titles
+            const startTitle = this.pts[0].getTitle();
+            const endTitle = this.pts[1].getTitle();
+
+            // Update edge references based on the new state
+            if (this.directionality.start === this.pts[0]) {
+                // Direction is from start to end
+                addEdgeToZettelkasten(startTitle, endTitle, myCodeMirror);
+                removeEdgeFromZettelkasten(endTitle, startTitle, true);
+            } else if (this.directionality.start === this.pts[1]) {
+                // Direction is from end to start
+                addEdgeToZettelkasten(endTitle, startTitle, myCodeMirror);
+                removeEdgeFromZettelkasten(startTitle, endTitle, true);
+            } else {
+                // Bidirectional
+                addEdgeToZettelkasten(startTitle, endTitle, myCodeMirror);
+                addEdgeToZettelkasten(endTitle, startTitle, myCodeMirror);
+            }
+        }
+
+
+        edgeDirectionalityMap.set(this.edgeKey, this.directionality);
+
+        //console.log(`Directionality relative to ${startTitle}: ${this.getDirectionRelativeTo(this.pts[0])}`);
+        //console.log(`Directionality relative to ${endTitle}: ${this.getDirectionRelativeTo(this.pts[1])}`);
+        //console.log(`New directionality: start=${this.directionality.start ? this.directionality.start.getTitle() : 'null'}, end=${this.directionality.end ? this.directionality.end.getTitle() : 'null'}`);
     }
+
 
     // Method to check directionality relative to a given node
     getDirectionRelativeTo(node) {
@@ -925,19 +949,10 @@ class Edge {
         }
     }
     onclick = (event) => {
-        this.toggleDirection();
-        this.draw();
-    }
-    onmouseover = (event) => {
-        this.mouseIsOver = true;
-        this.arrowSvg.classList.add('edge-arrow-hover');
-        this.borderSvg.classList.add('edge-border-hover'); // Class for hovered state of the border
-    }
-
-    onmouseout = (event) => {
-        this.mouseIsOver = false;
-        this.arrowSvg.classList.remove('edge-arrow-hover');
-        this.borderSvg.classList.remove('edge-border-hover'); // Class for normal state of the border
+        if (!nodeMode) {
+            this.toggleDirection();
+            this.draw();
+        }
     }
     ondblclick = (event) => {
         if (nodeMode) {
@@ -955,6 +970,18 @@ class Edge {
             cancel(event);
         }
     }
+    onmouseover = (event) => {
+        this.mouseIsOver = true;
+        this.arrowSvg.classList.add('edge-arrow-hover');
+        this.borderSvg.classList.add('edge-border-hover'); // Class for hovered state of the border
+    }
+
+    onmouseout = (event) => {
+        this.mouseIsOver = false;
+        this.arrowSvg.classList.remove('edge-arrow-hover');
+        this.borderSvg.classList.remove('edge-border-hover'); // Class for normal state of the border
+    }
+    
     remove() {
         edgeDirectionalityMap.set(this.edgeKey, this.directionality);
 
@@ -1087,35 +1114,39 @@ let prevNodeScale = 1;
 function nodeStep(time) {
     const selectedNodes = getSelectedNodes();
 
+    // Determine the combined direction from the key state
+    const combinedDirection = getDirectionFromKeyState();
+
+    // Process scaling keys
     Object.keys(keyState).forEach(key => {
         if (keyState[key]) {
-            const direction = directionMap[key];
+            const action = directionMap[key];
 
-            if (direction === 'scaleUp' || direction === 'scaleDown') {
-                const scaleFactor = direction === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
+            if (action === 'scaleUp' || action === 'scaleDown') {
+                const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
                 const centroid = getCentroidOfSelectedNodes();
                 if (centroid) {
                     scaleSelectedNodes(scaleFactor, centroid);
                 }
-            } else {
-                // Handle directional movement
-                if (selectedNodes.length > 0) {
-                    // Find the node with the largest scale
-                    let largestScaleNode = selectedNodes.reduce((max, node) => node.scale > max.scale ? node : max, selectedNodes[0]);
-
-                    // Apply movement to the node with the largest scale
-                    let forceApplied = largestScaleNode.moveNode(direction, false);
-
-                    // Apply the same force to the remaining nodes
-                    selectedNodes.forEach(node => {
-                        if (node !== largestScaleNode) {
-                            node.force = node.force.plus(forceApplied);
-                        }
-                    });
-                }
             }
         }
     });
+
+    // Handle directional movement
+    if (combinedDirection.length > 0 && selectedNodes.length > 0) {
+        // Find the node with the largest scale
+        let largestScaleNode = selectedNodes.reduce((max, node) => node.scale > max.scale ? node : max, selectedNodes[0]);
+
+        // Apply movement to the node with the largest scale
+        let forceApplied = largestScaleNode.moveNode(combinedDirection);
+
+        // Apply the same force to the remaining nodes
+        selectedNodes.forEach(node => {
+            if (node !== largestScaleNode) {
+                node.force = node.force.plus(forceApplied);
+            }
+        });
+    }
 
 
     let autopilot_travelDist = 0;
