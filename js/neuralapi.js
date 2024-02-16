@@ -137,12 +137,12 @@ function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanPar
         combinedRotateParams = { ...combinedRotateParams, ...customRotateParams };
 
         // Extract parameters with defaults
-        const { zoomFactor = 1, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
+        const { zoomFactor = 0, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
         const { deltaX = 0, deltaY = 0 } = combinedPanParams;
-        const { rotationAngle = 0, pivotX = window.innerWidth / 2, pivotY = window.innerHeight / 2 } = combinedRotateParams;
+        const { rotationAngle = null, pivotX = window.innerWidth / 2, pivotY = window.innerHeight / 2 } = combinedRotateParams;
 
         // Determine if rotation is needed
-        const isRotationNeeded = rotationAngle !== 0;
+        const isRotationNeeded = rotationAngle !== null;
 
         // Starting states
         const startZoom = zoom;
@@ -150,14 +150,14 @@ function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanPar
 
         // Calculate final states for zoom and pan
         const destZoom = toZ(new vec2(zoomX, zoomY));
-        const adjustedZoomFactor = zoomFactor;
+        const adjustedZoomFactor = 1 + zoomFactor; // Adjusted zoom factor
         const finalZoom = startZoom.scale(adjustedZoomFactor);
         const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-        const finalPan = destZoom.scale(1 - adjustedZoomFactor).plus(startPan.scale(adjustedZoomFactor)).plus(dp);
+        const finalPan = startPan.plus(dp);
 
         // Rotation calculations
-        const startRotation = 0; // Assuming the rotation starts from 0
-        const endRotation = rotationAngle * Math.PI / 180; // Convert degrees to radians
+        let startRotation = 0; // Assuming the rotation starts from 0
+        let endRotation = rotationAngle ? rotationAngle * Math.PI / 180 : 0; // Convert degrees to radians, only if needed
 
         // Animation
         try {
@@ -190,7 +190,6 @@ function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanPar
     });
 }
 
-
 /*
 panTo = new vec2(0, 0); //this.pos;
 let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
@@ -199,8 +198,10 @@ autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
 
-function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1, animate = true) {
+function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1) {
     return new Promise((resolve) => {
+        let animate = true
+
         const newZoomMagnitude = parseFloat(zoomMagnitude);
         const newPanReal = parseFloat(panReal);
         const newPanImaginary = parseFloat(panImaginary);
@@ -429,7 +430,7 @@ function neuriteGetMandelbrotCoords(forFunctionCall = false) {
 
     if (forFunctionCall) {
         // Format for setMandelbrotCoords function call
-        const functionCall = `setMandelbrotCoords(${zoomValue}, ${panReal}, ${panImaginary}, 0.1, true);`;
+        const functionCall = `setMandelbrotCoords(${zoomValue}, ${panReal}, ${panImaginary}, 0.1);`;
         return functionCall;
     } else {
         // Standard format
@@ -463,6 +464,28 @@ function neuriteReceiveCurrentView() {
     };
 }
 
+function getSavedView(query) {
+    const viewsList = listSavedViews();
+    let foundView = viewsList.find(view => view.title.toLowerCase() === query.toLowerCase());
+
+    // If no exact match, try a more sophisticated search approach
+    if (!foundView) {
+        foundView = viewsList.find(view => view.title.toLowerCase().includes(query.toLowerCase()));
+        // Further search strategies can be implemented here if necessary
+    }
+
+    // If a view is found, return an object with coordinates and function call format
+    if (foundView) {
+        return {
+            coordinates: foundView.coordinates,
+            functionCall: foundView.functionCall // Assuming this is available in your data structure
+        };
+    } else {
+        console.warn(`No saved view found for query: "${query}"`);
+        return null;
+    }
+}
+
 // https://www.mrob.com/pub/muency/colloquialnames.html
 
 const defaultSavedViews = [
@@ -472,7 +495,7 @@ const defaultSavedViews = [
             "zoom": "0.0000017699931315047657",
             "pan": "-0.7677840466850392+i-0.10807751495298584"
         },
-        "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1);"
     },
     {
         "title": "// Double Scepter Valley",
@@ -480,7 +503,7 @@ const defaultSavedViews = [
             "zoom": "0.000017687394673278873",
             "pan": "-0.13115417841259247+i-0.8429048341831951"
         },
-        "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1);"
     },
     {
         "title": "// Quad Spiral Valley",
@@ -488,7 +511,7 @@ const defaultSavedViews = [
             "zoom": "6.622764227402511e-7",
             "pan": "0.35871212237104466+i0.614868924400545"
         },
-        "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1);"
     },
     {
         "title": "// North Radical",
@@ -496,15 +519,7 @@ const defaultSavedViews = [
             "zoom": "0.01666349480736333",
             "pan": "-0.17757277666659035+i-1.0860005295937438"
         },
-        "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1, true);"
-    },
-    {
-        "title": "// South Radical",
-        "standardCoords": {
-            "zoom": "0.022493365230716315",
-            "pan": "-0.17709676066268798+i1.0856909324960642"
-        },
-        "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1);"
     },
     {
         "title": "// Shepherds Crook",
@@ -512,7 +527,15 @@ const defaultSavedViews = [
             "zoom": "0.000029460494639545112",
             "pan": "-0.7450088997859019+i-0.11300333384642439"
         },
-        "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1);"
+    },
+    {
+        "title": "// South Radical",
+        "standardCoords": {
+            "zoom": "0.022493365230716315",
+            "pan": "-0.17709676066268798+i1.0856909324960642"
+        },
+        "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1);"
     },
     {
         "title": "// Triple Spiral Valley",
@@ -520,7 +543,15 @@ const defaultSavedViews = [
             "zoom": "0.0002361832763705042",
             "pan": "-0.15629012673807463+i0.6534879139112698"
         },
-        "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1, true);"
+        "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1);"
+    },
+    {
+        "title": "// Reset View",
+        "standardCoords": {
+            "zoom": "1.5",
+            "pan": "-0.3+i0"
+        },
+        "functionCall": "resetView();"
     }
 ];
 
@@ -606,7 +637,7 @@ function neuriteDeleteSavedView(index) {
 }
 
 
-function neuriteReturnToSavedView(savedView, animate = true, speed = 0.1) {
+function neuriteReturnToSavedView(savedView, animate = true, speed = 0.0001) {
     if (savedView && savedView.standardCoords) {
         // Extract real and imaginary parts from pan
         const panParts = savedView.standardCoords.pan.split('+i');

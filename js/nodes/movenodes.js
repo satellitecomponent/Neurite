@@ -20,3 +20,14 @@ const directionMap = {
 
 const SCALE_UP_FACTOR = 1.04;
 const SCALE_DOWN_FACTOR = 0.96;
+
+// New function to calculate the combined direction
+function getDirectionFromKeyState() {
+    let direction = [];
+    if (keyState['ArrowUp']) direction.push('up');
+    if (keyState['ArrowDown']) direction.push('down');
+    if (keyState['ArrowLeft']) direction.push('left');
+    if (keyState['ArrowRight']) direction.push('right');
+
+    return direction;
+}

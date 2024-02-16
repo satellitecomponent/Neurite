@@ -123,6 +123,11 @@ let shouldAddCodeButton = false;
         }
 
         processInput() {
+            if (bypassZettelkasten) {
+                bypassZettelkasten = false;
+                return;
+            }
+
             initializeNodes(nodes);
             const lines = noteInput.getValue().split('\n');
             let currentNodeTitle = '';
@@ -478,11 +483,17 @@ let shouldAddCodeButton = false;
                 return otherNode ? [otherNode.uuid, edge] : [null, edge];
             }));
 
-            // Remove edges not found in reference UUIDs
+            // Remove edges not found in reference UUIDs and ensure both nodes are text nodes
             currentEdges.forEach((edge, uuid) => {
                 if (!allReferenceUUIDs.has(uuid)) {
-                    edge.remove();
-                    currentEdges.delete(uuid);
+                    // Retrieve the other node from the edge
+                    const otherNode = edge.pts.find(pt => pt.uuid === uuid);
+
+                    // Check if both nodes are text nodes
+                    if (thisNode.isTextNode && otherNode?.isTextNode) {
+                        edge.remove();
+                        currentEdges.delete(uuid);
+                    }
                 }
             });
 

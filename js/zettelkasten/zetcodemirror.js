@@ -456,17 +456,17 @@ function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function removeEdgeFromZettelkasten(title1, title2) {
+function removeEdgeFromZettelkasten(title1, title2, removeOnlyFromTitle1 = false) {
     if (!title1 || !title2) {
         console.error("One or both titles are empty or undefined.");
         return;
     }
     const lineCount = myCodeMirror.lineCount();
-    const titles = [title1, title2];
-
     const closingBracket = bracketsMap[refTag];
 
-    titles.forEach((title) => {
+    const titlesToProcess = removeOnlyFromTitle1 ? [title1] : [title1, title2];
+
+    titlesToProcess.forEach((title) => {
         const nodeLine = getNodeTitleLine(title, myCodeMirror);
         if (nodeLine !== null) {
             for (let j = nodeLine + 1; j < lineCount; j++) {
@@ -477,44 +477,46 @@ function removeEdgeFromZettelkasten(title1, title2) {
                 let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
 
                 if (lineHasRefTag) {
-                    titles.forEach((innerTitle) => {
-                        if (title === innerTitle) {
-                            return; // Skip if the title matches innerTitle
+                    let targetTitle;
+                    if (removeOnlyFromTitle1) {
+                        targetTitle = title2;
+                    } else {
+                        // When not removing only from title1, we need to look for each title in the other's references
+                        targetTitle = title === title1 ? title2 : title1;
+                    }
+                    let escapedTargetTitle = escapeRegExp(targetTitle);
+
+                    let regExp;
+                    if (closingBracket) {
+                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapeRegExp(closingBracket)})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
+                    } else {
+                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapedRefTag})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
+                    }
+
+                    nextLine = nextLine.replace(regExp, (match, p1, p2) => {
+                        if (p1) {
+                            return '';
+                        } else if (p2) {
+                            return p2.startsWith(',') ? ',' : '';
                         }
-                        let escapedInnerTitle = escapeRegExp(innerTitle);
+                    }).trim();
 
-                        let regExp;
-                        if (closingBracket) {
-                            regExp = new RegExp(`(${escapedRefTag}\\s*${escapedInnerTitle}\\s*${escapeRegExp(closingBracket)})|(,?\\s*${escapedInnerTitle}\\s*,?)`, 'g');
-                        } else {
-                            regExp = new RegExp(`(${escapedRefTag}\\s*${escapedInnerTitle}\\s*${escapedRefTag})|(,?\\s*${escapedInnerTitle}\\s*,?)`, 'g');
+                    // Remove trailing commas and spaces
+                    nextLine = nextLine.replace(/,\s*$/, '').trim();
+
+                    if (closingBracket) {
+                        let emptyBracketsRegExp = new RegExp(`${escapedRefTag}\\s*${escapeRegExp(closingBracket)}`, 'g');
+                        if (emptyBracketsRegExp.test(nextLine)) {
+                            nextLine = nextLine.replace(emptyBracketsRegExp, '');
                         }
-
-                        nextLine = nextLine.replace(regExp, (match, p1, p2) => {
-                            if (p1) {
-                                return '';
-                            } else if (p2) {
-                                return p2.startsWith(',') ? ',' : '';
-                            }
-                        }).trim();
-
-                        // Remove trailing commas and spaces
-                        nextLine = nextLine.replace(/,\s*$/, '').trim();
-
-                        if (closingBracket) {
-                            let emptyBracketsRegExp = new RegExp(`${escapedRefTag}\\s*${escapeRegExp(closingBracket)}`, 'g');
-                            if (emptyBracketsRegExp.test(nextLine)) {
-                                nextLine = nextLine.replace(emptyBracketsRegExp, '');
-                            }
-                        } else {
-                            let lonelyRefTag = new RegExp(`^${escapedRefTag}\\s*$`);
-                            if (lonelyRefTag.test(nextLine)) {
-                                nextLine = '';
-                            }
+                    } else {
+                        let lonelyRefTag = new RegExp(`^${escapedRefTag}\\s*$`);
+                        if (lonelyRefTag.test(nextLine)) {
+                            nextLine = '';
                         }
+                    }
 
-                        myCodeMirror.replaceRange(nextLine, { line: j, ch: 0 }, { line: j, ch: myCodeMirror.getLine(j).length });
-                    });
+                    myCodeMirror.replaceRange(nextLine, { line: j, ch: 0 }, { line: j, ch: myCodeMirror.getLine(j).length });
                 }
             }
         }
