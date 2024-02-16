@@ -123,42 +123,56 @@ Last ${historyCount} Function Calls: ${formattedCalls.join(' END ')}`;
 
 const functionObjects = {
     performSequence: {
-        title: "async function neuritePerformSequence(animations) {",
+        title: "async function performSequence(animations) {",
         mainDemo: `/* In the animations array, each animation is an array where the first element is the function to be called,
 the second element is an array of arguments for that function,
-and the optional third element is the delay after the function call. */`,
+and the optional third element is the delay after the function call. */
+
+// Psuedo code of the existing function.
+async function performSequence(animations) {
+    // Transform the input animations for processing
+    const transformedAnimations = animations.map(animation => {
+        // Extract the animation action, parameters, and delay
+        const [action, params, delay = 0] = animation;
+        // Ensure parameters are in array format
+        const paramsArray = Array.isArray(params) ? params : [params];
+        // Return the transformed animation object
+        return {
+            action: action,        // Function to execute for the animation
+            params: paramsArray,   // Parameters for the animation function
+            delayAfter: delay      // Optional delay after animation completion
+        };
+    });
+
+    // Execute the queue of animations
+    await neuriteAnimationQueue(transformedAnimations);
+}`,
         examples: [
-            `const animations = [
-    [genericAnimationFunction, [genericArg1, genericArg2, ..., genericArgN], delayAfterCompletion],
-    [anotherAnimationFunction, [otherArg1, otherArg2, ..., otherArgN], anotherDelay],
-    // More animation entries can be added here
-];`,
-            `// Define an async function to sequence Neurite movements
+            `// Expected Input Format for animations:
+// animations = [
+//     [animationFunction1, parameters1, optionalDelay1],
+//     [animationFunction2, parameters2, optionalDelay2],
+//     ...
+// ]`,
+            `// An Example of how to use performSequence(animations)
 async function neuriteExploreSequence() {
     try {
         const animations = [
             // Edge of Scepter Valley (Disc 3)
             [setMandelbrotCoords, [0.0005, -0.11976554575070869, -0.8386187672227761, 0.1, true], 0],
-
             // Zoom in slowly and pan to the right
             [movement, [[], {zoomFactor: 0.2}, { deltaX: 400, deltaY: 100 }, {}, 8000], 2000], // 8000ms for animation + 2000ms additional delay
-
             // Elephant Valley
             [setMandelbrotCoords, [0.0000035, 0.2544079756556442, 0.0004361569634536873, 0.1, true], 1000], // 4000ms for animation + 1000ms additional delay
-
             // Zoom in, pan up and left
             [movement, [[], { zoomFactor: 0.1, zoomX: window.innerWidth / 2, zoomY: window.innerHeight / 2 }, { deltaX: -120, deltaY: 100 }, {}, 7000], 2000],
-
             // Seahorse Valley
             [setMandelbrotCoords, [0.0005, -0.7683397616890582, -0.10766665853317046, 0.1, true], 1000],
-
             // Zoom out slowly
             [movement, [['zoomOut'], {}, {}, {}, 5000], 1000],
-
             // Reset the view
             [resetView, [true, 2000], 2000]
         ];
-
         console.log("Starting sequence...");
         await performSequence(animations);  // Utilize performSequence to await each call in const animations.
         console.log("Sequence completed!");
@@ -172,7 +186,7 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     setMandelbrotCoords: {
-        title: "function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1, animate = true) {",
+        title: "function setMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1, animate = true) {",
         mainDemo: `// Navigates to exact coordinates.`,
         examples: [
             "setMandelbrotCoords(0.0005, -0.11976554575070869, -0.8386187672227761, 0.1, true);",
@@ -181,7 +195,7 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     movement: {
-        title: "function neuriteMovement(movementTypes = [], zoomParams = {}, panParams = {}, rotateParams = {}, duration = 1000) {",
+        title: "function movement(movementTypes = [], zoomParams = {}, panParams = {}, rotateParams = {}, duration = 1000) {",
         mainDemo: `// Combined movements set by parameter.`,
         examples: [
             "movement(['zoomIn'], {}, {}, 3000);",
@@ -191,7 +205,7 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     addNote: {
-        title: "function neuriteAddNote(nodeTitle, nodeText) {",
+        title: "function addNote(nodeTitle, nodeText) {",
         mainDemo: `// Adds a note to the Zettelkasten with a specified title and content.`,
         examples: [
             "addNote('Holomorphic Dynamics?', 'Text explanation here...'); // Define a relevant title and text content",
@@ -200,16 +214,16 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     searchNotes: {
-        title: "async function neuriteSearchNotes(searchTerm, maxNodesOverride = null) {",
+        title: "async function searchNotes(searchTerm, maxNodesOverride = null) {",
         mainDemo: `// Returns an array of node objects, sorted by relevance to the search term. Optionally set the number of nodes to return.`,
         examples: [
-            "neuriteSearchNotes(`Relevant Query`)",
+            "searchNotes(`Relevant Query`)",
             ""
         ],
         options: { neuralApi: true, vision: false }
     },
     zoomToNodeTitle: {
-        title: "function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {",
+        title: "function zoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {",
         mainDemo: `// Accepts exact titles of nodes, or nodes retrieved from searchNotes`,
         examples: [
             "zoomToNodeTitle('Holomorphic Dynamics?', 1.0);"
@@ -217,7 +231,7 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     searchAndZoom: {
-        title: "async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {",
+        title: "async function searchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {",
         mainDemo: `// Accepts a search term. Automatically zooms to each resulting Node`,
         examples: [
             "searchAndZoom('Relevant Query');"
@@ -225,7 +239,7 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: true }
     },
     callMovementAi: {
-        title: "function neuriteCallMovementAi(movementIntention, totalIterations = 1) {",
+        title: "function callMovementAi(movementIntention, totalIterations = 1) {",
         mainDemo: `// Calls an Ai with vision capabilities to navigate the user screen. Optionally set an iteration count for the ai to repeatedly explore.`,
         examples: [
             "callMovementAi('Explore', 1);",
@@ -235,26 +249,27 @@ neuriteExploreSequence()`
         options: { neuralApi: true, vision: false }
     },
     promptZettelkasten: {
-        title: "function neuritePromptZettelkasten(message) {",
+        title: "function promptZettelkastenAi(message) {",
         mainDemo: `// Triggers a prompt to the Zettelkasten AI for generating notes based on the given message.`,
         examples: [
-            "promptZettelkasten('Define 10 notes that branch off ...'); // Fill ... with a relevant existing note title.",
-            "promptZettelkasten('Take notes on ...');",
-            "promptZettelkasten('Synthesize a critical dialogue from the following topics ..');"
+            "promptZettelkastenAi('Define 10 notes that branch off ...'); // Fill ... with a relevant existing note title.",
+            "promptZettelkastenAi('Take notes on ...');",
+            "promptZettelkastenAi('Synthesize a critical dialogue from the following topics ..');"
         ],
         options: { neuralApi: true, vision: false }
     },
     promptZettelkasten: {
-        title: "function neuriteGetUserResponse(message) {",
+        title: "function requestUserResponse(message) {",
         mainDemo: `/* Takes a message to the user as an argument.
 Returns the user response as a string*/`,
         examples: [
-            "const userResponse = getUserResponse('How are you?'); // Try to go beyond small talk"
+            `const userResponse = requestUserResponse('How are you ? ');
+// Then do something with the userResponsee string such as addNote(userResponse), or promptZettelkastenAi(userResponse)`
         ],
         options: { neuralApi: true, vision: false }
     },
     resetView: {
-        title: "function neuriteResetView(animate = true, duration = 2000) {",
+        title: "function resetView(animate = true, duration = 2000) {",
         mainDemo: `// Returns view to page refresh.`,
         examples: [
             "resetView(true, 2000);"
@@ -262,8 +277,8 @@ Returns the user response as a string*/`,
         options: { neuralApi: true, vision: true }
     },
     performSequence2: {
-        title: "Advanced use of neuritePerformSequence(animations)",
-        mainDemo: `// You can create multiple sequences, and use any N neuritefunction in a sequence.`,
+        title: "Advanced use of performSequence(animations)",
+        mainDemo: `// You can create multiple sequences, and use any function in a sequence.`,
         examples: [
             `// Define the initial sequence of setting coordinates, movements, and adding notes
 async function initialSequence() {
@@ -273,7 +288,6 @@ async function initialSequence() {
         [addNote, ['Holomorphic Dynamics', 'Tell me more...'], 500],
         [zoomToNodeTitle, ['Holomorphic Dynamics', { zoomfactor: 1 }], 1000],
         [movement, [[], { zoomFactor: 1.2 }, { deltaX: -500, deltaY: -400 }, {}, 4000], 2000],
-
         [addNote, ['Imaginary Numbers...', 'Can you explain this to me?'], 500],
         // ... additional sets of coordinates and notes
     ];
@@ -285,7 +299,7 @@ async function initialSequence() {
 
 // Function to interact with the Zettelkasten
 function callZettelkasten() {
-    promptZettelkasten("Define 10 notes that branch off the existing topics.");
+    promptZettelkastenAi("Define 10 notes that branch off the existing topics.");
 }
 
 // Define the second sequence of movements after interacting with the Zettelkasten
@@ -293,16 +307,12 @@ async function furtherMovementSequence() {
     const furtherAnimations = [
         // Movement with zoom and pan, including rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: 400, deltaY: -500 }, { rotationAngle: 45 }, 3000], 2000],
-
         // Set Mandelbrot coordinates
         [setMandelbrotCoords, [0.00008112374184603912, -0.024043983267418786, 0.7261919682847592, 0.1, true], 1000],
-
         // Another movement with a different rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: -200, deltaY: -500 }, { rotationAngle: -30 }, 4000], 2000],
-
         // Set Mandelbrot coordinates
         [setMandelbrotCoords, [0.000004038913281545681, -0.023793659903068972, 0.7278428617599411, 0.1, true], 1000],
-
         // A third movement with yet another rotation
         [movement, [[], { zoomFactor: 0.5 }, { deltaX: -600, deltaY: -500 }, { rotationAngle: 90 }, 3000], 1000],
     ];

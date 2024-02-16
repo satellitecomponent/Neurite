@@ -156,7 +156,7 @@ let shouldAddCodeButton = false;
                 return this.handleLLMPromptLine(line, nodeTag, refTag, currentNodeTitle, nodes);
             }
 
-            if (processAll) {
+            if (processAll && !restoreZettelkastenEvent) {
                 // Call handlePlainTextAndReferences without the start and end lines
                 this.handlePlainTextAndReferences(line, currentNodeTitle, nodes, null, null, lines);
             }
