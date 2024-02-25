@@ -19,6 +19,8 @@ Fractals are not just an aesthetic choice, their inner logic is ingrained into a
 
 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question. Neurite speaks in the language of iteration. The project seeks to grow scale independent landscapes where complexity unfolds seamlessly from imagination.
 
+![Screenshot 2024-02-23 150719](https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168)
+
 ### `First of its Kind Fractal Zoom`
 
 Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal rendering persists and regenerates as you interact! 
