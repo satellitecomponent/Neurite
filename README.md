@@ -11,21 +11,27 @@
 
 ## Bridging Fractals and Thought
 
-**Inspired by chaos theory and graph theory, Neurite unveils the hidden patterns and intricate interconnections that shape creative thinking. To make this idea a reality, we have been iterating out a virtually limitless fractal workspace that blends the mesmerizing complexity of the Mandelbrot set with contemporary mind mapping techniques.**
+**Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
+
+For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
 
 ### `Why Fractals?`
 
-Fractals are not just an aesthetic choice, their inner logic is ingrained into a number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
+[The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice -fractal logic is ingrained into a countless number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
-Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question. Neurite speaks in the language of iteration.
+Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question.
 
-The goal of this project is to grow agentic graphs of fractal creativity.
+Neurite speaks in the language of iteration.
+
+The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
 
 ![Screenshot 2024-02-23 150719](https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168)
 
 ### `First of its Kind Fractal Zoom`
 
-Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time. Movements through the fractal are no longer interrupted at each step. Instead, the fractal rendering persists and regenerates as you interact! 
+Neurite is unique in its ability to seamlessly navigate deep into the Mandelbrot set in real time!
+
+Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact! 
 
 We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
@@ -63,14 +69,17 @@ feel free to join our [Discord](https://discord.gg/6fdmDF8SmT)!
 
 ## `Synchronized Knowledge Management`
 
-[Neurite](https:/neurite.network/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and [Zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
+- **Synchronized Knowledge Management:** [Neurite](https:/neurite.network/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
+- **FractalGPT:** Engage with non-linear, rhizomatic memory through our biomimetic interface. Create and connect an endless number of individual chat windows, or let the AI take notes from above.
+- **Neural API:** A recent update to Neurite is our function calling panel, which allows you to execute Neurite's code from within Neurite itself.
+- **Local AI:** Neurite currently supports OpenAI, LLama 2, Red Pajamas 3B, and Vicuna 7B, running directly in the browser.
 
-This versatile approach allows one to seamlessly organize thoughts without sacrificing the benefits of either technique.
+This versatile approach allows one to seamlessly organize thoughts without sacrifice on either technique.
 
 ![notepanel](https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea)
 
-- **`Bi-Directional Sync`**: Edit a Mind Map node's content and see it instantaneously update in the Zettelkasten. Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
-- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text in the Mind Map, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. The Zettelkasten system does not preference any top down or bottom up approach. In Neurite, you don't have to comprise between all of these different methods.
+- **`Bi-Directional Sync`**: Edit a Mind Map node's content and see it instantaneously update in the [Zettelkasten](https://en.wikipedia.org/wiki/Zettelkasten). Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
+- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. The Zettelkasten system does not preference any top down or bottom up approach. In Neurite, you don't have to comprise between all of these different methods. Your notes links from within the infinite canvas are automatically formatted as Markdown.
 - **`Dynamic Fractal Backdrop`**: The Mandelbrot fractal is not just an aesthetic element - fractals set the stage for your personalized and interactive open-world landscape of multi-media composition.
 - **`Zoom-to-Node`**: Navigate through your notes from within the Zettelkasten, and zoom directly to their corresponding nodes within the Mandelbrot set. Conversely, clicking the fullscreen of a text node navigates to the corresponding note in the Zettelkasten.
 
@@ -129,11 +138,6 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
 
 
 ### `Not your typical chat interface`
-- **Web of Thought Reasoning:** Engage with non-linear, rhizomatic memory through our biomimetic interface.
-- **Limitless AI Agents:** Create and connect an endless number of individual chat windows, or let the AI take notes from above.
-- **Fractal Interface:** Utilize a custom fractal environment designed for Iterative Exploratory Learning.
-- **Custom Tool Creation**  Connect nodes that contain code blocks together to run html/css/js in an iframe, or Python via Pyodide.
-- **Neurite Function Calling** Call Neurite functions from within Neurite, and let the Ai take full control with context from the newly released Neural API
 
 ### `Modular Conversation`
 
@@ -295,8 +299,6 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 - VR
 - deeper fractal zoom
 
-✅ Global Function Calling
-  
 ✅ Global Function Calling
 
 🔄 Ai cursor control
