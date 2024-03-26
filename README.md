@@ -1,7 +1,11 @@
 # `Neurite`
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
-![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
+
+<p align="center">
+    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="intro" width="90%">
+</p>
+
 
 ## `Introduction`
 
@@ -24,8 +28,10 @@ Fractals act as the cross-disciplinary framework for non-integer dimensional tho
 Neurite speaks in the language of iteration.
 
 The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
+</p>
 
-![Screenshot 2024-02-23 150719](https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168)
 
 ### `First of its Kind Fractal Zoom`
 
@@ -36,10 +42,13 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
 ### `Why Nodes?`
-
 Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
 
 Neurite iteratively defines interactive and modular graphs of reasoning, computation, research, and creation. Nodes can take on any use case in code.
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
+</p>
 
 ### `Complexity Inspires Creativity / Basins Attract`
 Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape that traces the ever branching pathways of thought.
@@ -75,8 +84,9 @@ feel free to join our [Discord](https://discord.gg/6fdmDF8SmT)!
 - **Local AI:** Neurite currently supports OpenAI, LLama 2, Red Pajamas 3B, and Vicuna 7B, running directly in the browser.
 
 This versatile approach allows one to seamlessly organize thoughts without sacrifice on either technique.
-
-![notepanel](https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea)
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
+</p>
 
 - **`Bi-Directional Sync`**: Edit a Mind Map node's content and see it instantaneously update in the [Zettelkasten](https://en.wikipedia.org/wiki/Zettelkasten). Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
 - **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination. Zettelkasten is a method of taking short, atomic notes (or "zettels") that link to each other to create an interconnected system. The Zettelkasten system does not preference any top down or bottom up approach. In Neurite, you don't have to comprise between all of these different methods. Your notes links from within the infinite canvas are automatically formatted as Markdown.
@@ -134,7 +144,11 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
 - Connect instructions to Ai nodes. For every message, any connected nodes will be sent to the Ai. (ie, the entire connected graph)
 ## `FractalGPT`
 
-![Screenshot 2024-02-23 144718](https://github.com/satellitecomponent/Neurite/assets/129367899/9f820226-bc14-4f05-8ad1-5963271b6836)
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/9f820226-bc14-4f05-8ad1-5963271b6836" alt="FractalGPT" width="70%">
+</p>
+
+![Screenshot 2024-02-23 144718]()
 
 
 ### `Not your typical chat interface`
@@ -171,11 +185,13 @@ https://github.com/satellitecomponent/Neurite/assets/129367899/ddcfe933-84d1-422
 All API keys can be input through the AI tab in the menu dropdown.
 
 ## `Neural API`
-<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="movementapi" width="300">
-
 A recent update to Neurite is our function calling panel.
 
 This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.
+
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="neuralapi" width="20%">
+</p>
 
 Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include,
 - Animate movements through the Mandelbrot set
@@ -285,7 +301,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 
 ## `Future of Neurite`
 
-![Screenshot 2024-02-28 202827](https://github.com/satellitecomponent/Neurite/assets/129367899/1d8b87df-74bc-4de2-8abc-ea909fb235da)
+
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing thought.
 
