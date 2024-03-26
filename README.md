@@ -148,9 +148,6 @@ Supports embedded links. Ctrl+V to paste an embed link, or pasting normal links 
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/9f820226-bc14-4f05-8ad1-5963271b6836" alt="FractalGPT" width="70%">
 </p>
 
-![Screenshot 2024-02-23 144718]()
-
-
 ### `Not your typical chat interface`
 
 ### `Modular Conversation`
