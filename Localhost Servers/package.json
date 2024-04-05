@@ -5,11 +5,11 @@
   "main": "start_servers.js",
   "type": "module",
   "scripts": {
-    "start": "node start_servers.js"
+    "start": "node start_servers.js",
+    "start:neurite": "node start_servers.js neurite"
   },
   "author": "satelliteComponent",
   "license": "MIT",
   "dependencies": {
-    "pdf-parse": "^1.1.1"
   }
 }

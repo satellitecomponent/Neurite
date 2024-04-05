@@ -1,4 +1,4 @@
-document.addEventListener('dblclick', function (e) {
+﻿document.addEventListener('dblclick', function (e) {
     // Cancel the default behavior of the event
     cancel(e);
 
@@ -13,7 +13,7 @@ document.addEventListener('dblclick', function (e) {
         let node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
         node.draw();
     } else if (nodeMode && !prevNode) {
-        // Node mode (Shift) + double click behavior
+        // Node mode (Shift) + double click behavior *text nodes
         createNodeFromWindow();
     }
 });
@@ -67,6 +67,48 @@ function addNodeTagToZettelkasten(title, content = null) {
     noteInput.setValue(currentZettelkastenValue);
     noteInput.refresh();
 
-    // Reset processAll to false
-    processAll = false;
+    node = scrollToTitle(title, noteInput);
+
+}
+
+function createTextNodeWithPosAndScale(title, text, scale, x, y, addCodeButton = false) {
+    const defaultTitle = title || getDefaultTitle();
+
+    // Create the node without scale and position
+    const node = createTextNode(defaultTitle, text, undefined, undefined, undefined, undefined, addCodeButton);
+
+    // Set position if specified
+    if (x !== undefined && y !== undefined) {
+        node.pos.x = x;
+        node.pos.y = y;
+    }
+
+    // Set scale if specified
+    if (scale !== undefined) {
+        node.scale = scale;
+    }
+
+    return node;
+}
+
+function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null) {
+    const scaleFactor = 0.8; // Factor to scale the new node relative to the original
+
+    // If theta is not provided, select a random angle between 0 and 2π
+    if (theta === null) {
+        theta = Math.random() * Math.PI * 2;
+    }
+
+    // Calculate new position based on angle and distance
+    const newPositionX = spawningNode.pos.x + offsetDistance * Math.cos(theta) * spawningNode.scale;
+    const newPositionY = spawningNode.pos.y + offsetDistance * Math.sin(theta) * spawningNode.scale;
+    const newScale = spawningNode.scale * scaleFactor;
+
+    // Create a new node at the calculated position and scale
+    const newNode = createTextNodeWithPosAndScale(null, null, newScale, newPositionX, newPositionY);
+    newNode.draw();
+    restoreZettelkastenEvent = true;
+    addNodeTagToZettelkasten(newNode.getTitle());
+
+    return newNode;
 }

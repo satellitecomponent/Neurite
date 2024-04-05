@@ -1,4 +1,48 @@
+/* Node Flag Types
 
+    if (node.isTextNode) {
+        initTextNode(node)
+    }
+
+    if (node.isLLM) {
+        initAiNode(node);
+        restoreNewLinesInPreElements(node.aiResponseDiv);
+    }
+
+    if (node.isLink) {
+        initLinkNode(node);
+    }
+
+    if (isEditorNode(node)) {
+        initEditorNode(node)
+    }
+}
+
+*/
+
+
+const NodeExtensions = {
+    "window": (node, a) => {
+        rewindowify(node);
+    },
+    "textarea": (node, o) => {
+        let e = node.content;
+        for (let w of o.p) {
+            e = e.children[w];
+        }
+        let p = o.p;
+        e.value = o.v;
+        node.push_extra_cb((n) => {
+            return {
+                f: "textarea",
+                a: {
+                    p: p,
+                    v: e.value
+                }
+            };
+        });
+    },
+}
 
 function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
     let n = document.createElement("textarea");
@@ -112,7 +156,7 @@ function addEventListenersToTextNode(node) {
     let pythonView = node.pythonView;
 
     // Setup for the code checkbox listener
-    setupCodeCheckboxListener(button, node.addCodeButton);
+    //setupCodeCheckboxListener(button, node.addCodeButton);
 
     // Attach events for contentEditable and textarea
     addEventsToContentEditable(contentEditableDiv, textarea, node);
@@ -467,7 +511,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let regenerateButton = document.createElement("button");
     regenerateButton.type = "button";
     regenerateButton.id = "prompt-form";
-    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px; border-radius: 50%;";
+    regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
     regenerateButton.innerHTML = `
     <svg width="24" height="24">
         <use xlink:href="#refresh-icon"></use>
@@ -958,34 +1002,6 @@ function setupAiNodeSettingsButtonListeners(node) {
 
 function setupAiNodeLocalLLMDropdownListeners(node) {
     let selectElement = node.localLLMSelect;
-
-    const localLLMCheckbox = document.getElementById("localLLM");
-
-    localLLMCheckbox.addEventListener('change', function () {
-        // Access the options from the selectElement
-        const options = selectElement.options;
-
-        for (let i = 0; i < options.length; i++) {
-            let option = options[i];
-            if (option.value === 'OpenAi' || option.value.startsWith('gpt-')) {
-                option.hidden = false;  // Always show
-            } else {
-                option.hidden = !this.checked;  // Show or hide based on checkbox
-            }
-        }
-
-        // Also update the visibility of custom options
-        const customOptions = document.querySelectorAll('.options-replacer div');
-        customOptions.forEach((customOption) => {
-            const value = customOption.getAttribute('data-value');
-            if (value === 'OpenAi' || value.startsWith('gpt-')) {
-                customOption.style.display = 'block';  // Always show
-            } else {
-                customOption.style.display = this.checked ? 'block' : 'none';  // Show or hide based on checkbox
-            }
-        });
-    });
-
     setupCustomDropdown(selectElement, true);
 }
 
@@ -1134,26 +1150,23 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
     LocalLLMSelect.style.backgroundColor = "#222226";
     LocalLLMSelect.style.border = "none";
 
-    let localLLMCheckbox = document.getElementById("localLLM");
+    //let localLLMCheckbox = document.getElementById("localLLM");
 
     // Create an array to store the options
     let options = [
-        new Option('OpenAI', 'OpenAi', false, true),
-        new Option('Red Pajama 3B f32', 'RedPajama-INCITE-Chat-3B-v1-q4f32_0', false, false),
-        new Option('Vicuna 7B f32', 'vicuna-v1-7b-q4f32_0', false, false),
-        new Option('Llama 2 7B f32', 'Llama-2-7b-chat-hf-q4f32_1', false, false),
-        //new Option('Llama 2 13B f32', 'Llama-2-13b-chat-hf-q4f32_1', false, false),
-        new Option('Llama 2 70B f16', 'Llama-2-70b-chat-hf-q4f16_1', false, false),
-        //new Option('WizardCoder 15B f32', '"WizardCoder-15B-V1.0-q4f32_1', false, false),
+        new Option('GLOBAL', 'GLOBAL', false, true),
+        new Option('Ollama', 'custom-host', false, false),
+
         new Option('gpt-3.5-turbo', 'gpt-3.5-turbo', false, false),
-        //new Option('gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k', false, false),
-        //new Option('gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613', false, false),
-        new Option('gpt-3.5-16k-0613', 'gpt-3.5-turbo-16k-0613', false, false),
+        //new Option('gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct', false, false),
         new Option('gpt-4', 'gpt-4', false, false),
-        new Option('gpt-4-0613', 'gpt-4-0613', false, false),
         new Option('gpt-4-vision', 'gpt-4-vision-preview', false, false),
-        new Option('gpt-3.5-1106', 'gpt-3.5-turbo-1106', false, false),
-        new Option('gpt-4-1106', 'gpt-4-1106-preview', false, false)
+
+        new Option('GROQ-mixtral-8x7b-32768', 'GROQ-mixtral-8x7b-32768', false, false),
+        new Option('GROQ-llama2-70b-4096', 'GROQ-llama2-70b-4096', false, false)
+
+        //new Option('claude-3-opus', 'claude-3-opus-20240229', false, false),
+        //new Option('claude-3-sonnet', 'claude-3-sonnet-20240229', false, false)
     ];
 
     // Add options to the select
@@ -1162,13 +1175,13 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
     });
 
     // Initial setup based on checkbox state
-    options.forEach((option) => {
-        if (option.value === 'OpenAi' || option.value.startsWith('gpt-')) {
+    /*options.forEach((option) => {
+        if (option.value === 'OpenAi' || option.value.startsWith('gpt-') || option.value.startsWith('GROQ-') || option.value.startsWith('Ollama')) {
             option.hidden = false;  // Always show
         } else {
             option.hidden = !localLLMCheckbox.checked;  // Show or hide based on checkbox initial state
         }
-    });
+    });*/
 
     return LocalLLMSelect;
 }

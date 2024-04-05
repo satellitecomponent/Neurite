@@ -62,12 +62,16 @@ let page; // Store the page object globally
 const neuriteUrl = args.length >= 1 ? args[0] : defaultNeuriteUrl;
 const browserType = args[1] || 'chromium';
 
+console.log('Automation script started');
+
 startNeurite(neuriteUrl, browserType).then(async ({ page: p }) => {
+    console.log('Neurite started via Playwright');
     page = p;
-    // Start the server
     server.listen(8081, () => {
         console.log('Server running on port 8081');
     });
+}).catch((error) => {
+    console.error('Failed to start Neurite via Playwright:', error);
 });
 
 module.exports = { startNeurite, takeScreenshot };

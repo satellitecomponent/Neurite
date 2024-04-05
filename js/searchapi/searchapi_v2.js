@@ -1,20 +1,19 @@
 //searchapi.js
 
 async function generateKeywords(message, count, specificContext = null) {
-    // Use node-specific context if provided, otherwise get general context
     const lastPromptsAndResponses = specificContext || getLastPromptsAndResponses(2, 150);
-
     // Check if lastPromptsAndResponses is empty, null, undefined, or just white spaces/new lines
     const isEmpty = !lastPromptsAndResponses || !/\S/.test(lastPromptsAndResponses);
-
-    // Check if Wikipedia is enabled
-    const wikipediaEnabled = isWikipediaEnabled();
-
-    // If lastPromptsAndResponses is empty and Wikipedia is not enabled, return default keywords
     if (isEmpty) {
-        return ['n/a', 'n/a', 'n/a'];
+        // If the context is empty, return the 'count' longest words from the user message
+        const keywords = message
+            .split(' ')
+            .filter(word => word.trim().length > 0) // Remove empty strings
+            .sort((a, b) => b.length - a.length) // Sort words by length in descending order
+            .slice(0, count) // Take the top 'count' words
+            .map(word => word.trim());
+        return keywords;
     }
-
     // Prepare the messages array
     const messages = [
         {
@@ -24,8 +23,8 @@ async function generateKeywords(message, count, specificContext = null) {
         {
             role: "system",
             content: `You provide key search terms for our user query.
-Without any preface or final explanation, Generate three single-word, comma-separated keywords for the latest user message.
-Keywords may result from the user query and/or the recent conversation. Recognize when the user is changing topic.
+Your entire response should consist of three single-word, comma-separated keywords relevant to latest user message.
+Avoid preface or explanation. Your response is split by commas to extract the keywords.
 Order keywords by relevance, starting with a word from the current message.`,
         },
         {
@@ -33,11 +32,10 @@ Order keywords by relevance, starting with a word from the current message.`,
             content: `${message}`,
         },
     ];
-
     // Call the API
     const keywords = await callchatAPI(messages, false, 0);
     console.log(`Keywords:`, keywords);
-    // Return the keywords
+    // Return the keywords as an array
     return keywords.split(',').map(k => k.trim());
 }
 
@@ -141,7 +139,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     },
     {
         role: "system",
-        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used as a Google Programable Search and an embedded vector search that finds relevant webpages/pdf chunks. User can't see your output. Provide a single, brief search query that's most likely to yield relevant results."
+        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used as a Google Programable Search and an embedded vector search that finds relevant webpages/pdf chunks. User can't see your output. Provide a single, keyword search query that's most likely to yield relevant results."
     },
     {
         role: "user",
@@ -221,6 +219,14 @@ function displaySearchResults(searchResults) {
         node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
     });
+}
+
+function returnLinkNodes() {
+    let linkUrl = prompt("Enter a Link or Search Query", "");
+
+    if (linkUrl) {
+        processLinkInput(linkUrl);
+    }
 }
 
     //for interface.js link node drop handler

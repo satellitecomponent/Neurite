@@ -75,6 +75,10 @@ class vec2 {
         return new vec2(f(this.x), f(this.y));
     }
 
+    distanceTo(o) {
+        return this.minus(o).mag();
+    }
+
     cadd(o) {
         return this.plus(o);
     }
@@ -165,6 +169,10 @@ class vec2 {
     ctostring() {
         return ("" + this.y).startsWith("-") ? this.x + "-i" + (-this.y) : this.x + "+i" + this.y;
     }
+}
+
+function toSVG(coords) {
+    return coords.minus(SVGpan).scale(SVGzoom);
 }
 
 var mousePos = new vec2(0, 0);
@@ -275,24 +283,21 @@ function updateViewbox() {
     return
 
     // the below has the issue of low-res svg when changing the matrix in firefox
-    svg.setAttribute("viewBox", (-svg_viewbox_size / 2) + " " + (-svg_viewbox_size / 2) + " " + svg_viewbox_size + " " + svg_viewbox_size);
+    //svg.setAttribute("viewBox", (-svg_viewbox_size / 2) + " " + (-svg_viewbox_size / 2) + " " + svg_viewbox_size + " " + svg_viewbox_size);
     // z = bal(uv)*zoom+pan
     // svg = (z-svgpan)*svgzoom
     // want matrix to go svg -> bal(uv)*65536
     // bal(uv)*65536 = 65536*(z-pan)/zoom = 65536*(svg/svgzoom-svgpan-pan)/zoom
     // d/dsvg = 65536/svgzoom/zoom
     // f(0) = -65536*(svgpan+pan)/zoom
-    let t = zoom.crecip().scale(svg_viewbox_size / SVGzoom / 2);
-    let p = pan.minus(SVGpan).scale(-svg_viewbox_size / 2).cdiv(zoom);
+    //let t = zoom.crecip().scale(svg_viewbox_size / SVGzoom / 2);
+    //let p = pan.minus(SVGpan).scale(-svg_viewbox_size / 2).cdiv(zoom);
 
-    svg_viewmat.setAttribute("transform", "matrix(" + t.x + " " + (t.y) + " " + (-t.y) + " " + (t.x) + " " + (p.x) + " " + (p.y) + ")");
+    //svg_viewmat.setAttribute("transform", "matrix(" + t.x + " " + (t.y) + " " + (-t.y) + " " + (t.x) + " " + (p.x) + " " + (p.y) + ")");
     //svg_bg.setAttribute("transform","matrix("+z.x+" "+(-z.y)+" "+(z.y)+" "+(z.x)+" "+SVGpan.x+" "+SVGpan.y+")");
 
 }
 
-function toSVG(coords) {
-    return coords.minus(SVGpan).scale(SVGzoom);
-}
 
 function recalc_svg(oldSVGpan,oldSVGzoom) {
     let node = svg_bg;
@@ -418,8 +423,8 @@ function mandelbrott_grad(iters, c, z) {
             //ln(pz)2^?=ln(b)
             //ln(ln(pz))+ln(2)*?=ln(ln(b))
             return dz;
-            let llz = Math.log2(Math.log2(z.mag2()) / 2);
-            return i - llz;
+            //let llz = Math.log2(Math.log2(z.mag2()) / 2);
+            //return i - llz;
         }
         z = mand_step(z, c);
         dz = dz.cmult(z.scale(2));

@@ -11,7 +11,7 @@ function toggleNodeState(nodeOrTitle, cm, event) {
     }
 
     if (!node || !node.content) return;
-    let div = node.content.querySelector('.window');
+    let div = node.windowDiv;
     let circle = div.querySelector('.collapsed-circle'); // Find the circle here
 
     // Collapse or expand based on current state
@@ -215,7 +215,7 @@ let dragBox = null;
 let startX, startY;
 
 document.addEventListener('mousedown', function (event) {
-    if (event.button === 0 && event.ctrlKey) { // Right-click and Ctrl key
+    if (event.button === 0 && event.altKey) { // Right-click and Ctrl key
         event.preventDefault();
         event.stopPropagation();
         isDraggingDragBox = true;

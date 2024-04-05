@@ -9,7 +9,6 @@ let followMouseFromWindow = false;
 let shouldAddCodeButton = false;
 
 
-
 {
     //start of enclosure
     const nodes = {};
@@ -94,10 +93,24 @@ let shouldAddCodeButton = false;
     class ZettelkastenProcessor {
         constructor() {
             this.prevNoteInputLines = [];
-
             noteInput.on('change', this.processInput.bind(this));
             nodeTagInput.addEventListener('input', this.processInput.bind(this));
             refTagInput.addEventListener('input', this.processInput.bind(this));
+
+            this.placementStrategy = new NodePlacementStrategy([], {});
+        }
+
+        updatePlacementPath(pathObject) {
+            if (this.placementStrategy) {
+                this.placementStrategy.updatePath(pathObject);
+            }
+        }
+
+        spawnNodeFromZettelkasten(currentNodeTitle) {
+            updateGlobalProcessedNodeMap(nodeMap);
+            this.placementStrategy.nodeObjects = globalProcessedNodeMap;
+            const nodeObject = this.placementStrategy.calculatePositionAndScale(currentNodeTitle);
+            return nodeObject;
         }
 
         findFirstChangedLine(lines) {
@@ -212,8 +225,6 @@ let shouldAddCodeButton = false;
             this.deleteInactiveNodeLines(nodeLines);
         }
 
-
-        //Creates nodes either from the Zettelkasten or the window.
         handleNode(line, i, nodeLines, nodes, currentNodeTitle) {
             currentNodeTitle = line.substr(nodeTag.length).trim();
 
@@ -250,7 +261,7 @@ let shouldAddCodeButton = false;
                             followMouseFromWindow = false;
                         }
                     } else {
-                        nodeObject = createTextNode(currentNodeTitle, '', (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8);
+                        nodeObject = this.spawnNodeFromZettelkasten(currentNodeTitle);
                     }
 
                     const node = this.establishZettelkastenNode(nodeObject, currentNodeTitle, nodeLines, nodes, noteInput);
@@ -662,6 +673,7 @@ let shouldAddCodeButton = false;
     }
 
     const zettelkastenProcessor = new ZettelkastenProcessor(noteInput, nodeTagInput, refTagInput);
+    window.zettelkastenProcessor = zettelkastenProcessor;
 
     //end of enclosure
 }

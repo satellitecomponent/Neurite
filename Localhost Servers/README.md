@@ -1,15 +1,23 @@
-This project includes a script that spawns multiple servers based on their respective start commands. This enables you to manage and run multiple servers in different directories from a central location.
+##  Neurite Start Interface
 
 
 Currently, the script is configured to run the following servers:
 
-A Node.js server for web scraping located in the webscrape directory
+webscrape, a Node.js server for web scraping located in the webscrape directory
 
-A Python script for wiki searching located in the wikisearch directory
+wikisearch, a Node.js for wiki searching located in the wikisearch directory
 
-A Node.js server interfacing with Wolfram Alpha located in the wolfram-alpha directory
+wolfram-alpha, a Node.js server interfacing with Wolfram Alpha located in the wolfram-alpha directory
 
-Prerequisites
+and now,
+
+ai-proxy, a Node.js server for handling api calls between Neurite's js interface and local or cloud hosted large langauge models.
+
+and,
+
+automation, a Node.js server for running Neurite via Playwright, currently used for a headless browser option as well as for taking automated screenshots of Neurite.
+
+# Prerequisites
 
 Before running the script, make sure you have the following installed:
 
@@ -17,18 +25,34 @@ Node.js
 
 npm
 
-Python
 
+# Usage
 
-Usage
+To start all servers (besides automation.js), run the start_servers.js script with Node.js by...
 
-To start all servers, run the start_servers.js script with Node.js:
+...navigating to the LocalHost servers folder in the command line and running...
 
-Navigate to the LocalHost servers folder in the command line.
+```bash
+npm run start
+```
 
-node start_servers.js
+to include the Playwright script add the flag, neurite
 
-This will spawn each server in its own subprocess and they will run concurrently. Output from each server's stdout and stderr will be logged to the console.
+```bash
+npm run start neurite
+```
 
 
 The Node.js servers will run npm install before starting, ensuring all dependencies are installed. If the dependencies are already installed and up-to-date, npm install will not reinstall them.
+
+The one exception is the automation server which requires you to install playwright manually.
+
+navigate to the automation folder in your CLI and run
+
+```bash
+npm i
+```
+
+then, follow the steps to install playwright.
+
+ From there, `npm run start neurite` will work.

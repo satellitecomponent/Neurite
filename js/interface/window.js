@@ -64,7 +64,6 @@ function initWindow(node) {
     const wrapperDivs = document.getElementsByClassName('wrapperDiv');
     node.wrapperDivs = wrapperDivs;
 
-
     let resizeHandle = node.content.querySelector('.resize-handle');
     setResizeEventListeners(resizeHandle, node);
 
@@ -90,18 +89,33 @@ function setupHeaderContainerListeners(headerContainer) {
     };
 }
 
-
-
 function setupWindowDivListeners(node) {
     const windowDiv = node.windowDiv;
     const dropdown = node.dropdown;
     const wrapperDivs = node.wrapperDivs;
 
-    windowDiv.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (event.ctrlKey) {
-            toggleNodeSelection(node)
+    let clickStartX, clickStartY;
+
+    windowDiv.addEventListener('mousedown', (event) => {
+        if (event.altKey) {
+            // Record the starting position of the mouse only if the Alt key is held
+            clickStartX = event.clientX;
+            clickStartY = event.clientY;
         }
+    });
+
+    windowDiv.addEventListener('mouseup', (event) => {
+        if (event.altKey) {
+            const distanceMoved = Math.sqrt(Math.pow(event.clientX - clickStartX, 2) + Math.pow(event.clientY - clickStartY, 2));
+
+            // Check if the mouse has moved more than a certain threshold
+            const dragThreshold = 10; // pixels, adjust this value as needed
+            if (distanceMoved < dragThreshold) {
+                toggleNodeSelection(node);
+            }
+        }
+
+        hideContextMenu();
     });
 
     windowDiv.addEventListener('mousedown', () => {
@@ -148,6 +162,8 @@ function setupResizeHandleListeners(node) {
     const resizeHandle = node.windowDiv.querySelector('.resize-handle');
     setResizeEventListeners(resizeHandle, node);
 }
+
+
 
 
 function rewindowify(node) {
@@ -208,7 +224,10 @@ function rewindowify(node) {
         }
         node.remove();
         // Delete the node from CodeMirror
-        deleteNodeByTitle(title);
+
+        if (node.isTextNode) {
+           deleteNodeByTitle(title);
+        }
     });
     ui(fs, (() => {
         node.zoom_to_fit();
@@ -256,6 +275,8 @@ function rewindowify(node) {
     return node;
 }
 
+
+
 function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 1, window_it = true) {
     let node;
     if (window_it) {
@@ -285,6 +306,9 @@ function registernode(node) {
     nodes.push(node);
     nodeMap[node.uuid] = node;
 }
+
+
+
 
 function extractScalingFactors(element) {
     const rect = element.getBoundingClientRect();
@@ -492,103 +516,6 @@ function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
     resizeObserver.observe(windowDiv);
 }
 
-/*// Set the textarea's height according to its scrollHeight and maxHeight
-function setTextAreaHeight(textarea, maxHeight) {
-    // Calculate the bottom position of the textarea within the viewport
-    const textareaBottom = textarea.getBoundingClientRect().bottom;
-    const viewportHeight = window.innerHeight;
-
-    // Define a margin from the bottom (e.g., 30 pixels)
-    const bottomMargin = 30;
-
-    // If the bottom of the textarea (including the margin) is beyond the viewport
-    if (textareaBottom + bottomMargin > viewportHeight) {
-        return;
-    }
-
-    textarea.style.height = 'auto';
-    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-    textarea.style.height = `${Math.max(newHeight, 60)}px`;
-
-    if (newHeight >= maxHeight) {
-        textarea.style.overflowY = 'auto';
-    } else {
-        textarea.style.overflowY = 'hidden';
-    }
-}
-
-/**
- * Event handlers for mouse down and up to set resizing state
- */
-/*function attachMouseEvents(node, element) {
-    element.addEventListener('mousedown', () => {
-        node.isResizing = true;
-    });
-
-    element.addEventListener('mouseup', () => {
-        node.isResizing = false;
-        const newMaxHeight = element.clientHeight;
-        element.setAttribute('data-max-height', newMaxHeight);
-    });
-}
-
-/**
- * Function used for programmatic interaction in zettelkasten.js
- */
-/*function adjustTextareaHeight(textarea) {
-    const maxHeight = textarea.getAttribute('data-max-height') || 300;
-    const epsilon = 50; // Tolerance in pixels
-
-    requestAnimationFrame(() => {
-        // Record the current scroll position
-        const previousScrollHeight = textarea.scrollHeight;
-        const previousScrollTop = textarea.scrollTop;
-
-        // Adjust textarea height
-        setTextAreaHeight(textarea, maxHeight);
-
-        // Calculate the new scroll position
-        const newScrollHeight = textarea.scrollHeight;
-        const dScroll = newScrollHeight - previousScrollHeight;
-
-        // Update the scrollTop only if we are close to the bottom
-        if (Math.abs(previousScrollTop - (previousScrollHeight - textarea.clientHeight)) < epsilon) {
-            textarea.scrollTop = newScrollHeight - textarea.clientHeight;
-        } else {
-            // Preserve the scrollTop to keep the view stable
-            textarea.scrollTop = previousScrollTop + dScroll;
-        }
-    });
-}
-
-
- * Function used for user interaction in create text node
-
-function adjustTextareaElement(node, element) {
-    const adjustHeight = () => {
-        if (!node.isResizing) {
-            const maxHeight = element.getAttribute('data-max-height') || 300;
-            setTextAreaHeight(element, maxHeight);
-        }
-    };
-
-    attachMouseEvents(node, element);
-
-    adjustHeight();
-
-    node.isResizing = false;
-
-    node.observer = new ResizeObserver(adjustHeight);
-    node.observer.observe(element);
-
-    const mutationObserver = new MutationObserver(adjustHeight);
-    mutationObserver.observe(element, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
-} */
-
 function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight = 80) {
     const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
@@ -603,55 +530,4 @@ function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight
 
     resizeObserver.observe(parentDiv);
     return resizeObserver;
-}
-
-
-function put(e, p, s = 1) {
-    let svgbb = svg.getBoundingClientRect();
-    e.style.position = "absolute";
-    e.style.transform = "scale(" + s + "," + s + ")";
-    p = fromZtoUV(p);
-    if (p.minus(new vec2(0.5, 0.5)).mag2() > 16) {
-        e.style.display = "none";
-    } else {
-        e.style.display = "initial";
-    }
-    let w = Math.min(svgbb.width, svgbb.height);
-    let off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
-    p.x = w * p.x - (off - svgbb.right) / 2;
-    p.y = w * p.y - (off - svgbb.bottom) / 2;
-    let bb = e.getBoundingClientRect();
-    p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
-    e.style.left = p.x + "px";
-    e.style.top = p.y + "px";
-
-
-    //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
-    //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
-    //e.style['vertical-align']= 'middle';
-    //e.style['text-align']= 'center';
-
-}
-
-const NodeExtensions = {
-    "window": (node, a) => {
-        rewindowify(node);
-    },
-    "textarea": (node, o) => {
-        let e = node.content;
-        for (let w of o.p) {
-            e = e.children[w];
-        }
-        let p = o.p;
-        e.value = o.v;
-        node.push_extra_cb((n) => {
-            return {
-                f: "textarea",
-                a: {
-                    p: p,
-                    v: e.value
-                }
-            };
-        });
-    },
 }

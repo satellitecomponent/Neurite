@@ -1,3 +1,18 @@
+function haltFunctionAi() {
+    if (currentController) {
+        currentController.abort();
+        currentController = null;
+
+        isAiProcessing = false;  // Ensure the state is updated
+
+        // Use global functionSendSvg if it's always the correct element
+        if (functionSendSvg) {
+            functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
+        }
+    }
+}
+
+
 
 let isAiProcessing = false;
 
@@ -102,7 +117,6 @@ async function getFunctionResponse(requestMessages) {
         messages: requestMessages,
         stream: true,
         customTemperature: null,
-        API_URL: "https://api.openai.com/v1/chat/completions",
         onBeforeCall: () => {
             isAiProcessing = true;
             updateUiForProcessing();

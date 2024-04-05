@@ -47,6 +47,35 @@ function nextUUID() {
     }
     return NodeUUID;
 }
+
+function put(e, p, s = 1) {
+    let svgbb = svg.getBoundingClientRect();
+    e.style.position = "absolute";
+    e.style.transform = "scale(" + s + "," + s + ")";
+    p = fromZtoUV(p);
+    if (p.minus(new vec2(0.5, 0.5)).mag2() > 16) {
+        e.style.display = "none";
+    } else {
+        e.style.display = "initial";
+    }
+    let w = Math.min(svgbb.width, svgbb.height);
+    let off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
+    p.x = w * p.x - (off - svgbb.right) / 2;
+    p.y = w * p.y - (off - svgbb.bottom) / 2;
+    let bb = e.getBoundingClientRect();
+    p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
+    e.style.left = p.x + "px";
+    e.style.top = p.y + "px";
+
+
+    //e.style['margin-top'] = "-"+(e.offsetHeight/2)+"px";//"-50%";
+    //e.style['margin-left'] = "-"+(e.offsetWidth/2)+"px";//"-50%";
+    //e.style['vertical-align']= 'middle';
+    //e.style['text-align']= 'center';
+
+}
+
+
 class Node {
     constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
         this.anchor = new vec2(0, 0);
@@ -96,9 +125,13 @@ class Node {
 
         this.vel = new vec2(0, 0);
         this.force = new vec2(0, 0);
+        this.frictionConstant = 0.2;
+        this.intervalID = null;
         this.followingMouse = 0;
-        this.followingAiCursor = false;
-        this.aiCursorAnchor = new vec2(0, 0);
+        //this.followingAiCursor = false;
+        //this.aiCursorAnchor = new vec2(0, 0);
+
+        this.sensor = new NodeSensor(this, 3);
 
         this.removed = false;
 
@@ -119,8 +152,8 @@ class Node {
     json() {
         return JSON.stringify(this, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
-                k === "aiResponseEditor" || k === "aiCursor" || k === "responseHandler" ||
-                k === "windowDiv") { // Exclude windowDiv as well
+                k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
+                k === "windowDiv" || k === "agent") { // Exclude windowDiv as well
                 return undefined;
             }
             return v;
@@ -136,6 +169,11 @@ class Node {
         });
     }
 
+    updateSensor() {
+        this.sensor.callUpdate();
+        //console.log(this.sensor.nearbyNodes);
+        //console.log('extended radius', this.sensor.nodesWithinExtendedRadius);
+    }
 
     draw() {
         put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
@@ -166,7 +204,7 @@ class Node {
             this.pos = this.pos.plus(this.vel.scale(dt / 2));
             this.vel = this.vel.plus(this.force.scale(dt));
             this.pos = this.pos.plus(this.vel.scale(dt / 2));
-            this.force = this.vel.scale(-Math.min(this.vel.mag() + 0.4 + this.anchorForce, 1 / (dt + 1e-300)));
+            this.force = this.vel.scale(-Math.min(this.vel.mag() + this.frictionConstant + this.anchorForce, 1 / (dt + 1e-300)));
         } else {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
@@ -219,35 +257,58 @@ class Node {
         this.draw();
     }
 
-    moveNode(direction) {
-        const forceMagnitude = 0.01; // Base force intensity
+    moveNode(angle, forceMagnitude = 0.01) {
         const adjustedForce = forceMagnitude * this.scale; // Scale the force
 
-        let forceDirection = new vec2(0, 0);
-
-        // Check for diagonal movements
-        const isDiagonal = (direction.includes('up') || direction.includes('down')) &&
-            (direction.includes('left') || direction.includes('right'));
-
-        const diagonalAdjustment = isDiagonal ? Math.sqrt(2) : 1;
-
-        if (direction.includes('up')) {
-            forceDirection.y -= adjustedForce / diagonalAdjustment;
-        }
-        if (direction.includes('down')) {
-            forceDirection.y += adjustedForce / diagonalAdjustment;
-        }
-        if (direction.includes('left')) {
-            forceDirection.x -= adjustedForce / diagonalAdjustment;
-        }
-        if (direction.includes('right')) {
-            forceDirection.x += adjustedForce / diagonalAdjustment;
-        }
+        let forceDirection = new vec2(Math.cos(angle) * adjustedForce, Math.sin(angle) * adjustedForce);
 
         // Apply the force to the node
         this.force = this.force.plus(forceDirection);
 
-        return forceDirection; // Return the applied force direction
+        return forceDirection; // Optionally return the force direction if needed
+    }
+
+    moveTo(x, y, baseTolerance = 1, onComplete = () => { }) {
+        const targetComplexCoords = new vec2(x, y);
+        // Adjust tolerance based on the node's current scale
+        const tolerance = baseTolerance * this.scale;
+
+        const update = () => {
+            const distanceVector = targetComplexCoords.minus(this.pos);
+            const distance = distanceVector.mag();
+
+            // Check if the node is within the tolerance distance of the target
+            if (distance < tolerance) {
+                clearInterval(this.intervalID);
+                clearTimeout(this.timeoutID); // Clear the movement timeout
+                this.intervalID = null; // Reset the intervalID
+                onComplete(); // Call the completion callback
+                return;
+            }
+
+            // Apply movement
+            const forceMagnitude = Math.min(0.002 * this.scale, distance);
+            const forceDirection = distanceVector.normed().scale(forceMagnitude);
+            this.force = this.force.plus(forceDirection);
+        };
+
+        // Clear any existing interval and timeout to avoid multiple intervals or timeouts running
+        if (this.intervalID !== null) {
+            clearInterval(this.intervalID);
+        }
+        if (this.timeoutID !== null) {
+            clearTimeout(this.timeoutID);
+        }
+
+        this.intervalID = setInterval(update, 20); // Start the movement updates
+
+        // Set a fixed timeout to stop the movement after 4 seconds
+        this.timeoutID = setTimeout(() => {
+            clearInterval(this.intervalID); // Stop the movement updates
+            this.intervalID = null; // Reset the intervalID
+            //console.log("Movement stopped after 4 seconds.");
+            onComplete(); // Call the completion callback even if the target hasn't been reached
+        }, 4000); // Timeout duration of 4 seconds
     }
 
 
@@ -259,16 +320,17 @@ class Node {
         let scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
         this.zoom_by(1 / scale);
     }
-    zoom_by(s = 1) {
+    zoom_to(s = 1) {
         panTo = new vec2(0, 0); //this.pos;
-        let gz = ((s) ** (-1 / settings.zoomContentExp));
+        let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
         zoomTo = zoom.unscale(gz ** 0.5);
         autopilotReferenceFrame = this;
         panToI = new vec2(0, 0);
     }
-    zoom_to(s = 1) {
+
+    zoom_by(s = 1) {
         panTo = new vec2(0, 0); //this.pos;
-        let gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
+        let gz = ((s) ** (-1 / settings.zoomContentExp));
         zoomTo = zoom.unscale(gz ** 0.5);
         autopilotReferenceFrame = this;
         panToI = new vec2(0, 0);
@@ -315,20 +377,7 @@ class Node {
             if (prevNode === undefined) {
                 prevNode = this;
             } else {
-                // Get titles once and store them in variables
-                const thisTitle = this.getTitle();
-                const prevNodeTitle = prevNode.getTitle();
-
-                // Check conditions before calling addEdgeToZettelkasten
-                if (thisTitle !== prevNodeTitle && this.isTextNode && prevNode.isTextNode) {
-                    // Add edge from prevNode to this node
-                    addEdgeToZettelkasten(prevNodeTitle, thisTitle, myCodeMirror);
-                    // Add edge from this node to prevNode
-                    addEdgeToZettelkasten(thisTitle, prevNodeTitle, myCodeMirror);
-                } else {
-                    // If conditions are not met, call the original connectDistance
-                    connectDistance(this, prevNode, this.pos.minus(prevNode.pos).mag() / 2, undefined, true);
-                }
+                connectNodes(this, prevNode);
 
                 // Reset prevNode
                 prevNode = undefined;
@@ -462,129 +511,6 @@ class Node {
 
 }
 
-// Global or scoped array for selected UUIDs
-let selectedNodeUUIDs = new Set();
-
-// Function to toggle node selection
-function toggleNodeSelection(node) {
-    if (selectedNodeUUIDs.has(node.uuid)) {
-        node.windowDiv.classList.toggle('selected');
-        selectedNodeUUIDs.delete(node.uuid); // Deselect
-        //console.log(`deselected`);
-    } else {
-        node.windowDiv.classList.toggle('selected');
-        selectedNodeUUIDs.add(node.uuid); // Select
-        //console.log(`selected`);
-    }
-}
-
-function clearNodeSelection() {
-    selectedNodeUUIDs.forEach(uuid => {
-        const node = findNodeByUUID(uuid); // Implement this function based on how your nodes are stored
-        if (node) {
-            node.windowDiv.classList.remove('selected');
-        }
-    });
-    selectedNodeUUIDs.clear(); // Clear the set of selected UUIDs
-}
-
-function findNodeByUUID(uuid) {
-    return nodes.find(node => node.uuid === uuid);
-}
-
-function getSelectedNodes() {
-    // Return an array of node objects based on the selected UUIDs
-    return Array.from(selectedNodeUUIDs).map(uuid => nodeMap[uuid]);
-}
-
-function getNodeByTitle(title) {
-    const lowerCaseTitle = title.toLowerCase();
-    let matchingNodes = [];
-
-    for (let n of nodes) {
-        let nodeTitle = n.getTitle();
-
-        if (nodeTitle !== null && nodeTitle.toLowerCase() === lowerCaseTitle) {
-            matchingNodes.push(n);
-        }
-    }
-
-    // Debugging: Show all matching nodes and their count
-    //console.log(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
-    //console.log("Matching nodes:", matchingNodes);
-
-    return matchingNodes.length > 0 ? matchingNodes[0] : null;
-}
-
-function getTextareaContentForNode(node) {
-    if (!node || !node.content) {
-       // console.warn('Node or node.content is not available');
-        return null;
-    }
-
-    if (!node.isTextNode) {
-       // console.warn('Node is not a text node. Skipping text area and editable div logic.');
-        return null;
-    }
-
-    const editableDiv = node.contentEditableDiv;
-    const hiddenTextarea = node.textarea;
-    //console.log(editableDiv, hiddenTextarea);
-    if (!editableDiv || !hiddenTextarea) {
-        console.warn('Either editableDiv or hiddenTextarea is not found.');
-        return null;
-    }
-
-    // Explicitly sync the content
-    syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
-
-    hiddenTextarea.dispatchEvent(new Event('input'));
-    // Now get the textarea content
-    if (hiddenTextarea) {
-        return hiddenTextarea.value;
-    } else {
-        console.warn('Textarea not found in node');
-        return null;
-    }
-}
-
-function testNodeText(title) {
-    const node = getNodeByTitle(title);
-    if (node) {
-        console.log(`Fetching text for node with title: ${title}`);
-        const text = getTextareaContentForNode(node);
-        console.log(`Text fetched: ${text}`);
-        return text;
-    } else {
-        console.warn(`Node with title ${title} not found`);
-        return null;
-    }
-}
-
-function getNodeText() {
-    const nodes = [];
-    for (const child of htmlnodes_parent.children) {
-        if (child.firstChild && child.firstChild.win) {
-            const node = child.firstChild.win;
-
-            const titleInput = node.content.querySelector("input.title-input");
-            //console.log(`Title Input for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, titleInput); // Debugging line
-
-            const contentText = getTextareaContentForNode(node);
-            //console.log(`Content Text for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, contentText); // Debugging line
-
-            nodes.push({
-                ...node,
-                titleInput: titleInput ? titleInput.value : '',
-                contentText: contentText ? contentText : ''
-            });
-        } else {
-            console.warn('Node or child.firstChild.win not found'); // Debugging line
-        }
-    }
-    return nodes;
-}
-
 function edgeFromJSON(o, nodeMap) {
     let pts = o.p.map((k) => nodeMap[k]);
 
@@ -696,6 +622,27 @@ class Edge {
         this.html.onmouseout = this.onmouseout.bind(this);
         this.html.ondblclick = this.ondblclick.bind(this);
         this.html.onclick = this.onclick.bind(this); // Attach click event handler
+    }
+
+    // Method to check if this edge intersects with another edge
+    intersects(otherEdge) {
+        // Unpack points for easier access
+        const p1 = this.pts[0].anchor;
+        const p2 = this.pts[1].anchor;
+        const p3 = otherEdge.pts[0].anchor;
+        const p4 = otherEdge.pts[1].anchor;
+
+        // Calculate parts of intersection formulas
+        const denominator = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+
+        // If the denominator in intersection calculations is 0, lines are parallel (no intersection)
+        if (denominator === 0) return false;
+
+        const ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+        const ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+        // If both ua and ub are between 0 and 1, lines intersect
+        return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
     }
 
     attachEventListenersToArrow() {
@@ -1055,217 +1002,6 @@ for (const k of ["paste", "mousemove", "mousedown", "dblclick", "click"]) {
         cancel(e);
     })
 }
-//frame();
-var mousePathPos;
-var current_time = undefined;
-let regenAmount = 0;
-let regenDebt = 0;
-let avgfps = 0;
-let panToI = new vec2(0, 0);
-let panToI_prev = undefined;
-
-function clearTextSelection() {
-    if (window.getSelection) {
-        if (window.getSelection().empty) {  // Chrome
-            window.getSelection().empty();
-        } else if (window.getSelection().removeAllRanges) {  // Firefox (not working)
-            window.getSelection().removeAllRanges();
-        }
-    } else if (document.selection) {  // IE?
-        document.selection.empty();
-    }
-}
-
-function getCentroidOfSelectedNodes() {
-    const selectedNodes = getSelectedNodes();
-    if (selectedNodes.length === 0) return null;
-
-    let sumPos = new vec2(0, 0);
-    selectedNodes.forEach(node => {
-        sumPos = sumPos.plus(node.pos);
-    });
-    return sumPos.scale(1 / selectedNodes.length);
-}
-
-function scaleSelectedNodes(scaleFactor, centralPoint) {
-    const selectedNodes = getSelectedNodes();
-
-    selectedNodes.forEach(node => {
-        // Scale the node
-        node.scale *= scaleFactor;
-
-
-        // Adjust position to maintain relative spacing only if the node is not anchored
-        if (node.anchorForce !== 1) {
-            let directionToCentroid = node.pos.minus(centralPoint);
-            node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
-        }
-
-        updateNodeEdgesLength(node);
-    });
-
-    // If needed, scale the user screen (global zoom)
-    //zoom = zoom.scale(scaleFactor);
-    //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
-}
-
-let prevNodeScale = 1;
-
-function nodeStep(time) {
-    const selectedNodes = getSelectedNodes();
-
-    // Determine the combined direction from the key state
-    const combinedDirection = getDirectionFromKeyState();
-
-    // Process scaling keys
-    Object.keys(keyState).forEach(key => {
-        if (keyState[key]) {
-            const action = directionMap[key];
-
-            if (action === 'scaleUp' || action === 'scaleDown') {
-                const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
-                const centroid = getCentroidOfSelectedNodes();
-                if (centroid) {
-                    scaleSelectedNodes(scaleFactor, centroid);
-                }
-            }
-        }
-    });
-
-    // Handle directional movement
-    if (combinedDirection.length > 0 && selectedNodes.length > 0) {
-        // Find the node with the largest scale
-        let largestScaleNode = selectedNodes.reduce((max, node) => node.scale > max.scale ? node : max, selectedNodes[0]);
-
-        // Apply movement to the node with the largest scale
-        let forceApplied = largestScaleNode.moveNode(combinedDirection);
-
-        // Apply the same force to the remaining nodes
-        selectedNodes.forEach(node => {
-            if (node !== largestScaleNode) {
-                node.force = node.force.plus(forceApplied);
-            }
-        });
-    }
-
-
-    let autopilot_travelDist = 0;
-    let newPan = pan;
-
-    if (autopilotReferenceFrame && autopilotSpeed !== 0) {
-        if (panToI_prev === undefined) {
-            panToI_prev = autopilotReferenceFrame.pos.scale(1);
-            prevNodeScale = autopilotReferenceFrame.scale; // Initialize prevNodeScale
-        }
-        panToI = panToI.scale(1 - settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
-        newPan = pan.scale(1 - autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
-        panToI_prev = autopilotReferenceFrame.pos.scale(1);
-
-        if (autopilotReferenceFrame.scale !== prevNodeScale) {
-            let nodeScaleFactor = autopilotReferenceFrame.scale / prevNodeScale;
-
-            // Adjust zoomTo.scale based on nodeScaleFactor
-            zoomTo = zoomTo.scale(nodeScaleFactor);
-
-            prevNodeScale = autopilotReferenceFrame.scale; // Update the previous scale
-        }
-    } else {
-        newPan = pan.scale(1 - autopilotSpeed).plus(panTo.scale(autopilotSpeed));
-        panToI_prev = undefined;
-    }
-    autopilot_travelDist = pan.minus(newPan).mag() / zoom.mag();
-    if (autopilot_travelDist > settings.autopilotMaxSpeed) {
-        newPan = pan.plus(newPan.minus(pan).scale(settings.autopilotMaxSpeed / autopilot_travelDist));
-        const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed / autopilot_travelDist + 1e-300) / 10) * 2;
-        zoom = zoom.scale(1 - speedCoeff * autopilotSpeed);
-        //*Math.log(autopilot_travelDist/settings.autopilotMaxSpeed));
-    } else {
-        zoom = zoom.scale(1 - autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
-    }
-    pan = newPan;
-    //zoom = zoom.scale(0.9).plus(zoom_to.scale(0.1));
-    //pan = pan.scale(0.9).plus(pan_to.scale(0.1));
-    if (coordsLive) {
-        panInput.value = pan.ctostring();
-        zoomInput.value = zoom.mag() + "";
-    }
-
-    //const inpColor = scol(Math.log(zoom.mag()),undefined,64,128);
-    //coords.style.color = inpColor;
-
-    updateViewbox();
-
-    if (mousePath == "") {
-        mousePathPos = toZ(mousePos);
-        mousePath = "M " + toSVG(mousePathPos).str() + " L ";
-    }
-    for (let i = 0; i < settings.orbitStepRate; i++) {
-        //let g = mandGrad(settings.iterations,mousePathPos);
-        //mousePathPos = mousePathPos.plus(g.unscale((g.mag()+1e-10)*1000));
-
-        mousePathPos = mand_step(mousePathPos, toZ(mousePos));
-
-        //let p = findPeriod(mousePathPos);
-        //mousePathPos = mand_iter_n(p,mousePathPos,mousePathPos);
-        if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60)
-            mousePath += toSVG(mousePathPos).str() + " ";
-
-
-    }
-    let width = zoom.mag() * 0.0005 * SVGzoom;
-
-    if (nodeMode && prevNode !== undefined) {
-        clearTextSelection();
-        svg_mousePath.setAttribute("d", "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
-        width *= 50; // This will increase the width when connecting nodes. Adjust as needed.
-    } else {
-        svg_mousePath.setAttribute("d", mousePath);
-    }
-
-    // Moved the check to clear prevNode outside of the if-else block
-    if (!nodeMode && prevNode !== undefined) {
-        prevNode = undefined;
-
-        // Clear the mouse path
-        mousePath = "";
-        svg_mousePath.setAttribute("d", "");
-        clearTextSelection();
-    }
-
-    svg_mousePath.setAttribute("stroke-width", width + "");
-    if (current_time === undefined) {
-        current_time = time;
-    }
-    let dt = time - current_time;
-    current_time = time;
-    if (dt > 0) {
-        const alpha = Math.exp(-1 * dt / 1000);
-        avgfps = avgfps * alpha + (1 - alpha) * 1000 / dt;
-    }
-    document.getElementById("debug_layer").children[1].textContent = "fps:" + avgfps;
-    document.getElementById("fps").textContent = Math.round(avgfps).toString() + " fps";
-
-    dt *= (1 - nodeMode_v) ** 5;
-    for (let n of nodes) {
-        n.step(dt);
-        let d = toZ(mousePos).minus(n.pos);
-        //n.force = n.force.plus(d.unscale(-((d.mag2()**2)*500+1e-5)));
-    }
-    for (let e of edges) {
-        e.step(dt); //line 2703
-    }
-    regenDebt = Math.min(16, regenDebt + lerp(settings.regenDebtAdjustmentFactor, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
-    for (; regenDebt > 0; regenDebt--) {
-        render_hair(Math.random() * settings.renderSteps);
-    }
-    regenAmount = 0;
-    nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
-    window.requestAnimationFrame(nodeStep);
-}
-nodeStep();
-
-
-//connectRandom(10);
 
 
 
@@ -1302,7 +1038,7 @@ document.addEventListener('wheel', (event) => {
     if (settings.scroll === "zoom") {
         autopilotSpeed = 0;
         deselectCoordinate();
-
+        hideContextMenu();
         coordsLive = true;
         let dest = toZ(mousePos);
         regenAmount += Math.abs(event.wheelDelta);
@@ -1517,44 +1253,6 @@ addEventListener("gestureend", (e) => {
 });
 
 
-// Check if a string is valid JSON
-function isJSON(str) {
-    try {
-        JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
-
-
-// Check if the user's message is a URL
-const isUrl = (text) => {
-    try {
-        const url = new URL(text);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-        return false;
-    }
-}
-
-const isIframe = (text) => {
-    try {
-        const doc = new DOMParser().parseFromString(text, "text/html");
-        return doc.body.childNodes[0] && doc.body.childNodes[0].nodeName.toLowerCase() === 'iframe';
-    } catch (_) {
-        return false;
-    }
-}
-
-function getIframeUrl(iframeContent) {
-    // Function to extract URL from the iframe content
-    // Using a simple regex to get the 'src' attribute value
-    const match = iframeContent.match(/src\s*=\s*"([^"]+)"/);
-    return match ? match[1] : null; // Return URL or null if not found
-}
-
-
 function nodemousedown(id) {
     if (id < nodes.length) {
         nodes[id].mousedown();
@@ -1576,14 +1274,5 @@ function nodemousemove(id) {
 function nodeclick(id) {
     if (id < nodes.length) {
         nodes[id].mouseclick();
-    }
-}
-
-
-function cancel(event) {
-    if (event.stopPropagation) {
-        event.stopPropagation(); // W3C model
-    } else {
-        event.cancelBubble = true; // IE model
     }
 }
