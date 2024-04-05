@@ -1,0 +1,16 @@
+{
+  "name": "wikipedia-summaries-server",
+  "version": "1.0.0",
+  "description": "A server that retrieves Wikipedia summaries based on a keyword",
+  "main": "novelty.js",
+  "scripts": {
+    "start": "node novelty.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cors": "^2.8.5",
+    "express": "^4.18.3"
+  },
+  "author": "satellitecomponent",
+  "license": "MIT"
+}

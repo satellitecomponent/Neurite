@@ -10,8 +10,28 @@
 
 * {
     font-family: "Inter", sans-serif;
-    color: #888;
+    color: #9d9d9d;
     font-size: 16px;
+}
+
+
+#blur-filter, #invert-filter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+}
+
+#blur-filter {
+    backdrop-filter: blur(0px);
+    z-index: 0; /* Lower z-index */
+}
+
+#invert-filter {
+    backdrop-filter: invert(0%) hue-rotate(0deg);
+    z-index: 2000; /* Higher z-index to be on top */
 }
 
 
@@ -36,6 +56,7 @@
 
 .hidden {
     display: none;
+    overflow: hidden;
 }
 
 .collapsed-circle {
@@ -113,9 +134,10 @@
 .drag-box {
     position: absolute;
     border: 1px dashed rgba(255, 255, 255, 0.8); /* Adjusted border width and color */
-    background-color: rgba(150, 150, 150, 0.2);
+    background: rgb(255 255 255 / 5%); /* White background with transparency */
+    backdrop-filter: blur(1px);
     pointer-events: none;
-    z-index: 1000;
+    z-index: 0;
 }
 
 .selected {
@@ -237,7 +259,7 @@
     justify-content: space-between;
 }
 
-.title-input {
+input[type="text"i].title-input {
     flex-grow: 1;
     flex-shrink: 1;
     color: #bbb;
@@ -251,7 +273,7 @@
     z-index: 150;
 }
 
-    .title-input:focus {
+    input[type="text"i].title-input:focus {
         border-color: RGB(200,200,255);
         color: lightgrey;
         /* Change the border color when the input is focused */
@@ -379,6 +401,74 @@
             pointer-events: none;
         }
 
+        /*Custom Modal Styles*/
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 900;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /*background-color: rgba(0, 0, 0, 0.4);*/
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+
+    background-color: #2f2e3996;
+
+    border: 2px solid #333;
+    width: fit-content;
+    max-width: 90vw;
+    max-height: 80vh;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 5px 5px 0px 0px;
+    pointer-events: auto;
+    position: relative; /* Change to relative positioning */
+    cursor: move; /* Add cursor style to indicate draggable */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: 20px;
+    background-color: #222226;
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    user-select: none;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 20px;
+}
+
+.close {
+    color: #bbb;
+    font-size: 32px;
+    font-weight: 100;
+    cursor: pointer;
+}
+
+    .close:hover,
+    .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+.modal-body {
+    padding: 20px;
+}
+
+
         /* Dropdown menu styles */
 
         .dropdown {
@@ -450,9 +540,9 @@
     grid-template-rows: 1fr;
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    /*-webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
     -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);*/
     z-index: 1;
     margin-top: -38px;
     margin-right: -5px;
@@ -501,13 +591,13 @@ input[type="text"i] {
     width: 100%; /* Full-width to fit container */
     box-sizing: border-box; /* Include padding in width calculation */
     outline: none; /* Remove default focus outline */
-    /* Add a subtle border for focused state for accessibility */
+    /* Set specific borders */
+    border-style: solid;
+    border-width: 0 2px 2px 0; /* Only bottom and right borders */
+    border-color: transparent #747474 #747474 transparent; /* Transparent top and left borders */
     transition: border-color 0.3s; /* Smooth transition for the border color */
 }
-    /* Change border color on focus for visibility */
-input [type="text"i]:focus {
-    border-color: #555; /* Slightly lighter border for focus */
-}
+
 
 /* Minimal change on hover for interactivity */
 input[type="text"i]:hover {
@@ -651,9 +741,39 @@ input[type="text"i]:hover {
             border-color: #8882;
         }
 
-.api-container {
-
+.api-panel {
+    display: flex;
+    overflow: hidden;
+    transition: height 0.2s ease;
+    height: 0; /* Start with 0 height for the initial state if hidden */
 }
+
+.api-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.api-inputs {
+    flex-grow: 1;
+}
+
+.api-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    margin-left: 0px;
+}
+
+/* Initially hidden elements */
+.intentionally-hidden {
+    display: none; /* No !important required */
+}
+
+
 
 .linkbuttons {
     padding: 4px 6px;
@@ -717,6 +837,83 @@ input[type="text"i]:hover {
         line-height: 1;
     }
 
+/* Hide the checkbox visually but remain accessible */
+input[type="checkbox"] {
+    display: none;
+}
+
+    input[type="checkbox"] + label {
+        padding: 19px;
+        position: relative;
+        display: inline-block;
+        vertical-align: middle; /* Helps with vertical alignment */
+        cursor: pointer;
+        /* Add other styles as needed */
+    }
+
+        input[type="checkbox"] + label:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%; /* Adjust this to better align vertically */
+            transform: translateY(-50%); /* Centers the checkbox relative to the label's height */
+            width: 14px;
+            height: 14px;
+            background-color: transparent; /* Make the checkbox background transparent */
+            display: inline-block;
+        }
+
+    input[type="checkbox"]:checked + label:after {
+        content: '✔';
+        position: absolute;
+        top: 1px;
+        left: 87%; /* Adjust if necessary for better centering */
+        transform: translate(0, -50%); /* Adjust for precise vertical centering */
+        font-size: 18px;
+        color: #bbb; /* Change the checkmark color to white */
+    }
+    /* General label styling */
+    input[type="checkbox"] + label {
+        user-select: none;
+        cursor: pointer; /* Indicates clickable */
+        position: relative; /* For absolute positioning of :before and :after */
+    }
+    /* Styling applies to all checkboxes and labels */
+    input[type="checkbox"] + label {
+        display: inline-block;
+        padding: 3px 11px;
+        min-width: 50px; /* Ensure consistent width */
+        color: #888;
+        background-color: #222226;
+        border-radius: 0 10px 0px 10px;
+        border-top: 2px solid #555; /* Border on the left */
+        border-right: 3px solid #555; /* Border on the bottom */
+        border-left: 3px solid #8882; /* Border on the left */
+        border-bottom: 2px solid #8882; /* Border on the bottom */
+        margin: 3px 4px;
+        font-size: 14px;
+        text-align: center;
+        vertical-align: middle;
+        transition: background-color 0.3s, color 0.1s;
+    }
+    /* Change label style when associated checkbox is checked */
+    input[type="checkbox"]:checked + label {
+        background-color: rgb(30, 55, 81);
+        border-left: 3px solid #888; /* Border on the left */
+        border-bottom: 2px solid #888; /* Border on the bottom */
+        color: #bbb;
+    }
+    /* Hover effects for labels */
+    input[type="checkbox"] + label:hover {
+        background-color: #333; /* Hover BG color */
+        color: #bbb; /* Hover text color */
+    }
+    /* Hover effects for checked labels */
+    input[type="checkbox"]:checked + label:hover {
+        background-color: rgb(30, 55, 81); /* Hover BG color for checked state */
+        color: #bbb; /* Hover text color for checked state */
+    }
+
 .checkboxarray {
     display: flex;
     flex-direction: row;
@@ -724,17 +921,14 @@ input[type="text"i]:hover {
     flex-wrap: wrap;
     justify-content: space-between;
     width: 270px;
-    padding-top: 6px;
-    /* adjust this as needed */
+    padding-top: 6px; /* adjust this as needed */
 }
 
-            .checkboxarray div {
-                width: 33%;
-                /* adjust this as needed */
-            }
-    .checkboxarray label {
-        color: #888;
+    .checkboxarray div {
+        width: 33%; /* adjust this as needed */
     }
+
+
 
         .tabs {
             display: flex;
@@ -848,7 +1042,6 @@ input[type="text"i]:hover {
 
         table {
             border-collapse: collapse;
-            width: 283px;
             background-color: #222226;
         }
 
@@ -1045,6 +1238,7 @@ select-replacer > div:first-child {
 
         #howto {
             max-height: 500px; /* adjust this value as needed */
+            width: 100%;
             overflow-y: auto;
         }
 
@@ -1282,54 +1476,6 @@ select-replacer > div:first-child {
 }
 
 
-input[type="checkbox"] {
-    display: none;
-}
-
-/* Create a custom checkbox */
-    input[type="checkbox"] + label:before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 3px;
-        width: 14px;
-        height: 14px;
-        border: 1px solid #353535;
-        background-color: #222226;
-        display: inline-block;
-        border-radius: 25%;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    }
-
-
-input[type="checkbox"]:checked + label:before {
-    background-color: #006BB6;
-}
-
-
-input[type="checkbox"] + label {
-    padding-left: 25px;
-}
-
-input[type="checkbox"] + label {
-    position: relative;
-    top: -3px;
-}
-
-input[type="checkbox"]:checked + label:after {
-    content: '✔';
-    position: absolute;
-    top: 1px;
-    left: 2px;
-    font-size: 15px;
-    color: #bbb;
-}
-
-label {
-    user-select: none;
-    padding-top: 2px;
-}
-
 /* The slider itself */
 input[type=range] {
     -webkit-appearance: none;
@@ -1381,22 +1527,6 @@ input[type=range] {
     input[type=range]::-moz-range-thumb:hover {
         background: #aaa;
     }
-
-.api-container {
-    display: flex;
-}
-
-.api-inputs {
-    flex-grow: 1;
-}
-
-.api-buttons {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-end;
-    margin-left: 0px;
-}
 
 
 .CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
@@ -1770,15 +1900,14 @@ input[type=range] {
     }
 
 textarea[id^='custom-instructions-textarea-'] {
-    bottom: 8px;
     position: absolute;
     margin: 10px; /* Outer spacing */
     background-color: #222226; /* Background color */
     color: #bbb; /* Text color, assuming you want white text */
     padding: 10px; /* Inner spacing */
     font-size: 14px; /* Text size */
-    width: 60%; /* Full width */
-    height: 60%;
+    width: 55%; /* Full width */
+    height: 50%;
     resize: none; /* Turn off the resize handle */
 }
 
@@ -1896,6 +2025,7 @@ textarea[id^='custom-instructions-textarea-'] {
     width: auto;
     overflow-wrap: break-word;
     position: relative;
+    font-size: 18px;
 }
 
 .drag-handle {
@@ -2011,9 +2141,9 @@ textarea[id^='custom-instructions-textarea-'] {
     transform: translateX(-200%); /* Start off-screen to the left */
     transition: transform 0.3s ease; /* Transition for sliding effect */
     overflow: hidden; /* Hide overflow */
-    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    /*-webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
     -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
-    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);*/
     margin-top: 10px;
     margin-left: 12px;
 }
@@ -2059,10 +2189,65 @@ textarea[id^='custom-instructions-textarea-'] {
     width: 100%;
 }
 
+.context-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0; /* Start with 0 height for the initial state if hidden */
+}
+
+.context-settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.model-select-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.model-select-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.fractal-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.fractal-settings-container {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.color-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.color-settings-container {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+}
 
 
-
-.toggle-function-panel {
+.toggle-panel {
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2089,29 +2274,62 @@ textarea[id^='custom-instructions-textarea-'] {
     height: 20px;
 }
 
+/* Styles for .bar */
 .bar {
     flex-grow: 1; /* Allow bars to take up available space */
     max-width: 20%;
     height: 2px;
-    background-color: #424242; /* Default color */
+    background-color: #8882; /* Default color */
     align-self: center; /* Vertically align with the icon */
     transition: background-color 0.3s ease; /* Smooth transition for background color */
 }
 
-.function-call-panel:not(.hidden) + .toggle-function-panel .icon-wrapper .toggle-icon {
+/* Hover effect for .toggle-panel affecting .toggle-icon and bars */
+.panel-open + .toggle-panel .icon-wrapper .toggle-icon {
     transform: scaleY(-1);
 }
 
-.toggle-function-panel:hover .toggle-icon svg path {
+.toggle-panel:hover .toggle-icon svg path {
     stroke: RGB(200,200,255);
 }
 
-.toggle-function-panel:hover .toggle-icon {
+.toggle-panel:hover .toggle-icon {
     transform: scale(1.1); /* Increase size slightly */
 }
 
-.toggle-function-panel:hover .bar {
+.toggle-panel:hover .bar {
     background-color: #555; /* Change color on hover */
+}
+
+/* Styles for .button-label */
+.button-label {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Ensure the text remains centered */
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none; /* In case you apply this class to <a> tags */
+    gap: 15px; /* Space between bars and the label text */
+}
+
+    .button-label::before,
+    .button-label::after {
+        content: ''; /* Necessary for displaying the pseudo-element */
+        background-color: #8882;
+        height: 2px; /* Thickness of the bar, matching .bar */
+        flex-grow: 1; /* Allow bars to take up available space on either side */
+        transition: background-color 0.3s ease; /* Smooth transition for background color, matching .bar */
+    }
+
+/* Unified hover effects specifically targeting background color changes */
+.label-bar-container:hover .bar,
+.label-bar-container:hover .button-label::before,
+.label-bar-container:hover .button-label::after {
+    background-color: #555; /* Change color on hover for bars and pseudo-elements */
+}
+
+.label-bar-container:hover .button-label {
+    color: #bbb; /* Adjust for visibility on dark background for label */
 }
 
 
@@ -2125,7 +2343,7 @@ textarea[id^='custom-instructions-textarea-'] {
     width: 100%; /* Match the width of the function call container */
     overflow: hidden;
     height: 0px;
-    display: none;
+    display: block;
     padding: 0; /* Reset any padding */
 }
 
@@ -2313,3 +2531,137 @@ textarea[id^='custom-instructions-textarea-'] {
     height: 100%;
     z-index: 9999;
 }
+
+#customContextMenu {
+    border: 1px solid #eaeaea1a;
+    background: rgb(207 223 233 / 5%); /* White background with transparency */
+    backdrop-filter: blur(7px); /* Frosted glass effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    padding: 0px; /* Padding around the menu */
+    z-index: 1000; /* High z-index to overlay other elements */
+    position: absolute; /* Required for positioning */
+    display: none; /* Initially hidden */
+    border-radius: 0 10px 0 10px; /* Rounded corners as specified */
+    overflow: hidden; /* Ensures content doesn't overflow */
+}
+
+#customContextMenu,
+.suggestions-container {
+    user-select: none; /* Disable text selection */
+}
+
+
+        /* Hover effect for list items */
+    #customContextMenu li:hover {
+        background-color: rgb(150 193 255 / 59%); /* Blue background on hover */
+        color: black; /* White text on hover */
+        text-shadow: none;
+    }
+
+        /* Remove border from the last item */
+        #customContextMenu li:last-child {
+            border-bottom: none;
+        }
+
+    #customContextMenu li {
+        list-style: none; /* Removes default list styling */
+        padding: 0; /* Reduced padding for list items */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        border-bottom: 1px solid #eaeaea1a; /* Border between items */
+        min-height: 36px; /* Minimum height for each item */
+        display: flex; /* Flex layout to align items */
+        align-items: center; /* Center items vertically */
+    }
+
+        /* Specific style for non-input list items */
+        #customContextMenu li:not(.input-item) {
+            padding: 2px 12px; /* Left padding for non-input items */
+        }
+
+    #customContextMenu .custom-node-method-input {
+        border: none; /* Consistent border */
+        background-color: transparent;
+        color: #888; /* Text color to match the theme */
+        padding: 8px 10px; /* Padding similar to other menu items */
+        margin: 0; /* Removing extra margin */
+        width: fit-content; /* Full width */
+        box-sizing: border-box; /* Include padding and border in width */
+        outline: none; /* Removing outline */
+        font-size: 16px; /* Font size to match the theme */
+        transition: border-color 0.3s; /* Smooth transition for border color */
+        cursor: text; /* Cursor indication for text input */
+        flex-grow: 1; /* Let the input expand to fill the space */
+    }
+
+        /* Hover effect to match other menu items */
+        #customContextMenu .custom-node-method-input:hover {
+            background-color: rgb(143 146 223 / 40%);
+            color: black;
+        }
+
+            #customContextMenu .custom-node-method-input:hover::placeholder {
+                color: #333; /* Darker grey placeholder text color on hover */
+            }
+
+.suggestions-container {
+    position: absolute;
+    background: rgb(205 207 243 / 19%);
+    backdrop-filter: blur(17px);
+    max-height: 250px; /* Maximum height before scrolling */
+    overflow-y: auto; /* Enables vertical scroll */
+    scrollbar-width: none; /* Hides the scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hides the scrollbar for IE/Edge */
+    z-index: 10;
+    display: none; /* Start with the container hidden */
+    border-radius: 10px 10px 0 10px;
+}
+
+    .suggestions-container::-webkit-scrollbar {
+        display: none; /* Hides the scrollbar for WebKit browsers */
+    }
+
+    .suggestions-container div {
+        display: flex; /* Use flexbox for alignment */
+        align-items: center; /* Vertically center items */
+        justify-content: space-between; /* Space between text and button */
+        padding: 8px;
+        cursor: pointer;
+        color: #aaa;
+    }
+
+        .suggestions-container div:hover {
+            background-color: rgb(143 146 223 / 40%);
+            color: white;
+        }
+
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* This ensures vertical center alignment */
+    padding: 8px;
+}
+
+    .suggestion-item span {
+        flex-grow: 1; /* Allows the text to take up available space */
+        /* Optional: Set line-height if needed to match the height of the pin button */
+    }
+
+.pin-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px; /* Adjust padding as needed */
+    display: flex; /* Use flexbox for the button itself */
+    align-items: center; /* Center align items inside the button */
+    justify-content: center; /* Center content horizontally */
+    transition: transform 0.2s ease; /* Smooth transition for size */
+}
+
+    .pin-button svg {
+        height: 1em; /* Adjust size as needed */
+        width: 1em; /* Adjust size as needed */
+    }
+
+    .pin-button:hover {
+        transform: scale(1.4); /* Scale up on hover */
+    }

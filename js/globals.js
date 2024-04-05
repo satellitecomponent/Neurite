@@ -51,6 +51,8 @@ var flashlight_stdev = 0.25; // this is the radius of the flashlight
 var flashlight_fraction = 0.73; // this is what fraction of samples are diverted to the flashlight
 
 
+
+
 //interface
 
 const overlays = [];
@@ -102,7 +104,68 @@ var nodeMode = 0;
 
 var movingNode = undefined;
 var NodeUUID = 0;
+
+
+
 var nodeMap = {};
+
+// Global Processed Node Map
+let globalProcessedNodeMap = {};
+
+function updateGlobalProcessedNodeMap(nodeMap) {
+    // Collect current UUIDs in globalProcessedNodeMap
+    const existingUUIDs = new Set(Object.keys(globalProcessedNodeMap));
+
+    // Reset globalProcessedNodeMap
+    let tempProcessedNodeMap = {};
+
+    // Use addNodeToGlobalProcessedMap function for each node, updating or adding new
+    for (let key in nodeMap) {
+        const node = nodeMap[key];
+        addNodeToGlobalProcessedMap(node, tempProcessedNodeMap);
+        existingUUIDs.delete(node.uuid); // Remove from set to track as 'still exists'
+    }
+
+    // Remove any nodes that weren't in the updated nodeMap (stale nodes)
+    existingUUIDs.forEach(uuid => {
+        removeNodeFromGlobalProcessedMap(uuid);
+    });
+
+    // Update globalProcessedNodeMap after all operations to minimize state inconsistencies
+    globalProcessedNodeMap = tempProcessedNodeMap;
+
+    // Log or perform additional operations as needed
+    //console.log("Global Processed Node Map has been updated with removal of stale nodes.");
+}
+
+function addNodeToGlobalProcessedMap(node, processedMap) {
+    const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
+
+    processedMap[node.uuid] = {
+        uuid: node.uuid,
+        type: getNodeType(node),
+        pos: node.pos,
+        scale: node.scale,
+        sensor: node.sensor,
+        state: node.state,
+        actions: getNodeActions(node),
+        edges: edgesUUIDs
+    };
+}
+
+function removeNodeFromGlobalProcessedMap(nodeUuid) {
+    // First, remove the node's UUID from the edges of all other nodes
+    Object.values(globalProcessedNodeMap).forEach(node => {
+        node.edges = node.edges.filter(edgeUuid => edgeUuid !== nodeUuid);
+    });
+
+    // Then, remove the node itself from the map
+    delete globalProcessedNodeMap[nodeUuid];
+
+    // Log or additional operations can be performed here
+}
+
+
 var draggedNode = null;
 var mousedownNode = undefined;
 
@@ -243,6 +306,55 @@ function decodeHTML(html) {
 }
 
 //editornode.js
+
+//interface.js
+
+// Check if a string is valid JSON
+function isJSON(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
+
+// Check if the user's message is a URL
+const isUrl = (text) => {
+    try {
+        const url = new URL(text);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (_) {
+        return false;
+    }
+}
+
+const isIframe = (text) => {
+    try {
+        const doc = new DOMParser().parseFromString(text, "text/html");
+        return doc.body.childNodes[0] && doc.body.childNodes[0].nodeName.toLowerCase() === 'iframe';
+    } catch (_) {
+        return false;
+    }
+}
+
+function getIframeUrl(iframeContent) {
+    // Function to extract URL from the iframe content
+    // Using a simple regex to get the 'src' attribute value
+    const match = iframeContent.match(/src\s*=\s*"([^"]+)"/);
+    return match ? match[1] : null; // Return URL or null if not found
+}
+
+function cancel(event) {
+    if (event.stopPropagation) {
+        event.stopPropagation(); // W3C model
+    } else {
+        event.cancelBubble = true; // IE model
+    }
+}
+
+//debounce
 
 function debounce(func, wait) {
     let timeout;

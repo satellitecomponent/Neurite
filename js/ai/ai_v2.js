@@ -1,5 +1,4 @@
 ﻿
-
 let aiResponding = false;
 let latestUserMessage = null;
 let controller = new AbortController();
@@ -11,160 +10,149 @@ const MAX_FAILS = 2;
 
 let streamedResponse = "";
 
-async function handleStreamingResponse(response) {
-    streamedResponse = "";
-    const noteInput = document.getElementById("note-input");
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
-
-    const appendContent = async function (content) {
-        await new Promise(resolve => setTimeout(resolve, 30));  // Delay response append
-
-        const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
-        if (shouldContinue) {
-            myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
-            streamedResponse += content;  // Append the content to the streamedResponse
-        }
-        if (isScrolledToBottom && !userScrolledUp) {
-            noteInput.scrollTop = noteInput.scrollHeight;
-            myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
-        }
-        noteInput.dispatchEvent(new Event("input"));
-    };
-
-    while (true) {
-        const { value, done } = await reader.read();
-        // Break the loop if streaming is done or the shouldContinue flag is set to false
-        if (done || !shouldContinue) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // If shouldContinue is false, stop processing
-        if (!shouldContinue) break;
-
-        // Handle content processing only when shouldContinue is true
-        if (shouldContinue) {
-            let contentMatch;
-            while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-                const content = JSON.parse('"' + contentMatch[1] + '"');
-                if (!shouldContinue) break;
-
-                if (content.trim() !== "[DONE]") {
-                    await appendContent(content);
-                }
-                buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-            }
-        }
-    }
-
-    // Resolve the neuritePromptZettelkasten promise.
-    resolveAiMessageIfAppropriate(streamedResponse);
-
-    // Return the complete streamed response
-    return streamedResponse;
-}
-
-function getAPIParams(messages, stream, customTemperature, modelOverride = null) {
-    const API_KEY = document.getElementById("api-key-input").value;
-    if (!API_KEY) {
-        alert("Please enter your API key");
-        return null;
-    }
-
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    headers.append("Authorization", `Bearer ${API_KEY}`);
-
-    const temperature = customTemperature !== null ? customTemperature
-        : parseFloat(document.getElementById('model-temperature').value);
-    const modelSelect = document.getElementById('model-select');
-    const modelInput = document.getElementById('model-input');
-    const model = modelOverride || (modelSelect.value === 'other' ? modelInput.value : modelSelect.value);
-    let max_tokens = document.getElementById('max-tokens-slider').value;
-
-    return {
-        headers,
-        body: JSON.stringify({
-            model,
-            messages,
-            max_tokens: parseInt(max_tokens),
-            temperature,
-            stream
-        })
-    };
-}
-
 async function callchatAPI(messages, stream = false, customTemperature = null) {
     shouldContinue = true;
 
-    // Update aiResponding and the button
-    aiResponding = true;
-    document.querySelector('#regen-button use').setAttribute('xlink:href', '#pause-icon');
+    function onBeforeCall() {
+        aiResponding = true;
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#pause-icon');
+        document.getElementById("aiLoadingIcon").style.display = 'block';
+        document.getElementById("aiErrorIcon").style.display = 'none';
+        console.log("Messages sent to API:", messages);
+        console.log("Token count for messages:", getTokenCount(messages));
+    }
 
-    // Show loading icon
-    document.getElementById("aiLoadingIcon").style.display = 'block';
+    function onAfterCall() {
+        aiResponding = false;
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
+        document.getElementById("aiLoadingIcon").style.display = 'none';
+    }
 
-    // Hide error icon in case it was previously shown
-    document.getElementById("aiErrorIcon").style.display = 'none';
-
-    console.log("Messages sent to API:", messages);
-    console.log("Token count for messages:", getTokenCount(messages));
-
-    const API_URL = "https://api.openai.com/v1/chat/completions";
-    const params = getAPIParams(messages, stream, customTemperature);
-    if (!params) return;
-
-    controller = new AbortController();
-    let requestOptions = {
-        method: "POST",
-        headers: params.headers,
-        body: params.body,
-        signal: controller.signal,
-    };
-
-    try {
-        const response = await fetch(API_URL, requestOptions);
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error calling ChatGPT API:", errorData);
-            document.getElementById("aiErrorIcon").style.display = 'block';
-            failCounter++;
-            if (failCounter >= MAX_FAILS) {
-                console.error("Max attempts reached. Stopping further API calls.");
-                shouldContinue = false;
-                controller.abort();
-                resolveAiMessageIfAppropriate("Error: " + errorData.error.message, true); // pass error as true.
-                return "An error occurred while processing your request.";
-            }
-        } else {
-            failCounter = 0;
-        }
-
-        if (stream) {
-            let currentResponse = await handleStreamingResponse(response);
-            return currentResponse;
-        } else {
-            const data = await response.json();
-             // Do not resolve the neuritePromptZettelkasten promise here as these are hidden responses.
-            console.log("Token usage:", data.usage);
-            return data.choices[0].message.content.trim();
-        }
-    } catch (error) {
-        console.error("Error calling ChatGPT API:", error);
+    function onError(errorMsg) {
+        console.error("Error calling Ai API:", errorMsg);
         document.getElementById("aiErrorIcon").style.display = 'block';
         failCounter++;
         if (failCounter >= MAX_FAILS) {
             console.error("Max attempts reached. Stopping further API calls.");
             shouldContinue = false;
-            resolveAiMessageIfAppropriate("Error: " + error.message, true); // pass error as true
-            return "An error occurred while processing your request.";
+            if (controller) {
+                controller.abort();
+            }
+            resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
         }
-    } finally {
-        aiResponding = false;
-        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-        document.getElementById("aiLoadingIcon").style.display = 'none';
     }
+
+    function onStreamingResponse(content) {
+        // Implement the specific UI logic for streaming content here
+        const noteInput = document.getElementById("note-input");
+        const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
+
+        if (shouldContinue && content.trim() !== "[DONE]") {
+            myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
+            streamedResponse += content;
+
+            if (isScrolledToBottom && !userScrolledUp) {
+                noteInput.scrollTop = noteInput.scrollHeight;
+                myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
+            }
+            noteInput.dispatchEvent(new Event("input"));
+        }
+    }
+
+    return callAiApi({
+        messages,
+        stream,
+        customTemperature,
+        onBeforeCall,
+        onAfterCall,
+        onStreamingResponse,
+        onError
+    });
+}
+
+async function appendWithDelay(content, node, delay) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            node.aiResponseTextArea.value += content;
+            node.aiResponseTextArea.dispatchEvent(new Event("input"));
+            resolve();
+        }, delay);
+    });
+}
+
+async function handleStreamingForLLMnode(response, node) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let fullResponse = "";
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done || !node.shouldContinue) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let contentMatch;
+        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+            const content = JSON.parse('"' + contentMatch[1] + '"');
+            if (!node.shouldContinue) break;
+
+            if (content.trim() !== "[DONE]") {
+                await appendWithDelay(content, node, 30);
+            }
+            fullResponse += content; // append content to fullResponse
+            buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
+        }
+    }
+    return fullResponse; // return the entire response
+}
+
+async function callchatLLMnode(messages, node, stream = false, selectedModel = null) {
+    // Define the callbacks
+    function onBeforeCall() {
+        node.aiResponding = true;
+        node.regenerateButton.innerHTML = '<svg width="24" height="24"><use xlink:href="#pause-icon"></use></svg>';
+        document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'block';
+        document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'none';
+        console.log("Messages sent to API:", messages);
+    }
+
+    function onAfterCall() {
+        node.aiResponding = false;
+        node.regenerateButton.innerHTML = '<svg width="24" height="24" class="icon"><use xlink:href="#refresh-icon"></use></svg>';
+        document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'none';
+    }
+
+    function onStreamingResponse(content) {
+        if (node.shouldContinue && content.trim() !== "[DONE]") {
+            node.aiResponseTextArea.value += content;
+            node.aiResponseTextArea.dispatchEvent(new Event("input"));
+        }
+    }
+
+    function onError(errorMsg) {
+        console.error("Error calling ChatGPT API:", errorMsg);
+        document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'block';
+        if (node.haltCheckbox) {
+            node.haltCheckbox.checked = true;
+        }
+    }
+
+    // Prepare the parameters for callAiApi
+    const customTemperature = parseFloat(document.getElementById(`node-temperature-${node.index}`).value);
+    const modelOverride = selectedModel || determineModel();
+
+    // Call the generic API function
+    return callAiApi({
+        messages,
+        stream,
+        customTemperature,
+        onBeforeCall,
+        onAfterCall,
+        onStreamingResponse,
+        onError,
+        modelOverride
+    });
 }
 
 
@@ -172,7 +160,21 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
 
 let currentController = null;
 
-async function callAiApi({ messages, stream = false, customTemperature = null, API_URL, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
+async function callAiApi({ messages, stream = false, customTemperature = null, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
+    if (useDummyResponses) {
+        onBeforeCall();
+        try {
+            await streamDummyAiResponse(onStreamingResponse);
+        } catch (error) {
+            console.error("Error with dummy response:", error);
+            onError(error.message || error);
+        } finally {
+            onAfterCall();
+        }
+        return;
+    }
+
+    // Get API parameters, including the locally determined API URL
     const params = getAPIParams(messages, stream, customTemperature, modelOverride);
     console.log("Message Array", messages);
     if (!params) {
@@ -191,45 +193,33 @@ async function callAiApi({ messages, stream = false, customTemperature = null, A
     onBeforeCall();  // Pre API call UI updates
 
     try {
-        const response = await fetch(API_URL, requestOptions);
+        const response = await fetch(params.API_URL, requestOptions);
         if (!response.ok) throw await response.json();
 
         let responseData = '';
         if (stream) {
+            // Await the complete streamed response
             responseData = await streamAiResponse(response, onStreamingResponse);
         } else {
             const data = await response.json();
-            responseData = data.choices[0].message.content.trim();
+            responseData = data.choices && data.choices[0].message ? data.choices[0].message.content.trim() : '';
         }
 
-        return responseData;
+        return responseData; // This is either the full streamed response or the directly fetched response
     } catch (error) {
         console.error("Error:", error);
         onError(error.message || error);
     } finally {
-        onAfterCall();  // Post API call UI updates
+        onAfterCall(); // Post API call UI updates
     }
 }
 
-function haltFunctionAi() {
-    if (currentController) {
-        currentController.abort();
-        currentController = null;
-
-        isAiProcessing = false;  // Ensure the state is updated
-
-        // Use global functionSendSvg if it's always the correct element
-        if (functionSendSvg) {
-            functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
-        }
-    }
-}
-
-async function streamAiResponse(response, onStreamingResponse) {
+async function streamAiResponse(response, onStreamingResponse, delay = 10) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
-    let streamedResponse = "";
+    let finalResponse = ""; // Initialize an empty string to accumulate the final response
+    let isFirstChunk = true;
 
     while (true) {
         const { value, done } = await reader.read();
@@ -237,13 +227,21 @@ async function streamAiResponse(response, onStreamingResponse) {
         buffer += decoder.decode(value, { stream: true });
 
         let contentMatch;
-        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
+        while ((contentMatch = buffer.match(/{[^}]*"content":"((?:[^\\"]|\\.)*)"[^}]*}/)) !== null) {
             const content = JSON.parse('"' + contentMatch[1] + '"');
-            onStreamingResponse(content);  // UI update for each content piece
-            streamedResponse += content;
+            finalResponse += content; // Append the content to the final response
+
+            // Process the first chunk immediately, then introduce delay for subsequent chunks
+            if (isFirstChunk) {
+                onStreamingResponse(content);
+                isFirstChunk = false;
+            } else {
+                await new Promise(resolve => setTimeout(resolve, delay));
+                onStreamingResponse(content);
+            }
             buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
         }
     }
 
-    return streamedResponse;
+    return finalResponse; // Return the accumulated final response
 }

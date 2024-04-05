@@ -79,7 +79,8 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     if (matches.length > 0) {
         reformulatedQuery = matches[matches.length - 1];
     }
-
+    console.log("reformulated query", reformulatedQuery);
+    console.log("matches", matches);
     let preface = fullResponse.replace(`"${reformulatedQuery}"`, "").trim();
 
     // Append an additional new line

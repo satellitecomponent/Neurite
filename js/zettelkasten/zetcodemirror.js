@@ -53,6 +53,17 @@ myCodeMirror.on("scroll", function () {
     }
 });
 
+// Helper function to determine if a CodeMirror position is within a marked range
+function isWithinMarkedText(cm, pos, className) {
+    var lineMarkers = cm.findMarksAt(pos);
+    for (var i = 0; i < lineMarkers.length; i++) {
+        if (lineMarkers[i].className === className) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 myCodeMirror.on("mousedown", function (cm, event) {
     var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
@@ -70,30 +81,32 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
     if (isWithin) {
         const lineMarkers = cm.findMarksAt(pos);
-        for (var i = 0; i < lineMarkers.length; i++) {
-            if (lineMarkers[i].className === 'node-title') {
-                const from = lineMarkers[i].find().from;
-                const to = lineMarkers[i].find().to;
-                const title = cm.getRange(from, to);
+        let titles = lineMarkers.filter(marker => marker.className === 'node-title')
+            .map(marker => cm.getRange(marker.find().from, marker.find().to));
 
-                // Check if click is at the start or end of the marked text
+        if (titles.length > 0) {
+            // Select the longest title
+            const longestTitle = titles.reduce((a, b) => a.length > b.length ? a : b);
+            const markerForLongestTitle = lineMarkers.find(marker => {
+                const rangeText = cm.getRange(marker.find().from, marker.find().to);
+                return rangeText === longestTitle;
+            });
+
+            if (markerForLongestTitle) {
+                const from = markerForLongestTitle.find().from;
+                const to = markerForLongestTitle.find().to;
+
+                // Now using the longest title's from and to positions
                 if (pos.ch === from.ch || pos.ch === to.ch) {
-                    if (title.length === 1) {
-                        // If the title is one character long, perform click behavior
-                        handleTitleClick(title, cm);
+                    if (longestTitle.length === 1) {
+                        handleTitleClick(longestTitle, cm);
                     } else {
-                        // If click is at the start or end of a title longer than one character, just place the cursor
                         cm.setCursor(pos);
                     }
                 } else {
-                    // prevent default click event
                     event.preventDefault();
-
-                    // Scroll and zoom to the title
-                    handleTitleClick(title, cm);
+                    handleTitleClick(longestTitle, cm);
                 }
-
-                break; // Exit the loop once a title is found
             }
         }
     } else {
@@ -110,7 +123,7 @@ myCodeMirror.on("mousedown", function (cm, event) {
 
         // Check if the click is on a line that starts with 'node:'
         const lineText = cm.getLine(pos.line);
-        const nodeInputValue = nodeTag;  // add ':' at the end
+        const nodeInputValue = nodeTag;
         if (lineText.startsWith(nodeInputValue)) {
             // If the click is on the 'node:' line but not within the marked text, set the cursor position
             cm.setCursor(pos);
@@ -240,21 +253,6 @@ function updateMode() {
 nodeTagInput.addEventListener('change', updateMode);
 refTagInput.addEventListener('change', updateMode);
 updateMode();
-
-
-
-
-
-// Helper function to determine if a CodeMirror position is within a marked range
-function isWithinMarkedText(cm, pos, className) {
-    var lineMarkers = cm.findMarksAt(pos);
-    for (var i = 0; i < lineMarkers.length; i++) {
-        if (lineMarkers[i].className === className) {
-            return true;
-        }
-    }
-    return false;
-}
 
 // Array to store node titles
 let nodeTitles = [];
@@ -467,24 +465,24 @@ function removeEdgeFromZettelkasten(title1, title2, removeOnlyFromTitle1 = false
     const titlesToProcess = removeOnlyFromTitle1 ? [title1] : [title1, title2];
 
     titlesToProcess.forEach((title) => {
-        const nodeLine = getNodeTitleLine(title, myCodeMirror);
-        if (nodeLine !== null) {
-            for (let j = nodeLine + 1; j < lineCount; j++) {
-                let nextLine = myCodeMirror.getLine(j);
-                if (nextLine.startsWith(nodeTag)) break;
+    const nodeLine = getNodeTitleLine(title, myCodeMirror);
+    if (nodeLine !== null) {
+        for (let j = nodeLine + 1; j < lineCount; j++) {
+            let nextLine = myCodeMirror.getLine(j);
+            if (nextLine.startsWith(nodeTag)) break;
 
-                let escapedRefTag = escapeRegExp(refTag);
-                let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
+            let escapedRefTag = escapeRegExp(refTag);
+            let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
 
-                if (lineHasRefTag) {
-                    let targetTitle;
-                    if (removeOnlyFromTitle1) {
-                        targetTitle = title2;
-                    } else {
-                        // When not removing only from title1, we need to look for each title in the other's references
-                        targetTitle = title === title1 ? title2 : title1;
-                    }
-                    let escapedTargetTitle = escapeRegExp(targetTitle);
+            if (lineHasRefTag) {
+                let targetTitle;
+                if (removeOnlyFromTitle1) {
+                    targetTitle = title2;
+                } else {
+                    // When not removing only from title1, we need to look for each title in the other's references
+                    targetTitle = title === title1 ? title2 : title1;
+                }
+                let escapedTargetTitle = escapeRegExp(targetTitle);
 
                     let regExp;
                     if (closingBracket) {

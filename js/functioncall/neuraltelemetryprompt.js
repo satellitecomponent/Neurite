@@ -280,57 +280,7 @@ Returns the user response as a string*/`,
         title: "Advanced use of performSequence(animations)",
         mainDemo: `// You can create multiple sequences, and use any function in a sequence.`,
         examples: [
-            `// Define the initial sequence of setting coordinates, movements, and adding notes
-async function initialSequence() {
-    const initialAnimations = [
-        // Set Mandelbrot coordinates and add a note
-        [setMandelbrotCoords, [0.00013713634721725833, -0.024035092371998055, 0.7268549248591437, 0.1], 1000],
-        [addNote, ['Holomorphic Dynamics', 'Tell me more...'], 500],
-        [zoomToNodeTitle, ['Holomorphic Dynamics', { zoomfactor: 1 }], 1000],
-        [movement, [[], { zoomFactor: 1.2 }, { deltaX: -500, deltaY: -400 }, {}, 4000], 2000],
-        [addNote, ['Imaginary Numbers...', 'Can you explain this to me?'], 500],
-        // ... additional sets of coordinates and notes
-    ];
-
-    console.log("Starting initial sequence...");
-    await performSequence(initialAnimations);
-    console.log("Initial sequence completed!");
-}
-
-// Function to interact with the Zettelkasten
-function callZettelkasten() {
-    promptZettelkastenAi("Define 10 notes that branch off the existing topics.");
-}
-
-// Define the second sequence of movements after interacting with the Zettelkasten
-async function furtherMovementSequence() {
-    const furtherAnimations = [
-        // Movement with zoom and pan, including rotation
-        [movement, [[], { zoomFactor: 0.5 }, { deltaX: 400, deltaY: -500 }, { rotationAngle: 45 }, 3000], 2000],
-        // Set Mandelbrot coordinates
-        [setMandelbrotCoords, [0.00008112374184603912, -0.024043983267418786, 0.7261919682847592, 0.1], 1000],
-        // Another movement with a different rotation
-        [movement, [[], { zoomFactor: 0.5 }, { deltaX: -200, deltaY: -500 }, { rotationAngle: -30 }, 4000], 2000],
-        // Set Mandelbrot coordinates
-        [setMandelbrotCoords, [0.000004038913281545681, -0.023793659903068972, 0.7278428617599411, 0.1], 1000],
-        // A third movement with yet another rotation
-        [movement, [[], { zoomFactor: 0.5 }, { deltaX: -600, deltaY: -500 }, { rotationAngle: 90 }, 3000], 1000],
-    ];
-
-    console.log("Starting further movement sequence...");
-    await performSequence(furtherAnimations);
-    console.log("Further movement sequence completed!");
-}
-
-// Combine the sequences with the Zettelkasten call in between
-async function completeNeuriteInteraction() {
-    await initialSequence();
-    callZettelkasten();
-    await furtherMovementSequence();
-}
-
-// Execute the complete interaction
-completeNeuriteInteraction();`
+            `Do your best to remember and creatively the actual functionality described.`
         ],
         options: { neuralApi: true, vision: false }
     },

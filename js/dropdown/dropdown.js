@@ -217,9 +217,6 @@ function addEventListenersToCustomDropdown(select, aiNode) {
     let optionsReplacer = selectReplacer.querySelector('.options-replacer');
     let selectedDiv = selectReplacer.querySelector('div');
 
-    // Reference to local LLM Checkbox
-    let localLLMCheckbox = document.getElementById("localLLM");
-
     // Toggle dropdown on click
     let isPendingFrame = false;
 
@@ -232,17 +229,6 @@ function addEventListenersToCustomDropdown(select, aiNode) {
         // Highlight the selected option
         if (select.selectedIndex === index) {
             optionDiv.classList.add('selected');
-        }
-
-        if (aiNode) {  // AI node specific logic
-            // Initial visibility based on checkbox state
-            if (option.value === 'OpenAi' ||
-                (option.value.startsWith('gpt-') && !localLLMCheckbox.checked) ||
-                (!option.value.startsWith('gpt-') && localLLMCheckbox.checked)) {
-                optionDiv.style.display = 'block';
-            } else {
-                optionDiv.style.display = 'none';
-            }
         }
 
         optionDiv.addEventListener('click', function (event) {
@@ -301,12 +287,6 @@ function addEventListenersToCustomDropdown(select, aiNode) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Setup for all existing custom-selects
-    let selects = document.querySelectorAll('select.custom-select');
-    selects.forEach(select => setupModelSelect(select, select.id === 'embeddingsModelSelect'));
-});
-
 function setupModelSelect(selectElement, isEmbeddingsSelect = false) {
     if (selectElement) {
         setupCustomDropdown(selectElement);
@@ -333,24 +313,27 @@ function setupModelSelect(selectElement, isEmbeddingsSelect = false) {
 }
 
 function updateSelectedOptionDisplay(selectElement) {
-    // Update the custom dropdown display to show the selected value
-    let selectedDiv = selectElement.parentNode.querySelector('.select-replacer > div');
-    if (selectedDiv) {
-        selectedDiv.innerText = selectElement.options[selectElement.selectedIndex].innerText;
+  // Update the custom dropdown display to show the selected value
+  let selectedDiv = selectElement.parentNode.querySelector('.select-replacer > div');
+  if (selectedDiv) {
+    let selectedOption = selectElement.options[selectElement.selectedIndex];
+    if (selectedOption) {
+      selectedDiv.innerText = selectedOption.innerText;
     }
+  }
 
-    // Update highlighting in the custom dropdown options
-    let optionsReplacer = selectElement.parentNode.querySelector('.options-replacer');
-    if (optionsReplacer) {
-        let optionDivs = optionsReplacer.querySelectorAll('div');
-        optionDivs.forEach(div => {
-            if (div.getAttribute('data-value') === selectElement.value) {
-                div.classList.add('selected');
-            } else {
-                div.classList.remove('selected');
-            }
-        });
-    }
+  // Update highlighting in the custom dropdown options
+  let optionsReplacer = selectElement.parentNode.querySelector('.options-replacer');
+  if (optionsReplacer) {
+    let optionDivs = optionsReplacer.querySelectorAll('div');
+    optionDivs.forEach(div => {
+      if (div.getAttribute('data-value') === selectElement.value) {
+        div.classList.add('selected');
+      } else {
+        div.classList.remove('selected');
+      }
+    });
+  }
 }
 
 function checkLocalEmbeddingsCheckbox(selectElement) {
@@ -383,11 +366,14 @@ function setSliderBackground(slider) {
 }
 
 
-document.querySelectorAll('input[type=range]').forEach(function (slider) {
-    // Set the background color split initially
-    setSliderBackground(slider);
+document.addEventListener('DOMContentLoaded', function () {
+    // Setup for all existing custom-selects, excluding those in the modal
+    let selects = document.querySelectorAll('select.custom-select:not(#customModal select.custom-select)');
+    selects.forEach(select => setupModelSelect(select, select.id === 'embeddingsModelSelect'));
+});
 
-    // Update background color split and save slider values when the slider value changes
+document.querySelectorAll('input[type=range]:not(#customModal input[type=range])').forEach(function (slider) {
+    setSliderBackground(slider);
     slider.addEventListener('input', function () {
         setSliderBackground(slider);
     });
@@ -440,100 +426,12 @@ function updateLabel() {
     document.getElementById('model-temperature-label').innerText = 'Temperature:\n ' + temperature;
 }
 
-//api keys
 
-// Load any saved keys from local storage
-document.getElementById('googleApiKey').value = localStorage.getItem('googleApiKey') || '';
-document.getElementById('googleSearchEngineId').value = localStorage.getItem('googleSearchEngineId') || '';
-document.getElementById('api-key-input').value = localStorage.getItem('openaiApiKey') || '';
-document.getElementById('wolframApiKey').value = localStorage.getItem('wolframApiKey') || '';
-
-function saveKeys() {
-    // Save keys to local storage
-    localStorage.setItem('googleApiKey', document.getElementById('googleApiKey').value);
-    localStorage.setItem('googleSearchEngineId', document.getElementById('googleSearchEngineId').value);
-    localStorage.setItem('openaiApiKey', document.getElementById('api-key-input').value);
-    localStorage.setItem('wolframApiKey', document.getElementById('wolframApiKey').value);
-}
-
-async function saveKeysToFile() {
-    // Gather the keys
-    const keys = {
-        googleApiKey: document.getElementById('googleApiKey').value || '',
-        googleSearchEngineId: document.getElementById('googleSearchEngineId').value || '',
-        openaiApiKey: document.getElementById('api-key-input').value || '',
-        wolframApiKey: document.getElementById('wolframApiKey').value || '',
-    };
-
-    try {
-        if ('showSaveFilePicker' in window) {
-            const handle = await window.showSaveFilePicker({
-                types: [
-                    {
-                        description: 'Text Files',
-                        accept: {
-                            'text/plain': ['.txt'],
-                        },
-                    },
-                ],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(JSON.stringify(keys));
-            await writable.close();
-        } else {
-            // Handle lack of support for showSaveFilePicker
-            alert('Your browser does not support saving files.');
-        }
-    } catch (error) {
-        if (error.name !== 'AbortError') {
-            alert('An error occurred while saving: ' + error);
-        }
-    }
-}
-
-async function loadKeysFromFile() {
-    try {
-        if ('showOpenFilePicker' in window) {
-            const [fileHandle] = await window.showOpenFilePicker();
-            const file = await fileHandle.getFile();
-            const contents = await file.text();
-
-            const keys = JSON.parse(contents);
-            document.getElementById('googleApiKey').value = keys.googleApiKey || '';
-            document.getElementById('googleSearchEngineId').value = keys.googleSearchEngineId || '';
-            document.getElementById('api-key-input').value = keys.openaiApiKey || '';
-            document.getElementById('wolframApiKey').value = keys.wolframApiKey || '';
-        } else {
-            // Handle lack of support for showOpenFilePicker
-            alert('Your browser does not support opening files.');
-        }
-    } catch (error) {
-        if (error.name !== 'AbortError') {
-            alert('An error occurred while loading: ' + error);
-        }
-    }
-}
-
-function clearKeys() {
-    // Clear keys from local storage
-    localStorage.removeItem('googleApiKey');
-    localStorage.removeItem('googleSearchEngineId');
-    localStorage.removeItem('openaiApiKey');
-    localStorage.removeItem('wolframApiKey');
-
-    // Clear input fields
-    document.getElementById('googleApiKey').value = '';
-    document.getElementById('googleSearchEngineId').value = '';
-    document.getElementById('api-key-input').value = '';
-    document.getElementById('wolframApiKey').value = '';
-}
 
 
 
 function handleKeyDown(event) {
     if (event.key === 'Enter') {
-        const localLLMCheckbox = document.getElementById("localLLM");
-
         if (event.shiftKey) {
             // Shift + Enter was pressed, insert a newline
             event.preventDefault();
@@ -548,14 +446,7 @@ function handleKeyDown(event) {
         } else {
             // Enter was pressed without Shift
             event.preventDefault();
-
-            // If localLLM checkbox is enabled, submit the form (which triggers LLM code).
-            if (localLLMCheckbox.checked) {
-                document.getElementById('prompt-form').dispatchEvent(new Event('submit'));
-            } else {
-                // Otherwise, call sendMessage function
-                sendMessage(event);
-            }
+            sendMessage(event);
         }
     }
     return true;
@@ -599,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.body.style.transform = "scale(1)";
         document.body.style.transformOrigin = "0 0";
-
 
 
 function openTab(tabId, element) {
@@ -829,6 +719,48 @@ function getMaxDistForExponent(exponent) {
 
     return exponentToMaxDist[exponent] || 4; // default to 4 if no mapping found
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    var inversionSlider = document.getElementById('inversion-slider');
+    var hueRotationSlider = document.getElementById('hue-rotation-slider');
+    var invertFilterDiv = document.getElementById('invert-filter');
+
+    inversionSlider.addEventListener('input', function () {
+        skipMidRangeInversion();
+        updateFilters();
+    });
+
+    hueRotationSlider.addEventListener('input', function () {
+        updateFilters();
+    });
+
+    function updateFilters() {
+        var inversionValue = inversionSlider.value;
+        var hueRotationValue = hueRotationSlider.value;
+        var filterValue = `invert(${inversionValue}%) hue-rotate(${hueRotationValue}deg)`;
+
+        // Check if both sliders are at zero
+        if (inversionValue === "0" && hueRotationValue === "0") {
+            invertFilterDiv.style.backdropFilter = ""; // Remove the filter
+        } else {
+            invertFilterDiv.style.backdropFilter = filterValue;
+        }
+
+        // Update all wrappers
+        document.querySelectorAll('.image-video-wrapper').forEach(wrapper => {
+            wrapper.style.backdropFilter = filterValue;
+        });
+    }
+
+    function skipMidRangeInversion() {
+        var value = parseInt(inversionSlider.value, 10);
+
+        if (value === 50) {
+            // Adjust this value to define how much to skip (e.g., 49 to 51)
+            inversionSlider.value = inversionSlider.value > 49 ? 51 : 49;
+        }
+    }
+});
 
 // Function to update the flashlight strength and its display
 function updateFlashlightStrength() {

@@ -2,14 +2,14 @@
   "name": "neurite-automation",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "automation.js",
   "scripts": {
-    "start": "node NeuriteAutomation.js"
+    "start": "node automation.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "playwright": "^1.40.0"
+    "playwright": "1.42.1"
   }
 }
