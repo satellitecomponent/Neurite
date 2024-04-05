@@ -65,7 +65,6 @@ async function callVisionModel(messages, onStreamComplete) {
         messages: messages,
         stream: true, // Assuming streaming is not required for vision model
         customTemperature: null, // Or specify a custom temperature if needed
-        API_URL: "https://api.openai.com/v1/chat/completions",
         onBeforeCall: () => {
             isAiProcessing = true;
             updateUiForProcessing();

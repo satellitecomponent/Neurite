@@ -29,13 +29,13 @@ async function sendLLMNodeMessage(node, message = null) {
 
     //Initialize messages array.
     let nodeTitle = node.getTitle();
-    let aiIdentity = nodeTitle ? `${nodeTitle} (Ai)` : "Ai";
+    let aiIdentity = nodeTitle ? `${nodeTitle}` : "an Ai Assistant";
 
 
     let messages = [
         {
             role: "system",
-            content: `YOU (${aiIdentity}) are responding within an Ai node. CONNECTED NODES are SHARED as system messages. Triple backtick and label any codeblocks`
+            content: `YOU are ${aiIdentity}.`
         },
     ];
 
@@ -48,13 +48,22 @@ async function sendLLMNodeMessage(node, message = null) {
     selectedModel = determineModel(LocalLLMSelectValue, hasImageNodes);
 
     function determineModel(LocalLLMValue, hasImageNodes) {
-        if (hasImageNodes) {
-            return 'gpt-4-vision-preview'; // Switch to vision model if image nodes are present
-        } else if (LocalLLMValue === 'OpenAi') {
-            const globalModelSelect = document.getElementById('model-select');
-            return globalModelSelect.value; // Use global model selection
+        // Check if the local or global model is set to ollama.
+        const isOllamaSelected = LocalLLMValue === 'ollama' ||
+            (LocalLLMValue === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
+
+        // If image nodes are present, and ollama is not selected, use the vision model.
+        if (hasImageNodes && !isOllamaSelected) {
+            return 'gpt-4-vision-preview';
+        } else if (hasImageNodes && isOllamaSelected) {
+            // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
+            return 'LLaVA 7B';
+        } else if (LocalLLMValue === 'GLOBAL') {
+            // Use global model selection if LocalLLMValue is set to GLOBAL and ollama is not selected.
+            return document.getElementById('model-select').value;
         } else {
-            return LocalLLMValue; // Use the local model selection
+            // Use the local model selection
+            return LocalLLMValue;
         }
     }
 
@@ -85,7 +94,7 @@ async function sendLLMNodeMessage(node, message = null) {
             content: `LAST LINE of your response PROMPTS CONNECTED Ai nodes.
 ARCHITECT profound, mission-critical QUERIES to Ai nodes.
 SYNTHESIZE cross-disciplinary CONVERSATIONS.
-Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
+TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         });
     }
 
@@ -143,9 +152,6 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
 
     // Use the node-specific recent context when calling constructSearchQuery
     const searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
-    if (searchQuery === null) {
-        return; // Return early if a link node was created directly
-    }
 
     let searchResultsData = null;
     let searchResults = [];
@@ -157,9 +163,9 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
     if (searchResultsData) {
         searchResults = processSearchResults(searchResultsData);
         searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
-    }
 
-    displaySearchResults(searchResults);
+        displaySearchResults(searchResults);
+    }
 
     const searchResultsContent = searchResults.map((result, index) => {
         return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
@@ -167,7 +173,7 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
 
     const googleSearchMessage = {
         role: "system",
-        content: "Google Search RESULTS displayed to user:" + searchResultsContent
+        content: "Google SEARCH RESULTS displayed to user:" + searchResultsContent
     };
 
     if (document.getElementById(`google-search-checkbox-${nodeIndex}`).checked) {
@@ -185,7 +191,7 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Use the given chunks as context. CITE your sources!`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Use the given chunks as CONTEXT. CITE your sources!`
         };
 
         messages.push(embedMessage);
@@ -336,52 +342,26 @@ Take INITIATIVE to DECLARE the TOPIC of FOCUS.`
 
     const haltCheckbox = node.haltCheckbox;
 
-    // Local LLM call
-    if (document.getElementById("localLLM").checked && selectedModel !== 'OpenAi') {
-        window.generateLocalLLMResponse(node, messages)
-            .then(async (fullMessage) => {
-                node.aiResponding = false;
-                aiLoadingIcon.style.display = 'none';
+    // AI call
+    callchatLLMnode(messages, node, true, selectedModel)
+        .finally(async () => {
+            node.aiResponding = false;
+            aiLoadingIcon.style.display = 'none';
 
-                hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
+            hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
 
-                if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                    await aiNodeMessageLoop.questionConnectedAiNodes(fullMessage);
-                }
-            })
-            .catch((error) => {
-                if (haltCheckbox) {
-                    haltCheckbox.checked = true;
-                }
-                console.error(`An error occurred while getting response: ${error}`);
-                aiErrorIcon.style.display = 'block';
-            });
-    } else {
-        // AI call
-        callchatLLMnode(messages, node, true, selectedModel)
-            .finally(async () => {
-                node.aiResponding = false;
-                aiLoadingIcon.style.display = 'none';
-
-                hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
-
-                if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                    const aiResponseText = node.aiResponseTextArea.value;
-//                    const quotedTexts = await getQuotedText(aiResponseText);
-
-                    textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
-
-                    await aiNodeMessageLoop.questionConnectedAiNodes(textToSend);
-                }
-            })
-            .catch((error) => {
-                if (haltCheckbox) {
-                    haltCheckbox.checked = true;
-                }
-                console.error(`An error occurred while getting response: ${error}`);
-                aiErrorIcon.style.display = 'block';
-            });
-    }
+            if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
+                textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
+                await aiNodeMessageLoop.questionConnectedAiNodes(textToSend);
+            }
+        })
+        .catch((error) => {
+            if (haltCheckbox) {
+                haltCheckbox.checked = true;
+            }
+            console.error(`An error occurred while getting response: ${error}`);
+            aiErrorIcon.style.display = 'block';
+        });
 }
 
 function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize) {

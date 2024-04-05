@@ -1,158 +1,9 @@
-async function appendWithDelay(content, node, delay) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            node.aiResponseTextArea.value += content;
-            node.aiResponseTextArea.dispatchEvent(new Event("input"));
-            resolve();
-        }, delay);
-    });
-}
-
-async function handleStreamingForLLMnode(response, node) {
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
-    let fullResponse = "";
-
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done || !node.shouldContinue) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        let contentMatch;
-        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-            const content = JSON.parse('"' + contentMatch[1] + '"');
-            if (!node.shouldContinue) break;
-
-            if (content.trim() !== "[DONE]") {
-                await appendWithDelay(content, node, 30);
-            }
-            fullResponse += content; // append content to fullResponse
-            buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-        }
-    }
-    return fullResponse; // return the entire response
-}
 
 
-let previousContent = "";
-
-async function callchatLLMnode(messages, node, stream = false, selectedModel = null) {
-    // Reset shouldContinue
-    node.shouldContinue = true;
-
-    // Update aiResponding and the button
-    node.aiResponding = true;
-    node.regenerateButton.innerHTML = `
-    <svg width="24" height="24">
-        <use xlink:href="#pause-icon"></use>
-    </svg>`;
-    const haltCheckbox = node.haltCheckbox;
-
-    console.log("Messages sent to API:", messages);
-    console.log("Token count for messages:", getTokenCount(messages));
-
-    const API_KEY = document.getElementById("api-key-input").value;
-    if (!API_KEY) {
-        if (haltCheckbox) {
-            haltCheckbox.checked = true;
-        }
-        alert("Please enter your API key");
-        return;
-    }
-
-    const API_URL = "https://api.openai.com/v1/chat/completions";
-
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    headers.append("Authorization", `Bearer ${API_KEY}`);
-
-    // Create a new AbortController each time the function is called
-    node.controller = new AbortController();
-    let signal = node.controller.signal;
-
-    // Add the signal to your fetch request options
-    const temperature = document.getElementById(`node-temperature-${node.index}`).value;
-    const max_tokens = document.getElementById(`node-max-tokens-${node.index}`).value;
+function determineModel() {
     const modelSelect = document.getElementById('model-select');
     const globalModelInput = document.getElementById('model-input');
-
-    const defaultModel = modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
-    const modelToUse = selectedModel && selectedModel.startsWith('gpt') ? selectedModel : defaultModel;
-
-
-    const requestOptions = {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-            model: modelToUse,
-            messages: messages,
-            max_tokens: parseInt(max_tokens),
-            temperature: parseFloat(temperature),
-            stream: stream,
-        }),
-        signal: signal,
-    };
-
-   // console.log("Request Options: ", JSON.stringify(requestOptions, null, 2));
-
-    try {
-        const response = await fetch(API_URL, requestOptions);
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error calling ChatGPT API:", errorData);
-            //node.aiResponseTextArea.value += "\nAn error occurred while processing your request.";
-
-            if (haltCheckbox) {
-                haltCheckbox.checked = true;
-            }
-
-            // Display error icon and hide loading icon
-            const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
-            const aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
-            if (aiErrorIcon) aiErrorIcon.style.display = 'block';
-            if (aiLoadingIcon) aiLoadingIcon.style.display = 'none';
-
-            return;
-        }
-
-        if (stream) {
-            fullResponse = await handleStreamingForLLMnode(response, node);
-            //console.log("Full API Response:", fullResponse);
-            return fullResponse
-        } else {
-            const data = await response.json();
-            fullResponse = `${data.choices[0].message.content.trim()}`;
-            node.aiResponseTextArea.innerText += fullResponse;
-            node.aiResponseTextArea.dispatchEvent(new Event("input"));
-        }
-
-    } catch (error) {
-        // Check if the error is because of the abort operation
-        if (error.name === 'AbortError') {
-            if (haltCheckbox) {
-                haltCheckbox.checked = true;
-            }
-            console.log('Fetch request was aborted');
-        } else {
-            console.error("Error calling ChatGPT API:", error);
-            if (haltCheckbox) {
-                haltCheckbox.checked = true;
-            }
-            // Display error icon and hide loading icon
-            const aiErrorIcon = document.getElementById(`aiErrorIcon-${node.index}`);
-            const aiLoadingIcon = document.getElementById(`aiLoadingIcon-${node.index}`);
-            if (aiErrorIcon) aiErrorIcon.style.display = 'block';
-            if (aiLoadingIcon) aiLoadingIcon.style.display = 'none';
-        }
-    } finally {
-        node.aiResponding = false;
-        node.regenerateButton.innerHTML = `
-    <svg width="24" height="24" class="icon">
-        <use xlink:href="#refresh-icon"></use>
-    </svg>`;
-    }
+    return modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
 }
 
 
@@ -473,7 +324,7 @@ class ResponseHandler {
                 // Get the HTML content of the promptDiv
                 let message = promptDiv.innerHTML;
 
-                console.log(`Sending message: "${message}"`);
+                //console.log(`Sending message: "${message}"`);
                 sendLLMNodeMessage(this.node, message);
             }
         }.bind(this);

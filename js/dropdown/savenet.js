@@ -338,8 +338,28 @@ function restoreAdditionalSaveObjects(d) {
 }
 
 document.getElementById("load-button").addEventListener("click", function () {
-    loadnet(document.getElementById("save-or-load").value, true);
+    var inputValue = document.getElementById("save-or-load").value;
+    if (inputValue === "") {
+        // If the input is empty, ask for confirmation
+        document.getElementById("load-sure").setAttribute("style", "display:block");
+        document.getElementById("load-button").text = "Are you sure?";
+    } else {
+        // If the input is not empty, proceed with loading
+        loadnet(inputValue, true);
+    }
+});
 
+document.getElementById("load-unsure-button").addEventListener("click", function () {
+    // Hide the confirmation dialog and reset the button text if user is not sure
+    document.getElementById("load-sure").setAttribute("style", "display:none");
+    document.getElementById("load-button").text = "Load";
+});
+
+document.getElementById("load-sure-button").addEventListener("click", function () {
+    // Proceed with loading even if input is empty, as user confirmed
+    loadnet(document.getElementById("save-or-load").value, true);
+    document.getElementById("load-sure").setAttribute("style", "display:none");
+    document.getElementById("load-button").text = "Load";
 });
 
 function loadnet(text, clobber, createEdges = true) {

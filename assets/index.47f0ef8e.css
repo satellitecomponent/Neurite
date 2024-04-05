@@ -1,0 +1,2667 @@
+﻿        html {
+            /* overflow:hidden; */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+
+* {
+    font-family: "Inter", sans-serif;
+    color: #9d9d9d;
+    font-size: 16px;
+}
+
+
+#blur-filter, #invert-filter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+}
+
+#blur-filter {
+    backdrop-filter: blur(0px);
+    z-index: 0; /* Lower z-index */
+}
+
+#invert-filter {
+    backdrop-filter: invert(0%) hue-rotate(0deg);
+    z-index: 2000; /* Higher z-index to be on top */
+}
+
+
+.edge-arrow {
+    fill: rgba(51, 51, 51, 0.9); /* Semi-transparent fill color */
+}
+
+.edge-arrow-hover {
+    /* fill: rgba(51, 51, 51, 0.5);  Semi-transparent fill color */
+    fill: rgb(127 186 223 / 80%); /* Slightly more opaque fill for hover */
+}
+
+.edge-border {
+    fill: rgb(127 186 223 / 80%);
+}
+
+.edge-border-hover {
+    /* Styles for hovered state of the border */
+    fill: rgb(127 186 223 / 80%);
+}
+
+
+.hidden {
+    display: none;
+    overflow: hidden;
+}
+
+.collapsed-circle {
+    display: relative;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 60px;
+    height: 60px;
+    background-color: rgb(50 51 62 / 50%);
+    backdrop-filter: blur(3px);
+    transform: translateY(-3px); /* Adjust the value as needed */
+}
+    .collapsed-anchor:hover {
+        background-color: #555; /* Change to desired hover color */
+    }
+
+
+.collapsed-circle.collapsed-anchor {
+    background-color: rgba(107, 98, 121, 40%) !important;
+    border: none;
+}
+
+.window.selected.collapsed::before {
+    border-radius: 50%;
+}
+
+/* To hide the background color of the window when collapsed */
+.window.collapsed {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+
+.window {
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    border: none;
+    background-color: rgb(50 51 62 / 70%);
+    -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.3);
+    user-select: none;
+    position: relative;
+    /* Set initial width and height */
+    width: fit-content;
+    max-width: fit-content;
+    height: fit-content;
+    border: 1px solid rgba(0, 0, 0, 0);
+    z-index: 2;
+    transition: border 0.3s ease-in-out;
+}
+
+.window-anchored {
+    background-color: #1a1921bf;
+}
+
+    .window-anchored::before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        border: 2px solid #1a1a1a;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .window-anchored.selected {
+        background-color: #4a669d;
+    }
+
+.drag-box {
+    position: absolute;
+    border: 1px dashed rgba(255, 255, 255, 0.8); /* Adjusted border width and color */
+    background: rgb(255 255 255 / 5%); /* White background with transparency */
+    backdrop-filter: blur(1px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.selected {
+    background-color: #6c7687;
+    color: #222226;
+}
+
+
+        .window.selected::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border: 2px solid #007BFF;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+.node-textarea {
+    background-color: #222226;
+    color: #bbb;
+    overflow-y: scroll;
+    resize: both;
+    width: 259px;
+    line-height: 1.4;
+    display: none; /* Initially hidden */
+    position: absolute;
+}
+
+.html-iframe {
+    border: none;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-width: 50px;
+    min-height: 40px;
+    display: block;
+}
+
+.python-frame {
+    display: block;
+}
+
+    /* Increased specificity for hidden class */
+    .html-iframe.hidden, .python-frame.hidden {
+        display: none;
+    }
+
+.editable-div {
+    border: 2px solid #8882;
+    border-bottom: 1px solid #8882;
+    width: 100%;
+    height: calc(100%);
+    max-height: 300px;
+    max-width: 266px;
+    overflow: auto;
+    padding: 10px;
+    margin: 0px;
+    box-sizing: border-box;
+    white-space: pre-wrap; /* This will ensure text wrapping and preserve whitespace */
+    word-wrap: break-word; /* This will break long words to the next line */
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    background-color: #222229;
+    border-radius: 0; /* This will remove rounded edges */
+    transition: border-bottom 0.6s ease, border-left 0.6s ease, background-color 0.6s ease; /* This adds a smooth transition effect */
+}
+
+/* Firefox-specific style */
+@-moz-document url-prefix() {
+    .editable-div {
+        max-width: 276px;
+    }
+}
+
+.editable-div:focus {
+    outline: none; /* Removes default browser outline */
+    border-bottom: 1px solid #464646;
+    border-left: 2px solid #464646;
+    background-color: #201F28;
+}
+
+
+.button-container {
+    flex-grow: 0;
+    flex-shrink: 0;
+    z-index: 10;
+    pointer-events: auto;
+    display: flex;
+    justify-content: space-between;
+}
+
+
+
+.no-select {
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ and Edge */
+}
+
+.header-container {
+    display: flex;
+    justify-content: flex-end; /* Align items to the end (right) of the container */
+    width: 100%; /* Make sure this takes up the full width of the parent container */
+    margin-bottom: 2px;
+    z-index: 1;
+}
+
+.windowbutton {
+    cursor: pointer;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+input[type="text"i].title-input {
+    flex-grow: 1;
+    flex-shrink: 1;
+    color: #bbb;
+    background: none !important;
+    border-style: solid;
+    border-width: 2px 5px 0px 0;
+    border-color: #aaa;
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-left: -7px;
+    z-index: 150;
+}
+
+    input[type="text"i].title-input:focus {
+        border-color: RGB(200,200,255);
+        color: lightgrey;
+        /* Change the border color when the input is focused */
+        outline: none;
+        /* Remove the default outline */
+    }
+
+.hide-except-title > *:not(.title-input) {
+    display: none;
+}
+
+.collapsed-title {
+    background: transparent;
+    border: none;
+    pointer-events: none; /* Makes it un-clickable */
+    text-align: center; /* Centers the text */
+}
+
+
+
+.container-for-textarea-and-pre {
+    position: relative;
+}
+
+.code-highlight {
+    white-space: pre-wrap; /* Respect newlines */
+    word-wrap: break-word; /* Respect word wrap */
+    overflow: hidden; /* Hide overflow */
+}
+
+.pre-with-cursor::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1em;
+    background-color: black; /* or any color you want for the cursor */
+    pointer-events: none;
+}
+
+
+        .resize-container {
+            position: absolute;
+            flex-grow: 1;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            pointer-events: auto;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            /* Add this line */
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            bottom: -8px;
+            /* Adjust this value */
+            right: -8px;
+            cursor: nwse-resize;
+            z-index: 4;
+            pointer-events: auto;
+            /* Add this line */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            min-width: 300px;
+            min-height: 200px;
+            background-color: white;
+        }
+
+        .content {
+            width: fit-content;
+            height: fit-content;
+            box-sizing: border-box;
+            /* Add this line */
+        }
+
+        .resize-handle::before {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: #bbb;
+            transform-origin: 0 0;
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            width: 2.8px;
+            height: 5px;
+            background-color: #bbb;
+            transform-origin: 0 0;
+        }
+
+        .resize-handle::before {
+            transform: rotate(45deg) translate(-1px, -4px) scale(.9);
+        }
+
+        .resize-handle::after {
+            transform: rotate(45deg) translate(3px, -1px) scale(.5);
+        }
+
+        .resize-handle.dragging {
+            background-color: none;
+        }
+
+        .selectable {
+            user-select: auto;
+        }
+
+        #elements svg g {
+            z-index: 1000;
+            display: inline-block;
+        }
+
+        .disable-pointer-events {
+            pointer-events: none;
+        }
+
+        /*Custom Modal Styles*/
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 900;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /*background-color: rgba(0, 0, 0, 0.4);*/
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+
+    background-color: #2f2e3996;
+
+    border: 2px solid #333;
+    width: fit-content;
+    max-width: 90vw;
+    max-height: 80vh;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 5px 5px 0px 0px;
+    pointer-events: auto;
+    position: relative; /* Change to relative positioning */
+    cursor: move; /* Add cursor style to indicate draggable */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: 20px;
+    background-color: #222226;
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    user-select: none;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 20px;
+}
+
+.close {
+    color: #bbb;
+    font-size: 32px;
+    font-weight: 100;
+    cursor: pointer;
+}
+
+    .close:hover,
+    .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+.modal-body {
+    padding: 20px;
+}
+
+
+        /* Dropdown menu styles */
+
+        .dropdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .menu-button {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .menu-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 2px;
+            background-color: #bbb;
+            transition: all 0.3s ease-in-out;
+            z-index: 10; /* higher than dropdown-content */
+        }
+
+            .menu-icon::before,
+            .menu-icon::after {
+                content: "";
+                position: absolute;
+                width: 20px;
+                height: 2px;
+                background-color: #bbb;
+                transition: all 0.3s ease-in-out;
+            }
+
+            .menu-icon::before {
+                top: -6px;
+            }
+
+            .menu-icon::after {
+                bottom: -6px;
+            }
+
+        .menu-button.open .menu-icon {
+            background-color: transparent;
+        }
+
+            .menu-button.open .menu-icon::before {
+                transform: translateY(6px) rotate(45deg);
+            }
+
+            .menu-button.open .menu-icon::after {
+                transform: translateY(-6px) rotate(-45deg);
+            }
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #2f2e3996;
+    backdrop-filter: blur(6px);
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    /*-webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);*/
+    z-index: 1;
+    margin-top: -38px;
+    margin-right: -5px;
+    transform: translateY(-200%); /* Start off screen */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
+}
+
+    .dropdown-content.open {
+        transform: translateY(0%); /* Slide in to view */
+    }
+
+        .submenu {
+            padding: 10px;
+            color: #bbb;
+        }
+
+            .submenu a {
+                display: block;
+                color: #bbb;
+                text-decoration: none;
+                padding: 5px;
+            }
+
+                .submenu a.selected:before {
+                    content: "\2713";
+                    color: #bbb;
+                    margin-right: 5px;
+                }
+
+                .submenu a:hover {
+                    background-color: #ddd;
+                    color: #222226;
+                }
+
+        input[type="range"] {
+            display: block;
+            margin: 0 auto;
+            width: 200px;
+        }
+
+input[type="text"i] {
+    padding: 1px 2px;
+    background-color: #222226; /* Dark background */
+    color: #bbb; /* Light text color for contrast */
+    font-size: 16px; /* Standard readable font size */
+    width: 100%; /* Full-width to fit container */
+    box-sizing: border-box; /* Include padding in width calculation */
+    outline: none; /* Remove default focus outline */
+    /* Set specific borders */
+    border-style: solid;
+    border-width: 0 2px 2px 0; /* Only bottom and right borders */
+    border-color: transparent #747474 #747474 transparent; /* Transparent top and left borders */
+    transition: border-color 0.3s; /* Smooth transition for the border color */
+}
+
+
+/* Minimal change on hover for interactivity */
+input[type="text"i]:hover {
+    background-color: #1e1e22; /* Slightly lighter background on hover */
+}
+
+}
+
+        .submenu-btn {
+            display: flex;
+            align-content: flex-start;
+            border: none;
+            background-color: transparent;
+            color: #bbb;
+            cursor: pointer;
+            padding: 5px;
+            font-size: medium;
+        }
+
+        .Searchbar {
+            background-color: #222226;
+            color: #bbb;
+            width: 100%;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .gradient-selector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gradient-preview {
+            width: 250px;
+            height: 100px;
+            margin-top: 5px;
+        }
+
+        .color-inputs {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .color-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            background-color: #8882;
+            color: #bbb
+        }
+
+        .delete-btn {
+            margin-top: 5px;
+            background-color: #8882;
+            color: #bbb
+        }
+
+        .add-btn {
+            margin-top: 10px;
+            background-color: #8882;
+            display: flex;
+            justify-content: center !important;
+            width: auto;
+            color: #bbb;
+        }
+
+.search_matched {
+    outline-style: double;
+    outline-color: #54876f;
+    outline-width: 10px;
+}
+
+        .search_nomatch {
+            outline-style: hidden;
+            outline-color: blue;
+            outline-width: 0px;
+        }
+
+        .textnode {
+            background-color: #222226;
+        }
+
+        #prompt-form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        textarea#prompt {
+            overflow-y: hidden;
+            flex-grow: 1;
+            background-color: #222226;
+            color: #bbb;
+            border: inset;
+            border-color: #8882;
+            width: 100px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        #prompt-form button {
+            z-index: 1;
+            padding: 4px 4px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #222226;
+            transition: background-color 0.3s;
+            border: inset;
+            border-color: #8882;
+        }
+
+            #prompt-form button:hover {
+                background-color: #333;
+                color: #222226
+            }
+
+            #prompt-form button[type="submit"] {
+                background-color: #222226;
+                color: white;
+            }
+
+                #prompt-form button[type="submit"]:hover {
+                    background-color: #293e34;
+                    color: #222226;
+                }
+
+        #api-key-input {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+.api-panel {
+    display: flex;
+    overflow: hidden;
+    transition: height 0.2s ease;
+    height: 0; /* Start with 0 height for the initial state if hidden */
+}
+
+.api-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.api-inputs {
+    flex-grow: 1;
+}
+
+.api-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    margin-left: 0px;
+}
+
+/* Initially hidden elements */
+.intentionally-hidden {
+    display: none; /* No !important required */
+}
+
+
+
+.linkbuttons {
+    padding: 4px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    transition: background-color 0.3s;
+    border: inset;
+    border-color: #8882;
+}
+
+            .linkbuttons:hover {
+                background-color: #ddd;
+            }
+
+            .linkbuttons[type="submit"] {
+                background-color: #222226;
+                color: #bbb;
+            }
+
+                .linkbuttons[type="submit"]:hover {
+                    background-color: #45a049;
+                }
+
+#saved-networks-container .linkbuttons {
+    margin: 0;
+}
+
+.coordinate-field {
+    display: flex;
+    align-items: center; /* Aligns items vertically in the center */
+    justify-content: flex-start; /* Aligns items to the start of the flex container */
+    background-color: #222226;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+}
+
+    .coordinate-field span {
+        margin-right: 10px; /* Adds space between the label and the input field */
+    }
+
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+    .divider span {
+        border-bottom: 1px solid #000;
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .divider button {
+        background: none;
+        border: none;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+/* Hide the checkbox visually but remain accessible */
+input[type="checkbox"] {
+    display: none;
+}
+
+    input[type="checkbox"] + label {
+        padding: 19px;
+        position: relative;
+        display: inline-block;
+        vertical-align: middle; /* Helps with vertical alignment */
+        cursor: pointer;
+        /* Add other styles as needed */
+    }
+
+        input[type="checkbox"] + label:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%; /* Adjust this to better align vertically */
+            transform: translateY(-50%); /* Centers the checkbox relative to the label's height */
+            width: 14px;
+            height: 14px;
+            background-color: transparent; /* Make the checkbox background transparent */
+            display: inline-block;
+        }
+
+    input[type="checkbox"]:checked + label:after {
+        content: '✔';
+        position: absolute;
+        top: 1px;
+        left: 87%; /* Adjust if necessary for better centering */
+        transform: translate(0, -50%); /* Adjust for precise vertical centering */
+        font-size: 18px;
+        color: #bbb; /* Change the checkmark color to white */
+    }
+    /* General label styling */
+    input[type="checkbox"] + label {
+        user-select: none;
+        cursor: pointer; /* Indicates clickable */
+        position: relative; /* For absolute positioning of :before and :after */
+    }
+    /* Styling applies to all checkboxes and labels */
+    input[type="checkbox"] + label {
+        display: inline-block;
+        padding: 3px 11px;
+        min-width: 50px; /* Ensure consistent width */
+        color: #888;
+        background-color: #222226;
+        border-radius: 0 10px 0px 10px;
+        border-top: 2px solid #555; /* Border on the left */
+        border-right: 3px solid #555; /* Border on the bottom */
+        border-left: 3px solid #8882; /* Border on the left */
+        border-bottom: 2px solid #8882; /* Border on the bottom */
+        margin: 3px 4px;
+        font-size: 14px;
+        text-align: center;
+        vertical-align: middle;
+        transition: background-color 0.3s, color 0.1s;
+    }
+    /* Change label style when associated checkbox is checked */
+    input[type="checkbox"]:checked + label {
+        background-color: rgb(30, 55, 81);
+        border-left: 3px solid #888; /* Border on the left */
+        border-bottom: 2px solid #888; /* Border on the bottom */
+        color: #bbb;
+    }
+    /* Hover effects for labels */
+    input[type="checkbox"] + label:hover {
+        background-color: #333; /* Hover BG color */
+        color: #bbb; /* Hover text color */
+    }
+    /* Hover effects for checked labels */
+    input[type="checkbox"]:checked + label:hover {
+        background-color: rgb(30, 55, 81); /* Hover BG color for checked state */
+        color: #bbb; /* Hover text color for checked state */
+    }
+
+.checkboxarray {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 270px;
+    padding-top: 6px; /* adjust this as needed */
+}
+
+    .checkboxarray div {
+        width: 33%; /* adjust this as needed */
+    }
+
+
+
+        .tabs {
+            display: flex;
+            justify-content: flex-start;
+            padding-right: 47px;
+        }
+
+        .tabcontent {
+            display: none;
+        }
+
+.tablink {
+    padding: 4px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    transition: background-color 0.3s;
+    border: inset;
+    border-color: #8882;
+}
+
+    .tablink:hover {
+        background-color: #ddd;
+        color: #222226;
+        /* Change text color on hover so it's visible against the lighter background */
+    }
+
+    .tablink.activeTab {
+        background-color: #929292; /* Or the color you want for active tab */
+        color: #222226; /* Or the color you want for the text of active tab */
+    }
+
+        .input-group {
+            display: flex;
+            align-items: start;
+        }
+
+        .btn-group button {
+            width: 39px;
+            /* Adjust as needed */
+            height: 33px;
+            /* Adjust as needed */
+        }
+
+        .btn-group {
+            display: flex;
+            align-items: start;
+            gap: 5px;
+            padding-left: 33px;
+            padding-bottom: 10px;
+            width: 30px;
+            height: 20px;
+        }
+
+.zet-container {
+    position: relative;
+}
+
+.zet-drag-handle-horiz {
+    width: 6px; /* Increase the width */
+    height: 100%;
+    cursor: ew-resize;
+    background-color: transparent; /* Make it transparent */
+    position: absolute;
+    left: 0;
+    z-index: 1;
+}
+
+.zet-drag-handle-vert {
+    width: 100%;
+    height: 6px; /* Increase the height */
+    cursor: ns-resize;
+    background-color: transparent; /* Make it transparent */
+    position: absolute;
+    bottom: 0;
+    z-index: 1;
+}
+
+.zettelkasten {
+    background-color: #222226;
+    width: 261px;
+    min-width: 261px;
+    height: 70px;
+    z-index: -1;
+    border: inset;
+    border-color: #8882;
+    resize: none !important;
+    overflow: auto;
+}
+
+            .zettelkasten::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .zettelkasten::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .zettelkasten::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .zettelkasten::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+        .howto {
+            width: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            background-color: #222226;
+        }
+
+th,
+td {
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #5d5d5d;
+}
+
+.select-replacer.closed {
+    white-space: nowrap; /* Prevent wrapping of selected option text */
+    overflow: hidden; /* Hide excess content */
+    text-overflow: ellipsis; /* Show ellipsis when content overflows */
+}
+
+.select-container {
+    position: relative;
+    display: inline-block;
+    width: 130px; /* width of the select-replacer */
+    height: 25px; /* This accounts for the height of select-replacer including padding and border */
+    z-index: 20;
+}
+
+.select-replacer {
+    position: absolute;
+    top: 0;
+    border: 1px solid rgb(52 52 52);
+    padding: 2px 10px;
+    cursor: pointer;
+    width: 100%;
+    background-color: #222226;
+    color: #fff;
+    box-sizing: border-box;
+    z-index: 10;
+    user-select: none; /* Disable text selection */
+}
+
+select-replacer > div:first-child {
+    overflow: hidden;
+    position: relative; /* Makes sure the pseudo-element is relative to this element */
+    padding-right: 46px;
+}
+
+.select-replacer > div:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 46px; /* This should match the padding-right value */
+    background: linear-gradient(to left, #222226, transparent); /* Change 'white' to the background color of your container */
+    pointer-events: none; /* Ensures that the pseudo-element doesn't interfere with any user interactions */
+}
+
+
+.select-replacer::before {
+    content: "";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 8px; /* length of the chevron */
+    height: 2px; /* thickness of the chevron */
+    background: #bbb;
+    transform: translateY(-50%) rotate(-45deg);
+    transition: transform 0.2s;
+    z-index: 10;
+}
+
+.select-replacer::after {
+    content: "";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    width: 8px; /* length of the chevron */
+    height: 2px; /* thickness of the chevron */
+    background: #bbb;
+    transform: translateY(-50%) rotate(45deg);
+    transition: transform 0.2s;
+    z-index: 30;
+}
+
+    .select-replacer:not(.closed)::before {
+        transform: translateY(-50%) rotate(45deg);
+    }
+
+    .select-replacer:not(.closed)::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+.options-replacer {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid rgb(24, 24, 28);
+    background-color: #e2e2e2;
+    color: #ddd;
+    width: 100%; /* Match width with select-replacer */
+    z-index: 10;
+}
+
+    .options-replacer div {
+        white-space: normal;
+        padding: 5px 10px;
+    }
+
+        .options-replacer div:hover {
+            background-color: #ffffff;
+        }
+
+        .options-replacer div.selected {
+            background-color: #a3d3eb;
+        }
+
+    .options-replacer.show {
+        display: block;
+    }
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+        .custom-scrollbar::-webkit-scrollbar-corner {
+            background: transparent;
+            border: none;
+        }
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
+}
+
+    .custom-scrollbar:hover {
+        scrollbar-color: #555 transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-button {
+        color: transparent;
+        background-color: transparent;
+    }
+
+        .key-button {
+            z-index: 1;
+            padding: 2px 2px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #222226;
+            transition: background-color 0.3s;
+            border: inset;
+            border-color: #8882;
+            margin-bottom: 4px;
+        }
+
+            .key-button:hover {
+                background-color: #ddd;
+                color: #222226;
+            }
+
+        .google-key-input input {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .model-selector {
+            border: 1px solid #222226;
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        .model-input {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        #wolframApiKey {
+            background-color: #222226;
+            border: inset;
+            border-color: #8882;
+        }
+
+        #howto {
+            max-height: 500px; /* adjust this value as needed */
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        #clickable-link {
+            color: #0572eb;
+            text-decoration: underline;
+        }
+
+            #clickable-link:hover {
+                color: #0572eb;
+                text-decoration: none;
+            }
+
+            #clickable-link:visited {
+                color: #652fc5;
+            }
+
+        #svg_bg {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .extract-textarea {
+            background-color: #222226;
+            width: 261px;
+            z-index: -1;
+            border: inset;
+            border-color: #8882;
+            resize: vertical;
+            /* only allows the height to be resizable */
+        }
+
+            .extract-textarea::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .extract-textarea::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .extract-textarea::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .extract-textarea::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+
+        .extract-button {
+            
+        }
+
+.scrollable-list {
+    height: 149px; /* Adjust this value based on how tall you want your list to be */
+    width: 255px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+    margin-top: 10px;
+    border-top: 2px solid #727272;
+}
+
+            .scrollable-list::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            .scrollable-list::-webkit-scrollbar-thumb {
+                background: #888;
+            }
+
+                .scrollable-list::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+            .scrollable-list::-webkit-scrollbar-corner {
+                background: transparent;
+                border: none;
+            }
+
+
+        /* New CSS */
+        #key-list p:hover {
+            background-color: #bbb; /* Or any other color */
+            color: #222226;
+        }
+
+.inline-container {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 3px;
+}
+
+.flex-container {
+    width: 90%;
+    display: flex;
+    align-items: center;
+}
+
+#LocalLLMselect {
+    background-color: #222226;
+    border: none;
+}
+
+#saved-networks-container div {
+    margin: 5px 0;
+    overflow-x: hidden;
+}
+
+#saved-networks-container button {
+    margin-right: 10px;
+}
+
+.selected-save {
+    background-color: #3b484d;
+    transform: scale(1.05); /* Slightly enlarge the selected save */
+    transition: transform 0.3s ease;
+}
+
+
+
+.top-section, .bottom-section {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.buttons-left, .buttons-right {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+}
+
+.buttons-right {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    border-left: 2px solid #727272;
+    background-color: #222226;
+}
+
+.top-section {
+    display: flex;
+    flex-direction: row; /* Align children in a row */
+}
+
+.buttons-left {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    width: 100px; /* Fixed width */
+    background-color: #222226;
+    border-left: 2px solid #727272;
+    border-bottom: 2px solid #727272;
+    position: fixed;
+}
+
+.coordinates-container {
+    background-color: #222226; /* Replace with your desired background color */
+    border-top: 2px solid #727272;
+    border-right: 2px solid #727272;
+    border-left: none;
+    border-bottom: none; /* Add if you want a border at the bottom as well */
+    border-radius: 0px 15px 0 0;
+    overflow: hidden;
+    padding-top: 5px;
+}
+
+
+/* General styles for all containers */
+.saved-coordinates-container {
+    /* Allow elements to wrap */
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#savedCoordinatesContainer {
+    /* Specific styles for the main container */
+    height: 140px;
+    align-items: center;
+    margin-top: 5px;
+}
+
+#savedCoordinatesContainerTop {
+    /* Specific styles for the top container */
+    align-items: center;
+    height: 90px;
+    justify-content: flex-end;
+    margin-left: 100px; /* Same as the width of .buttons-left */
+}
+
+#savedCoordinatesContainerBottom {
+    /* Specific styles for the bottom container */
+    align-items: flex-start;
+    height: 60px;
+    width: 43%;
+}
+
+.saved-coordinate-item {
+    /* Styling for each saved view element */
+    background-color: #282828;
+    margin-right: 6px;
+    padding: 3px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+    /* Hover state */
+    .saved-coordinate-item:hover {
+        background-color: #555;
+        color: #bbb;
+        transform: scale(1.1);
+    }
+
+    /* Selected state - increased specificity */
+    .saved-coordinate-item.selected-coordinate {
+        background-color: #333041;
+        color: white;
+        transform: scale(1); /* Return scale to normal for selected items */
+    }
+
+.saved-coordinate-item {
+    cursor: pointer; /* Change cursor to indicate clickability */
+    transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+
+
+.highlight {
+    border: 2px dashed #aaa;
+}
+
+
+/* The slider itself */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    margin: 12px 0;
+    background: linear-gradient(to right, #888 0%, #888 50%, #888 50%, #888 100%);
+}
+
+    /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 10px;
+        height: 20px;
+        background: #bbb;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-top: -1px;
+    }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            background: #aaa;
+        }
+
+    input[type=range]::-moz-range-thumb {
+        width: 10px;
+        height: 20px;
+        background: #bbb;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    /* The slider progress (for Firefox) */
+    input[type=range]::-moz-range-progress {
+        background: #888;
+    }
+
+    /* The slider track (for Firefox) */
+    input[type=range]::-moz-range-track {
+        background: #888;
+    }
+
+    input[type=range]::-moz-range-thumb:hover {
+        background: #aaa;
+    }
+
+
+.CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
+    background-color: #222226 !important;
+    width: 6px !important;
+    display: none; /* Initially hidden */
+}
+
+.CodeMirror-simplescroll-scrollbar {
+    background: #888 !important;
+}
+
+    .CodeMirror-simplescroll-scrollbar:hover {
+        background: #555 !important;
+    }
+
+.CodeMirror-cursor {
+    border-left: 2px solid #bbb !important;
+}
+
+.CodeMirror-selected {
+    background: Highlight !important;
+}
+
+/* Invert the colors for focused text to ensure it has sufficient contrast */
+.CodeMirror-focused .CodeMirror-selected {
+    background: Highlight !important;
+    color: HighlightText !important;
+}
+
+/* Gutter */
+.CodeMirror-gutters {
+    background: #282a36 !important;
+    border-right: 0px !important;
+}
+.CodeMirror-gutter-wrapper {
+    position: absolute;
+    z-index: 1000;
+    background: white !important;
+    border: 1px solid #ccc !important;
+}
+
+.CodeMirror-linenumbers {
+    color: black !important;
+}
+.CodeMirror-linenumbers div {
+    color: black !important;
+}
+/* Syntax Highlighting - Mimics our Prism.js Tomorrow theme */
+
+/* General */
+.CodeMirror {
+    left: 0 !important; /* Add this line */
+    min-width: 266px;
+    resize: none !important;
+}
+/* Background and Text */
+.cm-s-default {
+    color: #cccccc !important;
+}
+
+    /* Keywords */
+    .cm-s-default .cm-keyword {
+        color: #cc99cc !important;
+    }
+
+    /* Built-ins */
+    .cm-s-default .cm-builtin {
+        color: #cc99cc !important;
+    }
+
+    /* Variables */
+    .cm-s-default .cm-variable {
+        color: #f8f8f2 !important;
+    }
+
+    /* Variables 2 and 3 (often these are local and global variables) */
+    .cm-s-default .cm-variable-2 {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-variable-3 {
+        color: #f8f8f2 !important;
+    }
+
+    /* Function Definitions */
+    .cm-s-default .cm-def {
+        color: #f08d49 !important;
+    }
+
+    /* Operators */
+    .cm-s-default .cm-operator {
+        color: #66cccc !important;
+    }
+
+    /* Punctuation */
+    .cm-s-default .cm-punctuation {
+        color: #cccccc !important;
+    }
+
+    /* Numbers */
+    .cm-s-default .cm-number {
+        color: #f08d49 !important;
+    }
+
+    /* Strings */
+    .cm-s-default .cm-string,
+    .cm-s-default .cm-string-2 {
+        color: #7ec699 !important;
+    }
+
+    /* Comments */
+    .cm-s-default .cm-comment {
+        color: #999999 !important;
+    }
+
+    /* Atoms */
+    .cm-s-default .cm-atom {
+        color: #95cecc !important;
+    }
+
+    /* Types */
+    .cm-s-default .cm-type {
+        color: #cc99cc !important;
+    }
+
+    /* Qualifiers */
+    .cm-s-default .cm-qualifier {
+        color: #cc99cc !important;
+    }
+
+    /* Tags */
+    .cm-s-default .cm-tag {
+        color: #e2777a !important;
+    }
+
+    /* Attributes */
+    .cm-s-default .cm-attribute {
+        color: #cc99cc !important;
+    }
+
+    /* Meta and Others */
+    .cm-s-default .cm-meta {
+        color: #55b5db !important;
+    }
+
+    .cm-s-default .cm-property {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-header {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-quote {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-link {
+        color: #f8f8f2 !important;
+    }
+
+    .cm-s-default .cm-error {
+        color: #f2777a !important;
+    }
+
+    .cm-s-default .cm-bracket {
+        color: #f8f8f2 !important;
+    }
+
+
+/*Hide codemirror node text*/
+.hidden-text {
+    display: none;
+}
+
+.current-node-section {
+    color: #bbb;
+}
+
+.node-title {
+    color: paleturquoise;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.cm-node {
+    color: #D15050;
+    cursor: pointer;
+}
+
+.cm-ref {
+    color: #4F8EB7;
+}
+
+.cm-Prompt {
+    color: #E0B0FF;
+    background-color: #464250;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.aiResponseEditor .CodeMirror-scroll {
+    padding: 0 !important;
+    background-color: #222226;
+}
+
+.model-dropdown {
+    width: 123px;
+}
+
+.error-icon-css {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    text-align: center;
+    margin: 3px;
+}
+
+.error-x-mark {
+    position: relative;
+    margin-top: 12px;
+    z-index: 2;
+}
+
+.error-x-mark-left,
+.error-x-mark-right {
+    display: block;
+    position: absolute;
+    width: 21px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    background-color: red;
+}
+
+.error-x-mark-left {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.error-x-mark-right {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.loader {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes scaleDown {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(0);
+    }
+}
+
+.initial-animation {
+    animation: scaleDown 8s forwards;
+}
+
+.loader-fillBackground {
+    border: 5px solid #222226; /* Dark grey */
+    border-top: 5px solid #006BB6; /* Blue */
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    position: relative;
+    overflow: hidden;
+    animation: spin 2s linear infinite;
+}
+
+.loader-fill {
+    background-color: #006BB6; /* Blue */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.35s;
+}
+
+.status-icons-container {
+    position: relative;
+    width: 24px; /* Width of the icons */
+    height: 24px; /* Height of the icons */
+    margin-right: -30px; /* Space between icons and buttons */
+    margin-left: 10px;
+    pointer-events: none; /* Disables pointer events */
+}
+
+.color-picker-container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.color-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+    .color-picker-item input[type="color"] {
+        background: #222226;
+    }
+
+#bgpick {
+    align-content: center;
+}
+
+.gridLayout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ainode-settings-container {
+    display: grid;
+    position: absolute; /* Doesn't affect existing elements */
+    z-index: 100; /* High z-index to overlay other elements */
+    top: 70px; /* Slightly more distance from top than from sides */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Adjust for perfect centering */
+    width: 90%;
+    height: 54%;
+    background-color: rgba(0.2, 0.2, 0.2, 0.3); /* Transparent blurred dark greyscale */
+    backdrop-filter: blur(10px); /* Blur effect */
+    border-radius: 10px; /* Slightly rounded corners */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Horizontal offset, Vertical offset, Blur, Color */
+
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-rows: repeat(4, 1fr); /* 4 rows */
+    grid-auto-flow: column;
+    gap: 15px; /* Gap between each element */
+    padding: 20px; /* Padding around the edges */
+}
+
+.settingsSlider {
+    background-color: #222226;
+    padding: 5px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    width: 90%;
+}
+
+    .settingsSlider.centered {
+        width: 256px; /* or whatever width you need */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+textarea[id^='custom-instructions-textarea-'] {
+    position: absolute;
+    margin: 10px; /* Outer spacing */
+    background-color: #222226; /* Background color */
+    color: #bbb; /* Text color, assuming you want white text */
+    padding: 10px; /* Inner spacing */
+    font-size: 14px; /* Text size */
+    width: 55%; /* Full width */
+    height: 50%;
+    resize: none; /* Turn off the resize handle */
+}
+
+    textarea[id^='custom-instructions-textarea-']:focus {
+        outline: none; /* Removes default browser outline */
+        border: 1px solid #bbb;
+        border-radius: 3px;
+    }
+
+.code-block-container {
+    width: 88%; /* Add width to the parent container */
+    margin: auto;
+}
+
+.code-block-wrapper {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    justify-content: flex-start;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    padding: 0px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%; /* Match the width with the label */
+    background-color: #18181c;
+    -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.5);
+    -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.5);
+}
+
+.language-label {
+    font-size: 12px;
+    background-color: black;
+    color: #bbb;
+    padding: 1px 5px;
+    width: 100%; /* Match the width with the wrapper */
+    text-align: left;
+    box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
+}
+
+.code-block {
+    padding: 15px;
+    margin-top: -5px;
+    margin-bottom: 0px;
+    box-sizing: border-box;
+    color: #D4D4D4;
+    overflow: hidden; /* Add horizontal scrollbar when content overflows */
+    white-space: pre; /* Prevents the text from wrapping */
+}
+
+
+.code-block pre code {
+    border-radius: 0;
+    margin: 0;
+    color: #D4D4D4;
+}
+
+.code-block-container.hovered {
+    transform: scale(1.05);
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+}
+
+.user-prompt {
+    background-color: #b799ce;
+    color: #222226;
+    padding: 4px 10px 4px 12px;
+    border-radius: 10px;
+    margin: 15px auto;
+    margin-right: 15px;
+    display: inline-block;
+    width: auto;
+    max-width: 80%;
+    -webkit-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    -moz-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    cursor: grab;
+    text-align: left;
+}
+
+    .user-prompt:hover {
+        transform: scale(1.02); /* increase size to 105% on hover */
+        transition: transform 0.3s ease; /* animate the size increase smoothly */
+    }
+
+    .user-prompt.editing {
+        transform: none; /* reset size */
+    }
+
+.response-wrapper {
+    display: flex;
+    position: relative;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin: 15px 0px 20px 20px;
+    -webkit-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 0px 6.5px rgba(0, 0, 0, 0.4);
+    max-width: 90%;
+    width: fit-content; /* Add this */
+}
+
+
+.ai-response {
+    align-self: flex-start;
+    background-color: #212127;
+    padding: 15px;
+    padding-left: 25px; /* or any value you prefer */
+    border-radius: 2px;
+    margin: 0px 0px 0px 0px;
+    display: inline-block;
+    width: auto;
+    overflow-wrap: break-word;
+    position: relative;
+    font-size: 18px;
+}
+
+.drag-handle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 10px;
+    height: 100%;
+    cursor: grab;
+    position: absolute;
+    left: -4px;
+    z-index: 1;
+    background-color: #3e364a;
+}
+
+    .drag-handle .dot {
+        width: 4px;
+        height: 4px;
+        background-color: #222226;
+        border-radius: 50%;
+        margin: 2px 0;
+    }
+
+
+
+.response-wrapper.hovered {
+    transform: scale(1.05);
+    transform-origin: left center;
+    transition: transform 0.3s ease;
+}
+
+.custom-textarea {
+    background-color: #222226;
+    color: inherit;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    height: 70px;
+    overflow-y: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+    user-select: none;
+}
+
+.custom-textarea:focus {
+    outline: none;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+}
+
+.copy-btn {
+    /* your default styles here */
+    padding: 1px 4px;
+    background: none;
+    color: #888888;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* smooth transition */
+    user-select: none;
+}
+
+    .copy-btn:hover {
+        /* styles for when the mouse is hovering over the button */
+        background-color: #18181c;
+    }
+
+    .copy-btn:active {
+        /* styles for when the button is being clicked */
+        background-color: black;
+    }
+
+.code-button {
+    background-color: #222226;
+    color: #bbb;
+    border: none;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    margin: 2px 2px;
+    cursor: pointer;
+    transition-duration: 0.4s;
+}
+
+    .code-button:hover {
+        background-color: #ddd;
+        color: #222226;
+    }
+
+/*Node Panel*/
+.node-panel {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    background: #2f2e3996;
+    backdrop-filter: blur(6px);
+    display: flex; /* Change to flex for initial layout */
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 20px;
+    padding-bottom: 5px;
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom-right-radius: 8px;
+    border-top-left-radius: 8px;
+    z-index: 100;
+    transform: translateX(-200%); /* Start off-screen to the left */
+    transition: transform 0.3s ease; /* Transition for sliding effect */
+    overflow: hidden; /* Hide overflow */
+    /*-webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.44);*/
+    margin-top: 10px;
+    margin-left: 12px;
+}
+
+    .node-panel.open {
+        transform: translateX(0%); /* Slide in to view */
+        width: fit-content; /* Adjust width to fit the content */
+    }
+
+.icon-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start; /* Align icons to the start */
+    margin-bottom: 10px;
+}
+
+.function-call-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
+}
+
+
+
+.node-panel .neurite-function-cm-style {
+    background-color: transparent;
+    max-height: 300px; /* Maximum height */
+    height: 300px;
+    padding:10px;
+    /* Add any other styles you need */
+}
+
+.function-prompt-wrapper {
+    /* Style the wrapper as per your requirements */
+    padding: 10px;
+    margin: 0px;
+    color: white; /* Example text color */
+    border-top: 1px solid #131313; /* Example border */
+    border-bottom: 1px solid #131313; /* Example border */
+    height: fit-content;
+    width: 100%;
+}
+
+.context-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0; /* Start with 0 height for the initial state if hidden */
+}
+
+.context-settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.model-select-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.model-select-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.fractal-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.fractal-settings-container {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.color-settings-panel {
+    display: flex;
+    transition: height 0.2s ease;
+    height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.color-settings-container {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+
+.toggle-panel {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute children evenly */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    width: 100%;
+    height: 10px;
+    padding: 0 10px; /* Add padding to space out the items */
+}
+
+.icon-wrapper {
+    flex-grow: 0; /* Prevent growing to keep icon centered */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-icon {
+    display: inline-block;
+    fill: #555;
+    transition: transform 0.5s ease, fill 0.3s ease;
+    width: 13px;
+    height: 20px;
+}
+
+/* Styles for .bar */
+.bar {
+    flex-grow: 1; /* Allow bars to take up available space */
+    max-width: 20%;
+    height: 2px;
+    background-color: #8882; /* Default color */
+    align-self: center; /* Vertically align with the icon */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+/* Hover effect for .toggle-panel affecting .toggle-icon and bars */
+.panel-open + .toggle-panel .icon-wrapper .toggle-icon {
+    transform: scaleY(-1);
+}
+
+.toggle-panel:hover .toggle-icon svg path {
+    stroke: RGB(200,200,255);
+}
+
+.toggle-panel:hover .toggle-icon {
+    transform: scale(1.1); /* Increase size slightly */
+}
+
+.toggle-panel:hover .bar {
+    background-color: #555; /* Change color on hover */
+}
+
+/* Styles for .button-label */
+.button-label {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Ensure the text remains centered */
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none; /* In case you apply this class to <a> tags */
+    gap: 15px; /* Space between bars and the label text */
+}
+
+    .button-label::before,
+    .button-label::after {
+        content: ''; /* Necessary for displaying the pseudo-element */
+        background-color: #8882;
+        height: 2px; /* Thickness of the bar, matching .bar */
+        flex-grow: 1; /* Allow bars to take up available space on either side */
+        transition: background-color 0.3s ease; /* Smooth transition for background color, matching .bar */
+    }
+
+/* Unified hover effects specifically targeting background color changes */
+.label-bar-container:hover .bar,
+.label-bar-container:hover .button-label::before,
+.label-bar-container:hover .button-label::after {
+    background-color: #555; /* Change color on hover for bars and pseudo-elements */
+}
+
+.label-bar-container:hover .button-label {
+    color: #bbb; /* Adjust for visibility on dark background for label */
+}
+
+
+.function-call-panel {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    max-height: fit-content; /* Adjust as needed */
+    /* background: rgba(42, 42, 54, 0.2);  Example background */
+    width: 100%; /* Match the width of the function call container */
+    overflow: hidden;
+    height: 0px;
+    display: block;
+    padding: 0; /* Reset any padding */
+}
+
+
+    .function-call-panel.hidden {
+        margin-top: 0; /* Eliminate margin when hidden */
+        margin-bottom: 0; /* Eliminate margin when hidden */
+    }
+
+.function-call-list {
+    height: 150px;
+    max-height: 150px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* direction: rtl; /* Right-to-left to move scrollbar to the left */
+}
+
+
+/* Example style for function call list items */
+    .function-call-list > div {
+        padding: 5px;
+        padding-left: 13px;
+        margin: 10px;
+        border-left: 1px solid RGB(200,200,255);
+        background-color: #222226;
+        color: #8a8a8d;
+        display: block; /* Change to block to stack elements vertically */
+        word-wrap: break-word; /* Ensure text wraps and doesn't overflow */
+    }
+
+.func-error-icon {
+    margin-right: 10px; /* Add space between the icon and the text */
+    margin-left: -2px;
+    vertical-align: middle; /* Vertically align the icon */
+    stroke: #87253e;
+}
+
+        .function-call-list > div.hover-state {
+            background-color: #404052; /* Light grey background on hover */
+            cursor: pointer;
+        }
+
+        .function-call-list > div.active-state {
+            background-color: #17171a; /* Slightly darker grey for active state */
+            color: RGB(200,200,255);
+        }
+
+        .function-call-list > div.error-item {
+            background-color: #44000069;
+            color: #8c7474;
+            border-left: 1px solid #aa1111;
+        }
+
+            .function-call-list > div.error-item:hover {
+                background-color: #603030; /* Warmer, lighter red for hover */
+            }
+
+            .function-call-list > div.error-item.active-state {
+                background-color: #1a0606; /* Darker, more intense red for active state */
+                color: #9f7777;
+            }
+.error-log {
+    color: #922b47 !important;
+}
+
+
+.function-prompt-textarea {
+    overflow-y: hidden;
+    flex-grow: 1;
+    background-color: #222226;
+    color: #bbb;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.function-button {
+    z-index: 1;
+    padding: 4px 4px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #222226;
+    color: white;
+    border: inset;
+    border-color: #8882;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#function-run-button:hover {
+    background-color: #58271c;
+    color: #222226;
+}
+
+#function-send-button:hover {
+    background-color: #293e34; /* Different color for send button */
+    color: #222226;
+}
+
+#function-regen-button:hover {
+    background-color: #333; /* Light grey for regen button */
+}
+
+
+
+.cm-neurite-function-name {
+    color: #8e8eff !important;
+}
+
+.icon-content {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 49px;
+    height: 33px;
+    margin-inline: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15%;
+}
+
+
+.panel-icon {
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    background-color: #222226;
+    border-radius: 15%;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.1);
+    -moz-box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.1);
+    box-shadow: 0px 0px 30px 10px rgba(21, 21, 27, 0.1);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+    .panel-icon:hover {
+        background-color: #ddd;
+        color: #222226;
+        cursor: grab;
+    }
+
+    /* Change cursor for draggable icons */
+    .panel-icon[data-draggable="true"]:hover {
+        cursor: grab;
+    }
+
+    .panel-icon[data-draggable="true"]:active {
+        cursor: grabbing;
+    }
+
+    /* Assuming you might have an active state for the icon in the future */
+    .panel-icon.activeIcon {
+        background-color: #929292;
+        cursor: grab;
+    }
+
+    .panel-icon.edges-active {
+        background-color: #929292;
+    }
+
+    .panel-icon.edges-icon:hover {
+        cursor: pointer; /* button click event cursor */
+    }
+
+.icon-content .panel-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+
+#customContextMenu {
+    border: 1px solid #eaeaea1a;
+    background: rgb(207 223 233 / 5%); /* White background with transparency */
+    backdrop-filter: blur(7px); /* Frosted glass effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    padding: 0px; /* Padding around the menu */
+    z-index: 1000; /* High z-index to overlay other elements */
+    position: absolute; /* Required for positioning */
+    display: none; /* Initially hidden */
+    border-radius: 0 10px 0 10px; /* Rounded corners as specified */
+    overflow: hidden; /* Ensures content doesn't overflow */
+}
+
+#customContextMenu,
+.suggestions-container {
+    user-select: none; /* Disable text selection */
+}
+
+
+        /* Hover effect for list items */
+    #customContextMenu li:hover {
+        background-color: rgb(150 193 255 / 59%); /* Blue background on hover */
+        color: black; /* White text on hover */
+        text-shadow: none;
+    }
+
+        /* Remove border from the last item */
+        #customContextMenu li:last-child {
+            border-bottom: none;
+        }
+
+    #customContextMenu li {
+        list-style: none; /* Removes default list styling */
+        padding: 0; /* Reduced padding for list items */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        border-bottom: 1px solid #eaeaea1a; /* Border between items */
+        min-height: 36px; /* Minimum height for each item */
+        display: flex; /* Flex layout to align items */
+        align-items: center; /* Center items vertically */
+    }
+
+        /* Specific style for non-input list items */
+        #customContextMenu li:not(.input-item) {
+            padding: 2px 12px; /* Left padding for non-input items */
+        }
+
+    #customContextMenu .custom-node-method-input {
+        border: none; /* Consistent border */
+        background-color: transparent;
+        color: #888; /* Text color to match the theme */
+        padding: 8px 10px; /* Padding similar to other menu items */
+        margin: 0; /* Removing extra margin */
+        width: fit-content; /* Full width */
+        box-sizing: border-box; /* Include padding and border in width */
+        outline: none; /* Removing outline */
+        font-size: 16px; /* Font size to match the theme */
+        transition: border-color 0.3s; /* Smooth transition for border color */
+        cursor: text; /* Cursor indication for text input */
+        flex-grow: 1; /* Let the input expand to fill the space */
+    }
+
+        /* Hover effect to match other menu items */
+        #customContextMenu .custom-node-method-input:hover {
+            background-color: rgb(143 146 223 / 40%);
+            color: black;
+        }
+
+            #customContextMenu .custom-node-method-input:hover::placeholder {
+                color: #333; /* Darker grey placeholder text color on hover */
+            }
+
+.suggestions-container {
+    position: absolute;
+    background: rgb(205 207 243 / 19%);
+    backdrop-filter: blur(17px);
+    max-height: 250px; /* Maximum height before scrolling */
+    overflow-y: auto; /* Enables vertical scroll */
+    scrollbar-width: none; /* Hides the scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hides the scrollbar for IE/Edge */
+    z-index: 10;
+    display: none; /* Start with the container hidden */
+    border-radius: 10px 10px 0 10px;
+}
+
+    .suggestions-container::-webkit-scrollbar {
+        display: none; /* Hides the scrollbar for WebKit browsers */
+    }
+
+    .suggestions-container div {
+        display: flex; /* Use flexbox for alignment */
+        align-items: center; /* Vertically center items */
+        justify-content: space-between; /* Space between text and button */
+        padding: 8px;
+        cursor: pointer;
+        color: #aaa;
+    }
+
+        .suggestions-container div:hover {
+            background-color: rgb(143 146 223 / 40%);
+            color: white;
+        }
+
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* This ensures vertical center alignment */
+    padding: 8px;
+}
+
+    .suggestion-item span {
+        flex-grow: 1; /* Allows the text to take up available space */
+        /* Optional: Set line-height if needed to match the height of the pin button */
+    }
+
+.pin-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px; /* Adjust padding as needed */
+    display: flex; /* Use flexbox for the button itself */
+    align-items: center; /* Center align items inside the button */
+    justify-content: center; /* Center content horizontally */
+    transition: transform 0.2s ease; /* Smooth transition for size */
+}
+
+    .pin-button svg {
+        height: 1em; /* Adjust size as needed */
+        width: 1em; /* Adjust size as needed */
+    }
+
+    .pin-button:hover {
+        transform: scale(1.4); /* Scale up on hover */
+    }

@@ -21,11 +21,7 @@ async function sendMessage(event, autoModeMessage = null) {
         constructSearchQuery(message);
         return; // This will stop the function execution here
     }
-    const localLLMCheckbox = document.getElementById("localLLM");
-    if (localLLMCheckbox.checked) {
-        // If local LLM is checked, don't do anything.
-        return false;
-    }
+
     let isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
     promptElement = document.getElementById("prompt");
@@ -93,9 +89,6 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // In your main function, check if searchQuery is null before proceeding with the Google search
     const searchQuery = await constructSearchQuery(message);
-    if (searchQuery === null) {
-        return; // Return early if a link node was created directly
-    }
 
     let searchResultsData = null;
     let searchResults = [];
@@ -107,9 +100,10 @@ async function sendMessage(event, autoModeMessage = null) {
     if (searchResultsData) {
         searchResults = processSearchResults(searchResultsData);
         searchResults = await getRelevantSearchResults(message, searchResults);
-    }
 
-    displaySearchResults(searchResults);
+
+        displaySearchResults(searchResults);
+    }
 
     const searchResultsContent = searchResults.map((result, index) => {
         return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;

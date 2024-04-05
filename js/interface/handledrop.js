@@ -1,38 +1,46 @@
-
-//Drag and Drop
-
 let isDraggingIcon = false;
 let initialMousePosition = null;
+let clickThreshold = 1; // Adjust this value as needed
+let mouseDownIcon = false;
 
 function makeIconDraggable(iconDiv) {
+    iconDiv.setAttribute('draggable', 'true'); // Set draggable to true by default
+
     iconDiv.addEventListener('mousedown', function (event) {
         if (!iconDiv.classList.contains('edges-icon')) {
-            iconDiv.dataset.draggable = 'true';  // Set to draggable immediately on mousedown
-            mouseDown = true;
+            initialMousePosition = { x: event.clientX, y: event.clientY };
+            mouseDownIcon = true;
         }
     });
 
     iconDiv.addEventListener('mousemove', function (event) {
-        if (mouseDown && !isDraggingIcon && !iconDiv.classList.contains('edges-icon')) {
-            iconDiv.setAttribute('draggable', 'true');
-            isDraggingIcon = true;
+        if (mouseDownIcon && !isDraggingIcon && !iconDiv.classList.contains('edges-icon')) {
+            const currentMousePosition = { x: event.clientX, y: event.clientY };
+            const distance = Math.sqrt(
+                Math.pow(currentMousePosition.x - initialMousePosition.x, 2) +
+                Math.pow(currentMousePosition.y - initialMousePosition.y, 2)
+            );
+            if (distance > clickThreshold) {
+                isDraggingIcon = true;
+            }
         }
     });
 
     iconDiv.addEventListener('mouseup', function () {
-        iconDiv.setAttribute('draggable', 'false');
+        mouseDownIcon = false;
         isDraggingIcon = false;
-        mouseDown = false;
-        initialMousePosition = null;
     });
 
     iconDiv.addEventListener('dragstart', function (event) {
+        if (!isDraggingIcon) {
+            event.preventDefault(); // Prevent default behavior when not dragging
+            return;
+        }
+
         const rect = iconDiv.getBoundingClientRect();
         const offsetX = event.clientX - rect.left;
         const offsetY = event.clientY - rect.top;
-
         event.dataTransfer.setDragImage(iconDiv, offsetX, offsetY);
-
         const draggableData = {
             type: 'icon',
             iconName: iconDiv.classList[1]
@@ -40,11 +48,15 @@ function makeIconDraggable(iconDiv) {
         event.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
     });
 
-    // When dragging ends, make sure the div is non-draggable
-    iconDiv.addEventListener('dragend', function () {
-        iconDiv.setAttribute('draggable', 'false');
-        isDraggingIcon = false;
-        mouseDown = false;
+    iconDiv.addEventListener('click', function (event) {
+        if (!isDraggingIcon) {
+            // Handle the click event here
+            console.log('Icon clicked:', iconDiv.classList[1]);
+            // Add your custom click event handling logic
+            if (iconDiv.classList.contains('note-icon')) {
+                openModal('noteModal');
+            }
+        }
     });
 }
 
@@ -82,11 +94,7 @@ function handleIconDrop(event, iconName) {
             console.log('Handle drop for the ai icon');
             break;
         case 'link-icon':
-            let linkUrl = prompt("Enter a Link or Search Query", "");
-
-            if (linkUrl) {
-                processLinkInput(linkUrl);
-            }
+            returnLinkNodes();
             break;
         case 'code-icon':
             node = createEditorNode();
@@ -233,6 +241,16 @@ function dropHandler(ev) {
                     };
                     reader.readAsDataURL(files[i]); // Read the file as a Data URL
                     break;
+                case "video":
+                    img = document.createElement('video');
+                    img.style = "display: block";
+                    img.setAttribute("controls", "");
+                    content = [
+                        img
+                    ];
+                    add(1);
+                    img.src = url;
+                    break;
                 case "audio":
                     img = new Audio();
                     img.setAttribute("controls", "");
@@ -248,16 +266,6 @@ function dropHandler(ev) {
                     ];
                     add(1);
                     //div.appendChild(c);
-                    img.src = url;
-                    break;
-                case "video":
-                    img = document.createElement('video');
-                    img.style = "display: block";
-                    img.setAttribute("controls", "");
-                    content = [
-                        img
-                    ];
-                    add(1);
                     img.src = url;
                     break;
                 case "text":
@@ -325,42 +333,65 @@ function dragOverHandler(ev) {
     ev.preventDefault();
 }
 
-
 //Paste event listener...
+function handlePasteData(pastedData, target) {
+    // Allow default handling for textareas and content-editable elements
+    if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable) {
+        return; // Exit the function and allow the browser to handle the paste
+    }
 
-addEventListener("paste", (event) => {
-    console.log(event);
-    let cd = (event.clipboardData || window.clipboardData);
-    let pastedData = cd.getData("text");
-
-    // Check if the pasted data is a URL or an iframe
+    // Handle special cases
     if (isUrl(pastedData)) {
-        let node = createLinkNode(pastedData, pastedData, pastedData); // Use 'pastedData' instead of 'url'
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        // Handle URL paste
+        let node = createLinkNode(pastedData, pastedData, pastedData);
+        setupNodeForPlacement(node);
     } else if (isIframe(pastedData)) {
+        // Handle iframe paste
         let iframeUrl = getIframeUrl(pastedData);
         let node = createLinkNode(iframeUrl, iframeUrl, iframeUrl);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        setupNodeForPlacement(node);
+    } else if (isHtmlContent(pastedData)) {
+        // Handle HTML content
+        createHtmlNode(pastedData);
     } else {
-        // Existing code for handling other pasted content
-        let content = document.createElement("div");
-        content.innerHTML = pastedData;
-        let t = document.createElement("input");
-        t.setAttribute("type", "text");
-        t.setAttribute("value", "untitled");
-        t.setAttribute("style", "background:none;");
-        t.classList.add("title-input");
-        let node = windowify("untitled", [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
-        htmlnodes_parent.appendChild(node.content);
-        registernode(node);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        // Handle plain text
+        createNodeFromWindow(null, pastedData, true);
     }
+    hideContextMenu();
+}
+
+function isHtmlContent(data) {
+    // A simple check for HTML tags
+    const htmlTagPattern = /<[^>]+>/;
+    return htmlTagPattern.test(data);
+}
+
+
+function setupNodeForPlacement(node) {
+    node.followingMouse = 1;
+    node.draw();
+    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+}
+
+function createHtmlNode(pastedData) {
+    let content = document.createElement("div");
+    content.innerHTML = pastedData;
+    let t = document.createElement("input");
+    t.setAttribute("type", "text");
+    t.setAttribute("value", "untitled");
+    t.setAttribute("style", "background:none;");
+    t.classList.add("title-input");
+    let node = windowify("untitled", [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
+    htmlnodes_parent.appendChild(node.content);
+    registernode(node);
+    setupNodeForPlacement(node);
+}
+
+// Existing paste event listener
+addEventListener('paste', (event) => {
+    let cd = (event.clipboardData || window.clipboardData);
+    let pastedData = cd.getData("text");
+    handlePasteData(pastedData, event.target);
 });
 
 addEventListener("paste", (event) => {
@@ -371,7 +402,7 @@ addEventListener("paste", (event) => {
         // Use setTimeout to defer the execution until after the paste event
         setTimeout(() => {
             processAll = true;
-            console.log('processAll set to true after paste in CodeMirror');
+            //console.log('processAll set to true after paste in CodeMirror');
 
             // Simulate a minor change in content to trigger an input event
             const cursorPos = window.myCodeMirror.getCursor();

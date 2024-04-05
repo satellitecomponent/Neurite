@@ -52,13 +52,14 @@ const instructionsMessage = () => ({
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
 ${tagValues.nodeTag} Essential Controls
-- Drag to move; Scroll to zoom; Alt + Scroll to rotate; Ctrl + Click or Ctrl + Drag to select and resize multiple nodes.
+- Drag to move; Scroll to zoom; Alt/Option + Scroll to rotate; Alt/Option + Click or Alt/Option + Drag to select multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
 - Shift + click on two nodes to link; Shift + Double Click on edges to delete.
 - Double Click a node to anchor/unanchor.
-- Alt + Drag on a node textarea to allow the drag to pass through the textarea.
+- Alt/Option + Drag on a node textarea to allow the drag to pass through the textarea.
+- Ctrl + Click to prevent custom right click.
 
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
@@ -84,7 +85,7 @@ ${tagValues.nodeTag} Advanced Controls:
 -Alt/Option Double Click to create an Ai node.
 -Alt/Option + Shift + Double click to create a code editor node.
 
-Make sure to exclusivly reference the above described controls. Try not to make an ything up which is not explained in the above instructions.`
+Make sure to exclusivly reference the above described controls. Avoid divergence from the above how-to.`
 });
 
 const aiNodesMessage = () => ({
@@ -101,9 +102,7 @@ const aiNodesMessage = () => ({
     
     ${LLM_TAG} (Your Topic 2)
     (Your Prompt 2)
-    ${tagValues.refTag} (Related Nodes 2)
-
-    Note: Do not repeat this system context.`,
+    ${tagValues.refTag} (Related Nodes 2)`,
 });
 
 
@@ -122,7 +121,7 @@ END FUNC`;
 const getCommonInstructions = (tagValues, isBracketLinks) => {
     const closeBracket = getClosingBracket(tagValues.refTag);
 
-    return `TO PARTICIPATE, ALWAYS MAINTAIN THE BELOW FORMAT:
+    return `TO CREATE, CONNECT IDEAS and PARTICIPATE, MAINTAIN THE BELOW FORMAT:
 1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a DISTINCT idea.
     - ENSURE UNIQUE TITLES. ITERATE until a UNIQUE note title is found.
 2. Within EACH response, use LINKS to BUILD a NETWORK of GRANULAR RHIZOMATIC notes.
@@ -133,11 +132,11 @@ const getCommonInstructions = (tagValues, isBracketLinks) => {
 
 ${tagValues.nodeTag} REMEMBER
 - Notes (nodes) are created using ${tagValues.nodeTag} and linked using ${tagValues.refTag}.
-- DO create CONNECTIONS BETWEEN notes AS OPPOSED TO ONLY at the END of your response.
+- CREATE CONNECTIONS BETWEEN NOTES.
 - Each title will be UNIQUE from other NOTES. AVOID REPEATED or GENERIC titles.
 ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
 
-Exemplify the format of the below Content Agnostic Example (This is what FUNC format(schema) outputs.):
+The output of our current format(schema) is demonstrated below. Notice the schema is already set. Utilize the format in your response:
 ${tagValues.nodeTag} Concept A
 Description of A.
 ${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Element D${closeBracket}` : `${tagValues.refTag} Principle B, Element D`}

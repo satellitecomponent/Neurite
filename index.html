@@ -42,11 +42,19 @@
     <!-- Pyodide -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
-  <script type="module" crossorigin src="./assets/index.673308c0.js"></script>
-  <link rel="stylesheet" href="./assets/index.d29d4527.css">
+  <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
+  <link rel="stylesheet" href="./assets/index.47f0ef8e.css">
 </head>
 
 <body id="body">
+
+    <!-- filters -->
+    <!-- filters <div id="filter-overlay"></div>-->
+    <div id="invert-filter"></div>
+
+
+
+    <!-- View Matrix -->
 
     <div ondragover="dragOverHandler(event);" ondrop="dropHandler(event);">
         <svg id="svg_bg" viewBox="-128 -128 256 256" width="100%" height="100vh" top="0" left="0" position="fixed">
@@ -54,17 +62,128 @@
                 <g id="bg" />
                 <path id="mousePath" d="" fill="none" stroke="rgb(50 51 62 / 80%)" stroke-width="0.01" />
                 <g id="edges" />
+                <g id="sensorData" />
+                <g id="placementPreview" />
             </g>
         </svg>
     </div>
-
 
     <svg id="debug_layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="position: absolute; left:0px; top:0px; display:none; visibility:hidden; width: 100%; height: 100vh;">
         <style type="text/css"> .white { font: 12px sans-serif; fill: white; } </style>
         <text x="0" y="0" class="white">fps:</text>
     </svg>
 
+    <!-- Modals -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-header">
+                <h2 class="modal-title"></h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
 
+    <div id="noteModal" style="display: none;">
+        <!-- Content for the note modal -->
+        <div style="display: flex; justify-content: space-evenly; align-items: center;" title="Determine what path the Zettelkasten decides to place nodes on.">
+            <label for="zetPathTypeDropdown" style="margin-right: 10px;">Placement Style</label>
+            <div class="dropdown-container">
+                <select id="zetPathTypeDropdown" class="model-selector custom-select">
+                    <option value="Radial">Radial</option>
+                    <option value="Spiral">Spiral</option>
+                    <option value="Branching">Branching</option>
+                </select>
+            </div>
+        </div>
+        <br />
+        <div class="gridLayout">
+
+            <!-- Node Count Slider : For Radial-->
+            <div class="settingsSlider radial-slider" title="Defines the number of steps or nodes in the path.">
+                <label for="radialPathLengthSlider">Number of Nodes</label>
+                <input type="range" id="radialPathLengthSlider" name="radial-path-length-slider" min="1" max="64" step="1">
+            </div>
+            <!-- Distance Slider: : For Radial-->
+            <div class="settingsSlider radial-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+                <label for="radialPathDistanceSlider">Node Spacing</label>
+                <input type="range" id="radialPathDistanceSlider" name="radial-path-distance-slider" min="0.1" max="8" step="0.1">
+            </div>
+            <!-- Scale Slider : For Radial-->
+            <div class="settingsSlider radial-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+                <label for="radialScaleSlider">Node Size</label>
+                <input type="range" id="radialScaleSlider" name="radial-scale-slider" min="0.1" max="2" step="0.01">
+            </div>
+            <!-- Radial Branch Depth Slider: For Radial -->
+            <div class="settingsSlider radial-slider" title="Sets the starting radius from the center for the first node.">
+                <label for="radialDepthSlider">Number of Radii</label>
+                <input type="range" id="radialDepthSlider" name="radial-depth-slider" min="1" max="32" step="1">
+            </div>
+
+            <!-- Node Count Slider : For Spiral-->
+            <div class="settingsSlider spiral-slider" title="Defines the number of steps or nodes in the path.">
+                <label for="spiralPathLengthSlider">Number of Nodes</label>
+                <input type="range" id="spiralPathLengthSlider" name="spiral-path-length-slider" min="1" max="100" step="1">
+            </div>
+            <!-- Distance Slider: : For Spiral-->
+            <div class="settingsSlider spiral-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+                <label for="spiralPathDistanceSlider">Node Spacing</label>
+                <input type="range" id="spiralPathDistanceSlider" name="spiral-path-distance-slider" min="0.1" max="4" step="0.1">
+            </div>
+            <!-- Scale Slider : For Spiral-->
+            <div class="settingsSlider spiral-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+                <label for="spiralScaleSlider">Node Size</label>
+                <input type="range" id="spiralScaleSlider" name="spiral-scale-slider" min="0.1" max="2" step="0.01">
+            </div>
+            <!-- Curl Slider: For Spiral -->
+            <div class="settingsSlider spiral-slider" title="Adjusts the curl of the spiral. Negative values create counterclockwise spirals, while positive values create clockwise spirals.">
+                <label for="curlSlider">Curl</label>
+                <input type="range" id="curlSlider" name="curl-slider" min="-1" max="1" step="0.01">
+            </div>
+
+
+
+            <!-- Node Count Slider : For Branching-->
+            <div class="settingsSlider branching-slider" title="Defines the number of steps or nodes in the path.">
+                <label for="branchingPathLengthSlider">Number of Nodes</label>
+                <input type="range" id="branchingPathLengthSlider" name="branching-path-length-slider" min="1" max="100" value="64" step="1">
+            </div>
+            <!-- Distance Slider: : For Branching-->
+            <div class="settingsSlider branching-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+                <label for="pathDistanceSlider">Node Spacing</label>
+                <input type="range" id="branchingPathDistanceSlider" name="path-distance-slider" min="0.1" max="4" value="1" step="0.1">
+            </div>
+            <!-- Scale Slider : For Branching-->
+            <div class="settingsSlider branching-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+                <label for="branchingScaleSlider">Node Size</label>
+                <input type="range" id="branchingScaleSlider" name="branching-scale-slider" min="0.1" max="2" value="0.98" step="0.01">
+            </div>
+            <!-- Branching Factor Slider: For Branching -->
+            <div class="settingsSlider branching-slider" title="Controls the number of branches emanating from each node.">
+                <label for="branchingFactorSlider">Branching Factor</label>
+                <input type="range" id="branchingFactorSlider" name="branching-factor-slider" min="2" max="12" value="4" step="1">
+            </div>
+        </div>
+        <br />
+        <div class="checkboxarray">
+            <div title="Places random nodes within your viewport instead of using the placement style.">
+                <input type="checkbox" id="zetPlacementOverride" name="override-zet-placement">
+                <label for="zetPlacementOverride">Random Placement</label>
+            </div>
+            <!-- <div title="Starts and stops nodes from making decisions based off their current state.">
+                <input type="checkbox" id="toggleAutomataCheckbox" name="toggleAutomataCheckbox">
+                <label for="toggleAutomataCheckbox">Toggle Automata</label>
+            </div>-->
+        </div>
+    </div>
+
+    <div id="alertModal" style="display: none;">
+        <!-- Content for the alert modal -->
+        <p>This is an alert message.</p>
+        <button>OK</button>
+    </div>
+
+    <!-- Dropdown -->
 
     <div class="dropdown" id="dropdowndiv">
         <div class="menu-button">
@@ -170,7 +289,7 @@
                     </div>
                 </div>
                 <!-- Toggle button for function call panel -->
-                <div class="toggle-function-panel" onclick="toggleFunctionCallPanel()">
+                <div class="toggle-panel" onclick="toggleFunctionCallPanel()">
                     <div class="bar left-bar"></div>
                     <div class="icon-wrapper">
                         <!-- Wrapper for the icon only -->
@@ -287,115 +406,157 @@
                 <div id="tab4" class="tabcontent">
                     <!-- Fourth tab content here -->
                     <div class="submenu">
-                        <!--<div>
-                    <button id="ai-cursor-button">Enable Ai Cursor</button>
-                </div>-->
-                        <br />
-                        <div class="flex-container">
-                            <div class="inline-container" title="Enable Local Ai Features">
-                                <input type="checkbox" id="localLLM">
-                                <label for="localLLM">:</label>
-                            </div>
-                            <button id="downloadAiButton" class="key-button" title="Install Local AI Models into Browser Cache">INSTALL</button>
-                            <div class="inline-container" title="Select Local Model">
-                                <select id="LocalLLMselect" class="model-dropdown custom-select">
-                                    <option value="RedPajama-INCITE-Chat-3B-v1-q4f32_0" selected>Red Pajama 3B f32</option>
-                                    <option value="vicuna-v1-7b-q4f32_0">Vicuna 7B f32</option>
-                                    <option value="Llama-2-7b-chat-hf-q4f32_1">Llama 2 7B f32</option>
-                                    <!--<option value="Llama-2-13b-chat-hf-q4f32_1">Llama 2 13B f32</option>-->
-                                    <option value="Llama-2-70b-chat-hf-q4f16_1">Llama 2 70B f16</option>
-                                    <!-- <option value="WizardCoder-15B-V1.0-q4f32_1">WizardCoder 15B f32</option>-->
-                                </select>
-                            </div>
-                            <div class="inline-container">
-                                <div class="loader" id="loadingIcon" style="display:none;"></div>
-                            </div>
-                            <div class="inline-container">
-                                <div class="loader-fillBackground" id="filledLoadingIcon" style="display:none;">
-                                    <div class="loader-fill initial-animation"></div>
-                                </div>
-                            </div>
-                            <div class="inline-container">
-                                <div id="errorIcon" style="display:none;">
-                                    <div class="error-icon-css">
-                                        <div class="error-x-mark">
-                                            <span class="error-x-mark-left"></span>
-                                            <span class="error-x-mark-right"></span>
+                        <div class="label-bar-container">
+                            <label for="modelSelectContainer" class="button-label" onclick="toggleModelSelectPanel()">Select Ai</label>
+                            <div class="model-select-container" id="modelSelectContainer">
+                                <div class="model-select-panel hidden">
+                                    <br />
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
+                                        <label for="model-select" style="margin-right: 10px;">GLOBAL Model:</label>
+                                        <div class="dropdown-container">
+                                            <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                                <option value="gpt-4">gpt-4</option>
+                                                <option value="gpt-4-0125-preview">gpt-4-0125</option>
+                                                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                                <option value="GROQ-mixtral-8x7b-32768">GROQ-mixtral 7b 32k</option>
+                                                <option value="GROQ-llama2-70b-4096">GROQ-llama2 70b 4k</option>
+                                                <option value="custom-host">Ollama</option>
+                                            </select>
+                                            <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
+                                        <label for="local-model-select" style="margin-right: 10px;">Ollama Model:</label>
+                                        <div class="dropdown-container">
+                                            <select id="local-model-select" class="model-selector custom-select">
+                                                <option value="llama2">Llama 2</option>
+                                                <option value="mistral">Mistral 7B</option>
+                                                <option value="dolphin-phi">Dolphin Phi 2.7B</option>
+                                                <option value="phi">Phi-2 2.7B</option>
+                                                <option value="neural-chat">Neural Chat 7B</option>
+                                                <option value="starling-lm">Starling 7B</option>
+                                                <option value="codellama">Code Llama 7B</option>
+                                                <option value="llama2-uncensored">Llama 2 Uncensored 7B</option>
+                                                <option value="llama2:13b">Llama 2 13B</option>
+                                                <option value="llama2:70b">Llama 2 70B</option>
+                                                <option value="orca-mini">Orca Mini 3B</option>
+                                                <option value="vicuna">Vicuna 7B</option>
+                                                <option value="llava">LLaVA 7B</option>
+                                                <option value="gemma:2b">Gemma 2B</option>
+                                                <option value="gemma:7b">Gemma 7B</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="toggle-panel" onclick="toggleModelSelectPanel()" style="padding-top: 15px;">
+                                    <div class="bar left-bar"></div>
+                                    <div class="icon-wrapper">
+                                        <div class="toggle-icon">
+                                            <!-- Icon SVG -->
+                                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="bar right-bar"></div>
+                                </div>
                             </div>
                         </div>
                         <br />
-                        <div class="api-container">
-                            <div class="api-inputs">
-                                <div>
-                                    <label for="api-key-input">OpenAI API Key:</label>
-                                    <input type="password" id="api-key-input">
-                                </div>
-                                <div class="google-key-input">
-                                    <label for="googleApiKey">Google API Key:</label>
-                                    <input type="password" id="googleApiKey">
-                                </div>
-                                <div class="google-key-input">
-                                    <label for="googleSearchEngineId">Search Engine ID:</label>
-                                    <input type="password" id="googleSearchEngineId">
-                                </div>
-                                <div class="wolfram-key-input">
-                                    <label for="wolframApiKey">Wolfram API Key:</label>
-                                    <input type="password" id="wolframApiKey">
-                                </div>
-                            </div>
+                        <div class="label-bar-container">
+                            <label for="contextSettingsContainer" class="button-label" onclick="toggleContextSettingsPanel()">Context Settings</label>
+                            <div class="context-settings-container" id="contextSettingsContainer">
+                                <div class="context-settings-panel hidden">
+                                    <div class="gridLayout" id="aiParameterGrid" style="padding-top: 15px;">
+                                        <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
+                                            <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
+                                            <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
+                                        </div>
 
-                            <div class="api-buttons">
-                                <button class="key-button" onclick="saveKeys()">Save Keys</button>
-                                <button class="key-button" onclick="clearKeys()">Clear Keys</button>
-                                <button class="key-button" id="saveToFileButton" onclick="saveKeysToFile()">Keys .txt</button>
-                                <button class="key-button" id="loadFromFileButton" onclick="loadKeysFromFile()">Load Keys</button>
+                                        <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
+                                            <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
+                                            <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
+                                        </div>
+
+                                        <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
+                                            <span id="max-context-size-display">2000</span>
+                                            <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
+                                        </div>
+
+                                        <div class="settingsSlider" title="Number of Notes Retrieved from Neurite and Sent to AI">
+                                            <label id="node-slider-label">Top 3 <br />nodes</label>
+                                            <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="toggle-panel" onclick="toggleContextSettingsPanel()" style="padding-top: 15px;">
+                                    <div class="bar left-bar"></div>
+                                    <div class="icon-wrapper">
+                                        <div class="toggle-icon">
+                                            <!-- Icon SVG -->
+                                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="bar right-bar"></div>
+                                </div>
                             </div>
                         </div>
                         <br />
-                        <div style="display: flex; justify-content: space-evenly; align-items: center; ">
-                            <label for="model-select" style="margin-right: 10px;">Select Model:</label>
-                            <div class="dropdown-container">
-                                <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
-                                    <option value="gpt-4">gpt-4</option>
-                                    <option value="gpt-3.5-turbo-1106">gpt-3.5-1106</option>
-                                    <option value="gpt-4-1106-preview">gpt-4-1106</option>
-                                    <option value="gpt-4-0613">gpt-4-0613</option>
-                                    <option value="gpt-4-vision-preview">gpt-4-vision</option>
-                                    <option value="gpt-3.5-turbo-16k-0613">gpt-3.5-16k-0613</option>
-                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-16k</option>
-                                    <option value="gpt-3.5-turbo-0613">gpt-3.5-0613</option>
-                                    <!-- <option value="other">Other...</option> -->
-                                </select>
-                                <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
-                            </div>
-                        </div>
-                        <br />
-                        <div class="gridLayout">
+                        <div class="label-bar-container">
+                            <label for="apiContainer" class="button-label" onclick="toggleAPIPanel()">API Keys</label>
+                            <div class="api-container" id="apiContainer">
+                                <div class="api-panel hidden">
+                                    <div class="api-inputs">
+                                        <div>
+                                            <label for="api-key-input">OpenAI:</label>
+                                            <input type="password" id="api-key-input" class="api-input">
+                                        </div>
+                                        <div class="google-key-input">
+                                            <label for="GROQ-api-key-input">GROQ:</label>
+                                            <input type="password" id="GROQ-api-key-input" class="api-input">
+                                        </div>
+                                        <div class="google-key-input" style="display: none;">
+                                            <label for="anthropic-api-key-input">Anthropic:</label>
+                                            <input type="password" id="anthropic-api-key-input" class="api-input">
+                                        </div>
+                                        <div class="google-key-input">
+                                            <label for="googleApiKey">Google:</label>
+                                            <input type="password" id="googleApiKey" class="api-input">
+                                        </div>
+                                        <div class="google-key-input">
+                                            <label for="googleSearchEngineId">Search Engine ID:</label>
+                                            <input type="password" id="googleSearchEngineId" class="api-input">
+                                        </div>
+                                        <div class="wolfram-key-input">
+                                            <label for="wolframApiKey">Wolfram:</label>
+                                            <input type="password" id="wolframApiKey" class="api-input">
+                                        </div>
+                                    </div>
 
-                            <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
-                                <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
-                                <input type="range" id="max-tokens-slider" name="max-tokens-slider" min="10" max="16000" value="2000" step="1">
+                                    <div class="api-buttons">
+                                        <button class="key-button" onclick="saveKeys()">Save Keys</button>
+                                        <button class="key-button" onclick="clearKeys()">Clear Keys</button>
+                                        <button class="key-button" id="saveToFileButton" onclick="saveKeysToFile()">Keys .txt</button>
+                                        <button class="key-button" id="loadFromFileButton" onclick="loadKeysFromFile()">Load Keys</button>
+                                    </div>
+                                </div>
+                                <div class="toggle-panel" onclick="toggleAPIPanel()" style="padding-top: 15px;">
+                                    <div class="bar left-bar"></div>
+                                    <div class="icon-wrapper">
+                                        <div class="toggle-icon">
+                                            <!-- Icon SVG -->
+                                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="bar right-bar"></div>
+                                </div>
                             </div>
-
-                            <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
-                                <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
-                                <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
-                            </div>
-
-                            <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
-                                <span id="max-context-size-display">2000</span>
-                                <input type="range" id="max-context-size-slider" name="max-context-size-slider" min="0" max="2000" value="555" step="1">
-                            </div>
-
-                            <div class="settingsSlider" title="Number of Notes Retrieved from Neurite and Sent to AI">
-                                <label id="node-slider-label">Top 3 <br />nodes</label>
-                                <input type="range" id="node-count-slider" name="node-count-slider" min="1" max="25" value="3">
-                            </div>
-
                         </div>
                     </div>
                 </div>
@@ -430,7 +591,7 @@
                             <!-- Stored keys will be dynamically added here -->
                         </div>
                         <!--<input type="file" id="fileInput" />
-                <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
                         <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
@@ -456,100 +617,151 @@
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
-                            <label style="white-space: nowrap;">
-                                z <sup id="exponent_value" style="color: powderblue">2</sup> + c
-                            </label>
-                            <input id="exponent" type="range" min="1" max="8" value="2">
+                        <div class="label-bar-container">
+                            <label for="fractalSettingsContainer" class="button-label" onclick="toggleFractalSettingsPanel()">Fractal Settings</label>
+                            <div class="fractal-settings-container" id="fractalSettingsContainer">
+                                <div class="fractal-settings-panel hidden">
+                                    <div class="settingsSlider centered" style="margin-bottom: 10px;">
+                                        <label style="white-space: nowrap;">
+                                            z <sup id="exponent_value" style="color: powderblue">2</sup> + c
+                                        </label>
+                                        <input id="exponent" type="range" min="1" max="8" value="2">
+                                    </div>
+                                    <div class="settingsSlider centered" style="margin-bottom: 10px;">
+                                        <div style="display:flex; justify-content: space-between;">
+                                            <div id="quality_value">Quality</div>
+                                            <div id="fps">fps:?? (is javascript enabled?)</div>
+                                        </div>
+                                        <input id="quality" type="range" min="0" max="100" value="16">
+                                    </div>
+                                    <div class="gridLayout">
+
+                                        <div class="settingsSlider">
+                                            <label for="length">Length: <span id="length_value"></span></label>
+                                            <input id="length" type="range" min="0" max="100" value="50">
+                                        </div>
+
+                                        <div class="settingsSlider">
+                                            <label for="renderWidthMultSlider">Width: <span id="renderWidthMultValue"></span></label>
+                                            <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.001">
+                                        </div>
+
+                                        <div class="settingsSlider">
+                                            <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
+                                            <input type="range"
+                                                   id="maxLinesSlider"
+                                                   min="0"
+                                                   max="2048"
+                                                   step="1"
+                                                   title="Set the removal limit for number of lines displayed">
+                                        </div>
+
+                                        <div class="settingsSlider">
+                                            <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
+                                            <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
+                                        </div>
+                                        <div class="settingsSlider" title="Set the strength of line generation around your mouse.">
+                                            <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
+                                            <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
+                                        </div>
+
+                                        <div class="settingsSlider" title="Set the radius of line generation around your mouse">
+                                            <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
+                                            <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
+                                        </div>
+
+                                    </div>
+                                    <!-- Additional fractal settings sliders here -->
+                                </div>
+                                <div class="toggle-panel" onclick="toggleFractalSettingsPanel()" style="padding-top: 15px;">
+                                    <div class="bar left-bar"></div>
+                                    <div class="icon-wrapper">
+                                        <div class="toggle-icon">
+                                            <!-- Icon SVG -->
+                                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="bar right-bar"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;">
-                            <div style="display:flex; justify-content: space-between;">
-                                <div id="quality_value">Quality</div>
-                                <div id="fps">fps:?? (is javascript enabled?)</div>
-                            </div>
-                            <input id="quality" type="range" min="0" max="100" value="16">
-                        </div>
-                        <div class="gridLayout">
+                        <br />
+                        <div class="label-bar-container">
+                            <label for="colorSettingsContainer" class="button-label" onclick="toggleColorSettingsPanel()">Color</label>
+                            <div class="color-settings-container" id="colorSettingsContainer">
+                                <div class="color-settings-panel hidden">
+                                    <div id="colorselection">
+                                        <div class="color-picker-container">
+                                            <div class="color-picker-item">
+                                                <label for="rColor">R</label>
+                                                <input type="color" id="rColor" name="rColor" value="#FF0000">
+                                            </div>
+                                            <div class="color-picker-item">
+                                                <label for="gColor">G</label>
+                                                <input type="color" id="gColor" name="gColor" value="#00FF00">
+                                            </div>
+                                            <div class="color-picker-item">
+                                                <label for="bColor">B</label>
+                                                <input type="color" id="bColor" name="bColor" value="#0000FF">
+                                            </div>
+                                            <div class="color-picker-item">
+                                                <label for="colorPicker">BG</label>
+                                                <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226;">
+                                            </div>
+                                        </div>
+                                        <br />
+                                        <div id="colorsliders">
+                                            <input type="range" min="0" max="255" id="rSlider" value="0" style="display: none;">
+                                            <div class="gridLayout">
 
-                            <div class="settingsSlider">
-                                <label for="length">Length: <span id="length_value"></span></label>
-                                <input id="length" type="range" min="0" max="100" value="50">
-                            </div>
+                                                <div class="settingsSlider">
+                                                    <label for="cSlider">Brightness<span id="c_value"></span></label>
+                                                    <input type="range" min="0" max="255" id="cSlider" value="128">
+                                                </div>
 
-                            <div class="settingsSlider">
-                                <label for="renderWidthMultSlider">Width: <span id="renderWidthMultValue"></span></label>
-                                <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.001">
-                            </div>
+                                                <div class="settingsSlider">
+                                                    <label for="sSlider">Saturation<span id="s_value"></span></label>
+                                                    <input type="range" min="0" max="255" id="sSlider" value="127">
+                                                </div>
 
-                            <div class="settingsSlider">
-                                <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
-                                <input type="range"
-                                       id="maxLinesSlider"
-                                       min="0"
-                                       max="2048"
-                                       step="1"
-                                       title="Set the removal limit for number of lines displayed">
-                            </div>
+                                                <div class="settingsSlider">
+                                                    <label for="outer_opacity">Outer Opacity<span id="outer_opacity_value"></span></label>
+                                                    <input id="outer_opacity" type="range" min="0" max="100" value="100">
+                                                </div>
 
-                            <div class="settingsSlider">
-                                <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
-                                <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
-                            </div>
-                            <div class="settingsSlider" title="Set the strength of line generation around your mouse.">
-                                <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
-                                <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
-                            </div>
+                                                <div class="settingsSlider">
+                                                    <label for="inner_opacity">Inner Opacity<span id="inner_opacity_value"></span></label>
+                                                    <input id="inner_opacity" type="range" min="0" max="100" value="100">
+                                                </div>
 
-                            <div class="settingsSlider" title="Set the radius of line generation around your mouse">
-                                <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
-                                <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
-                            </div>
+                                                <div class="settingsSlider" id="inversion-settings">
+                                                    <!-- Slider for Inversion -->
+                                                    <label for="inversion-slider">Inversion</label>
+                                                    <input type="range" id="inversion-slider" min="0" max="100" value="0">
+                                                </div>
+                                                <div class="settingsSlider" id="hue-rotation-settings">
+                                                    <!-- Slider for Hue Rotation -->
+                                                    <label for="hue-rotation-slider">Hue Rotation</label>
+                                                    <input type="range" id="hue-rotation-slider" min="0" max="360" value="0">
+                                                </div>
 
-                        </div>
-                        <div id="colorselection">
-                            <div class="color-picker-container">
-                                <div class="color-picker-item">
-                                    <label for="rColor">R</label>
-                                    <input type="color" id="rColor" name="rColor" value="#FF0000">
-                                </div>
-                                <div class="color-picker-item">
-                                    <label for="gColor">G</label>
-                                    <input type="color" id="gColor" name="gColor" value="#00FF00">
-                                </div>
-                                <div class="color-picker-item">
-                                    <label for="bColor">B</label>
-                                    <input type="color" id="bColor" name="bColor" value="#0000FF">
-                                </div>
-                                <div class="color-picker-item">
-                                    <label for="colorPicker">BG</label>
-                                    <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226;">
-                                </div>
-                            </div>
-                            <br />
-                            <div id="colorsliders">
-                                <input type="range" min="0" max="255" id="rSlider" value="0" style="display: none;">
-                                <div class="gridLayout">
-
-                                    <div class="settingsSlider">
-                                        <label for="cSlider">Brightness<span id="c_value"></span></label>
-                                        <input type="range" min="0" max="255" id="cSlider" value="128">
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    <div class="settingsSlider">
-                                        <label for="sSlider">Saturation<span id="s_value"></span></label>
-                                        <input type="range" min="0" max="255" id="sSlider" value="127">
+                                </div>
+                                <div class="toggle-panel" onclick="toggleColorSettingsPanel()" style="padding-top: 15px;">
+                                    <div class="bar left-bar"></div>
+                                    <div class="icon-wrapper">
+                                        <div class="toggle-icon">
+                                            <!-- Icon SVG -->
+                                            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
                                     </div>
-
-                                    <div class="settingsSlider">
-                                        <label for="outer_opacity">Outer Opacity<span id="outer_opacity_value"></span></label>
-                                        <input id="outer_opacity" type="range" min="0" max="100" value="100">
-                                    </div>
-
-                                    <div class="settingsSlider">
-                                        <label for="inner_opacity">Inner Opacity<span id="inner_opacity_value"></span></label>
-                                        <input id="inner_opacity" type="range" min="0" max="100" value="100">
-                                    </div>
-
+                                    <div class="bar right-bar"></div>
                                 </div>
                             </div>
                         </div>
@@ -566,6 +778,10 @@
                             <div class="buttons-left">
                                 <a id="save-button">Save</a>
                                 <a id="load-button">Load</a>
+                                <div id="load-sure" style="display:none">
+                                    <a id="load-unsure-button">no</a>
+                                    <a id="load-sure-button">yes</a>
+                                </div>
                                 <a id="clear-button">Clear</a>
                                 <div id="clear-sure" style="display:none">
                                     <a id="clear-unsure-button">no</a>
@@ -603,7 +819,7 @@
                         <table>
                             <tr>
                                 <td><strong>AI HOW-TO</strong></td>
-                                <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">←This checkbox enables the Ai to explain Neurite</label></td>
+                                <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">Prompt the Ai to explain Neurite</label></td>
                             </tr>
                             <tr>
                                 <td><a href="https://github.com/satellitecomponent/Neurite" id="clickable-link">Github Link</a></td>
@@ -658,7 +874,7 @@
                                 <td>
                                     <strong>Local LLM</strong>
                                 </td>
-                                <td>In the Ai tab, check Local LLM and select a model. The Ai will download into your browser cache. More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a> or <a href="https://mlc.ai/web-llm/" target="_blank" id="clickable-link">web-llm</a></td>
+                                <td>Download The LocalHost Servers Folder, then run your own instance of Ollama. More info at <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a> or <a href="https://ollama.com/" target="_blank" id="clickable-link">Ollama</a></td>
                             </tr>
                             <tr>
                                 <td>
@@ -673,9 +889,9 @@
                             <tr>
                                 <td>
                                     <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
-                                    <label for="forget-checkbox"><strong>:Enable Selective Forgetting </strong></label>
+                                    <label for="forget-checkbox"><strong>Enable Selective Forgetting </strong></label>
                                 </td>
-                                <td><input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>: Novelty<br />(Shuffled Wiki Results)</strong></label></td>
+                                <td><input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>Novelty<br />(Shuffled Wiki Results)</strong></label></td>
                             </tr>
                             <tr>
                                 <td>
@@ -684,7 +900,7 @@
                                 </td>
                                 <td>
                                     <input type="checkbox" id="ai-nodes-checkbox">
-                                    <label for="ai-nodes-checkbox"><strong>: AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
+                                    <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
                                 </td>
                             </tr>
                             <tr>
@@ -714,6 +930,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Nodes -->
+
     <a id="nodes">
         <!--         Save-Data .txt              -->
     </a>
@@ -842,6 +1061,22 @@
     </svg>
 
 
+    <!-- Custom Context Menu Structure -->
+    <ul id="customContextMenu" style="display: none; position: absolute;">
+        <!-- Dynamic list items will be added here -->
+    </ul>
+
+    <svg style="display: none;">
+        <defs>
+            <symbol id="icon-plus" viewBox="0 0 24 24">
+                <path stroke="#ddd" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7 7V5" />
+            </symbol>
+            <symbol id="icon-minus" viewBox="0 0 24 24">
+                <path stroke="#ddd" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
+            </symbol>
+        </defs>
+    </svg>
+
     <!--<script>
         window.onload = function () {
             var input = document.createElement("input");
@@ -861,14 +1096,21 @@
     <script src="js/globals.js"></script>
 
     <script src="js/dropdown/savenet.js"></script>
-    <script src="js/dropdown/dropdown_v2_0_1.js"></script>
+    <script src="js/dropdown/dropdown.js"></script>
+    <script src="js/dropdown/togglepanel.js"></script>
+    <script src="js/dropdown/handleapikeys.js"></script>
+
+    <script src="js/dropdown/custom-modal.js"></script>
     <script src="js/dropdown/displaysavedcoords.js"></script>
 
 
     <script src="js/zettelkasten/zetcodemirror.js"></script>
-    <script src="js/zettelkasten/zettelkasten_v2.js"></script>
 
+    <script src="js/zettelkasten/zetplacementstrategy.js"></script>
 
+    <script src="js/zettelkasten/zettelkasten.js"></script>
+
+    <script src="js/zettelkasten/zetpath.js"></script>
 
 
 
@@ -878,22 +1120,36 @@
 
     <script src="js/nodes/nodemode.js"></script>
     <script src="js/nodes/movenodes.js"></script>
+
     <script src="js/interface/window.js"></script>
 
     <script src="js/interface/interface_v2.js"></script>
 
-    <script src="js/nodes/connect.js"></script>
-    <script src="js/interface/search.js"></script>
+    <script src="js/nodes/nodeutilities.js"></script>
 
-    <script src="js/nodes/togglenodestate.js"></script>
+    <script src="js/nodes/nodestep.js"></script>
+
+    <script src="js/interface/search.js"></script>
 
     <script src="js/interface/bundlecode.js"></script>
     <script src="js/interface/handledrop.js"></script>
 
+    <script src="js/interface/rightclick/customcontextmenu.js"></script>
+    <script src="js/interface/rightclick/suggestions.js"></script>
 
+
+    <script src="js/nodes/nodeactioninterface.js"></script>
     <script src="js/nodes/editor/editornode.js"></script>
+    <script src="js/nodes/connect.js"></script>
+    <script src="js/nodes/togglenodestate.js"></script>
 
-    
+    <script src="js/nodes/createnodes/createnodes_v2.js"></script>
+    <script src="js/nodes/createnodes/nodedef.js"></script>
+    <script src="js/nodes/createnodes/contenteditable.js"></script>
+
+    <script src="js/record/record_v1.js"></script>
+
+    <!-- Ai -->
 
     <script src="js/ai/prompts.js"></script>
 
@@ -905,7 +1161,14 @@
     <script src="js/ai/aihelpers.js"></script>
     <script src="js/ai/vision.js"></script>
 
-    <!--<script src="js/aicursor.js"></script>-->
+    <script src="js/ai/dummyai.js"></script>
+
+
+    <script src="js/ai/nodesensor.js"></script>
+    <script src="js/ai/automata.js"></script>
+    <script src="js/ai/network.js"></script>
+
+    <!-- <script src="js/aicursor.js"></script>-->
 
     <script src="js/searchapi/searchapi_v2.js"></script>
     <script src="js/searchapi/filternodes.js"></script>
@@ -915,13 +1178,7 @@
     <script src="js/searchapi/codeparser/gitparsed.js"></script>
     <script src="js/searchapi/wolframapi.js"></script>
 
-    <script src="js/nodes/createnodes/createnodes_v2.js"></script>
-    <script src="js/nodes/createnodes/nodedef.js"></script>
-    <script src="js/nodes/createnodes/contenteditable.js"></script>
-
-    <script src="js/record/record_v1.js"></script>
     <script src="js/neuralapi.js"></script>
-
 
     <script src="js/functioncall/functioncallingpanel.js"></script>
     <script src="js/functioncall/neuraltelemetryprompt.js"></script>

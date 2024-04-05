@@ -49,13 +49,11 @@ async function getWikipediaSummaries(keywords, top_n_links = 3) {
     const allSummariesPromises = keywords.map(async (keyword) => {
         try {
             const response = await fetch(
-                `http://localhost:5000/wikipedia_summaries?keyword=${keyword}&top_n_links=${top_n_links}`
+                `http://localhost:5000/wikipedia_summaries?keyword=${encodeURIComponent(keyword)}&top_n_links=${top_n_links}`
             );
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const data = await response.json();
             const keywordSummaries = await calculateRelevanceScores(data, await fetchEmbeddings(keyword));
             return keywordSummaries;
@@ -65,18 +63,13 @@ async function getWikipediaSummaries(keywords, top_n_links = 3) {
             return [];
         }
     });
-
     const allSummaries = await Promise.all(allSummariesPromises);
     const summaries = [].concat(...allSummaries); // Flatten the array of summaries
-
     // Sort the summaries by relevance score in descending order
     summaries.sort((a, b) => b.relevanceScore - a.relevanceScore);
-
     const combinedSummaries = [];
-
     // Include the top matched summary
     combinedSummaries.push(summaries[0]);
-
     // Check if the novelty checkbox is checked
     if (isNoveltyEnabled()) {
         // If checked, randomly pick two summaries from the remaining summaries
@@ -87,10 +80,8 @@ async function getWikipediaSummaries(keywords, top_n_links = 3) {
         // If not checked, push the top n summaries
         combinedSummaries.push(...summaries.slice(1, top_n_links));
     }
-
     // Display the final selected Wikipedia results
     displayWikipediaResults(combinedSummaries);
-
     return combinedSummaries;
 }
 
