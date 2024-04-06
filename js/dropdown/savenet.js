@@ -1,14 +1,15 @@
-﻿
-function handleSaveConfirmation(title, saveData, existingTitle) {
+﻿const LATEST_LOADED_INDEX_KEY = "latest-selected"
+
+function handleSaveConfirmation(title, saveData, force = false) {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
     const existingSaves = saves.filter(save => save.title === title);
 
-    if (existingSaves.length > 0 && !existingTitle) {
+    if (existingSaves.length > 0) {
         let confirmMessage = existingSaves.length === 1 ?
             `A save with the title "${title}" already exists. Click 'OK' to overwrite, or 'Cancel' to create a duplicate.` :
             `${existingSaves.length} saves with the title "${title}" already exist. Click 'OK' to overwrite all, or 'Cancel' to create a duplicate.`;
 
-        if (confirm(confirmMessage)) {
+        if (force || confirm(confirmMessage)) {
             // Overwrite logic - update all saves with the matching title
             saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
             console.log(`Updated all saves with title: ${title}`);
@@ -93,17 +94,16 @@ function neuriteSaveEvent(existingTitle = null) {
 
     let title = existingTitle || prompt("Enter a title for this save:");
     if (title) {
-        handleSaveConfirmation(title, saveData, existingTitle);
+        handleSaveConfirmation(title, saveData, title === existingTitle);
     }
 }
 
 // Attach the neuriteSaveEvent to the save button
 document.getElementById("save-button").addEventListener("click", () => neuriteSaveEvent());
 
-
 function downloadData(title, data) {
-    var blob = new Blob([data], { type: 'text/plain' });
-    var tempAnchor = document.createElement('a');
+    const blob = new Blob([data], { type: 'text/plain' });
+    const tempAnchor = document.createElement('a');
     tempAnchor.download = title + '.txt';
     tempAnchor.href = window.URL.createObjectURL(blob);
     tempAnchor.click();
@@ -112,6 +112,7 @@ function downloadData(title, data) {
     }, 1);
 }
 
+let selectedSaveTitle = null; // Global variable to track the selected save
 let selectedSaveIndex = null; // Global variable to track the selected save
 
 function updateSavedNetworks() {
@@ -148,7 +149,9 @@ function updateSavedNetworks() {
         loadButton.className = 'linkbuttons';
         loadButton.addEventListener('click', function () {
             document.getElementById("save-or-load").value = data.textContent;
+            selectedSaveTitle = save.title; // Update the selected save title
             selectedSaveIndex = index; // Update the selected save index
+            localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex)
             updateSavedNetworks(); // Refresh the UI
         });
 
@@ -158,6 +161,18 @@ function updateSavedNetworks() {
         deleteButton.addEventListener('click', function () {
             // Remove the save from the array
             saves.splice(index, 1);
+
+            if (selectedSaveIndex === index) {
+                localStorage.removeItem(LATEST_LOADED_INDEX_KEY);
+                selectedSaveIndex = null;
+                selectedSaveTitle = null;
+            } else {
+                selectedSaveIndex = saves.findIndex(save => save.title === selectedSaveTitle) ?? null;
+
+                if (selectedSaveIndex === null) {
+                    selectedSaveTitle = null
+                }
+            }
 
             // Update local storage
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -195,6 +210,7 @@ function updateSavedNetworks() {
     }
 }
 
+
 // Call updateSavedNetworks on page load to display previously saved networks
 updateSavedNetworks();
 
@@ -211,7 +227,7 @@ let container = document.getElementById("saved-networks-container");
 });
 
 ['dragleave', 'drop'].forEach(eventName => {
-    container.addEventListener(eventName, unhighlight, false);
+    container.addEventListener(eventName, unHighlight, false);
 });
 
 // Handle the drop
@@ -222,11 +238,11 @@ function preventDefaults(e) {
     e.stopPropagation();
 }
 
-function highlight(e) {
+function highlight() {
     container.classList.add('highlight');
 }
 
-function unhighlight(e) {
+function unHighlight() {
     container.classList.remove('highlight');
 }
 
@@ -257,8 +273,6 @@ function handleSavedNetworksDrop(e) {
     }
 }
 
-
-
 document.getElementById("clear-button").addEventListener("click", function () {
     document.getElementById("clear-sure").setAttribute("style", "display:block");
     document.getElementById("clear-button").text = "Are you sure?";
@@ -268,19 +282,15 @@ document.getElementById("clear-unsure-button").addEventListener("click", functio
     document.getElementById("clear-button").text = "Clear";
 });
 document.getElementById("clear-sure-button").addEventListener("click", function () {
-    clearnet();
+    clearNet();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
     document.getElementById("clear-button").text = "Clear";
 });
-
-
 
 document.getElementById("clearLocalStorage").onclick = function () {
     localStorage.clear();
     alert('Local storage has been cleared.');
 }
-
-
 
 for (let n of htmlnodes) {
     let node = new Node(undefined, n, true);  // Indicate edge creation with `true`
@@ -290,7 +300,7 @@ for (let n of nodes) {
     n.init(nodeMap);
 }
 
-function clearnet() {
+function clearNet() {
     clearNodeSelection()
 
     // Remove all edges
@@ -345,7 +355,7 @@ document.getElementById("load-button").addEventListener("click", function () {
         document.getElementById("load-button").text = "Are you sure?";
     } else {
         // If the input is not empty, proceed with loading
-        loadnet(inputValue, true);
+        loadNet(inputValue, true);
     }
 });
 
@@ -357,14 +367,14 @@ document.getElementById("load-unsure-button").addEventListener("click", function
 
 document.getElementById("load-sure-button").addEventListener("click", function () {
     // Proceed with loading even if input is empty, as user confirmed
-    loadnet(document.getElementById("save-or-load").value, true);
+    loadNet(document.getElementById("save-or-load").value, true);
     document.getElementById("load-sure").setAttribute("style", "display:none");
     document.getElementById("load-button").text = "Load";
 });
 
-function loadnet(text, clobber, createEdges = true) {
+function loadNet(text, clobber, createEdges = true) {
     if (clobber) {
-        clearnet();
+        clearNet();
     }
 
     let d = document.createElement("div");
@@ -451,3 +461,37 @@ function reconstructSavedNode(node) {
         initEditorNode(node)
     }
 }
+
+const autosaveEnabledCheckbox = document.getElementById("autosave-enabled")
+
+function autosave() {
+    if (selectedSaveTitle !== null && autosaveEnabledCheckbox.checked) {
+        neuriteSaveEvent(selectedSaveTitle)
+    }
+}
+
+// Necessary because of the scripts order load order
+document.addEventListener("DOMContentLoaded", function (){
+    const value = localStorage.getItem(LATEST_LOADED_INDEX_KEY) ?? null
+    selectedSaveIndex = value !== null ? parseInt(value) : null; // Update the selected save index
+
+    if (selectedSaveIndex !== null) {
+        const saves = JSON.parse(localStorage.getItem("saves") || "[]");
+        const existingSaves = saves?.[selectedSaveIndex];
+        if (existingSaves) {
+            selectedSaveTitle = existingSaves.title
+            document.getElementById("save-or-load").value = existingSaves.data;
+            updateSavedNetworks();
+
+            loadNet(existingSaves.data, true);
+        } else {
+            selectedSaveTitle = null
+            selectedSaveIndex = null
+        }
+    }
+
+    autosaveEnabledCheckbox.checked = localStorage.getItem("autosave-enabled") ?? false
+    autosaveEnabledCheckbox.addEventListener("change", (e) => localStorage.setItem("autosave-enabled", !!e.target.checked))
+
+    setInterval(autosave, 10_000)
+})
