@@ -1,12 +1,13 @@
 # `Neurite`
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
+![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
 
 ## `Introduction`
 
 💡 **[Neurite](https:/neurite.network/) unleashes a new dimension of digital interface...**
 
-**...the fractal dimension...**
+**...the fractal dimension.**
 
 ## Bridging Fractals and Thought
 
@@ -16,13 +17,13 @@ For over a year, we've been iterating out a virtually limitless workspace that b
 
 ### `Why Fractals?`
 
-[The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice -fractal logic is ingrained into a countless number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
+[The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833) and [music](https://www.mpg.de/9379548/fractals-set-the-tone) - even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
-Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question.
+Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.
 
 Neurite speaks in the language of iteration.
 
-The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
+The goal of this project is to grow agentic graphs of fractal collaboration & creativity.
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
 </p>
@@ -44,7 +45,7 @@ Neurite iteratively defines interactive and modular graphs of reasoning, computa
 </p>
 
 ### `Complexity Inspires Creativity / Basins Attract`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape that traces ever branching pathways of thought.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape for tracing ever-branching pathways of thought.
 
 ### 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/) 🌐
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -75,7 +76,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 </p>
 
 - **`Bi-Directional Sync`**: Edit a Mind Map node's content and see it instantaneously update in the [Zettelkasten](https://en.wikipedia.org/wiki/Zettelkasten). Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
-- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination.
+- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination.
 - **`Dynamic Fractal Backdrop`**: The Mandelbrot fractal is not just an aesthetic element - fractals set the stage for your interactive open-world landscape of multi-media composition.
 - **`Zoom-to-Node`**: Navigate through your notes from within the Zettelkasten, and zoom directly to their corresponding nodes within the Mandelbrot set. Conversely, clicking the fullscreen of a text node navigates to the corresponding note in the Zettelkasten.
 
