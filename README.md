@@ -1,5 +1,8 @@
-# `Neurite`
+# Neurite
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
+
+
 
 ![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
 
@@ -319,6 +322,14 @@ If you are a developer who is interested in contributing to this project, contac
 ![Neuritereadme4fps360](https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e)
 full video [here](https://youtu.be/1VmE_Bov-Xw)
 ![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
+
+<a href="https://star-history.com/#satellitecomponent/Neurite&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
+ </picture>
+</a>
 
 ### Here is what GPT-4 has to say about Neurite
 
