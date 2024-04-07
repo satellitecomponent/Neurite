@@ -216,7 +216,7 @@ There will be more information on this soon. This is a new feature in initial re
   - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
   - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.
 - **Related Research:** [Conversational Swarm Intelligence Paper](https://arxiv.org/abs/2309.03220)
-- 
+
 ## `User Guide`
 ### To run Neurite locally,
 either:  
@@ -225,7 +225,7 @@ either:
 
 Or, to enable local AI features without using our Github pages host above:  
 1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-2. Install any necessary global dependencies when running the below, (Node.js, Rust, Emuscripten, Strawberry Perl, Vite)
+2. Install any necessary global dependencies when running the below, (Vite)
 
 ```
 npm install
@@ -240,7 +240,7 @@ The Localhost Servers are an important component of Neurite that serves as an op
 ### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
 ### The servers enable plugin integration for webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
-- Our Wikipedia, Wolfram, and web scrape servers require Python and Node.js
+- The localhost servers require npm and Node.js
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
@@ -277,6 +277,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 
 ✅ local embeddings 
 - VR
+
 🔄 deeper fractal zoom
 
 ✅ Global Function Calling
@@ -296,7 +297,6 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 ✅ Improved Saving
 
 🔄 accessibility
-
 - custom equations for the fractal
 - drawing-tool
 
