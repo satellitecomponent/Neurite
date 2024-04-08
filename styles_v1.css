@@ -1297,8 +1297,8 @@ select-replacer > div:first-child {
         }
 
 .scrollable-list {
-    height: 149px; /* Adjust this value based on how tall you want your list to be */
-    width: 255px;
+    height: 190px;
+    width: 95%;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 5px;
