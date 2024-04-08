@@ -8,7 +8,7 @@
 
 ## `Introduction`
 
-💡 **[Neurite](https:/neurite.network/) unleashes a new dimension of digital interface...**
+💡 **[Neurite](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 **...the fractal dimension.**
 
@@ -69,7 +69,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 
 ## `Synchronized Knowledge Management`
 
-- **`Synchronized Knowledge Management`**: [Neurite](https:/neurite.network/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
+- **`Synchronized Knowledge Management`**: [Neurite](https://satellitecomponent.github.io/Neurite/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
 - **`FractalGPT`**: Engage with non-linear, rhizomatic memory through our biomimetic interface. Create and connect an endless number of individual chat windows, or let the AI take notes from above.
 - **`Neural API`**: A recent update to Neurite is our function calling panel, which allows you to execute Neurite's code from within Neurite itself.
 - **`Local AI`**: Neurite connects to any locally hosted instance of Ollama to run Ai models directly from your computer.
@@ -87,7 +87,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://neurite.network/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
+### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
 
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
