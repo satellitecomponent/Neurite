@@ -99,7 +99,7 @@ function neuriteSaveEvent(existingTitle = null) {
 }
 
 // Attach the neuriteSaveEvent to the save button
-document.getElementById("save-button").addEventListener("click", () => neuriteSaveEvent());
+document.getElementById("new-save-button").addEventListener("click", () => neuriteSaveEvent());
 
 function downloadData(title, data) {
     const blob = new Blob([data], { type: 'text/plain' });
@@ -132,11 +132,12 @@ function updateSavedNetworks() {
         let loadButton = document.createElement("button");
         let deleteButton = document.createElement("button");
         let downloadButton = document.createElement("button");
+        let saveButton = document.createElement("button");
 
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = "none"
-        titleInput.style.width = "125px"
+        titleInput.style.width = "110px"
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -145,15 +146,43 @@ function updateSavedNetworks() {
         data.textContent = save.data;
         data.style.display = "none";
 
-        loadButton.textContent = "Select";
+        saveButton.textContent = "Save";
+        saveButton.className = 'linkbuttons';
+        saveButton.addEventListener('click', function () {
+            if (index !== selectedSaveIndex && !window.confirm(`This will overwrite ${save.title} with the currently selected save, ${selectedSaveTitle} Continue?`)) {
+                return;
+            }
+
+            neuriteSaveEvent(existingTitle = save.title)
+        });
+
+
+        loadButton.textContent = "Load";
         loadButton.className = 'linkbuttons';
         loadButton.addEventListener('click', function () {
-            document.getElementById("save-or-load").value = data.textContent;
-            selectedSaveTitle = save.title; // Update the selected save title
-            selectedSaveIndex = index; // Update the selected save index
-            localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex)
-            updateSavedNetworks(); // Refresh the UI
+
+            function updateLoadState() {
+                autosave()
+
+                selectedSaveTitle = save.title;
+                selectedSaveIndex = index;
+                localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex);
+            }
+
+            if (data.textContent === "") {
+                var isSure = window.confirm("Are you sure you want an empty save?");
+                if (isSure) {
+                    updateLoadState();
+                    loadNet(data.textContent, true);
+                }
+            } else {
+                updateLoadState();
+                loadNet(data.textContent, true);
+            }
+
+            updateSavedNetworks();
         });
+
 
 
         deleteButton.textContent = "X";
@@ -203,6 +232,7 @@ function updateSavedNetworks() {
 
         div.appendChild(titleInput);
         div.appendChild(data);
+        div.appendChild(saveButton);
         div.appendChild(loadButton);
         div.appendChild(downloadButton);
         div.appendChild(deleteButton);
@@ -264,8 +294,14 @@ function handleSavedNetworksDrop(e) {
                 localStorage.setItem("saves", JSON.stringify(saves));
                 updateSavedNetworks();
             } catch (error) {
-                // If local storage is full, update save-load input
-                document.getElementById("save-or-load").value = content;
+                // Before loading, confirm with the user due to size limitations
+                var isSure = window.confirm("The file is too large to store. Would you like to load it anyway?");
+                if (isSure) {
+                    // Proceed with loading if the user confirms
+                    selectedSaveTitle = null;
+                    selectedSaveIndex = null;
+                    loadNet(content, true);
+                }
             }
         };
     } else {
@@ -346,31 +382,6 @@ function restoreAdditionalSaveObjects(d) {
     // Restore sliders immediately after their values have been set
     restoreInputValues();
 }
-
-document.getElementById("load-button").addEventListener("click", function () {
-    var inputValue = document.getElementById("save-or-load").value;
-    if (inputValue === "") {
-        // If the input is empty, ask for confirmation
-        document.getElementById("load-sure").setAttribute("style", "display:block");
-        document.getElementById("load-button").text = "Are you sure?";
-    } else {
-        // If the input is not empty, proceed with loading
-        loadNet(inputValue, true);
-    }
-});
-
-document.getElementById("load-unsure-button").addEventListener("click", function () {
-    // Hide the confirmation dialog and reset the button text if user is not sure
-    document.getElementById("load-sure").setAttribute("style", "display:none");
-    document.getElementById("load-button").text = "Load";
-});
-
-document.getElementById("load-sure-button").addEventListener("click", function () {
-    // Proceed with loading even if input is empty, as user confirmed
-    loadNet(document.getElementById("save-or-load").value, true);
-    document.getElementById("load-sure").setAttribute("style", "display:none");
-    document.getElementById("load-button").text = "Load";
-});
 
 function loadNet(text, clobber, createEdges = true) {
     if (clobber) {
@@ -480,7 +491,6 @@ document.addEventListener("DOMContentLoaded", function (){
         const existingSaves = saves?.[selectedSaveIndex];
         if (existingSaves) {
             selectedSaveTitle = existingSaves.title
-            document.getElementById("save-or-load").value = existingSaves.data;
             updateSavedNetworks();
 
             loadNet(existingSaves.data, true);
@@ -493,5 +503,5 @@ document.addEventListener("DOMContentLoaded", function (){
     autosaveEnabledCheckbox.checked = localStorage.getItem("autosave-enabled") ?? false
     autosaveEnabledCheckbox.addEventListener("change", (e) => localStorage.setItem("autosave-enabled", !!e.target.checked))
 
-    setInterval(autosave, 10_000)
+    setInterval(autosave, 8_000)
 })
