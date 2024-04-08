@@ -482,6 +482,7 @@ function autosave() {
 }
 
 // Necessary because of the scripts order load order
+
 document.addEventListener("DOMContentLoaded", function (){
     const value = localStorage.getItem(LATEST_LOADED_INDEX_KEY) ?? null
     selectedSaveIndex = value !== null ? parseInt(value) : null; // Update the selected save index
