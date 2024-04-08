@@ -50,7 +50,7 @@ function clearMenuOptions(menu) {
 document.addEventListener('contextmenu', function (event) {
     // Function to check if default context menu should be used
     function shouldUseDefaultContextMenu(target) {
-        return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container') ||
+        return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content') ||
             target.tagName === 'IFRAME' ||
             target.tagName === 'IMG' ||
             target.tagName === 'VIDEO';

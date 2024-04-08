@@ -33,7 +33,7 @@ class SpiralZetPath extends ZetPath {
         };
     }
     generatePath() {
-        console.log('Generating spiral path...');
+        //console.log('Generating spiral path...');
         this.path = [];
         let angle = 0;
         let radius = this.options.spiralPathDistance * this.options.spiralScale;
@@ -56,12 +56,12 @@ class SpiralZetPath extends ZetPath {
             let distanceRatio = targetDistance / currentDistance;
             radius *= distanceRatio;
         }
-        console.log('Spiral path generated:', this.path);
+        //console.log('Spiral path generated:', this.path);
     }
 }
 class BranchingZetPath extends ZetPath {
     generatePath() {
-        console.log('Generating branching path...');
+        //console.log('Generating branching path...');
         this.path = [];
         const branchingFactor = this.options.branchingFactor;
         const nodeSpacing = this.options.branchingPathDistance;
@@ -95,14 +95,14 @@ class BranchingZetPath extends ZetPath {
         // Start with the branching interval at its max to place the first branch correctly
         generateBranch(totalDepth, 0, 0, branchingInterval);
 
-        console.log('Updated Branching Path:', this.path);
+        //console.log('Updated Branching Path:', this.path);
         return this.path;
     }
 }
 
 class RadialZetPath extends ZetPath {
     generatePath() {
-        console.log('Generating radial path...');
+        //console.log('Generating radial path...');
         this.path = [];
         const numBranches = this.options.radialDepth;
         const nodesPerBranch = Math.floor(this.options.radialPathLength / numBranches);
@@ -149,7 +149,7 @@ class RadialZetPath extends ZetPath {
                 }
             }
         }
-        console.log('Updated Radial Path:', this.path);
+        //console.log('Updated Radial Path:', this.path);
         return this.path;
     }
 }
@@ -206,7 +206,7 @@ const defaultZetPathOptions = {
 let zetPath = createZetPath('Radial', defaultZetPathOptions);
 
 function updatePathOptions() {
-    console.log('Updating path options...');
+    //console.log('Updating path options...');
     const style = modalInputValues.zetPathTypeDropdown || 'Radial';
 
     const spiralPathLength = parseInt(modalInputValues.spiralPathLengthSlider);
@@ -256,7 +256,7 @@ function updatePathOptions() {
     // Pass the complete pathObject, which now includes the path and the override flag
     window.zettelkastenProcessor.updatePlacementPath(pathObject);
 
-    console.log('Updated path options:', pathObject.zetPath.options);
+    //console.log('Updated path options:', pathObject.zetPath.options);
 
     // Adjust visibility of sliders based on path type
     adjustSliderVisibilityBasedOnPathType(style);
