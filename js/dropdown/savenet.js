@@ -471,6 +471,8 @@ function reconstructSavedNode(node) {
     if (isEditorNode(node)) {
         initEditorNode(node)
     }
+
+    node.sensor = new NodeSensor(node, 3);
 }
 
 const autosaveEnabledCheckbox = document.getElementById("autosave-enabled")
