@@ -1,12 +1,16 @@
-# `Neurite`
+# Neurite
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
+
+
+![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
 
 ## `Introduction`
 
 💡 **[Neurite](https:/neurite.network/) unleashes a new dimension of digital interface...**
 
-**...the fractal dimension...**
+**...the fractal dimension.**
 
 ## Bridging Fractals and Thought
 
@@ -16,13 +20,13 @@ For over a year, we've been iterating out a virtually limitless workspace that b
 
 ### `Why Fractals?`
 
-[The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice -fractal logic is ingrained into a countless number of natural and constructed phenomena - ranging from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833), and even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
+[The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833) and [music](https://www.mpg.de/9379548/fractals-set-the-tone) - even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
-Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4 dimensional spacetime are put into question.
+Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.
 
 Neurite speaks in the language of iteration.
 
-The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
+The goal of this project is to grow agentic graphs of fractal collaboration & creativity.
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
 </p>
@@ -44,7 +48,7 @@ Neurite iteratively defines interactive and modular graphs of reasoning, computa
 </p>
 
 ### `Complexity Inspires Creativity / Basins Attract`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape that traces ever branching pathways of thought.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape for tracing ever-branching pathways of thought.
 
 ### 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/) 🌐
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
@@ -75,7 +79,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 </p>
 
 - **`Bi-Directional Sync`**: Edit a Mind Map node's content and see it instantaneously update in the [Zettelkasten](https://en.wikipedia.org/wiki/Zettelkasten). Conversely, any text changes in the Zettelkasten are reflected by the Mind Map.
-- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files, while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination.
+- **`Zettelkasten and Mind Mapping`**: Traditional note-taking confines you to static files while conventional mind mapping lets you visualize connections but often lacks in-depth content. Neurite treats nodes as dynamic objects that can be interacted with from any approach.  Nodes don't just represent text, they can run code, interact with APIs, intercommunicate, and anything else within the realm of imagination.
 - **`Dynamic Fractal Backdrop`**: The Mandelbrot fractal is not just an aesthetic element - fractals set the stage for your interactive open-world landscape of multi-media composition.
 - **`Zoom-to-Node`**: Navigate through your notes from within the Zettelkasten, and zoom directly to their corresponding nodes within the Mandelbrot set. Conversely, clicking the fullscreen of a text node navigates to the corresponding note in the Zettelkasten.
 
@@ -215,7 +219,7 @@ There will be more information on this soon. This is a new feature in initial re
   - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
   - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.
 - **Related Research:** [Conversational Swarm Intelligence Paper](https://arxiv.org/abs/2309.03220)
-- 
+
 ## `User Guide`
 ### To run Neurite locally,
 either:  
@@ -224,7 +228,7 @@ either:
 
 Or, to enable local AI features without using our Github pages host above:  
 1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-2. Install any necessary global dependencies when running the below, (Node.js, Rust, Emuscripten, Strawberry Perl, Vite)
+2. Install any necessary global dependencies when running the below, (Vite)
 
 ```
 npm install
@@ -239,7 +243,7 @@ The Localhost Servers are an important component of Neurite that serves as an op
 ### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
 ### The servers enable plugin integration for webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
-- Our Wikipedia, Wolfram, and web scrape servers require Python and Node.js
+- The localhost servers require npm and Node.js
 - Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
@@ -276,6 +280,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 
 ✅ local embeddings 
 - VR
+
 🔄 deeper fractal zoom
 
 ✅ Global Function Calling
@@ -295,7 +300,6 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 ✅ Improved Saving
 
 🔄 accessibility
-
 - custom equations for the fractal
 - drawing-tool
 
@@ -318,6 +322,14 @@ If you are a developer who is interested in contributing to this project, contac
 ![Neuritereadme4fps360](https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e)
 full video [here](https://youtu.be/1VmE_Bov-Xw)
 ![Screenshot 2023-06-16 221906](https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404)
+
+<a href="https://star-history.com/#satellitecomponent/Neurite&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
+ </picture>
+</a>
 
 ### Here is what GPT-4 has to say about Neurite
 
