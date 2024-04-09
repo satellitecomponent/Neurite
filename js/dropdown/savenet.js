@@ -93,8 +93,24 @@ function neuriteSaveEvent(existingTitle = null) {
     let saveData = nodeData + zettelkastenSaveElement + additionalSaveData;
 
     let title = existingTitle || prompt("Enter a title for this save:");
+
+    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
     if (title) {
+        // Before saving, check if we're updating an existing save
+        let indexToUpdate = saves.findIndex(save => save.title === title);
+
+        if (indexToUpdate !== -1) {
+            // If we're updating, set this save as the selected one
+            selectedSaveIndex = indexToUpdate;
+        } else {
+            // If it's a new save, the new save will be the last in the array
+            selectedSaveIndex = saves.length;
+        }
+
+        selectedSaveTitle = title;
         handleSaveConfirmation(title, saveData, title === existingTitle);
+        // Update selectedSaveIndex and selectedSaveTitle accordingly
+        localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex);
     }
 }
 
