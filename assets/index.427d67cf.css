@@ -2,11 +2,11 @@
             /* overflow:hidden; */
         }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000000;
-        }
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+}
 
 * {
     font-family: "Inter", sans-serif;
@@ -1256,13 +1256,13 @@ select-replacer > div:first-child {
                 color: #652fc5;
             }
 
-        #svg_bg {
-            width: 100%;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
+#svg_bg {
+    width: 100%;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
 
         .extract-textarea {
             background-color: #222226;
@@ -1297,8 +1297,8 @@ select-replacer > div:first-child {
         }
 
 .scrollable-list {
-    height: 149px; /* Adjust this value based on how tall you want your list to be */
-    width: 255px;
+    height: 190px;
+    width: 95%;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 5px;

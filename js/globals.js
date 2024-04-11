@@ -354,6 +354,10 @@ function cancel(event) {
     }
 }
 
+function triggerInputEvent(elementId) {
+    document.getElementById(elementId).dispatchEvent(new Event('input'));
+}
+
 //debounce
 
 function debounce(func, wait) {

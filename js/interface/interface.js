@@ -1098,13 +1098,9 @@ addEventListener("mousemove", (event) => {
 
 
 
-
 //Touchpad controls (WIP)
-
 let touches = new Map();
-
-addEventListener("touchstart", (ev) => {
-    //pan = pan.plus(new vec2(0,1))
+svg.addEventListener("touchstart", (ev) => {
     for (let i = 0; i < ev.changedTouches.length; i++) {
         const touch = ev.changedTouches.item(i);
         touches.set(touch.identifier, {
@@ -1113,41 +1109,19 @@ addEventListener("touchstart", (ev) => {
         });
     }
 }, false);
-addEventListener("touchcancel", (ev) => {
+svg.addEventListener("touchcancel", (ev) => {
     for (let i = 0; i < ev.changedTouches.length; i++) {
         const touch = ev.changedTouches.item(i);
         touches.delete(touch.identifier);
     }
 }, false);
-addEventListener("touchend", (ev) => {
-    //pan = pan.plus(new vec2(0,-1))
-    switch (touches.size) {
-        case 2: //tap to zoom
-            if (ev.changedTouches.length == 1) {
-                const id = ev.changedTouches.item(0).identifier;
-                const t = touches.get(id);
-                if (t && t.prev == t.now) { //hasn't moved
-                    const ts = [...touches.keys()];
-                    const other = touches.get(ts[0] === id ? ts[1] : ts[0])
-                    const {
-                        s,
-                        o
-                    } = windowScaleAndOffset();
-                    const amount = Math.exp(-(other.now.clientY - t.now.clientY) / s);
-                    const dest = toZ(new vec2(other.now.clientX, other.now.clientY));
-                    zoom = zoom.scale(amount);
-                    pan = dest.scale(1 - amount).plus(pan.scale(amount));
-                }
-            }
-            break;
-
-    }
+svg.addEventListener("touchend", (ev) => {
     for (let i = 0; i < ev.changedTouches.length; i++) {
         const touch = ev.changedTouches.item(i);
         touches.delete(touch.identifier);
     }
 }, false);
-addEventListener("touchmove", (ev) => {
+svg.addEventListener("touchmove", (ev) => {
     for (let i = 0; i < ev.changedTouches.length; i++) {
         const touch = ev.changedTouches.item(i);
         touches.set(touch.identifier, {
@@ -1164,91 +1138,50 @@ addEventListener("touchmove", (ev) => {
             cancel(ev);
             break;
         case 2:
-        /*
-        const pts = [...touches.values()];
-        const p1p = toS(new vec2(pts[0].prev.clientX,pts[0].prev.clientY));
-        const p2p = toS(new vec2(pts[1].prev.clientX,pts[1].prev.clientY));
-        const p1n = toS(new vec2(pts[0].now.clientX,pts[0].now.clientY));
-        const p2n = toS(new vec2(pts[1].now.clientX,pts[1].now.clientY));
-        //want to find new zoom,pan such that
-        // old toZ(p1p) = new toZ(p1n)
-        // old toZ(p2p) = new toZ(p2n)
-        //
-        //  toZ(x) ≈ x*zoom + pan
-        //
-        // so, we want zoom' pan' s.t.
-        //  p1p*zoom + pan = p1n*zoom' + pan'
-        //  p2p*zoom + pan = p2n*zoom' + pan'
-        //
-        //  (p2p-p1p) * zoom = (p2n-p1n) * zoom'
-        //  (p1p+p2p)*zoom + 2pan = (p1p+p2p)*zoom' + 2pan'
-        //
-        //  zoom' = zoom * (p2p-p1p)/(p2n-p1n)
-        //  pan' = pan + (p1p+p2p)*zoom/2 - (p1p+p2p)*zoom'/2
-        //       = pan + (p1p+p2p)*(zoom - zoom')/2
-        const nzoom = zoom.cmult( p2p.minus(p1p).cdiv( p2n.minus(p1n)));
-        pan = pan.plus(p2p.plus(p1p).cmult(zoom.minus(nzoom)).scale(0.5));
-        zoom = nzoom;
+            const pts = [...touches.values()];
+            const p1p = toS(new vec2(pts[0].prev.clientX, pts[0].prev.clientY));
+            const p2p = toS(new vec2(pts[1].prev.clientX, pts[1].prev.clientY));
+            const p1n = toS(new vec2(pts[0].now.clientX, pts[0].now.clientY));
+            const p2n = toS(new vec2(pts[1].now.clientX, pts[1].now.clientY));
 
+            // Calculate the midpoint between the two touch points
+            const midpointPrev = p1p.plus(p2p).scale(0.5);
+            const midpointNow = p1n.plus(p2n).scale(0.5);
 
-        ev.preventDefault();
-        cancel(ev);
-        break;
-        */
+            // Calculate the zoom factor based on the distance between the touch points
+            const zoomFactor = p2p.minus(p1p).mag() / p2n.minus(p1n).mag();
+
+            // Calculate the rotation angle between the previous and current touch points
+            const anglePrev = Math.atan2(p2p.y - p1p.y, p2p.x - p1p.x);
+            const angleNow = Math.atan2(p2n.y - p1n.y, p2n.x - p1n.x);
+            const rotationAngle = anglePrev - angleNow; // Flip the rotation direction
+
+            // Apply the rotation to the zoom vector
+            const rotatedZoom = zoom.rot(rotationAngle);
+
+            // Update the zoom and pan based on the midpoint, zoom factor, and rotation
+            const newZoom = rotatedZoom.scale(zoomFactor);
+            const zoomDiff = newZoom.minus(zoom);
+            const panDiff = midpointNow.minus(midpointPrev).cmult(zoom); // Optimize pan calculation
+            pan = pan.minus(panDiff);
+            zoom = newZoom;
+
+            ev.preventDefault();
+            cancel(ev);
+            break;
         default:
             break;
     }
-
-
 }, false);
 
-
-
-
-var gestureStartParams = {
-    rotation: 0,
-    x: 0,
-    y: 0,
-    scale: 0,
-    zoom: new vec2(),
-    pan: new vec2()
-};
-addEventListener("gesturestart", (e) => {
+// Disable default pinch-to-zoom behavior in Safari
+document.addEventListener('gesturestart', function (e) {
     e.preventDefault();
-    //console.log(e);
-    gestureStartParams.rotation = e.rotation;
-    gestureStartParams.scale = e.scale;
-    gestureStartParams.x = e.pageX;
-    gestureStartParams.y = e.pageY;
-    gestureStartParams.zoom = zoom;
-    gestureStartParams.pan = pan;
-
 });
-addEventListener("gesturechange", (e) => {
+document.addEventListener('gesturechange', function (e) {
     e.preventDefault();
-    //console.log(e);
-    let d_theta = e.rotation - gestureStartParams.rotation;
-    let d_scale = e.scale;
-    let r = -e.rotation * settings.gestureRotateSpeed;
-    pan = gestureStartParams.pan;
-    zoom = gestureStartParams.zoom;
-    let r_center = toZ(new vec2(e.pageX, e.pageY));
-    let s = 0;
-    zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r), Math.sin(r)));
-    if (e.scale !== 0) {
-        let s = 1 / e.scale;
-        zoom = zoom.scale(s);
-        regenAmount += Math.abs(Math.log(s)) * settings.maxLines;
-    }
-    let dest = r_center;
-    let amount = s;
-    let dp = r_center.minus(gestureStartParams.pan);
-    pan = gestureStartParams.pan.plus(
-        dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
-    //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
-
 });
-addEventListener("gestureend", (e) => {
+document.addEventListener('gestureend', function (e) {
     e.preventDefault();
 });
 

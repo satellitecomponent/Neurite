@@ -19,6 +19,9 @@
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/mode/loadmode.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/runmode/runmode.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/hint/show-hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/addon/hint/anyword-hint.js"></script>
+
     <!-- Modes -->
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/meta.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.3/mode/htmlmixed/htmlmixed.js"></script>
@@ -29,6 +32,10 @@
     <!--Themes-->
     <!-- Custom Scrollbars -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/addon/scroll/simplescrollbars.css">
+
+    <!-- show-hint-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/addon/hint/show-hint.css">
+
 
     <!--Prism.js-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -43,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.3cb877c1.css">
+  <link rel="stylesheet" href="./assets/index.427d67cf.css">
 </head>
 
 <body id="body">
@@ -476,7 +483,7 @@
 
                                         <div class="settingsSlider" title="Set the Tempurature for Calls to GPT">
                                             <label id="model-temperature-label" for="model-temperature">Tempurature:<br /> 0.6</label>
-                                            <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6" onchange="updateLabel()">
+                                            <input type="range" id="model-temperature" name="model-temperature" min="0" max="1" step="0.1" value="0.6">
                                         </div>
 
                                         <div class="settingsSlider" title="Set the Proportion of Tokens Dedicated to AI Memory">
@@ -1096,11 +1103,21 @@
     <script src="js/globals.js"></script>
 
     <script src="js/dropdown/savenet.js"></script>
+
+    <script src="js/dropdown/tabs/notestab.js"></script>
+    <script src="js/dropdown/tabs/aitab.js"></script>
+    <script src="js/dropdown/tabs/datatab.js"></script>
+    <script src="js/dropdown/tabs/edittab.js"></script>
+
+    <script src="js/dropdown/customdropdown.js"></script>
+
     <script src="js/dropdown/dropdown.js"></script>
+
+
     <script src="js/dropdown/togglepanel.js"></script>
     <script src="js/dropdown/handleapikeys.js"></script>
 
-    <script src="js/dropdown/custom-modal.js"></script>
+    <script src="js/dropdown/custommodal.js"></script>
     <script src="js/dropdown/displaysavedcoords.js"></script>
 
 
@@ -1114,7 +1131,7 @@
 
 
 
-    <script src="js/mandelbrot/mandelbrot_v1_0_1.js"></script>
+    <script src="js/mandelbrot/mandelbrot.js"></script>
 
     <script defer type="module" src="./embeddings.js"></script>
 
@@ -1123,7 +1140,7 @@
 
     <script src="js/interface/window.js"></script>
 
-    <script src="js/interface/interface_v2.js"></script>
+    <script src="js/interface/interface.js"></script>
 
     <script src="js/nodes/nodeutilities.js"></script>
 
@@ -1143,7 +1160,7 @@
     <script src="js/nodes/connect.js"></script>
     <script src="js/nodes/togglenodestate.js"></script>
 
-    <script src="js/nodes/createnodes/createnodes_v2.js"></script>
+    <script src="js/nodes/createnodes/createnodes.js"></script>
     <script src="js/nodes/createnodes/nodedef.js"></script>
     <script src="js/nodes/createnodes/contenteditable.js"></script>
 
@@ -1153,7 +1170,7 @@
 
     <script src="js/ai/prompts.js"></script>
 
-    <script src="js/nodes/ainodes/ainodes_v2.js"></script>
+    <script src="js/nodes/ainodes/ainodes.js"></script>
     <script src="js/nodes/ainodes/ainodemessage.js"></script>
 
     <script src="js/ai/ai_v2.js"></script>
@@ -1170,7 +1187,7 @@
 
     <!-- <script src="js/aicursor.js"></script>-->
 
-    <script src="js/searchapi/searchapi_v2.js"></script>
+    <script src="js/searchapi/searchapi.js"></script>
     <script src="js/searchapi/filternodes.js"></script>
     <script src="js/searchapi/wikipedia.js"></script>
     <script src="js/searchapi/embeddingsdb.js"></script>
