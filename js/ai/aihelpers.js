@@ -1,4 +1,10 @@
 
+function determineModel() {
+    const modelSelect = document.getElementById('model-select');
+    const globalModelInput = document.getElementById('model-input');
+    return modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
+}
+
 
 const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
 

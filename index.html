@@ -1103,76 +1103,72 @@
 
     <script src="js/globals.js"></script>
 
-    <script src="js/dropdown/savenet.js"></script>
+    <script src="js/interface/dropdown/savenet.js"></script>
 
-    <script src="js/dropdown/tabs/notestab.js"></script>
-    <script src="js/dropdown/tabs/aitab.js"></script>
-    <script src="js/dropdown/tabs/datatab.js"></script>
-    <script src="js/dropdown/tabs/edittab.js"></script>
+    <script src="js/interface/dropdown/tabs/notestab.js"></script>
+    <script src="js/interface/dropdown/tabs/aitab.js"></script>
+    <script src="js/interface/dropdown/tabs/datatab.js"></script>
+    <script src="js/interface/dropdown/tabs/edittab.js"></script>
 
-    <script src="js/dropdown/customdropdown.js"></script>
+    <script src="js/interface/dropdown/customdropdown.js"></script>
 
-    <script src="js/dropdown/dropdown.js"></script>
+    <script src="js/interface/dropdown/dropdown.js"></script>
 
 
-    <script src="js/dropdown/togglepanel.js"></script>
-    <script src="js/dropdown/handleapikeys.js"></script>
-
-    <script src="js/dropdown/custommodal.js"></script>
-    <script src="js/dropdown/displaysavedcoords.js"></script>
-
+    <script src="js/interface/dropdown/togglepanel.js"></script>
+    <script src="js/interface/dropdown/handleapikeys.js"></script>
+    <script src="js/interface/dropdown/custommodal.js"></script>
+    <script src="js/interface/dropdown/displaysavedcoords.js"></script>
 
     <script src="js/zettelkasten/zetcodemirror.js"></script>
-
     <script src="js/zettelkasten/zetplacementstrategy.js"></script>
-
     <script src="js/zettelkasten/zettelkasten.js"></script>
-
     <script src="js/zettelkasten/zetpath.js"></script>
-
 
 
     <script src="js/mandelbrot/mandelbrot.js"></script>
 
-    <script defer type="module" src="/embeddings.js"></script>
-
-    <script src="js/nodes/nodemode.js"></script>
-    <script src="js/nodes/movenodes.js"></script>
-
-    <script src="js/interface/window.js"></script>
-
     <script src="js/interface/interface.js"></script>
-
-    <script src="js/nodes/nodeutilities.js"></script>
-
-    <script src="js/nodes/nodestep.js"></script>
-
     <script src="js/interface/search.js"></script>
-
-    <script src="js/interface/bundlecode.js"></script>
     <script src="js/interface/handledrop.js"></script>
-
+    <script src="js/interface/record/record.js"></script>
     <script src="js/interface/rightclick/customcontextmenu.js"></script>
     <script src="js/interface/rightclick/suggestions.js"></script>
 
+    <script src="js/nodes/nodeutilities.js"></script>
 
-    <script src="js/nodes/nodeactioninterface.js"></script>
-    <script src="js/nodes/editor/editornode.js"></script>
-    <script src="js/nodes/connect.js"></script>
-    <script src="js/nodes/togglenodestate.js"></script>
-
+    <script src="js/nodes/nodeinteraction/nodemode.js"></script>
+    <script src="js/nodes/nodeinteraction/movenodes.js"></script>
+    <script src="js/nodes/nodeinteraction/nodeactioninterface.js"></script>
+    <script src="js/nodes/nodeinteraction/connect.js"></script>
+    <script src="js/nodes/nodeinteraction/togglenodestate.js"></script>
+    <script src="js/nodes/nodeinteraction/filternodes.js"></script>
+    <script src="js/nodes/nodeinteraction/bundlecode.js"></script>
+    <script src="js/nodes/createnodes/window.js"></script>
     <script src="js/nodes/createnodes/createnodes.js"></script>
     <script src="js/nodes/createnodes/nodedef.js"></script>
-    <script src="js/nodes/createnodes/contenteditable.js"></script>
 
-    <script src="js/record/record_v1.js"></script>
+    <script src="js/nodes/nodeclass.js"></script>
+    <script src="js/nodes/edgeclass.js"></script>
+
+    <script src="js/nodes/nodeinteraction/nodestep.js"></script>
+
+    <script src="js/nodes/nodetypes/editornodes/editornode.js"></script>
+    <script src="js/nodes/nodetypes/textnodes/contenteditable.js"></script>
+    <script src="js/nodes/nodetypes/textnodes/textnode.js"></script>
+    <script src="js/nodes/nodetypes/linknodes/linknode.js"></script>
+    <script src="js/nodes/nodetypes/imagenodes/imagenode.js"></script>
+    <script src="js/nodes/nodetypes/wolframnodes/wolframnode.js"></script>
 
     <!-- Ai -->
 
+    <script defer type="module" src="/embeddings.js"></script>
+
     <script src="js/ai/prompts.js"></script>
 
-    <script src="js/nodes/ainodes/ainodes.js"></script>
-    <script src="js/nodes/ainodes/ainodemessage.js"></script>
+    <script src="js/nodes/nodetypes/ainodes/responsehandler.js"></script>
+    <script src="js/nodes/nodetypes/ainodes/ainode.js"></script>
+    <script src="js/nodes/nodetypes/ainodes/ainodemessage.js"></script>
 
     <script src="js/ai/ai_v2.js"></script>
     <script src="js/ai/aimessage.js"></script>
@@ -1189,7 +1185,6 @@
     <!-- <script src="js/aicursor.js"></script>-->
 
     <script src="js/searchapi/searchapi.js"></script>
-    <script src="js/searchapi/filternodes.js"></script>
     <script src="js/searchapi/wikipedia.js"></script>
     <script src="js/searchapi/embeddingsdb.js"></script>
     <script src="js/searchapi/codeparser/parsemirror.js"></script>

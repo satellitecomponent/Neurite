@@ -1,15 +1,5 @@
 
 
-function determineModel() {
-    const modelSelect = document.getElementById('model-select');
-    const globalModelInput = document.getElementById('model-input');
-    return modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
-}
-
-
-
-
-
 // Update handleUserPrompt, handleMarkdown, and renderCodeBlock to make the created divs draggable
 function makeDivDraggable(div, customTitle, handle) {
     handle = handle || div; // Default to the div itself if no handle is provided
