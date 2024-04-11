@@ -1,16 +1,3 @@
-function createWolframNode(wolframData) {
-    const { table, reformulatedQuery } = wolframData;
-    let content = [table];
-    let scale = 1;
-
-    let wolframNode = windowify(`${reformulatedQuery} - Wolfram Alpha Result`, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-    htmlnodes_parent.appendChild(wolframNode.content);
-    registernode(wolframNode);
-    wolframNode.followingMouse = 1;
-    wolframNode.draw();
-    wolframNode.mouseAnchor = toDZ(new vec2(0, -wolframNode.content.offsetHeight / 2 + 6));
-}
-
 const wolframmessage = `Based off the user message, arrive at a valid query to Wolfram Alpha.
 - Quotation marks delimit the Wolfram Query that is extracted from your response.
 - Ensure the query will return a relevant result from Wolfram. (If the user message is not a valid Wolfram Query, reformulate until it is.)
