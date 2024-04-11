@@ -1,4 +1,10 @@
 
+function nextUUID() {
+    while (nodeMap[NodeUUID] !== undefined) {
+        NodeUUID++;
+    }
+    return NodeUUID;
+}
 
 // Global array for selected UUIDs
 let selectedNodeUUIDs = new Set();
@@ -35,6 +41,42 @@ function getCentroidOfSelectedNodes() {
         sumPos = sumPos.plus(node.pos);
     });
     return sumPos.scale(1 / selectedNodes.length);
+}
+
+function edgeFromJSON(o, nodeMap) {
+    let pts = o.p.map((k) => nodeMap[k]);
+
+    if (pts.includes(undefined)) {
+        console.warn("missing keys", o, nodeMap);
+    }
+
+    // Check if edge already exists
+    for (let e of edges) {
+        let e_pts = e.pts.map(n => n.uuid).sort();
+        let o_pts = o.p.sort();
+        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) {
+            // Edge already exists, return without creating new edge
+            return;
+        }
+    }
+
+    let e = new Edge(pts, o.l, o.s, o.g);
+
+    for (let pt of pts) {
+        pt.addEdge(e); // add edge to all points
+    }
+
+    edges.push(e);
+    return e;
+}
+
+function updateNodeEdgesLength(node) {
+    node.edges.forEach(edge => {
+        const currentLength = edge.currentLength;
+        if (currentLength) {
+            edge.length = currentLength;
+        }
+    });
 }
 
 function scaleSelectedNodes(scaleFactor, centralPoint) {
