@@ -618,12 +618,9 @@ function gaussianRandom2() {
     return new vec2( m * Math.cos( 2.0 * Math.PI * v ) , m * Math.sin( 2.0 * Math.PI * v ));
 }
 
-
-
-
 function render_hair(n) {
     let iters = settings.iterations;
-    let maxLines = getMaxLines();
+    let maxLines = settings.maxLines;
     let tries = 1;
     let pt;
     if (Math.random() > flashlight_fraction){

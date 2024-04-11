@@ -758,13 +758,6 @@ function processChunkEmbedding(embedding) {
     return [];
 }
 
-let overlapSize = document.getElementById('overlapSizeSlider').value;
-
-document.getElementById('overlapSizeSlider').addEventListener('input', function (e) {
-    overlapSize = Number(e.target.value);
-    document.getElementById('overlapSizeDisplay').textContent = overlapSize;
-});
-
 
 function chunkText(text, maxLength, overlapSize) {
     // Modified regex to preserve punctuation and spaces
