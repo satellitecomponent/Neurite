@@ -1,3 +1,36 @@
+// Custom Endpoint
+function saveApiConfig() {
+    const endpoint = document.getElementById('apiEndpoint').value;
+    const key = document.getElementById('apiEndpointKey').value;
+    const modelName = document.getElementById('apiModelName').value;
+
+    // Validate the endpoint and model name
+    if (!endpoint.trim() || !modelName.trim()) {
+        alert("API Endpoint and Model Name are required.");
+        return;
+    }
+
+    const select = document.getElementById('custom-model-select');
+
+    // Create an object containing all necessary data
+    const selectData = { modelName, endpoint, key };
+
+    // Add the new model to the dropdown and update localStorage
+    addToCustomModelDropdown(select, selectData, 'customModelDropdown');
+
+    // Close modal after adding
+    closeModal();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('custom-model-select');
+    loadDropdownFromLocalStorage(select, 'customModelDropdown');
+});
+
+document.getElementById('addApiConfigBtn').addEventListener('click', function () {
+    openModal('apiConfigModalContent');
+});
+
 
 //api keys
 
@@ -162,6 +195,7 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
     const modelSelect = document.getElementById('model-select');
     const modelInput = document.getElementById('model-input');
     const localModelSelect = document.getElementById('local-model-select');
+    const customModelSelect = document.getElementById('custom-model-select');
     let model = modelOverride || (modelSelect.value === 'other' ? modelInput.value : modelSelect.value);
     console.log(`model`, model);
     let API_KEY;
@@ -173,10 +207,15 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
             API_URL = "http://localhost:7070/groq";
         } else if (model.includes("claude")) {
             API_URL = "http://localhost:7070/claude";
-        } else if (model.includes("custom-host")) {
+        } else if (model.includes("ollama")) {
             API_URL = "http://localhost:7070/ollama";
 
             model = localModelSelect.value;
+        } else if (model.includes("custom")) {
+            const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
+            API_URL = selectedOption.value;
+            API_KEY = selectedOption.getAttribute('data-key');
+            model = selectedOption.textContent; // This assumes the model name is the text content of the option
         } else {
             API_URL = "http://localhost:7070/openai";
         }
@@ -190,8 +229,11 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
         } else if (model.includes("claude")) {
             alert("Claude model can only be used with the AI proxy server. Please enable the proxy server and refresh the page.");
             return null;
-        } else if (model.includes("custom-host")) {
+        } else if (model.includes("ollama")) {
             alert("Ollama can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
+            return null;
+        } else if (model.includes("custom")) {
+            alert("Custom Endpoints can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
             return null;
         } else {
             API_URL = "https://api.openai.com/v1/chat/completions";

@@ -33,19 +33,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Function to open the modal
 function openModal(contentId) {
-    console.log(`opened Modal`);
+    //console.log(`Opened Modal: ${contentId}`);
     const content = document.getElementById(contentId);
+    if (!content) {
+        console.error(`No content found for ID: ${contentId}`);
+        return; // Exit the function if content doesn't exist
+    }
+
     const modalBody = modal.querySelector('.modal-body');
-    modalBody.innerHTML = content.innerHTML;
+    if (modalBody) {
+        modalBody.innerHTML = content.innerHTML; // Ensure modalBody exists before setting its innerHTML
+    } else {
+        console.error('Modal body element is missing');
+        return; // Exit if there is no modal body
+    }
 
     // Set the modal title based on the contentId
     const modalTitle = modal.querySelector('.modal-title');
-    if (contentId === 'noteModal') {
-        modalTitle.textContent = 'Zettelkasten Settings';
-    } else if (contentId === 'alertModal') {
-        modalTitle.textContent = 'Alert';
-    } else {
-        modalTitle.textContent = ''; // Clear the title for other modals
+    switch (contentId) {
+        case 'noteModal':
+            modalTitle.textContent = 'Zettelkasten Settings';
+            break;
+        case 'alertModal':
+            modalTitle.textContent = 'Alert';
+            break;
+        case 'apiConfigModalContent':
+            modalTitle.textContent = 'Custom Endpoint'; // Set title for the API config modal
+            break;
+        default:
+            modalTitle.textContent = ''; // Default, clears the title
     }
 
     modal.style.display = 'flex';
@@ -100,7 +116,7 @@ function openModal(contentId) {
 
 // Function to close the modal
 function closeModal() {
-    console.log('close Modal');
+    //console.log('close Modal');
     modal.style.display = 'none';
 }
 

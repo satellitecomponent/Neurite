@@ -1,5 +1,5 @@
 
-function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined, addCodeButton = false) {
+function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     let n = document.createElement("textarea");
     n.classList.add('custom-scrollbar', 'node-textarea');
     n.onmousedown = cancel;
@@ -7,21 +7,6 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     n.setAttribute("size", "11");
     //n.setAttribute("style", "background-color: #222226; color: #bbb; overflow-y: scroll; resize: both; width: 259px; line-height: 1.4; display: none;");
     n.style.position = "absolute";
-
-    let elements = [n];
-
-    let buttonCallback = null;
-
-    let button = document.createElement("button");
-    button.innerHTML = "Run Code";
-    button.classList.add("code-button");
-
-    // Initially hide the button
-    button.style.display = "none";
-
-    if (addCodeButton) {
-        button.style.display = "block";
-    }
 
     let node = addNodeAtNaturalScale(name, [n]); // Just add the textarea for now
 
@@ -39,9 +24,6 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     windowDiv.appendChild(htmlView);
     windowDiv.appendChild(pythonView);
     windowDiv.appendChild(editableDiv);  // Append the contentEditable div to .content div
-    windowDiv.appendChild(button);
-
-    node.addCodeButton = addCodeButton;
 
     if (sx !== undefined) {
         x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
@@ -78,6 +60,7 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     })
 
     node.isTextNode = true;
+    node.codeEditingState = 'edit';
 
     initTextNode(node)
 
@@ -104,39 +87,13 @@ function initTextNode(node) {
 }
 
 function addEventListenersToTextNode(node) {
-    let button = node.codeButton;
     let textarea = node.textarea;
     let contentEditableDiv = node.contentEditableDiv
     let htmlView = node.htmlView
     let pythonView = node.pythonView;
 
-    // Setup for the code checkbox listener
-    //setupCodeCheckboxListener(button, node.addCodeButton);
 
     // Attach events for contentEditable and textarea
     addEventsToContentEditable(contentEditableDiv, textarea, node);
     watchTextareaAndSyncWithContentEditable(textarea, contentEditableDiv);
-
-    // Reattach the handleCodeButton callback
-    if (button && textarea) {
-        // Assuming handleCodeButton sets up the button event listener
-        handleCodeButton(button, textarea, htmlView, pythonView, node);
-    }
-}
-
-function setupCodeCheckboxListener(button, addCodeButton) {
-    if (document.getElementById('code-checkbox')) {
-        document.getElementById('code-checkbox').addEventListener('change', (event) => {
-            if (addCodeButton) {
-                button.style.display = "block";
-                return;
-            }
-            //console.log(button, `button`);
-            button.style.display = event.target.checked ? "block" : "none";
-        });
-
-        if (document.getElementById('code-checkbox').checked) {
-            button.style.display = "block";
-        }
-    }
 }

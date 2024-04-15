@@ -163,48 +163,48 @@ function syncContent(node) {
     const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
 
     if (editableDiv && hiddenTextarea) {
-        hiddenTextarea.value = editableDiv.innerText;
+        syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
     } else {
         console.warn('Either editableDiv or hiddenTextarea is missing');
     }
 }
 
-async function handleCodeButton(button, textarea, htmlView, pythonView, node) {
-    button.onclick = async function () {
-        // Explicitly sync the content before using it
-        syncContent(node);
-        const contentEditableDiv = node.contentEditableDiv;
-        const windowDiv = node.windowDiv;
-        if (button.innerHTML === 'Run Code') {
-            // Extract initial dimensions for later restoration
-            const computedStyle = window.getComputedStyle(windowDiv);
-            const initialWindowWidth = computedStyle.width;
-            const initialWindowHeight = computedStyle.height;
+async function handleCodeExecution(textarea, htmlView, pythonView, node) {
+    const currentState = node.codeEditingState;
 
-            contentEditableDiv.classList.add('hidden');
+    // Explicitly sync the content before using it
+    syncContent(node);
+    const contentEditableDiv = node.contentEditableDiv;
+    const windowDiv = node.windowDiv;
 
-            let { allPythonCode, allWebCode } = collectCodeBlocks(textarea);
+    if (currentState === 'edit') {
+        // Extract initial dimensions for later restoration
+        const computedStyle = window.getComputedStyle(windowDiv);
+        const initialWindowWidth = computedStyle.width;
+        const initialWindowHeight = computedStyle.height;
 
-            if (allPythonCode !== '') {
-                pythonView.classList.remove('hidden');
-                let result = await runPythonCode(allPythonCode, pythonView, node.uuid);
-                console.log('Python code executed, result:', result);
-            }
+        contentEditableDiv.classList.add('hidden-visibility');
 
-            if (allWebCode.length > 0) {
-                displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight);
-            } else {
-                htmlView.classList.add('hidden');
-            }
+        let { allPythonCode, allWebCode } = collectCodeBlocks(textarea);
 
-            button.innerHTML = 'Code Text';
-            button.style.backgroundColor = '#717171';
-        } else {
-            resetViewsAndContentEditable(node, htmlView, pythonView);
-            button.innerHTML = 'Run Code';
-            button.style.backgroundColor = '';
+        if (allPythonCode !== '') {
+            pythonView.classList.remove('hidden');
+            let result = await runPythonCode(allPythonCode, pythonView, node.uuid);
+            console.log('Python code executed, result:', result);
         }
-    };
+
+        if (allWebCode.length > 0) {
+            displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight);
+        } else {
+            htmlView.classList.add('hidden');
+        }
+
+        node.codeEditingState = 'code';
+    } else {
+        resetViewsAndContentEditable(node, htmlView, pythonView);
+        contentEditableDiv.classList.remove('hidden-visibility');
+        node.codeEditingState = 'edit';
+    }
 }
 
 function collectCodeBlocks(textarea) {
@@ -231,6 +231,7 @@ function collectCodeBlocks(textarea) {
 function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
     let allConnectedNodesInfo = getAllConnectedNodesData(node);
     allConnectedNodesInfo.push(...allWebCode);
+    console.log(`allconnectednodesinfo`, allConnectedNodesInfo)
     let bundledContent = bundleWebContent(allConnectedNodesInfo);
 
     htmlView.style.width = initialWindowWidth;
@@ -243,7 +244,6 @@ function resetViewsAndContentEditable(node, htmlView, pythonView) {
     const windowDiv = node.windowDiv;
     htmlView.classList.add('hidden');
     pythonView.classList.add('hidden');
-    node.contentEditableDiv.classList.remove('hidden');
 
     // Resetting window dimensions is not required as they are not altered
 }

@@ -170,16 +170,6 @@ function expandNode(node, div, circle) {
     titleInput.style.border = '';
     titleInput.style.fontSize = '';
 
-    // Logic to handle the button's visibility after node expansion
-    let button = div.querySelector('.code-button');
-    if (button) { // Check if the button exists
-        if (node.addCodeButton || (document.getElementById('code-checkbox') && document.getElementById('code-checkbox').checked)) {
-            button.style.display = "block";
-        } else {
-            button.style.display = "none";
-        }
-    }
-
     // Transfer the .window-anchored class from circle to node.content if present
     if (circle && circle.classList.contains('collapsed-anchor')) {
         div.classList.add('window-anchored');

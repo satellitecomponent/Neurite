@@ -50,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.427d67cf.css">
+  <link rel="stylesheet" href="./assets/index.9b90f20d.css">
 </head>
 
 <body id="body">
@@ -181,6 +181,21 @@
                 <input type="checkbox" id="toggleAutomataCheckbox" name="toggleAutomataCheckbox">
                 <label for="toggleAutomataCheckbox">Toggle Automata</label>
             </div>-->
+        </div>
+    </div>
+
+    <div id="apiConfigModalContent" style="display: none;">
+        <div class="api-modal-content">
+            <label for="apiEndpoint">API Endpoint:</label>
+            <input type="text" id="apiEndpoint" class="api-modal-input" placeholder="Enter API Endpoint URL">
+
+            <label for="apiEndpointKey">API Key (Optional):</label>
+            <input type="text" id="apiEndpointKey" class="api-modal-input" placeholder="Enter API Key">
+
+            <label for="apiModelName">Model Name:</label>
+            <input type="text" id="apiModelName" class="api-modal-input" placeholder="Enter Model Name">
+
+            <button class="api-modal-button" onclick="saveApiConfig()">Save Configuration</button>
         </div>
     </div>
 
@@ -427,7 +442,8 @@
                                                 <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                                                 <option value="GROQ-mixtral-8x7b-32768">GROQ-mixtral 7b 32k</option>
                                                 <option value="GROQ-llama2-70b-4096">GROQ-llama2 70b 4k</option>
-                                                <option value="custom-host">Ollama</option>
+                                                <option value="ollama">Ollama</option>
+                                                <option value="custom">Custom</option>
                                             </select>
                                             <input id="model-input" class="model-input" style="display: none;" placeholder="Enter model name">
                                         </div>
@@ -455,7 +471,19 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <br />
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
+                                        <label for="custom-model-select" style="margin-right: 10px;"> <button id="addApiConfigBtn" class="linkbuttons" onclick="openModal('apiConfigModalContent')">+ Custom</button></label>
+                                        <div class="dropdown-container">
+                                            <select id="custom-model-select" class="model-selector custom-select">
+                                                <option value="none">none</option>
+                                                <!-- dynamic values -->
+                                            </select>
+                                        </div>
+                                    </div>
+
                                 </div>
+
                                 <div class="toggle-panel" onclick="toggleModelSelectPanel()" style="padding-top: 15px;">
                                     <div class="bar left-bar"></div>
                                     <div class="icon-wrapper">
