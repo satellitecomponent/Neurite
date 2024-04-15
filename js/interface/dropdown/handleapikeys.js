@@ -213,9 +213,9 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
             model = localModelSelect.value;
         } else if (model.includes("custom")) {
             const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
-            API_URL = selectedOption.value;
+            API_URL = selectedOption.getAttribute('data-endpoint');
             API_KEY = selectedOption.getAttribute('data-key');
-            model = selectedOption.textContent; // This assumes the model name is the text content of the option
+            model = selectedOption.text; // Assuming the model name is the text content of the option
         } else {
             API_URL = "http://localhost:7070/openai";
         }
