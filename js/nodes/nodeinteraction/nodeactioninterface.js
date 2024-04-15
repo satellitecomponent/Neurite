@@ -205,13 +205,7 @@ class TextNodeActions extends BaseNodeActions {
     }
 
     toggleCode() {
-        const codeButton = this.node.codeButton;
-
-        if (codeButton && codeButton instanceof HTMLElement) {
-            codeButton.click(); // Simulate the click
-        } else {
-            console.error('Code button not found or is not a valid element');
-        }
+        handleCodeExecution(this.node.textarea, this.node.htmlView, this.node.pythonView, this.node)
     }
     testNodeText() {
         testNodeText(this.node.getTitle());

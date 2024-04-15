@@ -288,6 +288,36 @@ function updateNodeTitleToLineMap() {
     });
 }
 
+function highlightNodeTitles() {
+    // First clear all existing marks
+    myCodeMirror.getAllMarks().forEach(mark => mark.clear());
+
+    myCodeMirror.eachLine((line) => {
+        nodeTitles.forEach((title) => {
+            if (title.length > 0) {
+                // Escape special regex characters
+                const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(escapedTitle, "ig"); // removed \\b word boundaries
+                let match;
+                while (match = regex.exec(line.text)) {
+                    const idx = match.index;
+                    if (idx !== -1) {
+                        myCodeMirror.markText(
+                            CodeMirror.Pos(line.lineNo(), idx),
+                            CodeMirror.Pos(line.lineNo(), idx + title.length),
+                            {
+                                className: 'node-title',
+                                handleMouseEvents: true
+                            }
+                        );
+                    }
+                }
+            }
+        });
+    });
+}
+
+
 
 function getNodeSectionRange(title, cm) {
     const lowerCaseTitle = title.toLowerCase();
@@ -322,35 +352,6 @@ function getNodeSectionRange(title, cm) {
     //console.log("Title:", title, "Start Line:", startLineNo, "End Line:", endLineNo);
 
     return { startLineNo, endLineNo };
-}
-
-function highlightNodeTitles() {
-    // First clear all existing marks
-    myCodeMirror.getAllMarks().forEach(mark => mark.clear());
-
-    myCodeMirror.eachLine((line) => {
-        nodeTitles.forEach((title) => {
-            if (title.length > 0) {
-                // Escape special regex characters
-                const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escapedTitle, "ig"); // removed \\b word boundaries
-                let match;
-                while (match = regex.exec(line.text)) {
-                    const idx = match.index;
-                    if (idx !== -1) {
-                        myCodeMirror.markText(
-                            CodeMirror.Pos(line.lineNo(), idx),
-                            CodeMirror.Pos(line.lineNo(), idx + title.length),
-                            {
-                                className: 'node-title',
-                                handleMouseEvents: true
-                            }
-                        );
-                    }
-                }
-            }
-        });
-    });
 }
 
 function highlightNodeSection(title, cm) {

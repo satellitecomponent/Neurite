@@ -675,7 +675,7 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
     // Create an array to store the options
     let options = [
         new Option('GLOBAL', 'GLOBAL', false, true),
-        new Option('Ollama', 'custom-host', false, false),
+        new Option('Ollama', 'ollama', false, false),
 
         new Option('gpt-3.5-turbo', 'gpt-3.5-turbo', false, false),
         //new Option('gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct', false, false),
@@ -683,7 +683,8 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
         new Option('gpt-4-vision', 'gpt-4-vision-preview', false, false),
 
         new Option('GROQ-mixtral-8x7b-32768', 'GROQ-mixtral-8x7b-32768', false, false),
-        new Option('GROQ-llama2-70b-4096', 'GROQ-llama2-70b-4096', false, false)
+        new Option('GROQ-llama2-70b-4096', 'GROQ-llama2-70b-4096', false, false),
+        new Option('Custom', 'custom', false, false),
 
         //new Option('claude-3-opus', 'claude-3-opus-20240229', false, false),
         //new Option('claude-3-sonnet', 'claude-3-sonnet-20240229', false, false)

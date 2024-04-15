@@ -128,37 +128,35 @@ function getNodeByTitle(title) {
 
     return matchingNodes.length > 0 ? matchingNodes[0] : null;
 }
-
 function getTextareaContentForNode(node) {
     if (!node || !node.content) {
-        // console.warn('Node or node.content is not available');
+        console.warn('Node or node.content is not available');
         return null;
     }
 
     if (!node.isTextNode) {
-        // console.warn('Node is not a text node. Skipping text area and editable div logic.');
+        console.warn('Node is not a text node. Skipping text area and editable div logic.');
         return null;
     }
 
     const editableDiv = node.contentEditableDiv;
     const hiddenTextarea = node.textarea;
-    //console.log(editableDiv, hiddenTextarea);
+
     if (!editableDiv || !hiddenTextarea) {
         console.warn('Either editableDiv or hiddenTextarea is not found.');
         return null;
     }
 
-    // Explicitly sync the content
+    // Sync and log content before and after syncing
+    //console.log('Before Sync:', editableDiv.innerText, hiddenTextarea.value);
     syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
+    //console.log('After Sync:', editableDiv.innerText, hiddenTextarea.value);
 
+    // Trigger input to process any dependent logic
     hiddenTextarea.dispatchEvent(new Event('input'));
-    // Now get the textarea content
-    if (hiddenTextarea) {
-        return hiddenTextarea.value;
-    } else {
-        console.warn('Textarea not found in node');
-        return null;
-    }
+
+    // Return the textarea content
+    return hiddenTextarea.value;
 }
 
 function testNodeText(title) {
