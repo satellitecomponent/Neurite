@@ -193,6 +193,22 @@ function addOptionToCustomDropdown(select, option) {
     optionsReplacer.appendChild(optionDiv);
 }
 
+function addToCustomModelDropdown(select, selectData, cacheKey) {
+    // Extract data from selectData object
+    const { modelName, endpoint, key } = selectData;
+
+    // Create a new option with these details
+    const option = new Option(modelName, endpoint);
+    option.setAttribute('data-key', key);
+    select.appendChild(option);
+
+    // Update local storage to reflect this new addition
+    saveDropdownToLocalStorage(select, cacheKey);
+
+    addOptionToCustomDropdown(select, option);
+    updateSelectedOptionDisplay(select);
+}
+
 function saveDropdownToLocalStorage(select, storageKey) {
     const options = Array.from(select.options).map(option => ({
         value: option.value,
