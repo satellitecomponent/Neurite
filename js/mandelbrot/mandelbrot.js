@@ -713,8 +713,95 @@ function render_hair(n) {
     pathn.setAttribute("stroke-opacity", "" + opacity);
     pathn.setAttribute("d", r);
     svg_bg.appendChild(pathn);
-    while (svg_bg.children.length > maxLines) {
-        svg_bg.removeChild(svg_bg.children[0]);
+    if (maxLines === 0) {
+        // Quick removal of all non-preserved children
+        Array.from(svg_bg.children).forEach(child => {
+            if (!child.classList.contains('preserve')) {
+                svg_bg.removeChild(child);
+            }
+        });
+    } else {
+        let activeCount = Array.from(svg_bg.children).filter(child => !child.classList.contains('preserve')).length;
+
+        while (activeCount > maxLines) {
+            let child = svg_bg.children[0]; // Start checking from the first child
+            if (!child.classList.contains('preserve')) {
+                svg_bg.removeChild(child);
+                activeCount--; // Decrement active count since an active element was removed
+            } else {
+                // Move the preserved child to the end of the list to avoid repeated checks
+                svg_bg.appendChild(child);
+            }
+        }
+
+        if (activeCount > maxLines) {
+            console.log("Still more active elements than max allowed, but all are preserved.");
+        }
+    }
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.altKey) {
+        switch (event.key) {
+            case 'f': // Alt+F for toggling preservation
+                console.log(`Alt+F pressed. Adding preservation to SVG elements.`);
+                Array.from(svg_bg.children).forEach(element => {
+                    if (!element.classList.contains('preserve')) {
+                        element.classList.add('preserve');
+                        console.log(`Preservation added to element with id: ${element.id}`);
+                    }
+                });
+                break;
+            case 's': // Alt+S for taking a screenshot
+                download_svg_screenshot("NeuriteSVG" + new Date().toISOString());
+                console.log(`Screenshot taken and downloaded.`);
+                break;
+            case 'c': // Alt+C to clear all preservations
+                console.log(`Alt+C pressed. Clearing all preservation tags.`);
+                Array.from(svg_bg.children).forEach(element => {
+                    element.classList.remove('preserve');
+                });
+                break;
+        }
+    }
+});
+
+function download_svg_screenshot(name) {
+    var svg = document.getElementById("svg_bg");
+
+    // Ensure the SVG has explicit dimensions
+    svg.setAttribute("width", svg.clientWidth);
+    svg.setAttribute("height", svg.clientHeight);
+
+    var xml = new XMLSerializer().serializeToString(svg);
+    var svgBlob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(svgBlob);
+
+    var img = new Image();
+    img.onload = function () {
+        // Create canvas with dimensions of the SVG
+        var canvas = document.createElement('canvas');
+        canvas.width = svg.clientWidth;
+        canvas.height = svg.clientHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = "rgb(0, 0, 0)";  // Set background color if needed
+        ctx.fillRect(0, 0, canvas.width, canvas.height);  // Fill background
+        ctx.drawImage(img, 0, 0);
+
+        // Create an <a> element for the download
+        var a = document.createElement('a');
+        a.download = name + ".png";
+        a.href = canvas.toDataURL("image/png");
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Clean up by revoking the created URL
+        URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    img.onerror = function () {
+        console.error('Failed to load the image');
     }
 }
 

@@ -27,7 +27,7 @@ function getDefaultTitle() {
     const minute = String(date.getMinutes()).padStart(2, '0');
     const second = String(date.getSeconds()).padStart(2, '0');
     const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
-    const amPm = hour >= 12 ? 'PM' : 'AM';
+    //const amPm = hour >= 12 ? 'PM' : 'AM';
 
     // Create a string in the format "YY-MM-DD HH:MM:SS.sss"
     const dateString = `${year}/${month}/${day} ${hour}:${minute}:${second}.${milliseconds}`;
@@ -71,11 +71,11 @@ function addNodeTagToZettelkasten(title, content = null) {
 
 }
 
-function createTextNodeWithPosAndScale(title, text, scale, x, y, addCodeButton = false) {
+function createTextNodeWithPosAndScale(title, text, scale, x, y) {
     const defaultTitle = title || getDefaultTitle();
 
     // Create the node without scale and position
-    const node = createTextNode(defaultTitle, text, undefined, undefined, undefined, undefined, addCodeButton);
+    const node = createTextNode(defaultTitle, text, undefined, undefined, undefined, undefined);
 
     // Set position if specified
     if (x !== undefined && y !== undefined) {

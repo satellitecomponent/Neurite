@@ -468,6 +468,29 @@ input[type="text"i].title-input {
     padding: 20px;
 }
 
+.api-modal-content {
+    width: 200px; /* Set a fixed width for the modal */
+}
+
+.api-modal-input {
+    width: 100%; /* Full width minus padding */
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.api-modal-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #222226;
+    color: white;
+    border: inset #8882;
+    cursor: pointer;
+}
+
+    .api-modal-button:hover {
+        background-color: #293e34;
+    }
+
 
         /* Dropdown menu styles */
 
@@ -773,7 +796,14 @@ input[type="text"i]:hover {
     display: none; /* No !important required */
 }
 
-
+.hidden-visibility {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
 
 .linkbuttons {
     padding: 4px 6px;

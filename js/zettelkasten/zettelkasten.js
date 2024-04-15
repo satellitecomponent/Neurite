@@ -6,7 +6,6 @@ const noteInput = myCodeMirror;
 let llmNodeCreated = false;
 let nodefromWindow = false;
 let followMouseFromWindow = false;
-let shouldAddCodeButton = false;
 
 
 {
@@ -253,8 +252,7 @@ let shouldAddCodeButton = false;
                 } else {
                     let nodeObject;
                     if (nodefromWindow) {
-                        nodeObject = createTextNode(currentNodeTitle, '', undefined, undefined, undefined, undefined, shouldAddCodeButton);
-                        shouldAddCodeButton = false;
+                        nodeObject = createTextNode(currentNodeTitle, '', undefined, undefined, undefined, undefined);
                         nodefromWindow = false;
                         if (followMouseFromWindow) {
                             nodeObject.followingMouse = 1;
