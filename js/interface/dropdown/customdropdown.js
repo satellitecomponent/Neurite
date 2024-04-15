@@ -30,48 +30,43 @@ function setupCustomDropdown(select, aiNode = false) {
 
 }
 
+function createOptionDiv(option, select, optionsReplacer, selectedDiv) {
+    let optionDiv = document.createElement('div');
+    optionDiv.className = 'dropdown-option';
+    optionDiv.innerText = option.innerText;
+    optionDiv.setAttribute('data-value', option.value);
+
+    // Event handler for clicks on this option
+    optionDiv.addEventListener('click', function (event) {
+        event.stopPropagation(); // Stop the event from propagating further
+
+        // First, remove 'selected' from all options
+        Array.from(optionsReplacer.children).forEach(child => {
+            child.classList.remove('selected');
+        });
+
+        // Set this option as the selected one
+        optionDiv.classList.add('selected');
+        select.value = option.value; // Update the underlying select value
+        selectedDiv.innerText = option.innerText; // Update the selected display
+
+        // Dispatch a change event to the original select element
+        select.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+    });
+
+    optionsReplacer.appendChild(optionDiv);
+}
+
 function addEventListenersToCustomDropdown(select, aiNode) {
+    let isPendingFrame = false;
     let container = select.parentNode;
     let selectReplacer = container.querySelector('.select-replacer');
     let optionsReplacer = selectReplacer.querySelector('.options-replacer');
     let selectedDiv = selectReplacer.querySelector('div');
 
-    // Toggle dropdown on click
-    let isPendingFrame = false;
-
     // Create individual options
-    Array.from(select.options).forEach((option, index) => {
-        let optionDiv = document.createElement('div');
-        optionDiv.innerText = option.innerText;
-        optionDiv.setAttribute('data-value', option.value);
-
-        // Highlight the selected option
-        if (select.selectedIndex === index) {
-            optionDiv.classList.add('selected');
-        }
-
-        optionDiv.addEventListener('click', function (event) {
-            event.stopPropagation(); // Stops the event from bubbling up
-
-            select.value = option.value;
-            selectedDiv.innerText = option.innerText;
-
-            // Remove `selected` class from previously selected option
-            const previousSelected = optionsReplacer.querySelector('.selected');
-            if (previousSelected) {
-                previousSelected.classList.remove('selected');
-            }
-            // Add `selected` class to the new selected option
-            optionDiv.classList.add('selected');
-
-            // Trigger the original dropdown's change event
-            let changeEvent = new Event('change', {
-                'bubbles': true,
-                'cancelable': true
-            });
-            select.dispatchEvent(changeEvent);
-        });
-        optionsReplacer.appendChild(optionDiv);
+    Array.from(select.options).forEach((option) => {
+        createOptionDiv(option, select, optionsReplacer, selectedDiv);
     });
 
     selectReplacer.addEventListener('click', function (event) {
@@ -161,50 +156,30 @@ document.addEventListener('DOMContentLoaded', function () {
     selects.forEach(select => setupModelSelect(select, select.id === 'embeddingsModelSelect'));
 });
 
-function addOptionToCustomDropdown(select, option) {
-    let container = select.parentNode;
-    let optionsReplacer = container.querySelector('.options-replacer');
-    let optionDiv = document.createElement('div');
-    optionDiv.innerText = option.textContent;
-    optionDiv.setAttribute('data-value', option.value);
+function addOptionToCustomDropdown(select, optionData) {
+    let optionsReplacer = select.parentNode.querySelector('.options-replacer');
+    let selectedDiv = select.parentNode.querySelector('.select-replacer > div');
 
-    // Add click event listener to new option div
-    optionDiv.addEventListener('click', function(event) {
-        event.stopPropagation();
-        select.value = option.value;
-        let selectedDiv = container.querySelector('.select-replacer > div');
-        selectedDiv.innerText = option.textContent;
-        
-        // Update selection visually across all options
-        const previousSelected = optionsReplacer.querySelector('.selected');
-        if (previousSelected) {
-            previousSelected.classList.remove('selected');
-        }
-        optionDiv.classList.add('selected');
+    // Create the option element
+    let option = new Option(optionData.text, optionData.value);
+    option.setAttribute('data-key', optionData.key);
 
-        // Trigger change event on the original select element
-        let changeEvent = new Event('change', {
-            'bubbles': true,
-            'cancelable': true
-        });
-        select.dispatchEvent(changeEvent);
-    });
-
-    optionsReplacer.appendChild(optionDiv);
+    // Append and bind event to this new option
+    createOptionDiv(option, select, optionsReplacer, selectedDiv);
 }
 
-function addToCustomModelDropdown(select, selectData, cacheKey) {
-    // Extract data from selectData object
-    const { modelName, endpoint, key } = selectData;
 
-    // Create a new option with these details
-    const option = new Option(modelName, endpoint);
-    option.setAttribute('data-key', key);
+function addToCustomModelDropdown(select, selectData, cacheKey) {
+    const uniqueId = Date.now().toString(); // Simple unique ID generation
+    const option = new Option(selectData.modelName, uniqueId);
+
+    // Store additional data in HTML5 data attributes
+    option.setAttribute('data-endpoint', selectData.endpoint);
+    option.setAttribute('data-key', selectData.key);
+
     select.appendChild(option);
 
-    // Update local storage to reflect this new addition
     saveDropdownToLocalStorage(select, cacheKey);
-
     addOptionToCustomDropdown(select, option);
     updateSelectedOptionDisplay(select);
 }
@@ -213,26 +188,21 @@ function saveDropdownToLocalStorage(select, storageKey) {
     const options = Array.from(select.options).map(option => ({
         value: option.value,
         text: option.textContent,
-        key: option.getAttribute('data-key')
+        key: option.getAttribute('data-key'),
+        endpoint: option.getAttribute('data-endpoint')
     }));
     localStorage.setItem(storageKey, JSON.stringify(options));
-
-    // Save the currently selected value
     localStorage.setItem(storageKey + '_selected', select.value);
 }
 
 function loadDropdownFromLocalStorage(select, storageKey) {
-    const selectContainer = select.parentNode.querySelector('.options-replacer');
-    // Clear existing options first to prevent duplication
-    while (selectContainer.firstChild) {
-        selectContainer.removeChild(selectContainer.firstChild);
-    }
-
-    // Retrieve and load options from localStorage
     const options = JSON.parse(localStorage.getItem(storageKey));
     if (options) {
         options.forEach(optionData => {
-            addOptionToCustomDropdown(select, new Option(optionData.text, optionData.value, undefined, optionData.key));
+            const option = new Option(optionData.text, optionData.value);
+            option.setAttribute('data-key', optionData.key);
+            option.setAttribute('data-endpoint', optionData.endpoint);
+            select.appendChild(option);
         });
 
         // Update selected option display after loading all options
