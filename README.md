@@ -16,7 +16,7 @@
 
 🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
-📆 For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
+For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
 
 ### `Why Fractals?`
 
@@ -51,7 +51,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 ### 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [neurite.network](https://satellitecomponent.github.io/Neurite/) 🌐
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
 
-🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)! 
+🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
@@ -69,9 +69,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 
 - **`Synchronized Knowledge Management`**: [Neurite](https://satellitecomponent.github.io/Neurite/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
 - **`FractalGPT`**: Engage with non-linear, rhizomatic memory through our biomimetic interface. Create and connect an endless number of individual chat windows, or let the AI take notes from above.
-- **`Neural API`**: A recent update to Neurite is our function calling panel, which allows you to execute Neurite's code from within Neurite itself.
-- **`Local AI`**: Neurite connects to any locally hosted instance of Ollama to run Ai models directly from your computer.
-
+- **`Local AI`**: Neurite is committed to privacy. Connect to any locally hosted instance of Ollama to run Ai models directly from your computer. Embeddings can also be generated locally. And, you can now define custom API endpoints from within the UI.
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
 </p>
@@ -90,22 +88,89 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
 ### `Controls*`
-| Category                       | Key/Combination           | Action                                               |
-|--------------------------------|---------------------------|------------------------------------------------------|
-| **Navigation**                 | Click and drag            | Move around                                          |
-|                                | Scroll                    | Zoom through the fractal                             |
-| **Node Management**            | Shift + double click      | Create text node                                     |
-|                                | Shift                     | Freeze Time                                          |
-|                                | Hold Shift + click        | Connect two nodes                                    |
-|                                | Double click              | Anchor a node                                        |
-|                                | Alt/Option + double click | Create an AI node                                    |
-| **Node Selection & Arrangement**| Alt/Option + Drag Node   | Arrange the node (avoids text selection)             |
-|                                | Alt/Option + Click        | Select nodes                                         |
-|                                | Alt/Option + Drag  Canvas | Select multiple nodes                                |
-|                                | Arrow Keys                | Move selected nodes                                  |
-|                                | d                         | Scale selected nodes down                            |
-|                                | f                         | Scale selected nodes up                              |
-|**Fractal Controls**            | Edit Tab                  | Main Sliders for Fractal rendering and Color         |
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Key/Combination</th>
+    <th>Action</th>
+  </tr>
+  <!-- Navigation -->
+  <tr>
+    <td rowspan="2"><strong>Navigation</strong></td>
+    <td><code>Click and drag</code></td>
+    <td>Move around</td>
+  </tr>
+  <tr>
+    <td><code>Scroll</code></td>
+    <td>Zoom through the fractal</td>
+  </tr>
+  <!-- Node Management -->
+  <tr>
+    <td rowspan="5"><strong>Node Management</strong></td>
+    <td><code>Shift + double click</code></td>
+    <td>Create text node</td>
+  </tr>
+  <tr>
+    <td><code>Shift</code></td>
+    <td>Freeze time</td>
+  </tr>
+  <tr>
+    <td><code>Hold Shift + click</code></td>
+    <td>Connect two nodes</td>
+  </tr>
+  <tr>
+    <td><code>Double click</code></td>
+    <td>Anchor a node</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + double click</code></td>
+    <td>Create an AI node</td>
+  </tr>
+  <!-- Node Selection & Arrangement -->
+  <tr>
+    <td rowspan="6"><strong>Node Selection & Arrangement</strong></td>
+    <td><code>Alt/Option + Drag Node</code></td>
+    <td>Arrange the node (avoids text selection)</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + Click</code></td>
+    <td>Select nodes</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + Drag Canvas</code></td>
+    <td>Select multiple nodes</td>
+  </tr>
+  <tr>
+    <td><code>Arrow Keys</code></td>
+    <td>Move selected nodes</td>
+  </tr>
+  <tr>
+    <td><code>d</code></td>
+    <td>Scale selected nodes down</td>
+  </tr>
+  <tr>
+    <td><code>f</code></td>
+    <td>Scale selected nodes up</td>
+  </tr>
+  <!-- Fractal Controls -->
+  <tr>
+    <td rowspan="4"><strong>Fractal Controls</strong></td>
+    <td><code>Edit Tab</code></td>
+    <td>Main sliders for fractal rendering and color</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + f</code></td>
+    <td>Freeze the currently displayed fractal lines</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + c</code></td>
+    <td>Clear any frozen lines</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + s</code></td>
+    <td>Save the fractal lines as a PNG</td>
+  </tr>
+</table>
 
 Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main dropdown.
 
