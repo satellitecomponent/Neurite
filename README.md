@@ -8,13 +8,13 @@
 
 ## `Introduction`
 
-💡 **[Neurite](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
+💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 **...the fractal dimension.**
 
 ## Bridging Fractals and Thought
 
-**Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
+🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
 For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
 
@@ -22,9 +22,7 @@ For over a year, we've been iterating out a virtually limitless workspace that b
 
 [The Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set) is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from [polynomial equations](https://www.youtube.com/watch?v=-RdOwhmqP5s), to [art](https://www.nature.com/articles/20833) and [music](https://www.mpg.de/9379548/fractals-set-the-tone) - even the [cosmic web](https://cosmicweb.kimalbrecht.com/).
 
-Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.
-
-Neurite speaks in the language of iteration.
+🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.
 
 The goal of this project is to grow agentic graphs of fractal collaboration & creativity.
 <p align="center">
@@ -34,36 +32,36 @@ The goal of this project is to grow agentic graphs of fractal collaboration & cr
 
 ### `First of its Kind Fractal Zoom`
 
-Neurite is unique in its ability to seamlessly navigate the Mandelbrot set in real time!
+[neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
 
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
 
 ### `Why Nodes?`
-Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
+Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭
 
-Neurite iteratively defines interactive and modular graphs of reasoning, computation, research, and creation.
+[neurite.network](https://satellitecomponent.github.io/Neurite/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
 </p>
 
 ### `Complexity Inspires Creativity / Basins Attract`
-Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape for tracing ever-branching pathways of thought.
+Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape that traces your ever-branching pathways of thought.
 
-### 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [Neurite](https://satellitecomponent.github.io/Neurite/) 🌐
+### 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [neurite.network](https://satellitecomponent.github.io/Neurite/) 🌐
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
 
-🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)! 🚧
+🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
 2. [Synchronized Knowledge Management](#synchronized-knowledge-management)
 3. [How to Use Neurite](#how-to-use-neurite)
 4. [FractalGPT](#fractalgpt)
-5. [Neural API](#neural-api)
-6. [Local Ai](#local-ai)
-7. [User Guide](#user-guide)
-8. [Local Server Setup](#local-server-setup)
+5. [Local Ai](#local-ai)
+6. [User Guide](#user-guide)
+7. [Local Server Setup](#local-server-setup)
+8. [Neural API](#neural-api)
 9. [Future of Neurite](#future-of-neurite)
 10. [Contact](#contact)
 
@@ -71,9 +69,7 @@ Whether you're a researcher, writer, artist, developer, educator, or simply a cu
 
 - **`Synchronized Knowledge Management`**: [Neurite](https://satellitecomponent.github.io/Neurite/) provides [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted, [bi-directional synchronization](https://en.wikipedia.org/wiki/File_synchronization) between UI-focused [Mind-Mapping](https://en.wikipedia.org/wiki/Mind_map) and text-based [hyperlinking](https://en.wikipedia.org/wiki/Hyperlink).
 - **`FractalGPT`**: Engage with non-linear, rhizomatic memory through our biomimetic interface. Create and connect an endless number of individual chat windows, or let the AI take notes from above.
-- **`Neural API`**: A recent update to Neurite is our function calling panel, which allows you to execute Neurite's code from within Neurite itself.
-- **`Local AI`**: Neurite connects to any locally hosted instance of Ollama to run Ai models directly from your computer.
-
+- **`Local AI`**: Neurite is committed to privacy. Connect to any locally hosted instance of Ollama to run Ai models directly from your computer. Embeddings can also be generated locally. And, you can now define custom API endpoints from within the UI.
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
 </p>
@@ -92,21 +88,89 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
 ### `Controls*`
-| Category                       | Key/Combination           | Action                                               |
-|--------------------------------|---------------------------|------------------------------------------------------|
-| **Navigation**                 | Click and drag            | Move around                                          |
-|                                | Scroll                    | Zoom through the fractal                             |
-| **Node Management**            | Shift + double click      | Create text node                                     |
-|                                | Shift                     | Freeze Time                                          |
-|                                | Hold Shift + click        | Connect two nodes                                    |
-|                                | Double click              | Anchor a node                                        |
-|                                | Alt/Option + double click | Create an AI node                                    |
-| **Node Selection & Arrangement**| Alt/Option + Drag Node   | Arrange the node (avoids text selection)             |
-|                                | Alt/Option + Click        | Select nodes                                         |
-|                                | Alt/Option + Drag  Canvas | Select multiple nodes                                |
-|                                | Arrow Keys                | Move selected nodes                                  |
-|                                | d                         | Scale selected nodes down                            |
-|                                | f                         | Scale selected nodes up                              |
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Key/Combination</th>
+    <th>Action</th>
+  </tr>
+  <!-- Navigation -->
+  <tr>
+    <td rowspan="2"><strong>Navigation</strong></td>
+    <td><code>Click and drag</code></td>
+    <td>Move around</td>
+  </tr>
+  <tr>
+    <td><code>Scroll</code></td>
+    <td>Zoom through the fractal</td>
+  </tr>
+  <!-- Node Management -->
+  <tr>
+    <td rowspan="5"><strong>Node Management</strong></td>
+    <td><code>Shift + double click</code></td>
+    <td>Create text node</td>
+  </tr>
+  <tr>
+    <td><code>Shift</code></td>
+    <td>Freeze time</td>
+  </tr>
+  <tr>
+    <td><code>Hold Shift + click</code></td>
+    <td>Connect two nodes</td>
+  </tr>
+  <tr>
+    <td><code>Double click</code></td>
+    <td>Anchor a node</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + double click</code></td>
+    <td>Create an AI node</td>
+  </tr>
+  <!-- Node Selection & Arrangement -->
+  <tr>
+    <td rowspan="6"><strong>Node Selection & Arrangement</strong></td>
+    <td><code>Alt/Option + Drag Node</code></td>
+    <td>Arrange the node (avoids text selection)</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + Click</code></td>
+    <td>Select nodes</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + Drag Canvas</code></td>
+    <td>Select multiple nodes</td>
+  </tr>
+  <tr>
+    <td><code>Arrow Keys</code></td>
+    <td>Move selected nodes</td>
+  </tr>
+  <tr>
+    <td><code>d</code></td>
+    <td>Scale selected nodes down</td>
+  </tr>
+  <tr>
+    <td><code>f</code></td>
+    <td>Scale selected nodes up</td>
+  </tr>
+  <!-- Fractal Controls -->
+  <tr>
+    <td rowspan="4"><strong>Fractal Controls</strong></td>
+    <td><code>Edit Tab</code></td>
+    <td>Main sliders for fractal rendering and color</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + f</code></td>
+    <td>Freeze the currently displayed fractal lines</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + c</code></td>
+    <td>Clear any frozen lines</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + s</code></td>
+    <td>Save the fractal lines as a PNG</td>
+  </tr>
+</table>
 
 Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main dropdown.
 
@@ -158,62 +222,29 @@ Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main d
 </tbody>
 </table>
 
-### Neurite Supports the Following AI Plugins:
+### Neurite Supports the following AI Plugins: ⚡
 
 - **Auto Mode**: Enable the AI to recursively generate its own prompts.
-- **Node-Based Memory**: Utilize long-term recall through our vector-embedded search of your notes and conversation. (Experimental forgetting mode in the ? tab)
-- **Direct Rendering Environments**:
+- **Nodal Memory**: Utilize long-term recall through our vector-embedded search of your notes and conversation. (Experimental forgetting mode in the ? tab)
+- **Experimental Code Editor**:
   - **HTML/JS**: Render GPT's code output directly. Connected nodes bundle together any HTML/CSS/JS codeblocks or editors.
   - **Python ([Pyodide](https://github.com/pyodide/pyodide))**: Execute Python code directly within the browser.
 - **Web Search**: Utilize the Google programmable search API to retrieve webpages that can be sent as context to the AI.
-- **Webpage and PDF Text Extraction**: Leverage a local vector database to extend the AI's context window.
+- **Understands Weboages and PDFs**: Leverage a local vector database to extend the AI's context window.
 - **Wikipedia Results**: Retrieve the top 3 Wikipedia results or shuffle through the top 20.
-- **Wolfram Alpha Results**: Experience our unique implementation of integrating Wolfram with AI.
+- **Wolfram Alpha Results**: Display Wolfram Pods as nodes.
 
 All API keys can be input through the AI tab in the menu dropdown.
 
-## `Neural API`
-A recent update to Neurite is our function calling panel.
-
-This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.
-
-<p align="center">
-   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="neuralapi" width="20%">
-</p>
-
-Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include,
-- Animate movements through the Mandelbrot set
-- Determine exact coordinates to zoom to
-- Call GPT 4 Vision to determine the next movement. (set number of iterations)
-- Create notes
-- Prompt the Zettelkasten Ai
-- Prompt the user
-- Search and Zoom to Notes
-
-You can call on GPT to construct the sequences of function calls itself. It has access to the documentation.
-
-All of these features can be called as a sequence or as decided by your code.
-
-For the current documentation, try calling the below from within the function panel...
-
-```javascript
-const neuralAPI = neuralApiPrompt();
-console.log(neuralAPI);
-```
-
-... the current Neural API documentation will display in your call history for the function calling panel as well as in your browser console.
-
-There will be more information on this soon. This is a new feature in initial release.
-
 ## `Local Ai`
 
-### Multi-Agent Chat Networks
+###  🤖 Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖
 - `Alt + Double click` creates a node with a more traditional AI chat interface. (you can create multiple)
 - Connected Ai nodes will now send messages to one another. This has been improved but contains endless possiblities. (`Hold Shift and Click` two node windows to connect them together)
 - Supports Local and OpenAi models concurrently.
 
-### [flow-based](https://en.wikipedia.org/wiki/Flow-based_programming) Ai-Agents
-- **Message Looping:** Initiate conversational loops among connected AI nodes.
+### [flow-based](https://en.wikipedia.org/wiki/Flow-based_programming) Ai-Agents ⛓️💭
+🔄 **Message Looping:** Initiate conversational loops among connected AI nodes.
 - **Prompt Generation:** Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.
 - **Unique & Shared Instructions:**
   - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
@@ -255,7 +286,7 @@ As of our recent update, the servers now support an Ai proxy that connects Neuri
 
 ### `Final Notes`
 - Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. Saving has recently been significantly enchanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
+- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enchanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
 - Zettelkasten and Mind Mapping: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 - Fractals: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
@@ -268,9 +299,40 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
 - This means retaining relevant information from any part of the conversation regardless of the Ai's context window size.
 - Still, advancements in context window size only further enable Neurite's performance.
 
+## `Neural API`
+A recent update to Neurite is our function calling panel.
+
+This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.
+
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="neuralapi" width="20%">
+</p>
+
+Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include,
+- Animate movements through the Mandelbrot set
+- Determine exact coordinates to zoom to
+- Call GPT 4 Vision to determine the next movement. (set number of iterations)
+- Create notes
+- Prompt the Zettelkasten Ai
+- Prompt the user
+- Search and Zoom to Notes
+
+You can call on GPT to construct the sequences of function calls itself. It has access to the documentation.
+
+All of these features can be called as a sequence or as decided by your code.
+
+For the current documentation, try calling the below from within the function panel...
+
+```javascript
+const neuralAPI = neuralApiPrompt();
+console.log(neuralAPI);
+```
+
+... the current Neural API documentation will display in your call history for the function calling panel as well as in your browser console.
+
+There will be more information on this soon. This is a new feature in initial release.
+
 ## `Future of Neurite`
-
-
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing thought.
 
