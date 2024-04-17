@@ -150,6 +150,18 @@ function updateSelectedOptionDisplay(selectElement) {
     }
 }
 
+function refreshCustomDropdownDisplay(select) {
+    const optionsReplacer = select.parentNode.querySelector('.options-replacer');
+    // Clear existing custom dropdown options
+    while (optionsReplacer.firstChild) {
+        optionsReplacer.removeChild(optionsReplacer.firstChild);
+    }
+    // Repopulate the custom dropdown options
+    Array.from(select.options).forEach(option => {
+        createOptionDiv(option, select, optionsReplacer, select.parentNode.querySelector('.select-replacer > div'));
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Setup for all existing custom-selects, excluding those in the modal
     let selects = document.querySelectorAll('select.custom-select:not(#customModal select.custom-select)');
@@ -196,19 +208,61 @@ function saveDropdownToLocalStorage(select, storageKey) {
 }
 
 function loadDropdownFromLocalStorage(select, storageKey) {
-    const options = JSON.parse(localStorage.getItem(storageKey));
-    if (options) {
-        options.forEach(optionData => {
-            const option = new Option(optionData.text, optionData.value);
-            option.setAttribute('data-key', optionData.key);
-            option.setAttribute('data-endpoint', optionData.endpoint);
-            select.appendChild(option);
+    const storedOptions = JSON.parse(localStorage.getItem(storageKey));
+    if (storedOptions) {
+        const existingOptions = new Set(); // Use a Set to track existing option values
+        Array.from(select.options).forEach(option => existingOptions.add(option.value));
+
+        storedOptions.forEach(optionData => {
+            // Only add option if it doesn't already exist
+            if (!existingOptions.has(optionData.value)) {
+                const option = new Option(optionData.text, optionData.value);
+                option.setAttribute('data-key', optionData.key);
+                option.setAttribute('data-endpoint', optionData.endpoint);
+                select.appendChild(option);
+                addOptionToCustomDropdown(select, option); // Custom function to handle UI updates
+            }
         });
 
-        // Update selected option display after loading all options
-        updateSelectedOptionDisplay(select);
+        // Ensure the select displays the correct selected value from storage
+        select.value = localStorage.getItem(storageKey + '_selected');
+        updateSelectedOptionDisplay(select); // Custom function to update UI display of selected option
     }
 }
+function deleteSelectedOption(selectId, storageKey) {
+    const select = document.getElementById(selectId);
+    const selectedIndex = select.selectedIndex;
+
+    if (selectedIndex > -1 && select.options[selectedIndex].value !== "none") {
+        if (confirm("Are you sure you want to delete this configuration?")) {
+            const uniqueValue = select.options[selectedIndex].value;
+            select.remove(selectedIndex);
+
+            // After removal, update the currently selected index
+            if (select.options.length > 0) {  // Check if there are remaining options
+                select.selectedIndex = Math.max(0, selectedIndex - 1); // Adjust the selected index appropriately
+            }
+
+            updateStorageAfterDeletion(select, storageKey, uniqueValue);
+            updateSelectedOptionDisplay(select);
+        }
+    } else {
+        alert("No valid option selected to delete or cannot delete the placeholder.");
+    }
+}
+
+function updateStorageAfterDeletion(select, storageKey, uniqueValue) {
+    const options = Array.from(select.options).map(option => ({
+        value: option.value,
+        text: option.textContent,
+        key: option.getAttribute('data-key'),
+        endpoint: option.getAttribute('data-endpoint')
+    }));
+    localStorage.setItem(storageKey, JSON.stringify(options));
+    localStorage.setItem(storageKey + '_selected', select.value);
+    refreshCustomDropdownDisplay(select); // Ensure UI is updated
+}
+
 
 // Function for custom slider background
 function setSliderBackground(slider) {

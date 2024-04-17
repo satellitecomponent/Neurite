@@ -9,6 +9,11 @@ function nextUUID() {
 // Global array for selected UUIDs
 let selectedNodeUUIDs = new Set();
 
+// Function to clone the current set of selected UUIDs
+function cloneSelectedUUIDs() {
+    return new Set(selectedNodeUUIDs);
+}
+
 // Function to toggle node selection
 function toggleNodeSelection(node) {
     if (selectedNodeUUIDs.has(node.uuid)) {
@@ -20,6 +25,17 @@ function toggleNodeSelection(node) {
         selectedNodeUUIDs.add(node.uuid); // Select
         //console.log(`selected`);
     }
+}
+
+// Restores selections from a saved state
+function restoreNodeSelections(savedUUIDs) {
+    savedUUIDs.forEach(uuid => {
+        const node = findNodeByUUID(uuid);
+        if (node) {
+            node.windowDiv.classList.add('selected');
+            selectedNodeUUIDs.add(uuid);
+        }
+    });
 }
 
 function clearNodeSelection() {
