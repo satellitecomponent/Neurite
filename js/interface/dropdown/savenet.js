@@ -78,10 +78,19 @@ function restoreNewLinesInPreElements(nodeElement) {
 }
 
 function neuriteSaveEvent(existingTitle = null) {
+    // First, update any edge data from nodes
     nodes.map((n) => n.updateEdgeData());
+
+    // Clone the currently selected UUIDs before clearing
+    const savedSelectedNodeUUIDs = cloneSelectedUUIDs();
+
+    // Clear current selections
     clearNodeSelection();
 
+    // Save the node data
     let nodeData = document.getElementById("nodes").innerHTML;
+
+    restoreNodeSelections(savedSelectedNodeUUIDs);
 
     // Replace new lines in nodeData for LLM nodes
     nodeData = replaceNewLinesInLLMSaveData(nodeData);

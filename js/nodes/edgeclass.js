@@ -317,7 +317,8 @@ class Edge {
 
             // Apply force to either shorten or lengthen the edge to the desired length
             if (dMag !== this.length) {
-                let f = d.scale(1 - this.length / (dMag + 1e-300));
+                let dampingFactor = 0.4;
+                let f = d.scale((1 - this.length / (dMag + 1e-300)) * dampingFactor);
                 n.force = n.force.plus(f.scale(-this.strength));
             }
         }
