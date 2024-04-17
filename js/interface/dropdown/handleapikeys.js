@@ -32,6 +32,14 @@ document.getElementById('addApiConfigBtn').addEventListener('click', function ()
 });
 
 
+document.getElementById('deleteApiConfigBtn').addEventListener('click', function () {
+    deleteSelectedOption('custom-model-select', 'customModelDropdown');
+});
+
+
+
+
+
 //api keys
 
 // Load any saved keys from local storage

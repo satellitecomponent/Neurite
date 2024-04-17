@@ -436,7 +436,7 @@
                                     <div style="display: flex; justify-content: space-evenly; align-items: center; ">
                                         <label for="model-select" style="margin-right: 10px;">GLOBAL Model:</label>
                                         <div class="dropdown-container">
-                                            <select id="model-select" class="model-selector custom-select" onchange="checkOtherModel(this)">
+                                            <select id="model-select" class="model-selector custom-select">
                                                 <option value="gpt-4">gpt-4</option>
                                                 <option value="gpt-4-0125-preview">gpt-4-0125</option>
                                                 <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
@@ -473,7 +473,10 @@
                                     </div>
                                     <br />
                                     <div style="display: flex; justify-content: space-evenly; align-items: center; ">
-                                        <label for="custom-model-select" style="margin-right: 10px;"> <button id="addApiConfigBtn" class="linkbuttons" onclick="openModal('apiConfigModalContent')">+ Custom</button></label>
+                                        <label for="custom-model-select" style="margin-right: 10px;">
+                                            <button id="addApiConfigBtn" class="linkbuttons" onclick="openModal('apiConfigModalContent')">+ Custom</button>
+                                            <button id="deleteApiConfigBtn" class="linkbuttons">-</button>
+                                        </label>
                                         <div class="dropdown-container">
                                             <select id="custom-model-select" class="model-selector custom-select">
                                                 <option value="none">none</option>
