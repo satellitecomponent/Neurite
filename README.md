@@ -21,12 +21,10 @@ For over a year, we've been iterating out a virtually limitless workspace that b
 <table>
   <tr>
     <td valign="top" width="50%">
-      <h3>Why Fractals?</h3>
+      <h3><code>Why Fractals?</code></h3>
       <p>The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.</p>
       <p>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.</p>
       <p>The goal of this project is to grow agentic graphs of fractal creativity & collaboration.</p>
-      <h3>First of its Kind Fractal Zoom</h3>
-      <p><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a> is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀</p>
     </td>
     <td valign="top" width="50%">
       <p align="center">
@@ -35,10 +33,15 @@ For over a year, we've been iterating out a virtually limitless workspace that b
     </td>
   </tr>
 </table>
+
+### First of its Kind Fractal Zoom
+
+[neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
+
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
 
 ### `Why Nodes?`
-Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭
+### Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭
 
 [neurite.network](https://satellitecomponent.github.io/Neurite/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.
 <p align="center">
@@ -49,7 +52,7 @@ Nodes represent text, images, videos, code, and AI agents. Together, they thread
 ## `Complexity Inspires Creativity / Basins Attract`
 ### Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape tracing your ever-branching pathways of thought.
 
-## 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [neurite.network](https://satellitecomponent.github.io/Neurite/) 🌐
+# 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [neurite.network](https://satellitecomponent.github.io/Neurite/) 🌐
 ⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
 
 🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)
@@ -115,7 +118,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
-### `Controls*`
+### ⚙️`Controls`⚙️
 <table>
   <tr>
     <th>Category</th>
@@ -305,18 +308,37 @@ Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main d
 All API keys can be input through the AI tab in the menu dropdown.
 
 ## `Local Ai`
-
-###  🤖 Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖
-- Connected Ai nodes send messages to one another. This idea contains endless possiblities. (`Hold Shift and Click` two node windows to connect them together)
-- Supports Local and Cloud based models concurrently.
-
-### [flow-based](https://en.wikipedia.org/wiki/Flow-based_programming) Ai-Agents ⛓️💭
-🔄 **Message Looping:** Initiate conversational threads across connected AI nodes.
-- **Prompt Generation:** Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.
-- **Unique & Shared Instructions:**
-  - **Unique Instructions:** Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.
-  - **Shared Instructions:** Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This is because once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.
-- **Related Research:** [Conversational Swarm Intelligence Paper](https://arxiv.org/abs/2309.03220)
+<table>
+  <tr>
+    <!-- Left: Text Description -->
+    <td valign="top" width="50%">
+      <h3>🤖 Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖</h3>
+      <ul>
+        <li>Connected Ai nodes send messages to one another. This idea contains endless possibilities. (<em>Hold Shift and Click</em> two node windows to connect them together)</li>
+        <li>Supports Local and Cloud based models concurrently.</li>
+      </ul>
+      <h3><a href="https://en.wikipedia.org/wiki/Flow-based_programming">flow-based</a> Ai-Agents ⛓️💭</h3>
+      <p>🔄 <strong>Message Looping:</strong> Initiate conversational threads across connected AI nodes.</p>
+      <ul>
+        <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
+        <li><strong>Unique & Shared Instructions:</strong>
+          <ul>
+            <li><strong>Unique Instructions:</strong> Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.</li>
+            <li><strong>Shared Instructions:</strong> Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This ensures that once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.</li>
+          </ul>
+        </li>
+        <li><strong>Related Research:</strong> <a href="https://arxiv.org/abs/2309.03220">Conversational Swarm Intelligence Paper</a></li>
+      </ul>
+    </td>
+    <!-- Right: Image -->
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
+      </p>
+    </td>
+  </tr>
+</table>
 
 ## `User Guide`
 ### To run Neurite locally,
