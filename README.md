@@ -334,6 +334,7 @@ All API keys can be input through the AI tab in the menu dropdown.
     <td valign="top" width="50%">
       <p align="center">
         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
+                <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/2f6f16be-659c-4048-aa8e-3aa7bcc73f35" alt="Multi-Agent Chat Networks3" width="100%">
         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
       </p>
     </td>
