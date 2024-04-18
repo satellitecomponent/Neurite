@@ -79,7 +79,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
       <ul>
         <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
         <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama.</li>
-        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be swtiched between any Ai.</li>
+        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be switched out as context for an increasing number of Ai systems.</li>
         <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environemnt for grappling with the interplay between logic and irrationality</li>
       </ul>
     </td>
@@ -227,7 +227,7 @@ Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main d
         <li><strong>Interactive Fractal Network:</strong> Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.</li>
         <li><strong>Intuitive Note Navigation:</strong> Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.</li>
       </ul>
-      <p>Fractals are the rabbit hole that this project seeks to increaingly dive into!</p>
+      <p>Fractals are the rabbit hole for endless exploration of thought!</p>
     </td>
     <!-- Right: Image -->
     <td valign="top" width="55%">
