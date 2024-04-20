@@ -415,7 +415,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
     </td>
     <!-- Right: Description of the Function Calling Panel -->
     <td valign="top" width="60%">
-      <h3>Expirmental Update: Function Calling Panel</h3>
+      <h3>Expirimental Update: Function Calling Panel</h3>
       <p>This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.</p>
       <p>Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include:</p>
       <ul>
