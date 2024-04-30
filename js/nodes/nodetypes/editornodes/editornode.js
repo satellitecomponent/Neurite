@@ -411,6 +411,8 @@ function initEditorNode(node) {
     iframeElement.srcdoc = htmlContent;
 }
 
+// To Do: Replace Saving with NodeExtensions
+
 function saveEditorContent(node) {
     let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
     if (iframeElement && iframeElement.contentWindow) {

@@ -405,14 +405,10 @@ function setResizeEventListeners(resizeHandle, node) {
         windowDiv.style.width = `${newWidth}px`;
         windowDiv.style.height = `${newHeight}px`;
 
-        const contentEditable = node.contentEditableDiv;
-        if (contentEditable) {
-            if (newHeight > 300) {
-                contentEditable.style.maxHeight = `${newHeight}px`;
-            } else {
-                contentEditable.style.maxHeight = `300px`;
-            }
-            contentEditable.style.maxWidth = `${newWidth}px`
+        const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
+        if (textNodeSyntaxWrapper) {
+            textNodeSyntaxWrapper.style.height = `100%`;
+            textNodeSyntaxWrapper.style.width = `100%`;
         }
 
         const htmlView = node.htmlView;
@@ -421,13 +417,12 @@ function setResizeEventListeners(resizeHandle, node) {
             htmlView.style.height = '100%';
         }
 
-        // Find the aiNodeWrapperDiv for this specific node. Use a more specific selector if needed.
         const aiNodeWrapperDiv = node.ainodewrapperDiv;
 
         // If aiNodeWrapperDiv exists, set its dimensions
         if (aiNodeWrapperDiv) {
-            aiNodeWrapperDiv.style.width = `${newWidth}px`;
-            aiNodeWrapperDiv.style.height = `${newHeight}px`;
+            aiNodeWrapperDiv.style.width = `100%`;
+            aiNodeWrapperDiv.style.height = `100%`;
         }
 
 

@@ -1,4 +1,3 @@
-
 const NodeExtensions = {
     "window": (node, a) => {
         rewindowify(node);
@@ -19,6 +18,58 @@ const NodeExtensions = {
                 }
             };
         });
+    },
+    "textareaId": (node, o) => {
+        // Using querySelector to find the textarea by ID
+        let textarea = node.content.querySelector(`#${o.p}`);
+        if (textarea) {
+            textarea.value = o.v;
+        }
+
+        // Push a callback to save the state of this textarea using its current ID
+        node.push_extra_cb((n) => {
+            return {
+                f: "textareaId",
+                a: {
+                    p: textarea.id,
+                    v: textarea.value
+                }
+            };
+        });
+    },
+    "checkboxId": (node, o) => {
+        // Query for checkboxes based on a specific ID and update their state
+        const checkbox = node.content.querySelector(`input[type="checkbox"][id='${o.p}']`);
+        if (checkbox) {
+            checkbox.checked = o.v;  // Set the checkbox's state based on the value provided
+
+            node.push_extra_cb((n) => {
+                return {
+                    f: "checkboxId",
+                    a: {
+                        p: o.p,  // Pass the ID of the checkbox
+                        v: checkbox.checked  // Save the current state
+                    }
+                };
+            });
+        }
+    },
+    "sliderId": (node, o) => {
+        // Query for sliders based on a specific ID and update their value
+        const slider = node.content.querySelector(`input[type="range"][id='${o.p}']`);
+        if (slider) {
+            slider.value = o.v ?? o.d;  // Set the slider's value based on the value provided or the default value
+
+            node.push_extra_cb((n) => {
+                return {
+                    f: "sliderId",
+                    a: {
+                        p: o.p,  // Pass the ID of the slider
+                        v: slider.value  // Save the current value
+                    }
+                };
+            });
+        }
     },
 }
 
@@ -78,8 +129,6 @@ class Node {
         this.frictionConstant = 0.2;
         this.intervalID = null;
         this.followingMouse = 0;
-        //this.followingAiCursor = false;
-        //this.aiCursorAnchor = new vec2(0, 0);
 
         this.sensor = new NodeSensor(this, 3);
 
@@ -109,6 +158,14 @@ class Node {
             return v;
         });
     }
+    updateNodeData() {
+        let saveExtras = [];
+        for (let extra of this.save_extras) {
+            saveExtras.push(typeof extra === "function" ? extra(this) : extra);
+        }
+        this.content.setAttribute("data-node_extras", JSON.stringify(saveExtras));
+        this.content.setAttribute("data-node_json", this.json());
+    }
     push_extra_cb(f) {
         this.save_extras.push(f);
     }
@@ -127,19 +184,6 @@ class Node {
 
     draw() {
         put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
-
-        // Before saving, get the current title input value and store it in a data-attribute
-        let titleInput = this.content.querySelector('.title-input');
-        if (titleInput) {
-            this.content.setAttribute('data-title', titleInput.value);
-        }
-
-        this.content.setAttribute("data-node_json", this.json());
-        let se = [];
-        for (let e of this.save_extras) {
-            se.push(typeof e === "function" ? e(this) : e);
-        }
-        this.content.setAttribute("data-node_extras", JSON.stringify(se));
     }
 
     step(dt) {
@@ -395,7 +439,8 @@ class Node {
     }
 
     getTitle() {
-        return this.content.getAttribute('data-title');
+        let titleInput = this.content.querySelector('.title-input');
+        return titleInput.value;
     }
 
     getEdgeDirectionalities() {

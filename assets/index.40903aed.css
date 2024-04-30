@@ -189,39 +189,96 @@ body {
         display: none;
     }
 
-.editable-div {
-    border: 2px solid #8882;
+.editor-wrapper {
+    font-family: monospace; /* Ensure all text uses the same font */
+    border: none;
     border-bottom: 1px solid #8882;
     width: 100%;
-    height: calc(100%);
-    max-height: 300px;
-    max-width: 266px;
-    overflow: auto;
-    padding: 10px;
+    height: 120px;
+    overflow: hidden;
+    padding: 0px;
     margin: 0px;
     box-sizing: border-box;
-    white-space: pre-wrap; /* This will ensure text wrapping and preserve whitespace */
-    word-wrap: break-word; /* This will break long words to the next line */
-    overflow-wrap: break-word;
-    line-height: 1.5;
     background-color: #222229;
-    border-radius: 0; /* This will remove rounded edges */
-    transition: border-bottom 0.6s ease, border-left 0.6s ease, background-color 0.6s ease; /* This adds a smooth transition effect */
+    border-radius: 0; /* Remove rounded edges */
+    position: relative; /* Needed for absolute positioning of children */
 }
 
-/* Firefox-specific style */
-@-moz-document url-prefix() {
-    .editable-div {
-        max-width: 276px;
+.editable-div, .syntax-display-div {
+    outline: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Scrolling is managed by the wrapper */
+    scroll-behavior: smooth;
+    white-space: pre-wrap; /* Ensure text wrapping and preserve whitespace */
+    word-wrap: break-word; /* Break long words to the next line */
+    overflow-wrap: break-word;
+    line-height: 1.5em;
+    box-sizing: border-box;
+    padding-left: 18px;
+    padding-top: 15px;
+}
+
+.editable-div {
+    z-index: 0; /* Higher than the display div to receive input */
+    background: transparent; /* Ensure the overlay content is visible */
+    color: #2b2847;
+    caret-color: #bbb;
+}
+
+.syntax-display-div {
+    z-index: 1; /* Behind the input div */
+    pointer-events: auto; /* Non-interactive */
+    background: transparent; /* Ensure the overlay content is visible */
+    pointer-events: none;
+}
+
+/* Custom syntax display div */
+    .syntax-display-div span {
+        display: inline;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        white-space: inherit; /* Ensure text wrapping and preserve whitespace */
+        word-wrap: inherit; /* Break long words to the next line */
+        overflow-wrap: inherit;
+        line-height: inherit;
+        font-family: inherit;
+        box-sizing: inherit;
     }
+
+.node-title-sd {
+    pointer-events: auto;
+    color: paleturquoise !important; /* Override color to ensure visibility */
+    cursor: pointer;
+    font-size: inherit; /* Ensures font size matches the surrounding text */
+    font-family: inherit; /* Ensures font family matches the surrounding text */
+    line-height: inherit; /* Ensures line height matches the surrounding text */
 }
 
-.editable-div:focus {
-    outline: none; /* Removes default browser outline */
-    border-bottom: 1px solid #464646;
-    border-left: 2px solid #464646;
-    background-color: #201F28;
+    .editable-div *, .syntax-display-div * {
+        color: inherit; /* This makes sure that all child elements inherit the parent's text color */
+    }
+
+.neurite-code-block {
 }
+
+.textarea-override {
+    border: none; /* Remove borders */
+    outline: none; /* Remove focus outline */
+    resize: none; /* Hide resize handle */
+    background-color: transparent; /* Make background transparent */
+    width: 100%; /* Ensure it fills the container */
+    height: 100%; /* Ensure it fills the container */
+    box-shadow: none; /* Remove any shadows */
+    -webkit-appearance: none; /* Neutralize platform-native styling on macOS */
+}
+
 
 
 .button-container {
@@ -1607,125 +1664,254 @@ input[type=range] {
 }
 /* Syntax Highlighting - Mimics our Prism.js Tomorrow theme */
 
+/* Define CSS variables for syntax highlighting colors */
+:root {
+    --cm-keyword-color: #cc99cc;
+    --cm-builtin-color: #cc99cc;
+    --cm-variable-color: #f8f8f2;
+    --cm-def-color: #f08d49;
+    --cm-operator-color: #66cccc;
+    --cm-punctuation-color: #cccccc;
+    --cm-number-color: #f08d49;
+    --cm-string-color: #7ec699;
+    --cm-comment-color: #999999;
+    --cm-atom-color: #95cecc;
+    --cm-type-color: #cc99cc;
+    --cm-qualifier-color: #cc99cc;
+    --cm-tag-color: #e2777a;
+    --cm-attribute-color: #cc99cc;
+    --cm-meta-color: #55b5db;
+    --cm-property-color: #f8f8f2;
+    --cm-header-color: #f8f8f2;
+    --cm-quote-color: #f8f8f2;
+    --cm-link-color: #f8f8f2;
+    --cm-error-color: #f2777a;
+    --cm-bracket-color: #f8f8f2;
+}
+
 /* General */
 .CodeMirror {
-    left: 0 !important; /* Add this line */
+    left: 0 !important;
     min-width: 266px;
     resize: none !important;
 }
+
 /* Background and Text */
 .cm-s-default {
-    color: #cccccc !important;
+    color: var(--cm-text-color, #cccccc) !important;
 }
 
     /* Keywords */
     .cm-s-default .cm-keyword {
-        color: #cc99cc !important;
+        color: var(--cm-keyword-color) !important;
     }
 
     /* Built-ins */
     .cm-s-default .cm-builtin {
-        color: #cc99cc !important;
+        color: var(--cm-builtin-color) !important;
     }
 
     /* Variables */
     .cm-s-default .cm-variable {
-        color: #f8f8f2 !important;
+        color: var(--cm-variable-color) !important;
     }
 
     /* Variables 2 and 3 (often these are local and global variables) */
     .cm-s-default .cm-variable-2 {
-        color: #f8f8f2 !important;
+        color: var(--cm-variable-color) !important;
     }
 
     .cm-s-default .cm-variable-3 {
-        color: #f8f8f2 !important;
+        color: var(--cm-variable-color) !important;
     }
 
     /* Function Definitions */
     .cm-s-default .cm-def {
-        color: #f08d49 !important;
+        color: var(--cm-def-color) !important;
     }
 
     /* Operators */
     .cm-s-default .cm-operator {
-        color: #66cccc !important;
+        color: var(--cm-operator-color) !important;
     }
 
     /* Punctuation */
     .cm-s-default .cm-punctuation {
-        color: #cccccc !important;
+        color: var(--cm-punctuation-color) !important;
     }
 
     /* Numbers */
     .cm-s-default .cm-number {
-        color: #f08d49 !important;
+        color: var(--cm-number-color) !important;
     }
 
     /* Strings */
     .cm-s-default .cm-string,
     .cm-s-default .cm-string-2 {
-        color: #7ec699 !important;
+        color: var(--cm-string-color) !important;
     }
 
     /* Comments */
     .cm-s-default .cm-comment {
-        color: #999999 !important;
+        color: var(--cm-comment-color) !important;
     }
 
     /* Atoms */
     .cm-s-default .cm-atom {
-        color: #95cecc !important;
+        color: var(--cm-atom-color) !important;
     }
 
     /* Types */
     .cm-s-default .cm-type {
-        color: #cc99cc !important;
+        color: var(--cm-type-color) !important;
     }
 
     /* Qualifiers */
     .cm-s-default .cm-qualifier {
-        color: #cc99cc !important;
+        color: var(--cm-qualifier-color) !important;
     }
 
     /* Tags */
     .cm-s-default .cm-tag {
-        color: #e2777a !important;
+        color: var(--cm-tag-color) !important;
     }
 
     /* Attributes */
     .cm-s-default .cm-attribute {
-        color: #cc99cc !important;
+        color: var(--cm-attribute-color) !important;
     }
 
     /* Meta and Others */
     .cm-s-default .cm-meta {
-        color: #55b5db !important;
+        color: var(--cm-meta-color) !important;
     }
 
     .cm-s-default .cm-property {
-        color: #f8f8f2 !important;
+        color: var(--cm-property-color) !important;
     }
 
     .cm-s-default .cm-header {
-        color: #f8f8f2 !important;
+        color: var(--cm-header-color) !important;
     }
 
     .cm-s-default .cm-quote {
-        color: #f8f8f2 !important;
+        color: var(--cm-quote-color) !important;
     }
 
     .cm-s-default .cm-link {
-        color: #f8f8f2 !important;
+        color: var(--cm-link-color) !important;
     }
 
     .cm-s-default .cm-error {
-        color: #f2777a !important;
+        color: var(--cm-error-color) !important;
     }
 
     .cm-s-default .cm-bracket {
-        color: #f8f8f2 !important;
+        color: var(--cm-bracket-color) !important;
     }
+
+/* Custom Neurite Mappings from Codemirror Styles */
+
+.neurite-meta {
+    color: var(--cm-keyword-color);
+}
+
+.neurite-keyword {
+    color: var(--cm-keyword-color);
+}
+
+.neurite-builtin {
+    color: var(--cm-builtin-color);
+}
+
+.neurite-variable {
+    color: var(--cm-variable-color);
+}
+
+.neurite-variable-2 {
+    color: var(--cm-variable-color);
+}
+
+.neurite-variable-3 {
+    color: var(--cm-variable-color);
+}
+
+.neurite-def {
+    color: var(--cm-def-color);
+}
+
+.neurite-operator {
+    color: var(--cm-operator-color);
+}
+
+.neurite-punctuation {
+    color: var(--cm-punctuation-color);
+}
+
+.neurite-number {
+    color: var(--cm-number-color);
+}
+
+.neurite-string,
+.neurite-string-2 {
+    color: var(--cm-string-color);
+}
+
+.neurite-comment {
+    color: var(--cm-comment-color);
+}
+
+.neurite-atom {
+    color: var(--cm-atom-color);
+}
+
+.neurite-type {
+    color: var(--cm-type-color);
+}
+
+.neurite-qualifier {
+    color: var(--cm-qualifier-color);
+}
+
+.neurite-tag {
+    color: var(--cm-tag-color);
+}
+
+    .neurite-tag.bracket {
+        color: var(--cm-bracket-color);
+    }
+
+.neurite-attribute {
+    color: var(--cm-attribute-color);
+}
+
+.neurite-meta {
+    color: var(--cm-meta-color);
+}
+
+.neurite-property {
+    color: var(--cm-property-color);
+}
+
+.neurite-header {
+    color: var(--cm-header-color);
+}
+
+.neurite-quote {
+    color: var(--cm-quote-color);
+}
+
+.neurite-link {
+    color: var(--cm-link-color);
+}
+
+.neurite-error {
+    color: var(--cm-error-color);
+}
+
+.neurite-bracket {
+    color: var(--cm-bracket-color);
+}
 
 
 /*Hide codemirror node text*/
@@ -2221,8 +2407,11 @@ textarea[id^='custom-instructions-textarea-'] {
 
 .context-settings-panel {
     display: flex;
+    flex-direction: column; /* Align children vertically */
+    align-items: center; /* Center-align the children */
     transition: height 0.2s ease;
     height: 0; /* Start with 0 height for the initial state if hidden */
+    width: 100%; /* Ensure the panel takes full width */
 }
 
 .context-settings-container {
@@ -2232,7 +2421,6 @@ textarea[id^='custom-instructions-textarea-'] {
     width: 100%;
     overflow: hidden;
 }
-
 .model-select-panel {
     display: flex;
     transition: height 0.2s ease;

@@ -175,6 +175,12 @@ let htmledges = document.getElementById("edges");
 
 //Zettelkasten
 
+let processAll = false;//set to true until made more robust.
+
+let restoreZettelkastenEvent = false;
+
+let bypassZettelkasten = false;
+
 var nodeTagInput;
 var refTagInput;
 
@@ -199,12 +205,6 @@ refTagInput.addEventListener('input', function () {
 });
 
 const LLM_TAG = "AI:";
-
-let processAll = false;//set to true until made more robust.
-
-let restoreZettelkastenEvent = false; 
-
-let bypassZettelkasten = false;
 
 const bracketsMap = {
     '(': ')',
@@ -245,15 +245,6 @@ var myCodeMirror = CodeMirror.fromTextArea(textarea, {
 
 window.myCodemirror = myCodeMirror;
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Check if CodeMirror instance exists
-    if (myCodeMirror) {
-        myCodeMirror.setValue('');  // Clear the content (prevents chaching on Firefox)
-    }
-});
-
-//ai.js
-
 let isBracketLinks = false;
 
 const tagValues = {
@@ -266,6 +257,9 @@ const tagValues = {
         return refValue;
     }
 };
+
+//ai.js
+
 
 // nodedef.js ainodemessage.js
 let llmNodeCount = 0;

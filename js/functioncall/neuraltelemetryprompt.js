@@ -82,7 +82,7 @@ function createTelemetryPrompt(neuralTelemetry, vision = false) {
     const currentEquation = neuralTelemetry.getCurrentEquation();
     const historyCount = 3;
     const lastFunctionCalls = neuralTelemetry.getLastFunctionCalls(historyCount);
-    const savedViewsList = neuralTelemetry.getListOfSavedViews();
+    //const savedViewsList = neuralTelemetry.getListOfSavedViews();
 
     let telemetryPrompt = `/* Current Zoom: ${mandelbrotCoords.zoom}, Current Pan: ${mandelbrotCoords.pan}, Current Equation: ${currentEquation}`;
 
@@ -97,12 +97,12 @@ function createTelemetryPrompt(neuralTelemetry, vision = false) {
     }
 
     // Append the list of saved views with their coordinates
-    if (savedViewsList.length > 0) {
-        const formattedViews = savedViewsList.map(view => {
-            return `{Title: "${view.title}", Coordinates: Zoom ${view.coordinates.zoom}, Pan ${view.coordinates.pan}}`;
-        });
-        telemetryPrompt += `, Saved Views: ${formattedViews.join(' | ')}`;
-    }
+    //if (savedViewsList.length > 0) {
+    //    const formattedViews = savedViewsList.map(view => {
+    //        return `{Title: "${view.title}", Coordinates: Zoom ${view.coordinates.zoom}, Pan ${view.coordinates.pan}}`;
+    //    });
+    //    telemetryPrompt += `, Saved Views: ${formattedViews.join(' | ')}`;
+    //}
 
     // Append the history of function calls
     if (lastFunctionCalls.length > 0) {
@@ -133,7 +133,7 @@ async function performSequence(animations) {
     // Transform the input animations for processing
     const transformedAnimations = animations.map(animation => {
         // Extract the animation action, parameters, and delay
-        const [action, params, delay = 0] = animation;
+        const [action, [params], delay = 0] = animation;
         // Ensure parameters are in array format
         const paramsArray = Array.isArray(params) ? params : [params];
         // Return the transformed animation object
@@ -280,7 +280,7 @@ Returns the user response as a string*/`,
         title: "Advanced use of performSequence(animations)",
         mainDemo: `// You can create multiple sequences, and use any function in a sequence.`,
         examples: [
-            `Do your best to remember and creatively the actual functionality described.`
+            `Do your best to best utilize the actual functionality described.`
         ],
         options: { neuralApi: true, vision: false }
     },
