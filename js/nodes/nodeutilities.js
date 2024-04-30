@@ -151,7 +151,7 @@ function getTextareaContentForNode(node) {
     }
 
     if (!node.isTextNode) {
-        console.warn('Node is not a text node. Skipping text area and editable div logic.');
+        //console.warn('Node is not a text node. Skipping text area and editable div logic.');
         return null;
     }
 
@@ -165,7 +165,7 @@ function getTextareaContentForNode(node) {
 
     // Sync and log content before and after syncing
     //console.log('Before Sync:', editableDiv.innerText, hiddenTextarea.value);
-    syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
+    syncHiddenTextareaWithInputTextarea(hiddenTextarea, editableDiv);
     //console.log('After Sync:', editableDiv.innerText, hiddenTextarea.value);
 
     // Trigger input to process any dependent logic
@@ -176,6 +176,16 @@ function getTextareaContentForNode(node) {
 }
 
 function testNodeText(title) {
+    nodes.forEach(node => {
+        let textarea = node.content.querySelector('textarea');
+        console.log(`From nodes array`);
+        if (textarea) {
+            console.log(`Node UUID: ${node.uuid} - Textarea value from DOM:`, textarea.value);
+        } else {
+            console.log(`Node UUID: ${node.uuid} - No textarea found in DOM`);
+        }
+    });
+
     const node = getNodeByTitle(title);
     if (node) {
         console.log(`Fetching text for node with title: ${title}`);

@@ -396,36 +396,6 @@
                             <div id="zetVertDragHandle" class="zet-drag-handle-vert"></div>
                             <textarea id="note-input" class="zettelkasten" rows="10" cols="50"></textarea>
                         </div>
-
-                        <div class="checkboxarray">
-                            <div title="Enable Web Search Results">
-                                <input type="checkbox" id="google-search-checkbox" name="enable-search">
-                                <label for="google-search-checkbox">Search</label>
-
-                            </div>
-                            <div title="Enable Code Instructions and Buttons">
-                                <input type="checkbox" id="code-checkbox" name="code-checkbox">
-                                <label for="code-checkbox">Code</label>
-                            </div>
-                            <div title="Self-Prompted AI">
-                                <input type="checkbox" id="auto-mode-checkbox">
-                                <label for="auto-mode-checkbox">Auto</label>
-                            </div>
-                            <div title="Retrieve Document Snippets and send to AI">
-                                <input type="checkbox" id="embed-checkbox">
-                                <label for="embed-checkbox">Data</label>
-                            </div>
-                            <div title="Query Wolfram Alpha">
-                                <input type="checkbox" id="enable-wolfram-alpha" name="enable-wolfram-alpha">
-                                <label for="enable-wolfram-alpha">Wolfram</label>
-                            </div>
-                            <div title="Query Wikipedia">
-                                <input type="checkbox" id="wiki-checkbox">
-                                <label for="wiki-checkbox">Wiki</label>
-
-
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div id="tab4" class="tabcontent">
@@ -509,6 +479,35 @@
                             <label for="contextSettingsContainer" class="button-label" onclick="toggleContextSettingsPanel()">Context Settings</label>
                             <div class="context-settings-container" id="contextSettingsContainer">
                                 <div class="context-settings-panel hidden">
+                                    <div class="checkboxarray">
+                                        <div title="Enable Web Search Results">
+                                            <input type="checkbox" id="google-search-checkbox" name="enable-search">
+                                            <label for="google-search-checkbox">Search</label>
+
+                                        </div>
+                                        <div title="Enable Code Instructions and Buttons">
+                                            <input type="checkbox" id="code-checkbox" name="code-checkbox">
+                                            <label for="code-checkbox">Code</label>
+                                        </div>
+                                        <div title="Self-Prompted AI">
+                                            <input type="checkbox" id="auto-mode-checkbox">
+                                            <label for="auto-mode-checkbox">Auto</label>
+                                        </div>
+                                        <div title="Retrieve Document Snippets and send to AI">
+                                            <input type="checkbox" id="embed-checkbox">
+                                            <label for="embed-checkbox">Data</label>
+                                        </div>
+                                        <div title="Query Wolfram Alpha">
+                                            <input type="checkbox" id="enable-wolfram-alpha" name="enable-wolfram-alpha">
+                                            <label for="enable-wolfram-alpha">Wolfram</label>
+                                        </div>
+                                        <div title="Query Wikipedia">
+                                            <input type="checkbox" id="wiki-checkbox">
+                                            <label for="wiki-checkbox">Wiki</label>
+
+
+                                        </div>
+                                    </div>
                                     <div class="gridLayout" id="aiParameterGrid" style="padding-top: 15px;">
                                         <div class="settingsSlider" title="Set the Token Limit for Calls to GPT">
                                             <label for="max-tokens-slider">Max Tokens: <br /><span id="max-tokens-display">2000</span></label>
@@ -531,6 +530,7 @@
                                         </div>
 
                                     </div>
+
                                 </div>
                                 <div class="toggle-panel" onclick="toggleContextSettingsPanel()" style="padding-top: 15px;">
                                     <div class="bar left-bar"></div>
@@ -1151,6 +1151,7 @@
     <script src="js/interface/dropdown/custommodal.js"></script>
     <script src="js/interface/dropdown/displaysavedcoords.js"></script>
 
+    <script src="js/zettelkasten/zetsyntax.js"></script>
     <script src="js/zettelkasten/zetcodemirror.js"></script>
     <script src="js/zettelkasten/zetplacementstrategy.js"></script>
     <script src="js/zettelkasten/zettelkasten.js"></script>

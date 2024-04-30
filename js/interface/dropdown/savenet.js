@@ -1,128 +1,4 @@
 ﻿const LATEST_LOADED_INDEX_KEY = "latest-selected"
-
-function handleSaveConfirmation(title, saveData, force = false) {
-    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-    const existingSaves = saves.filter(save => save.title === title);
-
-    if (existingSaves.length > 0) {
-        let confirmMessage = existingSaves.length === 1 ?
-            `A save with the title "${title}" already exists. Click 'OK' to overwrite, or 'Cancel' to create a duplicate.` :
-            `${existingSaves.length} saves with the title "${title}" already exist. Click 'OK' to overwrite all, or 'Cancel' to create a duplicate.`;
-
-        if (force || confirm(confirmMessage)) {
-            // Overwrite logic - update all saves with the matching title
-            saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
-            console.log(`Updated all saves with title: ${title}`);
-        } else {
-            // Duplicate logic
-            let newTitle = title;
-            saves.push({ title: newTitle, data: saveData });
-            console.log(`Created duplicate save: ${newTitle}`);
-            title = newTitle; // Update title to reflect new save
-        }
-    } else {
-        // Add new save
-        saves.push({ title: title, data: saveData });
-        console.log(`Created new save: ${title}`);
-    }
-
-    try {
-        localStorage.setItem("saves", JSON.stringify(saves));
-        updateSavedNetworks();
-    } catch (e) {
-        if (confirm("Local storage is full, download the data as a .txt file?")) {
-            downloadData(title, JSON.stringify({ data: saveData, zettelkastenSave: zettelkastenContent }));
-        }
-    }
-}
-
-function collectAdditionalSaveObjects() {
-    // Collecting slider values
-    const inputValues = localStorage.getItem('inputValues') || '{}';
-    const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
-
-    // Collecting saved views
-    const savedViewsString = JSON.stringify(savedViews);
-    const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
-
-    // Combine both slider values and saved views in one string
-    return savedInputValues + savedViewsElement;
-}
-
-const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
-
-function replaceNewLinesInLLMSaveData(nodeData) {
-    let tempDiv = document.createElement('div');
-    tempDiv.innerHTML = nodeData;
-
-    tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
-        try {
-            let nodeJson = JSON.parse(node.getAttribute('data-node_json'));
-            if (nodeJson.isLLM) {
-                node.querySelectorAll('pre').forEach(pre => {
-                    pre.innerHTML = pre.innerHTML.replace(/\n/g, NEWLINE_PLACEHOLDER);
-                });
-            }
-        } catch (error) {
-            console.warn('Error parsing node JSON:', error);
-        }
-    });
-
-    return tempDiv.innerHTML;
-}
-
-function restoreNewLinesInPreElements(nodeElement) {
-    nodeElement.querySelectorAll('pre').forEach(pre => {
-        pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
-    });
-}
-
-function neuriteSaveEvent(existingTitle = null) {
-    // First, update any edge data from nodes
-    nodes.map((n) => n.updateEdgeData());
-
-    // Clone the currently selected UUIDs before clearing
-    const savedSelectedNodeUUIDs = cloneSelectedUUIDs();
-
-    // Clear current selections
-    clearNodeSelection();
-
-    // Save the node data
-    let nodeData = document.getElementById("nodes").innerHTML;
-
-    restoreNodeSelections(savedSelectedNodeUUIDs);
-
-    // Replace new lines in nodeData for LLM nodes
-    nodeData = replaceNewLinesInLLMSaveData(nodeData);
-
-    let zettelkastenContent = window.myCodemirror.getValue();
-    let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
-
-    let additionalSaveData = collectAdditionalSaveObjects();
-    let saveData = nodeData + zettelkastenSaveElement + additionalSaveData;
-
-    let title = existingTitle || prompt("Enter a title for this save:");
-
-    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-    if (title) {
-        // Before saving, check if we're updating an existing save
-        let indexToUpdate = saves.findIndex(save => save.title === title);
-
-        if (indexToUpdate !== -1) {
-            // If we're updating, set this save as the selected one
-            selectedSaveIndex = indexToUpdate;
-        } else {
-            // If it's a new save, the new save will be the last in the array
-            selectedSaveIndex = saves.length;
-        }
-
-        selectedSaveTitle = title;
-        handleSaveConfirmation(title, saveData, title === existingTitle);
-        // Update selectedSaveIndex and selectedSaveTitle accordingly
-        localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex);
-    }
-}
-
 // Attach the neuriteSaveEvent to the save button
 document.getElementById("new-save-button").addEventListener("click", () => neuriteSaveEvent());
 
@@ -353,6 +229,146 @@ document.getElementById("clearLocalStorage").onclick = function () {
     alert('Local storage has been cleared.');
 }
 
+
+
+function handleSaveConfirmation(title, saveData, force = false) {
+    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    const existingSaves = saves.filter(save => save.title === title);
+
+    if (existingSaves.length > 0) {
+        let confirmMessage = existingSaves.length === 1 ?
+            `A save with the title "${title}" already exists. Click 'OK' to overwrite, or 'Cancel' to create a duplicate.` :
+            `${existingSaves.length} saves with the title "${title}" already exist. Click 'OK' to overwrite all, or 'Cancel' to create a duplicate.`;
+
+        if (force || confirm(confirmMessage)) {
+            // Overwrite logic - update all saves with the matching title
+            saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
+            console.log(`Updated all saves with title: ${title}`);
+        } else {
+            // Duplicate logic
+            let newTitle = title;
+            saves.push({ title: newTitle, data: saveData });
+            console.log(`Created duplicate save: ${newTitle}`);
+            title = newTitle; // Update title to reflect new save
+        }
+    } else {
+        // Add new save
+        saves.push({ title: title, data: saveData });
+        console.log(`Created new save: ${title}`);
+    }
+
+    try {
+        localStorage.setItem("saves", JSON.stringify(saves));
+        updateSavedNetworks();
+    } catch (e) {
+        if (confirm("Local storage is full, download the data as a .txt file?")) {
+            downloadData(title, JSON.stringify({ data: saveData }));
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+function collectAdditionalSaveObjects() {
+    // Collecting slider values
+    const inputValues = localStorage.getItem('inputValues') || '{}';
+    const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
+
+    // Collecting saved views
+    const savedViewsString = JSON.stringify(savedViews);
+    const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
+
+    // Combine both slider values and saved views in one string
+    return savedInputValues + savedViewsElement;
+}
+
+const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
+
+function replaceNewLinesInLLMSaveData(nodeData) {
+    let tempDiv = document.createElement('div');
+    tempDiv.innerHTML = nodeData;
+
+    tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
+        try {
+            let nodeJson = JSON.parse(node.getAttribute('data-node_json'));
+            if (nodeJson.isLLM) {
+                node.querySelectorAll('pre').forEach(pre => {
+                    pre.innerHTML = pre.innerHTML.replace(/\n/g, NEWLINE_PLACEHOLDER);
+                });
+            }
+        } catch (error) {
+            console.warn('Error parsing node JSON:', error);
+        }
+    });
+
+    return tempDiv.innerHTML;
+}
+
+function restoreNewLinesInPreElements(nodeElement) {
+    nodeElement.querySelectorAll('pre').forEach(pre => {
+        pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
+    });
+}
+
+function neuriteSaveEvent(existingTitle = null) {
+    //TEMP FIX: To-Do: Ensure processChangedNodes in zettelkasten.js does not cause other node textareas to have their values overwritten.
+    processAll = true;
+    window.zettelkastenProcessor.processInput();
+
+    nodes.forEach((node) => {
+        node.updateEdgeData();  // Update edge data
+        node.updateNodeData();  // Update node extras and other data before saving
+    });
+
+    // Clone the currently selected UUIDs before clearing
+    const savedSelectedNodeUUIDs = cloneSelectedUUIDs();
+
+    // Clear current selections
+    clearNodeSelection();
+
+    // Save the node data
+    let nodeData = document.getElementById("nodes").innerHTML;
+
+    restoreNodeSelections(savedSelectedNodeUUIDs);
+
+    // Replace new lines in nodeData for LLM nodes
+    nodeData = replaceNewLinesInLLMSaveData(nodeData);
+
+    let zettelkastenContent = window.myCodemirror.getValue();
+    let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
+
+    let additionalSaveData = collectAdditionalSaveObjects();
+    let saveData = nodeData + zettelkastenSaveElement + additionalSaveData;
+
+    let title = existingTitle || prompt("Enter a title for this save:");
+
+    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    if (title) {
+        // Before saving, check if we're updating an existing save
+        let indexToUpdate = saves.findIndex(save => save.title === title);
+
+        if (indexToUpdate !== -1) {
+            // If we're updating, set this save as the selected one
+            selectedSaveIndex = indexToUpdate;
+        } else {
+            // If it's a new save, the new save will be the last in the array
+            selectedSaveIndex = saves.length;
+        }
+
+        selectedSaveTitle = title;
+        handleSaveConfirmation(title, saveData, title === existingTitle);
+        // Update selectedSaveIndex and selectedSaveTitle accordingly
+        localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex);
+    }
+}
+
 for (let n of htmlnodes) {
     let node = new Node(undefined, n, true);  // Indicate edge creation with `true`
     registernode(node);
@@ -471,16 +487,9 @@ function populateDirectionalityMap(d, nodeMap) {
 }
 
 function reconstructSavedNode(node) {
-    // Restore the title
-    let titleInput = node.content.querySelector('.title-input');
-    if (titleInput) {
-        let savedTitle = node.content.getAttribute('data-title');
-        if (savedTitle) {
-            titleInput.value = savedTitle;
-        }
-    }
 
     if (node.isTextNode) {
+        console.log(`textarea value`, node.content.querySelector('.node-textarea').value);
         initTextNode(node)
     }
 
@@ -508,28 +517,52 @@ function autosave() {
     }
 }
 
-// Necessary because of the scripts order load order
+document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stateFromURL = urlParams.get('state');
 
-document.addEventListener("DOMContentLoaded", function (){
-    const value = localStorage.getItem(LATEST_LOADED_INDEX_KEY) ?? null
-    selectedSaveIndex = value !== null ? parseInt(value) : null; // Update the selected save index
+    if (stateFromURL) {
+        // Load state from a file in the /wiki/pages directory
+        fetch(`/wiki/pages/neurite-wikis/${stateFromURL}.txt`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.text();
+            })
+            .then(data => {
+                loadNet(data, true);  // Load the network directly with the fetched text data
+                selectedSaveTitle = null;
+                selectedSaveIndex = null;
+                updateSavedNetworks();
+            })
+            .catch(error => {
+                console.error('Failed to load state from file:', error);
+                // Handle errors gracefully, maybe display a message to users
+                displayErrorMessage('Failed to load the requested network state.');
+            });
+    } else {
+        // Existing logic to load from local storage
+        const value = localStorage.getItem(LATEST_LOADED_INDEX_KEY) ?? null;
+        selectedSaveIndex = value !== null ? parseInt(value) : null;
 
-    if (selectedSaveIndex !== null) {
-        const saves = JSON.parse(localStorage.getItem("saves") || "[]");
-        const existingSaves = saves?.[selectedSaveIndex];
-        if (existingSaves) {
-            selectedSaveTitle = existingSaves.title
-            updateSavedNetworks();
-
-            loadNet(existingSaves.data, true);
-        } else {
-            selectedSaveTitle = null
-            selectedSaveIndex = null
+        if (selectedSaveIndex !== null) {
+            const saves = JSON.parse(localStorage.getItem("saves") || "[]");
+            const existingSaves = saves?.[selectedSaveIndex];
+            if (existingSaves) {
+                selectedSaveTitle = existingSaves.title;
+                updateSavedNetworks();
+                loadNet(existingSaves.data, true);
+            } else {
+                selectedSaveTitle = null;
+                selectedSaveIndex = null;
+                updateSavedNetworks();
+            }
         }
+
+        // Autosave setup remains unchanged
+        autosaveEnabledCheckbox.checked = localStorage.getItem("autosave-enabled") ?? false;
+        autosaveEnabledCheckbox.addEventListener("change", (e) => localStorage.setItem("autosave-enabled", !!e.target.checked));
+        setInterval(autosave, 8000);
     }
-
-    autosaveEnabledCheckbox.checked = localStorage.getItem("autosave-enabled") ?? false
-    autosaveEnabledCheckbox.addEventListener("change", (e) => localStorage.setItem("autosave-enabled", !!e.target.checked))
-
-    setInterval(autosave, 8_000)
-})
+});
