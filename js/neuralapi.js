@@ -303,7 +303,7 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
                 autopilotSpeed = 0;
                 autopilotReferenceFrame = undefined;
                 activeAnimationsCount--;
-                resolve();
+                resolve(node);
             }
         };
 
@@ -318,7 +318,7 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
             activeAnimationsCount--;
             autopilotSpeed = 0;
             autopilotReferenceFrame = undefined;
-            resolve();
+            resolve(node);
         }, 3000); // 3 seconds
     });
 }
@@ -376,7 +376,7 @@ async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLev
 
             activeAnimationsCount--;
             console.log("Search and Zoom sequence completed!", activeAnimationsCount);
-            resolve(); // Resolve the promise when the sequence is completed
+            resolve(matchedNodes); // Resolve the promise with the matched nodes when the sequence is completed
         } catch (error) {
             console.error("An error occurred during the Search and Zoom sequence:", error);
             activeAnimationsCount--;
@@ -483,6 +483,16 @@ function getSavedView(query) {
     } else {
         console.warn(`No saved view found for query: "${query}"`);
         return null;
+    }
+}
+
+function getSavedViews() {
+    // Check if the savedViews is defined and has elements
+    if (savedViews && savedViews.length > 0) {
+        return savedViews;
+    } else {
+        console.warn("No saved views are currently available.");
+        return [];  // Or return null, depending on how you want to handle this case.
     }
 }
 
@@ -666,23 +676,6 @@ function listSavedViews() {
     });
 }
 
-function selectAndReturnToSavedView(animate = true, speed = 0.1) {
-    // List saved view titles and prompt user to select one
-    const titles = listSavedViews();
-    console.log("Saved Views:", titles.join(", "));
-    const selectedTitle = prompt("Enter the title of the view to return to:");
-
-    // Find the saved view with the selected title
-    const selectedView = savedViews.find(v => v.title === selectedTitle);
-
-    // Return to the selected view with specified animation settings
-    if (selectedView) {
-        neuriteReturnToSavedView(selectedView, animate, speed);
-    } else {
-        console.log("View not found with title:", selectedTitle);
-    }
-}
-
 async function exploreBoundaryPoints({
     numPoints = 100,
     zoomLevel = 0.0005,
@@ -708,40 +701,12 @@ async function exploreBoundaryPoints({
     }
 }
 
-async function promptToSaveView() {
-    const save = confirm("Save this view?");
-    if (save) {
-        neuriteSaveCurrentView();
-    }
-}
-
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
-}
-
-
-function neuriteCaptureScreenshot() {
-    if (window.startedViaPlaywright) {
-        // Playwright controlled session, use fetch to request screenshot
-        fetch('http://localhost:8081/screenshot')
-            .then(response => response.text())
-            .then(base64Image => {
-                // Create an image element from the base64 data
-                const img = new Image();
-                img.src = `data:image/png;base64,${base64Image}`;
-
-                // Create and add the image node
-                createImageNode(img, 'Screenshot', false); // false because it's not a direct URL
-            })
-            .catch(error => console.error('Error:', error));
-    } else {
-        // Regular session, use existing screenshot mechanism
-        captureScreenshot();
-    }
 }
 
 function neuriteDelay(delay) {
@@ -807,6 +772,26 @@ async function waitForAllAnimations(additionalDelay = 0) {
             }
         }, 100); // Check every 100 milliseconds
     });
+}
+
+function neuriteCaptureScreenshot() {
+    if (window.startedViaPlaywright) {
+        // Playwright controlled session, use fetch to request screenshot
+        fetch('http://localhost:8081/screenshot')
+            .then(response => response.text())
+            .then(base64Image => {
+                // Create an image element from the base64 data
+                const img = new Image();
+                img.src = `data:image/png;base64,${base64Image}`;
+
+                // Create and add the image node
+                createImageNode(img, 'Screenshot', false); // false because it's not a direct URL
+            })
+            .catch(error => console.error('Error:', error));
+    } else {
+        // Regular session, use existing screenshot mechanism
+        captureScreenshot();
+    }
 }
 
 document.getElementById('screenshotButton').addEventListener('click', neuriteCaptureScreenshot);
@@ -889,61 +874,6 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
         }
     }
 }
-
-
-
-/* 
-
-const autopilotThreshold2 = 0.1;
-function neuriteZoomToNodeTitle(nodeTitle, zoomLevel = 1.5) {
-    return new Promise((resolve, reject) => {
-        const cm = window.myCodemirror;
-        const node = scrollToTitle(nodeTitle, cm);
-        if (!node) {
-            reject("Node not found");
-            return;
-        }
-
-        let bb = node.content.getBoundingClientRect();
-        if (bb && bb.width > 0 && bb.height > 0) {
-            node.zoom_to_fit();
-        } else {
-            node.zoom_to(.5);
-        }
-
-        autopilotSpeed = settings.autopilotSpeed;
-
-        // Set initial zoom and pan targets
-        const targetZoom = zoom.scale(zoomLevel); // Assuming 'zoom' is the current zoom level
-        const targetPan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo; // Assuming 'panTo' is the target pan position
-
-        // Function to check if zoom and pan targets are reached
-        function checkTargetReached() {
-            let currentZoom = zoom; // Assuming 'zoom' is the current zoom level
-            let currentPan = pan; // Assuming 'pan' is the current pan position
-
-            // Check if the current zoom and pan are close enough to the targets
-            return currentZoom.closeEnough(targetZoom, autopilotThreshold2) &&
-                currentPan.closeEnough(targetPan, autopilotThreshold2);
-        }
-
-        // Interval to check if target is reached
-        const checkInterval = setInterval(() => {
-            if (checkTargetReached()) {
-                clearInterval(checkInterval);
-                resolve("Zoom and pan complete");
-            }
-        }, 100); // Polling interval
-
-        // Set a timeout as a fallback
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            reject("Zoom and pan operation timed out");
-        }, 10000); // Timeout duration
-    });
-}
-
-*/
 
 
 
@@ -1032,11 +962,11 @@ function neuriteAddNote(nodeTitle, nodeText) {
         codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
         processAll = false;
 
-        scrollToTitle(formattedNodeTitle, codeMirror); // returns the node
+        const node = scrollToTitle(formattedNodeTitle, codeMirror); // returns the node
 
         // Resolve the promise and decrement the active animations count after a short timeout
         setTimeout(() => {
-            resolve(formattedNodeTitle);
+            resolve(node);
             activeAnimationsCount--;  // Decrement the count here
         }, 300);
     });

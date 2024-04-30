@@ -30,7 +30,7 @@ function getDefaultTitle() {
     //const amPm = hour >= 12 ? 'PM' : 'AM';
 
     // Create a string in the format "YY-MM-DD HH:MM:SS.sss"
-    const dateString = `${year}/${month}/${day} ${hour}:${minute}:${second}.${milliseconds}`;
+    const dateString = `${year}/${month}/${day} ~ ${hour}:${minute}:${second}.${milliseconds}`;
     return dateString;
 }
 

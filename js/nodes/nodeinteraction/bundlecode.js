@@ -159,11 +159,11 @@ function bundleWebContent(nodesInfo) {
 }
 
 function syncContent(node) {
-    const editableDiv = node.content.querySelector('div[contenteditable]');
-    const hiddenTextarea = node.content.querySelector('textarea.custom-scrollbar');
+    const editableDiv = node.contentEditableDiv;
+    const hiddenTextarea = node.textarea;
 
     if (editableDiv && hiddenTextarea) {
-        syncTextareaWithContentEditable(hiddenTextarea, editableDiv);
+        syncHiddenTextareaWithInputTextarea(hiddenTextarea, editableDiv);
     } else {
         console.warn('Either editableDiv or hiddenTextarea is missing');
     }
@@ -174,7 +174,7 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
 
     // Explicitly sync the content before using it
     syncContent(node);
-    const contentEditableDiv = node.contentEditableDiv;
+    const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
     const windowDiv = node.windowDiv;
 
     if (currentState === 'edit') {
@@ -183,7 +183,7 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
         const initialWindowWidth = computedStyle.width;
         const initialWindowHeight = computedStyle.height;
 
-        contentEditableDiv.classList.add('hidden-visibility');
+        textNodeSyntaxWrapper.classList.add('hidden-visibility');
 
         let { allPythonCode, allWebCode } = collectCodeBlocks(textarea);
 
@@ -202,7 +202,7 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
         node.codeEditingState = 'code';
     } else {
         resetViewsAndContentEditable(node, htmlView, pythonView);
-        contentEditableDiv.classList.remove('hidden-visibility');
+        textNodeSyntaxWrapper.classList.remove('hidden-visibility');
         node.codeEditingState = 'edit';
     }
 }
@@ -231,13 +231,14 @@ function collectCodeBlocks(textarea) {
 function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
     let allConnectedNodesInfo = getAllConnectedNodesData(node);
     allConnectedNodesInfo.push(...allWebCode);
-    console.log(`allconnectednodesinfo`, allConnectedNodesInfo)
+    console.log(`allconnectednodesinfo`, allConnectedNodesInfo);
     let bundledContent = bundleWebContent(allConnectedNodesInfo);
-
+    
     htmlView.style.width = initialWindowWidth;
     htmlView.style.height = initialWindowHeight;
     htmlView.classList.remove('hidden');
-    htmlView.srcdoc = `${bundledContent.html}\n${bundledContent.css}\n${bundledContent.js}`;
+    htmlView.srcdoc = `${bundledContent.html}\n\n${bundledContent.css}\n\n${bundledContent.js}`;
+    console.log(`htmlView.srcdoc`, htmlView.srcdoc);
 }
 
 function resetViewsAndContentEditable(node, htmlView, pythonView) {

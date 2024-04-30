@@ -141,8 +141,11 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     const checkboxArray1 = createCheckboxArray(llmNodeCount, firstSixOptions);
     aiNodeSettingsContainer.appendChild(checkboxArray1);
 
-    const customInstructionsTextarea = createCustomInstructionsTextarea(llmNodeCount);
-    aiNodeSettingsContainer.appendChild(customInstructionsTextarea);
+    const customInstructionsTextareaDiv = createCustomInstructionsTextarea(llmNodeCount);
+    aiNodeSettingsContainer.appendChild(customInstructionsTextareaDiv);
+
+    // Assuming the textarea is the first child of the returned div
+    const customInstructionsTextarea = customInstructionsTextareaDiv.children[0];
 
     // Add settings container to the ainodewrapperDiv
     ainodewrapperDiv.appendChild(aiNodeSettingsContainer);
@@ -167,17 +170,84 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.isLLMNode = true;
     node.shouldAppendQuestion = false;
     node.aiResponseHalted = false;
-    node.savedCheckboxStates = {};
-    node.savedCustomInstructions = '';
     node.savedLLMSelection = '';
-    node.savedTextContent = '';
 
+    node.push_extra_cb((node) => {
+        return {
+            f: "textareaId",
+            a: {
+                p: customInstructionsTextarea.id,
+                v: customInstructionsTextarea.value
+            }
+        };
+    });
 
-    initAiNode(node);
+    node.push_extra_cb((node) => {
+        return {
+            f: "textareaId",
+            a: {
+                p: aiResponseTextArea.id,
+                v: aiResponseTextArea.value
+            }
+        };
+    });
 
-    let timer = null;
+    const checkboxes = node.content.querySelectorAll('.checkboxarray input[type="checkbox"]');
+
+    checkboxes.forEach(checkbox => {
+        node.push_extra_cb((node) => {
+            return {
+                f: "checkboxId",
+                a: {
+                    p: checkbox.id,
+                    v: checkbox.checked
+                }
+            };
+        });
+    });
+
+    // Fetch default values from DOM elements and sliders
+    const defaultTemperature = document.getElementById('model-temperature').value;
+    const defaultMaxTokens = document.getElementById('max-tokens-slider').value;
+    const defaultMaxContextSize = document.getElementById('max-context-size-slider').value;
+
+    // Set initial values for sliders using node.push_extra_cb
+    node.push_extra_cb((node) => {
+        return {
+            f: "sliderId",
+            a: {
+                p: 'node-temperature-' + node.index,
+                v: node.temperature,
+                d: defaultTemperature
+            }
+        };
+    });
+
+    node.push_extra_cb((node) => {
+        return {
+            f: "sliderId",
+            a: {
+                p: 'node-max-tokens-' + node.index,
+                v: node.maxTokens,
+                d: defaultMaxTokens
+            }
+        };
+    });
+
+    node.push_extra_cb((node) => {
+        return {
+            f: "sliderId",
+            a: {
+                p: 'node-max-context-' + node.index,
+                v: node.maxContextSize,
+                d: defaultMaxContextSize
+            }
+        };
+    });
+
 
     node.isLLM = true;
+    initAiNode(node);
 
     return node;
 }
@@ -210,16 +280,13 @@ function initAiNode(node) {
     node.localLLMSelect = localLLMSelect;
 
     // Setup event listeners
-    setupAiResponseTextAreaListener(node);
     setupAiNodeResponseDivListeners(node);
     setupAiNodePromptTextAreaListeners(node);
     setupAiNodeSendButtonListeners(node);
     setupAiNodeRegenerateButtonListeners(node);
     setupAiNodeSettingsButtonListeners(node);
     setupAiNodeLocalLLMDropdownListeners(node);
-    setupAiNodeSliderListeners(node)
-    setupAiNodeCheckBoxArrayListeners(node)
-    setupAiNodeCustomInstructionsListeners(node)
+    setupAiNodeSliderListeners(node);
 
     // Functions
 
@@ -352,25 +419,6 @@ function setupAiNodeResponseDivListeners(node) {
     });
 
     // ... other event listeners for aiResponseDiv ...
-}
-
-// Function to handle setup of aiResponseTextArea listener
-function setupAiResponseTextAreaListener(node) {
-    const aiResponseTextArea = node.content.querySelector('[id^="LLMnoderesponse-"]');
-    node.aiResponseTextArea = aiResponseTextArea;
-
-    // Restore saved text content if available
-    if (node.savedTextContent !== undefined) {
-        aiResponseTextArea.value = node.savedTextContent;
-    }
-
-    // Function to save text content
-    const saveTextContent = () => {
-        node.savedTextContent = aiResponseTextArea.value;
-    };
-
-    // Attach debounced event listener
-    aiResponseTextArea.addEventListener('input', debounce(saveTextContent, 300));
 }
 
 
@@ -575,7 +623,6 @@ function createSlider(id, label, initialValue, min, max, step) {
 }
 
 function setupAiNodeSliderListeners(node) {
-    // Assuming 'node.content' is the main container of your node
     const sliders = node.content.querySelectorAll('input[type=range]');
 
     sliders.forEach(slider => {
@@ -601,45 +648,8 @@ function setupAiNodeSliderListeners(node) {
 }
 
 function setupContextSpecificSliderListeners(node) {
-    // Fetch default values from DOM elements and sliders
-    const defaultTemperature = document.getElementById('model-temperature').value;
-    const defaultMaxTokens = document.getElementById('max-tokens-slider').value;
-    const defaultMaxContextSize = document.getElementById('max-context-size-slider').value;
-
-    const temperatureSlider = node.content.querySelector('#node-temperature-' + node.index);
-    const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
-    const maxContextSizeSlider = node.content.querySelector('#node-max-context-' + node.index);
-
-    // Set initial values and add event listeners
-    if (temperatureSlider) {
-        temperatureSlider.value = node.savedTemperature ?? defaultTemperature;
-        temperatureSlider.dispatchEvent(new Event('input'));
-
-        temperatureSlider.addEventListener('input', function () {
-            node.savedTemperature = temperatureSlider.value;
-        });
-    }
-
-    if (maxTokensSlider) {
-        maxTokensSlider.value = node.savedMaxTokens ?? defaultMaxTokens;
-        maxTokensSlider.dispatchEvent(new Event('input'));
-
-        maxTokensSlider.addEventListener('input', function () {
-            node.savedMaxTokens = maxTokensSlider.value;
-        });
-    }
-
-    if (maxContextSizeSlider) {
-        maxContextSizeSlider.value = node.savedMaxContextSize ?? defaultMaxContextSize;
-        maxContextSizeSlider.dispatchEvent(new Event('input'));
-
-        maxContextSizeSlider.addEventListener('input', function () {
-            node.savedMaxContextSize = maxContextSizeSlider.value;
-        });
-    }
-
-
     // Event listener for maxContextSizeSlider
+    const maxContextSizeSlider = node.content.querySelector('#node-max-context-' + node.index);
     if (maxContextSizeSlider) {
         maxContextSizeSlider.addEventListener('input', function () {
             const maxContextSizeLabel = node.content.querySelector(`label[for='node-max-context-${node.index}']`);
@@ -653,13 +663,13 @@ function setupContextSpecificSliderListeners(node) {
     }
 
     // Handle synchronization if both sliders are present
+    const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
     if (maxTokensSlider && maxContextSizeSlider) {
         aiTab.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
     }
 
     // Additional specific behaviors for other sliders can be added here
 }
-
 
 
 function createAndConfigureLocalLLMDropdown(llmNodeCount) {
@@ -741,27 +751,6 @@ function createCheckboxArray(llmNodeCount, subsetOptions) {
     return checkboxArrayDiv;
 }
 
-function setupAiNodeCheckBoxArrayListeners(node) {
-    // Assuming each checkbox has a unique ID formatted as `${option.id}-checkbox-${llmNodeCount}`
-    const checkboxes = node.content.querySelectorAll('.checkboxarray input[type="checkbox"]');
-
-    checkboxes.forEach(checkbox => {
-        // Check if savedCheckboxStates exists and then restore the saved state
-        if (node.savedCheckboxStates && node.savedCheckboxStates.hasOwnProperty(checkbox.id)) {
-            const savedState = node.savedCheckboxStates[checkbox.id];
-            checkbox.checked = savedState;
-        }
-
-        // Attach event listener to save state on change
-        checkbox.addEventListener('change', () => {
-            if (!node.savedCheckboxStates) {
-                node.savedCheckboxStates = {};
-            }
-            node.savedCheckboxStates[checkbox.id] = checkbox.checked;
-        });
-    });
-}
-
 function createCustomInstructionsTextarea(llmNodeCount) {
     const textareaDiv = document.createElement('div');
     textareaDiv.className = 'textarea-container';
@@ -774,21 +763,4 @@ function createCustomInstructionsTextarea(llmNodeCount) {
     textareaDiv.appendChild(textarea);
 
     return textareaDiv;
-}
-
-function setupAiNodeCustomInstructionsListeners(node) {
-    // Fetch the custom instructions textarea
-    const customInstructionsTextarea = node.content.querySelector(`#custom-instructions-textarea-${node.index}`);
-
-    if (customInstructionsTextarea) {
-        // Restore the saved value if it exists
-        if (node.savedCustomInstructions !== undefined) {
-            customInstructionsTextarea.value = node.savedCustomInstructions;
-        }
-
-        // Attach event listener to save value on input
-        customInstructionsTextarea.addEventListener('input', () => {
-            node.savedCustomInstructions = customInstructionsTextarea.value;
-        });
-    }
 }

@@ -354,6 +354,15 @@ function getNodeSectionRange(title, cm) {
     return { startLineNo, endLineNo };
 }
 
+function retrieveNodeSectionText(title, cm) {
+    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
+    let lines = [];
+    for (let i = startLineNo; i <= endLineNo; i++) {
+        lines.push(cm.getLine(i));  // Collect each line within the section
+    }
+    return lines.join("\n");  // Join all lines into a single string
+}
+
 function highlightNodeSection(title, cm) {
     // Clear any existing "current-node-section" marks
     cm.getAllMarks().forEach(mark => {
