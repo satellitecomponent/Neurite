@@ -15,12 +15,9 @@ async function sendMessage(event, autoModeMessage = null) {
         event.preventDefault();
         event.stopPropagation();
     }
-    // Check if the message is a URL and if it is, only execute constructSearchQuery and nothing else
+
+
     const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
-    if (isUrl(message)) {
-        constructSearchQuery(message);
-        return; // This will stop the function execution here
-    }
 
     let isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
@@ -47,9 +44,6 @@ async function sendMessage(event, autoModeMessage = null) {
         myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
     }
 
-    // Convert nodes object to an array of nodes
-    const nodesArray = Object.values(nodes);
-
     let keywordsArray = [];
     let keywords = '';
 
@@ -59,8 +53,6 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // Join the keywords array into a single string
     keywords = keywordsArray.join(' ');
-
-
 
     const keywordString = keywords.replace("Keywords: ", "");
     const splitKeywords = keywordString.split(',').map(k => k.trim());
@@ -117,34 +109,17 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const embedCheckbox = document.getElementById("embed-checkbox");
 
-
-
-
-    let tagsChanged = false;
-
-    // Check if the node or reference tags have changed
-    const storedNodeTag = localStorage.getItem('nodeTag');
-    const storedRefTag = localStorage.getItem('refTag');
-    if (storedNodeTag !== tagValues.nodeTag || storedRefTag !== tagValues.refTag) {
-        localStorage.setItem('nodeTag', tagValues.nodeTag);
-        localStorage.setItem('refTag', tagValues.refTag);
-    }
-
-    // Always use the original Zettelkasten prompt
-    const zettelkastenPromptToUse = zettelkastenPrompt();
-
     // Create the messages
     let messages = [
         {
             role: "system",
-            content: `${zettelkastenPromptToUse}`,
+            content: `${zettelkastenPrompt()}`,
         },
     ];
 
     if (document.getElementById("instructions-checkbox").checked) {
         messages.push(instructionsMessage());
     }
-
 
     if (document.getElementById("code-checkbox").checked) {
         messages.push(codeMessage());
@@ -193,8 +168,8 @@ async function sendMessage(event, autoModeMessage = null) {
     let topMatchedNodesContent = "";
 
     // Use the helper function to extract titles
-    let existingTitles = extractTitlesFromContent(context, nodeTag);
-
+    let existingTitles = extractTitlesFromContent(context);
+    console.log(`existingTitles`, existingTitles, context);
     // Replace the original search and highlight code with neuriteSearchNotes
     const topMatchedNodes = await neuriteSearchNotes(keywords);
 
@@ -212,7 +187,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         console.log("Titles to Forget:", titlesToForget);
 
-        // Use helper function to remove forgotten nodes from context
+        // Use helper function to forget nodes from context
         context = removeTitlesFromContext(context, titlesToForget, nodeTag);
 
         // Refilter topMatchedNodesContent by removing titles to forget
@@ -237,16 +212,6 @@ async function sendMessage(event, autoModeMessage = null) {
             content: `CONVERSATION HISTORY: <context>${context}</context>`,
         });
     }
-
-
-    const commonInstructions = getCommonInstructions(tagValues, isBracketLinks);
-
-
-    // Add Common Instructions as a separate system message
-    messages.push({
-        role: "system",
-        content: commonInstructions
-    });
 
     // Add Prompt
     if (autoModeMessage) {

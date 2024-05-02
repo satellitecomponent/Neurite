@@ -1,6 +1,42 @@
 
 window.startedViaPlaywright = window.startedViaPlaywright || false;
 
+//https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
+// this is a direct translation to code of the spec
+if (!RegExp.escape) {
+    RegExp.escape = (S) => {
+        // 1. let str be ToString(S).
+        // 2. ReturnIfAbrupt(str).
+        let str = String(S);
+        // 3. Let cpList be a List containing in order the code
+        // points as defined in 6.1.4 of str, starting at the first element of str.
+        let cpList = Array.from(str[Symbol.iterator]());
+        // 4. let cuList be a new List
+        let cuList = [];
+        // 5. For each code point c in cpList in List order, do:
+        for (let c of cpList) {
+            // i. If c is a SyntaxCharacter then do:
+            if ("^$\\.*+?()[]{}|".indexOf(c) !== -1) {
+                // a. Append "\" to cuList.
+                cuList.push("\\");
+            }
+            // Append c to cpList.
+            cuList.push(c);
+        }
+        //6. Let L be a String whose elements are, in order, the elements of cuList.
+        let L = cuList.join("");
+        // 7. Return L.
+        return L;
+    };
+}
+// Store the values of the input elements
+let modalInputValues = {};
+
+const storedInputValues = localStorage.getItem('modalInputValues');
+    if (storedInputValues) {
+        modalInputValues = JSON.parse(storedInputValues);
+    }
+
 var settings = {
     zoomSpeed: 0.0005,
     panSpeed: 1,
@@ -185,24 +221,38 @@ var nodeTagInput;
 var refTagInput;
 
 // Globally available variables for the tags
-var nodeTag = "";
-var refTag = "";
-
-nodeTagInput = document.getElementById('node-tag');
-refTagInput = document.getElementById('ref-tag');
-
-nodeTag = nodeTagInput.value;
-refTag = refTagInput.value;
+var nodeTag = modalInputValues['node-tag'] || "##";
+var refTag = modalInputValues['ref-tag'] || "[[";
 
 
-// Event listeners for the input changes to keep the global variables updated
-nodeTagInput.addEventListener('input', function () {
-    nodeTag = nodeTagInput.value;
-});
+function initializeTagInputs() {
+    var nodeTagInput = document.getElementById('node-tag');
+    var refTagInput = document.getElementById('ref-tag');
 
-refTagInput.addEventListener('input', function () {
-    refTag = refTagInput.value;
-});
+    if (nodeTagInput && refTagInput) {
+        nodeTagInput.value = nodeTag; // Set the current value
+        refTagInput.value = refTag; // Set the current value
+
+        nodeTagInput.addEventListener('input', function () {
+            nodeTag = nodeTagInput.value;
+            updateNodeTitleRegex();  // Update the regex with the new nodeTag
+            updateMode();
+            window.zettelkastenProcessor.processInput();
+        });
+
+        refTagInput.addEventListener('input', function () {
+            refTag = refTagInput.value;
+            updateMode();
+            window.zettelkastenProcessor.processInput();
+        });
+    }
+}
+
+let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+
+function updateNodeTitleRegex() {
+    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+}
 
 const LLM_TAG = "AI:";
 

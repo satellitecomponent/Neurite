@@ -692,8 +692,10 @@ function createAndConfigureLocalLLMDropdown(llmNodeCount) {
         new Option('gpt-4', 'gpt-4', false, false),
         new Option('gpt-4-vision', 'gpt-4-vision-preview', false, false),
 
+        new Option('GROQ-gemma-7b-it', 'GROQ-gemma-7b-it', false, false),
         new Option('GROQ-mixtral-8x7b-32768', 'GROQ-mixtral-8x7b-32768', false, false),
-        new Option('GROQ-llama2-70b-4096', 'GROQ-llama2-70b-4096', false, false),
+        new Option('GROQ-llama3-8b-8192', 'GROQ-llama3-8b-8192', false, false),
+        new Option('GROQ-llama3-70b-8192', 'GROQ-llama3-70b-8192', false, false),
         new Option('Custom', 'custom', false, false),
 
         //new Option('claude-3-opus', 'claude-3-opus-20240229', false, false),

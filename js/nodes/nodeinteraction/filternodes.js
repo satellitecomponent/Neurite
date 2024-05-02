@@ -32,27 +32,32 @@ async function forget(userMessage, combinedContext) {
     return titlesToForget;
 }
 
-function extractTitlesFromContent(content, nodeTag) {
+function extractTitlesFromContent(content) {
     let titles = new Set();
-    const titleRegex = new RegExp(nodeTag + " (.*?)\\r?\\n", "g"); // Match until the newline character
+    let regex = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`, 'gm');
     let match;
-    while ((match = titleRegex.exec(content)) !== null) {
+    while ((match = regex.exec(content)) !== null) {
         titles.add(match[1].trim());
     }
     return titles;
 }
 
-function removeTitlesFromContext(contentStr, titlesToForget, nodeTag) {
-    const regex = new RegExp(`(${nodeTag} )(.*?)\\r?\\n`, 'gs'); // Separate the tag and the title
-    let match;
+function removeTitlesFromContext(contentStr, titlesToForget) {
     let newContent = "";
-    while ((match = regex.exec(contentStr)) !== null) {
-        const title = match[2].trim(); // Get the title only, excluding the tag
-        if (!titlesToForget.has(title)) {
-            newContent += match[0];
+    const lines = contentStr.split("\n"); // Split content into lines
+    lines.forEach(line => {
+        const trimLine = line.trim();
+        const match = trimLine.match(nodeTitleRegexGlobal);
+        if (match && match[1]) {
+            const title = match[1].trim(); // Extract the title from the match
+            if (!titlesToForget.has(title)) {
+                newContent += line + "\n";  // Preserve this line if the title is not in the forget list
+            }
+        } else {
+            newContent += line + "\n";  // Include lines that do not match the node tag
         }
-    }
-    return newContent;
+    });
+    return newContent.trim(); // Trim the trailing newline from the last line addition
 }
 
 function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget, nodeTag) {
@@ -62,7 +67,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
                 return null;
             }
 
-            const titleElement = node.content.querySelector("input.title-input");
+            const titleElement = node.titleInput;
             const title = titleElement && titleElement.value !== "" ? titleElement.value.trim() : "No title found";
 
             // If title already present in context, don't include the node
@@ -73,33 +78,36 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
             fullNodeObject = getNodeByTitle(title.toLowerCase());
 
             const contents = getTextareaContentForNode(fullNodeObject);
-            //console.log(contents);
-            /* 
-                 const connectedNodesInfo = node.edges
-                ? node.edges.map((edge) => {
-                     if (edge.nodeA && edge.nodeB) {
-                          const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
-                          return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
-                              }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
-                      } else {
-                          return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                       }
-                   }).join("\n")
-                      : '';
-            
-                  const edgeInfo = node.edges
-                       .map((edge) => {
-                           if (edge.nodeA && edge.nodeB) {
-                               return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
-                           } else {
-                               return ''; // Return an empty string or a placeholder message if connectedNode is undefined
-                           }
-                      }).join("\n"); 
-            const createdAt = node.createdAt;
 
-            UUID: ${node.uuid}\n       Creation Time: ${createdAt} */
 
             return `${tagValues.nodeTag} ${title}\n ${contents}`;
         })
         .filter(content => content !== null); // Remove nulls
 }
+
+
+                        //console.log(contents);
+/*
+     const connectedNodesInfo = node.edges
+    ? node.edges.map((edge) => {
+         if (edge.nodeA && edge.nodeB) {
+              const connectedNode = edge.nodeA.uuid === node.uuid ? edge.nodeB : edge.nodeA;
+              return `Connected Node Title: ${connectedNode.uuid}\nConnected Node UUID: ${connectedNode.uuid ?? "N/A"
+                  }\nConnected Node Position: (${connectedNode.pos.x}, ${connectedNode.pos.y})`;
+          } else {
+              return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+           }
+       }).join("\n")
+          : '';
+ 
+      const edgeInfo = node.edges
+           .map((edge) => {
+               if (edge.nodeA && edge.nodeB) {
+                   return `Edge Length: ${edge.length}\nEdge Strength: ${edge.strength}\nConnected Nodes UUIDs: ${edge.nodeA.uuid}, ${edge.nodeB.uuid}`;
+               } else {
+                   return ''; // Return an empty string or a placeholder message if connectedNode is undefined
+               }
+          }).join("\n"); 
+const createdAt = node.createdAt;
+
+UUID: ${node.uuid}\n       Creation Time: ${createdAt} */

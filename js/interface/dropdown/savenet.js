@@ -489,7 +489,6 @@ function populateDirectionalityMap(d, nodeMap) {
 function reconstructSavedNode(node) {
 
     if (node.isTextNode) {
-        console.log(`textarea value`, node.content.querySelector('.node-textarea').value);
         initTextNode(node)
     }
 
