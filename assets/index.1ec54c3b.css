@@ -467,7 +467,7 @@ input[type="text"i].title-input {
     top: 0;
     width: 100vw;
     height: 100vh;
-    overflow: hidden;
+    overflow: auto;
     /*background-color: rgba(0, 0, 0, 0.4);*/
     justify-content: center;
     align-items: center;
@@ -485,7 +485,7 @@ input[type="text"i].title-input {
     max-width: 90vw;
     max-height: 80vh;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
     border-radius: 5px 5px 0px 0px;
     pointer-events: auto;
     position: relative; /* Change to relative positioning */
@@ -1230,6 +1230,8 @@ select-replacer > div:first-child {
     color: #ddd;
     width: 100%; /* Match width with select-replacer */
     z-index: 10;
+    max-height: 300px; /* Set a maximum height for the options container */
+    overflow-y: auto; /* Enable vertical scrolling */
 }
 
     .options-replacer div {

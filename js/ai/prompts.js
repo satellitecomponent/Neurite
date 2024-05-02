@@ -105,49 +105,41 @@ const aiNodesMessage = () => ({
     ${tagValues.refTag} (Related Nodes 2)`,
 });
 
-
-
 const zettelkastenPrompt = () => {
-    const { refTag, nodeTag } = tagValues, closeBracket = getClosingBracket(refTag), nodeTitleMap = new Set();
-    const refSnippet = isBracketLinks ? `EACH ref IN node.Refs: PRINT ${refTag}+ref.node+${closeBracket}; END;` : `PRINT ${refTag}+JOIN(node.Refs, ', ');`;
-    return `FUNC format(schema): EACH node IN schema:
-let title = node.Title; IF node.title IN nodes.titles THEN node.title = genUniqueTitle(); PRINT ${nodeTag}+title;
-PRINT node.Content;
-${refSnippet};
-NEXT node In schema;
-END FUNC`;
-};
+    const { refTag, nodeTag } = tagValues;
+    const closeBracket = getClosingBracket(refTag);
+    const refSnippet = isBracketLinks
+        ? `EACH ref IN node.Refs: PRINT ${refTag}+ref.node+${closeBracket}; END;`
+        : `PRINT ${refTag}+JOIN(node.Refs, ', ');`;
 
-const getCommonInstructions = (tagValues, isBracketLinks) => {
-    const closeBracket = getClosingBracket(tagValues.refTag);
+    return `You are an AI assistant creating a mind map using the following format:
 
-    return `TO CREATE, CONNECT IDEAS and PARTICIPATE, MAINTAIN THE BELOW FORMAT:
-1. Head each note using "${tagValues.nodeTag} title". The ${tagValues.nodeTag} title heading captures a DISTINCT idea.
-    - ENSURE UNIQUE TITLES. ITERATE until a UNIQUE note title is found.
-2. Within EACH response, use LINKS to BUILD a NETWORK of GRANULAR RHIZOMATIC notes.
-3. LINK (connect) related nodes using ${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
-    - Links CONNECT the REFERENCED title's note to the first found "${tagValues.nodeTag} Note Title" ABOVE the REFERENCE. This means each ${tagValues.nodeTag}
-    - REFERENCES are DEFINED for EACH NOTE at ANY POINT in your response.
-4. INTERSPERSE references between ALL notes. Create logical CONNECTIONS BETWEEN notes.
+FUNC format(schema):
+  EACH node IN schema:
+    PRINT ${nodeTag}+node.Title;
+    PRINT node.Content;
+    ${refSnippet}
+  END;
+END FUNC
 
-${tagValues.nodeTag} REMEMBER
-- Notes (nodes) are created using ${tagValues.nodeTag} and linked using ${tagValues.refTag}.
-- CREATE CONNECTIONS BETWEEN NOTES.
-- Each title will be UNIQUE from other NOTES. AVOID REPEATED or GENERIC titles.
-${tagValues.refTag}${isBracketLinks ? `bracketed note titles${closeBracket}` : ` followed by csv note titles.`}
+KEY POINTS:
+- Create nodes with "${nodeTag} Unique Title".
+- Link nodes using ${refTag}${isBracketLinks ? `[Note Title]${closeBracket}` : ` followed by comma-separated note titles`}.
+- Each title must be unique.
+- Create connections between notes.
 
-The output of our current format(schema) is demonstrated below. Notice the schema is already set. Utilize the format in your response:
-${tagValues.nodeTag} Concept A
+EXAMPLE:
+${nodeTag} Concept A 
 Description of A.
-${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Element D${closeBracket}` : `${tagValues.refTag} Principle B, Element D`}
+${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Element D${closeBracket}` : `${refTag} Principle B, Element D`}
 
-${tagValues.nodeTag} Principle B
-Text of B.
-${isBracketLinks ? `${tagValues.refTag}Concept A${closeBracket} ${tagValues.refTag}Idea C${closeBracket}` : `${tagValues.refTag} Concept A, Idea C`}
+${nodeTag} Principle B
+Text of B. 
+${isBracketLinks ? `${refTag}Concept A${closeBracket} ${refTag}Idea C${closeBracket}` : `${refTag} Concept A, Idea C`}
 
-${tagValues.nodeTag} Idea C
+${nodeTag} Idea C
 Synthesis of A and B.
-${isBracketLinks ? `${tagValues.refTag}Principle B${closeBracket} ${tagValues.refTag}Concept A${closeBracket}` : `${tagValues.refTag} Principle B, Concept A`}
+${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Concept A${closeBracket}` : `${refTag} Principle B, Concept A`}
 
-etc...`;
+Please adhere to this format in your response.`;
 };

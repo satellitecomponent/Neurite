@@ -250,8 +250,6 @@ function updateMode() {
     myCodeMirror.refresh();
 }
 
-nodeTagInput.addEventListener('change', updateMode);
-refTagInput.addEventListener('change', updateMode);
 updateMode();
 
 // Array to store node titles
@@ -261,9 +259,10 @@ function identifyNodeTitles() {
     // Clear previous node titles
     nodeTitles = [];
     myCodeMirror.eachLine((line) => {
-        if (line.text.startsWith(nodeTag)) {
-            let title = line.text.split(nodeTag)[1].trim();
-            // Remove comma if exists
+        const match = line.text.match(nodeTitleRegexGlobal);
+        if (match) {
+            let title = match[1].trim();
+            // Remove comma if exists at the end of the title
             if (title.endsWith(',')) {
                 title = title.slice(0, -1);
             }
@@ -295,9 +294,9 @@ function highlightNodeTitles() {
     myCodeMirror.eachLine((line) => {
         nodeTitles.forEach((title) => {
             if (title.length > 0) {
-                // Escape special regex characters
-                const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escapedTitle, "ig"); // removed \\b word boundaries
+                // Since titles are extracted and possibly cleaned up earlier, they should be safe to regex escape
+                const escapedTitle = RegExp.escape(title); // Using RegExp.escape for uniformity
+                const regex = new RegExp(escapedTitle, "ig");
                 let match;
                 while (match = regex.exec(line.text)) {
                     const idx = match.index;
