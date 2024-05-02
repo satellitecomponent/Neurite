@@ -93,8 +93,6 @@ let followMouseFromWindow = false;
         constructor() {
             this.prevNoteInputLines = [];
             noteInput.on('change', this.processInput.bind(this));
-            nodeTagInput.addEventListener('input', this.processInput.bind(this));
-            refTagInput.addEventListener('input', this.processInput.bind(this));
 
             this.placementStrategy = new NodePlacementStrategy([], {});
         }
@@ -119,7 +117,7 @@ let followMouseFromWindow = false;
         findChangedNode(lines) {
             const firstChangedLine = this.findFirstChangedLine(lines);
 
-            const nodeTitleRegex = new RegExp(`^${nodeTag}\\s*(.*)$`);
+            const nodeTitleRegex = nodeTitleRegexGlobal;
 
             for (let i = firstChangedLine; i >= 0; i--) {
                 if (typeof lines[i] === 'undefined') {

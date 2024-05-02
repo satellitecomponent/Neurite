@@ -4,8 +4,6 @@ const modal = document.getElementById('customModal');
 const closeBtn = modal.querySelector('.close');
 // Get the modal content element
 const modalContent = modal.querySelector('.modal-content');
-// Store the values of the input elements
-let modalInputValues = {};
 
 // Function to store input values and perform modal-specific actions
 const storeInputValue = debounce(function (input, contentId) {
@@ -22,14 +20,6 @@ const storeInputValue = debounce(function (input, contentId) {
     }
     // Add more conditions for other modals if needed
 }, 100);
-
-// Retrieve modalInputValues from local storage when the page loads
-document.addEventListener('DOMContentLoaded', function () {
-    const storedInputValues = localStorage.getItem('modalInputValues');
-    if (storedInputValues) {
-        modalInputValues = JSON.parse(storedInputValues);
-    }
-});
 
 // Function to open the modal
 function openModal(contentId) {
@@ -53,6 +43,7 @@ function openModal(contentId) {
     switch (contentId) {
         case 'noteModal':
             modalTitle.textContent = 'Zettelkasten Settings';
+            initializeTagInputs();
             break;
         case 'alertModal':
             modalTitle.textContent = 'Alert';
@@ -108,7 +99,7 @@ function openModal(contentId) {
             }
         }
         // Store the value when changed
-        input.addEventListener('change', function () {
+        input.addEventListener('input', function () {
             storeInputValue(input, contentId);
         });
     });

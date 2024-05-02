@@ -154,9 +154,20 @@ class RadialZetPath extends ZetPath {
     }
 }
 
+class EmptyZetPath extends ZetPath {
+    generatePath() {
+        //console.log('Generating radial path...');
+        this.path = [];
+        //console.log('Updated Radial Path:', this.path);
+        return this.path;
+    }
+}
+
 
 function createZetPath(style, options) {
     let zetPath;
+    let zetPlacementOverride = false;
+
     switch (style) {
         case 'Spiral':
             zetPath = new SpiralZetPath(options);
@@ -167,13 +178,20 @@ function createZetPath(style, options) {
         case 'Radial':
             zetPath = new RadialZetPath(options);
             break;
+        case 'Random':
+            zetPlacementOverride = true;
+            // You can choose a random style for the zetPath or use a default style
+            // For example, using 'Radial' as the default style for 'Random'
+            zetPath = new EmptyZetPath();
+            break;
         default:
             throw new Error(`Invalid ZetPath style: ${style}`);
     }
+
     // Return both the path instance and the override flag
     return {
         zetPath,
-        zetPlacementOverride: options.zetPlacementOverride
+        zetPlacementOverride
     };
 }
 
@@ -226,7 +244,7 @@ function updatePathOptions() {
     const radialDepth = parseFloat(modalInputValues.radialDepthSlider);
     const curl = parseFloat(modalInputValues.curlSlider);
 
-    const zetPlacementOverride = !!modalInputValues.zetPlacementOverride;
+    const zetPlacementOverride = (style === 'Random');
 
     // Update the options object with the new slider values
     const options = {

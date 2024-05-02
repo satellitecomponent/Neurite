@@ -96,6 +96,13 @@
 
     <div id="noteModal" style="display: none;">
         <!-- Content for the note modal -->
+        <div>
+            <label for="node-tag">Node Tag</label>
+            <input type="text" id="node-tag" value="**" style="width:80px;" />
+            <label for="node-tag">Link Tag</label>
+            <input type="text" id="ref-tag" value="[[" style="width:80px;" />
+        </div>
+        <br />
         <div style="display: flex; justify-content: space-evenly; align-items: center;" title="Determine what path the Zettelkasten decides to place nodes on.">
             <label for="zetPathTypeDropdown" style="margin-right: 10px;">Placement Style</label>
             <div class="dropdown-container">
@@ -103,6 +110,7 @@
                     <option value="Radial">Radial</option>
                     <option value="Spiral">Spiral</option>
                     <option value="Branching">Branching</option>
+                    <option value="Random">Random</option>
                 </select>
             </div>
         </div>
@@ -173,17 +181,6 @@
                 <label for="branchingFactorSlider">Branching Factor</label>
                 <input type="range" id="branchingFactorSlider" name="branching-factor-slider" min="2" max="12" value="4" step="1">
             </div>
-        </div>
-        <br />
-        <div class="checkboxarray">
-            <div title="Places random nodes within your viewport instead of using the placement style.">
-                <input type="checkbox" id="zetPlacementOverride" name="override-zet-placement">
-                <label for="zetPlacementOverride">Random Placement</label>
-            </div>
-            <!-- <div title="Starts and stops nodes from making decisions based off their current state.">
-                <input type="checkbox" id="toggleAutomataCheckbox" name="toggleAutomataCheckbox">
-                <label for="toggleAutomataCheckbox">Toggle Automata</label>
-            </div>-->
         </div>
     </div>
 
@@ -413,8 +410,10 @@
                                                 <option value="gpt-4">gpt-4</option>
                                                 <option value="gpt-4-0125-preview">gpt-4-0125</option>
                                                 <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                                <option value="GROQ-gemma-7b-it">GROQ-gemma-7b-it</option>
                                                 <option value="GROQ-mixtral-8x7b-32768">GROQ-mixtral 7b 32k</option>
-                                                <option value="GROQ-llama2-70b-4096">GROQ-llama2 70b 4k</option>
+                                                <option value="GROQ-llama3-8b-8192">GROQ-llama3-8b</option>
+                                                <option value="GROQ-llama3-70b-8192">GROQ-llama3-70b</option>
                                                 <option value="ollama">Ollama</option>
                                                 <option value="custom">Custom</option>
                                             </select>
@@ -422,18 +421,21 @@
                                         </div>
                                     </div>
                                     <br />
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center;">
                                         <label for="local-model-select" style="margin-right: 10px;">Ollama Model:</label>
                                         <div class="dropdown-container">
                                             <select id="local-model-select" class="model-selector custom-select">
-                                                <option value="llama2">Llama 2</option>
+                                                <option value="llama3">Llama 3 8B</option>
+                                                <option value="llama3:70b">Llama 3 70B</option>
                                                 <option value="mistral:7b">Mistral 7B</option>
-                                                <option value="dolphin-phi">Dolphin Phi 2.7B</option>
+                                                <option value="phi3">Phi-3 3.8B</option>
                                                 <option value="phi">Phi-2 2.7B</option>
+                                                <option value="dolphin-phi">Dolphin Phi 2.7B</option>
                                                 <option value="neural-chat">Neural Chat 7B</option>
                                                 <option value="starling-lm">Starling 7B</option>
                                                 <option value="codellama">Code Llama 7B</option>
                                                 <option value="llama2-uncensored">Llama 2 Uncensored 7B</option>
+                                                <option value="llama2">Llama 2 7B</option>
                                                 <option value="llama2:13b">Llama 2 13B</option>
                                                 <option value="llama2:70b">Llama 2 70B</option>
                                                 <option value="orca-mini">Orca Mini 3B</option>
@@ -623,21 +625,7 @@
                         <label for="inputKeyExtract">Key:</label><br>
                         <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
                         <label for="inputTextExtract">Text:</label><br>
-                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea><br>
-                        <div class="button-container">
-                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
-                        </div>
-                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
-                            <!-- Stored keys will be dynamically added here -->
-                        </div>
-                        <!--<input type="file" id="fileInput" />
-                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
-                        <br />
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
-                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
-                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
-                        </div>
+                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea>
                         <div class="gridLayout">
 
                             <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
@@ -650,6 +638,20 @@
                                 <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
                             </div>
 
+                        </div><br>
+                        <div class="button-container">
+                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
+                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
+                        </div>
+                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
+                            <!-- Stored keys will be dynamically added here -->
+                        </div>
+                        <!--<input type="file" id="fileInput" />
+    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                        <br />
+                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
+                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
+                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
                         </div>
                     </div>
                 </div>
@@ -944,12 +946,10 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <input type="text" id="node-tag" class="tags" value="##" style="width:80px;" />
-                                    <label for="node-tag">Node Tag</label>
+
                                 </td>
                                 <td>
-                                    <input type="text" id="ref-tag" class="tags" value="[[" style="width:80px;" />
-                                    <label for="ref-tag">Reference Tag</label>
+
                                 </td>
                             </tr>
                             <tr>

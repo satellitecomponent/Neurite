@@ -30,10 +30,11 @@ class SyntaxHighlighter {
         return highlightedCode;
     }
 
+    //ToDo Fix RegExp escape.
     static applyNodeTitleHighlighting(content) {
         nodeTitles.sort((a, b) => b.length - a.length);
         nodeTitles.forEach(title => {
-            const escapedTitle = escapeRegExp(title);
+            const escapedTitle = RegExp.escape(title);
             const regex = new RegExp(`\\b${escapedTitle}(?!\\w)`, 'gi');
             content = content.replace(regex, `<span class="node-title-sd">${title}</span>`);
         });
@@ -45,17 +46,17 @@ class SyntaxHighlighter {
 
         if (applyNodeTag) {
             const nodeTag = tagValues.nodeTag;
-            const nodeTagRegex = new RegExp(`\\b${escapeRegExp(nodeTag)}(?!\\w)`, 'gi');
+            const nodeTagRegex = new RegExp(`\\b${RegExp.escape(nodeTag)}(?!\\w)`, 'gi');
             content = content.replace(nodeTagRegex, `<span class="cm-node">${nodeTag}</span>`);
         }
 
         if (bracketsMap[refTag]) {
             const openingBracket = refTag;
             const closingBracket = bracketsMap[refTag];
-            const refRegex = new RegExp(`(${escapeRegExp(openingBracket)}|${escapeRegExp(closingBracket)})`, 'g');
+            const refRegex = new RegExp(`(${RegExp.escape(openingBracket)}|${RegExp.escape(closingBracket)})`, 'g');
             content = content.replace(refRegex, match => `<span class="cm-ref">${match}</span>`);
         } else {
-            const directRefRegex = new RegExp(`\\b${escapeRegExp(refTag)}(?!\\w)`, 'gi');
+            const directRefRegex = new RegExp(`\\b${RegExp.escape(refTag)}(?!\\w)`, 'gi');
             content = content.replace(directRefRegex, `<span class="cm-ref">${refTag}</span>`);
         }
 
