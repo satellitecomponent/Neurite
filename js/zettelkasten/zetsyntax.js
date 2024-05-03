@@ -67,14 +67,16 @@ class SyntaxHighlighter {
 class ZetSyntaxDisplay {
     static syncAndHighlight(displayDiv, hiddenTextarea) {
         let content = hiddenTextarea.value;
+        // Sanitize the content as soon as it is retrieved
+        content = DOMPurify.sanitize(content);
+
+        // Apply various syntax highlightings
         content = SyntaxHighlighter.applyCodeBlockHighlighting(content);
         content = SyntaxHighlighter.applyNodeTitleHighlighting(content);
         content = SyntaxHighlighter.applyZettelkastenSyntax(content);
         content += '\n';  // Adds visual spacing
 
-        // Sanitize the content using DOMPurify
-        content = DOMPurify.sanitize(content);
-
+        // Directly set sanitized and highlighted content to the displayDiv
         displayDiv.innerHTML = content;
     }
 }
