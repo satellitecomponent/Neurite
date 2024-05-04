@@ -8,9 +8,9 @@
 
 ## `Introduction`
 
-💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
+### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
-**...the fractal dimension.**
+### **...the fractal dimension.**
 
 ## Bridging Fractals and Thought
 
@@ -59,8 +59,8 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 ## `Table of Contents`
 
 1. [Introduction](#introduction)
-2. [Synchronized Knowledge Management](#synchronized-knowledge-management)
-3. [How to Use Neurite](#how-to-use-neurite)
+2. [How to Use Neurite](#how-to-use-neurite)
+3. [Synchronized Knowledge Management](#synchronized-knowledge-management)
 4. [FractalGPT](#fractalgpt)
 5. [Local Ai](#local-ai)
 6. [User Guide](#user-guide)
@@ -68,49 +68,6 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 8. [Neural API](#neural-api)
 9. [Future of Neurite](#future-of-neurite)
 10. [Contact](#contact)
-
-## `Synchronized Knowledge Management`
-<table>
-  <tr>
-    <!-- Top Left: Introduction and Main Features -->
-    <td valign="top" width="50%">
-      <h3><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a></h3>
-      <p><a href="https://en.wikipedia.org/wiki/Markdown">Markdown</a> formatted, <a href="https://en.wikipedia.org/wiki/File_synchronization">bi-directional synchronization</a> between UI-focused <a href="https://en.wikipedia.org/wiki/Mind_map">Mind-Mapping</a> and text-based <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlinking</a>.</p>
-      <ul>
-        <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
-        <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama.</li>
-        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be switched out as context for an increasing number of Ai systems.</li>
-        <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environemnt for grappling with the interplay between logic and irrationality</li>
-      </ul>
-    </td>
-    <!-- Top Right: Image -->
-    <td valign="top" width="50%">
-      <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="100%">
-      </p>
-    </td>
-  </tr>
-  <tr>
-    <!-- Bottom Left: image 2 -->
-    <td valign="top" width="50%">
-       <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="100%">
-      </p>
-    </td>
-    <!-- Bottom Right: Additional Info or CTA -->
-    <td valign="top" width="50%">
-      <ul>
-        <li><strong>Dynamic Fractal Backdrop</strong>: Interactive, multi-media orchestration.</li>
-        <li><strong>Zoom-to-Node</strong>: Navigate directly to and between nodes within the Mandelbrot set.</li>
-        <li><strong>Bi-Directional Sync</strong>: Real-time updates between Mind Map and Zettelkasten.</li>
-        <li><strong>Zettelkasten and Mind Mapping</strong>: Nodes are dynamic objects that can be interacted with from any approach.</li>
-        <li><strong>Endless Exploration</strong>: Build custom interfaces within Neurite for any task you have in mind.</li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
-Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity offers unprecedented control over both the granular and macroscopic perspectives of your information.
 
 ## `How to Use Neurite`
 
@@ -137,7 +94,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   </tr>
   <!-- Node Management -->
   <tr>
-    <td rowspan="5"><strong>Node Management</strong></td>
+    <td rowspan="4"><strong>Node Essentials</strong></td>
     <td><code>Shift + double click</code></td>
     <td>Create text node</td>
   </tr>
@@ -152,10 +109,6 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   <tr>
     <td><code>Double click</code></td>
     <td>Anchor a node</td>
-  </tr>
-  <tr>
-    <td><code>Alt/Option + double click</code></td>
-    <td>Create an AI node</td>
   </tr>
   <!-- Node Selection & Arrangement -->
   <tr>
@@ -203,15 +156,59 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   </tr>
 </table>
 
-Custom `## title` and `[[reference]]` tags can be set in the ? tab of the main dropdown.
+Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settings. To access the Zettelkasten Settings, click the note icon in the top left corner of the dropdown.
 
   *Full controls are listed in the ? tab within Neurite's main dropdown.
   
 `UI Tips`
-- Make sure to zoom (`Scroll`) deeper into the fractal before creating nodes. Otherwise, they will not have any space to spread out.
-- When arranging windows, drag them via the title input. Rescale by holding `Shift` and scrolling over the node.
-- Use `Shift` to freeze nodes in place, then double click the nodes that should remain anchored once unfrozen (releasing `Shift`.)
-- In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI that allows it to answer questions about Neurite.
+- Optimal Node Placement: Zoom in `Scroll` to create space for new nodes to ensure they have room to expand.
+- Managing Windows: Drag windows by their title bar and resize by scrolling while holding `Shift`.
+- Freezing Nodes: Hold `Shift` to freeze nodes in place, then double click the nodes to anchor them in place.
+- Ai Tutorial: In the '?' tab, the AI HOW-TO checkbox will send a context message to the AI that allows it to answer questions some questions about Neurite.
+
+## `Synchronized Knowledge Management`
+<table>
+  <tr>
+    <!-- Top Left: Introduction and Main Features -->
+    <td valign="top" width="50%">
+      <h3><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a></h3>
+      <p><a href="https://en.wikipedia.org/wiki/Markdown">Markdown</a> formatted, <a href="https://en.wikipedia.org/wiki/File_synchronization">bi-directional synchronization</a> between UI-focused <a href="https://en.wikipedia.org/wiki/Mind_map">Mind-Mapping</a> and text-based <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlinking</a>.</p>
+      <ul>
+        <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
+        <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama.</li>
+        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be switched out as context for an increasing number of Ai systems.</li>
+        <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environemnt for grappling with the interplay between logic and irrationality</li>
+      </ul>
+    </td>
+    <!-- Top Right: Image -->
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="100%">
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <!-- Bottom Left: image 2 -->
+    <td valign="top" width="50%">
+       <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="100%">
+      </p>
+    </td>
+    <!-- Bottom Right: Additional Info or CTA -->
+    <td valign="top" width="50%">
+      <ul>
+        <li><strong>Dynamic Fractal Backdrop</strong>: Interactive, multi-media orchestration.</li>
+        <li><strong>Zoom-to-Node</strong>: Navigate directly to and between nodes within the Mandelbrot set.</li>
+        <li><strong>Bi-Directional Sync</strong>: Real-time updates between Mind Map and Zettelkasten.</li>
+        <li><strong>Zettelkasten and Mind Mapping</strong>: Nodes are dynamic objects that can be interacted with from any approach.</li>
+        <li><strong>Endless Exploration</strong>: Build custom interfaces within Neurite for any task you have in mind.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity offers unprecedented control over both the granular and macroscopic perspectives of your information.
+
 ## `FractalGPT`
 
 ### Not your typical chat interface
