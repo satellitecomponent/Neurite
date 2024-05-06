@@ -213,14 +213,14 @@ body {
     bottom: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; /* Scrolling is managed by the wrapper */
+    overflow: auto;
     scroll-behavior: smooth;
     white-space: pre-wrap; /* Ensure text wrapping and preserve whitespace */
-    word-wrap: break-word; /* Break long words to the next line */
-    overflow-wrap: break-word;
+    word-wrap: inherit; /* Break long words to the next line */
     line-height: 1.5em;
     box-sizing: border-box;
-    padding-left: 18px;
+    padding-left: 22px;
+    padding-right: 11px;
     padding-top: 15px;
 }
 
@@ -233,7 +233,6 @@ body {
 
 .syntax-display-div {
     z-index: 1; /* Behind the input div */
-    pointer-events: auto; /* Non-interactive */
     background: transparent; /* Ensure the overlay content is visible */
     pointer-events: none;
 }

@@ -45,6 +45,9 @@ function openModal(contentId) {
             modalTitle.textContent = 'Zettelkasten Settings';
             initializeTagInputs();
             break;
+        case 'aiModal':
+            modalTitle.textContent = 'Experimental Ai Controls'; // Set title for the API config modal
+            break;
         case 'alertModal':
             modalTitle.textContent = 'Alert';
             break;

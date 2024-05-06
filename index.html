@@ -50,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.1ec54c3b.css">
+  <link rel="stylesheet" href="./assets/index.42a6c0d9.css">
 </head>
 
 <body id="body">
@@ -93,16 +93,20 @@
 
     <div id="noteModal" style="display: none;">
         <!-- Content for the note modal -->
-        <div>
-            <label for="node-tag">Node Tag</label>
-            <input type="text" id="node-tag" value="**" style="width:80px;" />
-            <label for="node-tag">Link Tag</label>
-            <input type="text" id="ref-tag" value="[[" style="width:80px;" />
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div style="align-self: self-end;">
+                <label for="node-tag">Node Tag:</label>
+                <input type="text" id="node-tag" value="##" style="width:80px;" />
+            </div>
+            <div style="align-self: start;">
+                <label for="node-tag">Link Tag:</label>
+                <input type="text" id="ref-tag" value="[[" style="width:80px;" />
+            </div>
         </div>
         <br />
-        <div style="display: flex; justify-content: space-evenly; align-items: center;" title="Determine what path the Zettelkasten decides to place nodes on.">
+        <div style="display: flex; justify-content: space-evenly; align-items: center;">
             <label for="zetPathTypeDropdown" style="margin-right: 10px;">Placement Style</label>
-            <div class="dropdown-container">
+            <div class="dropdown-container" title="Determine what path the Zettelkasten decides to place nodes on.">
                 <select id="zetPathTypeDropdown" class="model-selector custom-select">
                     <option value="Radial">Radial</option>
                     <option value="Spiral">Spiral</option>
@@ -193,6 +197,19 @@
             <input type="text" id="apiModelName" class="api-modal-input" placeholder="Enter Model Name">
 
             <button class="api-modal-button" onclick="saveApiConfig()">Save Configuration</button>
+        </div>
+    </div>
+
+    <div id="aiModal" style="display: none;">
+        <div class="checkboxarray">
+            <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
+            <label for="forget-checkbox"><strong>Selective Forgetting </strong></label>
+            <input type="checkbox" id="novelty-checkbox">
+            <label for="novelty-checkbox"><strong>Shuffle Wiki Results</strong></label>
+            <input type="checkbox" id="use-all-connected-ai-nodes" />
+            <label for="use-all-connected-ai-nodes"><strong>Message All Connected Ai</strong></label>
+            <input type="checkbox" id="ai-nodes-checkbox">
+            <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes</strong></label>
         </div>
     </div>
 
@@ -446,7 +463,7 @@
                                     <br />
                                     <div style="display: flex; justify-content: space-evenly; align-items: center; ">
                                         <label for="custom-model-select" style="margin-right: 10px;">
-                                            <button id="addApiConfigBtn" class="linkbuttons" onclick="openModal('apiConfigModalContent')">+ Custom</button>
+                                            <button id="addApiConfigBtn" class="linkbuttons">+ Custom</button>
                                             <button id="deleteApiConfigBtn" class="linkbuttons">-</button>
                                         </label>
                                         <div class="dropdown-container">
@@ -644,7 +661,7 @@
                             <!-- Stored keys will be dynamically added here -->
                         </div>
                         <!--<input type="file" id="fileInput" />
-    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
                         <br />
                         <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
                             <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
@@ -928,31 +945,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
-                                    <label for="forget-checkbox"><strong>Enable Selective Forgetting </strong></label>
-                                </td>
-                                <td><input type="checkbox" id="novelty-checkbox"><label for="novelty-checkbox"><strong>Novelty<br />(Shuffled Wiki Results)</strong></label></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <input type="checkbox" id="use-all-connected-ai-nodes" />
-                                    <label for="use-all-connected-ai-nodes"><strong>Send messages between all connected ai nodes.</strong> (rather than the closest connected Ai nodes)</label>
-                                </td>
-                                <td>
-                                    <input type="checkbox" id="ai-nodes-checkbox">
-                                    <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes <br />(or, Alt + Double Click / type LLM:)</strong></label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-
-                                </td>
-                                <td>
-
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <button id="clearLocalStorage" class="key-button">Clear Local Storage</button>
                                 </td>
                                 <td>
@@ -1140,15 +1132,13 @@
     <script src="js/interface/dropdown/tabs/datatab.js"></script>
     <script src="js/interface/dropdown/tabs/edittab.js"></script>
 
-    <script src="js/interface/dropdown/customdropdown.js"></script>
-
     <script src="js/interface/dropdown/dropdown.js"></script>
+    <script src="js/ai/handleapikeys.js"></script>
 
-
-    <script src="js/interface/dropdown/togglepanel.js"></script>
-    <script src="js/interface/dropdown/handleapikeys.js"></script>
-    <script src="js/interface/dropdown/custommodal.js"></script>
-    <script src="js/interface/dropdown/displaysavedcoords.js"></script>
+    <script src="js/interface/dropdown/customui/customdropdown.js"></script>
+    <script src="js/interface/dropdown/customui/togglepanel.js"></script>
+    <script src="js/interface/dropdown/customui/custommodal.js"></script>
+    <script src="js/interface/dropdown/customui/displaysavedcoords.js"></script>
 
     <script src="js/zettelkasten/zetsyntax.js"></script>
     <script src="js/zettelkasten/zetcodemirror.js"></script>
@@ -1160,11 +1150,12 @@
     <script src="js/mandelbrot/mandelbrot.js"></script>
 
     <script src="js/interface/interface.js"></script>
-    <script src="js/interface/search.js"></script>
     <script src="js/interface/handledrop.js"></script>
-    <script src="js/interface/record/record.js"></script>
-    <script src="js/interface/rightclick/customcontextmenu.js"></script>
-    <script src="js/interface/rightclick/suggestions.js"></script>
+
+
+    <script src="js/interface/dropdown/customui/record/record.js"></script>
+    <script src="js/interface/dropdown/customui/rightclick/customcontextmenu.js"></script>
+    <script src="js/interface/dropdown/customui/rightclick/suggestions.js"></script>
 
     <script src="js/nodes/nodeutilities.js"></script>
 
@@ -1214,19 +1205,19 @@
     <script src="js/ai/network.js"></script>
 
     <!-- <script src="js/aicursor.js"></script>-->
-
-    <script src="js/searchapi/searchapi.js"></script>
-    <script src="js/searchapi/wikipedia.js"></script>
-    <script src="js/searchapi/embeddingsdb.js"></script>
-    <script src="js/searchapi/codeparser/parsemirror.js"></script>
-    <script src="js/searchapi/codeparser/gitparsed.js"></script>
-    <script src="js/searchapi/wolframapi.js"></script>
+    <script src="js/interface/searchapi/search.js"></script>
+    <script src="js/interface/searchapi/searchapi.js"></script>
+    <script src="js/interface/searchapi/wikipedia.js"></script>
+    <script src="js/interface/searchapi/embeddingsdb.js"></script>
+    <script src="js/interface/searchapi/codeparser/parsemirror.js"></script>
+    <script src="js/interface/searchapi/codeparser/gitparsed.js"></script>
+    <script src="js/interface/searchapi/wolframapi.js"></script>
 
     <script src="js/neuralapi.js"></script>
 
-    <script src="js/functioncall/functioncallingpanel.js"></script>
-    <script src="js/functioncall/neuraltelemetryprompt.js"></script>
-    <script src="js/functioncall/requestfunctioncall.js"></script>
+    <script src="js/interface/functioncall/functioncallingpanel.js"></script>
+    <script src="js/interface/functioncall/neuraltelemetryprompt.js"></script>
+    <script src="js/interface/functioncall/requestfunctioncall.js"></script>
 
 </body>
 
