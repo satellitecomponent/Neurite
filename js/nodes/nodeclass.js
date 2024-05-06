@@ -203,16 +203,6 @@ class Node {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
         }
-        /*if (this.followingAiCursor) {
-            let p = toZ(this.aiCursor.position).minus(this.aiCursorAnchor);
-            this.vel = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
-            this.pos = p;
-            this.anchor = this.pos;
-        }
-        if (this.followingAiCursor && this.aiCursor) {
-            let finalPosition = this.aiCursor.initialPosition.plus(this.aiCursor.updatePosition);
-            this.pos = toDZ(finalPosition);
-        }*/
         let g = mandGrad(settings.iterations, this.pos);
         //g.y *= -1; //why?
         this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));

@@ -272,23 +272,6 @@ function handleSaveConfirmation(title, saveData, force = false) {
 
 
 
-
-
-
-
-function collectAdditionalSaveObjects() {
-    // Collecting slider values
-    const inputValues = localStorage.getItem('inputValues') || '{}';
-    const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
-
-    // Collecting saved views
-    const savedViewsString = JSON.stringify(savedViews);
-    const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
-
-    // Combine both slider values and saved views in one string
-    return savedInputValues + savedViewsElement;
-}
-
 const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
 
 function replaceNewLinesInLLMSaveData(nodeData) {
@@ -315,6 +298,25 @@ function restoreNewLinesInPreElements(nodeElement) {
     nodeElement.querySelectorAll('pre').forEach(pre => {
         pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
     });
+}
+
+
+
+function collectAdditionalSaveObjects() {
+    // Collecting slider values
+    const inputValues = localStorage.getItem('inputValues') || '{}';
+    const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
+
+    // Collecting saved views
+    const savedViewsString = JSON.stringify(savedViews);
+    const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
+
+    // Get current Mandelbrot coords in a standard format
+    const mandelbrotParams = neuriteGetMandelbrotCoords();
+    const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
+
+    // Combine both slider values and saved views in one string
+    return savedInputValues + savedViewsElement + mandelbrotSaveElement;
 }
 
 function neuriteSaveEvent(existingTitle = null) {
@@ -422,6 +424,14 @@ function restoreAdditionalSaveObjects(d) {
 
     // Restore sliders immediately after their values have been set
     restoreInputValues();
+
+    // Extract the Mandelbrot parameters and directly apply them
+    let mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
+    if (mandelbrotSaveElement) {
+        let mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
+        neuriteSetMandelbrotCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
+        mandelbrotSaveElement.remove();
+    }
 }
 
 function loadNet(text, clobber, createEdges = true) {

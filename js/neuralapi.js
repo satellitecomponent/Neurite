@@ -421,12 +421,11 @@ function neuriteResetView(animate = true, duration = 2000) {
         }
     });
 }
-
 function neuriteGetMandelbrotCoords(forFunctionCall = false) {
     // Extract and format zoom and pan values
-    const zoomValue = zoom.x.toString();
-    const panReal = pan.x.toString();
-    const panImaginary = pan.y.toString();
+    const zoomValue = zoom.x.toExponential();
+    const panReal = pan.x.toExponential();
+    const panImaginary = pan.y.toExponential();
 
     if (forFunctionCall) {
         // Format for setMandelbrotCoords function call
