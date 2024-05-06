@@ -54,8 +54,6 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
             }
         });
 
-
-        // Add this event listener to the editable div
         userInputTextarea.addEventListener('scroll', function (event) {
             syncDisplayFromInputTextareaScroll(this, displayDiv);
         });
