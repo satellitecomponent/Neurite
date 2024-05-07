@@ -2,19 +2,19 @@
 
 async function generateKeywords(message, count, specificContext = null) {
     const lastPromptsAndResponses = specificContext || getLastPromptsAndResponses(2, 150);
-    // Check if lastPromptsAndResponses is empty, null, undefined, or just white spaces/new lines
     const isEmpty = !lastPromptsAndResponses || !/\S/.test(lastPromptsAndResponses);
+
     if (isEmpty) {
         // If the context is empty, return the 'count' longest words from the user message
         const keywords = message
             .split(' ')
-            .filter(word => word.trim().length > 0) // Remove empty strings
-            .sort((a, b) => b.length - a.length) // Sort words by length in descending order
-            .slice(0, count) // Take the top 'count' words
+            .filter(word => word.trim().length > 0)
+            .sort((a, b) => b.length - a.length)
+            .slice(0, count)
             .map(word => word.trim());
         return keywords;
     }
-    // Prepare the messages array
+
     const messages = [
         {
             role: "system",
@@ -22,21 +22,27 @@ async function generateKeywords(message, count, specificContext = null) {
         },
         {
             role: "system",
-            content: `You provide key search terms for our user query.
-Your entire response should consist of three single-word, comma-separated keywords relevant to latest user message.
-Avoid preface or explanation. Your response is split by commas to extract the keywords.
-Order keywords by relevance, starting with a word from the current message.`,
+            content: `Provide three single-word keywords relevant to the latest user message. Enclose each keyword in quotations and separate them with commas.`,
         },
         {
             role: "user",
             content: `${message}`,
         },
     ];
-    // Call the API
-    const keywords = await callchatAPI(messages, false, 0);
+
+    const response = await callchatAPI(messages, false, 0);
+    console.log(`Response:`, response);
+
+    // Extract keywords by finding the part between quotations
+    const regex = /"(.*?)"/g;
+    let match;
+    const keywords = [];
+    while (match = regex.exec(response)) {
+        keywords.push(match[1].trim());
+    }
+
     console.log(`Keywords:`, keywords);
-    // Return the keywords as an array
-    return keywords.split(',').map(k => k.trim());
+    return keywords;
 }
 
 // Function to check if Google Search is enabled

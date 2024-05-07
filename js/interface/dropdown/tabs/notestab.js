@@ -42,48 +42,6 @@ function autoGrow(event) {
     }
 }
 
-
-function captureDocumentUndoRedoEventsAndApplyToCodeMirror(codeMirrorInstance) {
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey) {  // Works for both Ctrl (Windows/Linux) and Cmd (macOS)
-            let didOperation = false;
-
-            if (event.key === 'z') {
-                if (event.shiftKey) {
-                    // Redo for Ctrl+Shift+Z or Cmd+Shift+Z
-                    codeMirrorInstance.redo();
-                    didOperation = true;
-                } else {
-                    // Undo for Ctrl+Z or Cmd+Z
-                    codeMirrorInstance.undo();
-                    didOperation = true;
-                }
-            } else if (event.key === 'y') {
-                // Redo for Ctrl+Y or Cmd+Y
-                codeMirrorInstance.redo();
-                didOperation = true;
-            }
-
-            if (didOperation && (event.target.closest('.CodeMirror') || event.target.tagName.toLowerCase() !== 'textarea' && event.target.tagName.toLowerCase() !== 'input')) {
-                event.preventDefault();  // Prevent the default undo/redo behavior in the document or CodeMirror
-                setTimeout(() => codeMirrorInstance.refresh(), 0);  // Refresh the CodeMirror instance
-            }
-        }
-    });
-}
-
-// Override default CodeMirror undo/redo handlers
-myCodeMirror.setOption('extraKeys', {
-    'Ctrl-Z': (cm) => { /* Do nothing */ },
-    'Cmd-Z': (cm) => { /* Do nothing */ },
-    'Ctrl-Y': (cm) => { /* Do nothing */ },
-    'Cmd-Y': (cm) => { /* Do nothing */ },
-    'Shift-Ctrl-Z': (cm) => { /* Do nothing */ },
-    'Shift-Cmd-Z': (cm) => { /* Do nothing */ }
-});
-
-captureDocumentUndoRedoEventsAndApplyToCodeMirror(myCodeMirror);
-
 // Get the viewport dimensions
 let maxWidth, maxHeight;
 

@@ -15,15 +15,9 @@ async function sendMessage(event, autoModeMessage = null) {
         event.preventDefault();
         event.stopPropagation();
     }
-
-
-    const message = autoModeMessage ? autoModeMessage : document.getElementById("prompt").value;
-
-    let isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
-
-    promptElement = document.getElementById("prompt");
+    const promptElement = document.getElementById("prompt");
+    const promptValue = promptElement.value;
     promptElement.value = ''; // Clear the textarea
-    latestUserMessage = message;
     const promptEvent = new Event('input', {
         'bubbles': true,
         'cancelable': true
@@ -32,84 +26,87 @@ async function sendMessage(event, autoModeMessage = null) {
     promptElement.dispatchEvent(promptEvent);
 
 
+    const message = autoModeMessage ? autoModeMessage : promptValue;
+    latestUserMessage = message;
+
+    let isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
+
+
     if (isAutoModeEnabled && originalUserMessage === null) {
         originalUserMessage = message;
     }
 
     const noteInput = document.getElementById("note-input");
-
+    const embedCheckbox = document.getElementById("embed-checkbox");
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
         myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
     }
 
-    let keywordsArray = [];
-    let keywords = '';
-
     // Call generateKeywords function to get keywords
-    const count = 3; // Change the count value as needed
-    keywordsArray = await generateKeywords(message, count);
+    const count = 3; // Set the number of desired keywords
+    const keywordsArray = await generateKeywords(message, count);
 
-    // Join the keywords array into a single string
-    keywords = keywordsArray.join(' ');
+    // Join the keywords array into a single string when needed for operations that require a string
+    const keywordsString = keywordsArray.join(' ');
 
-    const keywordString = keywords.replace("Keywords: ", "");
-    const splitKeywords = keywordString.split(',').map(k => k.trim());
-    const firstKeyword = splitKeywords[0];
-    // Convert the keywords string into an array by splitting on spaces
+    // Use the first keyword from the array for specific lookups
+    const firstKeyword = keywordsArray[0];
 
     let wikipediaSummaries;
+    let wikipediaMessage;
 
     if (isWikipediaEnabled()) {
+        // Fetch Wikipedia summaries using the first keyword
         wikipediaSummaries = await getWikipediaSummaries([firstKeyword]);
-    } else {
-        wikipediaSummaries = "Wiki Disabled";
+
+        // Format the Wikipedia summaries output
+        wikipediaMessage = {
+            role: "system",
+            content: `Wikipedia Summaries (Keywords: ${keywordsString}): \n ${Array.isArray(wikipediaSummaries)
+                ? wikipediaSummaries
+                    .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
+                    .map(s => `${s.title} (Relevance Score: ${s.relevanceScore.toFixed(2)}): ${s.summary}`)
+                    .join("\n\n")
+                : "Wiki Disabled"
+                } END OF SUMMARIES`
+        };
     }
-    //console.log("Keywords array:", keywords);
 
-    const wikipediaMessage = {
-        role: "system",
-        content: `Wikipedia Summaries (Keywords: ${keywords}): \n ${Array.isArray(wikipediaSummaries)
-            ? wikipediaSummaries
-                .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
-                .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
-                .join("\n\n")
-            : "Wiki Disabled"
-            } END OF SUMMARIES`
-    };
+    let searchQuery = null;
 
-    // In your main function, check if searchQuery is null before proceeding with the Google search
-    const searchQuery = await constructSearchQuery(message);
+    if (isGoogleSearchEnabled() || embedCheckbox.checked) {
+        searchQuery = await constructSearchQuery(message);
+    }
 
     let searchResultsData = null;
     let searchResults = [];
+    let searchResultsContent;
+    let googleSearchMessage;
 
     if (isGoogleSearchEnabled()) {
         searchResultsData = await performSearch(searchQuery);
+
+        if (searchResultsData) {
+            searchResults = processSearchResults(searchResultsData);
+            searchResults = await getRelevantSearchResults(message, searchResults);
+
+
+            displaySearchResults(searchResults);
+        }
+        searchResultsContent = searchResults.map((result, index) => {
+            return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
+        }).join('\n');
+
+        googleSearchMessage = {
+            role: "system",
+            content: "Google Search RESULTS displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> CITE your sources! Always REMEMBER to follow the <format> message",
+        };
     }
 
-    if (searchResultsData) {
-        searchResults = processSearchResults(searchResultsData);
-        searchResults = await getRelevantSearchResults(message, searchResults);
 
-
-        displaySearchResults(searchResults);
-    }
-
-    const searchResultsContent = searchResults.map((result, index) => {
-        return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
-    }).join('\n');
-
-    const googleSearchMessage = {
-        role: "system",
-        content: "Google Search RESULTS displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> CITE your sources! Always REMEMBER to follow the <format> message",
-    };
-
-
-    const embedCheckbox = document.getElementById("embed-checkbox");
-
-    // Create the messages
+    // Start the message
     let messages = [
         {
             role: "system",
@@ -169,9 +166,9 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // Use the helper function to extract titles
     let existingTitles = extractTitlesFromContent(context);
-    console.log(`existingTitles`, existingTitles, context);
+    //console.log(`existingTitles`, existingTitles, context);
     // Replace the original search and highlight code with neuriteSearchNotes
-    const topMatchedNodes = await neuriteSearchNotes(keywords);
+    const topMatchedNodes = await neuriteSearchNotes(keywordsString);
 
     let titlesToForget = new Set();
 
@@ -182,7 +179,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     // If forgetting is enabled, extract titles to forget
     if (document.getElementById("forget-checkbox").checked) {
-        console.log("User message being sent to forget:", message);
+
         titlesToForget = await forget(message, `${context}\n\n${topMatchedNodesContent}`);
 
         console.log("Titles to Forget:", titlesToForget);
@@ -192,7 +189,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
         // Refilter topMatchedNodesContent by removing titles to forget
         topMatchedNodesContent = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag).join("\n\n");
-        console.log("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
+        //console.log("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
     }
 
     // Check if the content string is not empty
@@ -228,23 +225,20 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
         });
     }
 
-
+    let lineBeforeAppend = myCodeMirror.lastLine();
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
-        let lineBeforeAppend = myCodeMirror.lastLine();
-        scrollToLine(myCodeMirror, lineBeforeAppend); // Scroll to the line before the prompt
         myCodeMirror.replaceRange(`\n\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(lineBeforeAppend));
-        scrollToLine(myCodeMirror, lineBeforeAppend + 1); // Scroll to the line just after the prompt
-        userScrolledUp = false;
         isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
-        let lineBeforeAppend = myCodeMirror.lastLine();
-        scrollToLine(myCodeMirror, lineBeforeAppend); // Scroll to the line before the prompt
         myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
-        scrollToLine(myCodeMirror, lineBeforeAppend + 1); // Scroll to the new last line
-        userScrolledUp = false;
     }
+
+    scrollToLine(myCodeMirror, lineBeforeAppend + 2); // Scroll to the new last line
+    userScrolledUp = false;
+
+    // Handle Wolfram Loop after appending the prompt.
 
 
     let wolframData;
@@ -266,25 +260,8 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
         messages.push(wolframAlphaMessage);
     }
 
-
-    const stream = true;
-
     // Main AI call
-    if (stream) {
-        await callchatAPI(messages, stream);
-    } else {
-        let aiResponse = await callchatAPI(messages, stream);
-
-        if (aiResponse) {
-            const noteInput = document.getElementById("note-input");
-            if (noteInput.value[noteInput.value.length - 1] !== '\n') {
-                myCodeMirror.replaceRange("\n", CodeMirror.Pos(myCodeMirror.lastLine()));
-            }
-            myCodeMirror.replaceRange(aiResponse + "\n", CodeMirror.Pos(myCodeMirror.lastLine()));
-        } else {
-            console.error('AI response was undefined');
-        }
-    }
+    await callchatAPI(messages, stream = true);
 
     isAutoModeEnabled = document.getElementById("auto-mode-checkbox").checked;
 
