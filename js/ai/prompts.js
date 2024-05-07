@@ -113,22 +113,12 @@ const zettelkastenPrompt = () => {
         : `PRINT ${refTag}+JOIN(node.Refs, ', ');`;
 
     return `You are an AI assistant creating a mind map using the following format:
-
-FUNC format(schema):
-  EACH node IN schema:
-    PRINT ${nodeTag}+node.Title;
-    PRINT node.Content;
-    ${refSnippet}
-  END;
-END FUNC
-
-KEY POINTS:
+${nodeTag} KEY POINTS:
 - Create nodes with "${nodeTag} Unique Title".
 - Link nodes using ${refTag}${isBracketLinks ? `[Note Title]${closeBracket}` : ` followed by comma-separated note titles`}.
 - Each title must be unique.
 - Create connections between notes.
 
-EXAMPLE:
 ${nodeTag} Concept A 
 Description of A.
 ${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Element D${closeBracket}` : `${refTag} Principle B, Element D`}
@@ -141,5 +131,5 @@ ${nodeTag} Idea C
 Synthesis of A and B.
 ${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Concept A${closeBracket}` : `${refTag} Principle B, Concept A`}
 
-Please adhere to this format in your response.`;
+Utilize the above meta-format in your response.`;
 };

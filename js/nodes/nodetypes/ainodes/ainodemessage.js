@@ -110,73 +110,70 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
     const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
     let wikipediaSummaries;
-    let keywordsArray = [];
     let keywords = '';
 
     if (isWikipediaEnabled(nodeIndex)) {
 
         // Call generateKeywords function to get keywords
-        const count = 3; // Change the count value as needed
-        keywordsArray = await generateKeywords(node.latestUserMessage, count, truncatedRecentContext);
+        const count = 3; // Set the number of desired keywords
+        const keywordsArray = await generateKeywords(message, count);
 
-        // Join the keywords array into a single string
-        keywords = keywordsArray.join(' ');
-        const keywordString = keywords.replace("Keywords: ", "");
-        const splitKeywords = keywordString.split(',').map(k => k.trim());
-        const firstKeyword = splitKeywords[0];
-        // Convert the keywords string into an array by splitting on spaces
+        // Join the keywords array into a single string when needed for operations that require a string
+        const keywordsString = keywordsArray.join(' ');
+
+        // Use the first keyword from the array for specific lookups
+        const firstKeyword = keywordsArray[0];
 
         wikipediaSummaries = await getWikipediaSummaries([firstKeyword]);
         console.log("wikipediasummaries", wikipediaSummaries);
-    } else {
-        wikipediaSummaries = "Wiki Disabled";
+
+        const wikipediaMessage = {
+            role: "system",
+            content: `Wikipedia Summaries (Keywords: ${keywordsString}): \n ${Array.isArray(wikipediaSummaries)
+                ? wikipediaSummaries
+                    .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
+                    .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
+                    .join("\n\n")
+                : "Wiki Disabled"
+                } END OF SUMMARIES`
+        };
+
+        if (isWikipediaEnabled(nodeIndex)) {
+            messages.push(wikipediaMessage);
+        }
     }
 
+
+    let searchQuery = null;
+
+    if (isGoogleSearchEnabled(nodeIndex) || isEmbedEnabled(node.index)) {
+        // Use the node-specific recent context when calling constructSearchQuery
+        searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
+    }
     
-    //console.log("Keywords array:", keywords);
-
-    const wikipediaMessage = {
-        role: "system",
-        content: `Wikipedia Summaries (Keywords: ${keywords}): \n ${Array.isArray(wikipediaSummaries)
-            ? wikipediaSummaries
-                .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
-                .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
-                .join("\n\n")
-            : "Wiki Disabled"
-            } END OF SUMMARIES`
-    };
-
-    if (isWikipediaEnabled(nodeIndex)) {
-        messages.push(wikipediaMessage);
-    }
-
-    // Use the node-specific recent context when calling constructSearchQuery
-    const searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
 
     let searchResultsData = null;
     let searchResults = [];
 
     if (isGoogleSearchEnabled(nodeIndex)) {
         searchResultsData = await performSearch(searchQuery);
-    }
 
-    if (searchResultsData) {
-        searchResults = processSearchResults(searchResultsData);
-        searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
+        if (searchResultsData) {
+            searchResults = processSearchResults(searchResultsData);
+            searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
 
-        displaySearchResults(searchResults);
-    }
+            displaySearchResults(searchResults);
+        }
 
-    const searchResultsContent = searchResults.map((result, index) => {
-        return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
-    }).join('\n');
+        const searchResultsContent = searchResults.map((result, index) => {
+            return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
+        }).join('\n');
 
-    const googleSearchMessage = {
-        role: "system",
-        content: "Google SEARCH RESULTS displayed to user:" + searchResultsContent
-    };
+        const googleSearchMessage = {
+            role: "system",
+            content: "Google SEARCH RESULTS displayed to user:" + searchResultsContent
+        };
 
-    if (document.getElementById(`google-search-checkbox-${nodeIndex}`).checked) {
         messages.push(googleSearchMessage);
     }
 
