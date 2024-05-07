@@ -18,8 +18,6 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         document.querySelector('#regen-button use').setAttribute('xlink:href', '#pause-icon');
         document.getElementById("aiLoadingIcon").style.display = 'block';
         document.getElementById("aiErrorIcon").style.display = 'none';
-        console.log("Messages sent to API:", messages);
-        console.log("Token count for messages:", getTokenCount(messages));
     }
 
     function onAfterCall() {
@@ -114,7 +112,7 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
         node.regenerateButton.innerHTML = '<svg width="24" height="24"><use xlink:href="#pause-icon"></use></svg>';
         document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'block';
         document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'none';
-        console.log("Messages sent to API:", messages);
+        //console.log("Messages sent to API:", messages);
     }
 
     function onAfterCall() {
@@ -177,6 +175,8 @@ async function callAiApi({ messages, stream = false, customTemperature = null, o
     // Get API parameters, including the locally determined API URL
     const params = getAPIParams(messages, stream, customTemperature, modelOverride);
     console.log("Message Array", messages);
+    console.log("Token count:", getTokenCount(messages));
+
     if (!params) {
         onError("API key is missing.");
         return;

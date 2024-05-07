@@ -200,24 +200,17 @@ function testNodeText(title) {
 
 function getNodeText() {
     const nodes = [];
-    for (const child of htmlnodes_parent.children) {
-        if (child.firstChild && child.firstChild.win) {
-            const node = child.firstChild.win;
+    for (const nodeKey in nodeMap) {
+        const node = nodeMap[nodeKey];
 
-            const titleInput = node.content.querySelector("input.title-input");
-            //console.log(`Title Input for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, titleInput); // Debugging line
+        const titleInput = node.titleInput;
+        const contentText = node.hiddenTextarea;
 
-            const contentText = getTextareaContentForNode(node);
-            //console.log(`Content Text for ${titleInput ? titleInput.value : 'Unnamed Node'}:`, contentText); // Debugging line
-
-            nodes.push({
-                ...node,
-                titleInput: titleInput ? titleInput.value : '',
-                contentText: contentText ? contentText : ''
-            });
-        } else {
-            console.warn('Node or child.firstChild.win not found'); // Debugging line
-        }
+        nodes.push({
+            ...node,
+            titleInput: titleInput ? titleInput.value : '',
+            contentText: contentText ? contentText.value : ''
+        });
     }
     return nodes;
 }
