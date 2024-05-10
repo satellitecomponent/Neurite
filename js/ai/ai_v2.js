@@ -161,8 +161,9 @@ let currentController = null;
 async function callAiApi({ messages, stream = false, customTemperature = null, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
     if (useDummyResponses) {
         onBeforeCall();
+        const randomResponse = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
         try {
-            await streamDummyAiResponse(onStreamingResponse);
+            await imitateTextStream(randomResponse, onStreamingResponse);
         } catch (error) {
             console.error("Error with dummy response:", error);
             onError(error.message || error);

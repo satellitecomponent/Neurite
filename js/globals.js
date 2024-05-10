@@ -69,6 +69,10 @@ var settings = {
     autopilotSpeed: 0.1,
     autopilotMaxSpeed: 0.1,
 
+    useFlowDirection: true,
+    flowDirectionRotation: 0,
+    flowDirectionRandomRange: Math.PI / 1.05,
+
     buttonGraphics: {
         hover: ["RGB(100,100,100)", "RGB(200,200,255)"],
         click: ["RGB(70,70,70)", "RGB(100,100,100)"],
@@ -283,19 +287,11 @@ const getClosingBracket = (openingBracket) => {
     return bracketsMap[openingBracket];
 };
 
-const PROMPT_IDENTIFIER = "Prompt:";
-
-//Codemirror
-var textarea = document.getElementById('note-input');
-var myCodeMirror = CodeMirror.fromTextArea(textarea, {
-    lineWrapping: true,
-    scrollbarStyle: 'simple',
-    theme: 'default',
-});
-
-window.myCodemirror = myCodeMirror;
-
 let isBracketLinks = false;
+
+const checkBracketsMap = () => {
+    return Object.keys(bracketsMap).includes(`${tagValues.refTag}`);
+}
 
 const tagValues = {
     get nodeTag() {
@@ -307,6 +303,18 @@ const tagValues = {
         return refValue;
     }
 };
+
+const PROMPT_IDENTIFIER = "Prompt:";
+
+//Codemirror
+var textarea = document.getElementById('note-input');
+var myCodeMirror = CodeMirror.fromTextArea(textarea, {
+    lineWrapping: true,
+    scrollbarStyle: 'simple',
+    theme: 'default',
+});
+
+window.myCodemirror = myCodeMirror;
 
 //ai.js
 

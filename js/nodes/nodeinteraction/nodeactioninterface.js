@@ -289,7 +289,8 @@ class LinkNodeActions extends BaseNodeActions {
             ...super.getActions(),
             'displayIframe': ["show iframe", "iframe view", "embed", "display frame"],
             'extractText': ["get text", "copy text", "text extraction", "extract webpage", "scrape webpage"],
-            'displayWebpage': ["webpage text"]
+            'displayWebpage': ["webpage text"],
+            'importText': ["webpage text", "import", "text"]
 
         };
     }
@@ -320,6 +321,10 @@ class LinkNodeActions extends BaseNodeActions {
         } else {
             console.error('Extract button not found or is not a valid element');
         }
+    }
+    importText() {
+        importLinkNodeTextToZettelkasten(this.node.linkUrl);
+        hideContextMenu();
     }
 }
 

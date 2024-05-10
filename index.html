@@ -216,6 +216,29 @@
         </div>
     </div>
 
+    <div id="importLinkModalContent" style="display: none;">
+        <div class="import-modal-content">
+            <div>
+                <label for="importLinkTextarea">Text:</label>
+                <br />
+                <textarea id="importLinkTextarea" class="custom-scrollbar importLinkTextarea" rows="10"></textarea>
+            </div>
+
+            <div>
+                <label for="maxSentencesPerNote">Note Length:</label>
+                <input type="range" id="maxSentencesPerNote" value="5" min="1" max="20">
+            </div>
+
+            <div>
+                <input type="checkbox" id="connectNotes">
+                <label for="connectNotes">Connect</label>
+            </div>
+            
+
+            <button class="api-modal-button" onclick="confirmImport()">Confirm Import</button>
+        </div>
+    </div>
+
     <div id="alertModal" style="display: none;">
         <!-- Content for the alert modal -->
         <p>This is an alert message.</p>
@@ -1146,6 +1169,7 @@
     <script src="js/zettelkasten/zetplacementstrategy.js"></script>
     <script src="js/zettelkasten/zettelkasten.js"></script>
     <script src="js/zettelkasten/zetpath.js"></script>
+    <script src="js/zettelkasten/zetsplitter.js"></script>
 
 
     <script src="js/mandelbrot/mandelbrot.js"></script>
@@ -1180,6 +1204,7 @@
     <script src="js/nodes/nodetypes/textnodes/contenteditable.js"></script>
     <script src="js/nodes/nodetypes/textnodes/textnode.js"></script>
     <script src="js/nodes/nodetypes/linknodes/linknode.js"></script>
+    <script src="js/nodes/nodetypes/linknodes/importlink.js"></script>
     <script src="js/nodes/nodetypes/imagenodes/imagenode.js"></script>
     <script src="js/nodes/nodetypes/wolframnodes/wolframnode.js"></script>
 

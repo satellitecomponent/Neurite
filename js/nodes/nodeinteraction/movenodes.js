@@ -48,3 +48,25 @@ function getDirectionAngleFromKeyState() {
     const combinedDirection = direction.join('-'); // e.g., 'up-left'
     return directionToAngle(combinedDirection); // Use the updated directionToAngle function
 }
+
+
+function processScalingKeys(selectedNodes) {
+    Object.keys(keyState).forEach(key => {
+        if (keyState[key]) {
+            const action = directionMap[key];
+            if (action === 'scaleUp' || action === 'scaleDown') {
+                const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
+                const centroid = getCentroidOfSelectedNodes();
+                if (centroid) {
+                    scaleSelectedNodes(scaleFactor, centroid);
+                }
+            }
+        }
+    });
+}
+
+function moveSelectedNodes(selectedNodes, movementAngle) {
+    selectedNodes.forEach(node => {
+        node.moveNode(movementAngle); // Apply movement based on the angle
+    });
+}

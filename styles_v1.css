@@ -194,7 +194,9 @@ body {
     border: none;
     border-bottom: 1px solid #8882;
     width: 100%;
-    height: 120px;
+    height: auto;
+    min-height: 120px;
+    max-height: 320px;
     overflow: hidden;
     padding: 0px;
     margin: 0px;
@@ -548,13 +550,19 @@ input[type="text"i].title-input {
     }
 
 
-        /* Dropdown menu styles */
+.importLinkTextarea {
+    background-color: #222226;
+    height: 250px;
+    width: 500px;
+}
 
-        .dropdown {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
+
+/* Dropdown menu styles */
+.dropdown {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
 
         .menu-button {
             position: relative;

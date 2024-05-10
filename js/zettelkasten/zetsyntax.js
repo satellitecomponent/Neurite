@@ -24,19 +24,31 @@ class SyntaxHighlighter {
         let highlightedCode = '';
         CodeMirror.runMode(code, language, (text, style) => {
             let className = style ? `class="neurite-${style}"` : '';
-            let escapedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            let escapedText = RegExp.escape(text);
             highlightedCode += `<span ${className}>${escapedText}</span>`;
         });
         return highlightedCode;
     }
 
-    //ToDo Fix RegExp escape.
     static applyNodeTitleHighlighting(content) {
         nodeTitles.sort((a, b) => b.length - a.length);
         nodeTitles.forEach(title => {
-            const escapedTitle = RegExp.escape(title);
-            const regex = new RegExp(`\\b${escapedTitle}(?!\\w)`, 'gi');
-            content = content.replace(regex, `<span class="node-title-sd">${title}</span>`);
+            let index = content.indexOf(title);
+            while (index !== -1) {
+                // Check if the matched title is already within a <span> tag
+                const startIndex = content.lastIndexOf('<span', index);
+                const endIndex = content.indexOf('</span>', index);
+                if (startIndex !== -1 && endIndex !== -1 && startIndex < index && index < endIndex) {
+                    // The matched title is already within a <span> tag, so don't add another one
+                    index = content.indexOf(title, index + title.length);
+                } else {
+                    // The matched title is not within a <span> tag, so add one
+                    content = content.slice(0, index) +
+                        `<span class="node-title-sd">${title}</span>` +
+                        content.slice(index + title.length);
+                    index = content.indexOf(title, index + title.length + 31);
+                }
+            }
         });
         return content;
     }

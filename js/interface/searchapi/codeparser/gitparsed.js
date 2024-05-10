@@ -270,10 +270,22 @@ function getGitHubParser(fileExtension, text, MAX_CHUNK_SIZE, overlapSize) {
 }
 
 
+function isGitHubUrl(url) {
+    return url.includes('github.com');
+}
+
+function extractGitHubRepoDetails(url) {
+    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)(\/|$)/);
+    if (match) {
+        return { owner: match[1], repo: match[2] };
+    }
+    return null;
+}
 
 async function fetchGitHubRepoContent(owner, repo, path = '') {
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
     const response = await fetch(url);
+    let allText = '';
 
     if (!response.ok) {
         console.error(`Failed to fetch GitHub content for ${url}:`, response.statusText);
@@ -281,39 +293,53 @@ async function fetchGitHubRepoContent(owner, repo, path = '') {
     }
 
     const data = await response.json();
-
     for (const item of data) {
         if (item.type === 'file') {
             const fileResponse = await fetch(item.download_url);
-
-            // Check content type
-            if (!fileResponse.headers.get('Content-Type').includes('text')) {
-                console.error(`Received non-textual content for ${item.download_url}`);
-                continue;  // Skip this file and move to next one
+            if (!fileResponse.ok || !fileResponse.headers.get('Content-Type').includes('text')) {
+                console.error(`Received non-textual content from ${item.download_url}`);
+                continue;
             }
-
             const text = await fileResponse.text();
-            const sanitizedText = sanitizeGitHubText(text);  // Assume this function is defined
-
-            const fileExtension = getFileExtension(item.path); // Use the getFileExtension function
-            const parser = getGitHubParser(fileExtension, sanitizedText, MAX_CHUNK_SIZE, overlapSize);
-
-            const parsedText = parser.parse();
-
-            // Log each chunk for quality evaluation
-            parsedText.forEach((chunk, index) => {
-                console.log(`Chunk ${index + 1}/${parsedText.length} from ${item.path}:`);
-                console.log(`Size: ${chunk.length}`);
-                console.log(`Snippet: ${chunk.substring(0, chunk.length)}`);
-                // Add additional logging as needed
-            });
-
-            const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText);
-            const key = `https://github.com/${owner}/${repo}/${item.path}`;
-            await storeEmbeddingsAndChunksInDatabase(key, parsedText, chunkedEmbeddings);
+            allText += text + '\n';
         } else if (item.type === 'dir') {
-            await fetchGitHubRepoContent(owner, repo, item.path);
+            const dirText = await fetchGitHubRepoContent(owner, repo, item.path);
+            allText += dirText ? dirText : '';
         }
+    }
+    return allText;
+}
+
+async function storeGitHubContent(text, owner, repo, path) {
+    // Assuming we have a utility that sanitizes and parses text
+    const sanitizedText = sanitizeGitHubText(text);  // Assume this function is defined
+    const fileExtension = getFileExtension(path); // Use the getFileExtension function
+    const parser = getGitHubParser(fileExtension, sanitizedText, MAX_CHUNK_SIZE, overlapSize);
+    const parsedText = parser.parse();
+
+    // Log each chunk for quality evaluation
+    //parsedText.forEach((chunk, index) => {
+    //    console.log(`Chunk ${index + 1}/${parsedText.length} from ${path}:`);
+    //    console.log(`Size: ${chunk.length}`);
+    //    console.log(`Snippet: ${chunk.substring(0, 100)}...`);
+        // Add additional logging as needed
+    //});
+
+    // Fetch embeddings for each chunk
+    const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText);
+    const key = `https://github.com/${owner}/${repo}/${path}`;
+    // Store embeddings and chunks in the database
+    await storeEmbeddingsAndChunksInDatabase(key, parsedText, chunkedEmbeddings);
+}
+
+async function handleGitHubRepo(owner, repo) {
+    try {
+        const fetchedText = await fetchGitHubRepoContent(owner, repo);
+        if (fetchedText) {
+            await storeGitHubContent(fetchedText, owner, repo, '');
+        }
+    } catch (error) {
+        console.error("Error processing GitHub repository:", error);
     }
 }
 

@@ -1,17 +1,14 @@
 let useDummyResponses = false;
 
-async function streamDummyAiResponse(onStreamingResponse, delay = 10) {
-    const randomResponse = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
-
-    let currentChunk = '';
+async function imitateTextStream(text, onStreamingResponse, delay = 10, minChunkLength = 5, maxChunkLength = 10) {
     let responseIndex = 0;
 
-    while (responseIndex < randomResponse.length) {
-        // Randomly decide the number of characters to append (1 to 4)
-        const chunkLength = Math.floor(Math.random() * 4) + 1;
+    while (responseIndex < text.length) {
+        // Randomly decide the number of characters to append, between minChunkLength and maxChunkLength
+        const chunkLength = Math.floor(Math.random() * (maxChunkLength - minChunkLength + 1)) + minChunkLength;
 
         // Append characters to the current chunk
-        currentChunk = randomResponse.substring(responseIndex, responseIndex + chunkLength);
+        const currentChunk = text.substring(responseIndex, responseIndex + chunkLength);
         responseIndex += chunkLength;
 
         // Stream the current chunk
