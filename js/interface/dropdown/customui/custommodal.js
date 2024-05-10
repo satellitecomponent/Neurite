@@ -46,13 +46,16 @@ function openModal(contentId) {
             initializeTagInputs();
             break;
         case 'aiModal':
-            modalTitle.textContent = 'Experimental Ai Controls'; // Set title for the API config modal
+            modalTitle.textContent = 'Experimental Ai Controls';
             break;
         case 'alertModal':
             modalTitle.textContent = 'Alert';
             break;
         case 'apiConfigModalContent':
-            modalTitle.textContent = 'Custom Endpoint'; // Set title for the API config modal
+            modalTitle.textContent = 'Custom Endpoint';
+            break;
+        case 'importLinkModalContent':
+            modalTitle.textContent = 'Import Link Text';
             break;
         default:
             modalTitle.textContent = ''; // Default, clears the title

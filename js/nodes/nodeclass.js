@@ -130,6 +130,8 @@ class Node {
         this.intervalID = null;
         this.followingMouse = 0;
 
+        this.randomNodeFlowRange = (Math.random() - 0.5) * settings.flowDirectionRandomRange;
+
         this.sensor = new NodeSensor(this, 3);
 
         this.removed = false;
@@ -187,14 +189,23 @@ class Node {
     }
 
     step(dt) {
+        dt = this.clampDt(dt);
+        this.updatePosition(dt);
+        this.applyMandelbrotForce();
+        this.applyAnchorForce();
+        this.handleMouseInteraction(dt);
+        this.draw();
+    }
+
+    clampDt(dt) {
         if (dt === undefined || isNaN(dt)) {
-            dt = 0;
-        } else {
-            if (dt > 1) {
-                dt = 1;
-            }
+            return 0;
         }
-        if (!this.followingMouse) {
+        return Math.min(dt, 1);
+    }
+
+    updatePosition(dt) {
+        if (!this.followingMouse && this.anchorForce == 0) {
             this.pos = this.pos.plus(this.vel.scale(dt / 2));
             this.vel = this.vel.plus(this.force.scale(dt));
             this.pos = this.pos.plus(this.vel.scale(dt / 2));
@@ -203,12 +214,31 @@ class Node {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
         }
-        let g = mandGrad(settings.iterations, this.pos);
-        //g.y *= -1; //why?
-        this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
+    }
+
+    applyMandelbrotForce() {
+        if (this.anchorForce === 0) {
+            let g = mandGrad(settings.iterations, this.pos);
+
+            if (settings.useFlowDirection && g.mag2() > 0) {
+                let randomRotation = this.randomNodeFlowRange;
+                let flowDirection = g.rot(settings.flowDirectionRotation + randomRotation).normed();
+                let forceMagnitude = g.mag();
+
+                this.force = this.force.plus(flowDirection.scale(forceMagnitude).unscale((g.mag2() + 1e-10) * 300));
+            }
+
+            if (!settings.useFlowDirection && g.mag2() > 0) {
+                this.force = this.force.plus(g.unscale((g.mag2() + 1e-10) * 300));
+            }
+        }
+    }
+
+    applyAnchorForce() {
         this.force = this.force.plus(this.anchor.minus(this.pos).scale(this.anchorForce));
-        //let d = toZ(mousePos).minus(this.pos);
-        //this.force = this.force.plus(d.scale(this.followingMouse/(d.mag2()+1)));
+    }
+
+    handleMouseInteraction(dt) {
         if (this.followingMouse) {
             let p = toZ(mousePos).minus(this.mouseAnchor);
             let velocity = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
@@ -217,19 +247,16 @@ class Node {
             this.pos = p;
             this.anchor = this.pos;
 
-            // Update the edges of the current node being dragged
             if (nodeMode === 1) {
                 updateNodeEdgesLength(this);
             }
 
-            // Check if the current node's UUID is in the selected nodes
             if (selectedNodeUUIDs.has(this.uuid)) {
                 const selectedNodes = getSelectedNodes();
                 selectedNodes.forEach(node => {
-                    if (node.uuid !== this.uuid && node.anchorForce !== 1) { // Skip the current node and any anchored node
+                    if (node.uuid !== this.uuid && node.anchorForce !== 1) {
                         node.vel = velocity;
 
-                        // Update the edges for each selected node
                         if (nodeMode === 1) {
                             updateNodeEdgesLength(node);
                         }
@@ -237,8 +264,6 @@ class Node {
                 });
             }
         }
-        //this.force = this.force.plus((new vec2(-.1,-1.3)).minus(this.pos).scale(0.1));
-        this.draw();
     }
 
     moveNode(angle, forceMagnitude = 0.01) {

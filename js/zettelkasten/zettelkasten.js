@@ -524,15 +524,20 @@ let followMouseFromWindow = false;
             let buffer = "";
             let insideBrackets = false;
             let residualLine = "";
+
             for (let i = 0; i < line.length; i++) {
                 if (line.startsWith(openingBracket, i)) {
-                    insideBrackets = true;
-                    buffer = "";  // Clear the buffer
-                    i += openingBracket.length - 1;  // Skip the bracket characters
+                    if (!insideBrackets) {
+                        insideBrackets = true;
+                        buffer = "";  // Clear the buffer
+                        i += openingBracket.length - 1;  // Skip the bracket characters
+                    } else {
+                        buffer += line[i];
+                    }
                 } else if (line.startsWith(closingBracket, i) && insideBrackets) {
                     insideBrackets = false;
                     if (buffer.length > 0) {
-                        references.push(...buffer.split(',').map(ref => ref.trim()));
+                        references.push(buffer.trim());
                     }
                     i += closingBracket.length - 1;  // Skip the bracket characters
                 } else if (insideBrackets) {
@@ -541,6 +546,7 @@ let followMouseFromWindow = false;
                     residualLine += line[i];
                 }
             }
+
             return { references, residualLine };
         }
 

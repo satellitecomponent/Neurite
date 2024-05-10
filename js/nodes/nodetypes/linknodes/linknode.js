@@ -189,54 +189,52 @@ function setupLinkNodeDisplayButtonListeners(node) {
     });
 }
 
+
 function setupLinkNodeExtractButtonListeners(node) {
     let extractButton = node.extractButton;
-
     let link = node.linkUrl;
+
+    async function processExtraction(text, storageKey) {
+        clearInterval(dotInterval);  // Clear interval when starting to store
+        if (!text) {
+            extractButton.textContent = "No text to store";
+            return;
+        }
+        extractButton.textContent = "Storing...";
+        try {
+            await storeTextData(storageKey, text);  // Assuming storeTextData is already defined
+            extractButton.textContent = "Extracted";
+        } catch (error) {
+            console.error('Error storing data:', error);
+            extractButton.textContent = "Storage Failed";
+        }
+    }
 
     extractButton.addEventListener("click", async function () {
         let dotCount = 0;
-
         const dotInterval = setInterval(() => {
             dotCount = (dotCount + 1) % 4;
             extractButton.textContent = "Extracting" + ".".repeat(dotCount);
         }, 500);
 
-        let storageKey = link;
-        if (node && node.fileName) {
-            storageKey = node.fileName;
-        }
-
-        async function processExtraction(text, storageKey) {
-            extractButton.textContent = "Storing...";
-            await storeTextData(storageKey, text);
-            extractButton.textContent = "Extracted";
-        }
-
         try {
-            if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
-                const loadingTask = pdfjsLib.getDocument(link);
-                loadingTask.promise.then(async (pdf) => {
-                    let extractedText = '';
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        extractedText += textContent.items.map(item => item.str).join(' ');
-                    }
-                    await processExtraction(extractedText, storageKey);
-                }).catch(error => {
-                    console.error('Error reading PDF:', error);
-                    extractButton.textContent = "Extract Failed";
-                });
-            } else {
-                await fetchAndStoreWebPageContent(link);
-                extractButton.textContent = "Extracted";
+            let storageKey = link;
+            if (node && node.fileName) {
+                storageKey = node.fileName;
             }
+
+            const extractedText = await fetchLinkContentText(link); // Fetch text based on content type
+            if (!extractedText) {
+                throw new Error("Failed to extract text or text was empty");
+            }
+
+            await receiveAndStoreText(extractedText, storageKey, link);
+
+            extractButton.textContent = "Extracted";
         } catch (error) {
-            console.error('Error during extraction:', error);
+            console.error('Error during extraction and storage:', error);
             extractButton.textContent = "Extract Failed";
-            alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
+            alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost.");
         } finally {
             clearInterval(dotInterval);
         }

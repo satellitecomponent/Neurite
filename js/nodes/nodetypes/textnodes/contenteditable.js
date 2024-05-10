@@ -20,6 +20,37 @@ function createSyntaxTextarea() {
     editorWrapper.appendChild(displayDiv);
     editorWrapper.appendChild(inputDiv);
 
+    // Function to update the height of the editor wrapper
+    function updateEditorHeight() {
+        // Get the current height and styles of the editor wrapper
+        const wrapperHeight = editorWrapper.offsetHeight;
+        const wrapperStyle = window.getComputedStyle(editorWrapper);
+        const maxHeight = 300; // Maximum height allowed for the wrapper
+
+        // Early exit if the height is set to '100%' or exceeds the maximum allowed height
+        if (wrapperStyle.height === '100%' || wrapperHeight >= maxHeight) {
+            return;
+        }
+
+        // Try to get the bounding rectangle of the editor wrapper
+        const wrapperRect = editorWrapper.getBoundingClientRect();
+        const screenHeight = window.innerHeight;
+        const bottomOffset = 20; // Space to leave at the bottom of the screen
+
+        // Check if the bounding rectangle is visible and below the bottom of the screen
+        if (wrapperRect.bottom + bottomOffset < screenHeight) {
+            // If visible and within the screen, adjust height based on the inputDiv's scrollHeight
+            editorWrapper.style.height = 'auto';
+            editorWrapper.style.height = inputDiv.scrollHeight + 'px';
+        } else if (!wrapperRect) {
+            editorWrapper.style.height = 'auto';
+            editorWrapper.style.height = inputDiv.scrollHeight + 'px';
+        }
+    }
+
+    // Add event listeners to the textarea
+    inputDiv.addEventListener('input', updateEditorHeight);
+
     // Return the wrapper containing both the editable and the display div
     return editorWrapper;
 }
@@ -141,18 +172,23 @@ function watchHiddenTextareaAndSyncInputTextarea(textarea, editableDiv) {
     });
 }
 
-
-
-function syncInputTextareaWithHiddenTextarea(editableDiv, textarea) {
-    editableDiv.value = textarea.value;  // Update the content
-}
-
 let isProgrammaticChange = false;
 
+function syncInputTextareaWithHiddenTextarea(editableDiv, textarea) {
+    if (!isProgrammaticChange) {
+        isProgrammaticChange = true;  // Avoid recursive updates
+        editableDiv.value = textarea.value;  // Update the content
+        editableDiv.dispatchEvent(new Event('input'));
+    }
+    isProgrammaticChange = false;
+}
+
 function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
-    isProgrammaticChange = true;  // Avoid recursive updates
-    textarea.value = contentEditable.value;  // Update the textarea
-    textarea.dispatchEvent(new Event('input'));  // Trigger any associated event listeners
+    if (!isProgrammaticChange) {
+        isProgrammaticChange = true;  // Avoid recursive updates
+        textarea.value = contentEditable.value;  // Update the textarea
+        textarea.dispatchEvent(new Event('input'));  // Trigger any associated event listeners
+    }
     isProgrammaticChange = false;
 }
 
