@@ -255,23 +255,25 @@ class Edge {
         if (dt === undefined || isNaN(dt)) {
             dt = 0;
         } else {
-            if (dt > 1) {
-                dt = 1;
-            }
+            dt = Math.min(dt, 1);  // Clamp dt to a maximum of 1
         }
+
         let avg = this.center();
         for (let n of this.pts) {
-            let d = n.pos.minus(avg);
-            let dMag = d.mag();
+            if (n.anchorForce === 0) {  // Only apply force if the anchor force is zero
+                let d = n.pos.minus(avg);
+                let dMag = d.mag();
 
-            // Update the current length of the edge
-            this.currentLength = dMag;
+                // Update the current length of the edge
+                this.currentLength = dMag;
 
-            // Apply force to either shorten or lengthen the edge to the desired length
-            if (dMag !== this.length) {
-                let dampingFactor = 0.4;
-                let f = d.scale((1 - this.length / (dMag + 1e-300)) * dampingFactor);
-                n.force = n.force.plus(f.scale(-this.strength));
+                // Apply force to either shorten or lengthen the edge to the desired length
+                if (dMag !== this.length) {
+                    let dampingFactor = 0.4;
+                    let forceAdjustment = (1 - this.length / (dMag + 1e-300)) * dampingFactor;
+                    let f = d.scale(forceAdjustment);
+                    n.force = n.force.plus(f.scale(-this.strength));
+                }
             }
         }
         this.draw();

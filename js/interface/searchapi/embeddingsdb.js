@@ -404,44 +404,97 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
     }
 }
 
+
+
+
+
+
+
+// Extract text from PDF files using PDF.js
+async function extractTextFromPDF(pdfLink) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
+    const loadingTask = pdfjsLib.getDocument(pdfLink);
+
+    try {
+        const pdf = await loadingTask.promise;
+        let extractedText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            extractedText += textContent.items.map(item => item.str).join(' ');
+        }
+        return extractedText;
+    } catch (error) {
+        console.error('Error extracting text from PDF:', error);
+        throw new Error('Failed to extract text from PDF');
+    }
+}
+
+async function fetchLinkContentText(link) {
+    if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
+        return await extractTextFromPDF(link);
+    } else if (isGitHubUrl(link)) {
+        const details = extractGitHubRepoDetails(link);
+        if (!details) {
+            console.error('Invalid GitHub URL:', link);
+            return null;
+        }
+        return await fetchGitHubRepoContent(details.owner, details.repo);
+    } else {
+        try {
+            const response = await fetch(`${CORS_PROXY}?url=${encodeURIComponent(link)}`);
+            if (!response.ok) {
+                console.error(`Failed to fetch web page content for ${link}:`, response.statusText);
+                return null;
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType.includes("text")) {
+                console.warn(`Content type for ${link} is not text: ${contentType}`);
+                return null;
+            }
+            return await response.text();
+        } catch (error) {
+            console.error(`Failed to fetch web page content for ${link}:`, error);
+            return null;
+        }
+    }
+}
+
+
+
+
 async function storeTextData(storageKey, text) {
     const chunkedText = chunkText(text, MAX_CHUNK_SIZE, overlapSize);
     const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
     await storeEmbeddingsAndChunksInDatabase(storageKey, chunkedText, chunkedEmbeddings);
 }
 
-async function fetchAndStoreWebPageContent(url) {
-    if (isGitHubUrl(url)) {
-        console.log("Handling Github");
-        const [_, __, ___, owner, repo] = url.split('/');
-        // Defined in gitparsed.js
-        await fetchGitHubRepoContent(owner, repo);
+async function receiveAndStoreText(text, storageKey, url) {
+    if (!text) {
+        console.error("No text to store for:", storageKey);
         return;
     }
 
     try {
-        const response = await fetch(`${CORS_PROXY}?url=${encodeURIComponent(url)}`);
+        if (isGitHubUrl(url)) {
+            // Use the robust extraction method to get GitHub details
+            const details = extractGitHubRepoDetails(url);
+            if (!details) {
+                console.error("Invalid GitHub URL:", url);
+                return;  // Exit if the URL is not a valid GitHub repository URL
+            }
+            const { owner, repo } = details;
+            const path = url.split(`github.com/${owner}/${repo}/`)[1] || '';  // Extract the path within the repository
 
-        if (!response.ok) {
-            console.error(`Failed to fetch web page content for ${url}:`, response.statusText);
-            return null;
+            // GitHub content requires specialized handling
+            await storeGitHubContent(text, owner, repo, path);
+        } else {
+            // Call the existing storeTextData function for non-GitHub URLs
+            await storeTextData(storageKey, text);  // Ensure this is awaited to handle asynchronous operations
         }
-
-        const contentType = response.headers.get("content-type");
-        const text = await response.text();
-
-        if (typeof text !== "string") {
-            console.warn(`Text type for ${url}: ${contentType}`);
-            console.warn(`Text for ${url}:`, text);
-            return null;
-        }
-
-        await storeTextData(url, text);  // Store the text data
-
     } catch (error) {
-        console.error(`Failed to fetch web page content for ${url}:`, error);
-        alert("An error occurred fetching the top-n relevant chunks of extracted webpage text. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
-        return null;
+        console.error(`Error storing text for ${storageKey}:`, error);
     }
 }
 

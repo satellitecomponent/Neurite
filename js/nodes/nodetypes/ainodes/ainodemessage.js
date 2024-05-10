@@ -91,8 +91,8 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `LAST LINE of your response PROMPTS CONNECTED Ai nodes.
-ARCHITECT profound, mission-critical QUERIES to Ai nodes.
+            content: `The LAST LINE of your response PROMPTS any CONNECTED Ai.
+ARCHITECT profound, mission-critical QUERIES.
 SYNTHESIZE cross-disciplinary CONVERSATIONS.
 TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         });
@@ -188,7 +188,7 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Use the given chunks as CONTEXT. CITE your sources!`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Provide CONTEXT from the given snippets. CITE your sources!`
         };
 
         messages.push(embedMessage);
@@ -249,7 +249,7 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
 
     // For LLM Nodes
     if (llmNodeInfo.length > 0) {
-        let intro = "All AI nodes you are CONVERSING with:";
+        let intro = "AI you are CONVERSING with:";
         messages.push({
             role: "system",
             content: intro + "\n\n" + llmNodeInfo.join("\n\n")

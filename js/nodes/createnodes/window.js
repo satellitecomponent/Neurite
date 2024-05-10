@@ -408,6 +408,8 @@ function setResizeEventListeners(resizeHandle, node) {
         const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
         if (textNodeSyntaxWrapper) {
             textNodeSyntaxWrapper.style.height = `100%`;
+            textNodeSyntaxWrapper.style.minHeight = `0px`;
+            textNodeSyntaxWrapper.style.maxHeight = `100%`;
             textNodeSyntaxWrapper.style.width = `100%`;
         }
 

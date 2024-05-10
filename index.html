@@ -50,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.42a6c0d9.css">
+  <link rel="stylesheet" href="./assets/index.6e1b9f4f.css">
 </head>
 
 <body id="body">
@@ -210,6 +210,29 @@
             <label for="use-all-connected-ai-nodes"><strong>Message All Connected Ai</strong></label>
             <input type="checkbox" id="ai-nodes-checkbox">
             <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes</strong></label>
+        </div>
+    </div>
+
+    <div id="importLinkModalContent" style="display: none;">
+        <div class="import-modal-content">
+            <div>
+                <label for="importLinkTextarea">Text:</label>
+                <br />
+                <textarea id="importLinkTextarea" class="custom-scrollbar importLinkTextarea" rows="10"></textarea>
+            </div>
+
+            <div>
+                <label for="maxSentencesPerNote">Note Length:</label>
+                <input type="range" id="maxSentencesPerNote" value="5" min="1" max="20">
+            </div>
+
+            <div>
+                <input type="checkbox" id="connectNotes">
+                <label for="connectNotes">Connect</label>
+            </div>
+            
+
+            <button class="api-modal-button" onclick="confirmImport()">Confirm Import</button>
         </div>
     </div>
 
@@ -1145,6 +1168,7 @@
     <script src="js/zettelkasten/zetplacementstrategy.js"></script>
     <script src="js/zettelkasten/zettelkasten.js"></script>
     <script src="js/zettelkasten/zetpath.js"></script>
+    <script src="js/zettelkasten/zetsplitter.js"></script>
 
 
     <script src="js/mandelbrot/mandelbrot.js"></script>
@@ -1179,6 +1203,7 @@
     <script src="js/nodes/nodetypes/textnodes/contenteditable.js"></script>
     <script src="js/nodes/nodetypes/textnodes/textnode.js"></script>
     <script src="js/nodes/nodetypes/linknodes/linknode.js"></script>
+    <script src="js/nodes/nodetypes/linknodes/importlink.js"></script>
     <script src="js/nodes/nodetypes/imagenodes/imagenode.js"></script>
     <script src="js/nodes/nodetypes/wolframnodes/wolframnode.js"></script>
 
