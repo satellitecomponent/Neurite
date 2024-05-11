@@ -102,13 +102,12 @@ class BranchingZetPath extends ZetPath {
 
 class RadialZetPath extends ZetPath {
     generatePath() {
-        //console.log('Generating radial path...');
         this.path = [];
-        const numBranches = this.options.radialDepth;
-        const nodesPerBranch = Math.floor(this.options.radialPathLength / numBranches);
-        const nodeSpacing = this.options.radialPathDistance;
+        const numBranches = Math.min(Math.floor(this.options.radialDepth), 8);
+        const nodesPerBranch = Math.min(Math.floor(this.options.radialPathLength / numBranches), 50);
+        const nodeSpacing = Math.max(this.options.radialPathDistance, 1);
         const firstRadiusMultiplier = 3;
-        const radiusDecreaseRate = 0.4;
+        const radiusDecreaseRate = Math.max(Math.pow(this.options.radialScale, 1 / (numBranches - 1)), 0.5);
 
         // Generate the first branch from the initial origin
         for (let j = 0; j < nodesPerBranch; j++) {
@@ -128,14 +127,14 @@ class RadialZetPath extends ZetPath {
         let currentRadiusMultiplier = firstRadiusMultiplier;
         // Generate branches for each subsequent layer
         for (let i = 1; i < numBranches; i++) {
-            const startNodeIndex = (i - 1) * nodesPerBranch + 1;
-            const endNodeIndex = startNodeIndex + nodesPerBranch - 1;
+            const startNodeIndex = (i - 1) * nodesPerBranch;
+            const endNodeIndex = Math.min(startNodeIndex + nodesPerBranch - 1, this.path.length - 1);
             // Decrease the scale and radius multiplier for the current layer
-            currentScale *= this.options.radialScale;
-            currentRadiusMultiplier *= radiusDecreaseRate;
+            currentScale = Math.max(currentScale * this.options.radialScale, 0.1);
+            currentRadiusMultiplier = Math.max(currentRadiusMultiplier * radiusDecreaseRate, 0.5);
             for (let k = startNodeIndex; k <= endNodeIndex; k++) {
-                const originNode = this.path[k];
-                for (let j = 0; j < nodesPerBranch - 1; j++) {
+                const numNodesInBranch = Math.min(nodesPerBranch, this.options.radialPathLength - this.path.length);
+                for (let j = 0; j < numNodesInBranch; j++) {
                     const angle = (2 * Math.PI * (j + 1)) / nodesPerBranch;
                     const x = Math.cos(angle) * nodeSpacing * currentRadiusMultiplier;
                     const y = Math.sin(angle) * nodeSpacing * currentRadiusMultiplier;
@@ -149,7 +148,6 @@ class RadialZetPath extends ZetPath {
                 }
             }
         }
-        //console.log('Updated Radial Path:', this.path);
         return this.path;
     }
 }
@@ -180,8 +178,6 @@ function createZetPath(style, options) {
             break;
         case 'Random':
             zetPlacementOverride = true;
-            // You can choose a random style for the zetPath or use a default style
-            // For example, using 'Radial' as the default style for 'Random'
             zetPath = new EmptyZetPath();
             break;
         default:

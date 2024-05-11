@@ -59,6 +59,9 @@ function makeIconDraggable(iconDiv) {
             if (iconDiv.classList.contains('ai-icon')) {
                 openModal('aiModal');
             }
+            if (iconDiv.classList.contains('link-icon')) {
+                openModal('importLinkModalContent');
+            }
         }
     });
 }
