@@ -42,10 +42,18 @@ class ZetSplit {
             const title = titleWords.length > 4 ? titleWords : section.slice(0, 30);
             let formattedSection = `${tagValues.nodeTag} ${title}\n${section}`;
 
-            if (this.connectNotes && index > 0) {
-                const prevTitle = sections[index - 1].split(/\s+/).slice(0, 4).join(' ');
-                const connectionFormat = checkBracketsMap ? `${tagValues.refTag}${prevTitle}${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag}${prevTitle}`;
-                formattedSection += `\n\n${connectionFormat}`;
+            if (this.connectNotes) {
+                if (index > 0) {
+                    const prevTitle = sections[index - 1].split(/\s+/).slice(0, 4).join(' ');
+                    const prevConnectionFormat = checkBracketsMap ? `${tagValues.refTag}${prevTitle}${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag}${prevTitle}`;
+                    formattedSection += `\n\n${prevConnectionFormat}`;
+                }
+
+                if (index < sections.length - 1) {
+                    const nextTitle = sections[index + 1].split(/\s+/).slice(0, 4).join(' ');
+                    const nextConnectionFormat = checkBracketsMap ? `${tagValues.refTag}${nextTitle}${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag}${nextTitle}`;
+                    formattedSection += `\n\n${nextConnectionFormat}`;
+                }
             }
 
             return formattedSection;
