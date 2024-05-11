@@ -176,8 +176,11 @@ function addOptionToCustomDropdown(select, optionData) {
     let option = new Option(optionData.text, optionData.value);
     option.setAttribute('data-key', optionData.key);
 
-    // Append and bind event to this new option
-    createOptionDiv(option, select, optionsReplacer, selectedDiv);
+    // Check if optionsReplacer exists before appending the option div
+    if (optionsReplacer) {
+        // Append and bind event to this new option
+        createOptionDiv(option, select, optionsReplacer, selectedDiv);
+    }
 }
 
 
