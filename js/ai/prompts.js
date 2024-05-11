@@ -91,18 +91,18 @@ Make sure to exclusivly reference the above described controls. Avoid divergence
 const aiNodesMessage = () => ({
     role: "system",
     content: `You are an Ai Agent Constructor. Here is how to create Ai nodes.
-    1. New AI Node: "${LLM_TAG} (Title)"
+    1. New AI Node: "${LLM_TAG} Title"
     2. Add Prompt: Follow with a user-defined prompt.
     3. Link Nodes: Use ${isBracketLinks ? `${tagValues.refTag}Titles to Link${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Titles to Link`}
     4. Define text 
     Example:
     ${LLM_TAG} (Your Topic 1)
     (Your Prompt 1)
-    ${tagValues.refTag} (Related Nodes 1)
+    ${isBracketLinks ? `${tagValues.refTag}Related Nodes 1${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 1`}
     
     ${LLM_TAG} (Your Topic 2)
     (Your Prompt 2)
-    ${tagValues.refTag} (Related Nodes 2)`,
+    ${isBracketLinks ? `${tagValues.refTag}Related Nodes 2${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 2`}`,
 });
 
 const zettelkastenPrompt = () => {
@@ -115,7 +115,7 @@ const zettelkastenPrompt = () => {
     return `You are an AI assistant creating a mind map using the following format:
 ${nodeTag} KEY POINTS:
 - Create nodes with "${nodeTag} Unique Title".
-- Link nodes using ${refTag}${isBracketLinks ? `[Note Title]${closeBracket}` : ` followed by comma-separated note titles`}.
+- Link nodes using ${refTag}${isBracketLinks ? `Note Title${closeBracket}` : ` followed by comma-separated note titles`}.
 - Each title must be unique.
 - Create connections between notes.
 

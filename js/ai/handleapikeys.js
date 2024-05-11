@@ -208,6 +208,7 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
     console.log(`model`, model);
     let API_KEY;
     let API_URL;
+    let apiEndpoint;
 
     if (useProxy) {
         // Use the AI proxy server
@@ -221,7 +222,8 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
             model = localModelSelect.value;
         } else if (model.includes("custom")) {
             const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
-            API_URL = selectedOption.getAttribute('data-endpoint');
+            API_URL = "http://localhost:7070/custom";
+            apiEndpoint = selectedOption.getAttribute('data-endpoint');
             API_KEY = selectedOption.getAttribute('data-key');
             model = selectedOption.text; // Assuming the model name is the text content of the option
         } else {
@@ -267,15 +269,22 @@ function getAPIParams(messages, stream, customTemperature, modelOverride = null)
         : parseFloat(document.getElementById('model-temperature').value);
     let max_tokens = document.getElementById('max-tokens-slider').value;
 
+    const body = {
+        model,
+        messages,
+        max_tokens: parseInt(max_tokens),
+        temperature,
+        stream
+    };
+
+    if (apiEndpoint) {
+        body.apiEndpoint = apiEndpoint;
+        body.apiKey = API_KEY;
+    }
+
     return {
         headers,
-        body: JSON.stringify({
-            model,
-            messages,
-            max_tokens: parseInt(max_tokens),
-            temperature,
-            stream
-        }),
+        body: JSON.stringify(body),
         API_URL
     };
 }
