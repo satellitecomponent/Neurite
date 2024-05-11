@@ -25,9 +25,6 @@ async function confirmImport() {
     // Split the text for Zettelkasten
     const formattedTexts = zetSplit.splitText(text);
 
-    // Concatenate all formatted texts to simulate one long text
-    const concatenatedText = formattedTexts.join("\n\n");
-
     // Function to handle the addition of text chunks to Codemirror
     function addTextToCodemirror(textChunk) {
         if (window.myCodemirror) {
@@ -37,8 +34,13 @@ async function confirmImport() {
             console.error('Codemirror instance not found.');
         }
     }
+
     // Close the modal
     closeModal('importLinkModalContent');
-    // Stream the text chunks into the Codemirror instance with minimal delay and larger chunks
-    await imitateTextStream(concatenatedText, addTextToCodemirror, 2, 150, 500);  // Adjust chunk lengths and delay as needed
+
+    // Append the notes one at a time with a delay between each note
+    for (const note of formattedTexts) {
+        addTextToCodemirror(note + "\n\n");
+        await new Promise(resolve => setTimeout(resolve, 30)); // Adjust the delay as needed
+    }
 }
