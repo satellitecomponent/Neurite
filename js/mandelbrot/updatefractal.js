@@ -46,8 +46,19 @@ function updateEquation() {
         equationElement.innerHTML = `|z|<sup>${exponentValue}</sup> + c`;
     } else if (fractalType === "julia") {
         equationElement.innerHTML = `z<sup>${exponentValue}</sup> +`;
+    } else if (fractalType === "tricorn") {
+        equationElement.innerHTML = `conj(z)<sup>${exponentValue}</sup> + c`;
+    } else if (fractalType === "buffalo") {
+        equationElement.innerHTML = `|z|<sup>${exponentValue}</sup> * z + c`;
+    } else if (fractalType === "henon") {
+        equationElement.innerHTML = `Henon Map`;
+    } else if (fractalType === "ikeda") {
+        equationElement.innerHTML = `Ikeda Map`;
+    } else if (fractalType === "inverseMandelbrot") {
+        equationElement.innerHTML = `z<sup>-${exponentValue}</sup> + c`;
     }
 }
+
 
 
 function updateMandStep() {
@@ -68,14 +79,36 @@ function updateMandStep() {
         mand_step = (z, c) => {
             return z.ipow(exponentValue).cadd(juliaConstant);
         };
+    } else if (fractalType === "tricorn") {
+        mand_step = (z, c) => {
+            let conjZ = z.cconj();
+            return conjZ.ipow(exponentValue).cadd(c);
+        };
+    } else if (fractalType === "buffalo") {
+        mand_step = (z, c) => {
+            let absZ = new vec2(Math.abs(z.x), Math.abs(z.y));
+            return absZ.ipow(exponentValue).cmult(z).cadd(c);
+        };
+    } else if (fractalType === "henon") {
+        mand_step = (z, c) => {
+            return new vec2(1 - 1.4 * z.x * z.x + z.y, 0.3 * z.x).cadd(c);
+        };
+    } else if (fractalType === "ikeda") {
+        mand_step = (z, c) => {
+            let t = 0.4 - 6 / (1 + z.x * z.x + z.y * z.y);
+            return new vec2(1 + 0.9 * (z.x * Math.cos(t) - z.y * Math.sin(t)), 0.9 * (z.x * Math.sin(t) + z.y * Math.cos(t))).cadd(c);
+        };
+    } else if (fractalType === "inverseMandelbrot") {
+        mand_step = (z, c) => {
+            return z.ipow(-exponentValue).cadd(c);
+        };
     }
 
     settings.maxDist = getMaxDistForExponent(exponentValue);
     updateEquation();
 }
 
-function updateJuliaDisplay() {
-    const fractalType = document.getElementById("fractal-select").value;
+function updateJuliaDisplay(fractalType) {
     const juliaConstantElement = document.getElementById("julia-constant");
     juliaConstantElement.style.display = (fractalType === "julia") ? "block" : "none";
     document.getElementById("julia-x").textContent = juliaConstant.x.toFixed(2);
@@ -83,8 +116,9 @@ function updateJuliaDisplay() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    const fractalType = document.getElementById("fractal-select").value;
     updateMandStep();
-    updateJuliaDisplay();
+    updateJuliaDisplay(fractalType);
 
     const juliaConstantElement = document.getElementById("julia-constant");
     juliaConstantElement.addEventListener("mousedown", startDragging);
@@ -97,5 +131,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.getElementById("fractal-select").addEventListener("change", (e) => {
     updateMandStep();
-    updateJuliaDisplay();
+    updateJuliaDisplay(e.target.value);
 });

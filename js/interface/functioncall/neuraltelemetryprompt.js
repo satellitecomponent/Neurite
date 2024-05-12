@@ -15,16 +15,9 @@ class NeuralTelemetry {
         };
     }
 
-    // Method to fetch the current exponent
-    getCurrentExponent() {
-        // Retrieve the exponent value from the HTML element displaying it
-        return document.getElementById("exponent_value").textContent;
-    }
-
-    // Method to get the current equation used for generating the Mandelbrot set
     getCurrentEquation() {
-        const exponent = this.getCurrentExponent();
-        return `z^${exponent} + c`;
+        const equationElement = document.getElementById("equation");
+        return equationElement.innerHTML;
     }
 
     // Method to get a range of node titles
