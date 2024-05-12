@@ -3,61 +3,60 @@ async function fetchEmbeddings(text) {
     const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
     const model = document.getElementById("embeddingsModelSelect").value;
 
-    console.log(`local?`, useLocalEmbeddings, `model`, model);
+    const API_KEY = document.getElementById("api-key-input").value;
 
-    // If the "Use Local Embeddings" checkbox is checked, use the local model
-    if (useLocalEmbeddings && window.generateEmbeddings) {
-        try {
-            const output = await window.generateEmbeddings(text, {
-                pooling: 'mean',
-                normalize: true,
-            });
-            // Convert Float32Array to regular array
-            return Array.from(output.data);
-        } catch (error) {
-            console.error("Error generating local embeddings:", error);
-            return [];
-        }
-    } else {
-        // Use the API for embeddings
-
-        const API_KEY = document.getElementById("api-key-input").value;
-        if (!API_KEY) {
-            alert("Please enter your API key");
-            return;
-        }
-
-        const API_URL = "https://api.openai.com/v1/embeddings";
-
-        const headers = new Headers();
-        headers.append("Content-Type", "application/json");
-        headers.append("Authorization", `Bearer ${API_KEY}`);
-
-        const body = JSON.stringify({
-            model: model,
-            input: text,
-        });
-
-        const requestOptions = {
-            method: "POST",
-            headers: headers,
-            body: body,
-        };
-
-        try {
-            const response = await fetch(API_URL, requestOptions);
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Error fetching embeddings:", errorData);
+    // First check for API key and decide to use local or API based on its presence
+    if (!API_KEY || useLocalEmbeddings) {
+        if (window.generateEmbeddings) {
+            // Local embeddings logic
+            try {
+                const output = await window.generateEmbeddings(text, {
+                    pooling: 'mean',
+                    normalize: true,
+                });
+                return Array.from(output.data); // Convert Float32Array to regular array
+            } catch (error) {
+                console.error("Error generating local embeddings:", error);
                 return [];
             }
-
-            const data = await response.json();
-            return data.data[0].embedding;
-        } catch (error) {
-            console.error("Error fetching embeddings:", error);
+        } else {
+            console.error("Local embedding function not available.");
+            alert("Local embedding function is not available and no API key provided.");
             return [];
         }
+    }
+
+    // Proceed with API call if API key is present and not using local embeddings
+    const API_URL = "https://api.openai.com/v1/embeddings";
+
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", `Bearer ${API_KEY}`);
+
+    const body = JSON.stringify({
+        model: model,
+        input: text,
+    });
+
+    const requestOptions = {
+        method: "POST",
+        headers: headers,
+        body: body,
+    };
+
+    try {
+        const response = await fetch(API_URL, requestOptions);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Error fetching embeddings:", errorData);
+            return [];
+        }
+
+        const data = await response.json();
+        return data.data[0].embedding;
+    } catch (error) {
+        console.error("Error fetching embeddings:", error);
+        return [];
     }
 }
 

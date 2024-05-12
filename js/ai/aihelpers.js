@@ -86,12 +86,16 @@ function removeLastResponse() {
 function haltResponse() {
     if (aiResponding) {
         // AI is responding, so we want to stop it
-        controller.abort();
+        if (currentController) {
+            currentController.abort(); // Ensure you use the correct controller instance
+        }
         aiResponding = false;
         shouldContinue = false;
-        isFirstAutoModeMessage = true;  // Set the isFirstAutoModeMessage to true here
+        isFirstAutoModeMessage = true;
+
+        // UI updates, ensure they are always executed
         document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-        document.getElementById("prompt").value = latestUserMessage; // Add the last user message to the prompt input
+        document.getElementById("prompt").value = latestUserMessage; // Use the last user message as prompt
     }
 }
 

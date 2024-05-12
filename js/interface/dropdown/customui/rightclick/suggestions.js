@@ -209,9 +209,13 @@ function getDynamicActionDetails(uniqueIdentifier, node) {
 }
 
 function loadPinnedItemsToContextMenu(menu, node) {
+    const nodeActions = getNodeActions(node); // Get actions directly based on node
     const pinnedItems = pinnedItemsManager.getPinnedItems();
 
-    pinnedItems.forEach(uniqueIdentifier => {
+    // Filter pinned items to include only those that have corresponding actions in the current node's action set
+    const relevantPinnedItems = pinnedItems.filter(uniqueIdentifier => uniqueIdentifier in nodeActions);
+
+    relevantPinnedItems.forEach(uniqueIdentifier => {
         const currentDetails = getDynamicActionDetails(uniqueIdentifier, node); // Fetch current details
         pinSuggestionToContextMenu(uniqueIdentifier, menu, node, true, currentDetails.displayText); // Pass current display text
     });

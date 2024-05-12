@@ -57,6 +57,9 @@ function openModal(contentId) {
         case 'importLinkModalContent':
             modalTitle.textContent = 'Import Link Text';
             break;
+        case 'nodeConnectionModal':
+            modalTitle.textContent = 'Connect Notes';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
