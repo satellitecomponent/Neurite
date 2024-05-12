@@ -138,7 +138,7 @@ class BaseNodeActions {
             'toggleCollapse': ["collapse", "fold", "minimize", "expand", "unfold", "maximize"],
             'toggleAutomata': ["automata"],
             'spawnNode': ["automata", "birth", "create"],
-            //'connect': ["automata", "edge", "link"],
+            'connect': ["edge", "link"],
             //'moveNode': ["move", "shift", "translate"],
             //'moveTo': ["move", "shift", "translate"]
         };
@@ -155,13 +155,9 @@ class BaseNodeActions {
     // Common methods for all nodes
     updateSensor() { this.node.updateSensor(); }
     zoomTo() { neuriteZoomToNodeTitle(this.node); }
-    connect(targetNode = null) {
-        // Direct connection mode
-        if (targetNode) {
-            connectNodes(this.node, targetNode);
-        } else {
-            console.error("Target node is required in node mode 1");
-        }
+    connect() {
+        setupConnectModal(this.node);
+        hideContextMenu();
     }
     toggleSelect() {
         applyActionToSelectedNodes((node) => {

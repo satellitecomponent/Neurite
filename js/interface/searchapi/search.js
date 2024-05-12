@@ -1,5 +1,4 @@
-
-function searchNodesBy(searchTerm) {
+function searchNodesBy(searchTerm, maxResults = null) {
     let keywords = searchTerm.toLowerCase().split(' ');
     let matched = [];
     for (let n of nodes) {
@@ -10,8 +9,6 @@ function searchNodesBy(searchTerm) {
             }
         }
         if (numMatches > 0) {
-            n.content.classList.add("search_matched");
-            n.content.classList.remove("search_nomatch");
             matched.push({
                 node: n,
                 numMatches: numMatches
@@ -21,8 +18,22 @@ function searchNodesBy(searchTerm) {
             n.content.classList.add("search_nomatch");
         }
     }
+    // Sort by the number of matches in descending order
     matched.sort((a, b) => b.numMatches - a.numMatches);
-    return matched.map(m => m.node);
+
+    // Apply classes only to the top 'maxResults' (or all if maxResults is null)
+    matched.forEach((match, index) => {
+        if (!maxResults || index < maxResults) {
+            match.node.content.classList.add("search_matched");
+            match.node.content.classList.remove("search_nomatch");
+        } else {
+            match.node.content.classList.remove("search_matched");
+            match.node.content.classList.add("search_nomatch");
+        }
+    });
+
+    // Return all matched nodes if needed or just the top results
+    return (maxResults ? matched.slice(0, maxResults) : matched).map(m => m.node);
 }
 
 function clearSearch() {

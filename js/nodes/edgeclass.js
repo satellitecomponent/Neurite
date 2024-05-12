@@ -1,3 +1,14 @@
+function findExistingEdge(node1, node2) {
+    // Assuming each node's edges array contains references to edges
+    for (let edge of node1.edges) {
+        if (node2.edges.includes(edge)) {
+            return edge; // Return the common edge if found
+        }
+    }
+    return null; // Return null if no common edge exists
+}
+
+
 // Global map to store directionality states of edges
 const edgeDirectionalityMap = new Map();
 
@@ -105,18 +116,38 @@ class Edge {
         this.arrowSvg.classList.remove('edge-arrow-hover');
         this.borderSvg.classList.remove('edge-border-hover'); // Class for normal state of the border
     }
+
     onwheel = (event) => {
         if (nodeMode) {
             let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
-            this.length *= amount;
-            let avg = this.center();
-            for (let n of this.pts) {
-                n.pos = n.pos.minus(avg).scale(amount).plus(avg);
+            let selectedNodes = getSelectedNodes(); // Function to get currently selected nodes
+            let scaleAllConnectedEdges = false;
+
+            // Determine if this edge should be scaled based on both nodes being selected
+            if (selectedNodes.length > 0 && this.pts.every(pt => selectedNodes.includes(pt))) {
+                scaleAllConnectedEdges = true;
+                let uniqueEdges = collectEdgesFromSelectedNodes(selectedNodes);
+                uniqueEdges.forEach(edge => edge.scaleLength(amount));
             }
-            if (this.pts[0] !== undefined) {
-                this.pts[0].updateEdgeData();
+
+            // Default behavior when not both nodes are selected
+            if (!scaleAllConnectedEdges) {
+                this.scaleLength(amount);
             }
-            cancel(event);
+
+            cancel(event);  // Prevent default behavior and stop propagation
+        }
+    };
+
+
+    scaleLength(amount) {
+        let avg = this.center();
+        this.length *= amount;
+        this.pts.forEach(n => {
+            n.pos = n.pos.minus(avg).scale(amount).plus(avg);
+        });
+        if (this.pts.length > 0 && this.pts[0]) {
+            this.pts[0].updateEdgeData();  // Update the first point's edge data
         }
     }
 

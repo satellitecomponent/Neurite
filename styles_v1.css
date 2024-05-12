@@ -556,6 +556,37 @@ input[type="text"i].title-input {
     width: 500px;
 }
 
+#nodeList {
+    list-style-type: none;
+    padding: 0;
+}
+
+    #nodeList li {
+        cursor: pointer;
+        padding: 8px 12px;
+        border-bottom: 1px solid #bbb;
+    }
+
+        #nodeList li.connected {
+            background-color: #293e34; /* Light green background for connected nodes */
+        }
+
+        #nodeList li.disconnected {
+        }
+
+        #nodeList li:hover {
+            background-color: #555;
+            color: white;
+        }
+
+        #nodeList li.connected:hover {
+            background-color: #54876f; /* Light green background for connected nodes */
+        }
+
+        #nodeList li:active {
+            background-color: #e0e0e0;
+        }
+
 
 /* Dropdown menu styles */
 .dropdown {

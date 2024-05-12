@@ -24,7 +24,6 @@ function createSyntaxTextarea() {
     function updateEditorHeight() {
         // Get the current height and styles of the editor wrapper
         const wrapperHeight = editorWrapper.offsetHeight;
-        const wrapperStyle = window.getComputedStyle(editorWrapper);
         const maxHeight = 300; // Maximum height allowed for the wrapper
 
         // Early exit if the height is set to '100%' or exceeds the maximum allowed height
