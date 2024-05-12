@@ -233,10 +233,15 @@
                 <input type="checkbox" id="connectNotes">
                 <label for="connectNotes">Connect</label>
             </div>
-            
+
 
             <button class="api-modal-button" onclick="confirmImport()">Confirm Import</button>
         </div>
+    </div>
+
+    <div id="nodeConnectionModal" style="display:none;">
+        <input type="text" id="connectModalSearchBar" placeholder="search notes...">
+        <ul id="nodeList"></ul>
     </div>
 
     <div id="alertModal" style="display: none;">
@@ -1193,6 +1198,8 @@
     <script src="js/nodes/nodeinteraction/togglenodestate.js"></script>
     <script src="js/nodes/nodeinteraction/filternodes.js"></script>
     <script src="js/nodes/nodeinteraction/bundlecode.js"></script>
+    <script src="js/nodes/nodeinteraction/modalconnect.js"></script>
+
     <script src="js/nodes/createnodes/window.js"></script>
     <script src="js/nodes/createnodes/createnodes.js"></script>
     <script src="js/nodes/createnodes/nodedef.js"></script>

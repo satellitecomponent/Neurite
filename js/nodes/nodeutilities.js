@@ -59,6 +59,18 @@ function getCentroidOfSelectedNodes() {
     return sumPos.scale(1 / selectedNodes.length);
 }
 
+function collectEdgesFromSelectedNodes(selectedNodes) {
+    let uniqueEdges = new Set();
+    selectedNodes.forEach(node => {
+        node.edges.forEach(edge => {
+            if (edge.pts.every(pt => selectedNodes.includes(pt))) {
+                uniqueEdges.add(edge);
+            }
+        });
+    });
+    return uniqueEdges;
+}
+
 function edgeFromJSON(o, nodeMap) {
     let pts = o.p.map((k) => nodeMap[k]);
 

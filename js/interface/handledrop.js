@@ -51,7 +51,7 @@ function makeIconDraggable(iconDiv) {
     iconDiv.addEventListener('click', function (event) {
         if (!isDraggingIcon) {
             // Handle the click event here
-            console.log('Icon clicked:', iconDiv.classList[1]);
+            //console.log('Icon clicked:', iconDiv.classList[1]);
             // Add your custom click event handling logic
             if (iconDiv.classList.contains('note-icon')) {
                 openModal('noteModal');

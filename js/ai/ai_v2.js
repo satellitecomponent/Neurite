@@ -1,7 +1,6 @@
 ﻿
 let aiResponding = false;
 let latestUserMessage = null;
-let controller = new AbortController();
 let shouldContinue = true;
 
 
@@ -33,8 +32,9 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         if (failCounter >= MAX_FAILS) {
             console.error("Max attempts reached. Stopping further API calls.");
             shouldContinue = false;
-            if (controller) {
-                controller.abort();
+            if (currentController) {
+                currentController.abort();
+                currentController = null;
             }
             resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
         }
@@ -149,7 +149,8 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
         onAfterCall,
         onStreamingResponse,
         onError,
-        modelOverride
+        modelOverride,
+        controller: node.controller  // Pass the node-specific controller
     });
 }
 
@@ -158,7 +159,17 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
 
 let currentController = null;
 
-async function callAiApi({ messages, stream = false, customTemperature = null, onBeforeCall, onAfterCall, onStreamingResponse, onError, modelOverride = null }) {
+async function callAiApi({
+    messages,
+    stream = false,
+    customTemperature = null,
+    onBeforeCall,
+    onAfterCall,
+    onStreamingResponse,
+    onError,
+    modelOverride = null,
+    controller = null  // Accept a controller as a parameter, potentially null
+}) {
     if (useDummyResponses) {
         onBeforeCall();
         const randomResponse = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
@@ -173,7 +184,12 @@ async function callAiApi({ messages, stream = false, customTemperature = null, o
         return;
     }
 
-    // Get API parameters, including the locally determined API URL
+    // Determine whether to use the provided controller or create a new one
+    if (!controller) {
+        controller = new AbortController();  // Create a new AbortController if one is not provided
+        currentController = controller;
+    }
+
     const params = getAPIParams(messages, stream, customTemperature, modelOverride);
     console.log("Message Array", messages);
     console.log("Token count:", getTokenCount(messages));
@@ -183,12 +199,11 @@ async function callAiApi({ messages, stream = false, customTemperature = null, o
         return;
     }
 
-    currentController = new AbortController();
     let requestOptions = {
         method: "POST",
         headers: params.headers,
         body: params.body,
-        signal: currentController.signal,
+        signal: controller.signal,  // Use the signal from the appropriate controller
     };
 
     onBeforeCall();  // Pre API call UI updates
@@ -199,19 +214,18 @@ async function callAiApi({ messages, stream = false, customTemperature = null, o
 
         let responseData = '';
         if (stream) {
-            // Await the complete streamed response
             responseData = await streamAiResponse(response, onStreamingResponse);
         } else {
             const data = await response.json();
             responseData = data.choices && data.choices[0].message ? data.choices[0].message.content.trim() : '';
         }
 
-        return responseData; // This is either the full streamed response or the directly fetched response
+        return responseData;  // This is either the full streamed response or the directly fetched response
     } catch (error) {
         console.error("Error:", error);
         onError(error.message || error);
     } finally {
-        onAfterCall(); // Post API call UI updates
+        onAfterCall();  // Post API call UI updates
     }
 }
 
