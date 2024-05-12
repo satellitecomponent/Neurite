@@ -92,3 +92,10 @@ class ZetSyntaxDisplay {
         displayDiv.innerHTML = content;
     }
 }
+
+document.addEventListener('click', function (event) {
+    if (event.target.classList.contains('node-title-sd')) {
+        const title = event.target.textContent;
+        handleTitleClick(title, myCodeMirror);
+    }
+});

@@ -216,7 +216,7 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     white-space: pre-wrap; /* Ensure text wrapping and preserve whitespace */
     word-wrap: inherit; /* Break long words to the next line */
     line-height: 1.5em;
