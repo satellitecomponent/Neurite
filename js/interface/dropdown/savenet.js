@@ -316,7 +316,7 @@ function collectAdditionalSaveObjects() {
     const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
 
     // Get the selected fractal type from localStorage
-    const selectedFractalType = localStorage.getItem('fractal-select_selected');
+    const selectedFractalType = localStorage.getItem('fractal-select');
     const fractalTypeSaveElement = `<div id="fractal-type" style="display:none;">${encodeURIComponent(JSON.stringify(selectedFractalType))}</div>`;
 
     // Combine both slider values and saved views in one string
@@ -361,7 +361,9 @@ function restoreAdditionalSaveObjects(d) {
         const fractalSelectElement = document.getElementById('fractal-select');
         let fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
         if (fractalType) {
-            fractalSelectElement.value = selectedFractalType;
+            fractalSelectElement.value = fractalType;
+            updateSelectedOptionDisplay(fractalSelectElement);
+            updateJuliaDisplay(fractalType);
         }
         fractalTypeSaveElement.remove();
     }

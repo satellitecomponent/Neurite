@@ -78,14 +78,11 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
     });
 
     if (displayDiv) {
-        displayDiv.addEventListener('click', function (event) {
-            if (event.target.classList.contains('node-title-sd')) {
-                const title = event.target.textContent;
-                handleTitleClick(title, myCodeMirror);
-            }
+        userInputTextarea.addEventListener('scroll', function (event) {
+            syncDisplayFromInputTextareaScroll(this, displayDiv);
         });
 
-        userInputTextarea.addEventListener('scroll', function (event) {
+        userInputTextarea.addEventListener('focus', function (event) {
             syncDisplayFromInputTextareaScroll(this, displayDiv);
         });
     }
