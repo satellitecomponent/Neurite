@@ -315,8 +315,56 @@ function collectAdditionalSaveObjects() {
     const mandelbrotParams = neuriteGetMandelbrotCoords();
     const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
 
+    // Get the selected fractal type from localStorage
+    const selectedFractalType = localStorage.getItem('fractal-select_selected');
+    const fractalTypeSaveElement = `<div id="fractal-type" style="display:none;">${encodeURIComponent(JSON.stringify(selectedFractalType))}</div>`;
+
     // Combine both slider values and saved views in one string
-    return savedInputValues + savedViewsElement + mandelbrotSaveElement;
+    return savedInputValues + savedViewsElement + mandelbrotSaveElement + fractalTypeSaveElement;
+}
+
+function restoreAdditionalSaveObjects(d) {
+
+    let savedViewsElement = d.querySelector("#saved-views");
+    if (savedViewsElement) {
+        let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
+        savedViews = JSON.parse(savedViewsContent);
+        if (savedViews) {
+            // Update the cache
+            updateSavedViewsCache();
+
+            displaySavedCoordinates();
+        }
+        savedViewsElement.remove();
+    }
+
+    let sliderValuesElement = d.querySelector("#saved-input-values");
+    if (sliderValuesElement) {
+        const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
+        localStorage.setItem('inputValues', sliderValuesContent);
+        sliderValuesElement.remove();
+    }
+
+    // Restore sliders immediately after their values have been set
+    restoreInputValues();
+
+    // Extract the Mandelbrot parameters and directly apply them
+    let mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
+    if (mandelbrotSaveElement) {
+        let mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
+        neuriteSetMandelbrotCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
+        mandelbrotSaveElement.remove();
+    }
+
+    let fractalTypeSaveElement = d.querySelector("#fractal-type");
+    if (fractalTypeSaveElement) {
+        const fractalSelectElement = document.getElementById('fractal-select');
+        let fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
+        if (fractalType) {
+            fractalSelectElement.value = selectedFractalType;
+        }
+        fractalTypeSaveElement.remove();
+    }
 }
 
 function neuriteSaveEvent(existingTitle = null) {
@@ -398,40 +446,6 @@ function clearNet() {
 
     // Clear the CodeMirror content
     window.myCodemirror.setValue('');
-}
-
-function restoreAdditionalSaveObjects(d) {
-
-    let savedViewsElement = d.querySelector("#saved-views");
-    if (savedViewsElement) {
-        let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
-        savedViews = JSON.parse(savedViewsContent);
-        if (savedViews) {
-            // Update the cache
-            updateSavedViewsCache();
-
-            displaySavedCoordinates();
-        }
-        savedViewsElement.remove();
-    }
-
-    let sliderValuesElement = d.querySelector("#saved-input-values");
-    if (sliderValuesElement) {
-        const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
-        localStorage.setItem('inputValues', sliderValuesContent);
-        sliderValuesElement.remove();
-    }
-
-    // Restore sliders immediately after their values have been set
-    restoreInputValues();
-
-    // Extract the Mandelbrot parameters and directly apply them
-    let mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
-    if (mandelbrotSaveElement) {
-        let mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
-        neuriteSetMandelbrotCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
-        mandelbrotSaveElement.remove();
-    }
 }
 
 function loadNet(text, clobber, createEdges = true) {

@@ -710,9 +710,20 @@
                             <div class="fractal-settings-container" id="fractalSettingsContainer">
                                 <div class="fractal-settings-panel hidden">
                                     <div class="settingsSlider centered" style="margin-bottom: 10px;">
-                                        <label style="white-space: nowrap;">
-                                            z <sup id="exponent_value" style="color: powderblue">2</sup> + c
-                                        </label>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <label style="white-space: nowrap;">
+                                                <span id="equation"></span>
+                                            </label>
+                                            <div id="julia-constant" style="display: none;">(<span id="julia-x">0.256</span>, <span id="julia-y">0.01</span>)
+                                            </div>
+                                            <div class="dropdown-container">
+                                                <select id="fractal-select" class="model-selector custom-select">
+                                                    <option value="mandelbrot">Mandelbrot</option>
+                                                    <option value="burningShip">Burning Ship</option>
+                                                    <option value="julia">Julia Set</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <input id="exponent" type="range" min="1" max="8" value="2">
                                     </div>
                                     <div class="settingsSlider centered" style="margin-bottom: 10px;">
@@ -1180,6 +1191,7 @@
 
 
     <script src="js/mandelbrot/mandelbrot.js"></script>
+    <script src="js/mandelbrot/updatefractal.js"></script>
 
     <script src="js/interface/interface.js"></script>
     <script src="js/interface/handledrop.js"></script>
