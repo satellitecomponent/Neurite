@@ -218,7 +218,7 @@ body {
     overflow: auto;
     scroll-behavior: auto;
     white-space: pre-wrap; /* Ensure text wrapping and preserve whitespace */
-    word-wrap: inherit; /* Break long words to the next line */
+    word-wrap: break-word; /* Break long words to the next line */
     line-height: 1.5em;
     box-sizing: border-box;
     padding-left: 22px;
