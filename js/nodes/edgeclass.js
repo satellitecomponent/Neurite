@@ -225,38 +225,17 @@ class Edge {
         const stressValue = Math.max(this.stress(), 0.01);
         let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
         wscale = Math.min(wscale, this.maxWidth);
-        let path = "M ";
-        let c = this.center();
+
         let validPath = true;
+        let path = "";
 
-        // Constructing the main path
-        for (let n of this.pts) {
-            let r = n.scale * wscale;
-            let minusC = n.pos.minus(c);
-            let rotated = minusC.rot90();
-
-            if (rotated.x !== 0 || rotated.y !== 0) {
-                let left = rotated.normed(r);
-
-                if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
-                    path += toSVG(n.pos.minus(left)).str();
-                    path += " L ";
-                    path += toSVG(left.plus(n.pos)).str() + " ";
-                } else {
-                    validPath = false;
-                    break;
-                }
-            }
-        }
-
-        // Closing the main path
-        let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
-        if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
-            path += " " + toSVG(firstPoint).str() + "z";
+        if (this.directionality.start && this.directionality.end) {
+            // Use straight edge for directionality cases
+            path = this.createStraightEdgePath(wscale);
         } else {
-            validPath = false;
+            // Use curved edge for non-directionality cases
+            path = this.createCurvedEdgePath(wscale);
         }
-
 
         if (validPath) {
             this.html.setAttribute("d", path);
@@ -281,6 +260,97 @@ class Edge {
                 this.borderSvg.style.display = 'none';
             }
         }
+    }
+
+    createStraightEdgePath(wscale) {
+        let path = "M ";
+        let c = this.center();
+        let validPath = true;
+
+        // Constructing the straight edge path
+        for (let n of this.pts) {
+            let r = n.scale * wscale;
+            let minusC = n.pos.minus(c);
+            let rotated = minusC.rot90();
+
+            if (rotated.x !== 0 || rotated.y !== 0) {
+                let left = rotated.normed(r);
+
+                if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
+                    path += toSVG(n.pos.minus(left)).str();
+                    path += " L ";
+                    path += toSVG(left.plus(n.pos)).str() + " ";
+                } else {
+                    validPath = false;
+                    break;
+                }
+            }
+        }
+
+        // Closing the straight edge path
+        let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
+        if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
+            path += " " + toSVG(firstPoint).str() + "z";
+        } else {
+            validPath = false;
+        }
+
+        return validPath ? path : "";
+    }
+
+    createCurvedEdgePath(wscale) {
+        let path = "M ";
+        let validPath = true;
+
+        // Constructing the curved edge path
+        if (this.pts.length >= 2) {
+            let startPoint = this.pts[0].pos;
+            let endPoint = this.pts[this.pts.length - 1].pos;
+            let startScale = this.pts[0].scale;
+            let endScale = this.pts[this.pts.length - 1].scale;
+
+            let horizontal = (startPoint.x - endPoint.x) / 1.3;
+            let vertical = (startPoint.y - endPoint.y);
+            let distance = Math.sqrt(horizontal * horizontal + vertical * vertical);
+            let curve = 1;
+
+            let positiveVertical = vertical > 0;
+            curve = Math.min(curve, Math.abs(vertical)) / 2;
+
+            // Calculate the perpendicular vector with adjusted scale based on node scales
+            let startPerp = new vec2(vertical, -horizontal).normed(startScale * wscale * 1);
+            let endPerp = new vec2(vertical, -horizontal).normed(endScale * wscale * 1);
+
+            // Calculate the points for the curved path
+            let startLeft = startPoint.minus(startPerp);
+            let startRight = startPoint.plus(startPerp);
+            let endLeft = endPoint.minus(endPerp);
+            let endRight = endPoint.plus(endPerp);
+
+            // Adjust the control points based on the distance
+            let controlPointLeft1 = startLeft.minus(new vec2(horizontal, 0)).minus(new vec2(0, positiveVertical ? curve * distance : -curve * distance));
+            let controlPointLeft2 = endLeft.plus(new vec2(horizontal, 0)).plus(new vec2(0, positiveVertical ? curve * distance : -curve * distance));
+            let controlPointRight1 = startRight.minus(new vec2(horizontal, 0)).plus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
+            let controlPointRight2 = endRight.plus(new vec2(horizontal, 0)).minus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
+
+            // Construct the curved path
+            path += toSVG(startLeft).str();
+            path += " C ";
+            path += toSVG(controlPointLeft1).str() + ", ";
+            path += toSVG(controlPointLeft2).str() + ", ";
+            path += toSVG(endLeft).str();
+            path += " L ";
+            path += toSVG(endRight).str();
+            path += " C ";
+            path += toSVG(controlPointRight2).str() + ", ";
+            path += toSVG(controlPointRight1).str() + ", ";
+            path += toSVG(startRight).str();
+            path += " Z";
+        } else {
+            validPath = false;
+        }
+
+        return validPath ? path : "";
     }
     step(dt) {
         if (dt === undefined || isNaN(dt)) {
@@ -351,7 +421,6 @@ class Edge {
         }
     }
 }
-
 function createArrowSvg(startPoint, endPoint, startScale, endScale, wscale) {
     let perspectiveFactor = 0.5; // Range [0, 1]
 
