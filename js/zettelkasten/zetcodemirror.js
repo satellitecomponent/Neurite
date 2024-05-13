@@ -619,7 +619,18 @@ function handleTitleClick(title, cm) {
     // Scroll to the title
     const node = scrollToTitle(title, cm);
     if (node) {
-        neuriteZoomToNodeTitle(node, zoomLevel = 1.0)
+        let bb = node.content.getBoundingClientRect();
+
+        // Check if the bounding rectangle exists
+        if (bb && bb.width > 0 && bb.height > 0) {
+            // Zoom to fit the node if the bounding rectangle exists
+            node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.5);
+        } else {
+            // Use alternative zoom method if the bounding rectangle does not exist (allows best of both options, i.e. zoomto with exact height calculations when available, and when not currently in the viewport, a set value.)
+            node.zoom_to(.5);
+        }
+        autopilotSpeed = settings.autopilotSpeed;
     }
 }
 

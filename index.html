@@ -50,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.de466080.css">
+  <link rel="stylesheet" href="./assets/index.1851ee7d.css">
 </head>
 
 <body id="body">
@@ -501,6 +501,20 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <br />
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center;">
+                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">Embeddings:</label><br>
+                                        <div class="dropdown-container">
+                                            <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
+                                                <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                                <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                                <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                                                <option value="local-embeddings">Local Embeddings</option>
+                                            </select>
+                                        </div>
+                                        <!-- Hide the original local embeddings checkbox -->
+                                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
+                                    </div>
 
                                 </div>
 
@@ -649,21 +663,7 @@
                 <div id="tabExtract" class="tabcontent">
                     <!-- Extract tab content here -->
                     <div class="submenu">
-                        <div style="display: flex; justify-content: space-evenly; align-items: center;">
-                            <label for="embeddingsModelSelect">Embeddings:</label><br>
-                            <div class="dropdown-container">
-                                <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
-                                    <option value="text-embedding-3-small">text-embedding-3-small</option>
-                                    <option value="text-embedding-3-large">text-embedding-3-large</option>
-                                    <option value="text-embedding-ada-002">text-embedding-ada-002</option>
-                                    <option value="local-embeddings">Local Embeddings</option>
-                                </select>
-                            </div>
-                        </div>
-                        <br>
-                        <!-- Hide the original local embeddings checkbox -->
-                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
-                        <label for="local-embeddings-checkbox" style="display: none;">: Local Embeddings</label>
+                       
                         <label for="inputKeyExtract">Key:</label><br>
                         <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
                         <label for="inputTextExtract">Text:</label><br>

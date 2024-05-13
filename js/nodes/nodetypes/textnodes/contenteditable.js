@@ -77,56 +77,60 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
         scrollToTitle(title, noteInput, lineNumber);
     });
 
-    if (displayDiv) {
-        userInputTextarea.addEventListener('scroll', function (event) {
-            syncDisplayFromInputTextareaScroll(this, displayDiv);
-        });
-
-        userInputTextarea.addEventListener('focus', function (event) {
-            syncDisplayFromInputTextareaScroll(this, displayDiv);
-        });
-    }
+    userInputTextarea.addEventListener('scroll', function (event) {
+        syncDisplayFromInputTextareaScroll(this, displayDiv);
+    });
 
     textarea.addEventListener('change', (event) => {
         if (!isProgrammaticChange) {
             syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
-        }
-        if (displayDiv) {
-            ZetSyntaxDisplay.syncAndHighlight(displayDiv, textarea);
         }
         let userHasScrolledManually = handleUserScroll(userInputTextarea);
 
         if (!userHasScrolledManually) {
             scrollToBottom(userInputTextarea, displayDiv);
         }
+        if (displayDiv) {
+            ZetSyntaxDisplay.syncAndHighlight(displayDiv, textarea);
+            syncDisplayFromInputTextareaScroll(this, displayDiv);
+        }
     });
 
     // Highlight Codemirror text on focus of contenteditable div
     userInputTextarea.onfocus = function () {
+        syncDisplayFromInputTextareaScroll(this, displayDiv);
         const title = node.getTitle();
         highlightNodeSection(title, myCodeMirror);
     };
 
-    document.addEventListener('keydown', function (event) {
-        if (event.altKey) {
+    userInputTextarea.addEventListener('mousedown', function (event) {
+        if (isEventInsideElement(event, userInputTextarea) && !event.altKey) {
+            event.stopPropagation();
+            // We still allow default behavior, so the contenteditable div remains interactable.
+        }
+    }, true); // Use capture phase to catch the event early
+
+    userInputTextarea.addEventListener('keydown', function (event) {
+        if (event.altKey && document.activeElement === userInputTextarea) {
             userInputTextarea.style.userSelect = 'none';
             userInputTextarea.style.pointerEvents = 'none';
         }
     });
 
-    document.addEventListener('keyup', function (event) {
+    userInputTextarea.addEventListener('keyup', function (event) {
         if (!event.altKey) {
             userInputTextarea.style.userSelect = 'auto';
             userInputTextarea.style.pointerEvents = 'auto';
         }
     });
 
-    document.addEventListener('mousedown', function (event) {
-        if (isEventInsideElement(event, userInputTextarea) && !event.altKey) {
-            event.stopPropagation();
-            // We still allow default behavior, so the contenteditable div remains interactable.
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+            userInputTextarea.style.userSelect = 'auto';
+            userInputTextarea.style.pointerEvents = 'auto';
         }
-    }, true); // Use capture phase to catch the event early
+    });
+
 
     userInputTextarea.addEventListener('paste', function (event) {
         event.stopPropagation();
