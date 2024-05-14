@@ -45,16 +45,16 @@ async function sendLLMNodeMessage(node, message = null) {
 
     // Logic for dynamic model switching based on connected nodes
     const hasImageNodes = allConnectedNodes.some(node => node.isImageNode);
-    selectedModel = determineModel(LocalLLMSelectValue, hasImageNodes);
+    selectedModel = determineAiNodeModel(LocalLLMSelectValue, hasImageNodes);
 
-    function determineModel(LocalLLMValue, hasImageNodes) {
+    function determineAiNodeModel(LocalLLMValue, hasImageNodes) {
         // Check if the local or global model is set to ollama.
         const isOllamaSelected = LocalLLMValue === 'ollama' ||
             (LocalLLMValue === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
 
         // If image nodes are present, and ollama is not selected, use the vision model.
         if (hasImageNodes && !isOllamaSelected) {
-            return 'gpt-4-vision-preview';
+            return 'gpt-4o';
         } else if (hasImageNodes && isOllamaSelected) {
             // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
             return 'LLaVA 7B';
@@ -67,9 +67,7 @@ async function sendLLMNodeMessage(node, message = null) {
         }
     }
 
-    const isVisionModel = selectedModel.includes('gpt-4-vision');
-    const isAssistant = selectedModel.includes('1106');
-    console.log('Selected Model:', selectedModel, "Vision", isVisionModel, "Assistant", isAssistant);
+
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
     const customInstructions = customInstructionsTextarea ? customInstructionsTextarea.value.trim() : "";
@@ -110,7 +108,6 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
     const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.id);
 
     let wikipediaSummaries;
-    let keywords = '';
 
     if (isWikipediaEnabled(nodeIndex)) {
 
@@ -177,10 +174,35 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         messages.push(googleSearchMessage);
     }
 
-    if (isEmbedEnabled(node.index)) {
-        // Obtain relevant keys based on the user message and recent context
-        const relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery);
+    let relevantKeys = [];
 
+    // Check for connected link nodes
+    const hasLinkNodes = allConnectedNodes.some(node => node.isLink);
+
+    if (hasLinkNodes) {
+        const linkNodes = allConnectedNodes.filter(node => node.isLink);
+        const linkUrls = linkNodes.map(node => node.linkUrl);
+
+        // Check if each link URL exists in the vector store
+        const allKeysFromServer = await getAllKeysFromServer();
+        relevantKeys = linkUrls.filter(url => allKeysFromServer.includes(url));
+
+        // Handle not extracted links
+        const notExtractedLinks = linkUrls.filter(url => !allKeysFromServer.includes(url));
+        if (notExtractedLinks.length > 0) {
+            await handleNotExtractedLinks(notExtractedLinks);
+        }
+
+        // Refresh the relevant keys after handling not extracted links
+        const updatedKeysFromServer = await getAllKeysFromServer();
+        relevantKeys = linkUrls.filter(url => updatedKeysFromServer.includes(url));
+    } else if (isEmbedEnabled(node.index)) {
+        // Obtain relevant keys based on the user message and recent context
+        relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery);
+    }
+
+    // Only proceed if we have relevant keys
+    if (relevantKeys.length > 0) {
         // Get relevant chunks based on the relevant keys
         const relevantChunks = await getRelevantChunks(node.latestUserMessage, searchResults, topN, relevantKeys);
         const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
@@ -192,6 +214,8 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         };
 
         messages.push(embedMessage);
+    } else {
+        console.warn('No relevant keys found or server did not respond.');
     }
 
     let allConnectedNodesData = getAllConnectedNodesData(node, true);
@@ -205,24 +229,21 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
 
     const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
 
-
-    if (isVisionModel) {
-        allConnectedNodes.forEach(connectedNode => {
-            if (connectedNode.isImageNode) {
-                const imageData = getImageNodeData(connectedNode);
-                if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
-                    // Construct an individual message for each image
-                    messages.push({
-                        role: 'user',
-                        content: [imageData] // Contains only the image data
-                    });
-                    remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
-                } else {
-                    console.warn('Not enough tokens to include the image:', connectedNode);
-                }
+    allConnectedNodes.forEach(connectedNode => {
+        if (connectedNode.isImageNode) {
+            const imageData = getImageNodeData(connectedNode);
+            if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
+                // Construct an individual message for each image
+                messages.push({
+                    role: 'user',
+                    content: [imageData] // Contains only the image data
+                });
+                remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
+            } else {
+                console.warn('Not enough tokens to include the image:', connectedNode);
             }
-        });
-    }
+        }
+    });
 
 
     let messageTrimmed = false;
@@ -317,14 +338,6 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
 
     node.aiResponding = true;
     node.userHasScrolled = false;
-
-    // Get the loading and error icons
-    let aiLoadingIcon = document.getElementById(`aiLoadingIcon-${nodeIndex}`);
-    let aiErrorIcon = document.getElementById(`aiErrorIcon-${nodeIndex}`);
-
-    // Hide the error icon and show the loading icon
-    aiErrorIcon.style.display = 'none'; // Hide error icon
-    aiLoadingIcon.style.display = 'block'; // Show loading icon
 
 
     // Re-evaluate the state of connected AI nodes

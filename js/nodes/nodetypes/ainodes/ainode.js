@@ -675,50 +675,13 @@ function setupContextSpecificSliderListeners(node) {
     // Additional specific behaviors for other sliders can be added here
 }
 
-
 function createAndConfigureLocalLLMDropdown(llmNodeCount) {
-    // Create the Local LLM dropdown
-    let LocalLLMSelect = document.createElement("select");
+    const template = document.getElementById('model-select');
+    const LocalLLMSelect = template.cloneNode(true);
     LocalLLMSelect.id = `dynamicLocalLLMselect-${llmNodeCount}`;
-    LocalLLMSelect.classList.add('inline-container');
-    LocalLLMSelect.style.backgroundColor = "#222226";
-    LocalLLMSelect.style.border = "none";
 
-    //let localLLMCheckbox = document.getElementById("localLLM");
-
-    // Create an array to store the options
-    let options = [
-        new Option('GLOBAL', 'GLOBAL', false, true),
-        new Option('Ollama', 'ollama', false, false),
-
-        new Option('gpt-3.5-turbo', 'gpt-3.5-turbo', false, false),
-        //new Option('gpt-3.5-turbo-instruct', 'gpt-3.5-turbo-instruct', false, false),
-        new Option('gpt-4', 'gpt-4', false, false),
-        new Option('gpt-4-vision', 'gpt-4-vision-preview', false, false),
-
-        new Option('GROQ-gemma-7b-it', 'GROQ-gemma-7b-it', false, false),
-        new Option('GROQ-mixtral-8x7b-32768', 'GROQ-mixtral-8x7b-32768', false, false),
-        new Option('GROQ-llama3-8b-8192', 'GROQ-llama3-8b-8192', false, false),
-        new Option('GROQ-llama3-70b-8192', 'GROQ-llama3-70b-8192', false, false),
-        new Option('Custom', 'custom', false, false),
-
-        //new Option('claude-3-opus', 'claude-3-opus-20240229', false, false),
-        //new Option('claude-3-sonnet', 'claude-3-sonnet-20240229', false, false)
-    ];
-
-    // Add options to the select
-    options.forEach((option, index) => {
-        LocalLLMSelect.add(option, index);
-    });
-
-    // Initial setup based on checkbox state
-    /*options.forEach((option) => {
-        if (option.value === 'OpenAi' || option.value.startsWith('gpt-') || option.value.startsWith('GROQ-') || option.value.startsWith('Ollama')) {
-            option.hidden = false;  // Always show
-        } else {
-            option.hidden = !localLLMCheckbox.checked;  // Show or hide based on checkbox initial state
-        }
-    });*/
+    const globalOption = new Option('GLOBAL', 'GLOBAL', false, true);
+    LocalLLMSelect.insertBefore(globalOption, LocalLLMSelect.firstChild);
 
     return LocalLLMSelect;
 }

@@ -1264,7 +1264,7 @@ select-replacer > div:first-child {
     left: 0;
     right: 0;
     border: 1px solid rgb(24, 24, 28);
-    background-color: #e2e2e2;
+    background-color: #f3f3f3;
     color: #ddd;
     width: 100%; /* Match width with select-replacer */
     z-index: 10;
@@ -1451,7 +1451,9 @@ select-replacer > div:first-child {
                 border: none;
             }
 
-
+#key-list {
+    max-width: 265px;
+}
         /* New CSS */
         #key-list p:hover {
             background-color: #bbb; /* Or any other color */

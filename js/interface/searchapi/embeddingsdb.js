@@ -460,6 +460,35 @@ async function fetchLinkContentText(link) {
     }
 }
 
+async function extractAndStoreLinkContent(link) {
+    try {
+        const extractedText = await fetchLinkContentText(link); // Fetch text based on content type
+        if (!extractedText) {
+            throw new Error("Failed to extract text or text was empty");
+        }
+        await receiveAndStoreText(extractedText, link, link);
+        return true;
+    } catch (error) {
+        console.error('Error during extraction and storage:', error);
+        alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost.");
+        return false;
+    }
+}
+
+async function handleNotExtractedLinks(notExtractedLinks) {
+    for (const link of notExtractedLinks) {
+        const userConfirmed = confirm(`${link} is not in the vector store. Extract the content?`);
+        if (userConfirmed) {
+            const success = await extractAndStoreLinkContent(link);
+            if (success) {
+                console.log(`Successfully extracted and stored content for ${link}`);
+            } else {
+                console.warn(`Failed to extract content for ${link}`);
+            }
+        }
+    }
+}
+
 
 
 
