@@ -1,6 +1,6 @@
-
 class SyntaxHighlighter {
     static applyCodeBlockHighlighting(content) {
+        // Update the regex to capture multiline code blocks including HTML
         const codeBlockRegex = /(```)(html|css|js|javascript|python)?(\s*[\r\n]+)([\s\S]*?)(```)/gi;
         return content.replace(codeBlockRegex, (match, startDelimiter, languageLabel, leadingWhitespace, codeText, endDelimiter) => {
             const language = this.mapLanguage(languageLabel || '');
@@ -24,7 +24,15 @@ class SyntaxHighlighter {
         let highlightedCode = '';
         CodeMirror.runMode(code, language, (text, style) => {
             let className = style ? `class="neurite-${style}"` : '';
-            let escapedText = RegExp.escape(text);
+            let escapedText = text.replace(/[&<>"']/g, function (match) {
+                switch (match) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                }
+            });
             highlightedCode += `<span ${className}>${escapedText}</span>`;
         });
         return highlightedCode;
@@ -35,14 +43,11 @@ class SyntaxHighlighter {
         nodeTitles.forEach(title => {
             let index = content.indexOf(title);
             while (index !== -1) {
-                // Check if the matched title is already within a <span> tag
                 const startIndex = content.lastIndexOf('<span', index);
                 const endIndex = content.indexOf('</span>', index);
                 if (startIndex !== -1 && endIndex !== -1 && startIndex < index && index < endIndex) {
-                    // The matched title is already within a <span> tag, so don't add another one
                     index = content.indexOf(title, index + title.length);
                 } else {
-                    // The matched title is not within a <span> tag, so add one
                     content = content.slice(0, index) +
                         `<span class="node-title-sd">${title}</span>` +
                         content.slice(index + title.length);
@@ -79,16 +84,12 @@ class SyntaxHighlighter {
 class ZetSyntaxDisplay {
     static syncAndHighlight(displayDiv, hiddenTextarea) {
         let content = hiddenTextarea.value;
-        // Sanitize the content as soon as it is retrieved
-        content = DOMPurify.sanitize(content);
 
-        // Apply various syntax highlightings
         content = SyntaxHighlighter.applyCodeBlockHighlighting(content);
         content = SyntaxHighlighter.applyNodeTitleHighlighting(content);
         content = SyntaxHighlighter.applyZettelkastenSyntax(content);
-        content += '\n';  // Adds visual spacing
+        content += '\n'; // Adds visual spacing
 
-        // Directly set sanitized and highlighted content to the displayDiv
         displayDiv.innerHTML = content;
     }
 }

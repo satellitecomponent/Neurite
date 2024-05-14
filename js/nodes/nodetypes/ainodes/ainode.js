@@ -346,6 +346,9 @@ function aiNodeHaltResponse(node) {
     if (haltCheckbox) {
         haltCheckbox.checked = true;
     }
+
+    // Reinitialize the controller for future use
+    node.controller = new AbortController();
 }
 
 function setupAiNodeResponseDivListeners(node) {
@@ -480,6 +483,7 @@ function setupAiNodeSendButtonListeners(node) {
 
         // Reset the flag and uncheck the checkbox
         node.aiResponseHalted = false;
+        node.shouldContinue = true;
 
         if (haltCheckbox) {
             haltCheckbox.checked = false;
