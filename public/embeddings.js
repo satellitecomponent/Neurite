@@ -5,9 +5,9 @@ let modelInitialized = false;
 async function initialize() {
    try {
        window.generateEmbeddings = await pipeline(
-            'feature-extraction',
-           'Xenova/all-MiniLM-L6-v2'
-        );
+           'feature-extraction',
+           'Supabase/gte-small',
+       );
         modelInitialized = true;
         document.getElementById("local-embeddings-checkbox").disabled = false;
     } catch (error) {

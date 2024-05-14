@@ -292,31 +292,13 @@ class LinkNodeActions extends BaseNodeActions {
     }
 
     displayIframe() {
-        const iframeButton = this.node.iframeButton;
-
-        if (iframeButton && iframeButton instanceof HTMLElement) {
-            iframeButton.click(); // Simulate the click
-        } else {
-            console.error('iframeButton button not found or is not a valid element');
-        }
+        handleLinkNodeIframe(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
     }
     displayWebpage() {
-        const displayButton = this.node.displayButton;
-
-        if (displayButton && displayButton instanceof HTMLElement) {
-            displayButton.click(); // Simulate the click
-        } else {
-            console.error('Display button not found or is not a valid element');
-        }
+        handleLinkNodeProxyDisplay(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
     }
     extractText() {
-        const extractButton = this.node.extractButton;
-
-        if (displayButton && displayButton instanceof HTMLElement) {
-            extractButton.click(); // Simulate the click
-        } else {
-            console.error('Extract button not found or is not a valid element');
-        }
+        extractAndStoreLinkContent(this.node.linkUrl);
     }
     importText() {
         importLinkNodeTextToZettelkasten(this.node.linkUrl);

@@ -94,6 +94,11 @@ document.addEventListener('wheel', (event) => {
             targetElement.contentEditable === 'true') {
             return;
         }
+
+        // Check if the target is an instance of the custom dropdown
+        if (targetElement.classList.contains('options-replacer')) {
+            return;
+        }
         targetElement = targetElement.parentElement;
     }
     if (nodeMode !== 1 && event.getModifierState(settings.rotateModifier)) {

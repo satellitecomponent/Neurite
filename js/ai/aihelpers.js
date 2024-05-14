@@ -1,8 +1,7 @@
 
 function determineModel() {
     const modelSelect = document.getElementById('model-select');
-    const globalModelInput = document.getElementById('model-input');
-    return modelSelect.value === 'other' ? globalModelInput.value : modelSelect.value;
+    return modelSelect.value;
 }
 
 
@@ -116,18 +115,6 @@ document.getElementById("regen-button").addEventListener("click", function () {
         regenerateResponse();
     }
 });
-
-function checkOtherModel(selectElement) {
-    var modelInput = document.getElementById('model-input');
-    if (selectElement.value === 'other') {
-        // If 'Other...' is selected, show the text input field
-        modelInput.style.display = 'inline';
-    } else {
-        // Otherwise, hide the text input field and clear its value
-        modelInput.style.display = 'none';
-        modelInput.value = '';
-    }
-}
 
 
 // Extract the prompt from the last message
