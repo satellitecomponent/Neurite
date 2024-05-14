@@ -37,10 +37,11 @@ function connectNodes(node1, node2) {
     const title1 = node1.getTitle();
     const title2 = node2.getTitle();
 
-    if (title1 !== title2 && node1.isTextNode && node2.isTextNode) {
+    // Check if the titles are different and ensure the nodes are not the same instance
+    if (node1 !== node2 && node1.isTextNode && node2.isTextNode) {
         addEdgeToZettelkasten(title1, title2, myCodeMirror);
         addEdgeToZettelkasten(title2, title1, myCodeMirror);
-    } else {
+    } else if (node1 !== node2) {
         connectDistance(node1, node2, node1.pos.minus(node2.pos).mag() / 2, undefined, true);
     }
 }
