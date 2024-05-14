@@ -201,10 +201,9 @@ async function provideAPIKeys() {
 
 function getAPIParams(messages, stream, customTemperature, modelOverride = null) {
     const modelSelect = document.getElementById('model-select');
-    const modelInput = document.getElementById('model-input');
     const localModelSelect = document.getElementById('local-model-select');
     const customModelSelect = document.getElementById('custom-model-select');
-    let model = modelOverride || (modelSelect.value === 'other' ? modelInput.value : modelSelect.value);
+    let model = modelOverride || modelSelect.value;
     console.log(`model`, model);
     let API_KEY;
     let API_URL;
