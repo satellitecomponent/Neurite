@@ -119,11 +119,8 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     if (isUrl(userMessage)) {
         document.getElementById("prompt").value = ''; // Clear the textarea
         let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
-
-        htmlnodes_parent.appendChild(linkNode.content);
         // Attach the node to the user's mouse
         linkNode.followingMouse = 1;
-        linkNode.draw();
         linkNode.mouseAnchor = toDZ(new vec2(0, -linkNode.content.offsetHeight / 2 + 6));
 
         return null; // Return null to indicate that no further processing is necessary
@@ -218,11 +215,8 @@ function displaySearchResults(searchResults) {
         let link = result.link;
 
         let node = createLinkNode(title, description, link);
-
-        htmlnodes_parent.appendChild(node.content);
         // Attach the node to the user's mouse
         node.followingMouse = 1;
-        node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
     });
 }
@@ -242,23 +236,24 @@ async function processLinkInput(linkUrl) {
         node.followingMouse = 1;
         node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-        console.log('Handle drop for the link icon');
     } else {
-        let searchResultsData = null;
-        let searchResults = [];
-        // Construct the search query
-        const searchQuery = linkUrl;
-        console.log(`Search Query in processLinkInput: ${searchQuery}`);
-        if (searchQuery === null) {
-            return; // Return early if a link node was created directly
-        }
+        await handleNaturalLanguageSearch(linkUrl);
+    }
+}
 
-        searchResultsData = await performSearch(searchQuery);
+async function handleNaturalLanguageSearch(query) {
+    let searchResultsData = null;
 
-        if (searchResultsData) {
-            let searchResults = processSearchResults(searchResultsData);
-            searchResults = await getRelevantSearchResults(linkUrl, searchResults);
-            displaySearchResults(searchResults);
-        }
+    // Construct the search query
+    if (query === null) {
+        return; // Return early if the query is null
+    }
+
+    searchResultsData = await performSearch(query);
+
+    if (searchResultsData) {
+        let searchResults = processSearchResults(searchResultsData);
+        searchResults = await getRelevantSearchResults(query, searchResults);
+        displaySearchResults(searchResults);
     }
 }

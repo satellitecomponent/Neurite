@@ -468,7 +468,7 @@ input[type="text"i].title-input {
     top: 0;
     width: 100vw;
     height: 100vh;
-    overflow: auto;
+    overflow: hidden;
     /*background-color: rgba(0, 0, 0, 0.4);*/
     justify-content: center;
     align-items: center;
@@ -555,16 +555,19 @@ input[type="text"i].title-input {
     height: 250px;
     width: 500px;
 }
-
 #nodeList {
     list-style-type: none;
     padding: 0;
+    width: 300px;
 }
 
     #nodeList li {
         cursor: pointer;
         padding: 8px 12px;
         border-bottom: 1px solid #bbb;
+        white-space: nowrap; /* Prevent text from wrapping */
+        overflow: hidden; /* Hide any overflow */
+        text-overflow: ellipsis; /* Show ellipsis (...) for overflowed text */
     }
 
         #nodeList li.connected {
@@ -572,6 +575,7 @@ input[type="text"i].title-input {
         }
 
         #nodeList li.disconnected {
+            /* You can add specific styles for disconnected nodes if needed */
         }
 
         #nodeList li:hover {
@@ -586,8 +590,61 @@ input[type="text"i].title-input {
         #nodeList li:active {
             background-color: #e0e0e0;
         }
+#ollamaModelList {
+    list-style-type: none;
+    padding: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    max-height: 50vh;
+    min-width: 200px;
+}
 
+    #ollamaModelList .model-item {
+        cursor: pointer;
+        padding: 8px 12px;
+        border-bottom: 1px solid #bbb;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
+    #ollamaModelList .connected {
+        background-color: #293e34; /* Light green background for connected nodes */
+    }
+
+    #ollamaModelList .disconnected {
+        background-color: none; /* Different background for disconnected nodes */
+    }
+
+    #ollamaModelList .model-item:hover {
+        background-color: #555;
+        color: white;
+    }
+
+    #ollamaModelList .connected:hover {
+        background-color: #54876f; /* Light green background for connected nodes */
+    }
+
+    #ollamaModelList .model-item:active {
+        background-color: #e0e0e0;
+    }
+
+    #ollamaModelList .progress-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0;
+        background-color: #4caf50;
+        z-index: -1;
+        transition: width 0.5s ease;
+    }
+
+.model-name {
+    flex-grow: 1;
+    text-align: left;
+}
 /* Dropdown menu styles */
 .dropdown {
     position: absolute;
@@ -644,6 +701,7 @@ input[type="text"i].title-input {
             .menu-button.open .menu-icon::after {
                 transform: translateY(-6px) rotate(-45deg);
             }
+
 .dropdown-content {
     position: absolute;
     top: 100%;
@@ -923,6 +981,21 @@ input[type="text"i]:hover {
                     background-color: #45a049;
                 }
 
+.deletebuttons {
+    right: 15px;
+    padding: 0;
+    position: absolute;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: transparent;
+    transition: background-color 0.3s;
+    border: none;
+}
+
+.deletebuttons:hover {
+    color: black;
+}
+
 #saved-networks-container .linkbuttons {
     margin: 0;
 }
@@ -1177,77 +1250,71 @@ td {
     border: 1px solid #5d5d5d;
 }
 
-.select-replacer.closed {
-    white-space: nowrap; /* Prevent wrapping of selected option text */
-    overflow: hidden; /* Hide excess content */
-    text-overflow: ellipsis; /* Show ellipsis when content overflows */
-}
-
 .select-container {
     position: relative;
     display: inline-block;
-    width: 130px; /* width of the select-replacer */
-    height: 25px; /* This accounts for the height of select-replacer including padding and border */
+    width: 130px; /* Width of the select-replacer */
     z-index: 20;
 }
 
 .select-replacer {
-    position: absolute;
-    top: 0;
-    border: 1px solid rgb(52 52 52);
-    padding: 2px 10px;
+    position: relative;
+    border: 1px solid rgb(52, 52, 52);
     cursor: pointer;
     width: 100%;
     background-color: #222226;
     color: #fff;
     box-sizing: border-box;
     z-index: 10;
-    user-select: none; /* Disable text selection */
+    user-select: none;
 }
 
-select-replacer > div:first-child {
-    overflow: hidden;
-    position: relative; /* Makes sure the pseudo-element is relative to this element */
-    padding-right: 46px;
-}
+    .select-replacer .selected-text {
+        padding: 2px 10px;
+        height: 25px; /* Consistent height */
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 
-.select-replacer > div:first-child::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    width: 46px; /* This should match the padding-right value */
-    background: linear-gradient(to left, #222226, transparent); /* Change 'white' to the background color of your container */
-    pointer-events: none; /* Ensures that the pseudo-element doesn't interfere with any user interactions */
-}
+        .select-replacer .selected-text::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 46px; /* Match the padding-right value */
+            background: linear-gradient(to left, #222226, transparent);
+            pointer-events: none;
+        }
 
+    .select-replacer::before {
+        content: "";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        width: 8px;
+        height: 2px;
+        background: #bbb;
+        transform: translateY(-50%) rotate(-45deg);
+        transition: transform 0.2s;
+        z-index: 10;
+    }
 
-.select-replacer::before {
-    content: "";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    width: 8px; /* length of the chevron */
-    height: 2px; /* thickness of the chevron */
-    background: #bbb;
-    transform: translateY(-50%) rotate(-45deg);
-    transition: transform 0.2s;
-    z-index: 10;
-}
-
-.select-replacer::after {
-    content: "";
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    width: 8px; /* length of the chevron */
-    height: 2px; /* thickness of the chevron */
-    background: #bbb;
-    transform: translateY(-50%) rotate(45deg);
-    transition: transform 0.2s;
-    z-index: 30;
-}
+    .select-replacer::after {
+        content: "";
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        width: 8px;
+        height: 2px;
+        background: #bbb;
+        transform: translateY(-50%) rotate(45deg);
+        transition: transform 0.2s;
+        z-index: 30;
+    }
 
     .select-replacer:not(.closed)::before {
         transform: translateY(-50%) rotate(45deg);
@@ -1266,28 +1333,52 @@ select-replacer > div:first-child {
     border: 1px solid rgb(24, 24, 28);
     background-color: #f3f3f3;
     color: #ddd;
-    width: 100%; /* Match width with select-replacer */
+    width: 100%;
     z-index: 10;
-    max-height: 300px; /* Set a maximum height for the options container */
-    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 300px;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
     .options-replacer div {
-        white-space: normal;
+        white-space: normal; /* Allow text to wrap */
         padding: 5px 10px;
+        word-break: break-word; /* Break long words */
+        color: #555;
     }
 
-        .options-replacer div:hover {
-            background-color: #ffffff;
-        }
+    .options-replacer .dropdown-option:hover {
+        background-color: #ddd;
+    }
 
         .options-replacer div.selected {
             background-color: #a3d3eb;
         }
 
+    .options-replacer .dropdown-option.selected:hover {
+        background-color: #a3d3eb;
+    }
+
     .options-replacer.show {
         display: block;
     }
+
+.dropdown-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+    .dropdown-wrapper label {
+        white-space: nowrap;
+        width: 110px;
+    }
+
+.inference-template-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
 
 .custom-scrollbar::-webkit-scrollbar {
     width: 10px;

@@ -1,3 +1,24 @@
+function modulateAiNodeModel(aiNodeInference, hasImageNodes) {
+    const { provider, model } = aiNodeInference;
+
+    // Check if the local or global model is set to ollama.
+    const isOllamaSelected = provider === 'ollama' ||
+        (provider === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
+
+    // If image nodes are present, and ollama is not selected, use the vision model.
+    if (hasImageNodes && !isOllamaSelected) {
+        return { provider: 'OpenAi', model: 'gpt-4o' };
+    } else if (hasImageNodes && isOllamaSelected) {
+        // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
+        return { provider: 'ollama', model: 'LLaVA' };
+    } else if (provider === 'GLOBAL') {
+        return determineGlobalModel();
+    } else {
+        // Use the local model selection
+        return { provider, model };
+    }
+}
+
 
 // Function to calculate token cost for an image based on resolution and detail
 function calculateImageTokenCost(width, height, detailLevel) {
@@ -61,6 +82,11 @@ function getImageNodeData(node) {
 }
 
 async function callVisionModel(messages, onStreamComplete) {
+    const inferenceOverride = {
+        provider: 'OpenAi',
+        model: 'gpt-4o'
+    };
+
     callAiApi({
         messages: messages,
         stream: true, // Assuming streaming is not required for vision model
@@ -81,6 +107,6 @@ async function callVisionModel(messages, onStreamComplete) {
             functionErrorIcon.style.display = 'block';
             console.error("Error:", error);
         },
-        modelOverride: 'gpt-4-vision-preview' // Override model to use gpt-4-vision-preview
+        inferenceOverride: inferenceOverride,
     });
 }

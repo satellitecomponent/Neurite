@@ -120,7 +120,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     const initialMaxContextSize = document.getElementById('max-context-size-slider').value;
 
     // Create and configure the settings
-    const LocalLLMSelect = createAndConfigureLocalLLMDropdown(llmNodeCount);
+    const aiNodeDropdownContainer = createAndConfigureLocalLLMDropdown(llmNodeCount);
 
     const temperatureSliderContainer = createSlider(`node-temperature-${llmNodeCount}`, 'Temperature', initialTemperature, 0, 1, 0.1);
     const maxTokensSliderContainer = createSlider(`node-max-tokens-${llmNodeCount}`, 'Max Tokens', initialMaxTokens, 10, 16000, 1);
@@ -132,7 +132,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
 
     // Add the dropdown (LocalLLMSelect) into settings container
-    aiNodeSettingsContainer.appendChild(LocalLLMSelect);  // LocalLLMSelect is the existing dropdown
+    aiNodeSettingsContainer.appendChild(aiNodeDropdownContainer);  // LocalLLMSelect is the existing dropdown
     aiNodeSettingsContainer.appendChild(temperatureSliderContainer);
     aiNodeSettingsContainer.appendChild(maxTokensSliderContainer);
     aiNodeSettingsContainer.appendChild(maxContextSizeSliderContainer);
@@ -158,7 +158,6 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Append the ainodewrapperDiv to windowDiv of the node
     windowDiv.appendChild(ainodewrapperDiv);
-
     // Additional configurations
     node.id = aiResponseTextArea.id;  // Store the id in the node object
     node.index = llmNodeCount;
@@ -166,7 +165,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.localAiResponding = false;
     node.latestUserMessage = null;
     node.shouldContinue = true;
-    node.LocalLLMSelectID = `dynamicLocalLLMselect-${node.index}`;
+
     node.isLLMNode = true;
     node.shouldAppendQuestion = false;
     node.aiResponseHalted = false;
@@ -247,7 +246,9 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
 
     node.isLLM = true;
+
     initAiNode(node);
+
 
     return node;
 }
@@ -276,8 +277,12 @@ function initAiNode(node) {
     let regenerateButton = node.content.querySelector('#prompt-form');
     node.regenerateButton = regenerateButton;
 
-    let localLLMSelect = node.content.querySelector(`[id^="dynamicLocalLLMselect-"]`);
+    //This is now the container for our inferenence select dropdown.
+    let localLLMSelect = node.content.querySelector(`.local-llm-dropdown-container-${node.index}`);
     node.localLLMSelect = localLLMSelect;
+
+    // Initialize inference dropdowns
+    initInferenceDropdown(node);
 
     // Setup event listeners
     setupAiNodeResponseDivListeners(node);
@@ -572,12 +577,6 @@ function setupAiNodeSettingsButtonListeners(node) {
     aiNodeSettingsContainer.addEventListener('dblclick', conditionalStopPropagation, false);
 }
 
-function setupAiNodeLocalLLMDropdownListeners(node) {
-    let selectElement = node.localLLMSelect;
-    setupCustomDropdown(selectElement, true);
-}
-
-
 function conditionalStopPropagation(event) {
     if (!altHeld) {
         event.stopPropagation();
@@ -675,15 +674,123 @@ function setupContextSpecificSliderListeners(node) {
     // Additional specific behaviors for other sliders can be added here
 }
 
-function createAndConfigureLocalLLMDropdown(llmNodeCount) {
-    const template = document.getElementById('model-select');
-    const LocalLLMSelect = template.cloneNode(true);
-    LocalLLMSelect.id = `dynamicLocalLLMselect-${llmNodeCount}`;
+function initInferenceDropdown(node) {
+    const nodeIndex = node.index;
 
-    const globalOption = new Option('GLOBAL', 'GLOBAL', false, true);
-    LocalLLMSelect.insertBefore(globalOption, LocalLLMSelect.firstChild);
+    // Query and assign dropdowns to the node
+    node.inferenceSelect = node.content.querySelector(`#inference-select-${nodeIndex}`);
+    node.openAiSelect = node.content.querySelector(`#open-ai-select-${nodeIndex}`);
+    node.groqSelect = node.content.querySelector(`#groq-select-${nodeIndex}`);
+    node.localModelSelect = node.content.querySelector(`#local-model-select-${nodeIndex}`);
+    node.customModelSelect = node.content.querySelector(`#custom-model-select-${nodeIndex}`);
+}
 
-    return LocalLLMSelect;
+function setupAiNodeLocalLLMDropdownListeners(node) {
+    // Setup custom dropdown for each dropdown in the node
+    const dropdowns = node.localLLMSelect.querySelectorAll('.model-selector.custom-select');
+    dropdowns.forEach(dropdown => {
+        if (!dropdown.dataset.initialized) {
+            // Set the options for the dropdowns within the node
+            refreshAiNodeOptions(node, true); // setOptions to true
+            setupCustomDropdown(dropdown, true); // Set delayListeners to true
+            dropdown.dataset.initialized = 'true'; // Mark this dropdown as initialized
+        } else {
+            restoreDropdownState(dropdown);
+        }
+        addEventListenersToCustomDropdown(dropdown);
+
+        dropdown.addEventListener('change', () => {
+            refreshAiNodeOptions(node);
+        });
+
+        // Add click event listener to the dropdown container
+        const dropdownContainer = dropdown.closest('.dropdown-container');
+        dropdownContainer.addEventListener('click', () => {
+            refreshAiNodeOptions(node);
+        });
+    });
+
+    const templateDropdownsContainer = node.localLLMSelect;
+    setupInferenceDropdowns(templateDropdownsContainer);
+}
+
+function createAndConfigureLocalLLMDropdown(nodeIndex) {
+    const inferenceTemplate = document.createElement('div');
+    inferenceTemplate.className = `local-llm-dropdown-container-${nodeIndex}`; // Add a class for easier selection
+    inferenceTemplate.classList.add('inference-template-wrapper');
+
+    // Create dropdown elements without options
+    const inferenceSelect = createDropdown(`inference-select-${nodeIndex}`);
+    const openAiSelect = createDropdown(`open-ai-select-${nodeIndex}`);
+    const groqSelect = createDropdown(`groq-select-${nodeIndex}`);
+    const ollamaSelect = createDropdown(`local-model-select-${nodeIndex}`);
+    const customSelect = createDropdown(`custom-model-select-${nodeIndex}`);
+
+    // Append Inference
+    inferenceTemplate.appendChild(createDropdownWrapper(inferenceSelect, 'wrapper-inference', nodeIndex));
+
+    // Append dropdowns to the node element
+    inferenceTemplate.appendChild(createDropdownWrapper(openAiSelect, 'wrapper-openai', nodeIndex));
+    inferenceTemplate.appendChild(createDropdownWrapper(groqSelect, 'wrapper-groq', nodeIndex));
+    inferenceTemplate.appendChild(createDropdownWrapper(ollamaSelect, 'wrapper-ollama', nodeIndex));
+    inferenceTemplate.appendChild(createDropdownWrapper(customSelect, 'wrapper-custom', nodeIndex));
+
+    return inferenceTemplate;
+}
+
+function syncOptions(sourceId, target, storageKey) {
+    const sourceSelect = document.getElementById(sourceId);
+    const targetSelect = target;
+
+    // Extract existing values from the source select
+    const sourceValues = new Set(Array.from(sourceSelect.options).map(option => option.value));
+
+    // Remove options from targetSelect that do not exist in sourceSelect
+    Array.from(targetSelect.options).forEach(option => {
+        if (!sourceValues.has(option.value)) {
+            targetSelect.removeChild(option);
+            refreshCustomDropdownDisplay(targetSelect);
+        }
+    });
+
+    // Extract existing values from the target select after removal
+    const existingValues = new Set(Array.from(targetSelect.options).map(option => option.value));
+
+    // Add options from sourceSelect to targetSelect if they do not already exist
+    Array.from(sourceSelect.options).forEach(option => {
+        const optionValue = option.value;
+        if (!existingValues.has(optionValue)) {
+            const optionData = { text: option.text, value: option.value, key: option.getAttribute('data-key') };
+            addOptionToCustomDropdown(targetSelect, optionData);
+            existingValues.add(optionValue);
+        }
+    });
+}
+
+function refreshAiNodeOptions(node, setValues = false) {
+    // Sync options from global dropdowns to node-specific dropdowns
+    syncOptions('inference-select', node.inferenceSelect, 'inference-select-storage');
+    syncOptions('open-ai-select', node.openAiSelect, 'open-ai-select-storage');
+    syncOptions('groq-select', node.groqSelect, 'groq-select-storage');
+    syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage');
+    syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage');
+
+    if (setValues) {
+        // Set the selected value of the target dropdowns based on the selected value of the source dropdowns
+        setSelectedValue('inference-select', node.inferenceSelect);
+        setSelectedValue('open-ai-select', node.openAiSelect);
+        setSelectedValue('groq-select', node.groqSelect);
+        setSelectedValue('local-model-select', node.localModelSelect);
+        setSelectedValue('custom-model-select', node.customModelSelect);
+    }
+}
+
+function setSelectedValue(sourceId, targetSelect) {
+    const sourceSelect = document.getElementById(sourceId);
+    const selectedValue = sourceSelect.value;
+
+    // Set the selected value of the target select element
+    targetSelect.value = selectedValue;
 }
 
 const allOptions = [

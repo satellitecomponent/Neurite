@@ -110,7 +110,7 @@
         <div style="display: flex; justify-content: space-evenly; align-items: center;">
             <label for="zetPathTypeDropdown" style="margin-right: 10px;">Placement Style</label>
             <div class="dropdown-container" title="Determine what path the Zettelkasten decides to place nodes on.">
-                <select id="zetPathTypeDropdown" class="model-selector custom-select">
+                <select id="zetPathTypeDropdown" class="model-selector custom-select ignoreSetup">
                     <option value="Radial">Radial</option>
                     <option value="Spiral">Spiral</option>
                     <option value="Branching">Branching</option>
@@ -242,6 +242,10 @@
     <div id="nodeConnectionModal" style="display:none;">
         <input type="text" id="connectModalSearchBar" placeholder="search notes...">
         <ul id="nodeList"></ul>
+    </div>
+
+    <div id="ollamaManagerModal" style="display: none;">
+        <div id="ollamaModelList" class="custom-scrollbar"></div>
     </div>
 
     <div id="alertModal" style="display: none;">
@@ -448,77 +452,66 @@
                             <div class="model-select-container" id="modelSelectContainer">
                                 <div class="model-select-panel hidden">
                                     <br />
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
-                                        <label for="model-select" style="margin-right: 10px;">GLOBAL Model:</label>
-                                        <div class="dropdown-container">
-                                            <select id="model-select" class="model-selector custom-select">
-                                                <option value="gpt-4o">gpt-4o</option>
-                                                <option value="gpt-4">gpt-4</option>
-                                                <option value="gpt-4-0125-preview">gpt-4-0125</option>
-                                                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                                                <option value="ollama">Ollama</option>
-                                                <option value="GROQ-gemma-7b-it">GROQ-gemma-7b-it</option>
-                                                <option value="GROQ-mixtral-8x7b-32768">GROQ-mixtral 7b 32k</option>
-                                                <option value="GROQ-llama3-8b-8192">GROQ-llama3-8b</option>
-                                                <option value="GROQ-llama3-70b-8192">GROQ-llama3-70b</option>
-                                                <option value="custom">Custom</option>
-                                            </select>
+                                    <div id="template-dropdowns" class="inference-template-wrapper">
+                                        <div class="dropdown-wrapper" id="wrapper-inference">
+                                            <label for="inference-select">Inference</label>
+                                            <div class="dropdown-container">
+                                                <select id="inference-select" class="model-selector custom-select">
+                                                    <option value="OpenAi">OpenAi</option>
+                                                    <option value="GROQ">Groq</option>
+                                                    <option value="ollama">Ollama</option>
+                                                    <option value="custom">Custom</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <br />
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center;">
-                                        <label for="local-model-select" style="margin-right: 10px;">Ollama Model:</label>
-                                        <div class="dropdown-container">
-                                            <select id="local-model-select" class="model-selector custom-select">
-                                                <option value="llama3">Llama 3 8B</option>
-                                                <option value="llama3:70b">Llama 3 70B</option>
-                                                <option value="mistral:7b">Mistral 7B</option>
-                                                <option value="phi3">Phi-3 3.8B</option>
-                                                <option value="phi">Phi-2 2.7B</option>
-                                                <option value="dolphin-phi">Dolphin Phi 2.7B</option>
-                                                <option value="neural-chat">Neural Chat 7B</option>
-                                                <option value="starling-lm">Starling 7B</option>
-                                                <option value="codellama">Code Llama 7B</option>
-                                                <option value="llama2-uncensored">Llama 2 Uncensored 7B</option>
-                                                <option value="llama2">Llama 2 7B</option>
-                                                <option value="llama2:13b">Llama 2 13B</option>
-                                                <option value="llama2:70b">Llama 2 70B</option>
-                                                <option value="orca-mini">Orca Mini 3B</option>
-                                                <option value="vicuna">Vicuna 7B</option>
-                                                <option value="llava">LLaVA 7B</option>
-                                                <option value="gemma:2b">Gemma 2B</option>
-                                                <option value="gemma:7b">Gemma 7B</option>
-                                            </select>
+                                        <br />
+                                        <div class="dropdown-wrapper" id="wrapper-openai">
+                                            <label for="open-ai-select">OpenAi</label>
+                                            <div class="dropdown-container">
+                                                <select id="open-ai-select" class="model-selector custom-select">
+                                                    <option value="gpt-4o">gpt-4o</option>
+                                                    <option value="gpt-4">gpt-4</option>
+                                                    <option value="gpt-4v">gpt-4v</option>
+                                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <br />
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center; ">
-                                        <label for="custom-model-select" style="margin-right: 10px;">
-                                            <button id="addApiConfigBtn" class="linkbuttons">+ Custom</button>
-                                            <button id="deleteApiConfigBtn" class="linkbuttons">-</button>
-                                        </label>
-                                        <div class="dropdown-container">
-                                            <select id="custom-model-select" class="model-selector custom-select">
-                                                <option value="none">none</option>
-                                                <!-- dynamic values -->
-                                            </select>
+                                        <div class="dropdown-wrapper" id="wrapper-groq">
+                                            <label for="groq-select">Groq</label>
+                                            <div class="dropdown-container">
+                                                <select id="groq-select" class="model-selector custom-select">
+                                                    <option value="gemma-7b-it">gemma-7b-it</option>
+                                                    <option value="mixtral-8x7b-32768">mixtral 8x7b 32k</option>
+                                                    <option value="llama3-8b-8192">llama3-8b</option>
+                                                    <option value="llama3-70b-8192">llama3-70b</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <br />
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center;">
-                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">Embeddings:</label><br>
-                                        <div class="dropdown-container">
-                                            <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
-                                                <option value="text-embedding-3-small">text-embedding-3-small</option>
-                                                <option value="text-embedding-3-large">text-embedding-3-large</option>
-                                                <option value="text-embedding-ada-002">text-embedding-ada-002</option>
-                                                <option value="local-embeddings">Local Embeddings</option>
-                                            </select>
+                                        <div class="dropdown-wrapper" id="wrapper-ollama">
+                                            <label for="local-model-select">
+                                                <button id="openOllamaModalButton" class="linkbuttons">+ Ollama</button>
+                                            </label>
+                                            <div class="dropdown-container">
+                                                <select id="local-model-select" class="model-selector custom-select">
+                                                    <option value="llama3">none</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <!-- Hide the original local embeddings checkbox -->
-                                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
-                                    </div>
+                                        <div class="dropdown-wrapper" id="wrapper-custom">
+                                            <label for="custom-model-select">
+                                                <button id="addApiConfigBtn" class="linkbuttons">+ Custom</button>
+                                                <button id="deleteApiConfigBtn" class="linkbuttons">-</button>
+                                            </label>
+                                            <div class="dropdown-container">
+                                                <select id="custom-model-select" class="model-selector custom-select">
+                                                    <option value="none">none</option>
+                                                    <!-- dynamic values -->
+                                                </select>
+                                            </div>
+                                        </div>
 
+
+                                    </div>
                                 </div>
 
                                 <div class="toggle-panel" onclick="toggleModelSelectPanel()" style="padding-top: 15px;">
@@ -540,6 +533,19 @@
                             <label for="contextSettingsContainer" class="button-label" onclick="toggleContextSettingsPanel()">Context Settings</label>
                             <div class="context-settings-container" id="contextSettingsContainer">
                                 <div class="context-settings-panel hidden">
+                                    <div style="display: flex; justify-content: space-evenly; align-items: center; padding-top: 10px;">
+                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">Embeddings:</label><br>
+                                        <div class="dropdown-container">
+                                            <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
+                                                <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                                <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                                <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                                                <option value="local-embeddings">Local Embeddings</option>
+                                            </select>
+                                        </div>
+                                        <!-- Hide the original local embeddings checkbox -->
+                                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
+                                    </div>
                                     <div class="checkboxarray">
                                         <div title="Enable Web Search Results">
                                             <input type="checkbox" id="google-search-checkbox" name="enable-search">
@@ -666,7 +672,7 @@
                 <div id="tabExtract" class="tabcontent">
                     <!-- Extract tab content here -->
                     <div class="submenu">
-                       
+
                         <label for="inputKeyExtract">Key:</label><br>
                         <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
                         <label for="inputTextExtract">Text:</label><br>
@@ -1179,7 +1185,7 @@
     <script src="js/interface/dropdown/tabs/edittab.js"></script>
 
     <script src="js/interface/dropdown/dropdown.js"></script>
-    <script src="js/ai/handleapikeys.js"></script>
+    <script src="js/ai/ai-utility/handleapikeys.js"></script>
 
     <script src="js/interface/dropdown/customui/customdropdown.js"></script>
     <script src="js/interface/dropdown/customui/togglepanel.js"></script>
@@ -1215,6 +1221,7 @@
     <script src="js/nodes/nodeinteraction/filternodes.js"></script>
     <script src="js/nodes/nodeinteraction/bundlecode.js"></script>
     <script src="js/nodes/nodeinteraction/modalconnect.js"></script>
+    <script src="js/nodes/nodeinteraction/nodesensor.js"></script>
 
     <script src="js/nodes/createnodes/window.js"></script>
     <script src="js/nodes/createnodes/createnodes.js"></script>
@@ -1245,13 +1252,13 @@
 
     <script src="js/ai/ai_v2.js"></script>
     <script src="js/ai/aimessage.js"></script>
-    <script src="js/ai/aihelpers.js"></script>
+    <script src="js/ai/ai-utility/aihelpers.js"></script>
     <script src="js/ai/vision.js"></script>
 
-    <script src="js/ai/dummyai.js"></script>
+    <script src="js/ai/ollama/ollama.js"></script>
+    <script src="js/ai/ollama/ollama-api.js"></script>
+    <script src="js/ai/ai-utility/dummyai.js"></script>
 
-
-    <script src="js/ai/nodesensor.js"></script>
     <script src="js/ai/automata.js"></script>
     <script src="js/ai/network.js"></script>
 
@@ -1264,7 +1271,7 @@
     <script src="js/interface/searchapi/codeparser/gitparsed.js"></script>
     <script src="js/interface/searchapi/wolframapi.js"></script>
 
-    <script src="js/neuralapi.js"></script>
+    <script src="js/interface/neuralapi.js"></script>
 
     <script src="js/interface/functioncall/functioncallingpanel.js"></script>
     <script src="js/interface/functioncall/neuraltelemetryprompt.js"></script>
