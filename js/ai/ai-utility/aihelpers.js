@@ -1,9 +1,51 @@
+function determineGlobalModel() {
+    const inferenceSelect = document.getElementById('inference-select');
+    const openAiSelect = document.getElementById('open-ai-select');
+    const groqSelect = document.getElementById('groq-select');
+    const localModelSelect = document.getElementById('local-model-select');
+    const customModelSelect = document.getElementById('custom-model-select');
+    const provider = inferenceSelect.value;
 
-function determineModel() {
-    const modelSelect = document.getElementById('model-select');
-    return modelSelect.value;
+    let model = '';
+
+    if (provider === 'OpenAi') {
+        model = openAiSelect.value;
+    } else if (provider === 'GROQ') {
+        model = groqSelect.value;
+    } else if (provider === 'ollama') {
+        model = localModelSelect.value;
+    } else if (provider === 'custom') {
+        const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
+        model = selectedOption.text;
+    }
+
+    return { provider, model };
 }
 
+
+function determineAiNodeModel(node) {
+    const inferenceSelect = node.inferenceSelect;
+    const openAiSelect = node.openAiSelect;
+    const groqSelect = node.groqSelect;
+    const localModelSelect = node.localModelSelect;
+    const customModelSelect = node.customModelSelect;
+    const provider = inferenceSelect.value;
+
+    let model = '';
+
+    if (provider === 'OpenAi') {
+        model = openAiSelect.value;
+    } else if (provider === 'GROQ') {
+        model = groqSelect.value;
+    } else if (provider === 'ollama') {
+        model = localModelSelect.value;
+    } else if (provider === 'custom') {
+        const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
+        model = selectedOption.text;
+    }
+
+    return { provider, model };
+}
 
 const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
 

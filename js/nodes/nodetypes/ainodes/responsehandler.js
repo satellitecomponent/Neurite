@@ -39,7 +39,7 @@ class ResponseHandler {
         this.processingQueue = Promise.resolve();
         this.previousContentLength = 0;
         this.responseCount = 0;
-        this.currentResponseEnded = false
+        this.currentResponseEnded = false;
 
             // Attach the input event listener for new input
             this.node.aiResponseTextArea.addEventListener('input', () => {
@@ -87,10 +87,10 @@ class ResponseHandler {
         try {
             let content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
-
             if (newContent.trim() === "") {
                 newContent = newContent.replace(/ /g, "&nbsp;");
             }
+
             let trimmedNewContent = newContent.trim();
 
             if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
@@ -191,7 +191,7 @@ class ResponseHandler {
     }
 
     handleMarkdown(markdown) {
-        if ((this.node.aiResponding || this.node.localAiResponding) && markdown.trim().length > 0) {
+        if ((this.node.aiResponding || this.node.localAiResponding)) {
             let sanitizedMarkdown = DOMPurify.sanitize(markdown);
             let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
             let responseDiv;
@@ -214,8 +214,6 @@ class ResponseHandler {
                 wrapperDiv.className = 'response-wrapper';
                 wrapperDiv.appendChild(handleDiv);
                 wrapperDiv.appendChild(responseDiv);
-
-                
 
                 this.node.aiResponseDiv.appendChild(wrapperDiv);
 

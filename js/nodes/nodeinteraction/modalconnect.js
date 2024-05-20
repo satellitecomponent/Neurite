@@ -17,7 +17,6 @@ async function setupConnectModal(originNode) {
         await updateNodeList(searchInput.length > 0 ? searchInput : originNode.getTitle(), maxNodes, originNode);
     });
 }
-
 async function updateNodeList(searchTerm, maxNodes, originNode) {
     let allNodes = await searchNodesBy(searchTerm, maxNodes);
     let nodes = allNodes.slice(0, maxNodes);  // Limit the results
@@ -33,7 +32,8 @@ async function updateNodeList(searchTerm, maxNodes, originNode) {
     nodes.forEach(node => {
         if (node !== originNode) {
             const li = document.createElement('li');
-            li.textContent = node.getTitle();
+            const title = node.getTitle().trim() || 'Untitled'; // Check for empty title and set to 'Untitled'
+            li.textContent = title;
             li.className = findExistingEdge(node, originNode) ? 'connected' : 'disconnected';
             li.onclick = () => {
                 const connected = handleConnectOrRemove(node, originNode);
@@ -43,7 +43,6 @@ async function updateNodeList(searchTerm, maxNodes, originNode) {
         }
     });
 }
-
 function updateUIAfterConnectionChange(li, connected) {
     if (connected) {
         li.className = 'connected';

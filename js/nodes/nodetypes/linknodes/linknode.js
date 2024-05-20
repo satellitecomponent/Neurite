@@ -112,7 +112,7 @@ function setupLinkNodeSearchBarListener(node) {
                 node.link.href = inputValue; // Update the href attribute of the <a> element
                 node.link.textContent = inputValue; // Update the text content of the <a> element
             } else {
-                alert("Invalid URL. Please enter a valid URL.");
+                handleNaturalLanguageSearch(inputValue);
             }
         }
     });

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const cheerio = require('cheerio'); // Import cheerio
 const app = express();
 const PORT = process.env.PORT || 7070; // Proxy server port
 
@@ -83,7 +84,7 @@ app.post('/openai', async (req, res) => {
     }
 });
 
-app.post('/ollama', async (req, res) => {
+app.post('/ollama/chat', async (req, res) => {
     const { model, messages, max_tokens, temperature, stream } = req.body;
 
     // Prepare the request body for Ollama API, including an empty context.
@@ -122,6 +123,154 @@ app.get('/ollama/tags', async (req, res) => {
     } catch (error) {
         console.error('Error fetching Ollama tags:', error);
         res.status(500).json({ error: 'Failed to fetch Ollama tags' });
+    }
+});
+
+app.get('/ollama/library', async (req, res) => {
+    try {
+        const response = await axios.get('https://ollama.com/library');
+        const $ = cheerio.load(response.data);
+        const models = [];
+
+        $('li a[href^="/library/"]').each((index, element) => {
+            const modelName = $(element).text().trim();
+            models.push({ name: modelName });
+        });
+
+        res.json(models);
+    } catch (error) {
+        console.error('Error fetching Ollama library:', error);
+        res.status(500).json({ error: 'Failed to fetch Ollama library' });
+    }
+});
+
+app.post('/ollama/embeddings', async (req, res) => {
+    const { model, prompt, options, keep_alive } = req.body;
+    try {
+        const response = await axios.post('http://127.0.0.1:11434/api/embeddings', {
+            model,
+            prompt,
+            options,
+            keep_alive
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error generating embeddings:', error);
+        res.status(500).json({ error: 'Failed to generate embeddings' });
+    }
+});
+
+app.post('/ollama/pull', async (req, res) => {
+    const { name, insecure, stream } = req.body;
+    try {
+        const response = await axios.post('http://127.0.0.1:11434/api/pull', {
+            name,
+            insecure,
+            stream
+        }, {
+            responseType: 'stream'
+        });
+
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Transfer-Encoding': 'chunked'
+        });
+
+        response.data.on('data', (chunk) => {
+            res.write(chunk);
+        });
+
+        response.data.on('end', () => {
+            res.end();
+        });
+    } catch (error) {
+        console.error('Error pulling model:', error);
+        res.status(500).json({ error: 'Failed to pull model' });
+    }
+});
+
+app.delete('/ollama/delete', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const response = await axios.delete('http://127.0.0.1:11434/api/delete', {
+            data: { name }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error deleting model:', error);
+        res.status(500).json({ error: 'Failed to delete model' });
+    }
+});
+
+app.post('/ollama/create', async (req, res) => {
+    const { name, modelfile, stream, path } = req.body;
+    try {
+        const response = await axios.post('http://127.0.0.1:11434/api/create', {
+            name,
+            modelfile,
+            stream,
+            path
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error creating model:', error);
+        res.status(500).json({ error: 'Failed to create model' });
+    }
+});
+
+app.post('/ollama/show', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const response = await axios.post('http://127.0.0.1:11434/api/show', {
+            name
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error showing model information:', error);
+        res.status(500).json({ error: 'Failed to show model information' });
+    }
+});
+
+// Check if a Blob Exists
+app.head('/ollama/blobs/:digest', async (req, res) => {
+    const { digest } = req.params;
+    try {
+        const response = await axios.head(`http://127.0.0.1:11434/api/blobs/${digest}`);
+        res.status(response.status).end();
+    } catch (error) {
+        console.error('Error checking blob:', error);
+        res.status(404).json({ error: 'Blob not found' });
+    }
+});
+
+// Create a Blob
+app.post('/ollama/blobs/:digest', async (req, res) => {
+    const { digest } = req.params;
+    try {
+        const response = await axios.post(`http://127.0.0.1:11434/api/blobs/${digest}`, req.body, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        res.status(201).json(response.data);
+    } catch (error) {
+        console.error('Error creating blob:', error);
+        res.status(400).json({ error: 'Failed to create blob' });
+    }
+});
+
+app.post('/ollama/push', async (req, res) => {
+    const { name, insecure, stream } = req.body;
+    try {
+        const response = await axios.post('http://127.0.0.1:11434/api/push', {
+            name,
+            insecure,
+            stream
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error pushing model:', error);
+        res.status(500).json({ error: 'Failed to push model' });
     }
 });
 
