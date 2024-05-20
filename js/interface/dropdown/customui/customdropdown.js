@@ -1,22 +1,43 @@
+function createDropdown(id) {
+    const select = document.createElement('select');
+    select.id = id;
+    select.className = 'model-selector custom-select ignoreSetup';
+    return select;
+}
 
+function createDropdownWrapper(dropdown, wrapperIdPrefix, nodeIndex) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'dropdown-wrapper';
+    wrapper.id = `${wrapperIdPrefix}-${nodeIndex}`;
 
-function setupCustomDropdown(select, aiNode = false) {
+    const container = document.createElement('div');
+    container.className = 'dropdown-container';
+    container.appendChild(dropdown);
+
+    wrapper.appendChild(container);
+
+    return wrapper;
+}
+
+function setupCustomDropdown(select, delayListeners = false) {
     // Create the main custom dropdown container
     let selectReplacer = document.createElement('div');
     selectReplacer.className = 'select-replacer closed'; // add 'closed' class by default
 
     // Create the currently selected value container
     let selectedDiv = document.createElement('div');
-    selectedDiv.innerText = select.options[select.selectedIndex].innerText;
+    selectedDiv.className = 'selected-text';
+    if (select.options.length > 0) {
+        selectedDiv.innerText = select.options[select.selectedIndex].innerText;
+    }
     selectReplacer.appendChild(selectedDiv);
 
     // Create the dropdown options container
     let optionsReplacer = document.createElement('div');
-    optionsReplacer.className = 'options-replacer';
+    optionsReplacer.className = 'options-replacer custom-scrollbar';
 
     // Append the options container to the main dropdown container
     selectReplacer.appendChild(optionsReplacer);
-
 
     // Replace the original select with the custom dropdown
     let container = document.createElement('div');
@@ -26,8 +47,14 @@ function setupCustomDropdown(select, aiNode = false) {
     container.appendChild(select);
     select.style.display = 'none'; // Hide the original select
 
-    addEventListenersToCustomDropdown(select, aiNode);
+    // Create the custom options
+    Array.from(select.options).forEach(option => {
+        createOptionDiv(option, select, optionsReplacer, selectedDiv);
+    });
 
+    if (!delayListeners) {
+        addEventListenersToCustomDropdown(select);
+    }
 }
 
 function createOptionDiv(option, select, optionsReplacer, selectedDiv) {
@@ -35,6 +62,11 @@ function createOptionDiv(option, select, optionsReplacer, selectedDiv) {
     optionDiv.className = 'dropdown-option';
     optionDiv.innerText = option.innerText;
     optionDiv.setAttribute('data-value', option.value);
+
+    // Check if this option is the currently selected one
+    if (option.selected) {
+        optionDiv.classList.add('selected');
+    }
 
     // Event handler for clicks on this option
     optionDiv.addEventListener('click', function (event) {
@@ -57,12 +89,16 @@ function createOptionDiv(option, select, optionsReplacer, selectedDiv) {
     optionsReplacer.appendChild(optionDiv);
 }
 
-function addEventListenersToCustomDropdown(select, aiNode) {
+
+function addEventListenersToCustomDropdown(select) {
     let isPendingFrame = false;
     let container = select.parentNode;
     let selectReplacer = container.querySelector('.select-replacer');
     let optionsReplacer = selectReplacer.querySelector('.options-replacer');
-    let selectedDiv = selectReplacer.querySelector('div');
+    let selectedDiv = selectReplacer.querySelector('.selected-text');
+
+    // Clear existing options to avoid duplicates
+    optionsReplacer.innerHTML = '';
 
     // Create individual options
     Array.from(select.options).forEach((option) => {
@@ -70,25 +106,26 @@ function addEventListenersToCustomDropdown(select, aiNode) {
     });
 
     selectReplacer.addEventListener('click', function (event) {
-        // Get all the select containers
-        const selectContainers = document.querySelectorAll('.select-container');
-        // Reset z-index for all
-        selectContainers.forEach((el) => el.style.zIndex = "20");
 
         if (optionsReplacer.classList.contains('show')) {
-            if (!event.target.closest('.options-replacer')) {
-                // Dropdown is open and click was outside of the options, so close it
-                window.requestAnimationFrame(() => {
-                    optionsReplacer.classList.remove('show');
-                    selectReplacer.classList.add('closed');
-                    container.style.zIndex = "20"; // reset the z-index of the parent container
-                    isPendingFrame = false;
-                });
-                isPendingFrame = true;
-            }
+            // Dropdown is open, so close it
+            window.requestAnimationFrame(() => {
+                optionsReplacer.classList.remove('show');
+                selectReplacer.classList.add('closed');
+                container.style.zIndex = "20"; // Reset the z-index of the parent container
+                isPendingFrame = false;
+            });
+            isPendingFrame = true;
         } else {
+            // Close all other dropdowns
+            document.querySelectorAll('.options-replacer.show').forEach(el => {
+                el.classList.remove('show');
+                el.parentElement.classList.add('closed');
+                el.parentElement.parentElement.style.zIndex = "20"; // Reset the z-index of other dropdowns
+            });
+
             // Dropdown is closed, so open it
-            container.style.zIndex = "30"; // increase the z-index of the parent container
+            container.style.zIndex = "30"; // Increase the z-index of the parent container
             if (!isPendingFrame) {
                 window.requestAnimationFrame(() => {
                     optionsReplacer.classList.add('show');
@@ -99,9 +136,19 @@ function addEventListenersToCustomDropdown(select, aiNode) {
             }
         }
     });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (event) {
+        if (!container.contains(event.target)) {
+            optionsReplacer.classList.remove('show');
+            selectReplacer.classList.add('closed');
+            container.style.zIndex = "20"; // Reset the z-index of the parent container
+        }
+    });
 }
 
-function setupModelSelect(selectElement, isEmbeddingsSelect = false) {
+function setupModelSelect(selectElement) {
+    const isEmbeddingsSelect = selectElement.id === 'embeddingsModelSelect';
     if (selectElement) {
         setupCustomDropdown(selectElement);
 
@@ -125,6 +172,12 @@ function setupModelSelect(selectElement, isEmbeddingsSelect = false) {
         });
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Setup for all existing custom-selects, excluding those with the ignoreSetup class
+    let selects = document.querySelectorAll('select.custom-select:not(.ignoreSetup)');
+    selects.forEach(select => setupModelSelect(select));
+});
 
 function updateSelectedOptionDisplay(selectElement) {
     // Update the custom dropdown display to show the selected value
@@ -162,11 +215,21 @@ function refreshCustomDropdownDisplay(select) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Setup for all existing custom-selects, excluding those in the modal
-    let selects = document.querySelectorAll('select.custom-select:not(#customModal select.custom-select)');
-    selects.forEach(select => setupModelSelect(select, select.id === 'embeddingsModelSelect'));
-});
+function restoreDropdownState(dropdown) {
+    const customDropdown = dropdown.parentNode.querySelector('.select-replacer');
+    if (customDropdown) {
+        const selectedText = customDropdown.querySelector('.selected-text').textContent.trim();
+        const options = dropdown.options;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].textContent.trim() === selectedText) {
+                dropdown.selectedIndex = i;
+                // Optionally, trigger a change event if needed
+                dropdown.dispatchEvent(new Event('change'));
+                break;
+            }
+        }
+    }
+}
 
 function addOptionToCustomDropdown(select, optionData) {
     let optionsReplacer = select.parentNode.querySelector('.options-replacer');
@@ -176,11 +239,13 @@ function addOptionToCustomDropdown(select, optionData) {
     let option = new Option(optionData.text, optionData.value);
     option.setAttribute('data-key', optionData.key);
 
-    // Check if optionsReplacer exists before appending the option div
+    // Append and bind event to this new option
     if (optionsReplacer) {
-        // Append and bind event to this new option
         createOptionDiv(option, select, optionsReplacer, selectedDiv);
     }
+
+    // Append option to the select element
+    select.appendChild(option);
 }
 
 
@@ -193,19 +258,20 @@ function addToCustomModelDropdown(select, selectData, cacheKey) {
     option.setAttribute('data-key', selectData.key);
 
     select.appendChild(option);
-
     saveDropdownToLocalStorage(select, cacheKey);
-    addOptionToCustomDropdown(select, option);
     updateSelectedOptionDisplay(select);
+    refreshCustomDropdownDisplay(select);
 }
 
 function saveDropdownToLocalStorage(select, storageKey) {
-    const options = Array.from(select.options).map(option => ({
-        value: option.value,
-        text: option.textContent,
-        key: option.getAttribute('data-key'),
-        endpoint: option.getAttribute('data-endpoint')
-    }));
+    const options = Array.from(select.options)
+        .filter(option => option.value !== 'default') // Exclude the default option
+        .map(option => ({
+            value: option.value,
+            text: option.textContent,
+            key: option.getAttribute('data-key'),
+            endpoint: option.getAttribute('data-endpoint')
+        }));
     localStorage.setItem(storageKey, JSON.stringify(options));
     localStorage.setItem(storageKey + '_selected', select.value);
 }
@@ -213,23 +279,23 @@ function saveDropdownToLocalStorage(select, storageKey) {
 function loadDropdownFromLocalStorage(select, storageKey) {
     const storedOptions = JSON.parse(localStorage.getItem(storageKey));
     if (storedOptions) {
-        const existingOptions = new Set(); // Use a Set to track existing option values
-        Array.from(select.options).forEach(option => existingOptions.add(option.value));
-
-        storedOptions.forEach(optionData => {
-            // Only add option if it doesn't already exist
-            if (!existingOptions.has(optionData.value)) {
-                const option = new Option(optionData.text, optionData.value);
-                option.setAttribute('data-key', optionData.key);
-                option.setAttribute('data-endpoint', optionData.endpoint);
-                select.appendChild(option);
-                addOptionToCustomDropdown(select, option); // Custom function to handle UI updates
+        // Remove existing non-default options
+        Array.from(select.options).forEach(option => {
+            if (option.value !== 'default') {
+                select.removeChild(option);
             }
         });
 
+        storedOptions.forEach(optionData => {
+            const option = new Option(optionData.text, optionData.value);
+            option.setAttribute('data-key', optionData.key);
+            option.setAttribute('data-endpoint', optionData.endpoint);
+            select.appendChild(option);
+        });
+
         // Ensure the select displays the correct selected value from storage
-        select.value = localStorage.getItem(storageKey + '_selected');
-        updateSelectedOptionDisplay(select); // Custom function to update UI display of selected option
+        select.value = localStorage.getItem(storageKey + '_selected') || 'default';
+        updateSelectedOptionDisplay(select);
     }
 }
 function deleteSelectedOption(selectId, storageKey) {
@@ -237,20 +303,16 @@ function deleteSelectedOption(selectId, storageKey) {
     const selectedIndex = select.selectedIndex;
 
     if (selectedIndex > -1 && select.options[selectedIndex].value !== "none") {
-        if (confirm("Are you sure you want to delete this configuration?")) {
-            const uniqueValue = select.options[selectedIndex].value;
-            select.remove(selectedIndex);
+        const uniqueValue = select.options[selectedIndex].value;
+        select.remove(selectedIndex);
 
-            // After removal, update the currently selected index
-            if (select.options.length > 0) {  // Check if there are remaining options
-                select.selectedIndex = Math.max(0, selectedIndex - 1); // Adjust the selected index appropriately
-            }
-
-            updateStorageAfterDeletion(select, storageKey, uniqueValue);
-            updateSelectedOptionDisplay(select);
+        // After removal, update the currently selected index
+        if (select.options.length > 0) {  // Check if there are remaining options
+            select.selectedIndex = Math.max(0, selectedIndex - 1); // Adjust the selected index appropriately
         }
-    } else {
-        alert("No valid option selected to delete or cannot delete the placeholder.");
+
+        updateStorageAfterDeletion(select, storageKey, uniqueValue);
+        updateSelectedOptionDisplay(select);
     }
 }
 
@@ -265,6 +327,34 @@ function updateStorageAfterDeletion(select, storageKey, uniqueValue) {
     localStorage.setItem(storageKey + '_selected', select.value);
     refreshCustomDropdownDisplay(select); // Ensure UI is updated
 }
+
+
+
+
+function storeSelectSelectedValue(selectId) {
+    const select = document.getElementById(selectId);
+    if (select) {
+        const selectedValue = select.value;
+        localStorage.setItem(selectId, selectedValue);
+    }
+}
+
+function restoreSelectSelectedValue(selectId) {
+    const select = document.getElementById(selectId);
+    if (select) {
+        const storedValue = localStorage.getItem(selectId);
+        if (storedValue) {
+            const optionExists = Array.from(select.options).some(option => option.value === storedValue);
+            if (optionExists) {
+                select.value = storedValue;
+            }
+        }
+    }
+}
+
+
+
+
 
 
 // Function for custom slider background

@@ -1,4 +1,66 @@
-// Custom Endpoint
+function setModelSelectorsVisibility(inferenceSelect) {
+    const selectedValue = inferenceSelect.value.toLowerCase();
+    const nodeIndex = inferenceSelect.id.split('-').pop(); // Extract the node index if present
+
+    // Get the container of the inference select to scope the selection
+    const container = inferenceSelect.closest('.local-llm-dropdown-container-' + nodeIndex) || document.getElementById('template-dropdowns');
+
+    if (!container) {
+        console.error('Container not found for inference select', inferenceSelect);
+        return;
+    }
+
+    // Hide all model selectors by default
+    container.querySelectorAll('.dropdown-wrapper').forEach(wrapper => {
+        if (!wrapper.id.startsWith('wrapper-inference')) { // Ensure the inference select wrapper is never hidden
+            wrapper.style.display = 'none';
+        }
+    });
+
+    // Show the relevant model selector based on the selected inference option
+    const relevantWrapper = container.querySelector(`[id^="wrapper-${selectedValue}"]`);
+    if (relevantWrapper) {
+        relevantWrapper.style.display = 'flex';
+    }
+}
+
+function setupInferenceDropdowns(container) {
+    const inferenceSelect = container.querySelector('.model-selector.custom-select[id^="inference-select"]');
+
+    // Set up initial visibility based on the selected inference option
+    setModelSelectorsVisibility(inferenceSelect);
+
+    // Add change event listener to the inference select
+    inferenceSelect.addEventListener('change', () => {
+        setModelSelectorsVisibility(inferenceSelect);
+
+        // Close the dropdown when an option is selected
+        const selectReplacer = inferenceSelect.closest('.select-container').querySelector('.select-replacer');
+        if (selectReplacer) {
+            selectReplacer.classList.add('closed');
+            const optionsReplacer = selectReplacer.querySelector('.options-replacer');
+            if (optionsReplacer) {
+                optionsReplacer.classList.remove('show');
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const templateDropdownsContainer = document.getElementById('template-dropdowns');
+    // Delay the visibility update to ensure saved options are loaded
+    setTimeout(() => {
+        setupInferenceDropdowns(templateDropdownsContainer);
+    }, 100); // Adjust the timeout duration as needed
+});
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('custom-model-select');
+    loadDropdownFromLocalStorage(select, 'customModelDropdown');
+});
+
 function saveApiConfig() {
     const endpoint = document.getElementById('apiEndpoint').value;
     const key = document.getElementById('apiEndpointKey').value;
@@ -13,7 +75,7 @@ function saveApiConfig() {
     const select = document.getElementById('custom-model-select');
 
     // Create an object containing all necessary data
-    const selectData = { modelName, endpoint, key };
+    const selectData = { modelName, endpoint, key, value: Date.now().toString() };
 
     // Add the new model to the dropdown and update localStorage
     addToCustomModelDropdown(select, selectData, 'customModelDropdown');
@@ -22,20 +84,13 @@ function saveApiConfig() {
     closeModal();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    const select = document.getElementById('custom-model-select');
-    loadDropdownFromLocalStorage(select, 'customModelDropdown');
-});
-
 document.getElementById('addApiConfigBtn').addEventListener('click', function () {
     openModal('apiConfigModalContent');
 });
 
-
 document.getElementById('deleteApiConfigBtn').addEventListener('click', function () {
     deleteSelectedOption('custom-model-select', 'customModelDropdown');
 });
-
 
 
 
@@ -140,18 +195,11 @@ function clearKeys() {
     document.getElementById('anthropic-api-key-input').value = '';
 }
 
-
-
-
-
-
-
-
 // From ai.js
 
-
-
 let useProxy = true;
+let baseOllamaUrl = 'http://127.0.0.1:11434/api/';
+let ollamaLibrary = null;
 
 // Check if the AI proxy server is working
 async function checkProxyServer() {
@@ -162,11 +210,18 @@ async function checkProxyServer() {
             console.log('AI proxy server is working');
         } else {
             useProxy = false;
-            console.log('AI proxy server is not enabled. SeeNeurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through js until the page is refreshed while the ai-proxy is running.');
+            console.log('AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through JS until the page is refreshed while the ai-proxy is running.');
         }
     } catch (error) {
         useProxy = false;
-        console.log('AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through js until the page is refreshed while the ai-proxy is running.');
+        console.log('AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through JS until the page is refreshed while the ai-proxy is running.');
+    }
+
+    if (useProxy) {
+        ollamaLibrary = await getOllamaLibrary();
+        baseOllamaUrl = 'http://localhost:7070/ollama/';
+    } else {
+        baseOllamaUrl = 'http://127.0.0.1:11434/api/';
     }
 }
 
@@ -177,7 +232,6 @@ window.addEventListener('load', checkProxyServer);
 async function provideAPIKeys() {
     const openaiApiKey = document.getElementById("api-key-input").value;
     const groqApiKey = document.getElementById("GROQ-api-key-input").value;
-    //const claudeApiKey = document.getElementById("anthropic-api-key-input").value;
 
     try {
         const response = await fetch('http://localhost:7070/api-keys', {
@@ -185,12 +239,11 @@ async function provideAPIKeys() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            //body: JSON.stringify({ openaiApiKey, groqApiKey, claudeApiKey })
             body: JSON.stringify({ openaiApiKey, groqApiKey })
         });
 
         if (response.ok) {
-            console.log('API keys provided to the proxy server');
+            //console.log('API keys provided to the proxy server');
         } else {
             console.log('Failed to provide API keys to the proxy server');
         }
@@ -199,73 +252,72 @@ async function provideAPIKeys() {
     }
 }
 
-function getAPIParams(messages, stream, customTemperature, modelOverride = null) {
-    const modelSelect = document.getElementById('model-select');
-    const localModelSelect = document.getElementById('local-model-select');
-    const customModelSelect = document.getElementById('custom-model-select');
-    let model = modelOverride || modelSelect.value;
-    console.log(`model`, model);
+function getAPIParams(messages, stream, customTemperature, inferenceOverride = null) {
+    if (!inferenceOverride) {
+        inferenceOverride = determineGlobalModel();
+    }
+    const { provider, model } = inferenceOverride;
     let API_KEY;
     let API_URL;
     let apiEndpoint;
 
     if (useProxy) {
         // Use the AI proxy server
-        if (model.includes("GROQ")) {
-            API_URL = "http://localhost:7070/groq";
-        } else if (model.includes("claude")) {
-            API_URL = "http://localhost:7070/claude";
-        } else if (model.includes("ollama")) {
-            API_URL = "http://localhost:7070/ollama";
-
-            model = localModelSelect.value;
-        } else if (model.includes("custom")) {
-            const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
-            API_URL = "http://localhost:7070/custom";
-            apiEndpoint = selectedOption.getAttribute('data-endpoint');
-            API_KEY = selectedOption.getAttribute('data-key');
-            model = selectedOption.text; // Assuming the model name is the text content of the option
-        } else {
-            API_URL = "http://localhost:7070/openai";
+        switch (provider) {
+            case 'GROQ':
+                API_URL = "http://localhost:7070/groq";
+                break;
+            case 'claude':
+                API_URL = "http://localhost:7070/claude";
+                break;
+            case 'ollama':
+                API_URL = "http://localhost:7070/ollama/chat";
+                break;
+            case 'custom':
+                const selectedOption = document.querySelector(`#custom-model-select option[value="${model}"]`);
+                API_URL = "http://localhost:7070/custom";
+                apiEndpoint = selectedOption.getAttribute('data-endpoint');
+                API_KEY = selectedOption.getAttribute('data-key');
+                break;
+            default:
+                API_URL = "http://localhost:7070/openai";
         }
         // Provide API keys to the proxy server
         provideAPIKeys();
     } else {
         // Use the direct API endpoints
-        if (model.includes("GROQ")) {
-            API_URL = "https://api.groq.com/openai/v1/chat/completions";
-            API_KEY = document.getElementById("GROQ-api-key-input").value;
-        } else if (model.includes("claude")) {
-            alert("Claude model can only be used with the AI proxy server. Please enable the proxy server and refresh the page.");
-            return null;
-        } else if (model.includes("ollama")) {
-            alert("Ollama can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
-            return null;
-        } else if (model.includes("custom")) {
-            alert("Custom Endpoints can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
-            return null;
-        } else {
-            API_URL = "https://api.openai.com/v1/chat/completions";
-            API_KEY = document.getElementById("api-key-input").value;
+        switch (provider) {
+            case 'GROQ':
+                API_URL = "https://api.groq.com/openai/v1/chat/completions";
+                API_KEY = document.getElementById("GROQ-api-key-input").value;
+                break;
+            case 'claude':
+                alert("Claude model can only be used with the AI proxy server. Please enable the proxy server and refresh the page.");
+                return null;
+            case 'ollama':
+                API_URL = "http://127.0.0.1:11434/api/chat";
+                break;
+            case 'custom':
+                alert("Custom Endpoints can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
+                return null;
+            default:
+                API_URL = "https://api.openai.com/v1/chat/completions";
+                API_KEY = document.getElementById("api-key-input").value;
         }
     }
 
-    // Remove the "GROQ-" prefix from the model value
-    model = model.replace(/^GROQ-/, '');
-
-    if (!useProxy && !API_KEY) {
+    if (!useProxy && !API_KEY && provider !== 'ollama' && provider !== 'custom') {
         alert("Please enter your API key");
         return null;
     }
 
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
-    if (!useProxy) {
+    if (!useProxy && (provider === 'OpenAi' || provider === 'GROQ')) {
         headers.append("Authorization", `Bearer ${API_KEY}`);
     }
 
-    const temperature = customTemperature !== null ? customTemperature
-        : parseFloat(document.getElementById('model-temperature').value);
+    const temperature = customTemperature !== null ? customTemperature : parseFloat(document.getElementById('model-temperature').value);
     let max_tokens = document.getElementById('max-tokens-slider').value;
 
     const body = {

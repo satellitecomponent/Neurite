@@ -39,34 +39,12 @@ async function sendLLMNodeMessage(node, message = null) {
         },
     ];
 
-    let LocalLLMSelect = document.getElementById(node.LocalLLMSelectID);
-    const LocalLLMSelectValue = LocalLLMSelect.value;
+    const aiNodeInference = determineAiNodeModel(node);
     let selectedModel;
 
     // Logic for dynamic model switching based on connected nodes
     const hasImageNodes = allConnectedNodes.some(node => node.isImageNode);
-    selectedModel = determineAiNodeModel(LocalLLMSelectValue, hasImageNodes);
-
-    function determineAiNodeModel(LocalLLMValue, hasImageNodes) {
-        // Check if the local or global model is set to ollama.
-        const isOllamaSelected = LocalLLMValue === 'ollama' ||
-            (LocalLLMValue === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
-
-        // If image nodes are present, and ollama is not selected, use the vision model.
-        if (hasImageNodes && !isOllamaSelected) {
-            return 'gpt-4o';
-        } else if (hasImageNodes && isOllamaSelected) {
-            // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
-            return 'LLaVA 7B';
-        } else if (LocalLLMValue === 'GLOBAL') {
-            // Use global model selection if LocalLLMValue is set to GLOBAL and ollama is not selected.
-            return document.getElementById('model-select').value;
-        } else {
-            // Use the local model selection
-            return LocalLLMValue;
-        }
-    }
-
+    selectedModel = modulateAiNodeModel(aiNodeInference, hasImageNodes);
 
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
@@ -89,10 +67,7 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `The LAST LINE of your response PROMPTS any CONNECTED Ai.
-ARCHITECT profound, mission-critical QUERIES.
-SYNTHESIZE cross-disciplinary CONVERSATIONS.
-TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
+            content: `The LAST LINE of your response is DELIVERED to the current CONNECTIONS. TAKE INITIATIVE!`
         });
     }
 
@@ -214,8 +189,6 @@ TAKE INITIATIVE! DECLARE TOPIC(s) of FOCUS.`
         };
 
         messages.push(embedMessage);
-    } else {
-        console.warn('No relevant keys found or server did not respond.');
     }
 
     let allConnectedNodesData = getAllConnectedNodesData(node, true);

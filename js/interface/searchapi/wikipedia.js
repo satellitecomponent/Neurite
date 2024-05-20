@@ -96,9 +96,7 @@ function displayWikipediaResults(wikipediaSummaries) {
         let link = `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(' ', '_'))}`;
 
         let node = createLinkNode(title, description, link);
-        htmlnodes_parent.appendChild(node.content);
         node.followingMouse = 1;
-        node.draw();
         node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
     });
 }

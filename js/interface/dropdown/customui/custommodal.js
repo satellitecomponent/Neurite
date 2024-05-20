@@ -60,6 +60,9 @@ function openModal(contentId) {
         case 'nodeConnectionModal':
             modalTitle.textContent = 'Connect Notes';
             break;
+        case 'ollamaManagerModal':
+            modalTitle.textContent = 'Ollama Library';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
@@ -69,7 +72,7 @@ function openModal(contentId) {
     // Set up custom selects within the modal
     let modalSelects = modalBody.querySelectorAll('select.custom-select');
     modalSelects.forEach(select => {
-        setupModelSelect(select, select.id === 'embeddingsModelSelect');
+        setupModelSelect(select);
         // Restore the stored value if available
         if (modalInputValues[select.id] !== undefined) {
             select.value = modalInputValues[select.id];

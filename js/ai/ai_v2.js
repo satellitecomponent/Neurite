@@ -105,14 +105,13 @@ async function handleStreamingForLLMnode(response, node) {
     return fullResponse; // return the entire response
 }
 
-async function callchatLLMnode(messages, node, stream = false, selectedModel = null) {
+async function callchatLLMnode(messages, node, stream = false) {
     // Define the callbacks
     function onBeforeCall() {
         node.aiResponding = true;
         node.regenerateButton.innerHTML = '<svg width="24" height="24"><use xlink:href="#pause-icon"></use></svg>';
         document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'block';
         document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'none';
-        //console.log("Messages sent to API:", messages);
     }
 
     function onAfterCall() {
@@ -138,7 +137,7 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
 
     // Prepare the parameters for callAiApi
     const customTemperature = parseFloat(document.getElementById(`node-temperature-${node.index}`).value);
-    const modelOverride = selectedModel || determineModel();
+    let inferenceOverride = determineAiNodeModel(node);
 
     // Call the generic API function
     return callAiApi({
@@ -149,11 +148,10 @@ async function callchatLLMnode(messages, node, stream = false, selectedModel = n
         onAfterCall,
         onStreamingResponse,
         onError,
-        modelOverride,
+        inferenceOverride,
         controller: node.controller  // Pass the node-specific controller
     });
 }
-
 
         // UI agnostic api call
 
@@ -167,7 +165,7 @@ async function callAiApi({
     onAfterCall,
     onStreamingResponse,
     onError,
-    modelOverride = null,
+    inferenceOverride = null,
     controller = null  // Accept a controller as a parameter, potentially null
 }) {
     if (useDummyResponses) {
@@ -190,7 +188,7 @@ async function callAiApi({
         currentController = controller;
     }
 
-    const params = getAPIParams(messages, stream, customTemperature, modelOverride);
+    const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
     console.log("Message Array", messages);
     console.log("Token count:", getTokenCount(messages));
 
@@ -222,6 +220,14 @@ async function callAiApi({
 
         return responseData;  // This is either the full streamed response or the directly fetched response
     } catch (error) {
+        if (error.name === 'AbortError') {
+            // Request was aborted by the client
+            await fetch('/cancel-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId: currentController.requestId }),
+                });
+        }
         console.error("Error:", error);
         onError(error.message || error);
     } finally {
@@ -257,6 +263,5 @@ async function streamAiResponse(response, onStreamingResponse, delay = 10) {
             buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
         }
     }
-
     return finalResponse; // Return the accumulated final response
 }
