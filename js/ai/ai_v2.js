@@ -182,11 +182,12 @@ async function callAiApi({
         return;
     }
 
-    // Determine whether to use the provided controller or create a new one
     if (!controller) {
-        controller = new AbortController();  // Create a new AbortController if one is not provided
+        controller = new AbortController();
         currentController = controller;
     }
+
+    const requestId = Date.now().toString(); // Generate a unique requestId
 
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
     console.log("Message Array", messages);
@@ -200,11 +201,11 @@ async function callAiApi({
     let requestOptions = {
         method: "POST",
         headers: params.headers,
-        body: params.body,
-        signal: controller.signal,  // Use the signal from the appropriate controller
+        body: JSON.stringify({ ...JSON.parse(params.body), requestId }), // Include the requestId in the request body
+        signal: controller.signal,
     };
 
-    onBeforeCall();  // Pre API call UI updates
+    onBeforeCall();
 
     try {
         const response = await fetch(params.API_URL, requestOptions);
@@ -218,20 +219,16 @@ async function callAiApi({
             responseData = data.choices && data.choices[0].message ? data.choices[0].message.content.trim() : '';
         }
 
-        return responseData;  // This is either the full streamed response or the directly fetched response
+        return responseData;
     } catch (error) {
         if (error.name === 'AbortError') {
-            // Request was aborted by the client
-            await fetch('/cancel-request', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestId: currentController.requestId }),
-                });
+            console.log('Response Halted:', requestId);
+        } else {
+            console.error("Error:", error);
+            onError(error.message || error);
         }
-        console.error("Error:", error);
-        onError(error.message || error);
     } finally {
-        onAfterCall();  // Post API call UI updates
+        onAfterCall();
     }
 }
 
