@@ -248,6 +248,41 @@
         <div id="ollamaModelList" class="custom-scrollbar"></div>
     </div>
 
+    <div id="vectorDbModal" style="display: none;">
+        <div id="key-list" class="scrollable-list" title="Embedded Documents">
+            <!-- Stored keys will be dynamically added here -->
+        </div>
+        <div class="button-container">
+            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
+            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
+        </div>
+        <!--<input type="file" id="fileInput" />
+    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+        <br />
+        <div class="gridLayout">
+
+            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
+                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
+                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+            </div>
+
+            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
+                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
+                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+            </div>
+
+        </div>
+        <br />
+        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
+            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
+            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+        </div>
+        <label for="inputKeyExtract">Key:</label><br>
+        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
+        <label for="inputTextExtract">Text:</label><br>
+        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea>
+    </div>
+
     <div id="alertModal" style="display: none;">
         <!-- Content for the alert modal -->
         <p>This is an alert message.</p>
@@ -288,13 +323,6 @@
                     <div class="panel-icon link-icon" title="Display Link">
                         <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
                             <use xlink:href="#link-icon-symbol"></use>
-                        </svg>
-                    </div>
-                </div>
-                <div class="icon-content">
-                    <div class="panel-icon code-icon" title="Create Code Editor (Shift + ALT/Option + Double Click)">
-                        <svg class="w-[42px] h-[42px] text-gray-800 dark:text-white" aria-hidden="true">
-                            <use xlink:href="#code-icon-symbol"></use>
                         </svg>
                     </div>
                 </div>
@@ -385,9 +413,8 @@
                 <div class="tabs">
                     <button class="tablink" onclick="openTab('tab1', this)">Notes</button>
                     <button class="tablink" onclick="openTab('tab4', this)">Ai</button>
-                    <button class="tablink" onclick="openTab('tabExtract', this)">Data</button>
-                    <button class="tablink" onclick="openTab('tab2', this)">Edit</button>
-                    <button class="tablink" onclick="openTab('tab6', this)">Save</button>
+                    <button class="tablink" onclick="openTab('tab2', this)">Fractal</button>
+                    <button class="tablink" onclick="openTab('tab6', this)">Networks</button>
                     <button class="tablink" onclick="openTab('tab3', this)">?</button>
                 </div>
 
@@ -533,8 +560,11 @@
                             <label for="contextSettingsContainer" class="button-label" onclick="toggleContextSettingsPanel()">Context Settings</label>
                             <div class="context-settings-container" id="contextSettingsContainer">
                                 <div class="context-settings-panel hidden">
-                                    <div style="display: flex; justify-content: space-evenly; align-items: center; padding-top: 10px;">
-                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">Embeddings:</label><br>
+
+                                    <div class="dropdown-wrapper" style="padding: 10px" id="wrapper-embeddings">
+                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">
+                                            <button id="openVectorDbButton" class="linkbuttons">Vector-DB</button>
+                                        </label>
                                         <div class="dropdown-container">
                                             <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
                                                 <option value="text-embedding-3-small">text-embedding-3-small</option>
@@ -545,7 +575,8 @@
                                         </div>
                                         <!-- Hide the original local embeddings checkbox -->
                                         <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
-                                    </div>
+                                    </div> 
+                                       
                                     <div class="checkboxarray">
                                         <div title="Enable Web Search Results">
                                             <input type="checkbox" id="google-search-checkbox" name="enable-search">
@@ -669,50 +700,12 @@
                     </div>
                 </div>
 
-                <div id="tabExtract" class="tabcontent">
-                    <!-- Extract tab content here -->
-                    <div class="submenu">
-
-                        <label for="inputKeyExtract">Key:</label><br>
-                        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
-                        <label for="inputTextExtract">Text:</label><br>
-                        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea>
-                        <div class="gridLayout">
-
-                            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
-                                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
-                                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
-                            </div>
-
-                            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
-                                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
-                                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
-                            </div>
-
-                        </div><br>
-                        <div class="button-container">
-                            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
-                            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
-                        </div>
-                        <div id="key-list" class="scrollable-list" title="Embedded Documents">
-                            <!-- Stored keys will be dynamically added here -->
-                        </div>
-                        <!--<input type="file" id="fileInput" />
-                        <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
-                        <br />
-                        <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
-                            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
-                            <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
-                        </div>
-                    </div>
-                </div>
-
 
                 <div id="tab2" class="tabcontent">
                     <!-- Second tab content here -->
                     <div class="submenu">
                         <div class="label-bar-container">
-                            <label for="fractalSettingsContainer" class="button-label" onclick="toggleFractalSettingsPanel()">Fractal Settings</label>
+                            <label for="fractalSettingsContainer" class="button-label" onclick="toggleFractalSettingsPanel()">Controls</label>
                             <div class="fractal-settings-container" id="fractalSettingsContainer">
                                 <div class="fractal-settings-panel hidden">
                                     <div class="settingsSlider centered" style="margin-bottom: 10px;">
@@ -1234,7 +1227,6 @@
 
     <script src="js/nodes/nodeinteraction/nodestep.js"></script>
 
-    <script src="js/nodes/nodetypes/editornodes/editornode.js"></script>
     <script src="js/nodes/nodetypes/textnodes/contenteditable.js"></script>
     <script src="js/nodes/nodetypes/textnodes/textnode.js"></script>
     <script src="js/nodes/nodetypes/linknodes/linknode.js"></script>

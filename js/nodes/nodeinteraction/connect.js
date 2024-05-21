@@ -121,23 +121,6 @@ function getNodeData(node) {
         const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.id);
         const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nLast Prompts and Responses:${lastPromptsAndResponses}`;
         return nodeInfo;
-    }
-
-    // Check if the node contains an iframe editor
-    let iframeElement = document.querySelector(`iframe[identifier='editor-${node.uuid}']`);
-    if (iframeElement) {
-        // Handle iframe editor content
-        let iframeWindow = iframeElement.contentWindow;
-        let htmlContent = iframeWindow.htmlEditor.getValue();
-        let cssContent = iframeWindow.cssEditor.getValue();
-        let jsContent = iframeWindow.jsEditor.getValue();
-
-        const nodeInfo =
-            `${tagValues.nodeTag} ${title}\n` +
-            `Text Content: \n\`\`\`html\n${htmlContent}\n\`\`\`\n` +
-            `\`\`\`css\n${cssContent}\n\`\`\`\n` +
-            `\`\`\`javascript\n${jsContent}\n\`\`\``;
-        return nodeInfo;
     } else {
         // Handle regular text content
         let contentText = getTextareaContentForNode(node);

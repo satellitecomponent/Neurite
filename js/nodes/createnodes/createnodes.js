@@ -2,11 +2,7 @@
     // Cancel the default behavior of the event
     cancel(e);
 
-    if (nodeMode && e.altKey) {
-        // Node mode (Shift) + Alt + double click behavior
-        let node = createEditorNode();
-        node.draw();
-    } else if (e.altKey) {
+    if (e.altKey) {
         // Alt + double click behavior
         e.preventDefault();
         // Assuming that the createLLMNode function takes x, y coordinates

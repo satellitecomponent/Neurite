@@ -23,6 +23,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
     //Use Prompt area if message is not passed.
     node.latestUserMessage = message ? message : node.promptTextArea.value;
+
     // Clear the prompt textarea
     node.promptTextArea.value = '';
     node.promptTextArea.dispatchEvent(new Event('input'));
@@ -35,7 +36,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: `YOU are ${aiIdentity}.`
+            content: `YOU are ${aiIdentity}. Your response is rendered via marked.js. Code output requires triple backticks.`
         },
     ];
 
@@ -88,7 +89,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
         // Call generateKeywords function to get keywords
         const count = 3; // Set the number of desired keywords
-        const keywordsArray = await generateKeywords(message, count);
+        const keywordsArray = await generateKeywords(node.latestUserMessage, count);
 
         // Join the keywords array into a single string when needed for operations that require a string
         const keywordsString = keywordsArray.join(' ');
@@ -268,9 +269,7 @@ async function sendLLMNodeMessage(node, message = null) {
     lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.id);
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    node.aiResponseTextArea.value += `\n\n${PROMPT_IDENTIFIER} ${node.latestUserMessage}\n`;
-    // Trigger the input event programmatically
-    node.aiResponseTextArea.dispatchEvent(new Event('input'));
+    handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage, PROMPT_IDENTIFIER);
 
     let wolframData;
     if (document.getElementById(`enable-wolfram-alpha-checkbox-${nodeIndex}`).checked) {

@@ -229,7 +229,7 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
 
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
-        myCodeMirror.replaceRange(`\n\n${PROMPT_IDENTIFIER} ${message}\n\n`, CodeMirror.Pos(lineBeforeAppend));
+        handleUserPromptAppendCodeMirror(myCodeMirror, message, PROMPT_IDENTIFIER);
         isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
         myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));

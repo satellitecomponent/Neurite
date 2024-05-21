@@ -447,18 +447,6 @@ function setupAiNodePromptTextAreaListeners(node) {
             sendLLMNodeMessage(node);
         }
     });
-
-    promptTextArea.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            if (e.shiftKey) {
-                // Allow the new line to be added
-            } else {
-                e.preventDefault();
-                sendLLMNodeMessage(node);
-            }
-        }
-    });
-
     // ... other event listeners for promptTextArea ...
 }
 
