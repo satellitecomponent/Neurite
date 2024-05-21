@@ -188,65 +188,75 @@ body {
     .html-iframe.hidden, .python-frame.hidden {
         display: none;
     }
+.textarea-override {
+    border: none;
+    outline: none;
+    resize: none;
+    background-color: transparent;
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+    -webkit-appearance: none;
+}
 
 .editor-wrapper {
-    font-family: monospace; /* Ensure all text uses the same font */
+    font-family: monospace;
     border: none;
     border-bottom: 1px solid #8882;
-    width: 100%;
-    height: auto;
-    min-height: 120px;
+    width: 280px;
+    height: 100%;
+    min-height: 180px;
     max-height: 320px;
     overflow: hidden;
-    padding: 0px;
+    padding: 15px 0px 1px 22px;
     margin: 0px;
     box-sizing: border-box;
     background-color: #222229;
-    border-radius: 0; /* Remove rounded edges */
-    position: relative; /* Needed for absolute positioning of children */
+    border-radius: 0;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
 }
 
 .editable-div, .syntax-display-div {
+    border: none;
     outline: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow-y: auto;
     scroll-behavior: auto;
-    white-space: pre-wrap; /* Ensure text wrapping and preserve whitespace */
-    word-wrap: break-word; /* Break long words to the next line */
-    line-height: 1.5em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6em;
     box-sizing: border-box;
-    padding-left: 22px;
-    padding-right: 11px;
-    padding-top: 15px;
+    padding: 0;
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 18px;
+    letter-spacing: 0.6px;
 }
 
 .editable-div {
-    z-index: 0; /* Higher than the display div to receive input */
-    background: transparent; /* Ensure the overlay content is visible */
+    z-index: 0;
+    background: transparent;
     color: #2b2847;
     caret-color: #bbb;
 }
 
 .syntax-display-div {
-    z-index: 1; /* Behind the input div */
-    background: transparent; /* Ensure the overlay content is visible */
+    z-index: 1;
+    background: transparent;
     pointer-events: none;
 }
 
-/* Custom syntax display div */
     .syntax-display-div span {
         display: inline;
         font-family: inherit;
         font-size: inherit;
         line-height: inherit;
-        white-space: inherit; /* Ensure text wrapping and preserve whitespace */
-        word-wrap: inherit; /* Break long words to the next line */
+        white-space: inherit;
+        word-wrap: inherit;
         overflow-wrap: inherit;
         line-height: inherit;
         font-family: inherit;
@@ -255,31 +265,25 @@ body {
 
 .node-title-sd {
     pointer-events: auto;
-    color: paleturquoise !important; /* Override color to ensure visibility */
+    color: paleturquoise !important;
     cursor: pointer;
-    font-size: inherit; /* Ensures font size matches the surrounding text */
-    font-family: inherit; /* Ensures font family matches the surrounding text */
-    line-height: inherit; /* Ensures line height matches the surrounding text */
+    font-size: inherit;
+    font-family: inherit;
+    line-height: inherit;
 }
 
-    .editable-div *, .syntax-display-div * {
-        color: inherit; /* This makes sure that all child elements inherit the parent's text color */
-    }
+.editable-div *, .syntax-display-div * {
+    color: inherit;
+}
+
+/* Transparent text highlight color */
+.editable-div::selection {
+    background-color: rgba(0, 0, 255, 0.2);
+    color: transparent;
+}
 
 .neurite-code-block {
 }
-
-.textarea-override {
-    border: none; /* Remove borders */
-    outline: none; /* Remove focus outline */
-    resize: none; /* Hide resize handle */
-    background-color: transparent; /* Make background transparent */
-    width: 100%; /* Ensure it fills the container */
-    height: 100%; /* Ensure it fills the container */
-    box-shadow: none; /* Remove any shadows */
-    -webkit-appearance: none; /* Neutralize platform-native styling on macOS */
-}
-
 
 
 .button-container {
@@ -1544,6 +1548,7 @@ td {
 
 #key-list {
     max-width: 265px;
+    height: 100px;
 }
         /* New CSS */
         #key-list p:hover {
@@ -2324,15 +2329,14 @@ textarea[id^='custom-instructions-textarea-'] {
 }
 
 .user-prompt {
-    background-color: #b799ce;
-    color: #222226;
-    padding: 4px 10px 4px 12px;
-    border-radius: 10px;
-    margin: 15px auto;
-    margin-right: 15px;
+    background-color: rgb(22 20 22);
+    font-size: 20px;
+    padding: 10px 10px 10px 15px;
+    border-radius: 20px 20px 0 20px;
+    margin: 15px;
     display: inline-block;
     width: auto;
-    max-width: 80%;
+    max-width: 85%;
     -webkit-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
     -moz-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
     box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
@@ -2374,8 +2378,98 @@ textarea[id^='custom-instructions-textarea-'] {
     width: auto;
     overflow-wrap: break-word;
     position: relative;
-    font-size: 18px;
+    font-size: 22px;
 }
+
+    /* Headings */
+    .ai-response h1 {
+        font-size: 2em;
+        color: #fff;
+        margin-bottom: 0.5em;
+    }
+
+    .ai-response h2 {
+        font-size: 2em;
+        color: #eee;
+        margin-bottom: 0.5em;
+    }
+
+    .ai-response h3 {
+        font-size: 1.5em;
+        color: #ddd;
+        margin-bottom: 0.5em;
+    }
+
+    .ai-response h4 {
+        font-size: 1.25em;
+        color: #ccc;
+        margin-bottom: 0.5em;
+    }
+
+    .ai-response h5 {
+        font-size: 1.25em;
+        color: #bbb;
+        margin-bottom: 0.5em;
+    }
+
+    .ai-response h6 {
+        font-size: 1.125em;
+        color: #aaa;
+        margin-bottom: 0.5em;
+    }
+
+    /* Paragraphs */
+    .ai-response p {
+        margin-bottom: 1em;
+    }
+
+    /* Lists */
+    .ai-response ul,
+    .ai-response ol {
+        margin-bottom: 1em;
+        padding-left: 2em;
+    }
+
+    .ai-response li {
+        margin-bottom: 0.5em;
+    }
+
+    /* Links */
+    .ai-response a {
+        color: #8ac6f2;
+        text-decoration: none;
+    }
+
+        .ai-response a:hover {
+            text-decoration: underline;
+        }
+
+    /* Images */
+    .ai-response img {
+        display: block;
+        margin: 0 auto;
+        width: 80%;
+        max-width: 100%; /* Ensure the image doesn't exceed the container's width */
+    }
+
+    /* Tables */
+    .ai-response table {
+        width: 100%;
+        margin: 0 auto;
+        border-collapse: collapse; /* Optional: To make sure there are no spaces between table cells */
+        table-layout: fixed; /* Ensure consistent column widths */
+    }
+
+    .ai-response th, .ai-response td {
+        padding: 0.5em;
+        border: 1px solid #ddd; /* Optional: To add a border to the table cells */
+        text-align: left; /* Optional: To align text to the left in table cells */
+    }
+
+    /* Ensure consistent row height */
+    .ai-response tr {
+        height: 2em; /* Adjust the value as needed */
+    }
 
 .drag-handle {
     display: flex;
@@ -2483,7 +2577,7 @@ textarea[id^='custom-instructions-textarea-'] {
     padding-top: 20px;
     padding-bottom: 5px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     border-bottom-right-radius: 8px;
     border-top-left-radius: 8px;
     z-index: 100;
@@ -2505,9 +2599,9 @@ textarea[id^='custom-instructions-textarea-'] {
 .icon-row {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: flex-start; /* Align icons to the start */
     margin-bottom: 10px;
+    width: 100%;
+    justify-content: space-evenly;
 }
 
 .function-call-container {
@@ -2807,10 +2901,10 @@ textarea[id^='custom-instructions-textarea-'] {
 }
 
 .icon-content {
-    flex-grow: 0;
+    flex-grow: 1;
     flex-shrink: 0;
-    width: 49px;
-    height: 33px;
+    width: 10px;
+    height: 30px;
     margin-inline: 5px;
     display: flex;
     justify-content: center;
