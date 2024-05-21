@@ -197,10 +197,10 @@ zoomTo = zoom.unscale(gz ** 0.5);
 autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
-
 function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1) {
     return new Promise((resolve) => {
-        let animate = true
+        let animate = true;
+        let userBailedOut = false;
 
         const newZoomMagnitude = parseFloat(zoomMagnitude);
         const newPanReal = parseFloat(panReal);
@@ -224,10 +224,27 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
             try {
                 animateTransition(0, 1, duration, (t) => {
                     // Regular animation steps
-                    zoomTo = targetZoom;
-                    panTo = targetPan;
+                    const currentZoom = zoom.mag();
+                    const stepZoom = currentZoom + (targetZoom.mag() - currentZoom) * t;
+
+                    // Ensure zoom does not undershoot or overshoot
+                    if (Math.abs(stepZoom - targetZoom.mag()) < autopilotThreshold) {
+                        zoomTo = targetZoom;
+                    } else {
+                        zoomTo = zoom.scale(stepZoom / currentZoom);
+                    }
+
+                    const currentPan = pan;
+                    const stepPanX = currentPan.x + (targetPan.x - currentPan.x) * t;
+                    const stepPanY = currentPan.y + (targetPan.y - currentPan.y) * t;
+                    panTo = new vec2(stepPanX, stepPanY);
+
                 }, easeInOutCubic, () => {
-                    // Completion callback
+                    if (!userBailedOut) {
+                        // Ensure the final zoom and pan values are set to the target values
+                        zoom = targetZoom;
+                        pan = targetPan;
+                    }
                     activeAnimationsCount--;
                     autopilotSpeed = 0;
                     autopilotReferenceFrame = undefined;
@@ -236,6 +253,7 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
                 }, () => {
                     // Bailout condition
                     if (autopilotSpeed === 0) {
+                        userBailedOut = true;
                         console.log("Animation interrupted by user interaction.");
                         return true; // Indicate that the animation should be terminated
                     }
