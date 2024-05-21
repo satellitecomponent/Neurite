@@ -527,10 +527,6 @@ function reconstructSavedNode(node) {
         initLinkNode(node);
     }
 
-    if (isEditorNode(node)) {
-        initEditorNode(node)
-    }
-
     node.sensor = new NodeSensor(node, 3);
 }
 
