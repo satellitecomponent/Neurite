@@ -2,9 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const cheerio = require('cheerio'); // Import cheerio
+const cheerio = require('cheerio');
 const app = express();
-const PORT = process.env.PORT || 7070; // Proxy server port
+const PORT = process.env.PORT || 7070;
 
 // Initialize API keys
 let openaiApiKey = process.env.OPENAI_API_KEY;
@@ -39,81 +39,67 @@ app.post('/api-keys', (req, res) => {
     res.sendStatus(200);
 });
 
-// Proxy routes
-app.post('/groq', async (req, res) => {
-    const { model, messages, max_tokens, temperature, stream } = req.body;
-    try {
-        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', req.body, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${groqApiKey}`
-            },
-            responseType: stream ? 'stream' : 'json'
-        });
+// Helper function to handle API requests and cancellation
+async function handleApiRequest(req, res, apiEndpoint, apiKey, additionalOptions = {}) {
+    const { model, messages, max_tokens, temperature, stream, requestId } = req.body;
 
-        if (stream) {
-            response.data.pipe(res);
-        } else {
-            res.json(response.data);
-        }
-    } catch (error) {
-        console.error('Error calling GROQ API:', error);
-        res.status(500).json({ error: 'Failed to call GROQ API' });
-    }
-});
-
-app.post('/openai', async (req, res) => {
-    const { model, messages, max_tokens, temperature, stream } = req.body;
-    try {
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', req.body, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openaiApiKey}`
-            },
-            responseType: stream ? 'stream' : 'json'
-        });
-
-        if (stream) {
-            response.data.pipe(res);
-        } else {
-            res.json(response.data);
-        }
-    } catch (error) {
-        console.error('Error calling OpenAI API:', error);
-        res.status(500).json({ error: 'Failed to call OpenAI API' });
-    }
-});
-
-app.post('/ollama/chat', async (req, res) => {
-    const { model, messages, max_tokens, temperature, stream } = req.body;
-
-    // Prepare the request body for Ollama API, including an empty context.
     const requestBody = {
         model,
         messages,
         max_tokens,
         temperature,
         stream,
-        context: "" // Setting context to blank
+        ...additionalOptions
     };
 
+    const cancelToken = axios.CancelToken.source();
+
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/chat', requestBody, {
+        const response = await axios.post(apiEndpoint, requestBody, {
             headers: {
                 'Content-Type': 'application/json',
+                ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
             },
-            responseType: stream ? 'stream' : 'json'
+            responseType: stream ? 'stream' : 'json',
+            cancelToken: cancelToken.token
         });
 
         if (stream) {
             response.data.pipe(res);
+            res.on('close', () => {
+                cancelToken.cancel('Request canceled by the client');
+            });
         } else {
             res.json(response.data);
         }
     } catch (error) {
-        console.error('Error calling Ollama API:', error);
-        res.status(500).json({ error: 'Failed to call Ollama API' });
+        if (axios.isCancel(error)) {
+            console.log('Request canceled:', requestId);
+            res.status(499).json({ error: 'Request canceled by the client' });
+        } else {
+            console.error('Error calling API:', error);
+            res.status(500).json({ error: 'Failed to call API' });
+        }
     }
+}
+
+// Proxy routes
+app.post('/groq', async (req, res) => {
+    await handleApiRequest(req, res, 'https://api.groq.com/openai/v1/chat/completions', groqApiKey);
+});
+
+app.post('/openai', async (req, res) => {
+    await handleApiRequest(req, res, 'https://api.openai.com/v1/chat/completions', openaiApiKey);
+});
+
+app.post('/ollama/chat', async (req, res) => {
+    await handleApiRequest(req, res, 'http://127.0.0.1:11434/api/chat', null, { context: "" });
+});
+
+app.post('/custom', async (req, res) => {
+    const { apiEndpoint, apiKey: reqApiKey } = req.body;
+    const effectiveApiKey = reqApiKey || customApiKey;
+    await handleApiRequest(req, res, apiEndpoint, effectiveApiKey);
 });
 
 app.get('/ollama/tags', async (req, res) => {
@@ -271,49 +257,6 @@ app.post('/ollama/push', async (req, res) => {
     } catch (error) {
         console.error('Error pushing model:', error);
         res.status(500).json({ error: 'Failed to push model' });
-    }
-});
-
-// Custom API Proxy
-app.post('/custom', async (req, res) => {
-    const {
-        apiEndpoint,
-        apiKey: reqApiKey, // API key might be sent in the request
-        model,
-        messages,
-        max_tokens,
-        temperature,
-        stream
-    } = req.body;
-
-    // Determine the API key to use
-    const effectiveApiKey = reqApiKey || customApiKey; // Use request API key if provided, otherwise use the environment variable
-
-    try {
-        const headers = {
-            'Content-Type': 'application/json',
-            ...(effectiveApiKey ? { 'Authorization': `Bearer ${effectiveApiKey}` } : {}) // Conditionally add Authorization header
-        };
-
-        const response = await axios.post(apiEndpoint, {
-            model,
-            messages,
-            max_tokens,
-            temperature,
-            stream
-        }, {
-            headers,
-            responseType: stream ? 'stream' : 'json'
-        });
-
-        if (stream) {
-            response.data.pipe(res);
-        } else {
-            res.json(response.data);
-        }
-    } catch (error) {
-        console.error(`Error calling API at ${apiEndpoint}:`, error);
-        res.status(500).json({ error: `Failed to call API at ${apiEndpoint}` });
     }
 });
 
