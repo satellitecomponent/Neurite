@@ -272,12 +272,6 @@ async function fetchAndDisplayAllKeys() {
     }
 }
 
-window.onload = function () {
-    fetchAndDisplayAllKeys();
-}
-
-document.getElementById('chunkAndStoreButton').addEventListener('click', chunkAndStoreInputExtract);
-
 async function deleteSelectedKeys() {
     const selectedKeys = Array.from(document.getElementsByClassName("selected")).map(el => el.textContent);
 

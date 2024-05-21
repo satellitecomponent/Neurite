@@ -223,6 +223,8 @@ async function checkProxyServer() {
     } else {
         baseOllamaUrl = 'http://127.0.0.1:11434/api/';
     }
+
+    await ollamaSelectOnPageLoad();
 }
 
 // Call the checkProxyServer function when the page loads

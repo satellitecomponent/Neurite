@@ -144,16 +144,13 @@ function populateMenuForNode(menu, node, pageX, pageY) {
 function populateMenuForOthers(menu, target) {
     if (target.id === 'svg_bg' || target.closest('#svg_bg')) {
         // Option to create a Text Node (without calling draw)
-        addNodeCreationOption(menu, 'Add Note', createNodeFromWindow, false);
+        addNodeCreationOption(menu, '+ Note', createNodeFromWindow, false);
 
         // Option to create an LLM Node
-        addNodeCreationOption(menu, 'Create AI', createLLMNode, true);
+        addNodeCreationOption(menu, '+ Ai', createLLMNode, true);
 
         // Option to create a Link Node or Search Google
-        addNodeCreationOption(menu, 'Search / Link', returnLinkNodes, false);
-
-        // Option to create an Editor Node
-        addNodeCreationOption(menu, 'Code Editor', createEditorNode, true);
+        addNodeCreationOption(menu, '+ Link', returnLinkNodes, false);
 
         addPasteOption(menu, target);
     } else {

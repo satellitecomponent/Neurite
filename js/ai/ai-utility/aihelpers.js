@@ -77,6 +77,41 @@ function getTokenCount(messages) {
     return tokenCount;
 }
 
+function ensureClosedBackticks(text) {
+    const backtickCount = (text.match(/```/g) || []).length;
+    if (backtickCount % 2 !== 0) {
+        text += '```'; // Close the unclosed triple backticks
+    }
+    return text;
+}
+
+function handleUserPromptAppend(element, userMessage, promptIdentifier) {
+    // Ensure no unclosed triple backticks in the current content
+    element.value = ensureClosedBackticks(element.value);
+
+    // Append the user prompt to the AI response area with a distinguishing mark and end tag
+    element.value += `\n\n${promptIdentifier} ${userMessage}\n`;
+
+    // Trigger the input event programmatically
+    element.dispatchEvent(new Event('input'));
+}
+
+function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier) {
+    const doc = editor.getDoc();
+    let currentText = doc.getValue();
+    const lineBeforeAppend = doc.lineCount();
+
+    // Ensure no unclosed triple backticks in the current content
+    currentText = ensureClosedBackticks(currentText);
+    doc.setValue(currentText);
+
+    // Append the user prompt to the CodeMirror editor
+    editor.replaceRange(`\n\n${promptIdentifier} ${userMessage}\n`, { line: lineBeforeAppend, ch: 0 });
+}
+
+
+
+
 function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input") {
     const lines = document.getElementById(textareaId).value.split("\n");
     const promptsAndResponses = [];

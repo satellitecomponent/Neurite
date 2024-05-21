@@ -1,4 +1,5 @@
-﻿document.addEventListener('DOMContentLoaded', async () => {
+﻿
+async function ollamaSelectOnPageLoad() {
     const select = document.getElementById('local-model-select');
     const openModalButton = document.getElementById('openOllamaModalButton');
 
@@ -15,7 +16,7 @@
         // Store the selected value on change
         storeSelectSelectedValue(select.id);
     });
-});
+}
 
 function updateOllamaDropdownOptions(select, tags) {
     // Clear existing options
@@ -48,42 +49,6 @@ async function refreshOllamaModal() {
     const availableModels = await getAvailableModels();
     const allModels = mergeModelLists(availableModels, tags);
     populateOllamaModal(allModels);
-}
-
-
-
-
-
-async function receiveOllamaModelList() {
-    try {
-        const response = await fetch(`${baseOllamaUrl}tags`);
-        if (response.ok) {
-            const data = await response.json();
-            data.models.forEach(model => {
-                if (model.name.includes(':latest')) {
-                    model.name = model.name.replace(':latest', '');
-                }
-            });
-            return data.models; // Access the models array
-        } else {
-            console.error('Failed to fetch model tags');
-            return [];
-        }
-    } catch (error) {
-        console.error('Error fetching model tags:', error);
-        return [];
-    }
-}
-
-async function getOllamaLibrary() {
-    if (useProxy) {
-        const response = await fetch('http://localhost:7070/ollama/library');
-        const models = await response.json();
-        //console.log(models); Use this to update the defaults...
-        return models;
-    } else {
-        return defaultOllamaModels;
-    }
 }
 
 
@@ -257,94 +222,6 @@ async function installOllamaModelFromList(modelName, progressBar, listItem, sele
         console.error(`Failed to install model ${modelName}`);
         ollamaCurrentInstallNamesMap.delete(modelName);
         loadingIcon.style.display = 'none'; // Hide the loading icon on installation failure
-    }
-}
-
-async function pullOllamaModelWithProgress(name, onProgress) {
-    try {
-        const response = await fetch(`${baseOllamaUrl}pull`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, stream: true })
-        });
-
-        if (!response.body) {
-            console.error('Failed to pull model: No response body');
-            ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on failure
-            return false;
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let receivedLength = 0;
-        let totalLength = 0;
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            receivedLength += chunk.length;
-
-            const lines = chunk.split('\n').filter(line => line.trim() !== '');
-            for (const line of lines) {
-                const data = JSON.parse(line);
-                if (data.total) totalLength = data.total;
-                if (data.completed && totalLength) {
-                    const progress = (data.completed / totalLength) * 100;
-                    onProgress(progress);
-                }
-                if (data.status === 'success') {
-                    onProgress(100);
-                    ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on success
-                    return true;
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error pulling model with progress:', error);
-        ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on error
-        return false;
-    }
-}
-
-async function deleteOllamaModel(name) {
-    try {
-        const response = await fetch(`${baseOllamaUrl}delete`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        });
-        if (response.ok) {
-            console.log('Model deleted successfully');
-            return true;
-        } else {
-            console.error('Failed to delete model');
-            return false;
-        }
-    } catch (error) {
-        console.error('Error deleting model:', error);
-        return false;
-    }
-}
-
-async function generateOllamaEmbedding(model, prompt) {
-    try {
-        const response = await fetch(`${baseOllamaUrl}embeddings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model, prompt })
-        });
-        if (response.ok) {
-            const data = await response.json();
-            return data.embedding;
-        } else {
-            console.error('Failed to generate embeddings');
-            return null;
-        }
-    } catch (error) {
-        console.error('Error generating embeddings:', error);
-        return null;
     }
 }
 

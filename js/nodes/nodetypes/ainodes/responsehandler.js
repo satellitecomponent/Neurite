@@ -119,6 +119,15 @@ class ResponseHandler {
                     let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                     if (endOfCodeBlockIndex !== -1) {
                         let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                        let languageString = '';
+                        let languageStringEndIndex = codeContent.indexOf('\n');
+                        if (languageStringEndIndex !== -1) {
+                            languageString = codeContent.substring(0, languageStringEndIndex).trim();
+                            codeContent = codeContent.substring(languageStringEndIndex + 1);
+                        }
+                        if (languageString.length > 0) {
+                            this.currentLanguage = languageString;
+                        }
                         this.renderCodeBlock(codeContent, true);
 
                         this.codeBlockContent = '';
@@ -127,18 +136,10 @@ class ResponseHandler {
 
                         newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
                     } else {
-                        let endOfLanguageStringIndex = this.codeBlockContent.indexOf('\n');
-                        if (endOfLanguageStringIndex !== -1) {
-                            let languageString = this.codeBlockContent.substring(0, endOfLanguageStringIndex).trim();
-                            if (languageString.length > 0) {
-                                this.currentLanguage = languageString;
-                            }
-                        }
                         this.renderCodeBlock(this.codeBlockContent);
                         newContent = '';
                     }
                 }
-
 
                 if (newContent.length > 0) {
                     let startOfCodeBlockIndex = trimmedNewContent.indexOf('```');
@@ -149,7 +150,7 @@ class ResponseHandler {
                         this.inCodeBlock = true;
                         this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
                         this.codeBlockContent = trimmedNewContent.substring(startOfCodeBlockIndex + 3);
-                    } else if (!trimmedNewContent.startsWith('```') && !trimmedNewContent.endsWith('```')) {
+                    } else if (!this.inCodeBlock) {
                         this.handleMarkdown(newContent);
                     }
                 }
@@ -163,8 +164,80 @@ class ResponseHandler {
         }
     }
 
+    handleMarkdown(markdown) {
+        if (this.node.aiResponding || this.node.localAiResponding) {
+            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
+            let segments = sanitizedMarkdown.split('\n\n\n');
+
+            segments.forEach((segment, index) => {
+                let responseDiv = this.getOrCreateResponseDiv(index);
+                this.appendMarkdownSegment(responseDiv, segment);
+            });
+        }
+    }
+
+    getOrCreateResponseDiv(index) {
+        let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
+
+        if (index === 0 && lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
+            return lastWrapperDiv.querySelector('.ai-response');
+        } else {
+            let handleDiv = this.createHandleDiv();
+            let responseDiv = document.createElement('div');
+            responseDiv.className = 'ai-response';
+
+            let wrapperDiv = document.createElement('div');
+            wrapperDiv.className = 'response-wrapper';
+            wrapperDiv.appendChild(handleDiv);
+            wrapperDiv.appendChild(responseDiv);
+
+            this.node.aiResponseDiv.appendChild(wrapperDiv);
+            this.initAiResponseDiv(responseDiv);
+
+            return responseDiv;
+        }
+    }
+
+    createHandleDiv() {
+        let handleDiv = document.createElement('div');
+        handleDiv.className = 'drag-handle';
+        handleDiv.innerHTML = `
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    `;
+        return handleDiv;
+    }
+
+    appendMarkdownSegment(responseDiv, segment) {
+        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
+
+        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
+        responseDiv.innerHTML = parsedHtml;
+    }
+
+    getMarkedRenderer() {
+        let renderer = new marked.Renderer();
+        renderer.image = function (href, title, text) {
+            // Check if the image URL is a valid URL
+            if (isUrl(href)) {
+                return `<img src="${href}" alt="${text}" title="${title || ''}" />`;
+            } else {
+                // If the image URL is not a valid URL, treat it as a relative path
+                let basePath = 'path/to/your/images/directory/';
+                let imagePath = basePath + href;
+                return `<img src="${imagePath}" alt="${text}" title="${title || ''}" />`;
+            }
+        };
+        return renderer;
+    }
+
     handleUserPrompt(promptContent) {
         if (!promptContent) return;
+
+        // Replace newline characters with <br> tags
+        let formattedContent = promptContent.replace(/\n/g, '<br>');
+
         // Create a new div for the outer container
         let outerDiv = document.createElement('div');
         outerDiv.style.width = '100%';
@@ -176,8 +249,8 @@ class ResponseHandler {
         promptDiv.id = `prompt-${this.responseCount}`;  // Assign a unique ID to each prompt
         promptDiv.contentEditable = false; // Set contentEditable to false when the promptDiv is created
 
-
-        promptDiv.textContent = promptContent;
+        // Set the innerHTML to display new lines correctly
+        promptDiv.innerHTML = formattedContent;
 
         // Append the prompt div to the outer div
         outerDiv.appendChild(promptDiv);
@@ -185,43 +258,9 @@ class ResponseHandler {
         // Append the outer div to the response area
         this.node.aiResponseDiv.appendChild(outerDiv);
 
-        this.initUserPromptDiv(promptDiv)
+        this.initUserPromptDiv(promptDiv);
 
         this.responseCount++;  // Increment the response count after each prompt
-    }
-
-    handleMarkdown(markdown) {
-        if ((this.node.aiResponding || this.node.localAiResponding)) {
-            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
-            let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
-            let responseDiv;
-
-            if (lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
-                responseDiv = lastWrapperDiv.querySelector('.ai-response');
-            } else {
-                let handleDiv = document.createElement('div');
-                handleDiv.className = 'drag-handle';
-                handleDiv.innerHTML = `
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            `;
-
-                responseDiv = document.createElement('div');
-                responseDiv.className = 'ai-response';
-
-                let wrapperDiv = document.createElement('div');
-                wrapperDiv.className = 'response-wrapper';
-                wrapperDiv.appendChild(handleDiv);
-                wrapperDiv.appendChild(responseDiv);
-
-                this.node.aiResponseDiv.appendChild(wrapperDiv);
-
-                this.initAiResponseDiv(responseDiv);
-            }
-
-            responseDiv.innerHTML += sanitizedMarkdown.replace(/\n/g, "<br>");
-        }
     }
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
@@ -305,12 +344,12 @@ class ResponseHandler {
         let isEditing = false; // Flag to check if user is editing the content
 
         let handleKeyDown = function (event) {
-            if (event.key === 'Enter' && event.shiftKey) {
+            if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 this.removeResponsesUntil(promptDiv.id);
 
-                // Get the HTML content of the promptDiv
-                let message = promptDiv.innerHTML;
+                // Get the HTML content of the promptDiv and replace <br> with newline
+                let message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
 
                 //console.log(`Sending message: "${message}"`);
                 sendLLMNodeMessage(this.node, message);
@@ -330,8 +369,8 @@ class ResponseHandler {
                 isEditing = false;
 
                 // Reset styles to non-editing state
-                promptDiv.style.backgroundColor = "#b799ce";
-                promptDiv.style.color = "#222226";
+                promptDiv.style.backgroundColor = '';
+                promptDiv.style.color = '';
 
                 // Reset the cursor style to move
                 promptDiv.style.cursor = "move";
@@ -349,6 +388,9 @@ class ResponseHandler {
         promptDiv.addEventListener('dblclick', function (event) {
             // Prevent the default action of double click
             event.preventDefault();
+
+            // Stop the event from propagating
+            event.stopPropagation();
 
             // Toggle isEditing
             isEditing = !isEditing;
@@ -388,8 +430,8 @@ class ResponseHandler {
 
 
                 // Handle leaving edit mode
-                promptDiv.style.backgroundColor = "#b799ce";
-                promptDiv.style.color = "#222226";
+                promptDiv.style.backgroundColor = '';
+                promptDiv.style.color = '';
 
                 // Set the cursor style to move
                 promptDiv.style.cursor = "move";

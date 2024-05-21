@@ -19,16 +19,13 @@ function handleEmbeddingsSelection(selectElement) {
 }
 
 
-// Global variables
-let MAX_CHUNK_SIZE = 400;
-let topN = 5;
-let overlapSize = parseInt(document.getElementById('overlapSizeSlider').value, 10);
-
 class DataTab {
     constructor() {
         this.initMaxChunkSizeSlider();
         this.initTopNSlider();
         this.initOverlapSizeSlider();
+        this.initButtons();
+        this.displayDocuments();
     }
 
     initMaxChunkSizeSlider() {
@@ -38,9 +35,8 @@ class DataTab {
         // Display the initial slider value
         maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
 
-        // Update the global MAX_CHUNK_SIZE and display value on slider input
+        // Update display value on slider input
         maxChunkSizeSlider.addEventListener('input', () => {
-            MAX_CHUNK_SIZE = parseInt(maxChunkSizeSlider.value, 10);
             maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
         });
     }
@@ -49,9 +45,11 @@ class DataTab {
         const topNSlider = document.getElementById('topNSlider');
         const topNValue = document.getElementById('topNValue');
 
-        // Update the global topN and display value on slider input
+        // Display the initial slider value
+        topNValue.textContent = topNSlider.value;
+
+        // Update display value on slider input
         topNSlider.addEventListener('input', () => {
-            topN = parseInt(topNSlider.value, 10);
             topNValue.textContent = topNSlider.value;
         });
     }
@@ -60,10 +58,45 @@ class DataTab {
         const overlapSizeSlider = document.getElementById('overlapSizeSlider');
         const overlapSizeDisplay = document.getElementById('overlapSizeDisplay');
 
-        // Update the global overlapSize and display value on slider input
-        overlapSizeSlider.addEventListener('input', (e) => {
-            overlapSize = Number(e.target.value);
-            overlapSizeDisplay.textContent = overlapSize;
+        // Display the initial slider value
+        overlapSizeDisplay.textContent = overlapSizeSlider.value;
+
+        // Update display value on slider input
+        overlapSizeSlider.addEventListener('input', () => {
+            overlapSizeDisplay.textContent = overlapSizeSlider.value;
         });
     }
+
+    initButtons() {
+        document.getElementById('chunkAndStoreButton').addEventListener('click', chunkAndStoreInputExtract);
+        document.querySelector('.linkbuttons[title="Delete Document from Embeddings Database"]').addEventListener('click', deleteSelectedKeys);
+    }
+
+    displayDocuments() {
+        fetchAndDisplayAllKeys();
+    }
 }
+
+document.getElementById('openVectorDbButton').onclick = function () {
+    openModal('vectorDbModal');
+    const dataTab = new DataTab();
+};
+
+// Global constants using getters
+Object.defineProperty(window, 'MAX_CHUNK_SIZE', {
+    get() {
+        return parseInt(modalInputValues['maxChunkSizeSlider'] || 400, 10);
+    }
+});
+
+Object.defineProperty(window, 'topN', {
+    get() {
+        return parseInt(modalInputValues['topNSlider'] || 5, 10);
+    }
+});
+
+Object.defineProperty(window, 'overlapSize', {
+    get() {
+        return parseInt(modalInputValues['overlapSizeSlider'] || 10, 10);
+    }
+});

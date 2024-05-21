@@ -55,13 +55,16 @@ function openModal(contentId) {
             modalTitle.textContent = 'Custom Endpoint';
             break;
         case 'importLinkModalContent':
-            modalTitle.textContent = 'Import Link Text';
+            modalTitle.textContent = 'Import';
             break;
         case 'nodeConnectionModal':
             modalTitle.textContent = 'Connect Notes';
             break;
         case 'ollamaManagerModal':
             modalTitle.textContent = 'Ollama Library';
+            break;
+        case 'vectorDbModal':
+            modalTitle.textContent = 'Vector Database';
             break;
         default:
             modalTitle.textContent = ''; // Default, clears the title

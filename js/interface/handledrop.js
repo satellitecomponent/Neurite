@@ -102,13 +102,6 @@ function handleIconDrop(event, iconName) {
         case 'link-icon':
             returnLinkNodes();
             break;
-        case 'code-icon':
-            node = createEditorNode();
-            node.followingMouse = 1;
-            node.draw();
-            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
-            console.log('Handle drop for the code icon');
-            break;
         case 'edges-icon':
             console.log('Handle drop for the edges icon');
             break;
