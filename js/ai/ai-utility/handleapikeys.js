@@ -84,6 +84,37 @@ function saveApiConfig() {
     closeModal();
 }
 
+function fetchCustomModelData(modelName) {
+    const select = document.getElementById('custom-model-select');
+    const options = select.options;
+    let selectedOption = null;
+
+    for (let option of options) {
+        if (option.text === modelName) {
+            selectedOption = option;
+            break;
+        }
+    }
+
+    if (!selectedOption) {
+        console.error(`No option found with model name: ${modelName}`);
+        return null;
+    }
+
+    const apiEndpoint = selectedOption.getAttribute('data-endpoint');
+    const apiKey = selectedOption.getAttribute('data-key');
+
+    if (!apiEndpoint) {
+        console.error(`Missing Custom Endpoint: ${modelName}`);
+        return null;
+    }
+
+    return {
+        apiEndpoint: apiEndpoint,
+        apiKey: apiKey
+    };
+}
+
 document.getElementById('addApiConfigBtn').addEventListener('click', function () {
     openModal('apiConfigModalContent');
 });
@@ -259,6 +290,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
         inferenceOverride = determineGlobalModel();
     }
     const { provider, model } = inferenceOverride;
+    console.log(model);
     let API_KEY;
     let API_URL;
     let apiEndpoint;
@@ -276,10 +308,19 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
                 API_URL = "http://localhost:7070/ollama/chat";
                 break;
             case 'custom':
-                const selectedOption = document.querySelector(`#custom-model-select option[value="${model}"]`);
+                // Assume 'modelName' is the name or identifier you are working with
+                const apiDetails = fetchCustomModelData(model);
+                if (!apiDetails) {
+                    console.error("Failed to fetch API details for the model:", model);
+                    break;  // Exit if no API details are found
+                }
+                // Now use the API details as needed
                 API_URL = "http://localhost:7070/custom";
-                apiEndpoint = selectedOption.getAttribute('data-endpoint');
-                API_KEY = selectedOption.getAttribute('data-key');
+                apiEndpoint = apiDetails.apiEndpoint;
+                API_KEY = apiDetails.apiKey;
+
+                // Additional logic using API_URL, apiEndpoint, API_KEY as needed
+                break;
                 break;
             default:
                 API_URL = "http://localhost:7070/openai";
@@ -300,8 +341,9 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
                 API_URL = "http://127.0.0.1:11434/api/chat";
                 break;
             case 'custom':
-                alert("Custom Endpoints can only be used with the AI proxy server. Please enable the LocalHost Servers and refresh the page.");
-                return null;
+                const apiDetails = fetchCustomModelData(model);
+                API_URL = apiDetails.apiEndpoint;
+                API_KEY = apiDetails.apiKey;
             default:
                 API_URL = "https://api.openai.com/v1/chat/completions";
                 API_KEY = document.getElementById("api-key-input").value;

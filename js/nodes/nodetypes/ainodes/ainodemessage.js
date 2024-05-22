@@ -40,12 +40,12 @@ async function sendLLMNodeMessage(node, message = null) {
         },
     ];
 
-    const aiNodeInference = determineAiNodeModel(node);
-    let selectedModel;
+    const selectedModel = determineAiNodeModel(node);
+    let inferenceOverride;
 
     // Logic for dynamic model switching based on connected nodes
     const hasImageNodes = allConnectedNodes.some(node => node.isImageNode);
-    selectedModel = modulateAiNodeModel(aiNodeInference, hasImageNodes);
+    inferenceOverride = modulateAiNodeModel(selectedModel, hasImageNodes);
 
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
@@ -325,7 +325,7 @@ async function sendLLMNodeMessage(node, message = null) {
     const haltCheckbox = node.haltCheckbox;
 
     // AI call
-    callchatLLMnode(messages, node, true, selectedModel)
+    callchatLLMnode(messages, node, true, inferenceOverride)
         .finally(async () => {
             node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';

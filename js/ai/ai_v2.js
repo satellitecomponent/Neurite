@@ -105,7 +105,7 @@ async function handleStreamingForLLMnode(response, node) {
     return fullResponse; // return the entire response
 }
 
-async function callchatLLMnode(messages, node, stream = false) {
+async function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
     // Define the callbacks
     function onBeforeCall() {
         node.aiResponding = true;
@@ -137,7 +137,6 @@ async function callchatLLMnode(messages, node, stream = false) {
 
     // Prepare the parameters for callAiApi
     const customTemperature = parseFloat(document.getElementById(`node-temperature-${node.index}`).value);
-    let inferenceOverride = determineAiNodeModel(node);
 
     // Call the generic API function
     return callAiApi({
