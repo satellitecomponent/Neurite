@@ -27,7 +27,9 @@ function setupCustomDropdown(select, delayListeners = false) {
     // Create the currently selected value container
     let selectedDiv = document.createElement('div');
     selectedDiv.className = 'selected-text';
-    if (select.options.length > 0) {
+
+    // Safeguard against empty select or invalid selectedIndex
+    if (select.options.length > 0 && select.selectedIndex >= 0 && select.selectedIndex < select.options.length) {
         selectedDiv.innerText = select.options[select.selectedIndex].innerText;
     }
     selectReplacer.appendChild(selectedDiv);
@@ -250,6 +252,11 @@ function addOptionToCustomDropdown(select, optionData) {
 
 
 function addToCustomModelDropdown(select, selectData, cacheKey) {
+    // Check if the 'none' option is the only one and remove it
+    if (select.options.length === 1 && select.options[0].value === "none") {
+        select.remove(0);
+    }
+
     const uniqueId = Date.now().toString(); // Simple unique ID generation
     const option = new Option(selectData.modelName, uniqueId);
 
@@ -309,6 +316,11 @@ function deleteSelectedOption(selectId, storageKey) {
         // After removal, update the currently selected index
         if (select.options.length > 0) {  // Check if there are remaining options
             select.selectedIndex = Math.max(0, selectedIndex - 1); // Adjust the selected index appropriately
+        } else {
+            // Add a 'none' option if no options remain
+            const noneOption = new Option("none", "none");
+            select.appendChild(noneOption);
+            select.selectedIndex = 0;
         }
 
         updateStorageAfterDeletion(select, storageKey, uniqueValue);
