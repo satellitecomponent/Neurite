@@ -1,15 +1,28 @@
 
-async function receiveOllamaModelList() {
+async function receiveOllamaModelList(includeEmbeddingsModels = false) {
     try {
         const response = await fetch(`${baseOllamaUrl}tags`);
         if (response.ok) {
             const data = await response.json();
-            data.models.forEach(model => {
+            let models = data.models;
+
+            // Remove the ':latest' suffix from model names
+            models = models.map(model => {
                 if (model.name.includes(':latest')) {
-                    model.name = model.name.replace(':latest', '');
+                    return {
+                        ...model,
+                        name: model.name.replace(':latest', '')
+                    };
                 }
+                return model;
             });
-            return data.models; // Access the models array
+
+            // Filter out embeddings models if includeEmbeddingsModels is false
+            if (!includeEmbeddingsModels) {
+                models = models.filter(model => !isEmbeddingsModel(model.name));
+            }
+
+            return models;
         } else {
             console.error('Failed to fetch model tags');
             return [];
@@ -18,6 +31,11 @@ async function receiveOllamaModelList() {
         console.error('Error fetching model tags:', error);
         return [];
     }
+}
+
+function isEmbeddingsModel(modelName) {
+    const embeddingsModels = ["mxbai-embed-large", "nomic-embed-text", "all-minilm"];
+    return embeddingsModels.includes(modelName);
 }
 
 async function getOllamaLibrary() {
@@ -108,17 +126,21 @@ async function pullOllamaModelWithProgress(name, onProgress) {
                 if (data.total) totalLength = data.total;
                 if (data.completed && totalLength) {
                     const progress = (data.completed / totalLength) * 100;
-                    onProgress(progress);
+                    if (typeof onProgress === 'function') {
+                        onProgress(progress);
+                    }
                 }
                 if (data.status === 'success') {
-                    onProgress(100);
+                    if (typeof onProgress === 'function') {
+                        onProgress(100);
+                    }
                     ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on success
                     return true;
                 }
             }
         }
     } catch (error) {
-        console.error('Error pulling model with progress:', error);
+        console.error('Error pulling model:', error);
         ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on error
         return false;
     }

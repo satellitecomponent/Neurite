@@ -186,8 +186,6 @@ async function callAiApi({
         currentController = controller;
     }
 
-    const requestId = Date.now().toString(); // Generate a unique requestId
-
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
     console.log("Message Array", messages);
     console.log("Token count:", getTokenCount(messages));
@@ -200,11 +198,16 @@ async function callAiApi({
     let requestOptions = {
         method: "POST",
         headers: params.headers,
-        body: JSON.stringify({ ...JSON.parse(params.body), requestId }), // Include the requestId in the request body
+        body: JSON.stringify(params.body),
         signal: controller.signal,
     };
 
     onBeforeCall();
+
+    let requestId;
+    if (params.body.requestId) {
+        requestId = params.body.requestId;
+    }
 
     try {
         const response = await fetch(params.API_URL, requestOptions);
@@ -221,7 +224,7 @@ async function callAiApi({
         return responseData;
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.log('Response Halted:', requestId);
+            console.warn('Response Halted');
         } else {
             console.error("Error:", error);
             onError(error.message || error);

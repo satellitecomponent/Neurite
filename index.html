@@ -50,7 +50,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.ffebbdef.css">
+  <link rel="stylesheet" href="./assets/index.c9727119.css">
 </head>
 
 <body id="body">
@@ -250,34 +250,34 @@
             <!-- Stored keys will be dynamically added here -->
         </div>
         <div class="button-container">
-            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Store Text</button>
-            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete Key(s)</button>
+            <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Upload File</button>
+            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete File(s)</button>
         </div>
-        <!--<input type="file" id="fileInput" />
-    <button id="fileUploadButton" onclick="promptForFileUpload()">Upload Files</button>-->
+        <input type="file" id="fileInput" style="display: none;" />
         <br />
         <div class="gridLayout">
-
             <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
                 <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
                 <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
             </div>
-
             <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
                 <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
                 <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
             </div>
-
         </div>
-        <br />
+    </div>
+
+    <div id="vectorDbSearchModal" style="display: none;">
+        <div class="search-container">
+            <input type="text" id="vectorDbSearchInput" placeholder="Search...">
+        </div>
+        <div id="vectorDbSearchDisplay" class="vector-db-search-results custom-scrollbar">
+            <!-- Search results will be dynamically added here -->
+        </div>
         <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
-            <label for="topN">Top <span id="topNValue">5</span> Webpage Excerpts</label>
+            <label for="topN">Top <span id="topNValue">5</span> Results</label>
             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
         </div>
-        <label for="inputKeyExtract">Key:</label><br>
-        <input type="text" id="inputKeyExtract" name="inputKeyExtract" title="Set Title of Document"><br>
-        <label for="inputTextExtract">Text:</label><br>
-        <textarea id="inputTextExtract" rows="10" cols="50" class="zettelkasten" title="Plain Text of Document"></textarea>
     </div>
 
     <div id="alertModal" style="display: none;">
@@ -558,22 +558,28 @@
                             <div class="context-settings-container" id="contextSettingsContainer">
                                 <div class="context-settings-panel hidden">
 
-                                    <div class="dropdown-wrapper" style="padding: 10px" id="wrapper-embeddings">
-                                        <label for="embeddingsModelSelect" style="margin-right: 10px;">
+                                    <div class="dropdown-wrapper" id="wrapper-embeddings" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <label for="embeddingsModelSelect" style="margin-right: 15px; align-items: flex-end;">
+                                            <button id="vectorDbSearchButton" class="linkbuttons search-button" title="Search Vector Embeddings Database">
+                                                <svg class="icon">
+                                                    <use xlink:href="#searchSVG"></use>
+                                                </svg>
+                                            </button>
                                             <button id="openVectorDbButton" class="linkbuttons">Vector-DB</button>
                                         </label>
                                         <div class="dropdown-container">
-                                            <select id="embeddingsModelSelect" class="model-selector custom-select" onchange="handleEmbeddingsSelection(this)">
-                                                <option value="text-embedding-3-small">text-embedding-3-small</option>
-                                                <option value="text-embedding-3-large">text-embedding-3-large</option>
-                                                <option value="text-embedding-ada-002">text-embedding-ada-002</option>
-                                                <option value="local-embeddings">Local Embeddings</option>
+                                            <select id="embeddingsModelSelect" class="model-selector custom-select">
+                                                <option value="text-embedding-3-small">ada-3-small</option>
+                                                <option value="text-embedding-3-large">ada-3-large</option>
+                                                <option value="text-embedding-ada-002">ada-2</option>
+                                                <option value="local-embeddings">gte-small (in-browser)</option>
+                                                <option value="mxbai-embed-large">mxbai</option>
+                                                <option value="nomic-embed-text">nomic</option>
+                                                <option value="all-minilm">all-minilm</option>
                                             </select>
                                         </div>
-                                        <!-- Hide the original local embeddings checkbox -->
-                                        <input type="checkbox" id="local-embeddings-checkbox" style="display: none;">
-                                    </div> 
-                                       
+                                    </div>
+
                                     <div class="checkboxarray">
                                         <div title="Enable Web Search Results">
                                             <input type="checkbox" id="google-search-checkbox" name="enable-search">
@@ -1109,6 +1115,11 @@
             <symbol id="function-button" viewBox="0 0 24 24">
                 <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 12">
                     <path stroke="#686868" stroke-linecap="round" stroke-linejoin="round" stroke-width="0.9" d="M9 5 5 1 1 5m8 6L5 7l-4 4" />
+                </svg>
+            </symbol>
+            <symbol id="searchSVG" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-width="2.4" d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
                 </svg>
             </symbol>
         </defs>

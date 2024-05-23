@@ -290,7 +290,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
         inferenceOverride = determineGlobalModel();
     }
     const { provider, model } = inferenceOverride;
-    console.log(model);
+    console.log('Selected Ai:', model);
     let API_KEY;
     let API_URL;
     let apiEndpoint;
@@ -372,6 +372,12 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
         stream
     };
 
+    // Only include requestId in the body if it is 'ollama' or 'custom' provider
+    if (provider === 'ollama' || provider === 'custom') {
+        const requestId = Date.now().toString();
+        body.requestId = requestId;
+    }
+
     if (apiEndpoint) {
         body.apiEndpoint = apiEndpoint;
         body.apiKey = API_KEY;
@@ -379,7 +385,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
 
     return {
         headers,
-        body: JSON.stringify(body),
+        body,
         API_URL
     };
 }
