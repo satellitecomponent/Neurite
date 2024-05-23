@@ -1,62 +1,83 @@
-
-async function fetchEmbeddings(text) {
-    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-    const model = document.getElementById("embeddingsModelSelect").value;
-
+async function fetchEmbeddings(text, source = null) {
+    const model = source || document.getElementById("embeddingsModelSelect").value;
     const API_KEY = document.getElementById("api-key-input").value;
 
-    // First check for API key and decide to use local or API based on its presence
-    if (!API_KEY || useLocalEmbeddings) {
-        if (window.generateEmbeddings) {
-            // Local embeddings logic
-            try {
-                const output = await window.generateEmbeddings(text, {
-                    pooling: 'mean',
-                    normalize: true,
-                });
-                return Array.from(output.data); // Convert Float32Array to regular array
-            } catch (error) {
-                console.error("Error generating local embeddings:", error);
+    switch (model) {
+        case "local-embeddings":
+            if (window.generateEmbeddings) {
+                // Local embeddings logic
+                try {
+                    const output = await window.generateEmbeddings(text, {
+                        pooling: 'mean',
+                        normalize: true,
+                    });
+                    return Array.from(output.data); // Convert Float32Array to regular array
+                } catch (error) {
+                    console.error("Error generating local embeddings:", error);
+                    return [];
+                }
+            } else {
+                console.error("Local embedding function not available.");
+                alert("Local embedding function is not available.");
                 return [];
             }
-        } else {
-            console.error("Local embedding function not available.");
-            alert("Local embedding function is not available and no API key provided.");
-            return [];
-        }
-    }
+        case "mxbai-embed-large":
+        case "nomic-embed-text":
+        case "all-minilm":
+            // Check if the model is already in the model list
+            const modelList = await await receiveOllamaModelList(true); //true to not filter out embeddings models.
+            const isModelAvailable = modelList.some(m => m.name === model);
 
-    // Proceed with API call if API key is present and not using local embeddings
-    const API_URL = "https://api.openai.com/v1/embeddings";
+            if (!isModelAvailable) {
+                // If the model is not in the list, pull it
+                const isPulled = await pullOllamaModelWithProgress(model);
+                if (!isPulled) {
+                    console.error("Failed to pull Ollama model:", model);
+                    return [];
+                }
+            }
 
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    headers.append("Authorization", `Bearer ${API_KEY}`);
+            // Ollama API embeddings logic
+            try {
+                const embedding = await generateOllamaEmbedding(model, text);
+                return embedding || [];
+            } catch (error) {
+                console.error("Error generating Ollama embeddings:", error);
+                return [];
+            }
+        default:
+            // OpenAI API embeddings logic
+            const API_URL = "https://api.openai.com/v1/embeddings";
 
-    const body = JSON.stringify({
-        model: model,
-        input: text,
-    });
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+            headers.append("Authorization", `Bearer ${API_KEY}`);
 
-    const requestOptions = {
-        method: "POST",
-        headers: headers,
-        body: body,
-    };
+            const body = JSON.stringify({
+                model: model,
+                input: text,
+            });
 
-    try {
-        const response = await fetch(API_URL, requestOptions);
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error fetching embeddings:", errorData);
-            return [];
-        }
+            const requestOptions = {
+                method: "POST",
+                headers: headers,
+                body: body,
+            };
 
-        const data = await response.json();
-        return data.data[0].embedding;
-    } catch (error) {
-        console.error("Error fetching embeddings:", error);
-        return [];
+            try {
+                const response = await fetch(API_URL, requestOptions);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Error fetching embeddings:", errorData);
+                    return [];
+                }
+
+                const data = await response.json();
+                return data.data[0].embedding;
+            } catch (error) {
+                console.error("Error fetching embeddings:", error);
+                return [];
+            }
     }
 }
 
@@ -85,142 +106,6 @@ function cosineSimilarity(vecA, vecB) {
     return dotProduct / (vecAMagnitude * vecBMagnitude);
 }
 
-const MAX_CACHE_SIZE = 300;
-
-const nodeCache = new LRUCache(MAX_CACHE_SIZE);
-
-
-async function embeddedSearch(searchTerm, maxNodesOverride = null) {
-    // Use maxNodesOverride if provided, otherwise use the slider value
-    const maxNodes = maxNodesOverride !== null ? maxNodesOverride : document.getElementById('node-count-slider').value;
-    let keywords = searchTerm.toLowerCase().split(/,\s*/);
-
-    const nodes = getNodeText();
-
-    if (nodes.length === 0) {
-        return [];
-    }
-
-    let matched = [];
-
-    const fetchNodeEmbedding = async (node) => {
-        const titleText = node.titleInput;
-        const contentText = node.contentText;
-
-       // console.log('Extracted title text:', titleText);  // DEBUG
-       // console.log('Extracted content text:', contentText);  // DEBUG
-
-        const fullText = titleText + ' ' + contentText;
-
-        const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-        const compoundKey = `${node.uuid}-${useLocalEmbeddings ? 'local' : 'openai'}`;
-
-        const cachedEmbedding = nodeCache.get(compoundKey);
-        if (cachedEmbedding) {
-            return cachedEmbedding;
-        } else {
-            const embedding = await fetchEmbeddings(fullText);
-            nodeCache.set(compoundKey, embedding);
-            return embedding;
-        }
-    };
-
-    const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
-    const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
-    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
-
-    //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
-for (let i = 0; i < nodes.length; i++) {
-    const n = nodes[i];
-
-    // Skip if the node does not have the flag `isTextNode = true`
-    if (!n.isTextNode) {
-        continue;
-    }
-
-    // Updated to use new property names
-    const titleMatchScore = n.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
-
-    // Updated to use new property names
-    const contentMatchScore = keywords.filter(keyword => {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-        return n.contentText.match(regex);
-    }).length;
-
-    const weightedTitleScore = titleMatchScore * 10;
-    const weightedContentScore = contentMatchScore;
-
-        const nodeEmbedding = nodeEmbeddings[i];
-
-        const dotProduct = keywordEmbedding.reduce((sum, value, index) => sum + (value * nodeEmbedding[index]), 0);
-        const keywordMagnitude = Math.sqrt(keywordEmbedding.reduce((sum, value) => sum + (value * value), 0));
-        const nodeMagnitude = Math.sqrt(nodeEmbedding.reduce((sum, value) => sum + (value * value), 0));
-
-        //   console.log('Dot Product:', dotProduct);  // DEBUG
-        //   console.log('Keyword Magnitude:', keywordMagnitude);  // DEBUG
-        //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
-
-        const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-        //console.log('Cosine Similarity:', cosineSimilarity);
-
-        const similarityThreshold = -1;
-        const keywordMatchPercentage = 0.5;
-
-        if (weightedTitleScore + weightedContentScore > 0 || cosineSimilarity > similarityThreshold) {
-            matched.push({
-                node: n,
-                title: n.title,
-                content: n.content.innerText.trim(),
-                weightedTitleScore: weightedTitleScore,
-                weightedContentScore: weightedContentScore,
-                similarity: cosineSimilarity,
-            });
-            //console.log(`embeddings`, n.content.innerText.trim())
-        }
-    }
-
-    matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
-    return matched.slice(0, maxNodes).map(m => m.node);
-}
-
-
-
-const nodeTitlesAndContent = [];
-
-for (let key in nodes) {
-    let nodeTitle = nodes[key].title;
-    let nodeContent = nodes[key].plainText;
-    nodeTitlesAndContent.push({
-        title: nodeTitle,
-        content: nodeContent
-    });
-}
-
-function clearSearchHighlights(nodesArray) {
-    for (const node of nodesArray) {
-        node.content.classList.remove("search_matched");
-        node.content.classList.remove("search_nomatch");
-    }
-}
-
-
-async function calculateRelevanceScores(summaries, searchTermEmbedding) {
-    // Use the existing searchTermEmbedding for cosine similarity calculations
-    const titleEmbeddings = await Promise.all(summaries.map(summary => fetchEmbeddings(summary.title)));
-
-    for (let i = 0; i < summaries.length; i++) {
-        const similarity = cosineSimilarity(searchTermEmbedding, titleEmbeddings[i]);
-        summaries[i].relevanceScore = similarity;
-    }
-
-    return summaries;
-}
-
-function isGitHubUrl(url) {
-    return url.startsWith('https://github.com/') || url.startsWith('http://github.com/');
-}
-
-const CORS_PROXY = "http://localhost:4000/proxy";
 
 async function fetchAndDisplayAllKeys() {
     try {
@@ -310,7 +195,74 @@ async function deleteKey(key) {
     }
 }
 
-async function chunkAndStoreInputExtract() {
+function handleFileUploadVDBSelection() {
+    const fileInput = document.getElementById('fileInput');
+    fileInput.click();
+
+    fileInput.onchange = uploadFileToVectorDB;
+}
+
+async function processFileContent(file) {
+    const fileURL = URL.createObjectURL(file);
+    const fileType = file.type;
+
+    try {
+        switch (fileType) {
+            case 'application/pdf':
+                return await extractTextFromPDF(fileURL);
+            case 'text/plain':
+                return await fetchFile(fileURL);
+            case 'application/json':
+                return await fetchJsonFile(fileURL);
+            case 'text/html':
+                return await fetchFile(fileURL);
+            case 'application/xml':
+            case 'text/xml':
+                return await fetchFile(fileURL);
+            case 'text/csv':
+                return await fetchFile(fileURL);
+            default:
+                console.warn(`Unsupported file type: ${fileType}`);
+                return null;
+        }
+    } catch (error) {
+        console.error(`Error processing file content: ${error}`);
+        return null;
+    } finally {
+        // Revoke the object URL to release memory
+        URL.revokeObjectURL(fileURL);
+    }
+}
+
+// Generic fetch function for supported file types
+async function fetchFile(fileURL) {
+    try {
+        const response = await fetch(fileURL);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch file: ${response.statusText}`);
+        }
+        return await response.text();
+    } catch (error) {
+        console.error(`Error fetching file: ${error}`);
+        throw error;
+    }
+}
+
+async function fetchJsonFile(fileURL) {
+    try {
+        const response = await fetch(fileURL);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch JSON file: ${response.statusText}`);
+        }
+        return JSON.stringify(await response.json());
+    } catch (error) {
+        console.error(`Error fetching JSON file: ${error}`);
+        throw error;
+    }
+}
+
+async function uploadFileToVectorDB() {
+    const fileInput = document.getElementById('fileInput');
     const chunkAndStoreButton = document.getElementById('chunkAndStoreButton');
     let dotCount = 0;
 
@@ -321,87 +273,35 @@ async function chunkAndStoreInputExtract() {
     }, 500); // Update every 500 milliseconds
 
     try {
-        // Get the input text from the textarea
-        const inputText = document.getElementById('inputTextExtract').value;
-
-        if (!inputText) {
-            alert("Please enter some text into the textarea");
+        if (fileInput.files.length === 0) {
+            alert("Please select a file to upload");
             return;
         }
 
-        // Chunk the input text
-        const chunkedText = chunkText(inputText, MAX_CHUNK_SIZE, overlapSize);
+        const file = fileInput.files[0];
+        const fileText = await processFileContent(file);
 
-        // Fetch the embeddings for the chunks
+        if (!fileText) {
+            alert("Failed to extract text from the file");
+            return;
+        }
+
+        const chunkedText = chunkText(fileText, MAX_CHUNK_SIZE, overlapSize);
         const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
 
-        // Get the key from the input field, or use the first sentence of the input text if no key was provided
-        let key = document.getElementById('inputKeyExtract').value;
-        if (!key) {
-            // Extract the first sentence from the input text
-            // This regex matches everything up to the first period, question mark, or exclamation mark
-            const firstSentenceMatch = inputText.match(/[^.!?]+[.!?]/);
-            key = firstSentenceMatch ? firstSentenceMatch[0] : inputText;
-        }
-
-        // Store the chunks and their embeddings in the database
+        let key = file.name; // Use the file name as the key
         const success = await storeEmbeddingsAndChunksInDatabase(key, chunkedText, chunkedEmbeddings);
 
-        chunkAndStoreButton.textContent = success ? "Store Key & Text" : "Chunking Failed";
+        chunkAndStoreButton.textContent = success ? "Upload File" : "Chunking Failed";
 
     } catch (error) {
-        console.error(`Failed to chunk and store input:`, error); //1872
+        console.error(`Failed to chunk and store input:`, error);
         chunkAndStoreButton.textContent = "Chunking Failed";
     } finally {
-        // Stop the dot animation
-        clearInterval(dotInterval);
+        clearInterval(dotInterval); // Stop the dot animation
+        fileInput.value = ""; // Reset file input
     }
 }
-
-async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
-    console.log(`Storing embeddings and text chunks for key: ${key}`);
-
-    // Check if local embeddings are used
-    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-    const source = useLocalEmbeddings ? 'local' : 'openai';
-
-    try {
-        for (let i = 0; i < chunks.length; i++) {
-            const chunkKey = `${key}_chunk_${i}`;
-            const response = await fetch('http://localhost:4000/store-embedding-and-text', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    key: chunkKey,
-                    embedding: embeddings[i],
-                    text: chunks[i],
-                    source: source  // attach the source tag
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
-            }
-        }
-
-        // If no errors, refresh the key list
-        await fetchAndDisplayAllKeys();
-
-        // If no errors, return true to indicate success
-        return true;
-    } catch (error) {
-        console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
-        throw error;
-    }
-}
-
-
-
-
-
-
 
 // Extract text from PDF files using PDF.js
 async function extractTextFromPDF(pdfLink) {
@@ -436,7 +336,7 @@ async function fetchLinkContentText(link) {
         return await fetchGitHubRepoContent(details.owner, details.repo);
     } else {
         try {
-            const response = await fetch(`${CORS_PROXY}?url=${encodeURIComponent(link)}`);
+            const response = await fetch(`http://localhost:4000/proxy?url=${encodeURIComponent(link)}`);
             if (!response.ok) {
                 console.error(`Failed to fetch web page content for ${link}:`, response.statusText);
                 return null;
@@ -483,9 +383,6 @@ async function handleNotExtractedLinks(notExtractedLinks) {
     }
 }
 
-
-
-
 async function storeTextData(storageKey, text) {
     const chunkedText = chunkText(text, MAX_CHUNK_SIZE, overlapSize);
     const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText);
@@ -517,27 +414,6 @@ async function receiveAndStoreText(text, storageKey, url) {
         }
     } catch (error) {
         console.error(`Error storing text for ${storageKey}:`, error);
-    }
-}
-
-async function fetchAllStoredEmbeddings() {
-    try {
-        const response = await fetch(`http://localhost:4000/fetch-all-embeddings`);
-
-        if (!response.ok) {
-            console.error(`Failed to fetch stored embeddings:`, response.statusText);
-            return null;
-        }
-
-        // Parse the response text as JSON
-        const embeddings = await response.json();
-        //console.log('Fetched all stored embeddings:', embeddings);
-        return embeddings;
-
-    } catch (error) {
-        console.error(`Failed to fetch stored embeddings:`, error);
-        alert("An error occurred fetching the top-n relevant chunks of extracted webpage text. Please ensure that the extract server is running on your localhost. Localhosts can be found at the Github link in the ? tab.");
-        return null;
     }
 }
 
@@ -633,15 +509,62 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
 }
 
 
-// Step 3: Fetch embeddings only for the relevant keys using the new server endpoint
-async function fetchEmbeddingsForKeys(keys) {
+
+
+// Vector DB
+
+async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
+    console.log(`Storing embeddings and text chunks for key: ${key}`);
+
+    // Get the selected model from the dropdown
+    const selectedModel = document.getElementById("embeddingsModelSelect").value;
+
+    try {
+        for (let i = 0; i < chunks.length; i++) {
+            const chunkKey = `${key}_chunk_${i}`;
+            const response = await fetch('http://localhost:4000/store-embedding-and-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    key: chunkKey,
+                    embeddings: [
+                        {
+                            embedding: embeddings[i],
+                            source: selectedModel
+                        }
+                    ],
+                    text: chunks[i]
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
+            }
+        }
+
+        // If no errors, refresh the key list
+        await fetchAndDisplayAllKeys();
+
+        // If no errors, return true to indicate success
+        return true;
+    } catch (error) {
+        console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
+        throw error;
+    }
+}
+
+// Query function for outside use.
+
+async function fetchEmbeddingsForKeys(keys, source) {
     try {
         const response = await fetch('http://localhost:4000/fetch-embeddings-by-keys', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ keys }) // Send the keys as a JSON payload
+            body: JSON.stringify({ keys, source })
         });
         if (!response.ok) {
             throw new Error(`Network response was not ok: ${response.status}`);
@@ -650,187 +573,115 @@ async function fetchEmbeddingsForKeys(keys) {
         const selectedEmbeddings = await response.json();
 
         // Ensure that the embeddings are returned in the expected format
-        const formattedEmbeddings = selectedEmbeddings.map(embedding => {
-            return {
-                key: embedding.key,
-                embedding: embedding.embedding,
-                source: embedding.source,
-                text: embedding.text
-            };
-        });
-
-        //console.log("Formatted embeddings ready for return:", formattedEmbeddings); // Log the final formatted embeddings
+        const formattedEmbeddings = selectedEmbeddings.map(embedding => ({
+            key: embedding.key,
+            embedding: embedding.embedding,
+            text: embedding.text
+        }));
 
         return formattedEmbeddings;
     } catch (error) {
         console.error(`Error fetching selected embeddings: ${error.message}`);
-        console.error("Full error object:", error); // Log the full error object
-        return []; // Return an empty array to indicate failure
+        console.error("Full error object:", error);
+        return [];
     }
 }
 
-// Integration of the new flow into getRelevantChunks
-async function getRelevantChunks(searchQuery, searchResults, topN, relevantKeys = []) {
-    const searchQueryEmbedding = await fetchEmbeddings(searchQuery);
+async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
+    // Get the selected model from the dropdown
+    const selectedModel = document.getElementById("embeddingsModelSelect").value;
 
     let relevantEmbeddings = [];
 
-    // If relevant keys are provided, try to fetch embeddings for those keys
+    // If relevant keys are provided, fetch embeddings for those keys
     if (relevantKeys.length > 0) {
-        // Make sure to await the result of the async operation
-        relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys);
-        //console.log("Relevant Embeddings Fetch Result", relevantEmbeddings);
+        relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
     }
 
-    // Fallback to fetching all stored embeddings if no relevant keys were provided or fetching failed
+    // If no relevant keys were provided or fetching failed, use all available keys
     if (relevantKeys.length === 0 || !relevantEmbeddings || relevantEmbeddings.length === 0) {
-        console.warn("Fetching specific embeddings failed. Falling back to fetching all stored embeddings.");
-        const allStoredEmbeddings = await fetchAllStoredEmbeddings();
-        //console.log(allStoredEmbeddings);
-
-        // Map the base URLs to their full keys with chunk identifiers
-        const keyMap = allStoredEmbeddings.reduce((map, embedding) => {
-            const baseKey = embedding.key.split('_chunk_')[0];
-            if (!map[baseKey]) {
-                map[baseKey] = [];
-            }
-            map[baseKey].push(embedding.key);
-            return map;
-        }, {});
-
-        // Use the map to filter out embeddings that match the base keys from relevantKeys
-        if (allStoredEmbeddings && allStoredEmbeddings.length > 0) {
-            relevantEmbeddings = allStoredEmbeddings.filter(embedding =>
-                relevantKeys.some(relevantKey => {
-                    const baseRelevantKey = relevantKey.split('_chunk_')[0];
-                    return keyMap[baseRelevantKey] && keyMap[baseRelevantKey].includes(embedding.key);
-                })
-            ).map(embedding => {
-                // Ensure that the structure of the data matches the expected format
-                // Renaming 'chunks' property to 'text' to match the non-fallback data structure
-                return {
-                    ...embedding,
-                    text: embedding.chunks
-                };
-            });
-            //console.log(relevantEmbeddings);
+        // Fetch all available keys from the server
+        const allKeys = await getAllKeysFromServer();
+        if (!allKeys || allKeys.length === 0) {
+            console.warn("Failed to fetch keys from server.");
+            return [];
         }
+        relevantEmbeddings = await fetchEmbeddingsForKeys(allKeys, selectedModel);
     }
-
-    // After the fallback, if there are still no relevant embeddings, use all stored embeddings
-    if (!relevantEmbeddings || relevantEmbeddings.length === 0) {
-        console.warn("Failed to fetch index of embeddings. Using all available embeddings.");
-        // Return all available embeddings in the proper format
-        const allStoredEmbeddings = await fetchAllStoredEmbeddings();
-        relevantEmbeddings = allStoredEmbeddings.map(embedding => {
-            return {
-                key: embedding.key,
-                text: embedding.chunks,
-                source: embedding.source,
-                embedding: embedding.embedding
-            };
-        });
-    }
-
-    // Filter embeddings by source and calculate cosine similarity for each
-    const localEmbeddings = calculateSimilarity(filterBySource(relevantEmbeddings, 'local'), searchQueryEmbedding);
-    const openaiEmbeddings = calculateSimilarity(filterBySource(relevantEmbeddings, 'openai'), searchQueryEmbedding);
-    //console.log("local embeddings", localEmbeddings);
-    //console.log("openai embeddings", openaiEmbeddings);
-    // Sort and select top 2N embeddings from each category for more accurate readings when converting
-    const extendedTopN = topN * 2;
-    const topLocalEmbeddings = localEmbeddings.sort((a, b) => b.similarity - a.similarity).slice(0, extendedTopN);
-    const topOpenAIEmbeddings = openaiEmbeddings.sort((a, b) => b.similarity - a.similarity).slice(0, extendedTopN);
-
-    // Determine which embeddings to convert based on the checkbox state
-    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-    let embeddingsToConvert = useLocalEmbeddings ? topOpenAIEmbeddings : topLocalEmbeddings;
-
-    // Convert embeddings of the non-preferred type to the preferred type
-    const convertedEmbeddings = await Promise.all(
-        embeddingsToConvert.map(async (embedding) => {
-            // fetchEmbeddings function must be designed to take the text content and return its embeddings
-            const convertedEmbeddingText = await fetchEmbeddings(embedding.text);
-            return {
-                ...embedding,
-                // The assumption here is that fetchEmbeddings returns the embedding itself,
-                // not an object with an embedding property.
-                embedding: convertedEmbeddingText,
-                source: useLocalEmbeddings ? 'local' : 'openai'
-            };
-        })
-    );
-
-    // Calculate similarity for converted embeddings
-    const reevaluatedConvertedEmbeddings = calculateSimilarity(convertedEmbeddings, searchQueryEmbedding);
-
-    // Merge with preferred embeddings and re-sort to get the combined top N
-    const combinedEmbeddings = (useLocalEmbeddings ? topLocalEmbeddings : topOpenAIEmbeddings)
-        .concat(reevaluatedConvertedEmbeddings)
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, topN);
+    //console.log(relevantEmbeddings);
 
     // Prepare the final output
-    const topNChunks = combinedEmbeddings.map(chunkEmbedding => ({
-        // Directly use chunkEmbedding.text and chunkEmbedding.key
-        text: chunkEmbedding.text,
-        source: chunkEmbedding.key,
-        relevanceScore: chunkEmbedding.similarity
-    }));
+    const topNChunks = [];
 
-    console.log("Top N Chunks:", topNChunks);
-    return topNChunks;
-}
+    for (const embedding of relevantEmbeddings) {
+        if (embedding.embedding) {
+            // Calculate the similarity between the search query and the embedding
+            const similarity = await calculateSimilarity([{ embedding: embedding.embedding }], await fetchEmbeddings(searchQuery, selectedModel), selectedModel);
 
-// Helper function to filter embeddings by source
-function filterBySource(embeddings, source) {
-    // Log the source we're filtering for and the sources present in the embeddings
-    //console.log(`Filtering for source: ${source}`);
-    //console.log(`Current embedding sources:`, embeddings.map(e => e.source));
+            topNChunks.push({
+                key: embedding.key,
+                text: embedding.text,
+                source: selectedModel,
+                relevanceScore: similarity[0].similarity
+            });
+        } else {
+            // If the desired source is not available, fetch the embedding and store it in the database
+            const convertedEmbedding = await fetchEmbeddings(embedding.text, selectedModel);
 
-    const filteredEmbeddings = embeddings.filter(embedding => {
-        // Added a check for undefined or null source
-        const isSourceMatching = embedding.source && embedding.source === source;
-        if (!isSourceMatching) {
-            //console.log(`Mismatched source for key: ${embedding.key}, expected: ${source}, actual: ${embedding.source}`);
+            // Store the embedding with the additional source in the database
+            await storeAdditionalEmbedding(embedding.key, selectedModel, convertedEmbedding);
+
+            // Calculate the similarity between the search query and the converted embedding
+            const similarity = await calculateSimilarity([{ embedding: convertedEmbedding }], await fetchEmbeddings(searchQuery, selectedModel), selectedModel);
+
+            topNChunks.push({
+                key: embedding.key,
+                text: embedding.text,
+                source: selectedModel,
+                relevanceScore: similarity[0].similarity
+            });
         }
-        return isSourceMatching;
-    });
+    }
 
-    //console.log(`Filtered embeddings for ${source}:`, filteredEmbeddings);
-    return filteredEmbeddings;
+    // Sort the top N chunks by relevance score and return the top N
+    topNChunks.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    console.log("Top N Chunks:", topNChunks.slice(0, topN));
+    return topNChunks.slice(0, topN);
 }
+
+async function storeAdditionalEmbedding(key, source, embedding) {
+    try {
+        const response = await fetch('http://localhost:4000/store-additional-embedding', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ key, source, embedding })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to store additional embedding: ${response.statusText}`);
+        }
+
+        console.log('Additional embedding stored successfully');
+    } catch (error) {
+        console.error('Error storing additional embedding:', error);
+    }
+}
+
+
+
 
 // Helper function to calculate cosine similarity for a list of embeddings
-function calculateSimilarity(embeddings, searchQueryEmbedding) {
+function calculateSimilarity(embeddings, queryEmbedding, source) {
     return embeddings.map(embedding => {
-        embedding.similarity = cosineSimilarity(searchQueryEmbedding, embedding.embedding);
-        return embedding;
+        const embeddingToUse = embedding[source] || embedding.embedding;
+        const similarity = cosineSimilarity(embeddingToUse, queryEmbedding);
+        return {
+            ...embedding,
+            similarity
+        };
     });
-}
-
-// Helper function to process a single embedding's chunks
-function processChunkEmbedding(embedding) {
-    if (typeof embedding.chunks === 'string') {
-        return [{
-            result: {
-                link: embedding.key,
-                description: embedding.chunks
-            },
-            embedding: embedding.embedding,
-            source: embedding.source
-        }];
-    } else if (Array.isArray(embedding.chunks)) {
-        return embedding.chunks.map(chunk => ({
-            result: {
-                link: embedding.key,
-                description: chunk.text
-            },
-            embedding: chunk.embedding,
-            source: embedding.source
-        }));
-    }
-    return [];
 }
 
 
@@ -892,81 +743,23 @@ function chunkText(text, maxLength, overlapSize) {
     return chunks;
 }
 
-async function fetchChunkedEmbeddings(textChunks, model = "text-embedding-ada-002") {
-    const useLocalEmbeddings = document.getElementById("local-embeddings-checkbox").checked;
-
+async function fetchChunkedEmbeddings(textChunks) {
     // Array to store the embeddings
     const chunkEmbeddings = [];
 
     // Loop through each chunk of text
     for (const chunk of textChunks) {
-
-        // Check if local embeddings should be used
-        if (useLocalEmbeddings && window.generateEmbeddings) {
-            try {
-                // This assumes that the local embedding model is initialized
-                // and assigned to window.generateEmbeddings
-                const output = await window.generateEmbeddings(chunk, {
-                    pooling: 'mean',
-                    normalize: true,
-                });
-                // Convert Float32Array to regular array
-                chunkEmbeddings.push(Array.from(output.data));
-            } catch (error) {
-                console.error("Error generating local embeddings:", error);
-                chunkEmbeddings.push([]);
-            }
-        } else {
-            // Use the API for embeddings
-            const API_KEY = document.getElementById("api-key-input").value;
-            if (!API_KEY) {
-                alert("Please enter your API key");
-                return;
-            }
-
-            const API_URL = "https://api.openai.com/v1/embeddings";
-
-            const headers = new Headers();
-            headers.append("Content-Type", "application/json");
-            headers.append("Authorization", `Bearer ${API_KEY}`);
-
-            const body = JSON.stringify({
-                model: model,
-                input: chunk,
-            });
-
-            const requestOptions = {
-                method: "POST",
-                headers: headers,
-                body: body,
-            };
-
-            try {
-                const response = await fetch(API_URL, requestOptions);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Error fetching embeddings:", errorData);
-                    chunkEmbeddings.push([]);
-                    continue;
-                }
-
-                const data = await response.json();
-                const embedding = data.data[0].embedding;
-
-                chunkEmbeddings.push(embedding);
-            } catch (error) {
-                console.error("Error fetching embeddings:", error);
-                chunkEmbeddings.push([]);
-            }
-        }
+        const embedding = await fetchEmbeddings(chunk);
+        chunkEmbeddings.push(embedding);
     }
+
     return chunkEmbeddings;
 }
 
 function groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE) {
     // Group the chunks by their source (stripping the chunk number from the key)
     const groupedChunks = relevantChunks.reduce((acc, chunk) => {
-        const [source, chunkNumber] = chunk.source.split('_chunk_');
+        const [source, chunkNumber] = chunk.key.split('_chunk_');
         if (!acc[source]) acc[source] = [];
         acc[source].push({
             text: chunk.text.substring(0, MAX_CHUNK_SIZE),
@@ -979,6 +772,6 @@ function groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE) {
     // Construct the topNChunksContent
     return Object.entries(groupedChunks).map(([source, chunks]) => {
         chunks.sort((a, b) => a.number - b.number);
-        return `[Source: ${source}]\n${chunks.map(chunk => `Chunk ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
+        return `[Source: ${source}]\n${chunks.map(chunk => `Snippet ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
     }).join('\n');
 }

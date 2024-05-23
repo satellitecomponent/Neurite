@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Initialize SQLite database
-const db = new sqlite3.Database(':memory:', (err) => {
+const db = new sqlite3.Database('database.db', (err) => {
     if (err) {
         console.error(err.message);
     }
@@ -21,9 +21,16 @@ const db = new sqlite3.Database(':memory:', (err) => {
 
 // Create necessary tables
 db.serialize(() => {
-    db.run('CREATE TABLE embeddings (key TEXT PRIMARY KEY, embedding TEXT, source TEXT)');
-    db.run('CREATE TABLE webpage_text (url TEXT PRIMARY KEY, text TEXT)');
+    // Create the embeddings table if it doesn't exist
+    db.run(`CREATE TABLE IF NOT EXISTS embeddings (
+    key TEXT PRIMARY KEY,
+    embeddings TEXT,
+    text TEXT
+)`);
+    db.run('CREATE TABLE IF NOT EXISTS webpage_text (url TEXT PRIMARY KEY, text TEXT)');
 });
+
+
 
 
 // Extract visible text from HTML
@@ -95,43 +102,6 @@ app.get('/proxy', async (req, res) => {
     }
 });
 
-app.post('/store-embedding-and-text', (req, res) => {
-    const { key, embedding, text, source } = req.body;
-    db.run('INSERT OR REPLACE INTO embeddings (key, embedding, source) VALUES (?, ?, ?)', [key, JSON.stringify(embedding), source], (err) => {
-        if (err) {
-            console.error(err.message);
-            res.status(500).send('Error storing embedding');
-        } else {
-            console.log('Embedding stored successfully');
-            db.run('INSERT OR REPLACE INTO webpage_text (url, text) VALUES (?, ?)', [key, text], (err) => {
-                if (err) {
-                    console.error(err.message);
-                    res.status(500).send('Error storing web page text');
-                } else {
-                    console.log('Web page text stored successfully');
-                    res.send('Embedding and text stored successfully');
-                }
-            });
-        }
-    });
-});
-
-app.get('/fetch-embedding', async (req, res) => {
-    const key = req.query.key;
-
-    // Replace embeddingDatabase.get(key) with the appropriate SQLite query
-    db.get('SELECT embedding FROM embeddings WHERE key = ?', [key], (err, row) => {
-        if (err) {
-            console.error(err.message);
-            res.status(500).send('Error fetching embedding');
-        } else if (row) {
-            res.json(JSON.parse(row.embedding));
-        } else {
-            res.status(404).json({ error: 'Embedding not found' });
-        }
-    });
-});
-
 app.get('/fetch-web-page-text', (req, res) => {
     const url = req.query.url;
     db.get('SELECT text FROM webpage_text WHERE url = ?', [url], (err, row) => {
@@ -146,20 +116,70 @@ app.get('/fetch-web-page-text', (req, res) => {
     });
 });
 
+
+
+app.post('/store-embedding-and-text', (req, res) => {
+    const { key, embeddings, text } = req.body;
+
+    db.run('INSERT OR REPLACE INTO embeddings (key, embeddings, text) VALUES (?, ?, ?)', [key, JSON.stringify(embeddings), text], (err) => {
+        if (err) {
+            console.error(err.message);
+            res.status(500).send('Error storing embedding and text');
+        } else {
+            console.log('Embedding and text stored successfully');
+            res.send('Embedding and text stored successfully');
+        }
+    });
+});
+
+app.post('/store-additional-embedding', (req, res) => {
+    const { key, source, embedding } = req.body;
+
+    // Retrieve the existing embedding from the database
+    db.get('SELECT * FROM embeddings WHERE key = ?', [key], (err, row) => {
+        if (err) {
+            console.error(err.message);
+            res.status(500).send('Error fetching embedding');
+        } else if (row) {
+            const existingEmbeddings = JSON.parse(row.embeddings);
+
+            // Check if the source already exists in the embeddings array
+            const existingEmbeddingIndex = existingEmbeddings.findIndex(e => e.source === source);
+
+            if (existingEmbeddingIndex !== -1) {
+                // Update the existing embedding for the source
+                existingEmbeddings[existingEmbeddingIndex].embedding = embedding;
+            } else {
+                // Add the new source and embedding to the embeddings array
+                existingEmbeddings.push({ source, embedding });
+            }
+
+            // Update the embeddings in the database
+            db.run('UPDATE embeddings SET embeddings = ? WHERE key = ?', [JSON.stringify(existingEmbeddings), key], (err) => {
+                if (err) {
+                    console.error(err.message);
+                    res.status(500).send('Error updating embedding');
+                } else {
+                    res.send('Embedding updated successfully');
+                }
+            });
+        } else {
+            res.status(404).json({ error: 'Embedding not found' });
+        }
+    });
+});
+
 app.post('/fetch-embeddings-by-keys', async (req, res) => {
-    const keys = req.body.keys;
+    const { keys, source } = req.body;
     if (!Array.isArray(keys)) {
         return res.status(400).json({ error: 'Keys must be an array.' });
     }
 
     // Modify the placeholders to use the LIKE operator
     const placeholders = keys.map(() => '?').join(', ');
-    const query = `SELECT embeddings.key, embeddings.embedding, embeddings.source, webpage_text.text 
-                   FROM embeddings 
-                   JOIN webpage_text ON embeddings.key = webpage_text.url 
-                   WHERE ` + keys.map(() => 'embeddings.key LIKE ?').join(' OR ');
+    const query = `SELECT * FROM embeddings WHERE ` + keys.map(() => 'key LIKE ?').join(' OR ');
 
-    // Here we define the callback function
+    // Callback function to handle the query result
     const callback = (err, rows) => {
         if (err) {
             console.error('Database error:', err.message);
@@ -167,13 +187,24 @@ app.post('/fetch-embeddings-by-keys', async (req, res) => {
             return;
         }
 
-        // Map the rows to a format that includes parsed JSON embeddings
-        const result = rows.map(row => ({
-            key: row.key,
-            embedding: JSON.parse(row.embedding), // Assuming 'embedding' is stored as a JSON string
-            source: row.source,
-            text: row.text // Assuming 'text' is a plain string, not a JSON string
-        }));
+        // Filter the embeddings to only include the desired source
+        const result = rows.map(row => {
+            const embeddings = JSON.parse(row.embeddings);
+            const desiredEmbedding = embeddings.find(e => e.source === source);
+
+            if (desiredEmbedding) {
+                return {
+                    key: row.key,
+                    embedding: desiredEmbedding.embedding,
+                    text: row.text
+                };
+            } else {
+                return {
+                    key: row.key,
+                    text: row.text
+                };
+            }
+        });
 
         res.json(result);
     };
@@ -182,82 +213,11 @@ app.post('/fetch-embeddings-by-keys', async (req, res) => {
     db.all(query, keys.map(key => `${key.split('_chunk_')[0]}%`), callback);
 });
 
-app.get('/fetch-all-embeddings', (req, res) => {
-    db.all('SELECT key, embedding, source, text FROM embeddings INNER JOIN webpage_text ON embeddings.key = webpage_text.url', (err, rows) => {
-        if (err) {
-            console.error(err.message);
-            res.status(500).send('Error fetching all embeddings');
-        } else {
-            const embeddings = [];
-            for (const row of rows) {
-                try {
-                    const parsedEmbedding = JSON.parse(row.embedding);
-                    embeddings.push({
-                        key: row.key,
-                        embedding: parsedEmbedding,
-                        source: row.source,
-                        chunks: row.text
-                    });
-                } catch (error) {
-                    console.error('Error parsing JSON for row:', row, 'Error:', error.message);
-                }
-            }
-            res.json(embeddings);
-        }
-    });
-});
 
-// Function to log the contents of the database
-function logDatabaseContents() {
-    // Log the contents of the 'embeddings' table
-    db.all('SELECT * FROM embeddings', [], (err, rows) => {
-        if (err) {
-            console.error(err.message);
-        } else {
-            console.log('Contents of the embeddings table:');
-            console.log(rows);
-        }
-    });
 
-    // Log the contents of the 'webpage_text' table
-    db.all('SELECT * FROM webpage_text', [], (err, rows) => {
-        if (err) {
-            console.error(err.message);
-        } else {
-            console.log('Contents of the webpage_text table:');
-            console.log(rows);
-        }
-    });
-}
 
-// Log the contents of the database when the server starts
-logDatabaseContents();
 
-// Define endpoint to fetch all database records
-app.get('/fetch-all', (req, res) => {
-    const response = {
-        embeddings: [],
-        webpage_text: []
-    };
 
-    db.all('SELECT * FROM embeddings', [], (err, rows) => {
-        if (err) {
-            console.error(err.message);
-            res.status(500).send('Error fetching embeddings');
-        } else {
-            response.embeddings = rows;
-            db.all('SELECT * FROM webpage_text', [], (err, rows) => {
-                if (err) {
-                    console.error(err.message);
-                    res.status(500).send('Error fetching webpage_text');
-                } else {
-                    response.webpage_text = rows;
-                    res.json(response);
-                }
-            });
-        }
-    });
-});
 // Define endpoint to fetch all keys
 app.get('/get-keys', (req, res) => {
     db.all('SELECT key FROM embeddings', [], (err, rows) => {
@@ -296,6 +256,33 @@ app.delete('/delete-chunks', (req, res) => {
         }
     });
 });
+
+
+// Function to log the contents of the database
+function logDatabaseContents() {
+    /* Log the contents of the 'embeddings' table
+    db.all('SELECT * FROM embeddings', [], (err, rows) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Contents of the embeddings table:');
+            console.log(rows);
+        }
+    });*/
+
+    // Log the contents of the 'webpage_text' table
+    db.all('SELECT * FROM webpage_text', [], (err, rows) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Contents of the webpage_text table:');
+            console.log(rows);
+        }
+    });
+}
+
+// Log the contents of the database when the server starts
+logDatabaseContents();
 
 // Start the server
 const PORT = process.env.PORT || 4000;

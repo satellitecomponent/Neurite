@@ -1,19 +1,16 @@
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.3.0';
 
-let modelInitialized = false;
+let browserEmbeddingsInitialized = false;
 
-async function initialize() {
+async function initializeBrowserEmbeddings() {
    try {
        window.generateEmbeddings = await pipeline(
            'feature-extraction',
            'Supabase/gte-small',
        );
-        modelInitialized = true;
-        document.getElementById("local-embeddings-checkbox").disabled = false;
+       browserEmbeddingsInitialized = true;
     } catch (error) {
         console.error('Error initializing the model:', error);
     }
 }
-
-document.getElementById("local-embeddings-checkbox").disabled = true;
-initialize();
+initializeBrowserEmbeddings();

@@ -45,6 +45,19 @@ function isNoveltyEnabled() {
 }
 
 
+async function calculateRelevanceScores(summaries, searchTermEmbedding) {
+    // Use the existing searchTermEmbedding for cosine similarity calculations
+    const titleEmbeddings = await Promise.all(summaries.map(summary => fetchEmbeddings(summary.title)));
+
+    for (let i = 0; i < summaries.length; i++) {
+        const similarity = cosineSimilarity(searchTermEmbedding, titleEmbeddings[i]);
+        summaries[i].relevanceScore = similarity;
+    }
+
+    return summaries;
+}
+
+
 async function getWikipediaSummaries(keywords, top_n_links = 3) {
     const allSummariesPromises = keywords.map(async (keyword) => {
         try {

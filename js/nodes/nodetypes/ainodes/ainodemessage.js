@@ -36,7 +36,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: `YOU are ${aiIdentity}. Your response is rendered via marked.js. Code output requires triple backticks.`
+            content: `YOU are ${aiIdentity}. Your full response streams to marked.js`
         },
     ];
 
@@ -180,7 +180,7 @@ async function sendLLMNodeMessage(node, message = null) {
     // Only proceed if we have relevant keys
     if (relevantKeys.length > 0) {
         // Get relevant chunks based on the relevant keys
-        const relevantChunks = await getRelevantChunks(node.latestUserMessage, searchResults, topN, relevantKeys);
+        const relevantChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
         const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
 
         // Construct the embed message

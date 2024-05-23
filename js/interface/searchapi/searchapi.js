@@ -31,7 +31,7 @@ async function generateKeywords(message, count, specificContext = null) {
     ];
 
     const response = await callchatAPI(messages, false, 0);
-    console.log(`Response:`, response);
+    console.log(`Generate Keywords Ai Response:`, response);
 
     // Extract keywords by finding the part between quotations
     const regex = /"(.*?)"/g;

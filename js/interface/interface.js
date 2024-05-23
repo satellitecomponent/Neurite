@@ -95,10 +95,21 @@ document.addEventListener('wheel', (event) => {
             return;
         }
 
+        if (targetElement.tagName.toLowerCase() === 'textarea' ||
+            targetElement.contentEditable === 'true') {
+            return;
+        }
+
         // Check if the target is an instance of the custom dropdown
         if (targetElement.classList.contains('options-replacer')) {
             return;
         }
+
+        // Check if the target is a node title
+        if (targetElement.classList.contains('node-title-sd')) {
+            return;
+        }
+
         targetElement = targetElement.parentElement;
     }
     if (nodeMode !== 1 && event.getModifierState(settings.rotateModifier)) {
