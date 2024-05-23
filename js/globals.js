@@ -228,7 +228,6 @@ var refTagInput;
 var nodeTag = modalInputValues['node-tag'] || "##";
 var refTag = modalInputValues['ref-tag'] || "[[";
 
-
 function initializeTagInputs() {
     var nodeTagInput = document.getElementById('node-tag');
     var refTagInput = document.getElementById('ref-tag');
@@ -295,10 +294,10 @@ const checkBracketsMap = () => {
 
 const tagValues = {
     get nodeTag() {
-        return document.getElementById("node-tag").value;
+        return nodeTag;
     },
     get refTag() {
-        const refValue = document.getElementById("ref-tag").value;
+        const refValue = refTag;
         isBracketLinks = Object.keys(bracketsMap).includes(refValue);
         return refValue;
     }

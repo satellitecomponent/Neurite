@@ -52,6 +52,11 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, additionalOptions
         ...additionalOptions
     };
 
+    // Only include requestId in the request body if it is provided
+    if (requestId) {
+        requestBody.requestId = requestId;
+    }
+
     const cancelToken = axios.CancelToken.source();
 
     try {

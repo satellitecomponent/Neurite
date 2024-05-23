@@ -62,6 +62,11 @@ function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
     displayDiv.scrollLeft = userInputTextarea.scrollLeft;
 }
 
+function syncInputTextareaFromDisplayScroll(userInputTextarea, displayDiv) {
+    userInputTextarea.scrollTop = displayDiv.scrollTop;
+    userInputTextarea.scrollLeft = displayDiv.scrollLeft;
+}
+
 
 function addEventsToUserInputTextarea(userInputTextarea, textarea, node, displayDiv) {
     syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
@@ -79,6 +84,10 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
 
     userInputTextarea.addEventListener('scroll', function (event) {
         syncDisplayFromInputTextareaScroll(this, displayDiv);
+    });
+
+    displayDiv.addEventListener('scroll', function (event) {
+        syncInputTextareaFromDisplayScroll(userInputTextarea, this);
     });
 
     textarea.addEventListener('change', (event) => {

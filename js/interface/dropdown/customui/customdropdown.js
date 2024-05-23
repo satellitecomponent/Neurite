@@ -150,7 +150,6 @@ function addEventListenersToCustomDropdown(select) {
 }
 
 function setupModelSelect(selectElement) {
-    const isEmbeddingsSelect = selectElement.id === 'embeddingsModelSelect';
     if (selectElement) {
         setupCustomDropdown(selectElement);
 
@@ -159,18 +158,12 @@ function setupModelSelect(selectElement) {
         if (storedValue) {
             selectElement.value = storedValue;
             updateSelectedOptionDisplay(selectElement);
-            if (isEmbeddingsSelect) {
-                checkLocalEmbeddingsCheckbox(selectElement);
-            }
         }
 
         // Set change event listener for caching selected value and updating display
         selectElement.addEventListener('change', function () {
             localStorage.setItem(this.id, this.value);
             updateSelectedOptionDisplay(this);
-            if (isEmbeddingsSelect) {
-                checkLocalEmbeddingsCheckbox(this);
-            }
         });
     }
 }

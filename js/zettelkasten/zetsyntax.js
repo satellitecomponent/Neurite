@@ -39,23 +39,19 @@ class SyntaxHighlighter {
     }
 
     static applyNodeTitleHighlighting(content) {
-        nodeTitles.sort((a, b) => b.length - a.length);
-        nodeTitles.forEach(title => {
-            let index = content.indexOf(title);
-            while (index !== -1) {
-                const startIndex = content.lastIndexOf('<span', index);
-                const endIndex = content.indexOf('</span>', index);
-                if (startIndex !== -1 && endIndex !== -1 && startIndex < index && index < endIndex) {
-                    index = content.indexOf(title, index + title.length);
-                } else {
-                    content = content.slice(0, index) +
-                        `<span class="node-title-sd">${title}</span>` +
-                        content.slice(index + title.length);
-                    index = content.indexOf(title, index + title.length + 31);
-                }
+        const sortedTitles = [...nodeTitles].sort((a, b) => b.length - a.length);
+        const titleRegex = new RegExp(`(${sortedTitles.map(RegExp.escape).join('|')})`, 'g');
+
+        return content.replace(titleRegex, (match, title) => {
+            const startIndex = content.lastIndexOf('<span', match.index);
+            const endIndex = content.indexOf('</span>', match.index);
+
+            if (startIndex !== -1 && endIndex !== -1 && startIndex < match.index && match.index < endIndex) {
+                return match;
+            } else {
+                return `<span class="node-title-sd">${title}</span>`;
             }
         });
-        return content;
     }
 
     static applyZettelkastenSyntax(content, applyNodeTag = false) {

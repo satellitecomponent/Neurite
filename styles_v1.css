@@ -484,7 +484,7 @@ input[type="text"i].title-input {
     flex-direction: column;
 
     background-color: #2f2e3996;
-
+    backdrop-filter: blur(5px);
     border: 2px solid #333;
     width: fit-content;
     max-width: 90vw;
@@ -797,14 +797,6 @@ input[type="text"i]:hover {
             font-size: medium;
         }
 
-        .Searchbar {
-            background-color: #222226;
-            color: #bbb;
-            width: 100%;
-            border: inset;
-            border-color: #8882;
-        }
-
         .gradient-selector {
             display: flex;
             flex-direction: column;
@@ -854,6 +846,19 @@ input[type="text"i]:hover {
             color: #bbb;
         }
 
+.Searchbar {
+    background-color: #222226;
+    color: #bbb;
+    width: 100%;
+    border: inset;
+    border-color: #8882;
+}
+
+.search-button .icon {
+    width: 14px; /* Adjust the size as needed */
+    height: 14px; /* Adjust the size as needed */
+}
+
 .search_matched {
     outline-style: double;
     outline-color: #54876f;
@@ -865,6 +870,51 @@ input[type="text"i]:hover {
             outline-color: blue;
             outline-width: 0px;
         }
+
+.vector-db-search-results {
+    width: 350px;
+    height: 370px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.vdb-search-result {
+    background-color: #222226;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vdb-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.vdb-result-source {
+    font-weight: bold;
+    font-size: 16px;
+    color: #ddd;
+    max-width: 50%;
+}
+
+.vdb-result-score {
+    font-size: 14px;
+    color: #888;
+}
+
+.vdb-result-text {
+    font-size: 14px;
+    line-height: 1.5;
+}
 
         .textnode {
             background-color: #222226;
@@ -2126,6 +2176,9 @@ input[type=range] {
     transform: translate(-50%, -50%) rotate(-45deg);
 }
 
+.loader-centered {
+}
+
 .loader {
     border: 5px solid #222226; /* Dark grey */
     border-top: 5px solid #006BB6; /* Blue */
@@ -2383,13 +2436,13 @@ textarea[id^='custom-instructions-textarea-'] {
 
     /* Headings */
     .ai-response h1 {
-        font-size: 2em;
+        font-size: 1.5em;
         color: #fff;
         margin-bottom: 0.5em;
     }
 
     .ai-response h2 {
-        font-size: 2em;
+        font-size: 1.25em;
         color: #eee;
         margin-bottom: 0.5em;
     }

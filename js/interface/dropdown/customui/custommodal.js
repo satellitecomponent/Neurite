@@ -66,6 +66,9 @@ function openModal(contentId) {
         case 'vectorDbModal':
             modalTitle.textContent = 'Vector Database';
             break;
+        case 'vectorDbSearchModal':
+            modalTitle.textContent = 'Search Vector-DB';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
@@ -105,6 +108,11 @@ function openModal(contentId) {
     // Set up other input elements within the modal
     let modalInputs = modalBody.querySelectorAll('input:not([type=range]), textarea');
     modalInputs.forEach(function (input) {
+        // Skip file inputs
+        if (input.type === 'file') {
+            return;
+        }
+
         // Restore the stored value if available
         if (modalInputValues[input.id] !== undefined) {
             if (input.type === 'checkbox') {

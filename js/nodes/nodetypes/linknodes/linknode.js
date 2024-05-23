@@ -33,8 +33,9 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     contentWrapper.appendChild(linkWrapper);
     contentWrapper.appendChild(iframeWrapper);
 
-
-    let node = addNodeAtNaturalScale(link, []);
+    // Determine the parameter for addNodeAtNaturalScale
+    let nodeName = link.startsWith('blob:') ? name : link;
+    let node = addNodeAtNaturalScale(nodeName, []);
 
     let windowDiv = node.windowDiv;
 
@@ -42,7 +43,7 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
 
     node.isLink = true;
 
-    initLinkNode(node)
+    initLinkNode(node);
 
     return node;
 }

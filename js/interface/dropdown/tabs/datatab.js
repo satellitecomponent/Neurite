@@ -1,28 +1,7 @@
-function checkLocalEmbeddingsCheckbox(selectElement) {
-    const localEmbeddingsCheckbox = document.getElementById('local-embeddings-checkbox');
-
-    localEmbeddingsCheckbox.checked = selectElement.value === 'local-embeddings';
-}
-
-function handleEmbeddingsSelection(selectElement) {
-    const localEmbeddingsCheckbox = document.getElementById('local-embeddings-checkbox');
-
-    if (selectElement.value === 'local-embeddings') {
-        // Check the hidden checkbox when local embeddings is selected
-        localEmbeddingsCheckbox.checked = true;
-    } else {
-        // Uncheck the hidden checkbox for other selections
-        localEmbeddingsCheckbox.checked = false;
-    }
-
-    // Additional logic here if needed, e.g., saving the selection to localStorage
-}
-
 
 class DataTab {
     constructor() {
         this.initMaxChunkSizeSlider();
-        this.initTopNSlider();
         this.initOverlapSizeSlider();
         this.initButtons();
         this.displayDocuments();
@@ -41,19 +20,6 @@ class DataTab {
         });
     }
 
-    initTopNSlider() {
-        const topNSlider = document.getElementById('topNSlider');
-        const topNValue = document.getElementById('topNValue');
-
-        // Display the initial slider value
-        topNValue.textContent = topNSlider.value;
-
-        // Update display value on slider input
-        topNSlider.addEventListener('input', () => {
-            topNValue.textContent = topNSlider.value;
-        });
-    }
-
     initOverlapSizeSlider() {
         const overlapSizeSlider = document.getElementById('overlapSizeSlider');
         const overlapSizeDisplay = document.getElementById('overlapSizeDisplay');
@@ -68,7 +34,7 @@ class DataTab {
     }
 
     initButtons() {
-        document.getElementById('chunkAndStoreButton').addEventListener('click', chunkAndStoreInputExtract);
+        document.getElementById('chunkAndStoreButton').addEventListener('click', handleFileUploadVDBSelection);
         document.querySelector('.linkbuttons[title="Delete Document from Embeddings Database"]').addEventListener('click', deleteSelectedKeys);
     }
 
