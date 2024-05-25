@@ -119,14 +119,14 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
         }
     }, true); // Use capture phase to catch the event early
 
-    userInputTextarea.addEventListener('keydown', function (event) {
+    document.addEventListener('keydown', function (event) {
         if (event.altKey && document.activeElement === userInputTextarea) {
             userInputTextarea.style.userSelect = 'none';
             userInputTextarea.style.pointerEvents = 'none';
         }
     });
 
-    userInputTextarea.addEventListener('keyup', function (event) {
+    document.addEventListener('keyup', function (event) {
         if (!event.altKey) {
             userInputTextarea.style.userSelect = 'auto';
             userInputTextarea.style.pointerEvents = 'auto';
