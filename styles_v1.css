@@ -178,10 +178,12 @@ body {
     min-width: 50px;
     min-height: 40px;
     display: block;
+    z-index: 1000;
 }
 
 .python-frame {
     display: block;
+    z-index: 1000;
 }
 
     /* Increased specificity for hidden class */
