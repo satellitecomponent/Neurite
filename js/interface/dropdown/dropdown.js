@@ -68,13 +68,13 @@ function openTab(tabId, element) {
 
     tablinks = document.getElementsByClassName("tablink");
     for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].classList.remove("activeTab"); // We use classList.remove to remove the class
+        tablinks[i].classList.remove("activeTab");
     }
 
     document.getElementById(tabId).style.display = "block";
-    element.classList.add("activeTab"); // We use classList.add to add the class
+    element.classList.add("activeTab");
 
-    myCodeMirror.refresh();
+    window.currentActiveZettelkastenMirror.refresh();
 }
         // Get the menu button and dropdown content elements
         const menuButton = document.querySelector(".menu-button");
@@ -125,7 +125,7 @@ function openTab(tabId, element) {
                     document.selection.empty();
                 }
             }
-            myCodeMirror.refresh();
+            
         });
 
 

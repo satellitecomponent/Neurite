@@ -167,7 +167,7 @@ class BaseNodeActions {
 
     toggleCollapse() {
         applyActionToSelectedNodes((node) => {
-            toggleNodeState(node, window.myCodeMirror, '');
+            toggleNodeState(node, '');
         }, this.node);
     }
     toggleAutomata() {
@@ -207,7 +207,15 @@ class TextNodeActions extends BaseNodeActions {
         testNodeText(this.node.getTitle());
     }
     delete() {
-        deleteNodeByTitle(this.node.getTitle());
+        applyActionToSelectedNodes((node) => {
+            const nodeTitle = node.getTitle();
+
+            const zetNodeCMInstance = getZetNodeCMInstance(nodeTitle);
+            if (zetNodeCMInstance) {
+                zetNodeCMInstance.parser.deleteNodeByTitle(nodeTitle);
+            }
+        }, this.node);
+
         hideContextMenu();
     }
 }

@@ -93,14 +93,17 @@ class Edge {
         if (nodeMode) {
             // Capture the titles and textNode flags of the connected nodes for later use
             const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
-
             // only if both nodes have the isTextNode flag
             if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
-                removeEdgeFromZettelkasten(connectedNodes[0].title, connectedNodes[1].title);
+                // Remove edges from all relevant CodeMirror instances
+                const startTitle = connectedNodes[0].title;
+                const endTitle = connectedNodes[1].title;
+
+                // Call the function to remove edges from all instances
+                removeEdgeFromAllInstances(startTitle, endTitle);
             } else {
                 this.remove();
             }
-
             // Prevent the event from propagating further
             cancel(event);
         }
@@ -163,46 +166,55 @@ class Edge {
         }
     }
     toggleDirection() {
+        // Initialize directionality if it's null
         if (!this.directionality.start || !this.directionality.end) {
-            // Explicitly handle the null initial state
             this.directionality.start = this.pts[0];
             this.directionality.end = this.pts[1];
-        } else if (this.directionality.start === this.pts[0]) {
-            this.directionality.start = this.pts[1];
-            this.directionality.end = this.pts[0];
-        } else if (this.directionality.start === this.pts[1]) {
-            this.directionality.start = null;
-            this.directionality.end = null;
-        }
-
-        // Check if both nodes are text nodes
-        if (this.pts[0].isTextNode && this.pts[1].isTextNode) {
-            // Get node titles
-            const startTitle = this.pts[0].getTitle();
-            const endTitle = this.pts[1].getTitle();
-
-            // Update edge references based on the new state
+        } else {
+            // Switch direction or reset
             if (this.directionality.start === this.pts[0]) {
-                // Direction is from start to end
-                addEdgeToZettelkasten(endTitle, startTitle, myCodeMirror);
-                removeEdgeFromZettelkasten(startTitle, endTitle, true);
+                this.directionality.start = this.pts[1];
+                this.directionality.end = this.pts[0];
             } else if (this.directionality.start === this.pts[1]) {
-                // Direction is from end to start
-                addEdgeToZettelkasten(startTitle, endTitle, myCodeMirror);
-                removeEdgeFromZettelkasten(endTitle, startTitle, true);
-            } else {
-                // Bidirectional
-                addEdgeToZettelkasten(startTitle, endTitle, myCodeMirror);
-                addEdgeToZettelkasten(endTitle, startTitle, myCodeMirror);
+                this.directionality.start = null;
+                this.directionality.end = null;
             }
         }
 
+        // Update all instances of CodeMirror that include these nodes
+        if (this.pts[0].isTextNode && this.pts[1].isTextNode) {
+            const startTitle = this.pts[0].getTitle();
+            const endTitle = this.pts[1].getTitle();
+
+            // Get the edge information
+            const { startNodeInfo, endNodeInfo } = getEdgeInfo(startTitle, endTitle);
+
+            // Handle edge additions and removals based on new directionality
+            if (this.directionality.start === this.pts[0]) {
+                if (endNodeInfo) {
+                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                }
+                if (startNodeInfo) {
+                    removeEdgeFromZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                }
+            } else if (this.directionality.start === this.pts[1]) {
+                if (startNodeInfo) {
+                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                }
+                if (endNodeInfo) {
+                    removeEdgeFromZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                }
+            } else {
+                if (startNodeInfo) {
+                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                }
+                if (endNodeInfo) {
+                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                }
+            }
+        }
 
         edgeDirectionalityMap.set(this.edgeKey, this.directionality);
-
-        //console.log(`Directionality relative to ${startTitle}: ${this.getDirectionRelativeTo(this.pts[0])}`);
-        //console.log(`Directionality relative to ${endTitle}: ${this.getDirectionRelativeTo(this.pts[1])}`);
-        //console.log(`New directionality: start=${this.directionality.start ? this.directionality.start.getTitle() : 'null'}, end=${this.directionality.end ? this.directionality.end.getTitle() : 'null'}`);
     }
     // Method to check directionality relative to a given node
     getDirectionRelativeTo(node) {
@@ -223,7 +235,7 @@ class Edge {
         this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
         const stressValue = Math.max(this.stress(), 0.01);
-        let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 1.5 : 1.0);
+        let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 2 : 1.8);
         wscale = Math.min(wscale, this.maxWidth);
 
         let validPath = true;
@@ -306,8 +318,8 @@ class Edge {
         if (this.pts.length >= 2) {
             let startPoint = this.pts[0].pos;
             let endPoint = this.pts[this.pts.length - 1].pos;
-            let startScale = this.pts[0].scale;
-            let endScale = this.pts[this.pts.length - 1].scale;
+            let startScale = this.pts[0].scale || 1; // Provide a default value if undefined
+            let endScale = this.pts[this.pts.length - 1].scale || 1; // Provide a default value if undefined
 
             let horizontal = (startPoint.x - endPoint.x) / 1.3;
             let vertical = (startPoint.y - endPoint.y);
@@ -318,8 +330,8 @@ class Edge {
             curve = Math.min(curve, Math.abs(vertical)) / 2;
 
             // Calculate the perpendicular vector with adjusted scale based on node scales
-            let startPerp = new vec2(vertical, -horizontal).normed(startScale * wscale * 1);
-            let endPerp = new vec2(vertical, -horizontal).normed(endScale * wscale * 1);
+            let startPerp = new vec2(vertical, -horizontal).normed(startScale * wscale);
+            let endPerp = new vec2(vertical, -horizontal).normed(endScale * wscale);
 
             // Calculate the points for the curved path
             let startLeft = startPoint.minus(startPerp);
@@ -333,19 +345,33 @@ class Edge {
             let controlPointRight1 = startRight.minus(new vec2(horizontal, 0)).plus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
             let controlPointRight2 = endRight.plus(new vec2(horizontal, 0)).minus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
 
-            // Construct the curved path
-            path += toSVG(startLeft).str();
-            path += " C ";
-            path += toSVG(controlPointLeft1).str() + ", ";
-            path += toSVG(controlPointLeft2).str() + ", ";
-            path += toSVG(endLeft).str();
-            path += " L ";
-            path += toSVG(endRight).str();
-            path += " C ";
-            path += toSVG(controlPointRight2).str() + ", ";
-            path += toSVG(controlPointRight1).str() + ", ";
-            path += toSVG(startRight).str();
-            path += " Z";
+            // Validate the calculated points before adding them to the path string
+            if (
+                !isNaN(startLeft.x) && !isNaN(startLeft.y) &&
+                !isNaN(controlPointLeft1.x) && !isNaN(controlPointLeft1.y) &&
+                !isNaN(controlPointLeft2.x) && !isNaN(controlPointLeft2.y) &&
+                !isNaN(endLeft.x) && !isNaN(endLeft.y) &&
+                !isNaN(endRight.x) && !isNaN(endRight.y) &&
+                !isNaN(controlPointRight2.x) && !isNaN(controlPointRight2.y) &&
+                !isNaN(controlPointRight1.x) && !isNaN(controlPointRight1.y) &&
+                !isNaN(startRight.x) && !isNaN(startRight.y)
+            ) {
+                // Construct the curved path
+                path += toSVG(startLeft).str();
+                path += " C ";
+                path += toSVG(controlPointLeft1).str() + ", ";
+                path += toSVG(controlPointLeft2).str() + ", ";
+                path += toSVG(endLeft).str();
+                path += " L ";
+                path += toSVG(endRight).str();
+                path += " C ";
+                path += toSVG(controlPointRight2).str() + ", ";
+                path += toSVG(controlPointRight1).str() + ", ";
+                path += toSVG(startRight).str();
+                path += " Z";
+            } else {
+                validPath = false;
+            }
         } else {
             validPath = false;
         }

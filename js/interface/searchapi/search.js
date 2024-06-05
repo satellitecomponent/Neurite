@@ -50,36 +50,46 @@ function clearSearch() {
     }
 }
 
-let inp = document.getElementById("Searchbar");
-inp.addEventListener("input", function () {
-    let res = document.getElementById("search-results");
-    if (inp.value) {
-        res.style.display = "block";
-        let ns = searchNodesBy(inp.value);
-        let resdiv = res.children[0];
-        resdiv.innerHTML = "";
-        for (let n of ns) {
-            let c = document.createElement("a");
+function performZettelkastenSearch(searchTerm) {
+    let res = document.querySelector("#search-results .results-display-div");
+    let ns;
 
-            // Use the getTitle method to get the title of the node
-            c.appendChild(document.createTextNode(n.getTitle()));
-
-            c.addEventListener("click", (function (event) {
-                this.zoom_to();
-                autopilotSpeed = settings.autopilotSpeed;
-            }).bind(n));
-            c.addEventListener("dblclick", (function (event) {
-                this.zoom_to();
-                skipAutopilot();
-                autopilotSpeed = settings.autopilotSpeed;
-            }).bind(n));
-            resdiv.appendChild(c);
-        }
+    if (searchTerm) {
+        ns = searchNodesBy(searchTerm);
     } else {
-        res.style.display = "none";
-        clearSearch();
+        ns = Object.values(nodeMap);
     }
-});
+
+    res.innerHTML = "";
+
+    for (let n of ns) {
+        let c = document.createElement("div");
+        c.classList.add("search-result-item");
+        let title = document.createElement("div");
+        title.classList.add("search-result-title");
+        title.appendChild(document.createTextNode(n.getTitle()));
+        c.appendChild(title);
+        c.addEventListener("click", (function (event) {
+            this.zoom_to();
+            autopilotSpeed = settings.autopilotSpeed;
+        }).bind(n));
+        c.addEventListener("dblclick", (function (event) {
+            this.zoom_to();
+            skipAutopilot();
+            autopilotSpeed = settings.autopilotSpeed;
+        }).bind(n));
+        res.appendChild(c);
+    }
+}
+
+function setupZettelkastenSearchBar() {
+    let inp = document.getElementById("Searchbar");
+    inp.addEventListener("input", function () {
+        performZettelkastenSearch(inp.value);
+    });
+}
+
+
 
 
 document.getElementById("vectorDbSearchButton").addEventListener("click", () => {

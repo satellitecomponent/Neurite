@@ -1,4 +1,4 @@
-function toggleNodeState(nodeOrTitle, cm, event) {
+function toggleNodeState(nodeOrTitle, event) {
     let node;
     let title;
 
@@ -17,17 +17,24 @@ function toggleNodeState(nodeOrTitle, cm, event) {
     // Collapse or expand based on current state
     if (div && div.collapsed) {
         expandNode(node, div, circle);
-        if (title) showNodeText(title, cm); // Show node text in CodeMirror
+        if (node.isTextNode) {
+            ui = getZetNodeCMInstance(node).ui;
+            if (title) ui.showNodeText(title); // Show node text in CodeMirror
+        }
+        
     } else {
         collapseNode(node)(null);
-        if (title) hideNodeText(title, cm); // Hide node text in CodeMirror
+        if (node.isTextNode) {
+            ui = getZetNodeCMInstance(node).ui;
+            if (title) ui.hideNodeText(title); // Hide node text in CodeMirror
+        }
     }
 
     // Check if the alt key is being held
     if (event && event.altKey) {
         let allConnectedNodes = getAllConnectedNodes(node);
         allConnectedNodes.forEach(connectedNode => {
-            toggleNodeState(connectedNode, cm); // Pass the connected node
+            toggleNodeState(connectedNode); // Pass the connected node
         });
     }
 }
@@ -117,7 +124,7 @@ function collapseNode(node) {
                     }
                 } else {
                     // Call the toggleNodeState function instead of expanding the node directly
-                    toggleNodeState(node, myCodeMirror, event); // Assuming myCodeMirror is in scope
+                    toggleNodeState(node, event);
                     event.stopPropagation(); // Prevent the event from propagating up the DOM tree only in node mode
                 }
             }

@@ -285,6 +285,7 @@ function extractGitHubRepoDetails(url) {
 async function fetchGitHubRepoContent(owner, repo, path = '') {
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
     const response = await fetch(url);
+    console.log(response);
     let allText = '';
 
     if (!response.ok) {
@@ -296,9 +297,14 @@ async function fetchGitHubRepoContent(owner, repo, path = '') {
     for (const item of data) {
         if (item.type === 'file') {
             const fileResponse = await fetch(item.download_url);
-            if (!fileResponse.ok || !fileResponse.headers.get('Content-Type').includes('text')) {
-                console.error(`Received non-textual content from ${item.download_url}`);
-                continue;
+            if (!fileResponse.ok) {
+                console.error(`Failed to fetch file from ${item.download_url}:`, fileResponse.statusText);
+                continue; // Skip this file but continue with others
+            }
+            const contentType = fileResponse.headers.get('Content-Type');
+            if (!contentType.includes('text')) {
+                console.log(`Skipping non-textual content from ${item.download_url}`);
+                continue; // Skip non-text files but continue with others
             }
             const text = await fileResponse.text();
             allText += text + '\n';
@@ -309,7 +315,6 @@ async function fetchGitHubRepoContent(owner, repo, path = '') {
     }
     return allText;
 }
-
 async function storeGitHubContent(text, owner, repo, path) {
     // Assuming we have a utility that sanitizes and parses text
     const sanitizedText = sanitizeGitHubText(text);  // Assume this function is defined

@@ -226,7 +226,7 @@ body {
     outline: none;
     width: 100%;
     height: 100%;
-    overflow-y: auto;
+    overflow-y: scroll;
     scroll-behavior: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -564,7 +564,10 @@ input[type="text"i].title-input {
 #nodeList {
     list-style-type: none;
     padding: 0;
-    width: 300px;
+    width: 250px;
+    height: 30vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
     #nodeList li {
@@ -848,7 +851,14 @@ input[type="text"i]:hover {
             color: #bbb;
         }
 
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .Searchbar {
+    flex: 1;
     background-color: #222226;
     color: #bbb;
     width: 100%;
@@ -856,10 +866,68 @@ input[type="text"i]:hover {
     border-color: #8882;
 }
 
-.search-button .icon {
-    width: 14px; /* Adjust the size as needed */
-    height: 14px; /* Adjust the size as needed */
+.Searchbar:focus {
+    outline: none; /* Removes the default outline */
+    border: inset; /* Keeps the same border style */
+    border-color: #8882; /* Keeps the same border color */
 }
+
+.search-button .icon {
+    width: 17px; /* Adjust the size as needed */
+    height: 17px; /* Adjust the size as needed */
+}
+
+#search-results {
+    display: flex;
+    width: 250px;
+    height: 30vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.results-display-div {
+    width: 100%;
+}
+
+.search-result-item {
+    display: block;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    color: #fff;
+    width: 100%;
+}
+
+    .search-result-item:hover {
+        background-color: #333;
+    }
+
+    .search-result-item:active {
+        background-color: #444;
+    }
+
+.search-result-title {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #888 #444;
+}
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background-color: #444;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #888;
+    }
 
 .search_matched {
     outline-style: double;
@@ -872,7 +940,6 @@ input[type="text"i]:hover {
             outline-color: blue;
             outline-width: 0px;
         }
-
 .vector-db-search-results {
     width: 350px;
     height: 370px;
@@ -897,7 +964,7 @@ input[type="text"i]:hover {
 .vdb-result-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 10px;
 }
 
@@ -905,12 +972,15 @@ input[type="text"i]:hover {
     font-weight: bold;
     font-size: 16px;
     color: #ddd;
-    max-width: 50%;
+    word-wrap: break-word;
+    word-break: break-word;
+    max-width: 70%;
 }
 
 .vdb-result-score {
     font-size: 14px;
     color: #888;
+    white-space: nowrap;
 }
 
 .vdb-result-text {
@@ -928,18 +998,24 @@ input[type="text"i]:hover {
             gap: 5px;
         }
 
-        textarea#prompt {
-            overflow-y: hidden;
-            flex-grow: 1;
-            background-color: #222226;
-            color: #bbb;
-            border: inset;
-            border-color: #8882;
-            width: 100px;
-            padding: 10px;
-            box-sizing: border-box;
-            resize: none;
-        }
+textarea#prompt {
+    overflow-y: hidden;
+    flex-grow: 1;
+    background-color: #222226;
+    color: #bbb;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+    textarea#prompt:focus {
+        outline: none; /* Removes the default outline */
+        border: inset; /* Keeps the same border style */
+        border-color: #8882; /* Keeps the same border color */
+    }
 
         #prompt-form button {
             z-index: 1;
@@ -1022,6 +1098,7 @@ input[type="text"i]:hover {
     transition: background-color 0.3s;
     border: inset;
     border-color: #8882;
+    height: 100%;
 }
 
             .linkbuttons:hover {
@@ -1192,6 +1269,7 @@ input[type="checkbox"] {
 
         .tabcontent {
             display: none;
+            min-width: 290px;
         }
 
 .tablink {
@@ -1237,10 +1315,6 @@ input[type="checkbox"] {
             height: 20px;
         }
 
-.zet-container {
-    position: relative;
-}
-
 .zet-drag-handle-horiz {
     width: 6px; /* Increase the width */
     height: 100%;
@@ -1261,16 +1335,51 @@ input[type="checkbox"] {
     z-index: 1;
 }
 
-.zettelkasten {
-    background-color: #222226;
-    width: 261px;
-    min-width: 261px;
-    height: 70px;
-    z-index: -1;
-    border: inset;
-    border-color: #8882;
-    resize: none !important;
+.zet-pane-container {
+    display: flex;
+    flex-direction: column;
+    border: none;
+    resize: none;
     overflow: auto;
+    min-width: 270px;
+    height: 60vh;
+    width: 270px;
+}
+
+.zet-pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.zet-pane-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+}
+
+.zet-pane-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+}
+
+.zet-pane {
+    display: none;
+    height: 100%;
+    width: 100%
+}
+
+    .zet-pane.active {
+        display: block;
+    }
+
+.zet-add-pane-button {
+
 }
 
             .zettelkasten::-webkit-scrollbar {
@@ -1315,7 +1424,7 @@ td {
 
 .select-replacer {
     position: relative;
-    border: 1px solid rgb(52, 52, 52);
+    border: inset #8882;
     cursor: pointer;
     width: 100%;
     background-color: #222226;
@@ -1393,10 +1502,12 @@ td {
     z-index: 10;
     max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     box-sizing: border-box;
 }
 
     .options-replacer div {
+        display: flex;
         white-space: normal; /* Allow text to wrap */
         padding: 5px 10px;
         word-break: break-word; /* Break long words */
@@ -1419,6 +1530,41 @@ td {
         display: block;
     }
 
+.option-content {
+    width: 100%;
+    padding: 0px 0px !important;
+}
+
+.option-input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    padding: 5px 5px !important;
+    border-radius: 9px;
+}
+
+    .option-input:focus {
+        background: #d2e6f6;
+    }
+
+.minus-icon {
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    cursor: pointer;
+    fill: none;
+    stroke: #686868;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5px;
+}
+
+    .minus-icon:hover {
+        stroke: #ff0000;
+    }
+
 .dropdown-wrapper {
     display: flex;
     justify-content: flex-end;
@@ -1434,6 +1580,12 @@ td {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+}
+
+@-moz-document url-prefix() {
+    .inference-template-wrapper {
+        padding-top: 10px;
+    }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -2824,12 +2976,26 @@ textarea[id^='custom-instructions-textarea-'] {
 /* Unified hover effects specifically targeting background color changes */
 .label-bar-container:hover .bar,
 .label-bar-container:hover .button-label::before,
-.label-bar-container:hover .button-label::after {
+.label-bar-container:hover .button-label::after,
+.div-bar-container:hover .bar,
+.div-bar-container:hover > div:first-child::before,
+.div-bar-container:hover > div:first-child::after {
     background-color: #555; /* Change color on hover for bars and pseudo-elements */
 }
 
-.label-bar-container:hover .button-label {
+.label-bar-container:hover .button-label,
+.div-bar-container:hover > div:first-child {
     color: #bbb; /* Adjust for visibility on dark background for label */
+}
+
+/* Div-specific styles */
+.div-bar-container > div:first-child::before,
+.div-bar-container > div:first-child::after {
+    content: '';
+    background-color: #8882;
+    height: 2px;
+    flex-grow: 1;
+    transition: background-color 0.3s ease;
 }
 
 

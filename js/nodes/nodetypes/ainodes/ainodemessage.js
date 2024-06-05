@@ -36,7 +36,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: `YOU are ${aiIdentity}. Your full response streams to marked.js`
+            content: `YOU are ${aiIdentity}. Attend to relevant context. Your response is rendered in markdown.`
         },
     ];
 

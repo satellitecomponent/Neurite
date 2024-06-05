@@ -40,10 +40,25 @@ function isEmbeddingsModel(modelName) {
 
 async function getOllamaLibrary() {
     if (useProxy) {
-        const response = await fetch('http://localhost:7070/ollama/library');
-        const models = await response.json();
-        //console.log(models); Use this to update the defaults...
-        return models;
+        try {
+            const response = await Promise.race([
+                fetch('http://localhost:7070/ollama/library'),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timed out')), 2500)
+                ),
+            ]);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch Ollama library from proxy');
+            }
+
+            const models = await response.json();
+            return models;
+        } catch (error) {
+            console.error('Error fetching Ollama library from proxy:', error);
+            // Use the default models when an error occurs or the request times out
+            return defaultOllamaModels;
+        }
     } else {
         return defaultOllamaModels;
     }

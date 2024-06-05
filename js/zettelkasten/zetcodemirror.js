@@ -1,167 +1,290 @@
 
-// Call updateNodeTitleToLineMap whenever the CodeMirror content changes
-myCodeMirror.on("change", function () {
-    updateNodeTitleToLineMap();
-    identifyNodeTitles();
-    highlightNodeTitles()
-});
-
-myCodeMirror.on("focus", function () {
-    // Enable text selection when the editor is focused
-    myCodeMirror.getWrapperElement().style.userSelect = "text";
-});
-
-myCodeMirror.on("blur", function () {
-    // Disable text selection when the editor loses focus
-    myCodeMirror.getWrapperElement().style.userSelect = "none";
-});
-
-
-
-//sync codemirror and textarea
-
-myCodeMirror.on("change", function (instance, changeObj) {
-    ignoreTextAreaChanges = true; // Tell the MutationObserver to ignore changes
-    textarea.value = instance.getValue();
-
-    // Create a new 'input' event
-    var event = new Event('input', {
-        bubbles: true,
-        cancelable: true,
+function getAllInternalZettelkastenNodes() {
+    const allNodes = {};
+    window.zettelkastenProcessors.forEach(processor => {
+        Object.assign(allNodes, processor.nodes);
     });
-
-    // Dispatch the event
-    textarea.dispatchEvent(event);
-
-    ignoreTextAreaChanges = false; // Tell the MutationObserver to observe changes again
-});
-
-let userScrolledUp = false;
-
-myCodeMirror.on("scroll", function () {
-    var scrollInfo = myCodeMirror.getScrollInfo();
-    var atBottom = scrollInfo.height - scrollInfo.top - scrollInfo.clientHeight < 1;
-    if (!atBottom) {
-        userScrolledUp = true;
-    } else {
-        userScrolledUp = false;
-    }
-});
-
-// Helper function to determine if a CodeMirror position is within a marked range
-function isWithinMarkedText(cm, pos, className) {
-    var lineMarkers = cm.findMarksAt(pos);
-    for (var i = 0; i < lineMarkers.length; i++) {
-        if (lineMarkers[i].className === className) {
-            return true;
-        }
-    }
-    return false;
+    return allNodes;
 }
 
 
-myCodeMirror.on("mousedown", function (cm, event) {
-    var pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
-    const token = cm.getTokenAt(pos);
-    //console.log(token.type);
+let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates
 
-    if (token.type && token.type.includes("node")) {
-        const lineContent = cm.getLine(pos.line);
-        const title = lineContent.split(nodeTag)[1].trim(); // Title is the rest of the text after the node tag
-        if (title) toggleNodeState(title, cm, event); // Pass the event object here
-        return; // Skip the rest of the handler if the click is on a node tag
+class ZettelkastenParser {
+    constructor(codeMirrorInstance) {
+        this.cm = codeMirrorInstance;
+        this.nodeTitleToLineMap = new Map();
+        this.internalParserInstanceTitles = new Set(); // Use a Set to manage instance-specific titles
+        this.initializeParser();
     }
 
-    var isWithin = isWithinMarkedText(cm, pos, 'node-title');
+    initializeParser() {
+        this.cm.on("change", () => {
+            this.updateNodeTitleToLineMap();
+            this.identifyNodeTitles();
+        });
+    }
 
-    if (isWithin) {
-        const lineMarkers = cm.findMarksAt(pos);
-        let titles = lineMarkers.filter(marker => marker.className === 'node-title')
-            .map(marker => cm.getRange(marker.find().from, marker.find().to));
+    identifyNodeTitles() {
+        const newTitles = new Set();
+        this.cm.eachLine((line) => {
+            const match = line.text.match(nodeTitleRegexGlobal);
+            if (match) {
+                let title = match[1].trim();
+                if (title.endsWith(',')) {
+                    title = title.slice(0, -1);
+                }
+                newTitles.add(title); // Add new title to local set
+            }
+        });
 
-        if (titles.length > 0) {
-            // Select the longest title
-            const longestTitle = titles.reduce((a, b) => a.length > b.length ? a : b);
-            const markerForLongestTitle = lineMarkers.find(marker => {
-                const rangeText = cm.getRange(marker.find().from, marker.find().to);
-                return rangeText === longestTitle;
-            });
+        this.updateGlobalTitles(newTitles);
+    }
 
-            if (markerForLongestTitle) {
-                const from = markerForLongestTitle.find().from;
-                const to = markerForLongestTitle.find().to;
+    updateGlobalTitles(newTitles) {
+        // Remove old titles from the global set that are no longer present in the new set
+        this.internalParserInstanceTitles.forEach(title => {
+            if (!newTitles.has(title)) {
+                nodeTitles.delete(title);
+            }
+        });
 
-                // Now using the longest title's from and to positions
-                if (pos.ch === from.ch || pos.ch === to.ch) {
-                    if (longestTitle.length === 1) {
-                        handleTitleClick(longestTitle, cm);
+        // Add new titles to the global set
+        newTitles.forEach(title => {
+            if (!this.internalParserInstanceTitles.has(title)) {
+                nodeTitles.add(title);
+            }
+        });
+
+        // Update the internal set to the new set
+        this.internalParserInstanceTitles = newTitles;
+    }
+
+    updateNodeTitleToLineMap() {
+        this.nodeTitleToLineMap.clear();
+
+        let currentNodeTitleLineNo = null;
+        this.cm.eachLine((line) => {
+            if (line.text.startsWith(nodeTag)) {
+                const title = line.text.split(nodeTag)[1].trim();
+                currentNodeTitleLineNo = line.lineNo();
+                this.nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
+            }
+        });
+    }
+
+    getNodeSectionRange(title) {
+        const lowerCaseTitle = title.toLowerCase();
+        let nodeLineNo;
+        let nextNodeLineNo = this.cm.lineCount();
+
+        let foundCurrentNode = false;
+
+        for (const [mapTitle, mapLineNo] of Array.from(this.nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+            if (mapTitle.toLowerCase() === lowerCaseTitle) {
+                nodeLineNo = mapLineNo;
+                foundCurrentNode = true;
+                continue;
+            }
+            if (foundCurrentNode) {
+                nextNodeLineNo = mapLineNo;
+                break;
+            }
+        }
+
+        let startLineNo = nodeLineNo;
+        let endLineNo;
+
+        if (nextNodeLineNo === this.cm.lineCount()) {
+            endLineNo = this.cm.lineCount() - 1;
+        } else {
+            endLineNo = nextNodeLineNo - 1;
+        }
+
+        return { startLineNo, endLineNo };
+    }
+
+    retrieveNodeSectionText(title) {
+        const { startLineNo, endLineNo } = this.getNodeSectionRange(title);
+        let lines = [];
+        for (let i = startLineNo; i <= endLineNo; i++) {
+            lines.push(this.cm.getLine(i));
+        }
+        return lines.join("\n");
+    }
+
+    getNodeTitleLine(title) {
+        const lowerCaseTitle = title.toLowerCase();
+        for (const [mapTitle, mapLineNo] of Array.from(this.nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+            if (mapTitle.toLowerCase() === lowerCaseTitle) {
+                return mapLineNo;
+            }
+        }
+        return null;
+    }
+    deleteNodeByTitle(title) {
+        const startLineNo = this.nodeTitleToLineMap.get(title);
+
+        if (typeof startLineNo !== 'undefined') {
+            let endLineNo = startLineNo;
+            for (let i = startLineNo + 1; i < this.cm.lineCount(); i++) {
+                const lineText = this.cm.getLine(i);
+                if (lineText.startsWith(nodeTag)) {
+                    endLineNo = i - 1;
+                    break;
+                }
+                endLineNo = i;
+            }
+
+            this.cm.replaceRange("", { line: startLineNo, ch: 0 }, { line: endLineNo + 1, ch: 0 });
+            this.cm.refresh();
+        }
+    }
+    updateMode() {
+        const node = nodeTag;
+        const ref = refTag;
+        this.cm.setOption("mode", { name: "custom", node: node, ref: ref });
+        this.cm.refresh();
+    }
+    addEdge(fromTitle, toTitle, cmInstance) {
+        if (!fromTitle || !toTitle) {
+            console.error("One or both titles are empty or undefined.");
+            return;
+        }
+
+        const appendOrCreateTag = (range, tagLineStart, newTag, tagPrefix = "", useCSV = false) => {
+            const getTrailingWhitespace = range => {
+                let count = 0;
+                for (let i = range.endLineNo; i >= range.startLineNo; i--) {
+                    if (cmInstance.getLine(i).trim() === "") {
+                        count++;
                     } else {
-                        cm.setCursor(pos);
+                        break;
                     }
+                }
+                return count;
+            };
+
+            const insertTagInWhitespace = (endLine, count, tag) => {
+                let isEndOfDoc = (endLine === cmInstance.lineCount() - 1);
+
+                if (count === 0) {
+                    if (isEndOfDoc) {
+                        cmInstance.replaceRange(`\n\n${tag}\n`, { line: endLine + 1, ch: 0 });
+                    } else {
+                        cmInstance.replaceRange(`\n${tag}\n\n`, { line: endLine + 1, ch: 0 });
+                    }
+                } else if (count === 1) {
+                    cmInstance.replaceRange(`\n${tag}\n`, { line: endLine, ch: 0 });
+                } else if (count === 2) {
+                    cmInstance.replaceRange(`${tag}\n`, { line: endLine, ch: 0 });
                 } else {
-                    event.preventDefault();
-                    handleTitleClick(longestTitle, cm);
+                    cmInstance.replaceRange(`${tag}`, { line: endLine - 1, ch: 0 });
+                }
+            };
+
+            const whitespaceCount = getTrailingWhitespace(range);
+
+            if (tagLineStart !== null) {
+                const oldLine = cmInstance.getLine(tagLineStart);
+                if (!oldLine.includes(newTag)) {
+                    const separator = useCSV ? ', ' : ' ';
+                    cmInstance.replaceRange(`${oldLine}${separator}${newTag}`, { line: tagLineStart, ch: 0 }, { line: tagLineStart, ch: oldLine.length });
+                }
+            } else {
+                insertTagInWhitespace(range.endLineNo, whitespaceCount, `${tagPrefix}${newTag}`);
+            }
+        };
+
+        const fromRange = this.getNodeSectionRange(fromTitle);
+        const refTag = tagValues.refTag;
+        let tagLineStart = null;
+
+        for (let i = fromRange.startLineNo; i <= fromRange.endLineNo; i++) {
+            const lineText = cmInstance.getLine(i);
+            if (lineText.startsWith(refTag)) {
+                tagLineStart = i;
+                break;
+            }
+        }
+
+        const closingBracket = bracketsMap[refTag];
+
+        if (closingBracket) {
+            appendOrCreateTag(fromRange, tagLineStart, `${refTag}${toTitle}${closingBracket}`);
+        } else {
+            appendOrCreateTag(fromRange, tagLineStart, toTitle, `${refTag} `, true);
+        }
+    }
+
+    removeEdge(fromTitle, toTitle, cmInstance) {
+        if (!fromTitle || !toTitle) {
+            console.error("One or both titles are empty or undefined.");
+            return;
+        }
+
+        const lineCount = cmInstance.lineCount();
+        const closingBracket = bracketsMap[refTag];
+
+        const nodeLine = this.getNodeTitleLine(fromTitle);
+        if (nodeLine !== null) {
+            for (let j = nodeLine + 1; j < lineCount; j++) {
+                let nextLine = cmInstance.getLine(j);
+                if (nextLine.startsWith(nodeTag)) break;
+
+                let escapedRefTag = escapeRegExp(tagValues.refTag);
+                let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
+
+                if (lineHasRefTag) {
+                    let escapedTargetTitle = escapeRegExp(toTitle);
+
+                    let regExp;
+                    if (closingBracket) {
+                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapeRegExp(closingBracket)})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
+                    } else {
+                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapedRefTag})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
+                    }
+
+                    nextLine = nextLine.replace(regExp, (match, p1, p2) => {
+                        if (p1) {
+                            return '';
+                        } else if (p2) {
+                            return p2.startsWith(',') ? ',' : '';
+                        }
+                    }).trim();
+
+                    nextLine = nextLine.replace(/,\s*$/, '').trim();
+
+                    if (closingBracket) {
+                        let emptyBracketsRegExp = new RegExp(`${escapedRefTag}\\s*${escapeRegExp(closingBracket)}`, 'g');
+                        if (emptyBracketsRegExp.test(nextLine)) {
+                            nextLine = nextLine.replace(emptyBracketsRegExp, '');
+                        }
+                    } else {
+                        let lonelyRefTag = new RegExp(`^${escapedRefTag}\\s*$`);
+                        if (lonelyRefTag.test(nextLine)) {
+                            nextLine = '';
+                        }
+                    }
+
+                    cmInstance.replaceRange(nextLine, { line: j, ch: 0 }, { line: j, ch: cmInstance.getLine(j).length });
                 }
             }
         }
-    } else {
-        // If the click is not within the marked text, check if it's directly next to it
-        const leftPos = CodeMirror.Pos(pos.line, pos.ch - 1);
-        const rightPos = CodeMirror.Pos(pos.line, pos.ch + 1);
-        const isLeftAdjacent = isWithinMarkedText(cm, leftPos, 'node-title');
-        const isRightAdjacent = isWithinMarkedText(cm, rightPos, 'node-title');
 
-        // Set cursor position if click is directly next to the marked text
-        if (isLeftAdjacent || isRightAdjacent) {
-            cm.setCursor(pos);
-        }
-
-        // Check if the click is on a line that starts with 'node:'
-        const lineText = cm.getLine(pos.line);
-        const nodeInputValue = nodeTag;
-        if (lineText.startsWith(nodeInputValue)) {
-            // If the click is on the 'node:' line but not within the marked text, set the cursor position
-            cm.setCursor(pos);
-        }
+        cmInstance.refresh();
     }
-});
+}
 
-myCodeMirror.on("cursorActivity", function (cm) {
-    const cursorPos = cm.getCursor();
-    const cursorLineNo = cursorPos.line;
-
-    // Find the appropriate node section based on the cursor's position
-    let currentNodeSectionTitle;
-    for (const [title, lineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
-        if (lineNo <= cursorLineNo) {
-            currentNodeSectionTitle = title;
-        } else {
-            break;
-        }
+function updateAllZetMirrorModes() {
+    if (window.zettelkastenParsers) {
+        window.zettelkastenParsers.forEach(parser => {
+            if (parser && typeof parser.updateMode === 'function') {
+                parser.updateMode();
+            }
+        });
     }
-
-    // If the cursor is within a node section, highlight it, otherwise clear the highlighting
-    if (currentNodeSectionTitle) {
-        const { startLineNo, endLineNo } = getNodeSectionRange(currentNodeSectionTitle, cm);
-        if (cursorLineNo >= startLineNo && cursorLineNo <= endLineNo) {
-            highlightNodeSection(currentNodeSectionTitle, cm);
-            return;
-        }
-    }
-
-    // Clear any existing "current-node-section" marks if the cursor is not within any node section
-    cm.getAllMarks().forEach(mark => {
-        if (mark.className === 'current-node-section') mark.clear();
-    });
-});
-
-myCodeMirror.display.wrapper.style.backgroundColor = '#222226';
-myCodeMirror.display.wrapper.style.width = '265px';
-myCodeMirror.display.wrapper.style.height = '49vh';
-myCodeMirror.display.wrapper.style.borderStyle = 'inset';
-myCodeMirror.display.wrapper.style.borderColor = '#8882';
-myCodeMirror.display.wrapper.style.fontSize = '15px';
-myCodeMirror.getWrapperElement().style.resize = "vertical";
+}
 
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
@@ -238,386 +361,357 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
     };
 });
 
-function updateMode() {
-    var node = nodeTag;
-    var ref = refTag;
-    myCodeMirror.setOption("mode", { name: "custom", node: node, ref: ref });
-    myCodeMirror.refresh();
-}
-
-updateMode();
-
-// Array to store node titles
-let nodeTitles = [];
-
-function identifyNodeTitles() {
-    // Clear previous node titles
-    nodeTitles = [];
-    myCodeMirror.eachLine((line) => {
-        const match = line.text.match(nodeTitleRegexGlobal);
-        if (match) {
-            let title = match[1].trim();
-            // Remove comma if exists at the end of the title
-            if (title.endsWith(',')) {
-                title = title.slice(0, -1);
+function getActiveZetCMInstanceInfo() {
+    const activeCodeMirror = window.currentActiveZettelkastenMirror;
+    if (activeCodeMirror) {
+        for (const ui of window.zettelkastenUIs) {
+            if (ui.cm === activeCodeMirror) {
+                const textarea = activeCodeMirror.getTextArea();
+                const textareaId = activeCodeMirror.getTextArea().id;
+                const paneId = textareaId.replace('zet-note-input-', 'zet-pane-');
+                return {
+                    ui,
+                    parser: ui.parser,
+                    cmInstance: activeCodeMirror,
+                    textarea,
+                    paneId
+                };
             }
-            nodeTitles.push(title);
-        }
-    });
-}
-
-let nodeTitleToLineMap = new Map();
-
-function updateNodeTitleToLineMap() {
-    // Clear the map
-    nodeTitleToLineMap = new Map();
-
-    let currentNodeTitleLineNo = null;
-    myCodeMirror.eachLine((line) => {
-        if (line.text.startsWith(nodeTag)) {
-            const title = line.text.split(nodeTag)[1].trim();
-            currentNodeTitleLineNo = line.lineNo();  // Store the line number of the "node:" line
-            nodeTitleToLineMap.set(title, currentNodeTitleLineNo);
-        }
-    });
-}
-
-function highlightNodeTitles() {
-    // First clear all existing marks
-    myCodeMirror.getAllMarks().forEach(mark => mark.clear());
-
-    myCodeMirror.eachLine((line) => {
-        nodeTitles.forEach((title) => {
-            if (title.length > 0) {
-                // Since titles are extracted and possibly cleaned up earlier, they should be safe to regex escape
-                const escapedTitle = RegExp.escape(title); // Using RegExp.escape for uniformity
-                const regex = new RegExp(escapedTitle, "ig");
-                let match;
-                while (match = regex.exec(line.text)) {
-                    const idx = match.index;
-                    if (idx !== -1) {
-                        myCodeMirror.markText(
-                            CodeMirror.Pos(line.lineNo(), idx),
-                            CodeMirror.Pos(line.lineNo(), idx + title.length),
-                            {
-                                className: 'node-title',
-                                handleMouseEvents: true
-                            }
-                        );
-                    }
-                }
-            }
-        });
-    });
-}
-
-
-
-function getNodeSectionRange(title, cm) {
-    const lowerCaseTitle = title.toLowerCase();
-    let nodeLineNo;
-    let nextNodeLineNo = cm.lineCount(); // End of the document
-
-    let foundCurrentNode = false;
-
-    for (const [mapTitle, mapLineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
-        if (mapTitle.toLowerCase() === lowerCaseTitle) {
-            nodeLineNo = mapLineNo;
-            foundCurrentNode = true;
-            continue; // Skip the current node's line
-        }
-        if (foundCurrentNode) {
-            nextNodeLineNo = mapLineNo;
-            break;
-        }
-    }
-
-    let startLineNo = nodeLineNo;
-    let endLineNo;
-
-    // Set endLineNo to the last line of the document if this node extends to the end
-    if (nextNodeLineNo === cm.lineCount()) {
-        endLineNo = cm.lineCount() - 1;
-    } else {
-        // Otherwise, the end line is the line just before the next node
-        endLineNo = nextNodeLineNo - 1;
-    }
-
-    //console.log("Title:", title, "Start Line:", startLineNo, "End Line:", endLineNo);
-
-    return { startLineNo, endLineNo };
-}
-
-function retrieveNodeSectionText(title, cm) {
-    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
-    let lines = [];
-    for (let i = startLineNo; i <= endLineNo; i++) {
-        lines.push(cm.getLine(i));  // Collect each line within the section
-    }
-    return lines.join("\n");  // Join all lines into a single string
-}
-
-function highlightNodeSection(title, cm) {
-    // Clear any existing "current-node-section" marks
-    cm.getAllMarks().forEach(mark => {
-        if (mark.className === 'current-node-section') mark.clear();
-    });
-
-    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
-
-    if (startLineNo === undefined) {
-        // If the start line number is undefined, it means the title does not exist in the CodeMirror.
-        // In that case, simply return, leaving all section highlights cleared.
-        return;
-    }
-
-    // Mark the section between the current title and the next title with a special class for styling
-    cm.markText(
-        CodeMirror.Pos(startLineNo, 0), // Start from the current title's line
-        CodeMirror.Pos(endLineNo, cm.getLine(endLineNo).length),
-        { className: 'current-node-section' }
-    );
-}
-
-function scrollToLine(myCodeMirror, lineNumber) {
-    // Scroll to the specified line
-    myCodeMirror.scrollIntoView({ line: lineNumber, ch: 0 }, 30);
-}
-
-function scrollToTitle(title, cm, lineOffset = 0, chPosition = 0) {
-    if (!title || !cm) return; // Check if title and CodeMirror instance are not null or undefined
-
-    const lowerCaseTitle = title.toLowerCase();
-    let nodeLineNo;
-    for (const [mapTitle, mapLineNo] of nodeTitleToLineMap) {
-        if (mapTitle.toLowerCase() === lowerCaseTitle) {
-            nodeLineNo = mapLineNo;
-            break;
-        }
-    }
-
-    if (nodeLineNo === undefined) return; // Check if nodeLineNo is found
-
-    // Modify the line number to account for the line offset
-    nodeLineNo += lineOffset;
-
-    // Calculate the position to scroll to
-    const coords = cm.charCoords({ line: nodeLineNo, ch: chPosition }, "local"); // Use line and character position
-
-    // Set the scroll position of the editor to scroll the target line to the top
-    cm.scrollTo(null, coords.top);
-
-    // Highlight the section of the current node
-    highlightNodeSection(title, cm);
-
-    // Get the node by the title
-    const node = getNodeByTitle(title);
-    if (!node) {
-        return; // The node could not be found
-    }
-    return node; // Return the node object
-}
-
-function deleteNodeByTitle(title) {
-    // Make sure to have the most recent map of node titles to line numbers
-    updateNodeTitleToLineMap();
-
-    // Get the start line for the node section
-    const startLineNo = nodeTitleToLineMap.get(title);
-
-    if (typeof startLineNo !== 'undefined') {
-        let endLineNo = startLineNo;
-        // Iterate from the start line until the next node tag is found
-        for (let i = startLineNo + 1; i < myCodeMirror.lineCount(); i++) {
-            const lineText = myCodeMirror.getLine(i);
-            if (lineText.startsWith(nodeTag)) {
-                endLineNo = i - 1; // Set the end line to the line before the next node tag
-                break;
-            }
-            endLineNo = i; // Extend the end line to include this line
-        }
-
-        // Remove the lines corresponding to the node
-        myCodeMirror.replaceRange("", { line: startLineNo, ch: 0 }, { line: endLineNo + 1, ch: 0 });
-
-        myCodeMirror.refresh();
-    }
-}
-
-function getNodeTitleLine(title, cm) {
-    const lowerCaseTitle = title.toLowerCase();
-    for (const [mapTitle, mapLineNo] of Array.from(nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
-        if (mapTitle.toLowerCase() === lowerCaseTitle) {
-            return mapLineNo;
         }
     }
     return null;
 }
 
-function escapeRegExp(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function getZetNodeCMInstance(nodeOrTitle) {
+    let title = typeof nodeOrTitle === 'string' ? nodeOrTitle : nodeOrTitle.getTitle();
+    for (let i = 0; i < window.zettelkastenUIs.length; i++) {
+        const ui = window.zettelkastenUIs[i];
+        if (ui.parser.nodeTitleToLineMap.has(title)) {
+            const lineNumber = ui.parser.nodeTitleToLineMap.get(title);
+            const cmInstance = ui.cm;
+            const textareaId = cmInstance.getTextArea().id;
+            const paneId = textareaId.replace('zet-note-input-', 'zet-pane-');
+            const zettelkastenProcessor = window.zettelkastenProcessors[i];
+            return {
+                ui,
+                parser: ui.parser,
+                cmInstance,
+                lineNumber,
+                paneId: paneId,
+                zettelkastenProcessor
+            };
+        }
+    }
+    return null;
 }
 
-function removeEdgeFromZettelkasten(title1, title2, removeOnlyFromTitle1 = false) {
-    if (!title1 || !title2) {
-        console.error("One or both titles are empty or undefined.");
-        return;
-    }
-    const lineCount = myCodeMirror.lineCount();
-    const closingBracket = bracketsMap[refTag];
 
-    const titlesToProcess = removeOnlyFromTitle1 ? [title1] : [title1, title2];
-
-    titlesToProcess.forEach((title) => {
-    const nodeLine = getNodeTitleLine(title, myCodeMirror);
-    if (nodeLine !== null) {
-        for (let j = nodeLine + 1; j < lineCount; j++) {
-            let nextLine = myCodeMirror.getLine(j);
-            if (nextLine.startsWith(nodeTag)) break;
-
-            let escapedRefTag = escapeRegExp(refTag);
-            let lineHasRefTag = new RegExp(escapedRefTag).test(nextLine);
-
-            if (lineHasRefTag) {
-                let targetTitle;
-                if (removeOnlyFromTitle1) {
-                    targetTitle = title2;
-                } else {
-                    // When not removing only from title1, we need to look for each title in the other's references
-                    targetTitle = title === title1 ? title2 : title1;
-                }
-                let escapedTargetTitle = escapeRegExp(targetTitle);
-
-                    let regExp;
-                    if (closingBracket) {
-                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapeRegExp(closingBracket)})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
-                    } else {
-                        regExp = new RegExp(`(${escapedRefTag}\\s*${escapedTargetTitle}\\s*${escapedRefTag})|(,?\\s*${escapedTargetTitle}\\s*,?)`, 'g');
-                    }
-
-                    nextLine = nextLine.replace(regExp, (match, p1, p2) => {
-                        if (p1) {
-                            return '';
-                        } else if (p2) {
-                            return p2.startsWith(',') ? ',' : '';
-                        }
-                    }).trim();
-
-                    // Remove trailing commas and spaces
-                    nextLine = nextLine.replace(/,\s*$/, '').trim();
-
-                    if (closingBracket) {
-                        let emptyBracketsRegExp = new RegExp(`${escapedRefTag}\\s*${escapeRegExp(closingBracket)}`, 'g');
-                        if (emptyBracketsRegExp.test(nextLine)) {
-                            nextLine = nextLine.replace(emptyBracketsRegExp, '');
-                        }
-                    } else {
-                        let lonelyRefTag = new RegExp(`^${escapedRefTag}\\s*$`);
-                        if (lonelyRefTag.test(nextLine)) {
-                            nextLine = '';
-                        }
-                    }
-
-                    myCodeMirror.replaceRange(nextLine, { line: j, ch: 0 }, { line: j, ch: myCodeMirror.getLine(j).length });
-                }
-            }
-        }
-    });
-
-    myCodeMirror.refresh();
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Flag to control recursion
 let isEdgeBeingAdded = false;
 
-function addEdgeToZettelkasten(fromTitle, toTitle, cm) {
-    if (!fromTitle || !toTitle) {
+function addEdgeToZettelkasten(title, linkedTitle) {
+    if (!title || !linkedTitle) {
         console.error("One or both titles are empty or undefined.");
         return;
     }
-    // Prevent recursive addition of edges
-    if (isEdgeBeingAdded) {
+
+    const nodeInfo = getZetNodeCMInstance(title);
+
+    if (nodeInfo) {
+        const { parser, cmInstance } = nodeInfo;
+        parser.addEdge(title, linkedTitle, cmInstance);
+    }
+}
+
+function removeEdgeFromZettelkasten(title, linkedTitle) {
+    if (!title || !linkedTitle) {
+        console.error("One or both titles are empty or undefined.");
         return;
     }
 
-    isEdgeBeingAdded = true;
+    const nodeInfo = getZetNodeCMInstance(title);
 
-    const appendOrCreateTag = (range, tagLineStart, newTag, tagPrefix = "", useCSV = false) => {
-        const getTrailingWhitespace = range => {
-            let count = 0;
-            for (let i = range.endLineNo; i >= range.startLineNo; i--) {
-                if (cm.getLine(i).trim() === "") {
-                    count++;
+    if (nodeInfo) {
+        const { parser, cmInstance } = nodeInfo;
+        parser.removeEdge(title, linkedTitle, cmInstance);
+    }
+}
+
+function getEdgeInfo(startTitle, endTitle) {
+    const edgeInfo = {
+        startNodeInfo: null,
+        endNodeInfo: null
+    };
+
+    // Get the start and end node information from all instances
+    edgeInfo.startNodeInfo = getZetNodeCMInstance(startTitle);
+    edgeInfo.endNodeInfo = getZetNodeCMInstance(endTitle);
+
+    return edgeInfo;
+}
+
+function removeEdgeFromAllInstances(startTitle, endTitle) {
+    removeEdgeFromZettelkasten(startTitle, endTitle);
+    removeEdgeFromZettelkasten(endTitle, startTitle);
+}
+
+
+class ZettelkastenUI {
+    constructor(codeMirrorInstance, textarea, parser) {
+        this.cm = codeMirrorInstance;
+        this.parser = parser;
+        this.initializeUI();
+
+        this.textarea = textarea;
+
+        this.cm.display.wrapper.style.backgroundColor = '#222226';
+        this.cm.display.wrapper.style.width = 'auto';
+        this.cm.display.wrapper.style.height = '100%';
+        this.cm.display.wrapper.style.borderStyle = 'inset';
+        this.cm.display.wrapper.style.borderColor = '#8882';
+        this.cm.display.wrapper.style.fontSize = '16px';
+        this.cm.display.wrapper.style.wordWrap = 'break-word';
+        this.cm.getWrapperElement().style.resize = "vertical";
+
+        this.ignoreTextAreaChanges = false;
+        this.userScrolledUp = false;
+    }
+
+    initializeUI() {
+        this.cm.on("mousedown", (cm, event) => {
+            const pos = cm.coordsChar({ left: event.clientX, top: event.clientY });
+            const token = cm.getTokenAt(pos);
+
+            if (token.type && token.type.includes("node")) {
+                const lineContent = cm.getLine(pos.line);
+                const title = lineContent.split(nodeTag)[1].trim();
+                if (title) toggleNodeState(title, event);
+                return;
+            }
+
+            const isWithin = this.isWithinMarkedText(cm, pos, 'node-title');
+
+            if (isWithin) {
+                const lineMarkers = cm.findMarksAt(pos);
+                let titles = lineMarkers.filter(marker => marker.className === 'node-title')
+                    .map(marker => cm.getRange(marker.find().from, marker.find().to));
+
+                if (titles.length > 0) {
+                    const longestTitle = titles.reduce((a, b) => a.length > b.length ? a : b);
+                    const markerForLongestTitle = lineMarkers.find(marker => {
+                        const rangeText = cm.getRange(marker.find().from, marker.find().to);
+                        return rangeText === longestTitle;
+                    });
+
+                    if (markerForLongestTitle) {
+                        const from = markerForLongestTitle.find().from;
+                        const to = markerForLongestTitle.find().to;
+
+                        if (pos.ch === from.ch || pos.ch === to.ch) {
+                            if (longestTitle.length === 1) {
+                                handleTitleClick(longestTitle);
+                            } else {
+                                cm.setCursor(pos);
+                            }
+                        } else {
+                            event.preventDefault();
+                            handleTitleClick(longestTitle);
+                        }
+                    }
+                }
+            } else {
+                const leftPos = CodeMirror.Pos(pos.line, pos.ch - 1);
+                const rightPos = CodeMirror.Pos(pos.line, pos.ch + 1);
+                const isLeftAdjacent = this.isWithinMarkedText(cm, leftPos, 'node-title');
+                const isRightAdjacent = this.isWithinMarkedText(cm, rightPos, 'node-title');
+
+                if (isLeftAdjacent || isRightAdjacent) {
+                    cm.setCursor(pos);
+                }
+
+                const lineText = cm.getLine(pos.line);
+                const nodeInputValue = nodeTag;
+                if (lineText.startsWith(nodeInputValue)) {
+                    cm.setCursor(pos);
+                }
+            }
+        });
+
+        this.cm.on("cursorActivity", (cm) => {
+            const cursorPos = cm.getCursor();
+            const cursorLineNo = cursorPos.line;
+
+            let currentNodeSectionTitle;
+            for (const [title, lineNo] of Array.from(this.parser.nodeTitleToLineMap).sort((a, b) => a[1] - b[1])) {
+                if (lineNo <= cursorLineNo) {
+                    currentNodeSectionTitle = title;
                 } else {
                     break;
                 }
             }
-            //console.log(`Found ${count} trailing whitespaces.`);
-            return count;
-        };
-        // Above determines whitespace after content and below modifies line count such that the tag is always between new lines.
-        // Adds to existing penultimate empty line if whitespace count is greater than 3 to avoid new line additions.
-        const insertTagInWhitespace = (endLine, count, tag) => {
-            let isEndOfDoc = (endLine === cm.lineCount() - 1); // Check if it's the last line of the document
 
-            if (count === 0) {
-                if (isEndOfDoc) {
-                    cm.replaceRange(`\n\n${tag}\n`, { line: endLine + 1, ch: 0 });
-                } else {
-                    cm.replaceRange(`\n${tag}\n\n`, { line: endLine + 1, ch: 0 });
+            if (currentNodeSectionTitle) {
+                const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(currentNodeSectionTitle);
+                if (cursorLineNo >= startLineNo && cursorLineNo <= endLineNo) {
+                    highlightNodeSection(this.cm, this.parser, currentNodeSectionTitle);
+                    return;
                 }
-            } else if (count === 1) {
-                cm.replaceRange(`\n${tag}\n`, { line: endLine, ch: 0 });
-            } else if (count === 2) {
-                cm.replaceRange(`${tag}\n`, { line: endLine, ch: 0 });
+            }
+
+            cm.getAllMarks().forEach(mark => {
+                if (mark.className === 'current-node-section') mark.clear();
+            });
+        });
+
+        this.cm.on("change", (instance, changeObj) => {
+            this.ignoreTextAreaChanges = true;
+            this.textarea.value = instance.getValue();
+
+            var event = new Event('input', {
+                bubbles: true,
+                cancelable: true,
+            });
+
+            this.textarea.dispatchEvent(event);
+
+            this.ignoreTextAreaChanges = false;
+
+            // Update node titles and highlight them
+            this.parser.identifyNodeTitles();
+            this.highlightNodeTitles();
+        });
+
+        this.cm.on("scroll", () => {
+            var scrollInfo = this.cm.getScrollInfo();
+            var atBottom = scrollInfo.height - scrollInfo.top - scrollInfo.clientHeight < 1;
+            if (!atBottom) {
+                this.userScrolledUp = true;
             } else {
-                cm.replaceRange(`${tag}`, { line: endLine - 1, ch: 0 });
+                this.userScrolledUp = false;
             }
-        };
-
-        const whitespaceCount = getTrailingWhitespace(range);
-
-        if (tagLineStart !== null) {
-            const oldLine = cm.getLine(tagLineStart);
-            if (!oldLine.includes(newTag)) {
-                const separator = useCSV ? ', ' : ' ';
-                cm.replaceRange(`${oldLine}${separator}${newTag}`, { line: tagLineStart, ch: 0 }, { line: tagLineStart, ch: oldLine.length });
-            }
-        } else {
-            insertTagInWhitespace(range.endLineNo, whitespaceCount, `${tagPrefix}${newTag}`);
-        }
-    };
-
-    const fromRange = getNodeSectionRange(fromTitle, cm);
-    const refTag = document.getElementById('ref-tag').value;
-    let tagLineStart = null;
-
-    for (let i = fromRange.startLineNo; i <= fromRange.endLineNo; i++) {
-        const lineText = cm.getLine(i);
-        if (lineText.startsWith(refTag)) {
-            tagLineStart = i;
-            break;
-        }
+        });
+        
     }
 
-    const closingBracket = bracketsMap[refTag];
-
-    if (closingBracket) {
-        appendOrCreateTag(fromRange, tagLineStart, `${refTag}${toTitle}${closingBracket}`);
-    } else {
-        appendOrCreateTag(fromRange, tagLineStart, toTitle, `${refTag} `, true);
+    isWithinMarkedText(cm, pos, className) {
+        const lineMarkers = cm.findMarksAt(pos);
+        for (let i = 0; i < lineMarkers.length; i++) {
+            if (lineMarkers[i].className === className) {
+                return true;
+            }
+        }
+        return false;
     }
-    isEdgeBeingAdded = false;
+
+    highlightNodeTitles() {
+        this.cm.getAllMarks().forEach(mark => mark.clear());
+
+        this.cm.eachLine((line) => {
+            nodeTitles.forEach((title) => {
+                if (title.length > 0) {
+                    const escapedTitle = RegExp.escape(title);
+                    const regex = new RegExp(escapedTitle, "ig");
+                    let match;
+                    while (match = regex.exec(line.text)) {
+                        const idx = match.index;
+                        if (idx !== -1) {
+                            this.cm.markText(
+                                CodeMirror.Pos(line.lineNo(), idx),
+                                CodeMirror.Pos(line.lineNo(), idx + title.length),
+                                {
+                                    className: 'node-title',
+                                    handleMouseEvents: true
+                                }
+                            );
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    scrollToLine(cmInstance, lineNumber) {
+        const lastLine = cmInstance.lastLine();
+        const validLineNumber = Math.min(lineNumber, lastLine);
+        cmInstance.scrollIntoView({ line: validLineNumber, ch: 0 }, 30);
+    }
+
+    scrollToTitle(title, lineOffset = 0, chPosition = 0) {
+        if (!title || !this.cm) return;
+
+        const lowerCaseTitle = title.toLowerCase();
+        let nodeLineNo;
+        for (const [mapTitle, mapLineNo] of this.parser.nodeTitleToLineMap) {
+            if (mapTitle.toLowerCase() === lowerCaseTitle) {
+                nodeLineNo = mapLineNo;
+                break;
+            }
+        }
+
+        if (nodeLineNo === undefined) return;
+
+        nodeLineNo += lineOffset;
+
+        const coords = this.cm.charCoords({ line: nodeLineNo, ch: chPosition }, "local");
+
+        this.cm.scrollTo(null, coords.top);
+
+        highlightNodeSection(this.cm, this.parser, title);
+
+        const node = getNodeByTitle(title);
+        if (!node) {
+            return;
+        }
+        return node;
+    }
+
+    hideNodeText(title) {
+        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(title);
+        for (let i = startLineNo + 1; i <= endLineNo; i++) {
+            this.cm.addLineClass(i, 'text', 'hidden-text');
+        }
+        this.cm.refresh();
+    }
+
+    showNodeText(title) {
+        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(title);
+        for (let i = startLineNo + 1; i <= endLineNo; i++) {
+            this.cm.removeLineClass(i, 'text', 'hidden-text');
+        }
+        this.cm.refresh();
+    }
 }
 
+function highlightNodeSection(cmInstance, parser, title) {
+    cmInstance.getAllMarks().forEach(mark => {
+        if (mark.className === 'current-node-section') mark.clear();
+    });
 
-function handleTitleClick(title, cm) {
+    const { startLineNo, endLineNo } = parser.getNodeSectionRange(title);
+
+    if (startLineNo === undefined) {
+        return;
+    }
+
+    cmInstance.markText(
+        CodeMirror.Pos(startLineNo, 0),
+        CodeMirror.Pos(endLineNo, cmInstance.getLine(endLineNo).length),
+        { className: 'current-node-section' }
+    );
+}
+
+function handleTitleClick(title) {
     if (!title) {
         return; // title could not be extracted
     }
 
     // Scroll to the title
-    const node = scrollToTitle(title, cm);
+    //const node = scrollToTitle(title, cm);
+    const node = getNodeByTitle(title);
     if (node) {
         let bb = node.content.getBoundingClientRect();
 
@@ -625,7 +719,7 @@ function handleTitleClick(title, cm) {
         if (bb && bb.width > 0 && bb.height > 0) {
             // Zoom to fit the node if the bounding rectangle exists
             node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.5);
+            zoomTo = zoomTo.scale(2);
         } else {
             // Use alternative zoom method if the bounding rectangle does not exist (allows best of both options, i.e. zoomto with exact height calculations when available, and when not currently in the viewport, a set value.)
             node.zoom_to(.5);
@@ -640,14 +734,3 @@ function hideNodeText(title, cm) {
         cm.addLineClass(i, 'text', 'hidden-text');
     }
 }
-
-function showNodeText(title, cm) {
-    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
-    for (let i = startLineNo + 1; i <= endLineNo; i++) {
-        cm.removeLineClass(i, 'text', 'hidden-text');
-    }
-}
-
-// Call initially
-identifyNodeTitles();
-highlightNodeTitles();

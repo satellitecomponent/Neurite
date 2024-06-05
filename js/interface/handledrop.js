@@ -394,7 +394,7 @@ addEventListener('paste', (event) => {
 });
 
 addEventListener("paste", (event) => {
-    let codeMirrorWrapper = window.myCodeMirror.getWrapperElement();
+    let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
     if (codeMirrorWrapper.contains(event.target)) {
         //console.log('Paste detected in CodeMirror');
 
@@ -404,9 +404,9 @@ addEventListener("paste", (event) => {
             //console.log('processAll set to true after paste in CodeMirror');
 
             // Simulate a minor change in content to trigger an input event
-            const cursorPos = window.myCodeMirror.getCursor();
-            window.myCodeMirror.replaceRange(' ', cursorPos); // Insert a temporary space
-            window.myCodeMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
+            const cursorPos = window.currentActiveZettelkastenMirror.getCursor();
+            window.currentActiveZettelkastenMirror.replaceRange(' ', cursorPos); // Insert a temporary space
+            window.currentActiveZettelkastenMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
 
             //console.log('Triggered input event in CodeMirror');
 
