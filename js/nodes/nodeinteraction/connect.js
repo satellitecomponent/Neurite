@@ -119,7 +119,7 @@ function getNodeData(node) {
     if (isLLM) {
         // Handle AI nodes
         const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.id);
-        const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nLast Prompts and Responses:${lastPromptsAndResponses}`;
+        const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nConversation History:${lastPromptsAndResponses}`;
         return nodeInfo;
     } else {
         // Handle regular text content
@@ -180,7 +180,7 @@ function getAllConnectedNodesData(node, filterAfterLLM = false) {
 
     traverseConnectedNodes(node, currentNode => {
         let currentNodeData = getNodeData(currentNode);
-        allConnectedNodesData.push({ data: currentNodeData, isLLM: currentNode.isLLM });
+        allConnectedNodesData.push({ node: currentNode, data: currentNodeData, isLLM: currentNode.isLLM });
     }, filterAfterLLM);
 
     return allConnectedNodesData;
