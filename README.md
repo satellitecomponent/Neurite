@@ -158,7 +158,11 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settings. To access the Zettelkasten Settings, click the note icon in the top left corner of the dropdown.
 
   *Full controls are listed in the ? tab within Neurite's main dropdown.
-  
+
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
+</p>
+
 `UI Tips`
 - Optimal Node Placement: Zoom in `Scroll` to create space for new nodes to ensure they have room to expand.
 - Managing Windows: Drag windows by their title bar and resize by scrolling while holding `Shift`.
