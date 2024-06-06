@@ -231,22 +231,25 @@ var refTag = modalInputValues['ref-tag'] || "[[";
 function initializeTagInputs() {
     var nodeTagInput = document.getElementById('node-tag');
     var refTagInput = document.getElementById('ref-tag');
-
     if (nodeTagInput && refTagInput) {
         nodeTagInput.value = nodeTag; // Set the current value
         refTagInput.value = refTag; // Set the current value
-
         nodeTagInput.addEventListener('input', function () {
-            nodeTag = nodeTagInput.value;
+            nodeTag = nodeTagInput.value.trim();
+            if (nodeTag === '') {
+                nodeTag = ' ';
+            }
             updateNodeTitleRegex();  // Update the regex with the new nodeTag
             updateAllZetMirrorModes();
-            window.zettelkastenProcessor.processInput();
+            updateAllZettelkastenProcessors();
         });
-
         refTagInput.addEventListener('input', function () {
-            refTag = refTagInput.value;
+            refTag = refTagInput.value.trim();
+            if (refTag === '') {
+                refTag = ' ';
+            }
             updateAllZetMirrorModes();
-            window.zettelkastenProcessor.processInput();
+            updateAllZettelkastenProcessors();
         });
     }
 }

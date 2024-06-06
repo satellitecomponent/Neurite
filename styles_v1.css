@@ -1350,7 +1350,7 @@ input[type="checkbox"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding-bottom: 10px;
 }
 
 .zet-pane-close {
@@ -2961,8 +2961,13 @@ textarea[id^='custom-instructions-textarea-'] {
     cursor: pointer;
     text-align: center;
     text-decoration: none; /* In case you apply this class to <a> tags */
-    gap: 15px; /* Space between bars and the label text */
+    gap: 8px; /* Space between bars and the label text */
 }
+
+    .button-label:hover::before,
+    .button-label:hover::after {
+        background-color: #555; /* Change color on hover for bars and pseudo-elements */
+    }
 
     .button-label::before,
     .button-label::after {
@@ -2976,26 +2981,13 @@ textarea[id^='custom-instructions-textarea-'] {
 /* Unified hover effects specifically targeting background color changes */
 .label-bar-container:hover .bar,
 .label-bar-container:hover .button-label::before,
-.label-bar-container:hover .button-label::after,
-.div-bar-container:hover .bar,
-.div-bar-container:hover > div:first-child::before,
-.div-bar-container:hover > div:first-child::after {
+.label-bar-container:hover .button-label::after {
     background-color: #555; /* Change color on hover for bars and pseudo-elements */
 }
 
 .label-bar-container:hover .button-label,
 .div-bar-container:hover > div:first-child {
     color: #bbb; /* Adjust for visibility on dark background for label */
-}
-
-/* Div-specific styles */
-.div-bar-container > div:first-child::before,
-.div-bar-container > div:first-child::after {
-    content: '';
-    background-color: #8882;
-    height: 2px;
-    flex-grow: 1;
-    transition: background-color 0.3s ease;
 }
 
 

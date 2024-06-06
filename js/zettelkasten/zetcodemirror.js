@@ -286,6 +286,16 @@ function updateAllZetMirrorModes() {
     }
 }
 
+function updateAllZettelkastenProcessors() {
+    if (window.zettelkastenProcessors) {
+        window.zettelkastenProcessors.forEach(processor => {
+            if (processor && typeof processor.processInput === 'function') {
+                processor.processInput();
+            }
+        });
+    }
+}
+
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
