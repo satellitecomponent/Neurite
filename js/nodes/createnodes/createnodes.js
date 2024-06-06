@@ -51,12 +51,7 @@ function addNodeTagToZettelkasten(title, content = null) {
     } else {
         currentZettelkastenValue += '\n\n' + nodeTagLine;
     }
-    // Add content if given
-    if (content) {
-        currentZettelkastenValue += '\n' + content;
-    }
-    // Set processAll to true
-    processAll = true;
+
     zettelkasten.setValue(currentZettelkastenValue);
     zettelkasten.refresh();
 
@@ -64,7 +59,10 @@ function addNodeTagToZettelkasten(title, content = null) {
     const ui = window.zettelkastenUIs.find(ui => ui.cm === zettelkasten);
     if (ui) {
         // Scroll to the title using ui.scrollToTitle
-        ui.scrollToTitle(title);
+        node = ui.scrollToTitle(title);
+
+        node.contentEditableDiv.value = content;
+        node.contentEditableDiv.dispatchEvent(new Event('input'));
     }
 }
 
