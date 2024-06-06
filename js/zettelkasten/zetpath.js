@@ -219,7 +219,7 @@ const defaultZetPathOptions = {
 
 let zetPath = createZetPath('Radial', defaultZetPathOptions);
 
-function updatePathOptions() {
+function updatePathOptions(targetProcessor = null) {
     //console.log('Updating path options...');
     const style = modalInputValues.zetPathTypeDropdown || 'Radial';
 
@@ -268,7 +268,13 @@ function updatePathOptions() {
     let pathObject = createZetPath(style, options);
     pathObject.zetPath.generatePath(); // Generate the path
     // Pass the complete pathObject, which now includes the path and the override flag
-    window.zettelkastenProcessor.updatePlacementPath(pathObject);
+    if (targetProcessor) {
+        targetProcessor.updatePlacementPath(pathObject);
+    } else {
+        window.zettelkastenProcessors.forEach(processor => {
+            processor.updatePlacementPath(pathObject);
+        });
+    }
 
     //console.log('Updated path options:', pathObject.zetPath.options);
 

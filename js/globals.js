@@ -231,22 +231,25 @@ var refTag = modalInputValues['ref-tag'] || "[[";
 function initializeTagInputs() {
     var nodeTagInput = document.getElementById('node-tag');
     var refTagInput = document.getElementById('ref-tag');
-
     if (nodeTagInput && refTagInput) {
         nodeTagInput.value = nodeTag; // Set the current value
         refTagInput.value = refTag; // Set the current value
-
         nodeTagInput.addEventListener('input', function () {
-            nodeTag = nodeTagInput.value;
+            nodeTag = nodeTagInput.value.trim();
+            if (nodeTag === '') {
+                nodeTag = ' ';
+            }
             updateNodeTitleRegex();  // Update the regex with the new nodeTag
-            updateMode();
-            window.zettelkastenProcessor.processInput();
+            updateAllZetMirrorModes();
+            updateAllZettelkastenProcessors();
         });
-
         refTagInput.addEventListener('input', function () {
-            refTag = refTagInput.value;
-            updateMode();
-            window.zettelkastenProcessor.processInput();
+            refTag = refTagInput.value.trim();
+            if (refTag === '') {
+                refTag = ' ';
+            }
+            updateAllZetMirrorModes();
+            updateAllZettelkastenProcessors();
         });
     }
 }
@@ -304,16 +307,6 @@ const tagValues = {
 };
 
 const PROMPT_IDENTIFIER = "Prompt:";
-
-//Codemirror
-var textarea = document.getElementById('note-input');
-var myCodeMirror = CodeMirror.fromTextArea(textarea, {
-    lineWrapping: true,
-    scrollbarStyle: 'simple',
-    theme: 'default',
-});
-
-window.myCodemirror = myCodeMirror;
 
 //ai.js
 
@@ -409,6 +402,21 @@ function triggerInputEvent(elementId) {
     document.getElementById(elementId).dispatchEvent(new Event('input'));
 }
 
+function clearTextSelections() {
+    if (window.getSelection) {
+        if (window.getSelection().empty) {
+            // Chrome
+            window.getSelection().empty();
+        } else if (window.getSelection().removeAllRanges) {
+            // Firefox, Safari, IE 11+, Edge
+            window.getSelection().removeAllRanges();
+        }
+    } else if (document.selection) {
+        // IE 10 and below
+        document.selection.empty();
+    }
+}
+
 //debounce
 
 function debounce(func, wait) {
@@ -421,4 +429,20 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+const debouncedTextareaUpdates = new Map();
+
+function updateTextareaAndDispatchEvent(targetTextarea, text) {
+    targetTextarea.value = text;
+    targetTextarea.dispatchEvent(new Event('change'));
+    //console.log(`Event triggered`);
+}
+
+function getDebouncedTextareaUpdate(targetTextarea) {
+    if (!debouncedTextareaUpdates.has(targetTextarea)) {
+        const debouncedUpdate = debounce(updateTextareaAndDispatchEvent, 20);
+        debouncedTextareaUpdates.set(targetTextarea, debouncedUpdate);
+    }
+    return debouncedTextareaUpdates.get(targetTextarea);
 }

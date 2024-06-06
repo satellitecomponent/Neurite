@@ -90,5 +90,4 @@ function initTextNode(node) {
 function addEventListenersToTextNode(node) {
     // Attach events for contentEditable and textarea
     addEventsToUserInputTextarea(node.contentEditableDiv, node.textarea, node, node.displayDiv);
-    watchHiddenTextareaAndSyncInputTextarea(node.textarea, node.contentEditableDiv);
 }

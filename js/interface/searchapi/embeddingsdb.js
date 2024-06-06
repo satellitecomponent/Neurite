@@ -772,6 +772,6 @@ function groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE) {
     // Construct the topNChunksContent
     return Object.entries(groupedChunks).map(([source, chunks]) => {
         chunks.sort((a, b) => a.number - b.number);
-        return `[Source: ${source}]\n${chunks.map(chunk => `Snippet ${chunk.number} (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
+        return `[${source}](${source})\n\n${chunks.map(chunk => `(Snippet ${chunk.number}) (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
     }).join('\n');
 }

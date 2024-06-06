@@ -22,7 +22,7 @@ class NeuralTelemetry {
 
     // Method to get a range of node titles
     getRangeOfNodeTitles(startCount, endCount) {
-        const allTitles = Array.from(nodeTitleToLineMap.keys());
+        const allTitles = Array.from(nodeTitles);
 
         // Handle cases where the requested counts are more than available titles
         const totalTitles = allTitles.length;

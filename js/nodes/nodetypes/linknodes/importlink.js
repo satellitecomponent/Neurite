@@ -27,9 +27,9 @@ async function confirmImport() {
 
     // Function to handle the addition of text chunks to Codemirror
     function addTextToCodemirror(textChunk) {
-        if (window.myCodemirror) {
-            const totalLines = window.myCodemirror.lineCount();
-            window.myCodemirror.replaceRange(textChunk, { line: totalLines, ch: 0 });
+        if (window.currentActiveZettelkastenMirror) {
+            const totalLines = window.currentActiveZettelkastenMirror.lineCount();
+            window.currentActiveZettelkastenMirror.replaceRange(textChunk, { line: totalLines, ch: 0 });
         } else {
             console.error('Codemirror instance not found.');
         }

@@ -219,7 +219,14 @@ document.getElementById("clear-unsure-button").addEventListener("click", functio
     document.getElementById("clear-button").text = "Clear";
 });
 document.getElementById("clear-sure-button").addEventListener("click", function () {
+    let createNewSave = confirm("Create a new save before clearing?");
+
+    if (createNewSave) {
+        neuriteSaveEvent();
+    }
+
     clearNet();
+    zetPanes.addPane();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
     document.getElementById("clear-button").text = "Clear";
 });
@@ -371,8 +378,10 @@ function restoreAdditionalSaveObjects(d) {
 
 function neuriteSaveEvent(existingTitle = null) {
     //TEMP FIX: To-Do: Ensure processChangedNodes in zettelkasten.js does not cause other node textareas to have their values overwritten.
-    processAll = true;
-    window.zettelkastenProcessor.processInput();
+    window.zettelkastenProcessors.forEach((processor) => {
+        processAll = true;
+        processor.processInput();
+    });
 
     nodes.forEach((node) => {
         node.updateEdgeData();  // Update edge data
@@ -393,11 +402,16 @@ function neuriteSaveEvent(existingTitle = null) {
     // Replace new lines in nodeData for LLM nodes
     nodeData = replaceNewLinesInLLMSaveData(nodeData);
 
-    let zettelkastenContent = window.myCodemirror.getValue();
-    let zettelkastenSaveElement = `<div id="zettelkasten-save" style="display:none;">${encodeURIComponent(zettelkastenContent)}</div>`;
+    let zettelkastenPanesSaveElements = '';
+    window.codeMirrorInstances.forEach((instance, index) => {
+        let paneContent = instance.cmInstance.getValue();
+        let paneName = zetPanes.getPaneName(`zet-pane-${index + 1}`);
+        let paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(paneName)}" style="display:none;">${encodeURIComponent(paneContent)}</div>`;
+        zettelkastenPanesSaveElements += paneSaveElement;
+    });
 
     let additionalSaveData = collectAdditionalSaveObjects();
-    let saveData = nodeData + zettelkastenSaveElement + additionalSaveData;
+    let saveData = nodeData + zettelkastenPanesSaveElements + additionalSaveData;
 
     let title = existingTitle || prompt("Enter a title for this save:");
 
@@ -447,7 +461,7 @@ function clearNet() {
     llmNodeCount = 0;
 
     // Clear the CodeMirror content
-    window.myCodemirror.setValue('');
+    zetPanes.resetAllPanes();
 }
 
 function loadNet(text, clobber, createEdges = true) {
@@ -458,15 +472,17 @@ function loadNet(text, clobber, createEdges = true) {
     let d = document.createElement("div");
     d.innerHTML = text;
 
-    // Temporarily store Zettelkasten content but don't set it in myCodeMirror yet
+    // Check for the previous single-tab save object
     let zettelkastenSaveElement = d.querySelector("#zettelkasten-save");
-    let zettelkastenContent;
     if (zettelkastenSaveElement) {
-        zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
-        //console.log("Zettelkasten Content:", zettelkastenContent);
-        // Remove the Zettelkasten save element to process the rest of the nodes
         zettelkastenSaveElement.remove();
     }
+
+    // Check for the new multi-pane save objects
+    let zettelkastenPaneSaveElements = d.querySelectorAll("[id^='zettelkasten-pane-']");
+    zettelkastenPaneSaveElements.forEach((element) => {
+        element.remove();
+    });
 
     restoreAdditionalSaveObjects(d);
 
@@ -487,11 +503,17 @@ function loadNet(text, clobber, createEdges = true) {
         reconstructSavedNode(n); // Reconstruct the saved node
     }
 
-    if (zettelkastenContent) {
-        processAll = true;
-        restoreZettelkastenEvent = true;
-        window.myCodemirror.setValue(zettelkastenContent);
+    if (zettelkastenSaveElement) {
+        let zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
+        zetPanes.restorePane("Zettelkasten Save", zettelkastenContent);
     }
+
+    zettelkastenPaneSaveElements.forEach((element) => {
+        let paneContent = decodeURIComponent(element.innerHTML);
+        let paneName = decodeURIComponent(element.getAttribute('data-pane-name'));
+
+        zetPanes.restorePane(paneName, paneContent);
+    });
 }
 
 function populateDirectionalityMap(d, nodeMap) {

@@ -1,36 +1,7 @@
 
-var myCodeMirror;
-
-const noteInput = myCodeMirror;
-
-let llmNodeCreated = false;
 let nodefromWindow = false;
 let followMouseFromWindow = false;
 
-
-{
-    //start of enclosure
-    const nodes = {};
-    const nodeLines = {};
-    const draggableWindows = document.querySelectorAll('.window');
-
-    draggableWindows.forEach((draggableWindow) => {
-        draggableWindow.addEventListener('mousedown', (event) => {
-            draggableWindows.forEach((otherWindow) => {
-                if (otherWindow !== draggableWindow) {
-                    otherWindow.classList.add('disable-pointer-events');
-                }
-            });
-        });
-
-        draggableWindow.addEventListener('mouseup', (event) => {
-            draggableWindows.forEach((otherWindow) => {
-                if (otherWindow !== draggableWindow) {
-                    otherWindow.classList.remove('disable-pointer-events');
-                }
-            });
-        });
-    });
 
     function nodeRE(name = undefined, tag_prefix = undefined) {
         if (tag_prefix === undefined) {
@@ -74,27 +45,16 @@ let followMouseFromWindow = false;
         return (s) => replaceInBrackets(s.replace(re, replacer), from, to);
     }
 
-    function initializeNodes(nodes) {
-        for (const key in nodes) {
-            if (nodes[key].nodeObject.removed) {
-                delete nodes[key];
-            } else {
-                nodes[key].plainText = '';
-                nodes[key].ref = '';
-                nodes[key].live = false;
-            }
-        }
-    }
-
-
-
-
     class ZettelkastenProcessor {
-        constructor() {
+        constructor(codeMirrorInstance, parser) {
+            this.noteInput = codeMirrorInstance;
+            this.parser = parser;
             this.prevNoteInputLines = [];
-            noteInput.on('change', this.processInput.bind(this));
-
             this.placementStrategy = new NodePlacementStrategy([], {});
+            this.nodes = {}; // Add instance-specific nodes object
+            this.nodeLines = {}; // Add instance-specific nodeLines object
+
+            this.noteInput.on('change', () => this.processInput());
         }
 
         updatePlacementPath(pathObject) {
@@ -132,46 +92,58 @@ let followMouseFromWindow = false;
             return null;  // If no matching node is found, return null or another default value
         }
 
+        initializeNodes() {
+            for (const key in this.nodes) {
+                if (this.nodes[key].nodeObject.removed) {
+                    delete this.nodes[key];
+                } else {
+                    this.nodes[key].plainText = '';
+                    this.nodes[key].ref = '';
+                    this.nodes[key].live = false;
+                }
+            }
+        }
+
         processInput() {
             if (bypassZettelkasten) {
                 bypassZettelkasten = false;
                 return;
             }
 
-            initializeNodes(nodes);
-            const lines = noteInput.getValue().split('\n');
+            this.initializeNodes(); // Use instance-specific initializeNodes method
+            const lines = this.noteInput.getValue().split('\n');
             let currentNodeTitle = '';
 
             lines.forEach((line, index) => {
-                currentNodeTitle = this.processLine(line, lines, index, nodes, currentNodeTitle);
+                currentNodeTitle = this.processLine(line, lines, index, this.nodes, currentNodeTitle);
             });
 
-            if (!processAll) { 
-                this.processChangedNode(lines, nodes);
+            if (!processAll) {
+                this.processChangedNode(lines, this.nodes);
             }
 
-            this.cleanupNodes(nodes, nodeLines);
-            this.prevNoteInputLines = lines.slice();
-
+            this.cleanupNodes(this.nodes, this.nodeLines);
+            this.prevNoteInputLines = lines.slice(); // Update prevNoteInputLines with the current lines
             processAll = false;
             restoreZettelkastenEvent = false;
         }
 
+
         processLine(line, lines, index, nodes, currentNodeTitle) {
             const currentNode = nodes[currentNodeTitle];
             if (line.startsWith(nodeTag)) {
-                return this.handleNode(line, index, nodeLines, nodes, currentNodeTitle);
+                return this.handleNode(line, index, this.nodeLines, nodes, currentNodeTitle);
             }
 
             if (line.startsWith(LLM_TAG)) {
-                return this.handleLLM(line, index, nodeLines, nodes, currentNodeTitle, this.addLLMNodeInputListener);
+                return this.handleLLM(line, index, this.nodeLines, nodes, currentNodeTitle, this.addLLMNodeInputListener);
             }
 
             if (currentNode && currentNode.isLLM) {
                 return this.handleLLMPromptLine(line, nodeTag, refTag, currentNodeTitle, nodes);
             }
 
-            if (processAll && !restoreZettelkastenEvent) {
+            if (processAll && restoreZettelkastenEvent) {
                 // Call handlePlainTextAndReferences without the start and end lines
                 this.handlePlainTextAndReferences(line, currentNodeTitle, nodes, null, null, lines);
             }
@@ -195,7 +167,7 @@ let followMouseFromWindow = false;
             const changedNode = this.findChangedNode(lines);
             if (changedNode) {
                 const changedNodeTitle = changedNode.getTitle();
-                const { startLineNo, endLineNo } = getNodeSectionRange(changedNodeTitle, noteInput);
+                const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(changedNodeTitle);
 
                 let nodeContainsReferences = false;
                 let nodeReferencesCleared = false;
@@ -229,7 +201,7 @@ let followMouseFromWindow = false;
                 let savedNode = getNodeByTitle(currentNodeTitle);
 
                 if (savedNode) {
-                    const node = this.establishZettelkastenNode(savedNode, currentNodeTitle, nodeLines, nodes, noteInput);
+                    const node = this.establishZettelkastenNode(savedNode, currentNodeTitle, nodeLines, nodes);
                     nodeLines[i] = node;
                     nodes[currentNodeTitle] = node;
                     return currentNodeTitle;
@@ -260,7 +232,7 @@ let followMouseFromWindow = false;
                         nodeObject = this.spawnNodeFromZettelkasten(currentNodeTitle);
                     }
 
-                    const node = this.establishZettelkastenNode(nodeObject, currentNodeTitle, nodeLines, nodes, noteInput);
+                    const node = this.establishZettelkastenNode(nodeObject, currentNodeTitle, nodeLines, nodes);
                     nodeLines[i] = node;
                     nodes[currentNodeTitle] = node;
                 }
@@ -277,7 +249,7 @@ let followMouseFromWindow = false;
             return currentNodeTitle;
         }
 
-        establishZettelkastenNode(domNode, currentNodeTitle, nodeLines, nodes, noteInput) {
+        establishZettelkastenNode(domNode, currentNodeTitle, nodeLines, nodes) {
             if (!domNode) {
                 console.warn('DOM node is undefined, cannot establish Zettelkasten node.');
                 return null;
@@ -293,14 +265,14 @@ let followMouseFromWindow = false;
                 lineNum: null
             };
 
-            this.attachContentEventListenersToNode(node, nodes, noteInput, nodeLines);
+            this.attachContentEventListenersToNode(node, nodes, nodeLines);
 
             return node;
         }
 
-        attachContentEventListenersToNode(node, nodes, noteInput, nodeLines) {
+        attachContentEventListenersToNode(node, nodes, nodeLines) {
             const inputElement = node.nodeObject.titleInput;
-            const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, noteInput, nodeLines, inputElement);
+            const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, nodeLines, inputElement);
             inputElement.addEventListener('input', titleInputEventHandler);
 
             const textarea = node.nodeObject.textarea;
@@ -310,16 +282,12 @@ let followMouseFromWindow = false;
 
 
         //Syncs node titles and Zettelkasten
-        createTitleInputEventHandler(node, nodes, noteInput, nodeLines, inputElement) {
+        createTitleInputEventHandler(node, nodes, nodeLines, inputElement) {
             return (e) => {
-                processAll = true;
-
                 if (e.target !== inputElement) {
                     return;
                 }
-
                 let newName = inputElement.value.trim().replace(",", "");
-
                 // If a count was previously added, attempt to remove it
                 if (node.countAdded) {
                     const updatedTitle = newName.replace(/\(\d+\)$/, '').trim();
@@ -329,12 +297,10 @@ let followMouseFromWindow = false;
                         node.countAdded = false;
                     }
                 }
-
                 const name = node.title;
                 if (newName === node.title) {
                     return;
                 }
-
                 delete nodes[name];
                 let countAdded = false;
                 if (nodes[newName]) {
@@ -346,22 +312,48 @@ let followMouseFromWindow = false;
                     inputElement.value = newName;
                     countAdded = true;
                 }
-
                 nodes[newName] = node;
                 node.title = newName;
-
                 // Set cursor position to before the count if a count was added
                 if (countAdded) {
                     const cursorPosition = newName.indexOf("(");
                     inputElement.setSelectionRange(cursorPosition, cursorPosition);
                 }
-
                 node.countAdded = countAdded;
 
-                const f = renameNode(name, inputElement.value);
-                noteInput.setValue(f(noteInput.getValue()));
-                noteInput.refresh();
-                scrollToTitle(node.title, noteInput);
+                // Collect the relevant CodeMirror instances to update
+                const cmInstancesToUpdate = new Set();
+
+                // Get the CodeMirror instance for the current node
+                const currentNodeInstance = getZetNodeCMInstance(name);
+                if (currentNodeInstance) {
+                    cmInstancesToUpdate.add(currentNodeInstance.cmInstance);
+                }
+
+                // Process the nodes connected by edges
+                for (const edge of node.nodeObject.edges) {
+                    // Find the connected node that is not the current node
+                    const connectedNode = edge.pts.find(pt => pt !== node.nodeObject);
+
+                    if (connectedNode && connectedNode.isTextNode) {
+                        const connectedNodeInstance = getZetNodeCMInstance(connectedNode.getTitle());
+                        if (connectedNodeInstance && connectedNodeInstance.cmInstance !== currentNodeInstance.cmInstance) {
+                            cmInstancesToUpdate.add(connectedNodeInstance.cmInstance);
+                        }
+                    }
+                }
+
+                // Update the collected CodeMirror instances
+                const renameNodeInInstance = renameNode(name, newName);
+                for (const cmInstance of cmInstancesToUpdate) {
+                    processAll = true;
+                    const updatedValue = renameNodeInInstance(cmInstance.getValue());
+                    cmInstance.setValue(updatedValue);
+                    cmInstance.refresh();
+                }
+
+                zetPanes.switchPane(currentNodeInstance.paneId);
+                currentNodeInstance.ui.scrollToTitle(node.title);
             };
         }
 
@@ -372,34 +364,40 @@ let followMouseFromWindow = false;
                 if (e.target !== textarea) {
                     return;
                 }
-                let body = textarea.value;
+
+                const body = textarea.value;
                 const name = node.title;
-
-                const { startLineNo, endLineNo } = getNodeSectionRange(name, noteInput);
-
-                let originalValue = noteInput.getValue();
+                const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(name);
+                let originalValue = this.noteInput.getValue();
                 const lines = originalValue.split('\n');
 
-                // Replace the node's content
-                const newNodeContent = [lines[startLineNo]].concat(body.split('\n'));
-                lines.splice(startLineNo, endLineNo - startLineNo + 1, ...newNodeContent);
+                // Construct the updated content with the new body text
+                const updatedContent = [lines[startLineNo], ...body.split('\n')].join('\n');
 
-                const newValue = lines.join('\n');
-                noteInput.setValue(newValue);
-                noteInput.refresh();
+                // Replace the node's content using replaceRange
+                const from = { line: startLineNo, ch: 0 };
+                const to = { line: endLineNo, ch: lines[endLineNo].length };
 
-                // Explicitly update the edges (references)
-                const nodeLines = body.split('\n');
-                for (const line of nodeLines) {
-                    if (line.startsWith(refTag)) {
-                        // Passing startLineNo and endLineNo for more explicit reference handling
-                        this.handleReferenceLine(line, node.title, nodes, lines, false, startLineNo, endLineNo);
-                    }
-                }
+                this.noteInput.operation(() => {
+                    this.noteInput.replaceRange(updatedContent, from, to);
 
-                // Update the textarea value AFTER handling the references
+                    // Save and restore the scroll position
+                    const scrollInfo = this.noteInput.getScrollInfo();
+                    this.noteInput.refresh();
+                    this.noteInput.scrollTo(scrollInfo.left, scrollInfo.top);
+
+                    // Explicitly update the edges (references)
+                    body.split('\n').forEach((line, index) => {
+                        if (line.startsWith(refTag)) {
+                            // Handle references
+                            this.handleReferenceLine(line, node.title, this.nodes, lines, false, startLineNo + index, startLineNo + index);
+                        }
+                    });
+                });
+
+                // Update the textarea value AFTER handling the references to prevent recursive updates
                 textarea.value = body;
-            }
+            };
         }
 
         extractAllReferencesFromRange(startLine, endLine, lines) {
@@ -427,7 +425,7 @@ let followMouseFromWindow = false;
                 allReferences = this.extractAllReferencesFromRange(startLineIndex, endLineIndex, lines);
             } else {
                 // Get node section range dynamically if not provided
-                const { startLineNo, endLineNo } = getNodeSectionRange(currentNodeTitle, noteInput);
+                const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(currentNodeTitle);
                 allReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines); // +1 to skip the title
             }
 
@@ -465,22 +463,28 @@ let followMouseFromWindow = false;
                 return;
             }
 
-            //console.log(`currentNodetitle`, currentNodeTitle);
             const thisNode = thisNodeWrapper.nodeObject;
 
-            // Initialize set with UUIDs from current node references
-            let allReferenceUUIDs = new Set(references.map(ref => nodes[ref]?.nodeObject?.uuid).filter(uuid => uuid));
+            // Get all nodes from all CodeMirror instances
+            const allNodes = getAllInternalZettelkastenNodes();
 
-            // Check if connected nodes contain a reference to the current node
+            // Initialize set with UUIDs from current node references
+            let allReferenceUUIDs = new Set(references.map(ref => allNodes[ref]?.nodeObject?.uuid).filter(uuid => uuid));
+
+            // Check if connected nodes contain a reference to the current node in any CodeMirror instance
             const connectedNodes = getConnectedNodes(thisNode);
             connectedNodes.forEach(node => {
-                const { startLineNo, endLineNo } = getNodeSectionRange(node.getTitle(), noteInput);
-                const nodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines);
+                const nodeInfo = getZetNodeCMInstance(node.getTitle());
+                if (nodeInfo) {
+                    const { parser, cmInstance } = nodeInfo;
+                    const { startLineNo, endLineNo } = parser.getNodeSectionRange(node.getTitle());
+                    const nodeLines = cmInstance.getValue().split('\n');
+                    const nodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, nodeLines);
 
-                if (nodeReferences.includes(currentNodeTitle)) {
-                    // If the connected node references the current node, add its UUID to the set
-                    const nodeUUID = node.uuid;
-                    allReferenceUUIDs.add(nodeUUID);
+                    if (nodeReferences.includes(currentNodeTitle)) {
+                        const nodeUUID = node.uuid;
+                        allReferenceUUIDs.add(nodeUUID);
+                    }
                 }
             });
 
@@ -493,13 +497,22 @@ let followMouseFromWindow = false;
             // Remove edges not found in reference UUIDs and ensure both nodes are text nodes
             currentEdges.forEach((edge, uuid) => {
                 if (!allReferenceUUIDs.has(uuid)) {
-                    // Retrieve the other node from the edge
                     const otherNode = edge.pts.find(pt => pt.uuid === uuid);
-
-                    // Check if both nodes are text nodes
                     if (thisNode.isTextNode && otherNode?.isTextNode) {
-                        edge.remove();
-                        currentEdges.delete(uuid);
+                        // Check if there is a reference to the other node in any CodeMirror instance
+                        const otherNodeInfo = getZetNodeCMInstance(otherNode.getTitle());
+                        if (otherNodeInfo) {
+                            const { parser, cmInstance } = otherNodeInfo;
+                            const { startLineNo, endLineNo } = parser.getNodeSectionRange(otherNode.getTitle());
+                            const otherNodeLines = cmInstance.getValue().split('\n');
+                            const otherNodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, otherNodeLines);
+
+                            // Remove the edge only if there are no references to the current node in the other node
+                            if (!otherNodeReferences.includes(currentNodeTitle)) {
+                                edge.remove();
+                                currentEdges.delete(uuid);
+                            }
+                        }
                     }
                 }
             });
@@ -509,9 +522,9 @@ let followMouseFromWindow = false;
 
             // Add new edges for references
             references.forEach(reference => {
-                const refUUID = nodes[reference]?.nodeObject?.uuid;
+                const refUUID = allNodes[reference]?.nodeObject?.uuid;
                 if (refUUID && !currentEdges.has(refUUID)) {
-                    const newEdge = connectDistance(thisNode, nodes[reference].nodeObject);
+                    const newEdge = connectDistance(thisNode, allNodes[reference].nodeObject);
                     thisNode.edges.push(newEdge);
                     currentEdges.set(refUUID, newEdge);
                 }
@@ -558,16 +571,14 @@ let followMouseFromWindow = false;
             } else {
                 targetTextarea = node.nodeObject.textarea;
             }
-
             if (node.plainText !== '') {
                 node.plainText += '\n';
             }
-            //console.log(`Event triggered for node: ${node.title}`);
             node.plainText += line;
-            targetTextarea.value = node.plainText;
-            targetTextarea.dispatchEvent(new Event('change'));
-            //adjustTextareaHeight(targetTextarea);
-
+            // Get the debounced function for the specific textarea
+            const debouncedTextareaUpdate = getDebouncedTextareaUpdate(targetTextarea);
+            // Use the debounced function to update value and dispatch change event
+            debouncedTextareaUpdate(targetTextarea, node.plainText);
             node.skipNewLine = false;
         }
 
@@ -631,7 +642,7 @@ let followMouseFromWindow = false;
                         plainText: '',
                         isLLM: true,
                     };
-                    addLLMNodeInputListener(LLMNode);
+                    addLLMNodeInputListener(LLMNode, nodes);
                 }
             } else {
                 LLMNode.live = true;
@@ -644,7 +655,7 @@ let followMouseFromWindow = false;
             return currentNodeTitle;
         }
 
-        addLLMNodeInputListener(node) {
+        addLLMNodeInputListener(node, nodes) {
             node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', (e) => {
                 const oldName = node.title;
                 let newName = e.target.value.trim().replace(",", "");
@@ -668,17 +679,12 @@ let followMouseFromWindow = false;
                 node.title = newName;
 
                 const f = renameNode(oldName, newName);
-                noteInput.setValue(f(noteInput.getValue()));
-                noteInput.refresh();
+                this.noteInput.setValue(f(this.noteInput.getValue()));
+                this.noteInput.refresh();
             });
         }
     }
 
-    const zettelkastenProcessor = new ZettelkastenProcessor(noteInput, nodeTagInput, refTagInput);
-    window.zettelkastenProcessor = zettelkastenProcessor;
-
-    //end of enclosure
-}
 
 function getUniqueNodeTitle(baseTitle, nodes, removeExistingCount = false) {
     let newName = baseTitle.trim().replace(",", "");

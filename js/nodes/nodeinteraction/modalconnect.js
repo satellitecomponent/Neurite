@@ -18,8 +18,14 @@ async function setupConnectModal(originNode) {
     });
 }
 async function updateNodeList(searchTerm, maxNodes, originNode) {
-    let allNodes = await searchNodesBy(searchTerm, maxNodes);
-    let nodes = allNodes.slice(0, maxNodes);  // Limit the results
+    let nodes;
+
+    if (searchTerm) {
+        let allNodes = await searchNodesBy(searchTerm, maxNodes);
+        nodes = allNodes.slice(0, maxNodes); // Limit the results
+    } else {
+        nodes = Object.values(nodeMap); // Get all nodes from the nodeMap
+    }
 
     const nodeList = document.getElementById('nodeList');
     nodeList.innerHTML = '';
@@ -57,7 +63,7 @@ function handleConnectOrRemove(node, originNode) {
 
     if (existingEdge) {
         if (node.isTextNode && originNode.isTextNode) {
-            removeEdgeFromZettelkasten(node.getTitle(), originNode.getTitle());
+            removeEdgeFromAllInstances(node.getTitle(), originNode.getTitle());
         } else {
             existingEdge.remove();
         }

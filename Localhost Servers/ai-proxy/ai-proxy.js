@@ -116,22 +116,25 @@ app.get('/ollama/tags', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch Ollama tags' });
     }
 });
-
 app.get('/ollama/library', async (req, res) => {
     try {
         const response = await axios.get('https://ollama.com/library');
         const $ = cheerio.load(response.data);
         const models = [];
-
         $('li a[href^="/library/"]').each((index, element) => {
             const modelName = $(element).text().trim();
             models.push({ name: modelName });
         });
-
         res.json(models);
     } catch (error) {
         console.error('Error fetching Ollama library:', error);
-        res.status(500).json({ error: 'Failed to fetch Ollama library' });
+        if (error.response && error.response.status === 500) {
+            // Handle specific 500 Internal Server Error
+            res.status(500).json({ error: 'Ollama library page is currently unavailable.' });
+        } else {
+            // Handle other errors
+            res.status(500).json({ error: 'Failed to fetch Ollama library' });
+        }
     }
 });
 

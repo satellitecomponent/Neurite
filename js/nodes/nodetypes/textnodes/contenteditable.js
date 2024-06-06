@@ -62,54 +62,41 @@ function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
     displayDiv.scrollLeft = userInputTextarea.scrollLeft;
 }
 
-function syncInputTextareaFromDisplayScroll(userInputTextarea, displayDiv) {
-    userInputTextarea.scrollTop = displayDiv.scrollTop;
-    userInputTextarea.scrollLeft = displayDiv.scrollLeft;
-}
-
-
 function addEventsToUserInputTextarea(userInputTextarea, textarea, node, displayDiv) {
+
     syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
 
     userInputTextarea.addEventListener('input', function () {
         syncHiddenTextareaWithInputTextarea(textarea, userInputTextarea);
-        syncDisplayFromInputTextareaScroll(this, displayDiv);
         if (displayDiv) {
             ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
         }
-        const lineNumber = getLineNumberWithinTextarea(userInputTextarea);
-        const title = node.getTitle();
-        scrollToTitle(title, noteInput, lineNumber);
     });
 
     userInputTextarea.addEventListener('scroll', function (event) {
-        syncDisplayFromInputTextareaScroll(this, displayDiv);
+        syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv);
     });
 
     displayDiv.addEventListener('scroll', function (event) {
-        syncInputTextareaFromDisplayScroll(userInputTextarea, this);
+        syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv);
     });
+
+    const highlightWithDelay = debounce(() => {
+        if (displayDiv) {
+            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
+        }
+    }, 3000);
 
     textarea.addEventListener('change', (event) => {
-        if (!isProgrammaticChange) {
-            syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
-        }
-        let userHasScrolledManually = handleUserScroll(userInputTextarea);
-
-        if (!userHasScrolledManually) {
-            scrollToBottom(userInputTextarea, displayDiv);
-        }
+        syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
         if (displayDiv) {
-            ZetSyntaxDisplay.syncAndHighlight(displayDiv, textarea);
-            syncDisplayFromInputTextareaScroll(this, displayDiv);
+            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
         }
+        highlightWithDelay();
     });
-
     // Highlight Codemirror text on focus of contenteditable div
     userInputTextarea.onfocus = function () {
         syncDisplayFromInputTextareaScroll(this, displayDiv);
-        const title = node.getTitle();
-        highlightNodeSection(title, myCodeMirror);
     };
 
     userInputTextarea.addEventListener('mousedown', function (event) {
@@ -147,62 +134,74 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
 
 }
 
-function handleUserScroll(userInputTextarea) {
-    const contentEditable = userInputTextarea;
-    const threshold = 50;
-    const isNearBottom = contentEditable.scrollHeight - contentEditable.clientHeight - contentEditable.scrollTop < threshold;
+let isEditableDivProgrammaticChange = false;
 
-    if (isNearBottom) {
-        return false;
+function syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea) {
+    let previousContent = userInputTextarea.value;
+    const currentContent = textarea.value;
+    const changedText = getChangedText(previousContent, currentContent);
+    if (changedText !== null) {
+        const selectionStart = userInputTextarea.selectionStart;
+        const selectionEnd = userInputTextarea.selectionEnd;
+        userInputTextarea.value = currentContent;
+        userInputTextarea.setSelectionRange(selectionStart, selectionEnd);
+        isEditableDivProgrammaticChange = true;
+        insertTextAtCursor(userInputTextarea, changedText);
+        isEditableDivProgrammaticChange = false;
+    }
+}
+
+function getChangedText(oldText, newText) {
+    const oldLines = oldText.split("\n");
+    const newLines = newText.split("\n");
+
+    for (let i = 0; i < Math.min(oldLines.length, newLines.length); i++) {
+        if (oldLines[i] !== newLines[i]) {
+            return newLines[i].slice(oldLines[i].length);
+        }
+    }
+
+    if (newLines.length > oldLines.length) {
+        return newLines[newLines.length - 1];
+    }
+
+    return null;
+}
+
+function insertTextAtCursor(textarea, text) {
+    const event = new Event('input', { bubbles: true, cancelable: true });
+    const textNode = document.createTextNode(text);
+
+    if (textarea.childNodes.length > 0) {
+        const range = textarea.ownerDocument.createRange();
+        const childNode = textarea.childNodes[0];
+
+        // Ensure the selection start and end are within valid boundaries
+        const selectionStart = Math.min(textarea.selectionStart, childNode.length);
+        const selectionEnd = Math.min(textarea.selectionEnd, childNode.length);
+
+        range.setStart(childNode, selectionStart);
+        range.setEnd(childNode, selectionEnd);
+        range.deleteContents();
+        range.insertNode(textNode);
     } else {
-        return true;
+        textarea.appendChild(textNode);
     }
-}
 
-function scrollToBottom(userInputTextarea, displayDiv) {
-    userInputTextarea.scrollTop = userInputTextarea.scrollHeight;
-    if (displayDiv) {
-        displayDiv.scrollTop = displayDiv.scrollHeight;
-    }
-}
-
-
-function isEventInsideElement(event, element) {
-    return element.contains(event.target);
-}
-
-function watchHiddenTextareaAndSyncInputTextarea(textarea, editableDiv) {
-    const mutationObserver = new MutationObserver(() => {
-        syncInputTextareaWithHiddenTextarea(editableDiv, textarea);
-    });
-
-    mutationObserver.observe(textarea, {
-        attributes: true,
-        attributeFilter: ['value']
-    });
-}
-
-let isProgrammaticChange = false;
-
-function syncInputTextareaWithHiddenTextarea(editableDiv, textarea) {
-    if (!isProgrammaticChange) {
-        isProgrammaticChange = true;  // Avoid recursive updates
-        editableDiv.value = textarea.value;  // Update the content
-        editableDiv.dispatchEvent(new Event('input'));
-    }
-    isProgrammaticChange = false;
+    textarea.dispatchEvent(event);
 }
 
 function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
-    if (!isProgrammaticChange) {
-        isProgrammaticChange = true;  // Avoid recursive updates
+    if (!isEditableDivProgrammaticChange) {
+        isEditableDivProgrammaticChange = true;  // Avoid recursive updates
+
         textarea.value = contentEditable.value;  // Update the textarea
         textarea.dispatchEvent(new Event('input'));  // Trigger any associated event listeners
+
+        isEditableDivProgrammaticChange = false;
     }
-    isProgrammaticChange = false;
 }
 
-function getLineNumberWithinTextarea(textarea) {
-    const textUpToCursor = textarea.value.substring(0, textarea.selectionStart);
-    return textUpToCursor.split('\n').length; // Returns the current line number
+function isEventInsideElement(event, element) {
+    return element.contains(event.target);
 }
