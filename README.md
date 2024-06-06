@@ -3,9 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
-
-
-![localhost_8080_ (9)](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)
+![Screenshot 2024-06-06 140107](https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac)
 
 ## `Introduction`
 
@@ -68,7 +66,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 7. [Local Server Setup](#local-server-setup)
 8. [Neural API](#neural-api)
 9. [Future of Neurite](#future-of-neurite)
-10. [Contact](#contact)
+10. [Gallery](#gallery)
 
 ## `How to Use Neurite`
 
@@ -372,6 +370,10 @@ This will run all of the servers at once. They'll work on our Github pages host 
 
 As of our recent update, the servers now support an Ai proxy that connects Neurite to any inference backend.
 
+<p align="center">
+<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
+</p>
+
 ### `Final Notes`
 - Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
 - Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
@@ -474,13 +476,9 @@ console.log(neuralAPI);</code></pre>
 
 🔄 pull requests
 
-Depreciations:
-webLLM
 🚧
 
-https://github.com/satellitecomponent/Neurite/assets/129367899/d8d375c2-9274-4176-ac6b-b9a3bf4329d8
-
-## `Contact`
+## `Gallery`
 
 If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/6fdmDF8SmT) 🔗
 
@@ -488,12 +486,17 @@ If you are a developer who is interested in contributing to this project, contac
     <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="70%">
     <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404" alt="whyfractals2" width="70%">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/7593dbcf-1eb7-415b-9f83-b817229f0c17" alt="whyfractals4" width="70%">
+    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d5800897-1eb8-4113-8a9e-75ce029eb67a" alt="whyfractals6" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
 </p>
-full video [here](https://youtu.be/1VmE_Bov-Xw)
+
 <a href="https://star-history.com/#satellitecomponent/Neurite&Date">
+
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date&theme=dark" />
    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=satellitecomponent/Neurite&type=Date" />
  </picture>
+
 </a>
