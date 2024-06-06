@@ -42,29 +42,30 @@ function createNodeFromWindow(title = null, content = null, followMouse = false)
 }
 
 function addNodeTagToZettelkasten(title, content = null) {
+    const zettelkasten = window.currentActiveZettelkastenMirror;
     const nodeTagLine = nodeTag + ' ' + title;
-    let currentZettelkastenValue = noteInput.getValue();
-
+    let currentZettelkastenValue = zettelkasten.getValue();
     // Check if the content ends with a newline and add one or two newlines accordingly
     if (currentZettelkastenValue.endsWith('\n')) {
         currentZettelkastenValue += '\n' + nodeTagLine;
     } else {
         currentZettelkastenValue += '\n\n' + nodeTagLine;
     }
-
     // Add content if given
     if (content) {
         currentZettelkastenValue += '\n' + content;
     }
-
     // Set processAll to true
     processAll = true;
+    zettelkasten.setValue(currentZettelkastenValue);
+    zettelkasten.refresh();
 
-    noteInput.setValue(currentZettelkastenValue);
-    noteInput.refresh();
-
-    node = scrollToTitle(title, noteInput);
-
+    // Find the UI associated with the current active Zettelkasten mirror
+    const ui = window.zettelkastenUIs.find(ui => ui.cm === zettelkasten);
+    if (ui) {
+        // Scroll to the title using ui.scrollToTitle
+        ui.scrollToTitle(title);
+    }
 }
 
 function createTextNodeWithPosAndScale(title, text, scale, x, y) {

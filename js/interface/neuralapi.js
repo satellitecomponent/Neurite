@@ -294,8 +294,8 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
         if (typeof nodeOrTitle === 'object' && nodeOrTitle !== null) {
             node = nodeOrTitle; // Use the node object directly
         } else if (typeof nodeOrTitle === 'string') {
-            const cm = window.myCodemirror;
-            node = scrollToTitle(nodeOrTitle, cm); // Find the node by title
+            ui = getZetNodeCMInstance(nodeOrTitle).ui;
+            node = ui.scrollToTitle(nodeOrTitle); // Find the node by title
         } else {
             console.error("Invalid argument. Must be a node title or a node object.");
             resolve();
@@ -961,7 +961,7 @@ function neuriteAddNote(nodeTitle, nodeText) {
         }
 
         let contentToAdd = nodeTag + ' ' + formattedNodeTitle + '\n' + nodeText;
-        let codeMirror = window.myCodemirror;
+        let codeMirror = window.currentActiveZettelkastenMirror;
 
         let lastLine = codeMirror.lastLine();
         let lastLineText = codeMirror.getLine(lastLine);
@@ -979,7 +979,8 @@ function neuriteAddNote(nodeTitle, nodeText) {
         codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
         processAll = false;
 
-        const node = scrollToTitle(formattedNodeTitle, codeMirror); // returns the node
+        ui = getZetNodeCMInstance(nodeTitle).ui;
+        const node = ui.scrollToTitle(formattedNodeTitle); // returns the node
 
         // Resolve the promise and decrement the active animations count after a short timeout
         setTimeout(() => {
@@ -992,7 +993,7 @@ function neuriteAddNote(nodeTitle, nodeText) {
 function neuriteGetUniqueNodeTitle(baseTitle) {
     let counter = 2;
     let uniqueTitle = baseTitle;
-    while (nodeTitleToLineMap.has(uniqueTitle)) {
+    while (nodeTitles.has(uniqueTitle)) {
         uniqueTitle = `${baseTitle}(${counter})`;
         counter++;
     }

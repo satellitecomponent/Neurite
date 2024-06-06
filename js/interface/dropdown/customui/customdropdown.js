@@ -5,6 +5,23 @@ function createDropdown(id) {
     return select;
 }
 
+function selectOption(option, select) {
+    const optionsReplacer = select.parentNode.querySelector('.options-replacer');
+
+    // First, remove 'selected' from all options
+    Array.from(optionsReplacer.children).forEach(child => {
+        child.classList.remove('selected');
+    });
+
+    // Set this option as the selected one
+    select.parentNode.querySelector(`[data-value="${option.value}"]`).classList.add('selected');
+    select.value = option.value; // Update the underlying select value
+    updateSelectedOptionDisplay(select); // Update the selected display
+
+    // Dispatch a change event to the original select element
+    select.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+}
+
 function createDropdownWrapper(dropdown, wrapperIdPrefix, nodeIndex) {
     const wrapper = document.createElement('div');
     wrapper.className = 'dropdown-wrapper';
@@ -91,6 +108,22 @@ function createOptionDiv(option, select, optionsReplacer, selectedDiv) {
     optionsReplacer.appendChild(optionDiv);
 }
 
+function addOptionToCustomDropdown(select, optionData) {
+    let optionsReplacer = select.parentNode.querySelector('.options-replacer');
+    let selectedDiv = select.parentNode.querySelector('.select-replacer > div');
+
+    // Create the option element
+    let option = new Option(optionData.text, optionData.value);
+    option.setAttribute('data-key', optionData.key);
+
+    // Append and bind event to this new option
+    if (optionsReplacer) {
+        createOptionDiv(option, select, optionsReplacer, selectedDiv);
+    }
+
+    // Append option to the select element
+    select.appendChild(option);
+}
 
 function addEventListenersToCustomDropdown(select) {
     let isPendingFrame = false;
@@ -108,7 +141,6 @@ function addEventListenersToCustomDropdown(select) {
     });
 
     selectReplacer.addEventListener('click', function (event) {
-
         if (optionsReplacer.classList.contains('show')) {
             // Dropdown is open, so close it
             window.requestAnimationFrame(() => {
@@ -140,12 +172,19 @@ function addEventListenersToCustomDropdown(select) {
     });
 
     // Close dropdown when clicking outside
-    document.addEventListener('click', function (event) {
+    document.addEventListener('mousedown', function (event) {
         if (!container.contains(event.target)) {
+            container.setAttribute('data-outside-click', 'true');
+        }
+    });
+
+    document.addEventListener('mouseup', function (event) {
+        if (container.getAttribute('data-outside-click') === 'true' && !container.contains(event.target)) {
             optionsReplacer.classList.remove('show');
             selectReplacer.classList.add('closed');
             container.style.zIndex = "20"; // Reset the z-index of the parent container
         }
+        container.removeAttribute('data-outside-click');
     });
 }
 
@@ -224,23 +263,6 @@ function restoreDropdownState(dropdown) {
             }
         }
     }
-}
-
-function addOptionToCustomDropdown(select, optionData) {
-    let optionsReplacer = select.parentNode.querySelector('.options-replacer');
-    let selectedDiv = select.parentNode.querySelector('.select-replacer > div');
-
-    // Create the option element
-    let option = new Option(optionData.text, optionData.value);
-    option.setAttribute('data-key', optionData.key);
-
-    // Append and bind event to this new option
-    if (optionsReplacer) {
-        createOptionDiv(option, select, optionsReplacer, selectedDiv);
-    }
-
-    // Append option to the select element
-    select.appendChild(option);
 }
 
 
@@ -358,22 +380,159 @@ function restoreSelectSelectedValue(selectId) {
 }
 
 
-
-
-
-
-// Function for custom slider background
-function setSliderBackground(slider) {
-    const min = slider.min ? parseFloat(slider.min) : 0;
-    const max = slider.max ? parseFloat(slider.max) : 100;
-    const value = slider.value ? parseFloat(slider.value) : 0;
-    const percentage = (value - min) / (max - min) * 100;
-    slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
+function updateOptionTitle(selectElement, optionValue, newTitle) {
+    const option = Array.from(selectElement.options).find(opt => opt.value === optionValue);
+    if (option) {
+        option.innerText = newTitle;
+        const optionDiv = selectElement.parentNode.querySelector(`.dropdown-option[data-value="${optionValue}"] .option-input`);
+        if (optionDiv) {
+            optionDiv.innerText = newTitle;
+        }
+        if (option.selected) {
+            updateSelectedOptionDisplay(selectElement);
+        }
+    }
 }
 
-document.querySelectorAll('input[type=range]:not(#customModal input[type=range])').forEach(function (slider) {
-    setSliderBackground(slider);
-    slider.addEventListener('input', function () {
-        setSliderBackground(slider);
+function addHtmlOptionToCustomDropdown(select, optionData, createOptionContent) {
+    let optionsReplacer = select.parentNode.querySelector('.options-replacer');
+    let selectedDiv = select.parentNode.querySelector('.select-replacer > div');
+
+    // Create the option element
+    let option = new Option(optionData.text, optionData.value);
+    option.setAttribute('data-key', optionData.key);
+
+    // Append and bind event to this new option
+    if (optionsReplacer) {
+        createHtmlOptionDiv(option, select, optionsReplacer, selectedDiv, createOptionContent);
+    }
+
+    // Append option to the select element
+    select.appendChild(option);
+}
+
+function setupHtmlOptionsCustomDropdown(select, createOptionContent, delayListeners = false) {
+    // Create the main custom dropdown container
+    let selectReplacer = document.createElement('div');
+    selectReplacer.className = 'select-replacer closed'; // add 'closed' class by default
+
+    // Create the currently selected value container
+    let selectedDiv = document.createElement('div');
+    selectedDiv.className = 'selected-text';
+
+    // Safeguard against empty select or invalid selectedIndex
+    if (select.options.length > 0 && select.selectedIndex >= 0 && select.selectedIndex < select.options.length) {
+        selectedDiv.innerText = select.options[select.selectedIndex].innerText;
+    }
+    selectReplacer.appendChild(selectedDiv);
+
+    // Create the dropdown options container
+    let optionsReplacer = document.createElement('div');
+    optionsReplacer.className = 'options-replacer custom-scrollbar';
+
+    // Append the options container to the main dropdown container
+    selectReplacer.appendChild(optionsReplacer);
+
+    // Replace the original select with the custom dropdown
+    let container = document.createElement('div');
+    container.className = 'select-container';
+    select.parentNode.insertBefore(container, select);
+    container.appendChild(selectReplacer);
+    container.appendChild(select);
+    select.style.display = 'none'; // Hide the original select
+
+    // Create the custom options
+    Array.from(select.options).forEach(option => {
+        createHtmlOptionDiv(option, select, optionsReplacer, selectedDiv, createOptionContent);
     });
-});
+
+    if (!delayListeners) {
+        addEventListenersToCustomDropdown(select);
+    }
+}
+
+function createHtmlOptionDiv(option, select, optionsReplacer, selectedDiv, createOptionContent) {
+    let optionDiv = document.createElement('div');
+    optionDiv.className = 'dropdown-option';
+    optionDiv.setAttribute('data-value', option.value);
+
+    // Call the createOptionContent function to generate the option content
+    const optionContent = createOptionContent(option);
+    optionDiv.appendChild(optionContent);
+
+    // Check if this option is the currently selected one
+    if (option.selected) {
+        optionDiv.classList.add('selected');
+    }
+
+    // Event handler for clicks on this option
+    optionDiv.addEventListener('click', function (event) {
+        event.stopPropagation(); // Stop the event from propagating further
+        selectOption(option, select);
+    });
+
+    optionsReplacer.appendChild(optionDiv);
+}
+
+function createZetContainerDropdown(option) {
+    let inputDiv = document.createElement('div');
+    inputDiv.className = 'option-input';
+    inputDiv.contentEditable = true;
+    inputDiv.innerText = option.text;
+
+    let optionContent = document.createElement('div');
+    optionContent.className = 'option-content';
+    optionContent.appendChild(inputDiv);
+
+    // Event handler for input changes in the option
+    inputDiv.addEventListener('input', function () {
+        option.text = inputDiv.innerText; // Update the option's text property
+
+        // Update the data-pane-name attribute of the corresponding pane element
+        const paneId = option.value;
+        const pane = document.querySelector(`#${paneId}`);
+        if (pane) {
+            pane.setAttribute('data-pane-name', option.text);
+        }
+
+        if (option.selected) {
+            updateSelectedOptionDisplay(option.parentNode);
+        }
+    });
+
+    // Event handler for keydown event to prevent adding new lines
+    inputDiv.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+    });
+
+    inputDiv.addEventListener('paste', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    });
+
+    // Event handler for focus on the input div
+    inputDiv.addEventListener('focus', function () {
+        selectOption(option, option.parentNode);
+    });
+
+    return optionContent;
+}
+
+function refreshHtmlDropdownDisplay(select, createOptionContent) {
+    const optionsReplacer = select.parentNode.querySelector('.options-replacer');
+    const selectedDiv = select.parentNode.querySelector('.select-replacer > div');
+
+    // Clear existing custom dropdown options
+    while (optionsReplacer.firstChild) {
+        optionsReplacer.removeChild(optionsReplacer.firstChild);
+    }
+
+    // Repopulate the custom dropdown options
+    Array.from(select.options).forEach(option => {
+        createHtmlOptionDiv(option, select, optionsReplacer, selectedDiv, createOptionContent);
+    });
+
+    updateSelectedOptionDisplay(select);
+}

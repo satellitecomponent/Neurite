@@ -112,7 +112,7 @@ function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier)
 
 
 
-function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input") {
+function getLastPromptsAndResponses(count, maxTokens, textareaId = zetPanes.getActiveTextareaId()) {
     const lines = document.getElementById(textareaId).value.split("\n");
     const promptsAndResponses = [];
     let promptCount = 0;
@@ -140,7 +140,7 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = "note-input")
 }
 
 function removeLastResponse() {
-    const noteInput = document.getElementById("note-input");
+    const noteInput = document.getElementById(zetPanes.getActiveTextareaId());
     const lines = noteInput.value.split("\n");
 
     // Find the index of the last "Prompt:"
@@ -155,7 +155,7 @@ function removeLastResponse() {
         noteInput.value = lines.join("\n");
 
         // Update the CodeMirror instance with the new value
-        myCodeMirror.setValue(noteInput.value);
+        window.currentActiveZettelkastenMirror.setValue(noteInput.value);
     }
 }
 

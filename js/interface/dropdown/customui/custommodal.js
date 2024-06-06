@@ -69,6 +69,9 @@ function openModal(contentId) {
         case 'vectorDbSearchModal':
             modalTitle.textContent = 'Search Vector-DB';
             break;
+        case 'zetSearchModal':
+            modalTitle.textContent = 'Search Notes';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
@@ -131,6 +134,19 @@ function openModal(contentId) {
 // Function to close the modal
 function closeModal() {
     //console.log('close Modal');
+    const modalBody = modal.querySelector('.modal-body');
+    const contentId = modalBody.id;
+
+    // Perform specific actions based on the contentId
+    switch (contentId) {
+        case 'zetSearchModal':
+            clearSearch();
+            break;
+        // Add more cases for other modals if needed
+        default:
+            break;
+    }
+
     modal.style.display = 'none';
 }
 

@@ -382,16 +382,19 @@ class Node {
         this.followingMouse = 1;
         window.draggedNode = this;
         movingNode = this;
+
         if (nodeMode) {
             if (prevNode === undefined) {
                 prevNode = this;
+                clearTextSelections(); // Clear text selections when starting the node mode connection
             } else {
                 connectNodes(this, prevNode);
-
                 // Reset prevNode
                 prevNode = undefined;
+                clearTextSelections(); // Clear text selections when ending the node mode connection
             }
         }
+
         // Add an event listener to window.mouseup that stops the node from following the mouse
         window.addEventListener('mouseup', () => this.stopFollowingMouse());
         cancel(event);

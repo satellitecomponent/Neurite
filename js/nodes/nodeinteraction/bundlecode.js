@@ -229,22 +229,47 @@ function collectCodeBlocks(textarea) {
 }
 
 function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
+    // Hide the syntax display div
+    let displayDiv = node.content.querySelector('.syntax-display-div');
+    if (displayDiv) {
+        displayDiv.style.display = 'none';
+        node.displayDiv = displayDiv;
+    } else {
+        console.warn('syntax-display-div not found.');
+    }
+
     let allConnectedNodesInfo = getAllConnectedNodesData(node);
     allConnectedNodesInfo.push(...allWebCode);
     console.log(`allconnectednodesinfo`, allConnectedNodesInfo);
     let bundledContent = bundleWebContent(allConnectedNodesInfo);
-    
+
+    // Ensuring iframe is interactable
     htmlView.style.width = initialWindowWidth;
     htmlView.style.height = initialWindowHeight;
     htmlView.classList.remove('hidden');
+
+    // Use srcdoc to inject the content directly
     htmlView.srcdoc = `${bundledContent.html}\n\n${bundledContent.css}\n\n${bundledContent.js}`;
     console.log(`htmlView.srcdoc`, htmlView.srcdoc);
+
+    // Ensure the iframe allows interactions
+    htmlView.onload = function () {
+        const iframeDocument = htmlView.contentDocument || htmlView.contentWindow.document;
+        iframeDocument.body.style.pointerEvents = 'auto';
+        iframeDocument.body.style.userSelect = 'auto';
+        console.log('Iframe content loaded and interactable.');
+    };
 }
 
 function resetViewsAndContentEditable(node, htmlView, pythonView) {
     const windowDiv = node.windowDiv;
     htmlView.classList.add('hidden');
     pythonView.classList.add('hidden');
+
+    // Show the syntax display div again
+    if (node.displayDiv) {
+        node.displayDiv.style.display = '';
+    }
 
     // Resetting window dimensions is not required as they are not altered
 }

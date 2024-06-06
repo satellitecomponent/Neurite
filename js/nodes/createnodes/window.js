@@ -1,3 +1,4 @@
+
 function windowify(title, content, pos, scale, iscale, link) {
     let odiv = document.createElement('div');
     let div = document.createElement('div');
@@ -226,17 +227,24 @@ function rewindowify(node) {
         // Delete the node from CodeMirror
 
         if (node.isTextNode) {
-           deleteNodeByTitle(title);
+            nodeInfo = getZetNodeCMInstance(node)
+            const parser = nodeInfo.parser;
+            parser.deleteNodeByTitle(title);
         }
     });
     ui(fs, (() => {
         node.zoom_to_fit();
-        zoomTo = zoomTo.scale(1.0625);
+        zoomTo = zoomTo.scale(1.2);
         autopilotSpeed = settings.autopilotSpeed;
-        scrollToTitle(node.getTitle(), noteInput); // Use the getTitle method
+        if (node.isTextNode) {
+            nodeInfo = getZetNodeCMInstance(node)
+            const { ui, paneId } = nodeInfo;
+            ui.scrollToTitle(node.getTitle());
+            zetPanes.switchPane(paneId);
+        }
     }));
 
-    ui(col, () => toggleNodeState(node, myCodeMirror, event), "stroke");
+    ui(col, () => toggleNodeState(node, event), "stroke");
 
     // Add the "mouseup" event listener to the document
     document.addEventListener('mouseup', () => {
@@ -277,7 +285,7 @@ function rewindowify(node) {
 
 
 
-function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 1, window_it = true) {
+function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 0.5, window_it = true) {
     let node;
     if (window_it) {
         let pos = toZ(mousePos)

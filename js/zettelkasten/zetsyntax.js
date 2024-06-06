@@ -39,7 +39,7 @@ class SyntaxHighlighter {
     }
 
     static applyNodeTitleHighlighting(content) {
-        const sortedTitles = [...nodeTitles].sort((a, b) => b.length - a.length);
+        const sortedTitles = Array.from(nodeTitles).sort((a, b) => b.length - a.length);
         const titleRegex = new RegExp(`(${sortedTitles.map(RegExp.escape).join('|')})`, 'g');
 
         return content.replace(titleRegex, (match, title) => {
@@ -93,6 +93,21 @@ class ZetSyntaxDisplay {
 document.addEventListener('click', function (event) {
     if (event.target.classList.contains('node-title-sd')) {
         const title = event.target.textContent;
-        handleTitleClick(title, myCodeMirror);
+        handleTitleClick(title);
     }
 });
+
+// Manage scroll behavior and temporarily disable pointer events
+document.addEventListener('wheel', function (event) {
+    if (event.target.classList.contains('node-title-sd')) {
+        event.target.style.pointerEvents = 'none'; // Disable pointer events during scroll
+
+        // Clear any existing timeout to avoid conflicts
+        clearTimeout(event.target.pointerEventTimeout);
+
+        // Set a timeout to restore pointer events after a period of inactivity
+        event.target.pointerEventTimeout = setTimeout(() => {
+            event.target.style.pointerEvents = 'auto';
+        }, 20); // Adjust delay as necessary based on user behavior and preferences
+    }
+}, { passive: false });

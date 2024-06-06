@@ -11,6 +11,11 @@ document.getElementById("auto-mode-checkbox").addEventListener("change", functio
 
 
 async function sendMessage(event, autoModeMessage = null) {
+    const activeInstance = getActiveZetCMInstanceInfo();
+    const { ui, parser, cmInstance, textarea, paneId } = activeInstance;
+    const noteInput = textarea;
+    const myCodeMirror = cmInstance;
+
     if (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -36,7 +41,6 @@ async function sendMessage(event, autoModeMessage = null) {
         originalUserMessage = message;
     }
 
-    const noteInput = document.getElementById("note-input");
     const embedCheckbox = document.getElementById("embed-checkbox");
 
     // Check if the last character in the note-input is not a newline, and add one if needed
@@ -230,12 +234,13 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
     // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
     if (!autoModeMessage || (isFirstAutoModeMessage && autoModeMessage)) {
         handleUserPromptAppendCodeMirror(myCodeMirror, message, PROMPT_IDENTIFIER);
+        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
         isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
         myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
     }
 
-    scrollToLine(myCodeMirror, lineBeforeAppend + 2); // Scroll to the new last line
+    ui.scrollToLine(myCodeMirror, lineBeforeAppend + 2); // Scroll to the new last line
     userScrolledUp = false;
 
     // Handle Wolfram Loop after appending the prompt.

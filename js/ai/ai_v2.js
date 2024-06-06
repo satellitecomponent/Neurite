@@ -41,19 +41,23 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
     }
 
     function onStreamingResponse(content) {
-        // Implement the specific UI logic for streaming content here
-        const noteInput = document.getElementById("note-input");
-        const isScrolledToBottom = noteInput.scrollHeight - noteInput.clientHeight <= noteInput.scrollTop + 1;
+        const myCodeMirror = window.currentActiveZettelkastenMirror;
+        const scrollThreshold = 10; // Adjust this value as needed
+        const scrollInfo = myCodeMirror.getScrollInfo();
+        const isScrolledToBottom = scrollInfo.height - scrollInfo.clientHeight - scrollInfo.top <= scrollThreshold;
 
         if (shouldContinue && content.trim() !== "[DONE]") {
-            myCodeMirror.replaceRange(content, CodeMirror.Pos(myCodeMirror.lastLine()));
+            const currentDoc = myCodeMirror.getDoc();
+            const lastLine = currentDoc.lastLine();
+            const lastLineLength = currentDoc.getLine(lastLine).length;
+            myCodeMirror.replaceRange(content, CodeMirror.Pos(lastLine, lastLineLength));
             streamedResponse += content;
 
-            if (isScrolledToBottom && !userScrolledUp) {
-                noteInput.scrollTop = noteInput.scrollHeight;
-                myCodeMirror.scrollTo(null, myCodeMirror.getScrollInfo().height);
+            if (isScrolledToBottom) {
+                myCodeMirror.scrollTo(null, scrollInfo.height);
             }
-            noteInput.dispatchEvent(new Event("input"));
+
+            myCodeMirror.focus();
         }
     }
 
@@ -128,7 +132,7 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
     }
 
     function onError(errorMsg) {
-        console.error("Error calling ChatGPT API:", errorMsg);
+        console.error("Error calling Chat API:", errorMsg);
         document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'block';
         if (node.haltCheckbox) {
             node.haltCheckbox.checked = true;
@@ -224,7 +228,7 @@ async function callAiApi({
         return responseData;
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.warn('Response Halted');
+            console.warn('Response Halted:');
         } else {
             console.error("Error:", error);
             onError(error.message || error);
