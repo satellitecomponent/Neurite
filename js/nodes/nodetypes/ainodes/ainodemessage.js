@@ -17,9 +17,6 @@ async function sendLLMNodeMessage(node, message = null) {
     // Choose the function based on checkbox state
     let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
 
-    // Determine if there are any connected AI nodes
-    let hasConnectedAiNode = allConnectedNodes.some(n => n.isLLMNode);
-
 
     //Use Prompt area if message is not passed.
     node.latestUserMessage = message ? message : node.promptTextArea.value;
@@ -58,6 +55,10 @@ async function sendLLMNodeMessage(node, message = null) {
             content: `RETRIEVE INSIGHTS FROM and ADHERE TO the following user-defined CUSTOM INSTRUCTIONS: ${customInstructions}`
         });
     }
+
+    // Determine if there are any connected AI nodes
+    let connectedAiNodes = calculateAiNodeDirectionalityLogic(node);
+    let hasConnectedAiNode = connectedAiNodes.length > 0;
 
     if (hasConnectedAiNode) {
         node.shouldAppendQuestion = true;
@@ -123,7 +124,7 @@ async function sendLLMNodeMessage(node, message = null) {
         // Use the node-specific recent context when calling constructSearchQuery
         searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
     }
-    
+
 
     let searchResultsData = null;
     let searchResults = [];
@@ -223,13 +224,20 @@ async function sendLLMNodeMessage(node, message = null) {
     let messageTrimmed = false;
 
     allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
-
     allConnectedNodesData.forEach(info => {
         if (info.data && info.data.replace) {
-            let tempInfoList = info.isLLM ? llmNodeInfo : textNodeInfo;
-            [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
-                info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize
-            );
+            if (info.isLLM) {
+                // Check if the AI node is present in the connectedAiNodes array
+                if (connectedAiNodes.some(aiNode => aiNode.uuid === info.node.uuid)) {
+                    [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
+                        info, llmNodeInfo, remainingTokens, totalTokenCount, maxContextSize
+                    );
+                }
+            } else {
+                [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
+                    info, textNodeInfo, remainingTokens, totalTokenCount, maxContextSize
+                );
+            }
         }
     });
 
@@ -311,16 +319,9 @@ async function sendLLMNodeMessage(node, message = null) {
     node.aiResponding = true;
     node.userHasScrolled = false;
 
-
-    // Re-evaluate the state of connected AI nodes
-    function updateConnectedAiNodeState() {
-        let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
-        return allConnectedNodes.some(n => n.isLLMNode);
-    }
-
     const clickQueues = {};  // Contains a click queue for each AI node
     // Initiates helper functions for aiNode Message loop.
-    const aiNodeMessageLoop = new AiNodeMessageLoop(node, allConnectedNodes, clickQueues);
+    const aiNodeMessageLoop = new AiNodeMessageLoop(node, clickQueues);
 
     const haltCheckbox = node.haltCheckbox;
 
@@ -330,7 +331,9 @@ async function sendLLMNodeMessage(node, message = null) {
             node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';
 
-            hasConnectedAiNode = updateConnectedAiNodeState(); // Update state right before the call
+            // Determine if there are any connected AI nodes
+            connectedAiNodes = calculateAiNodeDirectionalityLogic(node);
+            hasConnectedAiNode = connectedAiNodes.length > 0;
 
             if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
                 textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
@@ -366,18 +369,11 @@ function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, ma
 }
 
 class AiNodeMessageLoop {
-    constructor(node, allConnectedNodes, clickQueues) {
+    constructor(node, clickQueues) {
         this.node = node;
-        this.allConnectedNodes = allConnectedNodes;
         this.clickQueues = clickQueues || {}; // If clickQueues is not passed, initialize as an empty object
     }
 
-    updateConnectedNodes() {
-        const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
-        this.allConnectedNodes = useAllConnectedNodes
-            ? getAllConnectedNodes(this.node)
-            : getAllConnectedNodes(this.node, true);
-    }
 
     async processClickQueue(nodeId) {
         const queue = this.clickQueues[nodeId] || [];
@@ -402,54 +398,66 @@ class AiNodeMessageLoop {
     }
 
     async questionConnectedAiNodes(lastLine) {
-        // Retrieve edge directionalities for the main node
-        const edgeDirectionalities = this.node.getEdgeDirectionalities();
+        const connectedAiNodes = calculateAiNodeDirectionalityLogic(this.node);
 
-        this.updateConnectedNodes();
+        for (const connectedNode of connectedAiNodes) {
+            let uniqueNodeId = connectedNode.index;
 
-        for (const connectedNode of this.allConnectedNodes) {
-            if (connectedNode.isLLMNode) {
-                let uniqueNodeId = connectedNode.index;
+            if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
+                console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
+                continue;
+            }
 
-                // Find the edge directionality related to the connected node
-                const edgeDirectionality = edgeDirectionalities.find(ed => ed.edge.pts.includes(connectedNode));
+            let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
+            let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
 
-                // Skip sending message if the directionality is outgoing from the main node
-                if (edgeDirectionality && edgeDirectionality.directionality === "outgoing") {
-                    console.log(`Skipping node ${uniqueNodeId} due to outgoing directionality.`);
-                    continue;
+            if (!promptElement || !sendButton) {
+                console.error(`Elements for ${uniqueNodeId} are not found`);
+                continue;
+            }
+
+            if (promptElement instanceof HTMLTextAreaElement) {
+                promptElement.value += `\n${lastLine}`;
+            } else if (promptElement instanceof HTMLDivElement) {
+                promptElement.innerHTML += `<br>${lastLine}`;
+            } else {
+                console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+            }
+
+            promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+
+            if (!this.clickQueues[uniqueNodeId]) {
+                this.clickQueues[uniqueNodeId] = [];
+                this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
+            }
+
+            this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+        }
+    }
+}
+
+function calculateAiNodeDirectionalityLogic(node, visited = new Set()) {
+    const connectedAiNodes = [];
+    visited.add(node.uuid);
+
+    const edgeDirectionalities = node.getEdgeDirectionalities();
+
+    for (const { edge, directionality } of edgeDirectionalities) {
+        const isOutgoing = directionality === "outgoing";
+        const isBidirectional = directionality === "none";
+
+        if (isOutgoing || isBidirectional) {
+            for (const pt of edge.pts) {
+                if (pt.uuid !== node.uuid && !visited.has(pt.uuid)) {
+                    if (pt.isLLMNode) {
+                        connectedAiNodes.push(pt);
+                    } else {
+                        connectedAiNodes.push(...calculateAiNodeDirectionalityLogic(pt, visited));
+                    }
                 }
-
-                if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-                    console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
-                    continue;
-                }
-
-                let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
-                let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
-
-                if (!promptElement || !sendButton) {
-                    console.error(`Elements for ${uniqueNodeId} are not found`);
-                    continue;
-                }
-
-                if (promptElement instanceof HTMLTextAreaElement) {
-                    promptElement.value += `\n${lastLine}`;
-                } else if (promptElement instanceof HTMLDivElement) {
-                    promptElement.innerHTML += `<br>${lastLine}`;
-                } else {
-                    console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
-                }
-
-                promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
-
-                if (!this.clickQueues[uniqueNodeId]) {
-                    this.clickQueues[uniqueNodeId] = [];
-                    this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
-                }
-
-                this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
             }
         }
     }
+
+    return connectedAiNodes;
 }

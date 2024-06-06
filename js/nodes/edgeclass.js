@@ -218,9 +218,9 @@ class Edge {
     }
     // Method to check directionality relative to a given node
     getDirectionRelativeTo(node) {
-        if (this.directionality.start === node) {
+        if (this.directionality.end === node) {
             return "outgoing";
-        } else if (this.directionality.end === node) {
+        } else if (this.directionality.start === node) {
             return "incoming";
         }
         return "none";
