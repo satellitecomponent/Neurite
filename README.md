@@ -1,3 +1,4 @@
+
 # Neurite
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
@@ -177,7 +178,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
         <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
         <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama.</li>
         <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be switched out as context for an increasing number of Ai systems.</li>
-        <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environemnt for grappling with the interplay between logic and irrationality</li>
+        <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environment for grappling with the interplay between logic and irrationality</li>
       </ul>
     </td>
     <!-- Top Right: Image -->
@@ -273,7 +274,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   </tr>
   <tr>
     <td><strong>Long-Term Memory</strong></td>
-    <td>Utilize nodal recall through our vector-embedded search of your notes and conversation. Includes experimental forgetting mode in the ? tab.</td>
+    <td>Utilize nodal recall through our vector-embedded search of your notes and conversation. Includes experimental ability to forget certain memories.</td>
   </tr>
   <tr>
     <td><strong>Experimental Code Editor</strong></td>
@@ -356,7 +357,7 @@ npm run start
 
 ## `Local Server Setup`
 
-The Localhost Servers are an important component of Neurite that serves as an optional backend for complelte functionality.
+The Localhost Servers are an important component of Neurite that serves as an optional backend for complete functionality.
 
 ### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
@@ -373,7 +374,7 @@ As of our recent update, the servers now support an Ai proxy that connects Neuri
 
 ### `Final Notes`
 - Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enchanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
+- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
 - Zettelkasten and Mind Mapping: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 - Fractals: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
@@ -437,7 +438,6 @@ console.log(neuralAPI);</code></pre>
 ## `Future of Neurite`
 
 ### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing thought.
-
 🚧 `Neurite is in active development.` 🚧 
 
 ✅ Ollama (local Ai)
@@ -464,7 +464,8 @@ console.log(neuralAPI);</code></pre>
 ✅ Improved Saving
 
 🔄 accessibility
-- custom equations for the fractal
+
+✅ Expanded fractal types. (Mandelbrot, Burning Ship, Julia Sets)
 - drawing-tool
 
 🔄 Experimental Features
