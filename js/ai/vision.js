@@ -63,18 +63,13 @@ function convertImageToBase64(imageElement, callback) {
 }
 
 function getImageNodeData(node) {
-    // If the node has an image URL, prefer that
-    if (node.imageUrl) {
-        return {
-            type: 'image_url',
-            image_url: node.imageUrl // Use the direct URL to the image
-        };
-    }
     // If there's no image URL but there is base64 image data
-    else if (node.imageData) {
+    if (node.imageData) {
         return {
             type: 'image_url',
-            image_url: node.imageData // The imageData should be a base64 string
+            image_url: {
+                url: node.imageData // Provide the base64 data as the url property of the image_url object
+            }
         };
     }
     // If there's no image data or URL, return null or an appropriate placeholder
