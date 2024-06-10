@@ -1,7 +1,7 @@
 
 async function sendLLMNodeMessage(node, message = null) {
     if (node.aiResponding) {
-        console.log('AI is currently responding. Please wait for the current response to complete before sending a new message.');
+        console.log('AI is currently responding. Wait for the current response to complete before sending a new message.');
         return;
     }
 
@@ -33,16 +33,12 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: `YOU are ${aiIdentity}. Attend to relevant context. Your response is rendered in markdown.`
+            content: `YOU are ${aiIdentity}. Attend to relevant context. Your response renders via markdown.`
         },
     ];
 
     const selectedModel = determineAiNodeModel(node);
-    let inferenceOverride;
-
-    // Logic for dynamic model switching based on connected nodes
-    const hasImageNodes = allConnectedNodes.some(node => node.isImageNode);
-    inferenceOverride = modulateAiNodeModel(selectedModel, hasImageNodes);
+    let inferenceOverride = selectedModel;
 
     // Fetch the content from the custom instructions textarea using the nodeIndex
     const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
@@ -69,7 +65,7 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `The LAST LINE of your response is DELIVERED to the current CONNECTIONS. TAKE INITIATIVE!`
+            content: `The LAST LINE of your response is DELIVERED your current CONNECTIONS. TAKE INITIATIVE!`
         });
     }
 

@@ -221,24 +221,20 @@ function dropHandler(ev) {
             console.log("loading " + baseType);
             switch (baseType) {
                 case "image":
-                    // We use a FileReader to read the dropped file and convert it to a Data URL (base64)
                     let reader = new FileReader();
                     reader.onload = function (e) {
                         let base64DataUrl = e.target.result;
                         let imageElement = document.createElement('img');
                         imageElement.src = base64DataUrl;
-
-                        // Once the image is loaded, create the node
                         imageElement.onload = function () {
-                            let node = createImageNode(imageElement, files[i].name);
-                            // Append the node to the DOM here, as the image data is now ready
+                            let node = createImageNode(imageElement, files[i].name); // Pass only imageElement and title
                             htmlnodes_parent.appendChild(node.content);
                             node.followingMouse = 1;
                             node.draw();
-                            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                            node.mouseAnchor = toDZ(new vec2(0, 0));
                         };
                     };
-                    reader.readAsDataURL(files[i]); // Read the file as a Data URL
+                    reader.readAsDataURL(files[i]);
                     break;
                 case "video":
                     img = document.createElement('video');
