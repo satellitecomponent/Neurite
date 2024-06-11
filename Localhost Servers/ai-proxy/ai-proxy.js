@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const cheerio = require('cheerio');
+const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 7070;
 
@@ -12,10 +13,15 @@ let groqApiKey = process.env.GROQ_API_KEY;
 let customApiKey = process.env.CUSTOM_API_KEY;
 
 // Middleware to parse JSON request bodies
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase the limit to handle large payloads
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:8080', // Adjust this to match your client origin
+    methods: 'GET,POST',
+    allowedHeaders: 'Content-Type,Authorization'
+}));
 
 // Endpoint to check if the proxy server is working
 app.get('/check', (req, res) => {

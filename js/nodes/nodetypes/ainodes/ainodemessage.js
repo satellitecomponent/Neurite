@@ -65,7 +65,7 @@ async function sendLLMNodeMessage(node, message = null) {
     if (node.shouldAppendQuestion) {
         messages.push({
             role: "system",
-            content: `The LAST LINE of your response is DELIVERED your current CONNECTIONS. TAKE INITIATIVE!`
+            content: `The LAST LINE of your response is DELIVERED to any current CONNECTIONS. TAKE INITIATIVE!`
         });
     }
 
