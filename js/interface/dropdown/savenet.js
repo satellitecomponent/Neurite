@@ -38,7 +38,7 @@ function updateSavedNetworks() {
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = "none"
-        titleInput.style.width = "110px"
+        titleInput.style.width = "100px"
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
@@ -219,13 +219,18 @@ document.getElementById("clear-unsure-button").addEventListener("click", functio
     document.getElementById("clear-button").text = "Clear";
 });
 document.getElementById("clear-sure-button").addEventListener("click", function () {
-    let createNewSave = confirm("Create a new save before clearing?");
+    let createNewSave = confirm("Create a new save?");
+
+    selectedSaveTitle = null;
+    selectedSaveIndex = null;
+
+    clearNet();
 
     if (createNewSave) {
         neuriteSaveEvent();
     }
 
-    clearNet();
+    updateSavedNetworks();
     zetPanes.addPane();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
     document.getElementById("clear-button").text = "Clear";

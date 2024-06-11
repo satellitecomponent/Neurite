@@ -96,7 +96,7 @@ function handleIconDrop(event, iconName) {
             node = createLLMNode('', undefined, undefined, undefined, undefined);
             node.followingMouse = 1;
             node.draw();
-            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+            node.mouseAnchor = toDZ(new vec2(0,0));
             console.log('Handle drop for the ai icon');
             break;
         case 'link-icon':
@@ -243,7 +243,7 @@ function dropHandler(ev) {
                     content = [
                         img
                     ];
-                    add(1);
+                    add(0.5);
                     img.src = url;
                     break;
                 case "audio":
@@ -259,7 +259,7 @@ function dropHandler(ev) {
                     content = [
                         img
                     ];
-                    add(1);
+                    add(0.5);
                     //div.appendChild(c);
                     img.src = url;
                     break;
@@ -306,7 +306,7 @@ function dropHandler(ev) {
                             htmlnodes_parent.appendChild(node.content);
                             node.followingMouse = 1;
                             node.draw();
-                            node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                            node.mouseAnchor = toDZ(new vec2(0, 0));
                         };
 
                         reader.onerror = function (err) {
