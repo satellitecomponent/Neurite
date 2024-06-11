@@ -216,7 +216,7 @@ function dropHandler(ev) {
                 registernode(node);
                 node.followingMouse = 1;
                 node.draw();
-                node.mouseAnchor = toDZ(new vec2(0, node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));)
             }
             console.log("loading " + baseType);
             switch (baseType) {
