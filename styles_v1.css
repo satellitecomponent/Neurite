@@ -3192,7 +3192,7 @@ textarea[id^='custom-instructions-textarea-'] {
 
 #customContextMenu {
     border: 1px solid #eaeaea1a;
-    background: rgb(207 223 233 / 5%); /* White background with transparency */
+    background: rgb(0 0 0 / 50%); /* White background with transparency */
     backdrop-filter: blur(7px); /* Frosted glass effect */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
     padding: 0px; /* Padding around the menu */
