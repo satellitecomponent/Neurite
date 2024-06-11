@@ -382,7 +382,6 @@ class Node {
         this.followingMouse = 1;
         window.draggedNode = this;
         movingNode = this;
-
         if (nodeMode) {
             if (prevNode === undefined) {
                 prevNode = this;
@@ -394,9 +393,12 @@ class Node {
                 clearTextSelections(); // Clear text selections when ending the node mode connection
             }
         }
-
         // Add an event listener to window.mouseup that stops the node from following the mouse
         window.addEventListener('mouseup', () => this.stopFollowingMouse());
+
+        // Disable pointer events on iframes within the node
+        this.disableIframePointerEvents();
+
         cancel(event);
     }
 
@@ -405,6 +407,23 @@ class Node {
         movingNode = undefined;
         // Remove the event listener to clean up
         window.removeEventListener('mouseup', this.stopFollowingMouse);
+
+        // Re-enable pointer events on iframes within the node
+        this.enableIframePointerEvents();
+    }
+
+    disableIframePointerEvents() {
+        const iframes = this.content.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            iframe.style.pointerEvents = 'none';
+        });
+    }
+
+    enableIframePointerEvents() {
+        const iframes = this.content.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            iframe.style.pointerEvents = 'auto';
+        });
     }
     onmouseup(event) {
         if (this === window.draggedNode) {

@@ -434,20 +434,6 @@ function setResizeEventListeners(resizeHandle, node) {
             aiNodeWrapperDiv.style.width = `100%`;
             aiNodeWrapperDiv.style.height = `100%`;
         }
-
-
-        if (editorWrapperDiv) {
-            const newEditorWidth = Math.max(startWidth + dx, 350);  //350 min width
-            const newEditorHeight = Math.max(startHeight + dy, 200);  //200 min height
-
-            // Set the new dimensions for the editor wrapper div
-            editorWrapperDiv.style.width = `${newEditorWidth}px`;
-            editorWrapperDiv.style.height = `${newEditorHeight}px`;
-
-            // Optional: You might want to update the iframe size here as well
-            editorIframe.style.width = `${newEditorWidth}px`;
-            editorIframe.style.height = `${newEditorHeight - 10}px`;
-        }
     };
 
     const handleMouseUp = () => {
@@ -455,15 +441,9 @@ function setResizeEventListeners(resizeHandle, node) {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
         document.body.style.cursor = 'auto'; // Reset the cursor style
-
-        // Re-enable pointer events on iframe
-        if (editorWrapperDiv) {
-            if (editorIframe) {
-                editorIframe.style.pointerEvents = 'auto';
-            }
-        }
+        // Re-enable pointer events on iframes within the node
+        node.enableIframePointerEvents();
     };
-
     resizeHandle.addEventListener('mousedown', (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -471,18 +451,13 @@ function setResizeEventListeners(resizeHandle, node) {
         startY = event.pageY;
         startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
         startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
-
         isMouseMoving = true; // Flag to indicate that a resize operation is in progress
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
-
-        // Disable pointer events on iframe
-        if (editorWrapperDiv) {
-            if (editorIframe) {
-                editorIframe.style.pointerEvents = 'none';
-            }
-        }
+        // Disable pointer events on iframes within the node
+        node.disableIframePointerEvents();
     });
+
 }
 
 function resetWindowDivSize(windowDiv) {
