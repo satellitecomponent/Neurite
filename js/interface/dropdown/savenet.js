@@ -225,13 +225,13 @@ document.getElementById("clear-sure-button").addEventListener("click", function 
     selectedSaveIndex = null;
 
     clearNet();
+    zetPanes.addPane();
 
     if (createNewSave) {
         neuriteSaveEvent();
     }
 
     updateSavedNetworks();
-    zetPanes.addPane();
     document.getElementById("clear-sure").setAttribute("style", "display:none");
     document.getElementById("clear-button").text = "Clear";
 });

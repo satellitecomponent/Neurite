@@ -117,7 +117,7 @@ class NodeSimulation {
         dt *= (1 - nodeMode_v) ** 5;
         for (let n of nodes) {
             n.step(dt);
-            let d = toZ(mousePos).minus(n.pos);
+            //let d = toZ(mousePos).minus(n.pos);
         }
     }
 
