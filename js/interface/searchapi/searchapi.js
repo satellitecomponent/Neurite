@@ -120,8 +120,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
         document.getElementById("prompt").value = ''; // Clear the textarea
         let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
         // Attach the node to the user's mouse
-        linkNode.followingMouse = 1;
-        linkNode.mouseAnchor = toDZ(new vec2(0, -linkNode.content.offsetHeight / 2 + 6));
+        setupNodeForPlacement(node);
 
         return null; // Return null to indicate that no further processing is necessary
     }
@@ -216,8 +215,7 @@ function displaySearchResults(searchResults) {
 
         let node = createLinkNode(title, description, link);
         // Attach the node to the user's mouse
-        node.followingMouse = 1;
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        setupNodeForPlacement(node);
     });
 }
 
@@ -233,9 +231,7 @@ function returnLinkNodes() {
 async function processLinkInput(linkUrl) {
     if (isUrl(linkUrl)) {
         let node = createLinkNode(linkUrl, linkUrl, linkUrl);
-        node.followingMouse = 1;
-        node.draw();
-        node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+        setupNodeForPlacement(node);
     } else {
         await handleNaturalLanguageSearch(linkUrl);
     }

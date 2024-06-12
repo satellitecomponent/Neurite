@@ -21,6 +21,8 @@ const storeInputValue = debounce(function (input, contentId) {
     // Add more conditions for other modals if needed
 }, 100);
 
+let currentOpenModalContentId = null;
+
 // Function to open the modal
 function openModal(contentId) {
     //console.log(`Opened Modal: ${contentId}`);
@@ -75,6 +77,8 @@ function openModal(contentId) {
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
+
+    currentOpenModalContentId = contentId;
 
     modal.style.display = 'flex';
 
@@ -133,13 +137,10 @@ function openModal(contentId) {
 
 // Function to close the modal
 function closeModal() {
-    //console.log('close Modal');
-    const modalBody = modal.querySelector('.modal-body');
-    const contentId = modalBody.id;
-
-    // Perform specific actions based on the contentId
-    switch (contentId) {
+    // Perform specific actions based on the currentContentId
+    switch (currentOpenModalContentId) {
         case 'zetSearchModal':
+        case 'nodeConnectionModal':
             clearSearch();
             break;
         // Add more cases for other modals if needed
@@ -148,6 +149,7 @@ function closeModal() {
     }
 
     modal.style.display = 'none';
+    currentContentId = null; // Reset the current content ID
 }
 
 // Event listener for the close button
