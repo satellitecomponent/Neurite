@@ -214,9 +214,7 @@ function dropHandler(ev) {
                 })*/
                 htmlnodes_parent.appendChild(node.content);
                 registernode(node);
-                node.followingMouse = 1;
-                node.draw();
-                node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+                setupNodeForPlacement(node);
             }
             console.log("loading " + baseType);
             switch (baseType) {
@@ -303,10 +301,7 @@ function dropHandler(ev) {
                             let url = URL.createObjectURL(new Blob([reader.result], { type: 'application/pdf' }));
                             let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
                             node.fileName = files[i].name; // Store file name in node
-                            htmlnodes_parent.appendChild(node.content);
-                            node.followingMouse = 1;
-                            node.draw();
-                            node.mouseAnchor = toDZ(new vec2(0, 0));
+                            setupNodeForPlacement(node);
                         };
 
                         reader.onerror = function (err) {
@@ -364,8 +359,7 @@ function isHtmlContent(data) {
 
 function setupNodeForPlacement(node) {
     node.followingMouse = 1;
-    node.draw();
-    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
+    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 4));
 }
 
 function createHtmlNode(pastedData) {
