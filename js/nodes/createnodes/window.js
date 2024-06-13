@@ -108,7 +108,6 @@ function setupWindowDivListeners(node) {
     windowDiv.addEventListener('mouseup', (event) => {
         if (event.altKey) {
             const distanceMoved = Math.sqrt(Math.pow(event.clientX - clickStartX, 2) + Math.pow(event.clientY - clickStartY, 2));
-
             // Check if the mouse has moved more than a certain threshold
             const dragThreshold = 10; // pixels, adjust this value as needed
             if (distanceMoved < dragThreshold) {
@@ -116,7 +115,10 @@ function setupWindowDivListeners(node) {
             }
         }
 
-        hideContextMenu();
+        // Check if the right mouse button was released
+        if (event.button !== 2) {
+            hideContextMenu();
+        }
     });
 
     windowDiv.addEventListener('mousedown', () => {

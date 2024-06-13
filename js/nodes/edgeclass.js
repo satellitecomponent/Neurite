@@ -235,7 +235,7 @@ class Edge {
         this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
         const stressValue = Math.max(this.stress(), 0.01);
-        let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 2 : 1.8);
+        let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 2 : 1.6);
         wscale = Math.min(wscale, this.maxWidth);
 
         let validPath = true;

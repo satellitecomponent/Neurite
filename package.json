@@ -5,6 +5,7 @@
   "description": "fractal mind map",
   "scripts": {
     "start": "vite",
+    "start:host": "vite --host",
     "build": "vite build",
     "postbuild": "shx cp -r js dist/js"
   },

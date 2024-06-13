@@ -267,13 +267,51 @@ svg.addEventListener("touchmove", (ev) => {
     }
 }, false);
 
-// Disable default pinch-to-zoom behavior in Safari
-document.addEventListener('gesturestart', function (e) {
+
+
+var gestureStartParams = {
+    rotation: 0,
+    x: 0,
+    y: 0,
+    scale: 0,
+    zoom: new vec2(),
+    pan: new vec2()
+};
+addEventListener("gesturestart", (e) => {
     e.preventDefault();
+    //console.log(e);
+    gestureStartParams.rotation = e.rotation;
+    gestureStartParams.scale = e.scale;
+    gestureStartParams.x = e.pageX;
+    gestureStartParams.y = e.pageY;
+    gestureStartParams.zoom = zoom;
+    gestureStartParams.pan = pan;
+
 });
-document.addEventListener('gesturechange', function (e) {
+addEventListener("gesturechange", (e) => {
     e.preventDefault();
+    //console.log(e);
+    let d_theta = e.rotation - gestureStartParams.rotation;
+    let d_scale = e.scale;
+    let r = -e.rotation * settings.gestureRotateSpeed;
+    pan = gestureStartParams.pan;
+    zoom = gestureStartParams.zoom;
+    let r_center = toZ(new vec2(e.pageX, e.pageY));
+    let s = 0;
+    zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r), Math.sin(r)));
+    if (e.scale !== 0) {
+        let s = 1 / e.scale;
+        zoom = zoom.scale(s);
+        regenAmount += Math.abs(Math.log(s)) * settings.maxLines;
+    }
+    let dest = r_center;
+    let amount = s;
+    let dp = r_center.minus(gestureStartParams.pan);
+    pan = gestureStartParams.pan.plus(
+        dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
+    //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
+
 });
-document.addEventListener('gestureend', function (e) {
+addEventListener("gestureend", (e) => {
     e.preventDefault();
 });

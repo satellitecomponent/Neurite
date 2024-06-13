@@ -262,33 +262,25 @@ function dropHandler(ev) {
                     img.src = url;
                     break;
                 case "text":
-                    reader.onload = function (e) {
+                    let textReader = new FileReader();
+                    textReader.onload = function (e) {
                         let text = e.target.result;
                         let node = createNodeFromWindow(files[i].name, text);
                     }
-                    reader.readAsText(files[i]);
+                    textReader.readAsText(files[i]);
                     break;
                 case "markdown":
                     let mdReader = new FileReader();
                     mdReader.onload = function (e) {
                         let mdText = e.target.result;
                         let htmlContent = marked.parse(mdText, { mangle: false, headerIds: false });
-                        let node = createTextNode(files[i].name, '');
-
                         let htmlContainer = document.createElement('div');
                         htmlContainer.innerHTML = htmlContent;
-                        htmlContainer.style.maxWidth = '1000px';
                         htmlContainer.style.overflow = 'auto';
-                        htmlContainer.style.height = '1400px';
                         htmlContainer.style.backgroundColor = '#222226'; // Set background color
-
-                        // Check if there is a textarea being appended, if there is remove it.
-                        if (node.content.children[0].children[1].getElementsByTagName('textarea').length > 0) {
-                            node.content.children[0].children[1].removeChild(node.content.children[0].children[1].getElementsByTagName('textarea')[0]);
-                        }
-
-                        node.content.children[0].children[1].appendChild(htmlContainer);
-                        htmlnodes_parent.appendChild(node.content);
+                        htmlContainer.style.width = '100%'; // Set width to 100% of the node
+                        htmlContainer.style.height = '100%'; // Set height to 100% of the node
+                        createHtmlNode(files[i].name, htmlContainer.outerHTML);
                     }
                     mdReader.readAsText(files[i]);
                     break;
@@ -362,15 +354,10 @@ function setupNodeForPlacement(node) {
     node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 4));
 }
 
-function createHtmlNode(pastedData) {
+function createHtmlNode(title, pastedData) {
     let content = document.createElement("div");
     content.innerHTML = pastedData;
-    let t = document.createElement("input");
-    t.setAttribute("type", "text");
-    t.setAttribute("value", "untitled");
-    t.setAttribute("style", "background:none;");
-    t.classList.add("title-input");
-    let node = windowify("untitled", [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
+    let node = windowify(title, [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
     htmlnodes_parent.appendChild(node.content);
     registernode(node);
     setupNodeForPlacement(node);
