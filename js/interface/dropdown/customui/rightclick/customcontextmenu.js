@@ -140,24 +140,65 @@ function populateMenuForNode(menu, node, pageX, pageY) {
     // Load pinned items each time the menu is opened
     loadPinnedItemsToContextMenu(menu, node);
 }
+let rightClickFileInput = null; // Declare a variable to hold the file input element
 
 function populateMenuForOthers(menu, target) {
     if (target.id === 'svg_bg' || target.closest('#svg_bg')) {
         // Option to create a Text Node (without calling draw)
         addNodeCreationOption(menu, '+ Note', createNodeFromWindow, false);
-
         // Option to create an LLM Node
         addNodeCreationOption(menu, '+ Ai', createLLMNode, true);
-
         // Option to create a Link Node or Search Google
         addNodeCreationOption(menu, '+ Link', returnLinkNodes, false);
-
+        // Option to select a file
+        addFileSelectionOption(menu, '+ File', handleFileSelection);
         addPasteOption(menu, target);
     } else {
         // Generic action for non-SVG targets
         addGenericOption(menu, 'Generic Action', handleGenericAction);
     }
 }
+
+function addFileSelectionOption(menu, text, fileSelectionFunction) {
+    const li = document.createElement('li');
+    li.textContent = text;
+    li.classList.add('dynamic-option');
+    li.onclick = () => fileSelectionFunction();
+    menu.appendChild(li);
+}
+
+function handleFileSelection() {
+    if (!rightClickFileInput) {
+        // Create the file input element if it doesn't exist
+        rightClickFileInput = document.createElement('input');
+        rightClickFileInput.type = 'file';
+        rightClickFileInput.onchange = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = e.target.result;
+                    const customEvent = {
+                        preventDefault: () => { },
+                        dataTransfer: {
+                            getData: () => data,
+                            files: [file],  // Pass the selected file as an array
+                            items: [{
+                                kind: 'file',
+                                getAsFile: () => file
+                            }]
+                        }
+                    };
+                    dropHandler(customEvent); // Pass the custom event object to dropHandler
+                };
+                reader.readAsText(file);
+            }
+        };
+    }
+    rightClickFileInput.click();
+    hideContextMenu();
+}
+
 
 function addNodeCreationOption(menu, text, createNodeFunction, shouldDraw) {
     const li = document.createElement('li');

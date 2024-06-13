@@ -10,7 +10,7 @@ class ZetSplit {
         const paragraphs = text.split(/\n\n+/);
 
         paragraphs.forEach(paragraph => {
-            const sentences = paragraph.split(/(?<=[.!?])\s+/);
+            const sentences = paragraph.match(/[^.!?]+[.!?]/g);
             if (sentences.length > this.maxSentencesPerNote) {
                 this._processLongParagraph(sentences, sections);
             } else {
