@@ -5,10 +5,9 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #000000;
     width: 100vw;
-    height: 100vh;
-    position: fixed;
+    height: 0;
+    position: absolute;
 }
 
 * {
