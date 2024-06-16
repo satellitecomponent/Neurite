@@ -61,7 +61,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 2. [How to Use Neurite](#how-to-use-neurite)
 3. [Synchronized Knowledge Management](#synchronized-knowledge-management)
 4. [FractalGPT](#fractalgpt)
-5. [Local Ai](#local-ai)
+5. [Multi-Agent UI](#multi-agent-ui)
 6. [User Guide](#user-guide)
 7. [Local Server Setup](#local-server-setup)
 8. [Neural API](#neural-api)
@@ -239,6 +239,50 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   </tr>
 </table>
 
+## `Multi-Agent UI`
+<table>
+  <tr>
+    <!-- Left: Text Description -->
+    <td valign="top" width="50%">
+      <h3>🤖 Build Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖</h3>
+      <ul>
+        <li>Connected Ai nodes send messages to one another. This idea contains endless possibilities. (<em>Hold Shift + Click</em> two node windows to connect. <em>Click</em> connections to change their direction. <em>Shift + Double Click</em> to delete.)</li>
+        <li>Supports Local and Cloud based models concurrently.</li>
+      </ul>
+      <h3><a href="https://en.wikipedia.org/wiki/Flow-based_programming">flow-based</a> Ai-Agents ⛓️💭</h3>
+      <p>🔄 <strong>Message Looping:</strong> Initiate conversational threads across connected AI nodes.</p>
+      <ul>
+        <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
+        <li><strong>Ai Logic Circuits:</strong>
+          <ul>
+            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of converstion across connected Ai Nodes between two-way, sending, or receiving.</li>
+          </ul>
+        </li>
+        <li><strong>Graph Context:</strong>
+          <ul>
+            <li><strong>Networked Instructions:</strong> Ai nodes read all connected graphs.</li>
+            <li><strong>Shared Instructions:</strong> Compare Various Ai Models from the same set of prompts.</li>
+          </ul>
+        </li>
+        <li><strong>Connect Data:</strong>
+          <ul>
+            <li><strong>Read Connected Web-Link Nodes:</strong> Connect webpages and Ai nodes to utilize RAG search for that document. Create specialized autonomous agent swarms via mind-mapping.</li>
+          </ul>
+        </li>
+        <li><strong>Related Research:</strong> <a href="https://arxiv.org/abs/2309.03220">Conversational Swarm Intelligence Paper</a></li>
+      </ul>
+    </td>
+    <!-- Right: Image -->
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
+                <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/2f6f16be-659c-4048-aa8e-3aa7bcc73f35" alt="Multi-Agent Chat Networks3" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
+      </p>
+    </td>
+  </tr>
+</table>
+
 ### `Unbounded AI Collaboration`
 
 ### An open world generative landscape for thought integrated with artificial intelligence.
@@ -307,58 +351,12 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
 All API keys can be input through the AI tab in the menu dropdown.
 
-## `Local Ai`
-<table>
-  <tr>
-    <!-- Left: Text Description -->
-    <td valign="top" width="50%">
-      <h3>🤖 Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖</h3>
-      <ul>
-        <li>Connected Ai nodes send messages to one another. This idea contains endless possibilities. (<em>Hold Shift and Click</em> two node windows to connect them together)</li>
-        <li>Supports Local and Cloud based models concurrently.</li>
-      </ul>
-      <h3><a href="https://en.wikipedia.org/wiki/Flow-based_programming">flow-based</a> Ai-Agents ⛓️💭</h3>
-      <p>🔄 <strong>Message Looping:</strong> Initiate conversational threads across connected AI nodes.</p>
-      <ul>
-        <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
-        <li><strong>Unique & Shared Instructions:</strong>
-          <ul>
-            <li><strong>Unique Instructions:</strong> Connect text nodes and Ai nodes to have the Ai recieve text from nodes within its entire connected graph.</li>
-          </ul>
-        </li>
-        <li><strong>Ai Logic Circuits:</strong>
-          <ul>
-            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via modular user interface. Change the direction of converstion between connected Ai Nodes from two-way, to one-way in either direction.</li>
-          </ul>
-        </li>
-        <li><strong>Connect Data:</strong>
-          <ul>
-            <li><strong>Read Connected Web-Link Nodes:</strong> Connect webpages and Ai nodes to utilize RAG search for that document. Create autonomous research swarms via mind-mapping.</li>
-          </ul>
-        </li>
-        <li><strong>Related Research:</strong> <a href="https://arxiv.org/abs/2309.03220">Conversational Swarm Intelligence Paper</a></li>
-      </ul>
-    </td>
-    <!-- Right: Image -->
-    <td valign="top" width="50%">
-      <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
-                <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/2f6f16be-659c-4048-aa8e-3aa7bcc73f35" alt="Multi-Agent Chat Networks3" width="100%">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
-      </p>
-    </td>
-  </tr>
-</table>
-
 ## `User Guide`
 ### To run Neurite locally,
 either:  
 1. Clone the repository  
-2. Open the index.html file in your browser (note: local AI features will not be enabled)  
-
-Or, to enable local AI features without using our Github pages host above:  
-1. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-2. Install any necessary global dependencies when running the below, (Vite)
+2. Navigate to the cloned directory in your terminal (either main or local-ai branch)
+3. Install any necessary global dependencies when running the below, (Vite)
 
 ```
 npm install
@@ -366,20 +364,23 @@ npm run build
 npm run start
 ```
 
+4. Navigate to localhost:8080 in your browser.
+5. Ensure the Localhost Servers are running to leverage Neurite's full capabilities.
+
 ## `Local Server Setup`
 
 The Localhost Servers are an important component of Neurite that serves as an optional backend for complete functionality.
 
 ### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
 
-### The servers enable plugin integration for webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
+### The servers enable the local Vector Databse, webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
 - The localhost servers require npm and Node.js
-- Without any servers running, Wolfram, Wiki, and Webpage extractions will not function.
+- Without any servers running, Wolfram, Wiki, the Vector Database and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
   node start_servers.js
 ```
-This will run all of the servers at once. They'll work on our Github pages host of Neurite, or any other way you locally access the interface.
+This will install and run all of the servers at once. They'll work on our Github pages host of Neurite, or any other way you locally access the interface.
 
 As of our recent update, the servers now support an Ai proxy that connects Neurite to any inference backend.
 
