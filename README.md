@@ -159,15 +159,15 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
 
   *Full controls are listed in the ? tab within Neurite's main dropdown.
 
-<p align="center">
-   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
-</p>
-
 `UI Tips`
 - Optimal Node Placement: Zoom in `Scroll` to create space for new nodes to ensure they have room to expand.
 - Managing Windows: Drag windows by their title bar and resize by scrolling while holding `Shift`.
 - Freezing Nodes: Hold `Shift` to freeze nodes in place, then double click the nodes to anchor them in place.
 - Ai Tutorial: The HOW-TO checkbox sends a context message to the AI that allows it to answer some questions about Neurite.
+
+<p align="center">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
+</p>
 
 ## `Synchronized Knowledge Management`
 <table>
@@ -186,7 +186,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
     <!-- Top Right: Image -->
     <td valign="top" width="50%">
       <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/da23628a-d3e2-4fe6-8dda-6f3f15e850f0" alt="SKM3" width="100%">
       </p>
     </td>
   </tr>
@@ -194,7 +194,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
     <!-- Bottom Left: image 2 -->
     <td valign="top" width="50%">
        <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/3718856b-fa35-4b5a-bb78-3f0507712ad1" alt="SKM" width="100%">
       </p>
     </td>
     <!-- Bottom Right: Additional Info or CTA -->
@@ -323,8 +323,17 @@ All API keys can be input through the AI tab in the menu dropdown.
         <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
         <li><strong>Unique & Shared Instructions:</strong>
           <ul>
-            <li><strong>Unique Instructions:</strong> Connect text nodes exclusively to a specific AI node to give it private system instructions, isolated from other connected AI nodes.</li>
-            <li><strong>Shared Instructions:</strong> Text nodes can send instructions to multiple AI nodes as long as there are no other AI nodes between them. This ensures that once another AI node is found in the connected graph, all preceding connected nodes are excluded from the current AI's instruction set.</li>
+            <li><strong>Unique Instructions:</strong> Connect text nodes and Ai nodes to have the Ai recieve text from nodes within its entire connected graph.</li>
+          </ul>
+        </li>
+        <li><strong>Ai Logic Circuits:</strong>
+          <ul>
+            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via modular user interface. Change the direction of converstion between connected Ai Nodes from two-way, to one-way in either direction.</li>
+          </ul>
+        </li>
+        <li><strong>Connect Data:</strong>
+          <ul>
+            <li><strong>Read Connected Web-Link Nodes:</strong> Connect webpages and Ai nodes to utilize RAG search for that document. Create autonomous research swarms via mind-mapping.</li>
           </ul>
         </li>
         <li><strong>Related Research:</strong> <a href="https://arxiv.org/abs/2309.03220">Conversational Swarm Intelligence Paper</a></li>
@@ -493,6 +502,8 @@ If you are a developer who is interested in contributing to this project, contac
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/7593dbcf-1eb7-415b-9f83-b817229f0c17" alt="whyfractals4" width="70%">
     <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d5800897-1eb8-4113-8a9e-75ce029eb67a" alt="whyfractals6" width="70%">
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="70%">
+             <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
 </p>
 
 <a href="https://star-history.com/#satellitecomponent/Neurite&Date">
