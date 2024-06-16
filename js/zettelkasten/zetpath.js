@@ -106,47 +106,22 @@ class RadialZetPath extends ZetPath {
         const numBranches = Math.min(Math.floor(this.options.radialDepth), 8);
         const nodesPerBranch = Math.min(Math.floor(this.options.radialPathLength / numBranches), 50);
         const nodeSpacing = Math.max(this.options.radialPathDistance, 1);
-        const firstRadiusMultiplier = 3;
-        const radiusDecreaseRate = Math.max(Math.pow(this.options.radialScale, 1 / (numBranches - 1)), 0.5);
-
-        // Generate the first branch from the initial origin
-        for (let j = 0; j < nodesPerBranch; j++) {
-            const angle = (2 * Math.PI * j) / nodesPerBranch;
-            const x = Math.cos(angle) * nodeSpacing * firstRadiusMultiplier;
-            const y = Math.sin(angle) * nodeSpacing * firstRadiusMultiplier;
-            this.path.push({
-                x,
-                y,
-                scale: this.options.radialScale,
-                startNodeIndex: 0,
-                startFromBeginning: true,
-            });
-        }
-
+        const maxPathLength = this.options.radialPathLength * numBranches; // Set a limit to the path length
         let currentScale = this.options.radialScale;
-        let currentRadiusMultiplier = firstRadiusMultiplier;
+        let currentLayerNodes = [0]; // Start with the initial parent node as the first layer
         // Generate branches for each subsequent layer
-        for (let i = 1; i < numBranches; i++) {
-            const startNodeIndex = (i - 1) * nodesPerBranch;
-            const endNodeIndex = Math.min(startNodeIndex + nodesPerBranch - 1, this.path.length - 1);
-            // Decrease the scale and radius multiplier for the current layer
+        for (let i = 0; i < numBranches - 1 && this.path.length < maxPathLength; i++) {
+            const nextLayerNodes = [];
+            // Decrease the scale for the current layer
             currentScale = Math.max(currentScale * this.options.radialScale, 0.1);
-            currentRadiusMultiplier = Math.max(currentRadiusMultiplier * radiusDecreaseRate, 0.5);
-            for (let k = startNodeIndex; k <= endNodeIndex; k++) {
-                const numNodesInBranch = Math.min(nodesPerBranch, this.options.radialPathLength - this.path.length);
-                for (let j = 0; j < numNodesInBranch; j++) {
-                    const angle = (2 * Math.PI * (j + 1)) / nodesPerBranch;
-                    const x = Math.cos(angle) * nodeSpacing * currentRadiusMultiplier;
-                    const y = Math.sin(angle) * nodeSpacing * currentRadiusMultiplier;
-                    this.path.push({
-                        x,
-                        y,
-                        scale: currentScale,
-                        startNodeIndex: k,
-                        startFromBeginning: true,
-                    });
-                }
+            // Generate child nodes for each parent node in the current layer
+            for (let j = 0; j < currentLayerNodes.length && this.path.length < maxPathLength; j++) {
+                const parentNodeIndex = currentLayerNodes[j];
+                const childNodes = this.generateRadialNodes(nodesPerBranch, nodeSpacing, currentScale, parentNodeIndex);
+                this.path.push(...childNodes.slice(0, maxPathLength - this.path.length)); // Limit the number of child nodes added
+                nextLayerNodes.push(...childNodes.map((_, index) => this.path.length - childNodes.length + index));
             }
+            currentLayerNodes = nextLayerNodes;
         }
         return this.path;
     }
