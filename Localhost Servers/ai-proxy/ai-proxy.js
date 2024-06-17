@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 7070;
 
 // Initialize API keys
 let openaiApiKey = process.env.OPENAI_API_KEY;
+let anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 let groqApiKey = process.env.GROQ_API_KEY;
 let customApiKey = process.env.CUSTOM_API_KEY;
 
@@ -30,25 +31,100 @@ app.get('/check', (req, res) => {
 
 // Endpoint to receive API keys from the client-side JavaScript
 app.post('/api-keys', (req, res) => {
-    const { openaiApiKey: clientOpenaiApiKey, groqApiKey: clientGroqApiKey } = req.body;
-
+    const { openaiApiKey: clientOpenaiApiKey, groqApiKey: clientGroqApiKey, anthropicApiKey: clientAnthropicApiKey } = req.body;
     if (!openaiApiKey && clientOpenaiApiKey) {
         openaiApiKey = clientOpenaiApiKey;
         console.log('OpenAI API Key received from client-side JavaScript');
     }
-
     if (!groqApiKey && clientGroqApiKey) {
         groqApiKey = clientGroqApiKey;
         console.log('GROQ API Key received from client-side JavaScript');
     }
-
+    if (!anthropicApiKey && clientAnthropicApiKey) {
+        anthropicApiKey = clientAnthropicApiKey;
+        console.log('Anthropic API Key received from client-side JavaScript');
+    }
     res.sendStatus(200);
 });
 
-// Helper function to handle API requests and cancellation
-async function handleApiRequest(req, res, apiEndpoint, apiKey, additionalOptions = {}) {
-    const { model, messages, max_tokens, temperature, stream, requestId } = req.body;
+// Function to modify the request body and headers based on the API type
+function modifyRequestByApiType(apiType, requestBody, headers, apiKey) {
+    switch (apiType) {
+        case 'anthropic':
+            headers['x-api-key'] = apiKey;
+            headers['anthropic-version'] = '2023-06-01';
+            // Extract system messages and concatenate the remaining messages
+            if (requestBody.messages && requestBody.messages.length > 0) {
+                const systemMessages = requestBody.messages.filter(msg => msg.role === 'system');
+                if (systemMessages.length > 0) {
+                    requestBody.system = systemMessages.map(msg => msg.content).join('\n');
+                }
+                requestBody.messages = requestBody.messages
+                    .filter(msg => msg.role !== 'system')
+                    .map(msg => ({ role: msg.role, content: msg.content }));
+            }
+            break;
+        default:
+            headers['Authorization'] = `Bearer ${apiKey}`;
+            break;
+    }
+}
 
+// Function to modify the response based on the API type
+function modifyResponseByApiType(apiType, response, res, stream) {
+    switch (apiType) {
+        case 'anthropic':
+            if (stream) {
+                let responseText = '';
+                response.data.on('data', (chunk) => {
+                    responseText += chunk.toString();
+                    const lines = responseText.split('\n');
+                    responseText = lines.pop();
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data !== '[DONE]') {
+                                try {
+                                    const payload = JSON.parse(data);
+                                    if (payload.type === 'content_block_delta') {
+                                        const content = payload.delta.text;
+                                        const transformedResponse = {
+                                            choices: [{ delta: { content } }],
+                                        };
+                                        res.write(`data: ${JSON.stringify(transformedResponse)}\n\n`);
+                                    }
+                                } catch (error) {
+                                    console.error('Error parsing JSON:', error);
+                                }
+                            }
+                        }
+                    }
+                });
+                response.data.on('end', () => {
+                    res.write(`data: [DONE]\n\n`);
+                    res.end();
+                });
+            } else {
+                const content = response.data.content.map(block => block.text).join('');
+                const transformedResponse = {
+                    choices: [{ message: { content: content.trim() } }],
+                };
+                res.json(transformedResponse);
+            }
+            break;
+        default:
+            if (stream) {
+                response.data.pipe(res);
+            } else {
+                res.json(response.data);
+            }
+            break;
+    }
+}
+
+// Helper function to handle API requests and cancellation
+async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, additionalOptions = {}) {
+    const { model, messages, max_tokens, temperature, stream, requestId } = req.body;
     const requestBody = {
         model,
         messages,
@@ -57,54 +133,49 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, additionalOptions
         stream,
         ...additionalOptions
     };
-
     // Only include requestId in the request body if it is provided
     if (requestId) {
         requestBody.requestId = requestId;
     }
-
     const cancelToken = axios.CancelToken.source();
-
     try {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        modifyRequestByApiType(apiType, requestBody, headers, apiKey);
         const response = await axios.post(apiEndpoint, requestBody, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-            },
+            headers: headers,
             responseType: stream ? 'stream' : 'json',
             cancelToken: cancelToken.token
         });
-
-        if (stream) {
-            response.data.pipe(res);
-            res.on('close', () => {
-                cancelToken.cancel('Request canceled by the client');
-            });
-        } else {
-            res.json(response.data);
-        }
+        modifyResponseByApiType(apiType, response, res, stream);
     } catch (error) {
         if (axios.isCancel(error)) {
             console.log('Request canceled:', requestId);
             res.status(499).json({ error: 'Request canceled by the client' });
         } else {
             console.error('Error calling API:', error);
+            console.error('Error details:', error.response ? error.response.data : error.message);
             res.status(500).json({ error: 'Failed to call API' });
         }
     }
 }
 
 // Proxy routes
-app.post('/groq', async (req, res) => {
-    await handleApiRequest(req, res, 'https://api.groq.com/openai/v1/chat/completions', groqApiKey);
+app.post('/openai', async (req, res) => {
+    await handleApiRequest(req, res, 'https://api.openai.com/v1/chat/completions', openaiApiKey, 'openai');
 });
 
-app.post('/openai', async (req, res) => {
-    await handleApiRequest(req, res, 'https://api.openai.com/v1/chat/completions', openaiApiKey);
+app.post('/anthropic', async (req, res) => {
+    await handleApiRequest(req, res, 'https://api.anthropic.com/v1/messages', anthropicApiKey, 'anthropic');
+});
+
+app.post('/groq', async (req, res) => {
+    await handleApiRequest(req, res, 'https://api.groq.com/openai/v1/chat/completions', groqApiKey, 'groq');
 });
 
 app.post('/ollama/chat', async (req, res) => {
-    await handleApiRequest(req, res, 'http://127.0.0.1:11434/api/chat', null, { context: "" });
+    await handleApiRequest(req, res, 'http://127.0.0.1:11434/api/chat', null, 'ollama', { context: "" });
 });
 
 app.post('/custom', async (req, res) => {
