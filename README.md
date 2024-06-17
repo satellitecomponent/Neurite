@@ -17,8 +17,21 @@
 
 For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
 
-| <h3><code>Why Fractals?</code></h3> The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.<br><br>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.<br><br>The goal of this project is to grow agentic graphs of fractal creativity & collaboration. | <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%"> |
-|:--|:--|
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      <h3><code>Why Fractals?</code></h3>
+      <p>The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.</p>
+      <p>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.</p>
+      <p>The goal of this project is to grow agentic graphs of fractal creativity & collaboration.</p>
+    </td>
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
+      </p>
+    </td>
+  </tr>
+</table>
 
 ### `First of its Kind Fractal Zoom`
 
