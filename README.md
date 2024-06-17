@@ -305,6 +305,10 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 <td align="center"><a href="https://huggingface.co/docs/transformers.js/en/index">transformers.js</a></td>
 <td align="center"><a href="https://groq.com/">Groq</a></td>
 </tr>
+<tr>
+<td align="center"><a href="https://github.com/ggerganov/llama.cpp">Custom</a></td>
+<td align="center"><a href="https://docs.anthropic.com/en/docs/quickstart-guide">Anthropic</a></td>
+</tr>
 </tbody>
 </table>
 
