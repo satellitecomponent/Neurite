@@ -17,25 +17,12 @@
 
 For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
 
-<table>
-  <tr>
-    <td valign="top" width="50%">
-      <h3><code>Why Fractals?</code></h3>
-      <p>The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.</p>
-      <p>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.</p>
-      <p>The goal of this project is to grow agentic graphs of fractal creativity & collaboration.</p>
-    </td>
-    <td valign="top" width="50%">
-      <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
-      </p>
-    </td>
-  </tr>
-</table>
+| <h3><code>Why Fractals?</code></h3> The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.<br><br>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.<br><br>The goal of this project is to grow agentic graphs of fractal creativity & collaboration. | <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%"> |
+|:--|:--|
 
-### First of its Kind Fractal Zoom
+### `First of its Kind Fractal Zoom`
 
-[neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
+## [neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
 
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
 
@@ -160,10 +147,10 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
   *Full controls are listed in the ? tab within Neurite's main dropdown.
 
 `UI Tips`
-- Optimal Node Placement: Zoom in `Scroll` to create space for new nodes to ensure they have room to expand.
-- Managing Windows: Drag windows by their title bar and resize by scrolling while holding `Shift`.
-- Freezing Nodes: Hold `Shift` to freeze nodes in place, then double click the nodes to anchor them in place.
-- Ai Tutorial: The HOW-TO checkbox sends a context message to the AI that allows it to answer some questions about Neurite.
+- `Optimal Node Placement`: Zoom in `Scroll` to create space for new nodes to ensure they have room to expand.
+- `Managing Windows`: Drag windows by their title bar and resize by scrolling while holding `Shift`.
+- `Freezing Nodes`: Hold `Shift` to freeze nodes in place, then `Double Click` nodes to anchor them in place.
+- `Ai Tutorial`: The HOW-TO checkbox sends a context message to the AI that allows it to answer some questions about Neurite.
 
 <p align="center">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
@@ -361,19 +348,22 @@ either:
 ```
 npm install
 npm run build
-npm run start
+npm start
 ```
+*optionally run `npm start:host` to access Neurite from devices connected to the same network.
 
 4. Navigate to localhost:8080 in your browser.
 5. Ensure the Localhost Servers are running to leverage Neurite's full capabilities.
 
 ## `Local Server Setup`
 
-The Localhost Servers are an important component of Neurite that serves as an optional backend for complete functionality.
+The Localhost Servers are an important component of Neurite that serve as an optional backend and enable complete functionality.
 
-### Download Localhost Servers [here](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/satellitecomponent/Neurite/tree/main/Localhost%20Servers).
+### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2FLocalhost%2520Servers). 
 
-### The servers enable the local Vector Databse, webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
+*alternatively clone the entire repo.
+
+### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
 - The localhost servers require npm and Node.js
 - Without any servers running, Wolfram, Wiki, the Vector Database and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
@@ -389,10 +379,10 @@ As of our recent update, the servers now support an Ai proxy that connects Neuri
 </p>
 
 ### `Final Notes`
-- Search: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- Saving: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
-- Zettelkasten and Mind Mapping: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
-- Fractals: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
+- `Search`: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
+- `Saving`: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
+- `Zettelkasten and Mind Mapping`: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
+- `Fractals`: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
 Neurite realizes tapestry of thought reasoning for Ai, all within our innovative real-time Mandelbrot visualization.
 - Talk to the custom GPT, [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. (This is not the ai that interacts with Neurite itself)
