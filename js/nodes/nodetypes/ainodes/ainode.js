@@ -668,6 +668,7 @@ function initInferenceDropdown(node) {
     // Query and assign dropdowns to the node
     node.inferenceSelect = node.content.querySelector(`#inference-select-${nodeIndex}`);
     node.openAiSelect = node.content.querySelector(`#open-ai-select-${nodeIndex}`);
+    node.anthropicSelect = node.content.querySelector(`#anthropic-select-${nodeIndex}`);
     node.groqSelect = node.content.querySelector(`#groq-select-${nodeIndex}`);
     node.localModelSelect = node.content.querySelector(`#local-model-select-${nodeIndex}`);
     node.customModelSelect = node.content.querySelector(`#custom-model-select-${nodeIndex}`);
@@ -710,6 +711,7 @@ function createAndConfigureLocalLLMDropdown(nodeIndex) {
     // Create dropdown elements without options
     const inferenceSelect = createDropdown(`inference-select-${nodeIndex}`);
     const openAiSelect = createDropdown(`open-ai-select-${nodeIndex}`);
+    const anthropicSelect = createDropdown(`anthropic-select-${nodeIndex}`);
     const groqSelect = createDropdown(`groq-select-${nodeIndex}`);
     const ollamaSelect = createDropdown(`local-model-select-${nodeIndex}`);
     const customSelect = createDropdown(`custom-model-select-${nodeIndex}`);
@@ -719,6 +721,7 @@ function createAndConfigureLocalLLMDropdown(nodeIndex) {
 
     // Append dropdowns to the node element
     inferenceTemplate.appendChild(createDropdownWrapper(openAiSelect, 'wrapper-openai', nodeIndex));
+    inferenceTemplate.appendChild(createDropdownWrapper(anthropicSelect, 'wrapper-anthropic', nodeIndex));
     inferenceTemplate.appendChild(createDropdownWrapper(groqSelect, 'wrapper-groq', nodeIndex));
     inferenceTemplate.appendChild(createDropdownWrapper(ollamaSelect, 'wrapper-ollama', nodeIndex));
     inferenceTemplate.appendChild(createDropdownWrapper(customSelect, 'wrapper-custom', nodeIndex));
@@ -759,6 +762,7 @@ function refreshAiNodeOptions(node, setValues = false) {
     // Sync options from global dropdowns to node-specific dropdowns
     syncOptions('inference-select', node.inferenceSelect, 'inference-select-storage');
     syncOptions('open-ai-select', node.openAiSelect, 'open-ai-select-storage');
+    syncOptions('anthropic-select', node.anthropicSelect, 'anthropic-select-storage');
     syncOptions('groq-select', node.groqSelect, 'groq-select-storage');
     syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage');
     syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage');
@@ -767,6 +771,7 @@ function refreshAiNodeOptions(node, setValues = false) {
         // Set the selected value of the target dropdowns based on the selected value of the source dropdowns
         setSelectedValue('inference-select', node.inferenceSelect);
         setSelectedValue('open-ai-select', node.openAiSelect);
+        setSelectedValue('anthropic-select', node.anthropicSelect);
         setSelectedValue('groq-select', node.groqSelect);
         setSelectedValue('local-model-select', node.localModelSelect);
         setSelectedValue('custom-model-select', node.customModelSelect);
