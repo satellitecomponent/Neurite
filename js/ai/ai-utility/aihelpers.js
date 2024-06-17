@@ -1,6 +1,7 @@
 function determineGlobalModel() {
     const inferenceSelect = document.getElementById('inference-select');
     const openAiSelect = document.getElementById('open-ai-select');
+    const anthropicSelect = document.getElementById('anthropic-select');
     const groqSelect = document.getElementById('groq-select');
     const localModelSelect = document.getElementById('local-model-select');
     const customModelSelect = document.getElementById('custom-model-select');
@@ -10,6 +11,8 @@ function determineGlobalModel() {
 
     if (provider === 'OpenAi') {
         model = openAiSelect.value;
+    } else if (provider === 'anthropic') {
+        model = anthropicSelect.value;
     } else if (provider === 'GROQ') {
         model = groqSelect.value;
     } else if (provider === 'ollama') {
@@ -26,6 +29,7 @@ function determineGlobalModel() {
 function determineAiNodeModel(node) {
     const inferenceSelect = node.inferenceSelect;
     const openAiSelect = node.openAiSelect;
+    const anthropicSelect = node.anthropicSelect;
     const groqSelect = node.groqSelect;
     const localModelSelect = node.localModelSelect;
     const customModelSelect = node.customModelSelect;
@@ -35,6 +39,8 @@ function determineAiNodeModel(node) {
 
     if (provider === 'OpenAi') {
         model = openAiSelect.value;
+    } else if (provider === 'anthropic') {
+        model = anthropicSelect.value;
     } else if (provider === 'GROQ') {
         model = groqSelect.value;
     } else if (provider === 'ollama') {

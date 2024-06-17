@@ -265,16 +265,15 @@ window.addEventListener('load', checkProxyServer);
 async function provideAPIKeys() {
     const openaiApiKey = document.getElementById("api-key-input").value;
     const groqApiKey = document.getElementById("GROQ-api-key-input").value;
-
+    const anthropicApiKey = document.getElementById("anthropic-api-key-input").value;
     try {
         const response = await fetch('http://localhost:7070/api-keys', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ openaiApiKey, groqApiKey })
+            body: JSON.stringify({ openaiApiKey, groqApiKey, anthropicApiKey })
         });
-
         if (response.ok) {
             //console.log('API keys provided to the proxy server');
         } else {
@@ -301,8 +300,8 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
             case 'GROQ':
                 API_URL = "http://localhost:7070/groq";
                 break;
-            case 'claude':
-                API_URL = "http://localhost:7070/claude";
+            case 'anthropic':
+                API_URL = "http://localhost:7070/anthropic";
                 break;
             case 'ollama':
                 API_URL = "http://localhost:7070/ollama/chat";
