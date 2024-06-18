@@ -119,15 +119,6 @@ class ResponseHandler {
                     let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                     if (endOfCodeBlockIndex !== -1) {
                         let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
-                        let languageString = '';
-                        let languageStringEndIndex = codeContent.indexOf('\n');
-                        if (languageStringEndIndex !== -1) {
-                            languageString = codeContent.substring(0, languageStringEndIndex).trim();
-                            codeContent = codeContent.substring(languageStringEndIndex + 1);
-                        }
-                        if (languageString.length > 0) {
-                            this.currentLanguage = languageString;
-                        }
                         this.renderCodeBlock(codeContent, true);
 
                         this.codeBlockContent = '';
@@ -264,9 +255,18 @@ class ResponseHandler {
     }
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
-        let encodedContent = encodeHTML(content);
-        let cleanedContent = encodedContent.split('\n').slice(1).join('\n');
-        let decodedContent = decodeHTML(cleanedContent);
+        let languageString = '';
+        let codeContent = content;
+
+        // Check if the content starts with a language string
+        let languageStringEndIndex = content.indexOf('\n');
+        if (languageStringEndIndex !== -1) {
+            languageString = content.substring(0, languageStringEndIndex).trim();
+            codeContent = content.substring(languageStringEndIndex + 1);
+        }
+
+        let encodedContent = encodeHTML(codeContent);
+        let decodedContent = decodeHTML(encodedContent);
 
         if (!isFinal && this.node.lastBlockId) {
             let oldBlock = document.getElementById(this.node.lastBlockId);
@@ -276,7 +276,6 @@ class ResponseHandler {
         }
 
         let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
-
         let existingContainerDiv = document.getElementById(codeBlockDivId);
 
         if (!existingContainerDiv) {
@@ -307,7 +306,7 @@ class ResponseHandler {
         let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
 
         let codeElement = document.createElement("code");
-        codeElement.className = `language-${this.currentLanguage}`;
+        codeElement.className = `language-${languageString || this.currentLanguage}`;
         codeElement.textContent = decodedContent;
 
         Prism.highlightElement(codeElement);
@@ -316,7 +315,7 @@ class ResponseHandler {
         preDiv.appendChild(codeElement);
 
         let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
-        languageLabelDiv.innerText = this.currentLanguage;
+        languageLabelDiv.innerText = languageString || this.currentLanguage;
         languageLabelDiv.style.display = 'flex';
         languageLabelDiv.style.justifyContent = 'space-between';
         languageLabelDiv.style.alignItems = 'center';
