@@ -1755,6 +1755,9 @@ td {
 #key-list {
     max-width: 265px;
     height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
         /* New CSS */
         #key-list p:hover {
