@@ -18,11 +18,14 @@ app.use(express.json({ limit: '50mb' })); // Increase the limit to handle large 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Enable CORS for all routes
-app.use(cors({
-    origin: 'http://localhost:8080', // Adjust this to match your client origin
-    methods: 'GET,POST',
-    allowedHeaders: 'Content-Type,Authorization'
-}));
+const corsOptions = {
+    origin: ['https://neurite.network', 'http://localhost:8080'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 // Endpoint to check if the proxy server is working
 app.get('/check', (req, res) => {
