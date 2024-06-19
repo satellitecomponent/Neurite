@@ -4,7 +4,15 @@ const axios = require('axios');
 const { stringify } = require('querystring');
 
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+    origin: ['https://neurite.network', 'http://localhost:8080'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 function removeHtmlTags(text) {
   return text.replace(/<.*?>/g, '');

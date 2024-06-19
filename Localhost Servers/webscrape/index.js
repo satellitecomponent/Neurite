@@ -7,8 +7,16 @@ const pdf = require('pdf-parse');
 const cheerio = require('cheerio');
 
 const app = express();
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+const corsOptions = {
+    origin: ['https://neurite.network', 'http://localhost:8080'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 
 // Initialize SQLite database
 const db = new sqlite3.Database('database.db', (err) => {
