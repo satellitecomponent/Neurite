@@ -515,72 +515,181 @@ function getSavedViews() {
 
 // https://www.mrob.com/pub/muency/colloquialnames.html
 
-const defaultSavedViews = [
-    {
-        "title": "// Seahorse Valley West",
-        "standardCoords": {
-            "zoom": "0.0000017699931315047657",
-            "pan": "-0.7677840466850392+i-0.10807751495298584"
+const defaultSavedViews = {
+    "mandelbrot": [
+        {
+            "title": "// Seahorse Valley West",
+            "standardCoords": {
+                "zoom": "0.0000017699931315047657",
+                "pan": "-0.7677840466850392+i-0.10807751495298584"
+            },
+            "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1);"
-    },
-    {
-        "title": "// Double Scepter Valley",
-        "standardCoords": {
-            "zoom": "0.000017687394673278873",
-            "pan": "-0.13115417841259247+i-0.8429048341831951"
+        {
+            "title": "// Double Scepter Valley",
+            "standardCoords": {
+                "zoom": "0.000017687394673278873",
+                "pan": "-0.13115417841259247+i-0.8429048341831951"
+            },
+            "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1);"
-    },
-    {
-        "title": "// Quad Spiral Valley",
-        "standardCoords": {
-            "zoom": "6.622764227402511e-7",
-            "pan": "0.35871212237104466+i0.614868924400545"
+        {
+            "title": "// Quad Spiral Valley",
+            "standardCoords": {
+                "zoom": "6.622764227402511e-7",
+                "pan": "0.35871212237104466+i0.614868924400545"
+            },
+            "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1);"
-    },
-    {
-        "title": "// North Radical",
-        "standardCoords": {
-            "zoom": "0.01666349480736333",
-            "pan": "-0.17757277666659035+i-1.0860005295937438"
+        {
+            "title": "// North Radical",
+            "standardCoords": {
+                "zoom": "0.01666349480736333",
+                "pan": "-0.17757277666659035+i-1.0860005295937438"
+            },
+            "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1);"
-    },
-    {
-        "title": "// Shepherds Crook",
-        "standardCoords": {
-            "zoom": "0.000029460494639545112",
-            "pan": "-0.7450088997859019+i-0.11300333384642439"
+        {
+            "title": "// Shepherds Crook",
+            "standardCoords": {
+                "zoom": "0.000029460494639545112",
+                "pan": "-0.7450088997859019+i-0.11300333384642439"
+            },
+            "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1);"
-    },
-    {
-        "title": "// South Radical",
-        "standardCoords": {
-            "zoom": "0.022493365230716315",
-            "pan": "-0.17709676066268798+i1.0856909324960642"
+        {
+            "title": "// South Radical",
+            "standardCoords": {
+                "zoom": "0.022493365230716315",
+                "pan": "-0.17709676066268798+i1.0856909324960642"
+            },
+            "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1);"
-    },
-    {
-        "title": "// Triple Spiral Valley",
-        "standardCoords": {
-            "zoom": "0.0002361832763705042",
-            "pan": "-0.15629012673807463+i0.6534879139112698"
+        {
+            "title": "// Triple Spiral Valley",
+            "standardCoords": {
+                "zoom": "0.0002361832763705042",
+                "pan": "-0.15629012673807463+i0.6534879139112698"
+            },
+            "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1);"
         },
-        "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1);"
-    },
-    {
-        "title": "// Reset View",
-        "standardCoords": {
-            "zoom": "1.5",
-            "pan": "-0.3+i0"
+    ],
+    "burningShip": [
+        {
+            "title": "// East Spoke",
+            "standardCoords": {
+                "zoom": "8.420214425120169e-2",
+                "pan": "9.169164222633116e-1+i-1.6310643190278835e+0"
+            },
+            "functionCall": "setMandelbrotCoords(8.420214425120169e-2, 9.169164222633116e-1, -1.6310643190278835e+0, 0.1);"
         },
-        "functionCall": "resetView();"
-    }
-];
+        {
+            "title": "// West Spoke",
+            "standardCoords": {
+                "zoom": "1.8788037931611875e-2",
+                "pan": "-1.9711042552803943e+0+i-4.334808282086102e-3"
+            },
+            "functionCall": "setMandelbrotCoords(1.8788037931611875e-2, -1.9711042552803943e+0, -4.334808282086102e-3, 0.1);"
+        },
+        {
+            "title": "// Kansas",
+            "standardCoords": {
+                "zoom": "1.546207997245595e-4",
+                "pan": "-2.9164166060085045e-1+i1.306446844207734e-1"
+            },
+            "functionCall": "setMandelbrotCoords(1.546207997245595e-4, -2.9164166060085045e-1, 1.306446844207734e-1, 0.1);"
+        },
+        {
+            "title": "// Cathedral Valley",
+            "standardCoords": {
+                "zoom": "1.434728547873302e-6",
+                "pan": "-1.7964026403617497e+0+i-6.890731439710235e-7"
+            },
+            "functionCall": "setMandelbrotCoords(1.434728547873302e-6, -1.7964026403617497e+0, -6.890731439710235e-7, 0.1);"
+        },
+        {
+            "title": "// Dumpster-Fire",
+            "standardCoords": {
+                "zoom": "5.920320423831963e-5",
+                "pan": "-1.5078232909808023e+0+i-3.55694616402374e-5"
+            },
+            "functionCall": "setMandelbrotCoords(5.920320423831963e-5, -1.5078232909808023e+0, -3.55694616402374e-5, 0.1);"
+        },
+        {
+            "title": "// Iris Chasm",
+            "standardCoords": {
+                "zoom": "7.698116326980893e-6",
+                "pan": "-1.5075332685770135e+0+i4.3338695907954664e-4"
+            },
+            "functionCall": "setMandelbrotCoords(7.698116326980893e-6, -1.5075332685770135e+0, 4.3338695907954664e-4, 0.1);"
+        },
+        {
+            "title": "// Archipelago",
+            "standardCoords": {
+                "zoom": "9.354013289992328e-4",
+                "pan": "-7.008855604508728e-1+i-1.0783378699218966e+0"
+            },
+            "functionCall": "setMandelbrotCoords(9.354013289992328e-4, -7.008855604508728e-1, -1.0783378699218966e+0, 0.1);"
+        }
+    ],
+    "julia": [
+        {
+            "title": "// South Spiral",
+            "standardCoords": {
+                "zoom": "7.638646189048822e-3",
+                "pan": "4.7332900084640715e-2+i8.993463379974346e-1"
+            },
+            "functionCall": "setMandelbrotCoords(7.638646189048822e-3, 4.7332900084640715e-2, 8.993463379974346e-1, 0.1);"
+        },
+        {
+            "title": "// North Spiral",
+            "standardCoords": {
+                "zoom": "1.3918520830597225e-2",
+                "pan": "-3.6849331744016355e-2+i-9.029969059101963e-1"
+            },
+            "functionCall": "setMandelbrotCoords(1.3918520830597225e-2, -3.6849331744016355e-2, -9.029969059101963e-1, 0.1);"
+        },
+        {
+            "title": "// East Spiral",
+            "standardCoords": {
+                "zoom": "3.859876908954036e-2",
+                "pan": "5.589693781322422e-1+i-8.304609304546705e-2"
+            },
+            "functionCall": "setMandelbrotCoords(3.859876908954036e-2, 5.589693781322422e-1, -8.304609304546705e-2, 0.1);"
+        },
+        {
+            "title": "// West Spiral",
+            "standardCoords": {
+                "zoom": "9.71062247743426e-3",
+                "pan": "-5.546948889347452e-1+i9.444801375262804e-2"
+            },
+            "functionCall": "setMandelbrotCoords(9.71062247743426e-3, -5.546948889347452e-1, 9.444801375262804e-2, 0.1);"
+        }
+    ],
+    "tricorn": [
+        // Add default Tricorn views here
+    ],
+    "buffalo": [
+        // Add default Buffalo views here
+    ],
+    "henon": [
+        // Add default Henon Map views here
+    ],
+    "ikeda": [
+        // Add default Ikeda Map views here
+    ],
+    "all": [
+        {
+            "title": "// Reset View",
+            "standardCoords": {
+                "zoom": "1.5",
+                "pan": "-0.3+i0"
+            },
+            "functionCall": "resetView();"
+        }
+    ]
+};
+
 
 function generateCopyPasteSavedViews() {
     return JSON.stringify(savedViews, null, 2);
@@ -594,26 +703,42 @@ function updateSavedViewsCache() {
 
 function getSavedViewsFromCache() {
     const cachedViews = localStorage.getItem('savedViews');
-    return cachedViews ? JSON.parse(cachedViews) : null;
+    if (cachedViews) {
+        const parsedViews = JSON.parse(cachedViews);
+        // Check if the cached views have fractal types
+        if (typeof parsedViews === 'object' && !Array.isArray(parsedViews)) {
+            return parsedViews;
+        }
+    }
+    // If the cached views are in the old format or don't exist, return the default views
+    return { ...defaultSavedViews };
 }
 
 // Function to initialize saved views
 function initializeSavedViews() {
     const cachedViews = getSavedViewsFromCache();
-    savedViews = cachedViews ? cachedViews : [...defaultSavedViews];
+    savedViews = cachedViews ? cachedViews : { ...defaultSavedViews };
 }
 
 initializeSavedViews();
 
 function neuriteSaveCurrentView() {
     const view = neuriteReceiveCurrentView();
-
     if (view === null) {
         console.log("View save cancelled by user.");
         return;
     }
 
-    savedViews.push(view);
+    // Get the current fractal type from the dropdown
+    const currentFractalType = document.getElementById('fractal-select').value;
+
+    // Check if savedViews is defined for the current fractal type
+    if (!savedViews[currentFractalType]) {
+        savedViews[currentFractalType] = [];
+    }
+
+    // Add the view to the savedViews array for the current fractal type
+    savedViews[currentFractalType].push(view);
     console.log("View saved:", view.title);
 
     // Update the browser cache
@@ -625,8 +750,10 @@ function neuriteSaveCurrentView() {
     // Update button text temporarily
     const saveButton = document.getElementById('saveCoordinatesBtn');
     saveButton.textContent = 'Saved!';
-    setTimeout(() => saveButton.textContent = 'Save Coordinates', 1000);
+    setTimeout(() => saveButton.textContent = 'Save Coordinates', 500);
 }
+
+document.getElementById('fractal-select').addEventListener('change', displaySavedCoordinates);
 
 document.getElementById('saveCoordinatesBtn').addEventListener('click', function () {
     neuriteSaveCurrentView();
