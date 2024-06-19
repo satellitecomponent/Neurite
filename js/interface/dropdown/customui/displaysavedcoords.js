@@ -52,8 +52,16 @@ function appendViewsToContainer(views, containerId, startIndex) {
 
 function displaySavedCoordinates() {
     const savedViews = getSavedViewsFromCache();
-    const { mainViews, topViews, bottomViews } = distributeCoordinates(savedViews);
+    const currentFractalType = document.getElementById('fractal-select').value;
 
+    // Get the saved views for the current fractal type
+    const currentFractalViews = savedViews[currentFractalType] || [];
+
+    // Combine the current fractal views with the "all" views
+    const allViews = savedViews.all || [];
+    const combinedViews = [...currentFractalViews, ...allViews];
+
+    const { mainViews, topViews, bottomViews } = distributeCoordinates(combinedViews);
     appendViewsToContainer(mainViews, 'savedCoordinatesContainer', 0);
     appendViewsToContainer(topViews, 'savedCoordinatesContainerTop', mainViews.length);
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
