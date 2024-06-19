@@ -89,11 +89,15 @@ function isEmbedEnabled(nodeIndex = null) {
 // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
     console.log(`Search Query in processLinkInput: ${searchQuery}`);
-    // Get the API Key and Search Engine ID from local storage
-    const apiKey = localStorage.getItem('googleApiKey');
-    const searchEngineId = localStorage.getItem('googleSearchEngineId');
 
-    console.log(`Search query: ${searchQuery}`);  // Log the search query
+    // Get the API Key and Search Engine ID from input fields
+    const apiKey = document.getElementById('googleApiKey').value;
+    const searchEngineId = document.getElementById('googleSearchEngineId').value;
+
+    if (!apiKey || !searchEngineId) {
+        alert('API Key or Search Engine ID is missing. Please enter them.');
+        return null;
+    }
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
     //console.log(`Request URL: ${url}`);  // Log the request URL
@@ -104,12 +108,12 @@ async function performSearch(searchQuery) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('Received data:', data);  // Log the received data
+        //console.log('Received data:', data);  // Log the received data
 
         return data;
     } catch (error) {
         console.error('Error fetching search results:', error);
-        alert('Failed to fetch search results. Please ensure you have entered your Google Programmable Search API key and search engine ID in the Ai tab.');
+        alert(`Failed to fetch search results: ${error.message}. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.`);
         return null;
     }
 }
