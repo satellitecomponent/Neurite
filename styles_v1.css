@@ -957,10 +957,11 @@ input[type="text"i]:hover {
 
 .vdb-search-result {
     background-color: #222226;
-    border-radius: 5px;
+    border-radius: 10px;
+    border: inset #8882;
     padding: 15px;
     margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 5px 3px 10px 0px rgb(0 0 0 / 33%);
 }
 
 .vdb-result-header {
@@ -988,7 +989,17 @@ input[type="text"i]:hover {
 .vdb-result-text {
     font-size: 14px;
     line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
 }
+
+    .vdb-result-text::before,
+    .vdb-result-text::after {
+        content: '...';
+    }
+
+
+
 
         .textnode {
             background-color: #222226;
@@ -2607,25 +2618,25 @@ textarea[id^='custom-instructions-textarea-'] {
     }
 
     .ai-response h3 {
-        font-size: 1.5em;
+        font-size: 1.2em;
         color: #ddd;
         margin-bottom: 0.5em;
     }
 
     .ai-response h4 {
-        font-size: 1.25em;
+        font-size: 1.1em;
         color: #ccc;
         margin-bottom: 0.5em;
     }
 
     .ai-response h5 {
-        font-size: 1.25em;
+        font-size: 1.1em;
         color: #bbb;
         margin-bottom: 0.5em;
     }
 
     .ai-response h6 {
-        font-size: 1.125em;
+        font-size: 1em;
         color: #aaa;
         margin-bottom: 0.5em;
     }

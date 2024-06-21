@@ -177,15 +177,13 @@ async function sendLLMNodeMessage(node, message = null) {
     // Only proceed if we have relevant keys
     if (relevantKeys.length > 0) {
         // Get relevant chunks based on the relevant keys
-        const relevantChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
-        const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
-
+        node.currentTopNChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
+        let topNChunks = groupAndSortChunks(node.currentTopNChunks, MAX_CHUNK_SIZE);
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Provide CONTEXT from the given snippets. CITE your sources!`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\n Provide CONTEXT from the given snippets. CITE your sources! Use [Snippet n](source) to display references to exact snippets.`
         };
-
         messages.push(embedMessage);
     }
 

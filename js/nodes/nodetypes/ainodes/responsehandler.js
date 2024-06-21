@@ -41,34 +41,12 @@ class ResponseHandler {
         this.responseCount = 0;
         this.currentResponseEnded = false;
 
+        this.tooltip = new TopNChunksTooltip();
+
             // Attach the input event listener for new input
             this.node.aiResponseTextArea.addEventListener('input', () => {
                 this.processingQueue = this.processingQueue.then(() => this.handleInput());
             });
-    }
-
-    restoreAiResponseDiv() {
-        // Iterate through each child element in the AI response div
-        const children = this.node.aiResponseDiv.children;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-
-            // Check if the child contains a user-prompt div
-            const userPromptDiv = child.querySelector('.user-prompt');
-            if (userPromptDiv) {
-                // Initialize the user prompt div found within the child
-                this.initUserPromptDiv(userPromptDiv);
-            } else if (child.classList.contains('response-wrapper')) {
-                // For AI responses, find the .ai-response div within the wrapper
-                const responseDiv = child.querySelector('.ai-response');
-                if (responseDiv) {
-                    this.initAiResponseDiv(child); // Pass the wrapper div
-                }
-            } else if (child.classList.contains('code-block-container')) {
-                // For code blocks, pass the container div
-                this.initCodeBlockDiv(child);
-            }
-        }
     }
 
     initUserPromptDiv(promptDiv) {
@@ -87,9 +65,6 @@ class ResponseHandler {
         try {
             let content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
-            if (newContent.trim() === "") {
-                newContent = newContent.replace(/ /g, "&nbsp;");
-            }
 
             let trimmedNewContent = newContent.trim();
 
@@ -155,16 +130,102 @@ class ResponseHandler {
         }
     }
 
+    restoreAiResponseDiv() {
+        const children = this.node.aiResponseDiv.children;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const userPromptDiv = child.querySelector('.user-prompt');
+            if (userPromptDiv) {
+                this.initUserPromptDiv(userPromptDiv);
+            } else if (child.classList.contains('response-wrapper')) {
+                const responseDiv = child.querySelector('.ai-response');
+                if (responseDiv) {
+                    this.initAiResponseDiv(child);
+                    this.reattachTooltips(responseDiv);
+                }
+            } else if (child.classList.contains('code-block-container')) {
+                this.initCodeBlockDiv(child);
+            }
+        }
+    }
+
+    reattachTooltips(responseDiv) {
+        responseDiv.querySelectorAll('a.snippet-ref').forEach(link => {
+            if (link.dataset.snippetData) {
+                this.tooltip.detachTooltipEvents(link);  // First, detach any existing events
+                this.tooltip.attachTooltipEvents(link);
+                link.dataset.tooltipAttached = 'true';
+            }
+        });
+    }
+
+
+    findSnippetData(snippetNumber, source) {
+        if (this.node.currentTopNChunks) {
+            const snippet = this.node.currentTopNChunks.find(chunk => {
+                const [chunkSource, chunkNumber] = chunk.key.split('_chunk_');
+                return chunkSource === source && parseInt(chunkNumber) === snippetNumber;
+            });
+            if (snippet) {
+                return {
+                    source: source,
+                    relevanceScore: snippet.relevanceScore,
+                    text: snippet.text
+                };
+            }
+        }
+        return null;
+    }
+
+    attachSnippetTooltips(aiResponseDiv) {
+        console.log('Attaching snippet tooltips...');
+        aiResponseDiv.querySelectorAll('a').forEach(link => {
+            const href = link.getAttribute('href');
+            const text = link.textContent;
+            const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
+            console.log(text, snippetMatch);
+            if (snippetMatch) {
+                const snippetNumbers = snippetMatch[1].split(',').map(Number);
+                const source = href;
+                console.log('Found snippet link:', link, 'Snippet Numbers:', snippetNumbers, 'Source:', source);
+                const snippetDataList = snippetNumbers.map(snippetNumber => this.findSnippetData(snippetNumber, source)).filter(Boolean);
+                this.addTooltipEventListeners(link, snippetDataList);
+            }
+        });
+    }
+
+    addTooltipEventListeners(link, snippetDataList) {
+        if (snippetDataList.length > 0 && !link.dataset.tooltipAttached) {
+            console.log('Adding event listeners for snippet:', snippetDataList);
+            link.classList.add('snippet-ref');
+            link.dataset.snippetData = JSON.stringify(snippetDataList);
+            this.tooltip.attachTooltipEvents(link);
+            link.dataset.tooltipAttached = 'true';
+        } else if (snippetDataList.length === 0) {
+            console.log('No snippet data found for:', link);
+        } else {
+            console.log('Tooltip already attached for:', link);
+        }
+    }
+
     handleMarkdown(markdown) {
         if (this.node.aiResponding || this.node.localAiResponding) {
             let sanitizedMarkdown = DOMPurify.sanitize(markdown);
             let segments = sanitizedMarkdown.split('\n\n\n');
-
             segments.forEach((segment, index) => {
                 let responseDiv = this.getOrCreateResponseDiv(index);
                 this.appendMarkdownSegment(responseDiv, segment);
             });
+            // Call attachSnippetTooltips after all segments have been appended
+            this.attachSnippetTooltips(this.node.aiResponseDiv);
         }
+    }
+
+    appendMarkdownSegment(responseDiv, segment) {
+        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
+
+        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
+        responseDiv.innerHTML = parsedHtml;
     }
 
     getOrCreateResponseDiv(index) {
@@ -200,13 +261,6 @@ class ResponseHandler {
         return handleDiv;
     }
 
-    appendMarkdownSegment(responseDiv, segment) {
-        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
-
-        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
-        responseDiv.innerHTML = parsedHtml;
-    }
-
     getMarkedRenderer() {
         let renderer = new marked.Renderer();
         renderer.image = function (href, title, text) {
@@ -221,6 +275,23 @@ class ResponseHandler {
             }
         };
         return renderer;
+    }
+
+    setupAiResponse(responseDiv) {
+        // Find the wrapper and handle divs relative to the responseDiv
+        const wrapperDiv = responseDiv.closest('.response-wrapper');
+        const handleDiv = wrapperDiv.querySelector('.drag-handle');
+
+        // Apply logic specific to AI response div
+        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
+
+        handleDiv.addEventListener('mouseover', () => {
+            wrapperDiv.classList.add('hovered');
+        });
+
+        handleDiv.addEventListener('mouseout', () => {
+            wrapperDiv.classList.remove('hovered');
+        });
     }
 
     handleUserPrompt(promptContent) {
@@ -441,23 +512,6 @@ class ResponseHandler {
             }
 
         }.bind(this));
-    }
-
-    setupAiResponse(responseDiv) {
-        // Find the wrapper and handle divs relative to the responseDiv
-        const wrapperDiv = responseDiv.closest('.response-wrapper');
-        const handleDiv = wrapperDiv.querySelector('.drag-handle');
-
-        // Apply logic specific to AI response div
-        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
-
-        handleDiv.addEventListener('mouseover', () => {
-            wrapperDiv.classList.add('hovered');
-        });
-
-        handleDiv.addEventListener('mouseout', () => {
-            wrapperDiv.classList.remove('hovered');
-        });
     }
 
     setupCodeBlock(codeBlockDiv) {

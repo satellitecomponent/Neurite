@@ -765,13 +765,18 @@ function groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE) {
             text: chunk.text.substring(0, MAX_CHUNK_SIZE),
             number: parseInt(chunkNumber),
             relevanceScore: chunk.relevanceScore,
+            source: source
         });
         return acc;
     }, {});
 
     // Construct the topNChunksContent
-    return Object.entries(groupedChunks).map(([source, chunks]) => {
-        chunks.sort((a, b) => a.number - b.number);
-        return `[${source}](${source})\n\n${chunks.map(chunk => `(Snippet ${chunk.number}) (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`).join('\n')}\n`;
-    }).join('\n');
+    return Object.entries(groupedChunks)
+        .map(([source, chunks]) => {
+            chunks.sort((a, b) => a.number - b.number);
+            return chunks
+                .map(chunk => `[Snippet ${chunk.number}](${chunk.source}) (Relevance: ${chunk.relevanceScore.toFixed(2)}): ${chunk.text}...`)
+                .join('\n');
+        })
+        .join('\n\n');
 }

@@ -75,6 +75,11 @@ document.addEventListener('wheel', (event) => {
             return;
         }
 
+        // Check if the target is an instance of the custom tooltip
+        if (targetElement.classList.contains('tooltip')) {
+            return;
+        }
+
         // Check if the target is a node title
         if (targetElement.classList.contains('node-title-sd')) {
             return;
