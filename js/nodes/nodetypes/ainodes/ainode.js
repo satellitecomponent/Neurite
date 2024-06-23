@@ -171,6 +171,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     node.aiResponseHalted = false;
     node.savedLLMSelection = '';
 
+    node.currentTopNChunks = null;
+
     node.push_extra_cb((node) => {
         return {
             f: "textareaId",

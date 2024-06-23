@@ -151,41 +151,44 @@ async function sendLLMNodeMessage(node, message = null) {
 
     // Check for connected link nodes
     const hasLinkNodes = allConnectedNodes.some(node => node.isLink);
-
     if (hasLinkNodes) {
         const linkNodes = allConnectedNodes.filter(node => node.isLink);
-        const linkUrls = linkNodes.map(node => node.linkUrl);
+        const linkInfo = linkNodes.map(node => ({
+            url: node.linkUrl,
+            key: node.linkUrl.startsWith('blob:') ? node.titleInput.value : node.linkUrl
+        }));
 
-        // Check if each link URL exists in the vector store
         const allKeysFromServer = await getAllKeysFromServer();
-        relevantKeys = linkUrls.filter(url => allKeysFromServer.includes(url));
 
-        // Handle not extracted links
-        const notExtractedLinks = linkUrls.filter(url => !allKeysFromServer.includes(url));
+        relevantKeys = linkInfo
+            .filter(info => allKeysFromServer.includes(info.key))
+            .map(info => info.key);
+
+        const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
+
         if (notExtractedLinks.length > 0) {
-            await handleNotExtractedLinks(notExtractedLinks);
+            await handleNotExtractedLinks(notExtractedLinks, linkNodes);
         }
 
         // Refresh the relevant keys after handling not extracted links
         const updatedKeysFromServer = await getAllKeysFromServer();
-        relevantKeys = linkUrls.filter(url => updatedKeysFromServer.includes(url));
+        relevantKeys = linkInfo
+            .filter(info => updatedKeysFromServer.includes(info.key))
+            .map(info => info.key);
     } else if (isEmbedEnabled(node.index)) {
-        // Obtain relevant keys based on the user message and recent context
         relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery);
     }
 
     // Only proceed if we have relevant keys
     if (relevantKeys.length > 0) {
         // Get relevant chunks based on the relevant keys
-        const relevantChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
-        const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
-
+        node.currentTopNChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
+        let topNChunks = groupAndSortChunks(node.currentTopNChunks, MAX_CHUNK_SIZE);
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunksContent + `\n Provide CONTEXT from the given snippets. CITE your sources!`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\n Provide CONTEXT from the given snippets. CITE your sources! Use [Snippet n](source) to display references to exact snippets.`
         };
-
         messages.push(embedMessage);
     }
 
