@@ -177,8 +177,8 @@ function toSVG(coords) {
 
 var mousePos = new vec2(0, 0);
 var mousePath = "";
-var zoom = new vec2(1.5, 0); //bigger is further out
-var pan = new vec2(-0.3, 0);
+var zoom = new vec2(1, 0); //bigger is farther out
+var pan = new vec2(0, 0);
 
 function lerp(a, b, t) {
     return a * (1 - t) + b * t;

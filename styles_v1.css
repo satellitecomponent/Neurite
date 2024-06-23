@@ -486,13 +486,12 @@ input[type="text"i].title-input {
 .modal-content {
     display: flex;
     flex-direction: column;
-
-    background-color: #2f2e3996;
+    background-color: #1a1921bf;
     backdrop-filter: blur(5px);
     border: 2px solid #333;
     width: fit-content;
     max-width: 90vw;
-    max-height: 80vh;
+    max-height: 90vh;
     box-sizing: border-box;
     overflow: visible;
     border-radius: 5px 5px 0px 0px;
@@ -717,7 +716,7 @@ input[type="text"i].title-input {
     position: absolute;
     top: 100%;
     right: 0;
-    background: #2f2e3996;
+    background: #1a1921bf;
     backdrop-filter: blur(6px);
     border-top-right-radius: 8px;
     border-bottom-left-radius: 8px;
@@ -962,6 +961,7 @@ input[type="text"i]:hover {
     padding: 15px;
     margin-bottom: 10px;
     box-shadow: 5px 3px 10px 0px rgb(0 0 0 / 33%);
+    cursor: text;
 }
 
 .vdb-result-header {
@@ -977,7 +977,7 @@ input[type="text"i]:hover {
     color: #ddd;
     word-wrap: break-word;
     word-break: break-word;
-    max-width: 70%;
+    max-width: 69%;
 }
 
 .vdb-result-score {
@@ -999,11 +999,87 @@ input[type="text"i]:hover {
     }
 
 
+.vdb-loading-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    padding: 4px;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.vdb-progress-bar-inner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background-color: #5b5b6d;
+    transition: width 0.3s ease-in-out;
+    z-index: 1;
+}
+
+.vdb-loading-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    z-index: 2;
+    position: relative;
+}
+
+.vdb-loader-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #8ac6f2;
+    flex-grow: 1;
+}
+
+.tooltip-highlight {
+    background-color: #5b5b6d;
+    color: #8ac6f2;
+}
+
+.snippet-ref {
+    background-color: #5b5b6d;
+    border-radius: 10px;
+    padding-inline: 6px;
+    padding-top: 2px;
+    padding-bottom: 4px;
+}
 
 
-        .textnode {
-            background-color: #222226;
-        }
+textarea#rawTextArea {
+    background-color: #222226;
+    width: 300px;
+    height: 300px;
+    resize: none;
+    border-top: 2px solid #727272;
+    border-bottom: none;
+    border-inline: none;
+}
+
+textarea#rawTextArea:focus {
+    outline: none; /* Removes the default outline */
+    border-top: 2px solid #727272;
+}
+
+#chunkedTextDisplay {
+    height: 300px;
+    width: 300px;
+}
+
+#cancelChunkAndStoreButton:hover {
+    background-color: #5c2929;
+}
+
+
+
+
+.textnode {
+    background-color: #222226;
+}
 
         #prompt-form {
             display: flex;
@@ -1765,16 +1841,25 @@ td {
 
 #key-list {
     max-width: 265px;
-    height: 100px;
+    min-width: 265px;
+    height: 300px;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
 }
         /* New CSS */
         #key-list p:hover {
             background-color: #bbb; /* Or any other color */
             color: #222226;
         }
+
+    #key-list p {
+        max-width: 80%; /* Ensure items do not exceed the container width */
+        word-wrap: break-word; /* Break long words */
+        overflow-wrap: break-word; /* Compatibility */
+        white-space: normal; /* Allow text to wrap */
+        text-align: left; /* Align text to the right */
+    }
 
 .inline-container {
     display: inline-block;
@@ -2792,7 +2877,7 @@ textarea[id^='custom-instructions-textarea-'] {
     top: 0;
     width: auto;
     height: auto;
-    background: #2f2e3996;
+    background: #1a1921bf;
     backdrop-filter: blur(6px);
     display: flex; /* Change to flex for initial layout */
     padding-left: 5px;

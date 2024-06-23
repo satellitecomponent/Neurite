@@ -119,45 +119,55 @@ async function performSearch(searchQuery) {
 }
 
 async function constructSearchQuery(userMessage, recentContext = null, node = null) {
-    // If the user's message is a URL, use it as the search query and create a link node
+    // Check if the user's message is a URL
     if (isUrl(userMessage)) {
-        document.getElementById("prompt").value = ''; // Clear the textarea
-        let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Set the title to user's message (URL)
-        // Attach the node to the user's mouse
-        setupNodeForPlacement(node);
-
-        return null; // Return null to indicate that no further processing is necessary
+        document.getElementById("prompt").value = ''; // Clear the input field
+        let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Create a link node with the URL
+        setupNodeForPlacement(linkNode); // Attach the node for user interaction
+        return null; // End function execution as no search query is needed
     }
+
+    // Fetch the index of the current node if available
     let nodeIndex = node ? node.index : null;
-    //console.log(nodeIndex);
-    // Adjust to account for both Google Search and Embed
+
+    // Check if search features are enabled for the current node
     if (!isGoogleSearchEnabled(nodeIndex) && !isEmbedEnabled(nodeIndex)) {
-        return "not-enabled"; // Return a default value when search is disabled
+        return "not-enabled"; // Return immediately if search is disabled
     }
 
-
-
+    // Prepare the recent context for the query
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
-
-    const queryContext = [{
-        role: "system",
-        content: `The following recent conversation may provide further context for generating your search query; \n ${recentContext},`
-    },
-    {
-        role: "system",
-        content: "Without preface or explanation, generate the search query most relevant to the current user message. Your response is used as a Google Programable Search and an embedded vector search that finds relevant webpages/pdf chunks. User can't see your output. Provide a single, keyword search query that's most likely to yield relevant results."
-    },
-    {
-        role: "user",
-        content: userMessage,
-    },
+    const queryContext = [
+        {
+            role: "system",
+            content: `Recent conversation context: \n${recentContext}`
+        },
+        {
+            role: "system",
+            content: "Generate the search query most relevant to the current user message. This will be used for both Google Programmable Search and embedded vector search."
+        },
+        {
+            role: "user",
+            content: userMessage
+        }
     ];
 
-    const searchQuery = await callchatAPI(queryContext, false, 0);
-    console.log("Search Query", searchQuery);
-    return searchQuery;
-}
+    // Attempt to generate a search query using the chat API
+    try {
+        const searchQuery = await callchatAPI(queryContext, false, 0);
+        console.log("Generated Search Query:", searchQuery);
 
+        // Check if the search query is empty, null, or undefined
+        if (!searchQuery || searchQuery.trim().length === 0) {
+            console.warn("Received empty search query, using user message as fallback.");
+            return userMessage; // Use user's original message as fallback
+        }
+        return searchQuery; // Return the valid search query
+    } catch (error) {
+        console.error("Error generating search query:", error);
+        return userMessage; // Fallback to the user's message if an error occurs
+    }
+}
 
 
 

@@ -682,8 +682,8 @@ const defaultSavedViews = {
         {
             "title": "// Reset View",
             "standardCoords": {
-                "zoom": "1.5",
-                "pan": "-0.3+i0"
+                "zoom": "1",
+                "pan": "0+i0"
             },
             "functionCall": "resetView();"
         }

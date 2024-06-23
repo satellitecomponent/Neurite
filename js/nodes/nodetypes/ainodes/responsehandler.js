@@ -154,13 +154,13 @@ class ResponseHandler {
             if (link.dataset.snippetData) {
                 this.tooltip.detachTooltipEvents(link);  // First, detach any existing events
                 this.tooltip.attachTooltipEvents(link);
-                link.dataset.tooltipAttached = 'true';
             }
         });
     }
 
 
     findSnippetData(snippetNumber, source) {
+        // First, check in the current top N chunks
         if (this.node.currentTopNChunks) {
             const snippet = this.node.currentTopNChunks.find(chunk => {
                 const [chunkSource, chunkNumber] = chunk.key.split('_chunk_');
@@ -174,20 +174,42 @@ class ResponseHandler {
                 };
             }
         }
+
+        // If not found, search in previous AI responses
+        return this.findSnippetDataInPreviousResponses(snippetNumber, source);
+    }
+
+    findSnippetDataInPreviousResponses(snippetNumber, source) {
+        const aiResponseDivs = Array.from(this.node.aiResponseDiv.querySelectorAll('.ai-response'));
+        // Get the 10 most recent response divs, adjust number as needed for balance between depth and performance
+        const recentResponseDivs = aiResponseDivs.slice(-10);
+
+        for (let i = recentResponseDivs.length - 1; i >= 0; i--) {
+            const responseDiv = recentResponseDivs[i];
+            const links = responseDiv.querySelectorAll('a.snippet-ref');
+            for (let link of links) {
+                if (link.dataset.snippetData) {
+                    const snippetDataList = JSON.parse(link.dataset.snippetData);
+                    const matchingSnippet = snippetDataList.find(snippet =>
+                        snippet.source === source && snippet.snippetNumber === snippetNumber
+                    );
+                    if (matchingSnippet) {
+                        return matchingSnippet;
+                    }
+                }
+            }
+        }
         return null;
     }
 
     attachSnippetTooltips(aiResponseDiv) {
-        console.log('Attaching snippet tooltips...');
         aiResponseDiv.querySelectorAll('a').forEach(link => {
             const href = link.getAttribute('href');
             const text = link.textContent;
             const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
-            console.log(text, snippetMatch);
             if (snippetMatch) {
                 const snippetNumbers = snippetMatch[1].split(',').map(Number);
                 const source = href;
-                console.log('Found snippet link:', link, 'Snippet Numbers:', snippetNumbers, 'Source:', source);
                 const snippetDataList = snippetNumbers.map(snippetNumber => this.findSnippetData(snippetNumber, source)).filter(Boolean);
                 this.addTooltipEventListeners(link, snippetDataList);
             }
@@ -195,16 +217,10 @@ class ResponseHandler {
     }
 
     addTooltipEventListeners(link, snippetDataList) {
-        if (snippetDataList.length > 0 && !link.dataset.tooltipAttached) {
-            console.log('Adding event listeners for snippet:', snippetDataList);
+        if (snippetDataList.length > 0) {
             link.classList.add('snippet-ref');
             link.dataset.snippetData = JSON.stringify(snippetDataList);
             this.tooltip.attachTooltipEvents(link);
-            link.dataset.tooltipAttached = 'true';
-        } else if (snippetDataList.length === 0) {
-            console.log('No snippet data found for:', link);
-        } else {
-            console.log('Tooltip already attached for:', link);
         }
     }
 
@@ -212,12 +228,21 @@ class ResponseHandler {
         if (this.node.aiResponding || this.node.localAiResponding) {
             let sanitizedMarkdown = DOMPurify.sanitize(markdown);
             let segments = sanitizedMarkdown.split('\n\n\n');
+            let linkFound = false;  // Flag to determine if any links exist
+
             segments.forEach((segment, index) => {
                 let responseDiv = this.getOrCreateResponseDiv(index);
                 this.appendMarkdownSegment(responseDiv, segment);
+                // Check for links as segments are processed to avoid re-querying later
+                if (!linkFound && responseDiv.querySelector('a')) {
+                    linkFound = true;
+                }
             });
-            // Call attachSnippetTooltips after all segments have been appended
-            this.attachSnippetTooltips(this.node.aiResponseDiv);
+
+            // Only attach tooltips if a link was found
+            if (linkFound) {
+                this.attachSnippetTooltips(this.node.aiResponseDiv);
+            }
         }
     }
 

@@ -71,6 +71,10 @@ function openModal(contentId) {
         case 'vectorDbSearchModal':
             modalTitle.textContent = 'Search Vector-DB';
             break;
+        case 'vectorDbImportConfirmModal':
+            modalTitle.textContent = 'Confirm Vector DB Import';
+            setupVectorDbImportConfirmModal();
+            break;
         case 'zetSearchModal':
             modalTitle.textContent = 'Search Notes';
             break;
@@ -137,19 +141,23 @@ function openModal(contentId) {
 
 // Function to close the modal
 function closeModal() {
-    // Perform specific actions based on the currentContentId
     switch (currentOpenModalContentId) {
         case 'zetSearchModal':
         case 'nodeConnectionModal':
             clearSearch();
             break;
+        case 'vectorDbImportConfirmModal':
+            if (window.currentVectorDbImportReject) {
+                window.currentVectorDbImportReject(new Error('User cancelled the operation'));
+                window.currentVectorDbImportReject = null;
+            }
+            break;
         // Add more cases for other modals if needed
         default:
             break;
     }
-
     modal.style.display = 'none';
-    currentContentId = null; // Reset the current content ID
+    currentOpenModalContentId = null; // Reset the current content ID
 }
 
 // Event listener for the close button
@@ -195,7 +203,9 @@ function startDragging(event) {
 // Function to check if an element is an input element
 function isInputElement(element) {
     const inputTypes = ['input', 'select', 'textarea', 'button'];
-    return inputTypes.includes(element.tagName.toLowerCase()) || element.classList.contains('custom-select');
+    return inputTypes.includes(element.tagName.toLowerCase()) ||
+        element.classList.contains('custom-select') ||
+        element.closest('.vdb-search-result');
 }
 
 // Event listener for mousemove on the document

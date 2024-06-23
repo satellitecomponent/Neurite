@@ -267,17 +267,31 @@
             <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete File(s)</button>
         </div>
         <input type="file" id="fileInput" style="display: none;" />
-        <br />
+    </div>
+
+    <div id="vectorDbImportConfirmModal" style="display: none;">
         <div class="gridLayout">
-            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
-                <label for="maxChunkSizeSlider">Chunk Size: <br /><span id="maxChunkSizeValue"></span></label>
-                <input type="range" min="1" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+            <div class="raw-text">
+                <h3>Raw Text</h3>
+                <textarea id="rawTextArea" class="custom-scrollbar" rows="20" cols="50"></textarea>
             </div>
-            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
-                <label for="overlapSizeSlider">Overlap:<br /><span id="overlapSizeDisplay">10</span></label>
-                <input type="range" id="overlapSizeSlider" name="overlapSize" min="1" max="100" value="10">
+            <div class="chunked-text">
+                <h3>Chunked Text</h3>
+                <div id="chunkedTextDisplay" class="scrollable-list"></div>
             </div>
         </div>
+        <div class="gridLayout" style="padding-top: 8px; padding-bottom: 6px;">
+            <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
+                <label for="maxChunkSizeSlider">Chunk Size: <span id="maxChunkSizeValue"></span></label>
+                <input type="range" min="50" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+            </div>
+            <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
+                <label for="overlapSizeSlider">Overlap: <span id="overlapSizeDisplay"></span></label>
+                <input type="range" id="overlapSizeSlider" name="overlapSize" min="0" max="100" value="10">
+            </div>
+        </div>
+        <button id="confirmChunkAndStoreButton" class="api-modal-button">Confirm and Store</button>
+        <button id="cancelChunkAndStoreButton" class="api-modal-button">Cancel</button>
     </div>
 
     <div id="vectorDbSearchModal" style="display: none;">
@@ -524,12 +538,13 @@
                                             </div>
                                         </div>
                                         <div class="dropdown-wrapper" id="wrapper-anthropic">
-                                            <label for="anthropic-select">Claude 3</label>
+                                            <label for="anthropic-select">Claude</label>
                                             <div class="dropdown-container">
                                                 <select id="anthropic-select" class="model-selector custom-select">
-                                                    <option value="claude-3-opus-20240229">Opus</option>
-                                                    <option value="claude-3-sonnet-20240229">Sonnet</option>
-                                                    <option value="claude-3-haiku-20240307">Haiku</option>
+                                                    <option value="claude-3-5-sonnet-20240620">3.5 Sonnet</option>
+                                                    <option value="claude-3-opus-20240229">3 Opus</option>
+                                                    <option value="claude-3-sonnet-20240229">3 Sonnet</option>
+                                                    <option value="claude-3-haiku-20240307">3 Haiku</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -592,17 +607,16 @@
                                 <div class="context-settings-panel hidden">
 
                                     <div class="dropdown-wrapper" id="wrapper-embeddings" style="margin-top: 10px; margin-bottom: 10px;">
-                                        <label for="embeddingsModelSelect" style="margin-right: 15px; align-items: flex-end;">
-                                            <button id="vectorDbSearchButton" class="linkbuttons search-button" title="Search Vector Embeddings Database">
-                                                <svg class="icon">
-                                                    <use xlink:href="#searchSVG"></use>
-                                                </svg>
-                                            </button>
-                                            <button id="openVectorDbButton" class="linkbuttons">Vector-DB</button>
-                                        </label>
+                                        <button id="vectorDbSearchButton" class="linkbuttons search-button" title="Search Vector Embeddings Database">
+                                            <svg class="icon">
+                                                <use xlink:href="#searchSVG"></use>
+                                            </svg>
+                                        </button>
+                                        <button id="openVectorDbButton" class="linkbuttons search-button">Vector-DB</button>
                                         <div class="dropdown-container">
                                             <select id="embeddingsModelSelect" class="model-selector custom-select">
-                                                <option value="local-embeddings">gte-small (in-browser)</option>
+                                                <option value="local-embeddings-gte-small">gte-small (in-browser)</option>
+                                                <option value="local-embeddings-all-MiniLM-L6-v2">all-MiniLM-L6-v2 (in-browser)</option>
 
                                                 <option value="text-embedding-3-small">ada-3-small</option>
                                                 <option value="text-embedding-3-large">ada-3-large</option>
@@ -756,9 +770,9 @@
                                             </div>
                                             <div class="dropdown-container">
                                                 <select id="fractal-select" class="model-selector custom-select">
+                                                    <option value="julia">Julia Set</option>
                                                     <option value="mandelbrot">Mandelbrot</option>
                                                     <option value="burningShip">Burning Ship</option>
-                                                    <option value="julia">Julia Set</option>
                                                     <option value="tricorn">Tricorn</option>
                                                     <option value="buffalo">Buffalo</option>
                                                     <option value="henon">Henon Map</option>

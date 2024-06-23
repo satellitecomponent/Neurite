@@ -331,8 +331,8 @@ async function storeGitHubContent(text, owner, repo, path) {
     //});
 
     // Fetch embeddings for each chunk
-    const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText);
     const key = `https://github.com/${owner}/${repo}/${path}`;
+    const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText, key);
     // Store embeddings and chunks in the database
     await storeEmbeddingsAndChunksInDatabase(key, parsedText, chunkedEmbeddings);
 }
