@@ -116,19 +116,15 @@ function handleIconDrop(event, iconName) {
 
 function dropHandler(ev) {
     ev.preventDefault();
-
     const data = ev.dataTransfer.getData('text');
-
     if (data && isJSON(data)) {
         const parsedData = JSON.parse(data);
-
         if (parsedData.type === 'icon') {
             // Handle the icon drop
             handleIconDrop(ev, parsedData.iconName);
-            return;  // Exit the handler early
+            return;
         }
-
-        // Now only try destructuring if the data isn't an icon type
+        // Now only try destructuring if the data isn't an icon
         let [title, content] = parsedData;
         // If this is one of the three specific types of divs, handle it here
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {

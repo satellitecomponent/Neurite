@@ -41,34 +41,12 @@ class ResponseHandler {
         this.responseCount = 0;
         this.currentResponseEnded = false;
 
+        this.tooltip = new TopNChunksTooltip();
+
             // Attach the input event listener for new input
             this.node.aiResponseTextArea.addEventListener('input', () => {
                 this.processingQueue = this.processingQueue.then(() => this.handleInput());
             });
-    }
-
-    restoreAiResponseDiv() {
-        // Iterate through each child element in the AI response div
-        const children = this.node.aiResponseDiv.children;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-
-            // Check if the child contains a user-prompt div
-            const userPromptDiv = child.querySelector('.user-prompt');
-            if (userPromptDiv) {
-                // Initialize the user prompt div found within the child
-                this.initUserPromptDiv(userPromptDiv);
-            } else if (child.classList.contains('response-wrapper')) {
-                // For AI responses, find the .ai-response div within the wrapper
-                const responseDiv = child.querySelector('.ai-response');
-                if (responseDiv) {
-                    this.initAiResponseDiv(child); // Pass the wrapper div
-                }
-            } else if (child.classList.contains('code-block-container')) {
-                // For code blocks, pass the container div
-                this.initCodeBlockDiv(child);
-            }
-        }
     }
 
     initUserPromptDiv(promptDiv) {
@@ -87,9 +65,6 @@ class ResponseHandler {
         try {
             let content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
-            if (newContent.trim() === "") {
-                newContent = newContent.replace(/ /g, "&nbsp;");
-            }
 
             let trimmedNewContent = newContent.trim();
 
@@ -155,16 +130,127 @@ class ResponseHandler {
         }
     }
 
+    restoreAiResponseDiv() {
+        const children = this.node.aiResponseDiv.children;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const userPromptDiv = child.querySelector('.user-prompt');
+            if (userPromptDiv) {
+                this.initUserPromptDiv(userPromptDiv);
+            } else if (child.classList.contains('response-wrapper')) {
+                const responseDiv = child.querySelector('.ai-response');
+                if (responseDiv) {
+                    this.initAiResponseDiv(child);
+                    this.reattachTooltips(responseDiv);
+                }
+            } else if (child.classList.contains('code-block-container')) {
+                this.initCodeBlockDiv(child);
+            }
+        }
+    }
+
+    reattachTooltips(responseDiv) {
+        responseDiv.querySelectorAll('a.snippet-ref').forEach(link => {
+            if (link.dataset.snippetData) {
+                this.tooltip.detachTooltipEvents(link);  // First, detach any existing events
+                this.tooltip.attachTooltipEvents(link);
+            }
+        });
+    }
+
+
+    findSnippetData(snippetNumber, source) {
+        // First, check in the current top N chunks
+        if (this.node.currentTopNChunks) {
+            const snippet = this.node.currentTopNChunks.find(chunk => {
+                const [chunkSource, chunkNumber] = chunk.key.split('_chunk_');
+                return chunkSource === source && parseInt(chunkNumber) === snippetNumber;
+            });
+            if (snippet) {
+                return {
+                    source: source,
+                    relevanceScore: snippet.relevanceScore,
+                    text: snippet.text
+                };
+            }
+        }
+
+        // If not found, search in previous AI responses
+        return this.findSnippetDataInPreviousResponses(snippetNumber, source);
+    }
+
+    findSnippetDataInPreviousResponses(snippetNumber, source) {
+        const aiResponseDivs = Array.from(this.node.aiResponseDiv.querySelectorAll('.ai-response'));
+        // Get the 10 most recent response divs, adjust number as needed for balance between depth and performance
+        const recentResponseDivs = aiResponseDivs.slice(-10);
+
+        for (let i = recentResponseDivs.length - 1; i >= 0; i--) {
+            const responseDiv = recentResponseDivs[i];
+            const links = responseDiv.querySelectorAll('a.snippet-ref');
+            for (let link of links) {
+                if (link.dataset.snippetData) {
+                    const snippetDataList = JSON.parse(link.dataset.snippetData);
+                    const matchingSnippet = snippetDataList.find(snippet =>
+                        snippet.source === source && snippet.snippetNumber === snippetNumber
+                    );
+                    if (matchingSnippet) {
+                        return matchingSnippet;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    attachSnippetTooltips(aiResponseDiv) {
+        aiResponseDiv.querySelectorAll('a').forEach(link => {
+            const href = link.getAttribute('href');
+            const text = link.textContent;
+            const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
+            if (snippetMatch) {
+                const snippetNumbers = snippetMatch[1].split(',').map(Number);
+                const source = href;
+                const snippetDataList = snippetNumbers.map(snippetNumber => this.findSnippetData(snippetNumber, source)).filter(Boolean);
+                this.addTooltipEventListeners(link, snippetDataList);
+            }
+        });
+    }
+
+    addTooltipEventListeners(link, snippetDataList) {
+        if (snippetDataList.length > 0) {
+            link.classList.add('snippet-ref');
+            link.dataset.snippetData = JSON.stringify(snippetDataList);
+            this.tooltip.attachTooltipEvents(link);
+        }
+    }
+
     handleMarkdown(markdown) {
         if (this.node.aiResponding || this.node.localAiResponding) {
             let sanitizedMarkdown = DOMPurify.sanitize(markdown);
             let segments = sanitizedMarkdown.split('\n\n\n');
+            let linkFound = false;  // Flag to determine if any links exist
 
             segments.forEach((segment, index) => {
                 let responseDiv = this.getOrCreateResponseDiv(index);
                 this.appendMarkdownSegment(responseDiv, segment);
+                // Check for links as segments are processed to avoid re-querying later
+                if (!linkFound && responseDiv.querySelector('a')) {
+                    linkFound = true;
+                }
             });
+
+            // Only attach tooltips if a link was found
+            if (linkFound) {
+                this.attachSnippetTooltips(this.node.aiResponseDiv);
+            }
         }
+    }
+
+    appendMarkdownSegment(responseDiv, segment) {
+        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
+
+        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
+        responseDiv.innerHTML = parsedHtml;
     }
 
     getOrCreateResponseDiv(index) {
@@ -200,13 +286,6 @@ class ResponseHandler {
         return handleDiv;
     }
 
-    appendMarkdownSegment(responseDiv, segment) {
-        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
-
-        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
-        responseDiv.innerHTML = parsedHtml;
-    }
-
     getMarkedRenderer() {
         let renderer = new marked.Renderer();
         renderer.image = function (href, title, text) {
@@ -221,6 +300,23 @@ class ResponseHandler {
             }
         };
         return renderer;
+    }
+
+    setupAiResponse(responseDiv) {
+        // Find the wrapper and handle divs relative to the responseDiv
+        const wrapperDiv = responseDiv.closest('.response-wrapper');
+        const handleDiv = wrapperDiv.querySelector('.drag-handle');
+
+        // Apply logic specific to AI response div
+        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
+
+        handleDiv.addEventListener('mouseover', () => {
+            wrapperDiv.classList.add('hovered');
+        });
+
+        handleDiv.addEventListener('mouseout', () => {
+            wrapperDiv.classList.remove('hovered');
+        });
     }
 
     handleUserPrompt(promptContent) {
@@ -441,23 +537,6 @@ class ResponseHandler {
             }
 
         }.bind(this));
-    }
-
-    setupAiResponse(responseDiv) {
-        // Find the wrapper and handle divs relative to the responseDiv
-        const wrapperDiv = responseDiv.closest('.response-wrapper');
-        const handleDiv = wrapperDiv.querySelector('.drag-handle');
-
-        // Apply logic specific to AI response div
-        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
-
-        handleDiv.addEventListener('mouseover', () => {
-            wrapperDiv.classList.add('hovered');
-        });
-
-        handleDiv.addEventListener('mouseout', () => {
-            wrapperDiv.classList.remove('hovered');
-        });
     }
 
     setupCodeBlock(codeBlockDiv) {

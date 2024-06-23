@@ -1,16 +1,17 @@
 // vite.config.js
-export default {
+import { defineConfig } from 'vite';
+
+export default defineConfig({
     base: './',
     build: {
         sourcemap: 'inline',
         target: 'esnext',
         minify: false
     },
-    esbuild: {
-        jsxFactory: 'h',
-        jsxFragment: 'Fragment'
-    },
     server: {
         port: 8080
+    },
+    worker: {
+        format: 'es'
     }
-};
+});

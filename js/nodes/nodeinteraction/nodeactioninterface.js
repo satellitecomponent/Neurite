@@ -293,7 +293,7 @@ class LinkNodeActions extends BaseNodeActions {
             ...super.getActions(),
             'displayIframe': ["show iframe", "iframe view", "embed", "display frame"],
             'extractText': ["get text", "copy text", "text extraction", "extract webpage", "scrape webpage"],
-            'displayWebpage': ["webpage text"],
+            'toggleProxy': ["webpage text", "proxy"],
             'importText': ["webpage text", "import", "text"]
 
         };
@@ -303,10 +303,13 @@ class LinkNodeActions extends BaseNodeActions {
         handleLinkNodeIframe(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
     }
     displayWebpage() {
+        this.toggleProxy();
+    }
+    toggleProxy() {
         handleLinkNodeProxyDisplay(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
     }
     extractText() {
-        extractAndStoreLinkContent(this.node.linkUrl);
+        extractAndStoreLinkContent(this.node.linkUrl, this.node.titleInput.value);
     }
     importText() {
         importLinkNodeTextToZettelkasten(this.node.linkUrl);
