@@ -361,9 +361,7 @@ let followMouseFromWindow = false;
         //Syncs node text and Zettelkasten
         getHandleNodeBodyInputEvent(node, textarea) {
             return (e) => {
-                if (e.target !== textarea) {
-                    return;
-                }
+                if (e.target !== textarea) return;
 
                 const body = textarea.value;
                 const name = node.title;
@@ -371,32 +369,24 @@ let followMouseFromWindow = false;
                 let originalValue = this.noteInput.getValue();
                 const lines = originalValue.split('\n');
 
-                // Construct the updated content with the new body text
-                const updatedContent = [lines[startLineNo], ...body.split('\n')].join('\n');
+                // Create the updated content
+                let updatedContent = lines[startLineNo] + '\n'; // Node title line
+                updatedContent += body;
 
                 // Replace the node's content using replaceRange
                 const from = { line: startLineNo, ch: 0 };
-                const to = { line: endLineNo, ch: lines[endLineNo].length };
+                const to = { line: Math.max(startLineNo, endLineNo), ch: (lines[endLineNo] || '').length };
 
                 this.noteInput.operation(() => {
                     this.noteInput.replaceRange(updatedContent, from, to);
 
-                    // Save and restore the scroll position
-                    const scrollInfo = this.noteInput.getScrollInfo();
-                    this.noteInput.refresh();
-                    this.noteInput.scrollTo(scrollInfo.left, scrollInfo.top);
-
-                    // Explicitly update the edges (references)
+                    // Handle references
                     body.split('\n').forEach((line, index) => {
                         if (line.startsWith(refTag)) {
-                            // Handle references
-                            this.handleReferenceLine(line, node.title, this.nodes, lines, false, startLineNo + index, startLineNo + index);
+                            this.handleReferenceLine(line, node.title, this.nodes, body.split('\n'), false, startLineNo + 1 + index, startLineNo + 1 + index);
                         }
                     });
                 });
-
-                // Update the textarea value AFTER handling the references to prevent recursive updates
-                textarea.value = body;
             };
         }
 
@@ -565,21 +555,14 @@ let followMouseFromWindow = false;
 
         handleTextWithoutTags(line, currentNodeTitle, nodes) {
             let node = nodes[currentNodeTitle];
-            let targetTextarea;
-            if (node.isLLM) {
-                targetTextarea = node.nodeObject.promptTextArea;
-            } else {
-                targetTextarea = node.nodeObject.textarea;
-            }
-            if (node.plainText !== '') {
-                node.plainText += '\n';
-            }
-            node.plainText += line;
-            // Get the debounced function for the specific textarea
+            let targetTextarea = node.isLLM ? node.nodeObject.promptTextArea : node.nodeObject.textarea;
+
+            // Append the line
+            node.plainText = node.plainText ? node.plainText + '\n' + line : line;
+
+            // Update textarea
             const debouncedTextareaUpdate = getDebouncedTextareaUpdate(targetTextarea);
-            // Use the debounced function to update value and dispatch change event
             debouncedTextareaUpdate(targetTextarea, node.plainText);
-            node.skipNewLine = false;
         }
 
         deleteInactiveNodes(nodes) {

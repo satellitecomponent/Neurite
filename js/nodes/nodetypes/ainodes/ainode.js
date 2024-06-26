@@ -2,87 +2,70 @@
 function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
     // Create the AI response textarea
     let aiResponseTextArea = document.createElement("textarea");
-    aiResponseTextArea.id = `LLMnoderesponse-${llmNodeCount}`;  // Assign unique id to each aiResponseTextArea
-    aiResponseTextArea.style.display = 'none';  // Hide the textarea
+    aiResponseTextArea.id = `LLMnoderesponse-${llmNodeCount}`;
+    aiResponseTextArea.style.display = 'none';
 
     // Create the AI response container
     let aiResponseDiv = document.createElement("div");
-    aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;  // Assign unique id to each aiResponseDiv
+    aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;
     aiResponseDiv.classList.add('custom-scrollbar', 'ai-response-div');
-    aiResponseDiv.setAttribute("style", "background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226); color: inherit; border: none; border-color: #8882; width: 100%; max-height: 80%; height: 80%; overflow-y: auto; overflow-x: hidden; resize: none; word-wrap: break-word; user-select: none; line-height: 1.75;");
 
     // Create the user prompt textarea
     let promptTextArea = document.createElement("textarea");
     promptTextArea.id = `nodeprompt-${llmNodeCount}`;
-    promptTextArea.classList.add('custom-scrollbar', 'custom-textarea'); // Add the class here
+    promptTextArea.classList.add('custom-scrollbar', 'custom-textarea');
 
-    // Create the send button
+    // Create the send button (keeping inline styles)
     let sendButton = document.createElement("button");
     sendButton.type = "submit";
     sendButton.id = `prompt-form-${llmNodeCount}`;
     sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
+    sendButton.innerHTML = `<svg width="24" height="24"><use xlink:href="#play-icon"></use></svg>`;
 
-    sendButton.innerHTML = `
-    <svg width="24" height="24">
-        <use xlink:href="#play-icon"></use>
-    </svg>`;
-
-    // Create the regenerate button
+    // Create the regenerate button (keeping inline styles)
     let regenerateButton = document.createElement("button");
     regenerateButton.type = "button";
     regenerateButton.id = "prompt-form";
     regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    regenerateButton.innerHTML = `
-    <svg width="24" height="24">
-        <use xlink:href="#refresh-icon"></use>
-    </svg>`;
+    regenerateButton.innerHTML = `<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>`;
 
-    // Create settings button
+    // Create settings button (keeping inline styles)
     const aiNodeSettingsButton = document.createElement('button');
     aiNodeSettingsButton.type = "button";
     aiNodeSettingsButton.id = 'aiNodeSettingsButton';
     aiNodeSettingsButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-
-    // Clone the SVG element
     const settingsIcon = document.getElementById('aiNodeSettingsIcon').cloneNode(true);
     settingsIcon.style.display = 'inline-block';
-
-    // Append the SVG to the button
     aiNodeSettingsButton.appendChild(settingsIcon);
-
-    // Initialize the button's active state as false
     aiNodeSettingsButton.isActive = false;
 
-    // Create the loader and error icons container
+    // Create the loader and error icons container (keeping inline styles)
     let statusIconsContainer = document.createElement("div");
     statusIconsContainer.className = 'status-icons-container';
-    statusIconsContainer.style.cssText = 'position: absolute; top: 40px; right: 80px; width: 20px; height: 20px;';
+    statusIconsContainer.style.cssText = 'position: absolute; top: 50px; right: 90px; width: 20px; height: 20px;';
 
     // Create the loader icon
     let aiLoadingIcon = document.createElement("div");
     aiLoadingIcon.className = 'loader';
-    aiLoadingIcon.id = `aiLoadingIcon-${llmNodeCount}`; // Assign unique id
+    aiLoadingIcon.id = `aiLoadingIcon-${llmNodeCount}`;
     aiLoadingIcon.style.display = 'none';
 
     // Create the error icon
     let aiErrorIcon = document.createElement("div");
     aiErrorIcon.className = 'error-icon-css';
-    aiErrorIcon.id = `aiErrorIcon-${llmNodeCount}`; // Assign unique id
+    aiErrorIcon.id = `aiErrorIcon-${llmNodeCount}`;
     aiErrorIcon.style.display = 'none';
 
     // Create the 'X' mark inside the error icon
     let xMark = document.createElement("div");
     xMark.className = 'error-x-mark';
-
     let xMarkLeft = document.createElement("div");
     xMarkLeft.className = 'error-x-mark-left';
-
     let xMarkRight = document.createElement("div");
     xMarkRight.className = 'error-x-mark-right';
-
     xMark.appendChild(xMarkLeft);
     xMark.appendChild(xMarkRight);
-    aiErrorIcon.appendChild(xMark); // Append the 'X' mark to the error icon
+    aiErrorIcon.appendChild(xMark);
 
     // Append loader and error icons to container
     statusIconsContainer.appendChild(aiLoadingIcon);
@@ -90,16 +73,14 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     // Create a div to wrap prompt textarea and buttons
     let buttonDiv = document.createElement("div");
+    buttonDiv.className = 'button-container';
     buttonDiv.appendChild(sendButton);
     buttonDiv.appendChild(regenerateButton);
     buttonDiv.appendChild(aiNodeSettingsButton);
-    buttonDiv.style.cssText = "display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; margin-top: 4px;";
 
-    // Create the promptDiv with relative position
+    // Create the promptDiv
     let promptDiv = document.createElement("div");
-    promptDiv.style.cssText = "display: flex; flex-direction: row; justify-content: space-between; align-items: center; position: relative;"; // Added position: relative;
-
-    // Append statusIconsContainer to the promptDiv instead of wrapperDiv
+    promptDiv.className = 'prompt-container';
     promptDiv.appendChild(statusIconsContainer);
     promptDiv.appendChild(promptTextArea);
     promptDiv.appendChild(buttonDiv);
@@ -107,9 +88,6 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Wrap elements in a div
     let ainodewrapperDiv = document.createElement("div");
     ainodewrapperDiv.className = 'ainodewrapperDiv';
-    ainodewrapperDiv.style.position = 'relative'; // <-- Add this line to make sure the container has a relative position
-    ainodewrapperDiv.style.width = "500px";
-    ainodewrapperDiv.style.height = "520px";
 
     ainodewrapperDiv.appendChild(aiResponseTextArea);
     ainodewrapperDiv.appendChild(aiResponseDiv);
@@ -155,6 +133,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     let windowDiv = node.windowDiv;
     windowDiv.style.resize = 'both';
+    windowDiv.style.minWidth = `450px`;
+    windowDiv.style.minHeight = `500px`;
 
     // Append the ainodewrapperDiv to windowDiv of the node
     windowDiv.appendChild(ainodewrapperDiv);
@@ -437,6 +417,7 @@ function setupAiNodePromptTextAreaListeners(node) {
 
     promptTextArea.onmousedown = cancel;  // Prevent dragging
     promptTextArea.addEventListener('input', autoGrow);
+    promptTextArea.addEventListener('focus', autoGrow);
     promptTextArea.addEventListener('mouseenter', function () {
         promptTextArea.style.userSelect = "text";
     });

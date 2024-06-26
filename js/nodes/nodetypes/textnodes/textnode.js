@@ -21,6 +21,10 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     windowDiv.appendChild(pythonView);
     windowDiv.appendChild(editorWrapper);  // Append the editor wrapper to window div
 
+    windowDiv.style.minWidth = `100px`;
+    windowDiv.style.minHeight = `100px`;
+
+
     // Handle position and scale if necessary
     if (sx !== undefined) {
         x = (new vec2(sx, sy)).cmult(zoom).plus(pan);

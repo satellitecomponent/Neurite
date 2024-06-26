@@ -262,9 +262,9 @@
         <div id="key-list" class="scrollable-list" title="Embedded Documents">
             <!-- Stored keys will be dynamically added here -->
         </div>
-        <div class="button-container">
+        <div style="display: flex; justify-content: space-between;">
             <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Upload File</button>
-            <button onclick="deleteSelectedKeys()" class="linkbuttons" title="Delete Document from Embeddings Database">Delete File(s)</button>
+            <button id="delete-vectordb-docs" class="linkbuttons" title="Delete Document from Embeddings Database">Delete File(s)</button>
         </div>
         <input type="file" id="fileInput" style="display: none;" />
     </div>
@@ -1186,6 +1186,13 @@
 
             <symbol id="gear-icon" viewBox="0 0 24 24">
                 <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.4,12.7a7.59,7.59,0,0,0,.1-1.4,7.59,7.59,0,0,0-.1-1.4l2.1-1.6a0.5,0.5,0,0,0,.1-0.6l-2-3.5a0.5,0.5,0,0,0-.6-.2l-2.5,1A7.59,7.59,0,0,0,13.5,4.2L13,1.8a0.5,0.5,0,0,0-.5-0.4H10a0.5,0.5,0,0,0-.5,0.4L9,4.2a7.59,7.59,0,0,0-2.3.9L4.2,4.1a0.5,0.5,0,0,0-.6.2l-2,3.5a0.5,0.5,0,0,0,.1.6L4,10.3a7.59,7.59,0,0,0-.1,1.4,7.59,7.59,0,0,0,.1,1.4L2,15.7a0.5,0.5,0,0,0-.1.6l2,3.5a0.5,0.5,0,0,0,.6.2l2.5-1a7.59,7.59,0,0,0,2.3.9l0.5,2.4a0.5,0.5,0,0,0,.5.4h3a0.5,0.5,0,0,0,.5-0.4l0.5-2.4a7.59,7.59,0,0,0,2.3-.9l2.5,1a0.5,0.5,0,0,0,.6-.2l2-3.5a0.5,0.5,0,0,0-.1-.6ZM12,15.5A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
+            </symbol>
+
+            <symbol id="eyeball-symbol" viewBox="0 0 24 24">
+                <path fill="#8ac6f2" fill-rule="evenodd" d="M4.998 7.78C6.729 6.345 9.198 5 12 5c2.802 0 5.27 1.345 7.002 2.78a12.713 12.713 0 0 1 2.096 2.183c.253.344.465.682.618.997.14.286.284.658.284 1.04s-.145.754-.284 1.04a6.6 6.6 0 0 1-.618.997 12.712 12.712 0 0 1-2.096 2.183C17.271 17.655 14.802 19 12 19c-2.802 0-5.27-1.345-7.002-2.78a12.712 12.712 0 0 1-2.096-2.183 6.6 6.6 0 0 1-.618-.997C2.144 12.754 2 12.382 2 12s.145-.754.284-1.04c.153-.315.365-.653.618-.997A12.714 12.714 0 0 1 4.998 7.78ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+            </symbol>
+            <symbol id="crossed-eyeball-symbol" viewBox="0 0 24 24">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3.933 13.909A4.357 4.357 0 0 1 3 12c0-1 4-6 9-6m7.6 3.8A5.068 5.068 0 0 1 21 12c0 1-3 6-9 6-.314 0-.62-.014-.918-.04M5 19 19 5m-4 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </symbol>
         </defs>
     </svg>
