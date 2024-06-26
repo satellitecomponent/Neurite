@@ -40,6 +40,8 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     let windowDiv = node.windowDiv;
 
     windowDiv.appendChild(contentWrapper);
+    windowDiv.style.minWidth = `150px`;
+    windowDiv.style.minHeight = `200px`;
 
     node.isLink = true;
 

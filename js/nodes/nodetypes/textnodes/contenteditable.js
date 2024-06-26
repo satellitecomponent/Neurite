@@ -63,13 +63,24 @@ function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
 }
 
 function addEventsToUserInputTextarea(userInputTextarea, textarea, node, displayDiv) {
-
     syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
 
-    userInputTextarea.addEventListener('input', function () {
-        syncHiddenTextareaWithInputTextarea(textarea, userInputTextarea);
-        if (displayDiv) {
-            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
+    userInputTextarea.addEventListener('input', function (event) {
+        if (!isEditableDivProgrammaticChange) {
+            syncHiddenTextareaWithInputTextarea(textarea, userInputTextarea);
+            if (displayDiv) {
+                ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
+            }
+        }
+    });
+
+    textarea.addEventListener('change', function (event) {
+        if (!isEditableDivProgrammaticChange) {
+            syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
+            if (displayDiv) {
+                ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
+            }
+            highlightWithDelay();
         }
     });
 
@@ -87,13 +98,7 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
         }
     }, 3000);
 
-    textarea.addEventListener('change', (event) => {
-        syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
-        if (displayDiv) {
-            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
-        }
-        highlightWithDelay();
-    });
+
     // Highlight Codemirror text on focus of contenteditable div
     userInputTextarea.onfocus = function () {
         syncDisplayFromInputTextareaScroll(this, displayDiv);
@@ -135,70 +140,47 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
 }
 
 let isEditableDivProgrammaticChange = false;
+let isHiddenTextareaProgrammaticChange = false;
 
 function syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea) {
-    let previousContent = userInputTextarea.value;
-    const currentContent = textarea.value;
-    const changedText = getChangedText(previousContent, currentContent);
-    if (changedText !== null) {
-        const selectionStart = userInputTextarea.selectionStart;
-        const selectionEnd = userInputTextarea.selectionEnd;
-        userInputTextarea.value = currentContent;
-        userInputTextarea.setSelectionRange(selectionStart, selectionEnd);
+    if (!isHiddenTextareaProgrammaticChange) {
         isEditableDivProgrammaticChange = true;
-        insertTextAtCursor(userInputTextarea, changedText);
+        let previousContent = userInputTextarea.value;
+        const currentContent = textarea.value;
+
+        if (previousContent !== currentContent) {
+            const selectionStart = userInputTextarea.selectionStart;
+            const selectionEnd = userInputTextarea.selectionEnd;
+            userInputTextarea.value = currentContent;
+            userInputTextarea.setSelectionRange(selectionStart, selectionEnd);
+            userInputTextarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        }
+
+        //console.log(`Synced input textarea: ${userInputTextarea.value}`);
         isEditableDivProgrammaticChange = false;
     }
-}
-
-function getChangedText(oldText, newText) {
-    const oldLines = oldText.split("\n");
-    const newLines = newText.split("\n");
-
-    for (let i = 0; i < Math.min(oldLines.length, newLines.length); i++) {
-        if (oldLines[i] !== newLines[i]) {
-            return newLines[i].slice(oldLines[i].length);
-        }
-    }
-
-    if (newLines.length > oldLines.length) {
-        return newLines[newLines.length - 1];
-    }
-
-    return null;
-}
-
-function insertTextAtCursor(textarea, text) {
-    const event = new Event('input', { bubbles: true, cancelable: true });
-    const textNode = document.createTextNode(text);
-
-    if (textarea.childNodes.length > 0) {
-        const range = textarea.ownerDocument.createRange();
-        const childNode = textarea.childNodes[0];
-
-        // Ensure the selection start and end are within valid boundaries
-        const selectionStart = Math.min(textarea.selectionStart, childNode.length);
-        const selectionEnd = Math.min(textarea.selectionEnd, childNode.length);
-
-        range.setStart(childNode, selectionStart);
-        range.setEnd(childNode, selectionEnd);
-        range.deleteContents();
-        range.insertNode(textNode);
-    } else {
-        textarea.appendChild(textNode);
-    }
-
-    textarea.dispatchEvent(event);
 }
 
 function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
     if (!isEditableDivProgrammaticChange) {
-        isEditableDivProgrammaticChange = true;  // Avoid recursive updates
+        isHiddenTextareaProgrammaticChange = true;
 
-        textarea.value = contentEditable.value;  // Update the textarea
-        textarea.dispatchEvent(new Event('input'));  // Trigger any associated event listeners
+        const contentEditableValue = contentEditable.value;
+        const textareaValue = textarea.value;
 
-        isEditableDivProgrammaticChange = false;
+        // Count leading empty lines in the textarea
+        const leadingEmptyLines = (textareaValue.match(/^(\n*)/) || [''])[0];
+        
+        // Combine leading empty lines with the content editable value
+        const newValue = leadingEmptyLines + contentEditableValue.trimStart();
+
+        if (textareaValue !== newValue) {
+            textarea.value = newValue;
+            textarea.dispatchEvent(new Event('input'));
+        }
+
+        //console.log(`Synced hidden textarea: ${textarea.value}`);
+        isHiddenTextareaProgrammaticChange = false;
     }
 }
 

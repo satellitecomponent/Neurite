@@ -79,9 +79,17 @@ async function sendMessage(event, autoModeMessage = null) {
     }
 
     let searchQuery = null;
+    let filteredKeys = null;
 
-    if (isGoogleSearchEnabled() || embedCheckbox.checked) {
-        searchQuery = await constructSearchQuery(message);
+    if (isGoogleSearchEnabled() || (filteredKeys = await isEmbedEnabled())) {
+        try {
+            searchQuery = await constructSearchQuery(message);
+        } catch (error) {
+            console.error('Error constructing search query:', error);
+            searchQuery = null; // Set to null if there's an error
+        }
+    } else {
+        searchQuery = null;
     }
 
     let searchResultsData = null;
@@ -138,9 +146,9 @@ async function sendMessage(event, autoModeMessage = null) {
         messages.push(aiNodesMessage());
     }
 
-    if (embedCheckbox && embedCheckbox.checked) {
+    if (searchQuery != null && filteredKeys) {
         // Obtain relevant keys based on the user message
-        const relevantKeys = await getRelevantKeys(message, null, searchQuery);
+        const relevantKeys = await getRelevantKeys(message, null, searchQuery, filteredKeys);
 
         // Get relevant chunks based on the relevant keys
         const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);

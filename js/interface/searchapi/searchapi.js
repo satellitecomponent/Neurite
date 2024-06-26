@@ -65,26 +65,6 @@ function isGoogleSearchEnabled(nodeIndex = null) {
     return false;
 }
 
-// Function to check if Embed (Data) is enabled
-function isEmbedEnabled(nodeIndex = null) {
-    const globalCheckbox = document.getElementById("embed-checkbox");
-
-    // Check for AI node-specific checkboxes only if nodeIndex is provided
-    if (nodeIndex !== null) {
-        const aiCheckbox = document.getElementById(`embed-checkbox-${nodeIndex}`);
-        if (aiCheckbox) {
-            return aiCheckbox.checked;
-        }
-    }
-
-    // If we are here, it means no node-specific checkbox was found or nodeIndex was not provided
-    if (globalCheckbox) {
-        return globalCheckbox.checked;
-    }
-
-    return false;
-}
-
 
 // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
@@ -125,14 +105,6 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
         let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Create a link node with the URL
         setupNodeForPlacement(linkNode); // Attach the node for user interaction
         return null; // End function execution as no search query is needed
-    }
-
-    // Fetch the index of the current node if available
-    let nodeIndex = node ? node.index : null;
-
-    // Check if search features are enabled for the current node
-    if (!isGoogleSearchEnabled(nodeIndex) && !isEmbedEnabled(nodeIndex)) {
-        return "not-enabled"; // Return immediately if search is disabled
     }
 
     // Prepare the recent context for the query
