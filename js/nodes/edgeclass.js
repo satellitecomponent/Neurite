@@ -321,7 +321,7 @@ class Edge {
             let startScale = this.pts[0].scale || 1; // Provide a default value if undefined
             let endScale = this.pts[this.pts.length - 1].scale || 1; // Provide a default value if undefined
 
-            let horizontal = (startPoint.x - endPoint.x) / 1.3;
+            let horizontal = (startPoint.x - endPoint.x) / 1.1;
             let vertical = (startPoint.y - endPoint.y);
             let distance = Math.sqrt(horizontal * horizontal + vertical * vertical);
             let curve = 1;

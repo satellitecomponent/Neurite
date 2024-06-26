@@ -119,6 +119,8 @@ document.getElementById("vectorDbSearchButton").addEventListener("click", () => 
 // Function to perform the search and display the results
 async function performVectorDbDisplaySearch() {
     const searchQuery = document.getElementById("vectorDbSearchInput").value;
+    const relevantKeys = getVisibleKeys(await getAllKeys()); // Get filtered keys if any filters are applied
+
     const searchResultsContainer = document.getElementById("vectorDbSearchDisplay");
     searchResultsContainer.innerHTML = ""; // Clear previous search results
 
@@ -129,7 +131,7 @@ async function performVectorDbDisplaySearch() {
     searchResultsContainer.appendChild(loaderElement);
 
     try {
-        const relevantChunks = await getRelevantChunks(searchQuery, topN);
+        const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);
 
         // Remove the loading icon safely
         if (loaderElement.parentNode === searchResultsContainer) {

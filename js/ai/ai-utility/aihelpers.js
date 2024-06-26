@@ -53,6 +53,31 @@ function determineAiNodeModel(node) {
     return { provider, model };
 }
 
+// Function to check if Embed (Data) is enabled
+async function isEmbedEnabled(nodeIndex = null) {
+    const globalCheckbox = document.getElementById("embed-checkbox");
+    const allKeys = await getAllKeys();
+    const visibleKeys = getVisibleKeys(allKeys);
+
+    let isEnabled = false;
+
+    if (nodeIndex !== null) {
+        const aiCheckbox = document.getElementById(`embed-checkbox-${nodeIndex}`);
+        isEnabled = aiCheckbox ? aiCheckbox.checked : false;
+    } else {
+        isEnabled = globalCheckbox ? globalCheckbox.checked : false;
+    }
+
+    if (isEnabled && visibleKeys.length > 0 && visibleKeys.length < allKeys.length) {
+        return visibleKeys;
+    }
+    return false;
+}
+
+
+
+
+
 const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
 
 
@@ -92,13 +117,16 @@ function ensureClosedBackticks(text) {
 }
 
 function handleUserPromptAppend(element, userMessage, promptIdentifier) {
-    // Ensure no unclosed triple backticks in the current content
+    // Close any unclosed backticks
     element.value = ensureClosedBackticks(element.value);
 
-    // Append the user prompt to the AI response area with a distinguishing mark and end tag
+    // Trigger an input event after closing backticks
+    element.dispatchEvent(new Event('input'));
+
+    // Append the user prompt
     element.value += `\n\n${promptIdentifier} ${userMessage}\n`;
 
-    // Trigger the input event programmatically
+    // Trigger another input event after appending the user prompt
     element.dispatchEvent(new Event('input'));
 }
 

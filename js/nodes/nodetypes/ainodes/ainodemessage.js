@@ -115,19 +115,23 @@ async function sendLLMNodeMessage(node, message = null) {
 
 
     let searchQuery = null;
+    let filteredKeys = null;
 
-    if (isGoogleSearchEnabled(nodeIndex) || isEmbedEnabled(node.index)) {
-        // Use the node-specific recent context when calling constructSearchQuery
-        searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
+    if (isGoogleSearchEnabled(nodeIndex) || (filteredKeys = await isEmbedEnabled(node.index))) {
+        try {
+            searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
+        } catch (error) {
+            console.error('Error constructing search query:', error);
+            searchQuery = null;
+        }
     }
-
 
     let searchResultsData = null;
     let searchResults = [];
 
     if (isGoogleSearchEnabled(nodeIndex)) {
+        
         searchResultsData = await performSearch(searchQuery);
-
         if (searchResultsData) {
             searchResults = processSearchResults(searchResultsData);
             searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
@@ -158,7 +162,7 @@ async function sendLLMNodeMessage(node, message = null) {
             key: node.linkUrl.startsWith('blob:') ? node.titleInput.value : node.linkUrl
         }));
 
-        const allKeysFromServer = await getAllKeysFromServer();
+        const allKeysFromServer = await getAllKeys();
 
         relevantKeys = linkInfo
             .filter(info => allKeysFromServer.includes(info.key))
@@ -175,8 +179,9 @@ async function sendLLMNodeMessage(node, message = null) {
         relevantKeys = linkInfo
             .filter(info => updatedKeysFromServer.includes(info.key))
             .map(info => info.key);
-    } else if (isEmbedEnabled(node.index)) {
-        relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery);
+    } else if (searchQuery !== null && filteredKeys) {
+        // Obtain relevant keys based on the user message
+        relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery, filteredKeys);
     }
 
     // Only proceed if we have relevant keys

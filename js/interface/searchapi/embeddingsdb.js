@@ -125,7 +125,22 @@ function cosineSimilarity(vecA, vecB) {
 }
 
 
+let keyFilters = new Map();
 
+function toggleKeyFilter(key) {
+    keyFilters.set(key, !keyFilters.get(key));
+    localStorage.setItem('keyFilters', JSON.stringify(Array.from(keyFilters)));
+}
+
+function initializeKeyFilters() {
+    const storedFilters = localStorage.getItem('keyFilters');
+    if (storedFilters) {
+        keyFilters = new Map(JSON.parse(storedFilters));
+    }
+}
+
+// Call this when your application starts
+initializeKeyFilters();
 
 async function getAllKeys() {
     try {
@@ -134,6 +149,8 @@ async function getAllKeys() {
             throw new Error('Network response was not ok');
         }
         const keys = await response.json();
+
+        // Return all keys, including filtered ones
         return keys;
     } catch (error) {
         console.error('Error fetching keys:', error);
@@ -141,24 +158,27 @@ async function getAllKeys() {
     }
 }
 
+function getVisibleKeys(keys) {
+    return keys.filter(key => !keyFilters.get(key));
+}
 
-async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
-    const allKeys = await getAllKeys();
+async function getRelevantKeys(userInput, recentContext = null, searchQuery, filteredKeys) {
+    const visibleKeys = filteredKeys;
 
     // Early return if there are 3 or fewer keys
-    if (allKeys.length <= 3) {
-        return allKeys;
+    if (visibleKeys.length <= 3) {
+        return visibleKeys;
     }
 
     // Use recent context or fetch the last prompts and responses if not provided
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
 
     const directoryMap = new Map();
-    allKeys.forEach(key => {
+    visibleKeys.forEach(key => {
         const directory = key.substring(0, key.lastIndexOf('/'));
         directoryMap.set(directory, directoryMap.get(directory) || []);
         directoryMap.get(directory).push({
-            index: allKeys.indexOf(key) + 1, // index +1 for display
+            index: visibleKeys.indexOf(key) + 1, // index +1 for display
             filename: key.substring(key.lastIndexOf('/') + 1)
         });
     });
@@ -169,7 +189,7 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
         keysDisplayContent += `Directory: ${directory}\n`;
         files.forEach(file => {
             keysDisplayContent += ` ${file.index}. ${file.filename}\n`;
-            indexToFileMap[file.index] = allKeys[file.index - 1]; // Correct index for full key
+            indexToFileMap[file.index] = visibleKeys[file.index - 1]; // Correct index for full key
         });
     });
 
@@ -197,7 +217,7 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
 
     // Return all keys if the response does not select any keys
     if (relevantKeys.length === 0) {
-        return allKeys;
+        return visibleKeys;
     }
 
     console.log("Selected Document Keys", relevantKeys);
@@ -209,82 +229,96 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery) {
 
 async function fetchAndDisplayAllKeys() {
     try {
-        const response = await fetch('http://localhost:4000/get-keys');
-        if (!response.ok) {
-            console.error(`Failed to fetch keys:`, response.statusText);
-            return;
-        }
-
-        const keys = await response.json();
+        const keys = await getAllKeys();
         const keyList = document.getElementById("key-list");
         keyList.innerHTML = "";
-
-        const uniqueGitHubRepos = new Set(); // To hold unique GitHub root repos
-
+        const uniqueGitHubRepos = new Set();
         for (let key of keys) {
+            const listItem = document.createElement("p");
+            listItem.title = key; // Add this line to set the hover text
+
+            const keyText = document.createElement("span");
+            keyText.textContent = key;
+
+            const eyeballIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            eyeballIcon.classList.add("eyeball-icon");
+            eyeballIcon.innerHTML = `<use xlink:href="${keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol'}"></use>`;
+
+            listItem.appendChild(keyText);
+            listItem.appendChild(eyeballIcon);
+
             if (isGitHubUrl(key)) {
                 const [protocol, empty, domain, owner, repo] = key.split('/');
                 const rootRepo = `${protocol}//${domain}/${owner}/${repo}`;
-                uniqueGitHubRepos.add(rootRepo); // Add to Set. Duplicates will be ignored.
-                continue;
+                if (!uniqueGitHubRepos.has(rootRepo)) {
+                    uniqueGitHubRepos.add(rootRepo);
+                    keyList.appendChild(listItem);
+                }
+            } else {
+                keyList.appendChild(listItem);
             }
 
-            // Handle non-GitHub keys (existing logic)
-            const listItem = document.createElement("p");
-            listItem.textContent = key;
-            keyList.appendChild(listItem);
-            (function (listItem) {
-                listItem.addEventListener("click", (event) => {
+            listItem.addEventListener("click", (event) => {
+                if (event.target !== eyeballIcon && event.target !== eyeballIcon.querySelector('use')) {
                     event.stopPropagation();
                     listItem.classList.toggle("selected");
-                });
-            })(listItem);
-        }
+                }
+            });
 
-        // Add unique GitHub root repos to the display
-        for (let rootRepo of uniqueGitHubRepos) {
-            const listItem = document.createElement("p");
-            listItem.textContent = rootRepo;
-            keyList.appendChild(listItem);
-            listItem.addEventListener("click", (event) => {
+            eyeballIcon.addEventListener("click", (event) => {
                 event.stopPropagation();
-                listItem.classList.toggle("selected");
+                toggleKeyFilter(key);
+                updateEyeballIcon(eyeballIcon, key);
             });
         }
-
     } catch (error) {
         console.error(`(Server disconnect) Failed to fetch keys:`, error);
     }
 }
 
-async function deleteSelectedKeys() {
-    const selectedKeys = Array.from(document.getElementsByClassName("selected")).map(el => el.textContent);
+function updateEyeballIcon(eyeballIcon, key) {
+    const useElement = eyeballIcon.querySelector('use');
+    useElement.setAttribute('xlink:href', keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol');
+}
 
+function toggleKeyFilter(key) {
+    keyFilters.set(key, !keyFilters.get(key));
+    localStorage.setItem('keyFilters', JSON.stringify(Array.from(keyFilters)));
+}
+
+async function deleteSelectedKeys() {
+    const keyList = document.getElementById('key-list');
+    const selectedElements = Array.from(keyList.getElementsByClassName("selected"));
+    const selectedKeys = selectedElements.map(el => el.title || el.textContent.trim());
+
+    if (selectedKeys.length === 0) {
+        alert("No keys selected for deletion.");
+        return;
+    }
+
+    let keysToDelete = [];
     for (let key of selectedKeys) {
         if (isGitHubUrl(key)) {
             // If the selected key is a GitHub repo root, find all associated keys
-            const allKeys = await getAllKeysFromServer();
+            const allKeys = await getAllKeys();
             const associatedKeys = allKeys.filter(k => k.startsWith(key));
-
-            // Delete all associated keys
-            await Promise.all(associatedKeys.map(deleteKey));
+            keysToDelete = keysToDelete.concat(associatedKeys);
         } else {
             // If it's not a GitHub repo, just delete the single key
-            await deleteKey(key);
+            keysToDelete.push(key);
         }
     }
 
-    fetchAndDisplayAllKeys();
+    const confirmMessage = `Are you sure you want to delete the following keys?\n\n${keysToDelete.join('\n')}\n\nThis action cannot be undone.`;
+
+    if (confirm(confirmMessage)) {
+        for (let key of keysToDelete) {
+            await deleteKey(key);
+        }
+        await fetchAndDisplayAllKeys();
+    }
 }
 
-async function getAllKeysFromServer() {
-    const response = await fetch('http://localhost:4000/get-keys');
-    if (!response.ok) {
-        console.error(`Failed to fetch keys:`, response.statusText);
-        return [];
-    }
-    return await response.json();
-}
 
 async function deleteKey(key) {
     const response = await fetch(`http://localhost:4000/delete-chunks?key=${encodeURIComponent(key)}`, {
@@ -730,14 +764,9 @@ async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
     // Fetch embeddings for relevant keys or all keys
     if (relevantKeys.length > 0) {
         relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
-    }
-    if (relevantEmbeddings.length === 0) {
-        const allKeys = await getAllKeysFromServer();
-        if (!allKeys || allKeys.length === 0) {
-            console.warn("Failed to fetch keys from server.");
-            return [];
-        }
-        relevantEmbeddings = await fetchEmbeddingsForKeys(allKeys, selectedModel);
+    } else {
+        console.warn("No relevant keys provided for fetching embeddings.");
+        return [];
     }
 
     // Fetch the search query embedding once

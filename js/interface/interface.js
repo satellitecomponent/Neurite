@@ -136,34 +136,49 @@ document.addEventListener('wheel', (event) => {
     }
 });
 
-
 let mouseDown = false;
 let mouseDownPos = new vec2(0, 0);
+let isMousePanning = false;
+
 addEventListener("mousedown", (event) => {
-    autopilotSpeed = 0;
-    mouseDownPos = mousePos.scale(1);
-    mouseDown = true;
+    // Only set mouseDown for left-click (button 0)
+    if (event.button === 0) {
+        autopilotSpeed = 0;
+        mouseDownPos = mousePos.scale(1);
+        mouseDown = true;
+        isMousePanning = false;  // Reset panning flag
+    }
     cancel(event);
 });
+
 addEventListener("mouseup", (event) => {
+    // Reset flags on any mouse button release
     mouseDown = false;
+    isMousePanning = false;
     if (movingNode !== undefined) {
         movingNode.onmouseup(event);
     }
-    isDraggingIcon = false; // Reset the flag
-});
-addEventListener("mousemove", (event) => {
-    if (mouseDown) {
-        isAnimating = false;
-        autopilotSpeed = 0;
-        coordsLive = true;
-        let delta = mousePos.minus(mouseDownPos);
-        pan = pan.minus(toDZ(delta));
-        regenAmount += delta.mag() * 0.25;
-        mouseDownPos = mousePos.scale(1);
-    }
+    isDraggingIcon = false;
 });
 
+addEventListener("mousemove", (event) => {
+    if (mouseDown && event.buttons === 1) {  // Check if left button is still pressed
+        if (!isMousePanning) {
+            // First mousemove after mousedown, start panning
+            isMousePanning = true;
+            mouseDownPos = mousePos.scale(1);  // Reset mouseDownPos
+        } else {
+            // Subsequent mousemoves, perform panning
+            isAnimating = false;
+            autopilotSpeed = 0;
+            coordsLive = true;
+            let delta = mousePos.minus(mouseDownPos);
+            pan = pan.minus(toDZ(delta));
+            regenAmount += delta.mag() * 0.25;
+            mouseDownPos = mousePos.scale(1);
+        }
+    }
+});
 
 
 //Touchpad controls (WIP)

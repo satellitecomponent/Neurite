@@ -290,16 +290,6 @@ body {
 }
 
 
-.button-container {
-    flex-grow: 0;
-    flex-shrink: 0;
-    z-index: 10;
-    pointer-events: auto;
-    display: flex;
-    justify-content: space-between;
-}
-
-
 
 .no-select {
     user-select: none;
@@ -318,11 +308,6 @@ body {
 
 .windowbutton {
     cursor: pointer;
-}
-
-.button-container {
-    display: flex;
-    justify-content: space-between;
 }
 
 input[type="text"i].title-input {
@@ -412,8 +397,6 @@ input[type="text"i].title-input {
         iframe {
             width: 100%;
             height: 100%;
-            min-width: 300px;
-            min-height: 200px;
             background-color: white;
         }
 
@@ -998,6 +981,68 @@ input[type="text"i]:hover {
         content: '...';
     }
 
+#key-list {
+    max-width: 265px;
+    min-width: 265px;
+    height: 300px;
+    overflow-y: auto;
+}
+
+    #key-list p {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        cursor: pointer;
+    }
+
+        #key-list p:hover {
+            background-color: #5b5b6d;
+        }
+
+            #key-list p:hover span {
+                color: #8ac6f2;
+            }
+
+        #key-list p.selected,
+        #key-list p.selected:hover {
+            background-color: #9a4a4a;
+        }
+
+            #key-list p.selected span,
+            #key-list p.selected:hover span {
+                color: #222226;
+            }
+
+        #key-list p span {
+            flex-grow: 1;
+            margin-right: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+.eyeball-icon {
+    flex-shrink: 0;
+    width: 25px;
+    height: 25px;
+}
+
+
+
+
+
+#delete-vectordb-docs:hover {
+    background-color: #9a4a4a;
+    color: #222226;
+}
+
+#chunkAndStoreButton:hover {
+    background-color: #293e34;
+}
+
+#cancelChunkAndStoreButton:hover {
+    background-color: #5c2929;
+}
 
 .vdb-loading-item {
     display: flex;
@@ -1036,6 +1081,8 @@ input[type="text"i]:hover {
     flex-grow: 1;
 }
 
+
+
 .tooltip-highlight {
     background-color: #5b5b6d;
     color: #8ac6f2;
@@ -1068,10 +1115,6 @@ textarea#rawTextArea:focus {
 #chunkedTextDisplay {
     height: 300px;
     width: 300px;
-}
-
-#cancelChunkAndStoreButton:hover {
-    background-color: #5c2929;
 }
 
 
@@ -1839,28 +1882,6 @@ td {
                 border: none;
             }
 
-#key-list {
-    max-width: 265px;
-    min-width: 265px;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-        /* New CSS */
-        #key-list p:hover {
-            background-color: #bbb; /* Or any other color */
-            color: #222226;
-        }
-
-    #key-list p {
-        max-width: 80%; /* Ensure items do not exceed the container width */
-        word-wrap: break-word; /* Break long words */
-        overflow-wrap: break-word; /* Compatibility */
-        white-space: normal; /* Allow text to wrap */
-        text-align: left; /* Align text to the right */
-    }
-
 .inline-container {
     display: inline-block;
     vertical-align: middle;
@@ -2524,6 +2545,45 @@ input[type=range] {
     gap: 10px;
 }
 
+.ainodewrapperDiv {
+    display: flex;
+    flex-direction: column;
+    height: 550px;
+    width: 500px;
+    position: relative;
+}
+
+.ai-response-div {
+    flex-grow: 1;
+    background: linear-gradient(to bottom, rgba(34, 34, 38, 0), #222226);
+    color: inherit;
+    border: none;
+    border-color: #8882;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    user-select: none;
+    line-height: 1.75;
+}
+
+.prompt-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin: 10px;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 12px;
+    margin-top: 4px;
+}
+
 .ainode-settings-container {
     display: grid;
     position: absolute; /* Doesn't affect existing elements */
@@ -2823,11 +2883,11 @@ textarea[id^='custom-instructions-textarea-'] {
     user-select: none;
 }
 
-.custom-textarea:focus {
-    outline: none;
-    border: 1px solid #bbb;
-    border-radius: 3px;
-}
+    .custom-textarea:focus {
+        outline: none;
+        border: 1px solid #9d9d9d;
+        border-radius: 3px;
+    }
 
 .copy-btn {
     /* your default styles here */
