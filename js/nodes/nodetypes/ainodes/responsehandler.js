@@ -65,13 +65,10 @@ class ResponseHandler {
         try {
             let content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
-
             let trimmedNewContent = newContent.trim();
-
             if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
                 trimmedNewContent = trimmedNewContent.trimStart();
             }
-
             // Find the last occurrence of the prompt identifier in the trimmed content
             let lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
             if (lastPromptIndex !== -1) {
@@ -83,7 +80,7 @@ class ResponseHandler {
                         if (i % 2 === 0) {
                             this.handleUserPrompt(segment); // Even segments are regular text
                         } else {
-                            this.renderCodeBlock(segment, false, true); // Odd segments are code blocks within user prompts
+                            this.renderCodeBlock(segment, true, true); // Odd segments are code blocks within user prompts
                         }
                     }
                 }
@@ -95,36 +92,45 @@ class ResponseHandler {
                     if (endOfCodeBlockIndex !== -1) {
                         let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
                         this.renderCodeBlock(codeContent, true);
-
                         this.codeBlockContent = '';
                         this.codeBlockStartIndex = -1;
                         this.inCodeBlock = false;
-
                         newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
                     } else {
-                        this.renderCodeBlock(this.codeBlockContent);
+                        this.renderCodeBlock(this.codeBlockContent, false);
                         newContent = '';
                     }
                 }
 
-                if (newContent.length > 0) {
-                    let startOfCodeBlockIndex = trimmedNewContent.indexOf('```');
+                while (newContent.length > 0) {
+                    let startOfCodeBlockIndex = newContent.indexOf('```');
                     if (startOfCodeBlockIndex !== -1) {
-                        let markdown = newContent.substring(0, startOfCodeBlockIndex);
-                        this.handleMarkdown(markdown);
-
+                        if (startOfCodeBlockIndex > 0) {
+                            this.handleMarkdown(newContent.substring(0, startOfCodeBlockIndex));
+                        }
                         this.inCodeBlock = true;
                         this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
-                        this.codeBlockContent = trimmedNewContent.substring(startOfCodeBlockIndex + 3);
-                    } else if (!this.inCodeBlock) {
+                        this.codeBlockContent = newContent.substring(startOfCodeBlockIndex + 3);
+                        let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                        if (endOfCodeBlockIndex !== -1) {
+                            let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                            this.renderCodeBlock(codeContent, true);
+                            this.codeBlockContent = '';
+                            this.codeBlockStartIndex = -1;
+                            this.inCodeBlock = false;
+                            newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
+                        } else {
+                            this.renderCodeBlock(this.codeBlockContent, false);
+                            newContent = '';
+                        }
+                    } else {
                         this.handleMarkdown(newContent);
+                        newContent = '';
                     }
                 }
             }
-
             this.previousContent = content;
             this.previousContentLength = this.previousContent.length;
-
         } catch (error) {
             console.error('Error while processing markdown:', error);
         }
@@ -226,8 +232,7 @@ class ResponseHandler {
 
     handleMarkdown(markdown) {
         if (this.node.aiResponding || this.node.localAiResponding) {
-            let sanitizedMarkdown = DOMPurify.sanitize(markdown);
-            let segments = sanitizedMarkdown.split('\n\n\n');
+            let segments = markdown.split('\n\n\n');
             let linkFound = false;  // Flag to determine if any links exist
 
             segments.forEach((segment, index) => {
