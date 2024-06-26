@@ -33,7 +33,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let messages = [
         {
             role: "system",
-            content: `YOU are ${aiIdentity}. Attend to relevant context. Your response renders via markdown.`
+            content: `You are ${aiIdentity}. Conversation renders via markdown.`
         },
     ];
 
@@ -48,7 +48,7 @@ async function sendLLMNodeMessage(node, message = null) {
     if (customInstructions.length > 0) {
         messages.push({
             role: "system",
-            content: `RETRIEVE INSIGHTS FROM and ADHERE TO the following user-defined CUSTOM INSTRUCTIONS: ${customInstructions}`
+            content: `${customInstructions}`
         });
     }
 

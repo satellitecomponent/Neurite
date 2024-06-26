@@ -417,7 +417,7 @@ function setResizeEventListeners(resizeHandle, node) {
 
         const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
         if (textNodeSyntaxWrapper) {
-            textNodeSyntaxWrapper.style.height = `100%`;
+            textNodeSyntaxWrapper.style.flexGrow = '1';
             textNodeSyntaxWrapper.style.minHeight = `0px`;
             textNodeSyntaxWrapper.style.maxHeight = `100%`;
             textNodeSyntaxWrapper.style.width = `100%`;
@@ -433,8 +433,8 @@ function setResizeEventListeners(resizeHandle, node) {
 
         // If aiNodeWrapperDiv exists, set its dimensions
         if (aiNodeWrapperDiv) {
-            aiNodeWrapperDiv.style.width = `100%`;
-            aiNodeWrapperDiv.style.height = `100%`;
+            aiNodeWrapperDiv.style.flexGrow = '1';
+            aiNodeWrapperDiv.style.width = '100%';
         }
     };
 
