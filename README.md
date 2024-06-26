@@ -3,13 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
-![Screenshot 2024-06-06 140107](https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac)
-
 ## `Introduction`
 
 ### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
-### **...the fractal dimension.**
+### ***...the fractal dimension.***
+
+
 
 ## Bridging Fractals and Thought
 
@@ -178,9 +178,9 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
       <p><a href="https://en.wikipedia.org/wiki/Markdown">Markdown</a> formatted, <a href="https://en.wikipedia.org/wiki/File_synchronization">bi-directional synchronization</a> between UI-focused <a href="https://en.wikipedia.org/wiki/Mind_map">Mind-Mapping</a> and text-based <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlinking</a>.</p>
       <ul>
         <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
-        <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama.</li>
-        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can be switched out as context for an increasing number of Ai systems.</li>
-        <li><strong>Chaos and Order</strong>: Navigate through the depths of a non-linear environment for grappling with the interplay between logic and irrationality</li>
+        <li><strong>Local AI</strong>: Privacy-focused, connect to any locally hosted instance of Ollama or your own custom endpoint.</li>
+        <li><strong>Vector Embeddings</strong>: Grow a database of memories that can switch out as context for an increasing number of Ai systems.</li>
+        <li><strong>Chaos and Order</strong>: Navigate through the depths of Neurite's non-linear environment at the boundary between stability and disorder.</li>
       </ul>
     </td>
     <!-- Top Right: Image -->
@@ -214,7 +214,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
 ## `FractalGPT`
 
-### Not your typical chat interface
+### ***Not your typical chat interface***
 <table>
   <tr>
     <!-- Left: Description of the Modular Conversation -->
@@ -512,8 +512,8 @@ If you are a developer who is interested in contributing to this project, contac
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="70%">
              <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac" alt="SKM3" width="70%">
 </p>
-
 <a href="https://star-history.com/#satellitecomponent/Neurite&Date">
 
  <picture>
