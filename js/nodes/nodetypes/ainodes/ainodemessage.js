@@ -175,7 +175,7 @@ async function sendLLMNodeMessage(node, message = null) {
         }
 
         // Refresh the relevant keys after handling not extracted links
-        const updatedKeysFromServer = await getAllKeysFromServer();
+        const updatedKeysFromServer = await getAllKeys();
         relevantKeys = linkInfo
             .filter(info => updatedKeysFromServer.includes(info.key))
             .map(info => info.key);
