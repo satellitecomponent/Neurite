@@ -54,21 +54,28 @@ function determineAiNodeModel(node) {
 }
 
 // Function to check if Embed (Data) is enabled
-async function isEmbedEnabled(nodeIndex = null) {
+async function isEmbedEnabled(aiNode = null) {
     const globalCheckbox = document.getElementById("embed-checkbox");
-    const allKeys = await getAllKeys();
-    const visibleKeys = getVisibleKeys(allKeys);
-
     let isEnabled = false;
 
-    if (nodeIndex !== null) {
-        const aiCheckbox = document.getElementById(`embed-checkbox-${nodeIndex}`);
-        isEnabled = aiCheckbox ? aiCheckbox.checked : false;
+    if (aiNode) {
+        const dataCheckbox = aiNode.content.querySelector(`#embed-checkbox-${aiNode.index}`);
+        if (dataCheckbox) {
+            isEnabled = dataCheckbox.checked;
+        } else {
+            console.log("Data checkbox not found in the AI node");
+        }
     } else {
         isEnabled = globalCheckbox ? globalCheckbox.checked : false;
     }
 
-    if (isEnabled && visibleKeys.length > 0 && visibleKeys.length < allKeys.length) {
+    if (!isEnabled) {
+        return false;
+    }
+
+    const allKeys = await getAllKeys();
+    const visibleKeys = getVisibleKeys(allKeys);
+    if (visibleKeys.length > 0 && visibleKeys.length < allKeys.length) {
         return visibleKeys;
     }
     return false;
@@ -146,12 +153,16 @@ function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier)
 
 
 
-function getLastPromptsAndResponses(count, maxTokens, textareaId = zetPanes.getActiveTextareaId()) {
-    const lines = document.getElementById(textareaId).value.split("\n");
+function getLastPromptsAndResponses(count, maxTokens, textarea = zetPanes.getActiveTextarea()) {
+    if (!textarea) {
+        console.error("No active textarea found");
+        return "";
+    }
+
+    const lines = textarea.value.split("\n");
     const promptsAndResponses = [];
     let promptCount = 0;
     let tokenCount = 0;
-
     for (let i = lines.length - 1; i >= 0; i--) {
         if (lines[i].startsWith(`${PROMPT_IDENTIFIER}`)) {
             promptCount++;
@@ -162,19 +173,16 @@ function getLastPromptsAndResponses(count, maxTokens, textareaId = zetPanes.getA
         tokenCount += lines[i].split(/\s+/).length;
         promptsAndResponses.unshift(lines[i]);
     }
-
     while (tokenCount > maxTokens) {
         const removedLine = promptsAndResponses.shift();
         tokenCount -= removedLine.split(/\s+/).length;
     }
-
     const lastPromptsAndResponses = promptsAndResponses.join("\n") + "\n";
-    // console.log("Last prompts and responses:", lastPromptsAndResponses);
     return lastPromptsAndResponses;
 }
 
 function removeLastResponse() {
-    const noteInput = document.getElementById(zetPanes.getActiveTextareaId());
+    const noteInput = zetPanes.getActiveTextarea();
     const lines = noteInput.value.split("\n");
 
     // Find the index of the last "Prompt:"

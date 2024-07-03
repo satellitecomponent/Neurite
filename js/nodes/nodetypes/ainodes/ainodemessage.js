@@ -78,7 +78,7 @@ async function sendLLMNodeMessage(node, message = null) {
         messages.push(instructionsMessage());
     }
 
-    const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.id);
+    const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.aiResponseTextArea);
 
     let wikipediaSummaries;
 
@@ -117,7 +117,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let searchQuery = null;
     let filteredKeys = null;
 
-    if (isGoogleSearchEnabled(nodeIndex) || (filteredKeys = await isEmbedEnabled(node.index))) {
+    if (isGoogleSearchEnabled(nodeIndex) || (filteredKeys = await isEmbedEnabled(node))) {
         try {
             searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
         } catch (error) {
@@ -278,14 +278,14 @@ async function sendLLMNodeMessage(node, message = null) {
 
     // Init value of getLastPromptsAndResponses
     let lastPromptsAndResponses;
-    lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.id);
+    lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.aiResponseTextArea);
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
     handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage, PROMPT_IDENTIFIER);
 
     let wolframData;
     if (document.getElementById(`enable-wolfram-alpha-checkbox-${nodeIndex}`).checked) {
-        const wolframContext = getLastPromptsAndResponses(2, 300, node.id);
+        const wolframContext = getLastPromptsAndResponses(2, 300, node.aiResponseTextArea);
         wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
     }
 
@@ -302,7 +302,7 @@ async function sendLLMNodeMessage(node, message = null) {
         messages.push(wolframAlphaMessage);
 
         // Redefine lastPromptsAndResponses after Wolfram's response.
-        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.id);
+        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.aiResponseTextArea);
     }
 
     if (lastPromptsAndResponses.trim().length > 0) {

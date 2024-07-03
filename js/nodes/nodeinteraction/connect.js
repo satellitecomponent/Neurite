@@ -118,7 +118,7 @@ function getNodeData(node) {
 
     if (isLLM) {
         // Handle AI nodes
-        const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.id);
+        const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.aiResponseTextArea);
         const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nConversation History:${lastPromptsAndResponses}`;
         return nodeInfo;
     } else {
