@@ -343,6 +343,19 @@ class ZetPanes {
         return null;
     }
 
+    getActiveTextarea() {
+        const activeCodeMirror = window.currentActiveZettelkastenMirror;
+        if (activeCodeMirror) {
+            const textareas = this.paneContent.querySelectorAll('textarea');
+            for (const textarea of textareas) {
+                if (activeCodeMirror.getTextArea() === textarea) {
+                    return textarea;
+                }
+            }
+        }
+        return null;
+    }
+
     openSearchModal() {
         openModal('zetSearchModal');
         setupZettelkastenSearchBar();
