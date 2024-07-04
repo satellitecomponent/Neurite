@@ -51,7 +51,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
 
   <script type="module" crossorigin src="./assets/index.c16e5b52.js"></script>
-  <link rel="stylesheet" href="./assets/index.d1da9433.css">
+  <link rel="stylesheet" href="./assets/index.eb315333.css">
 </head>
 
 <body id="body">
@@ -302,6 +302,24 @@
         <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
             <label for="topN">Top <span id="topNValue">5</span> Results</label>
             <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+        </div>
+    </div>
+
+    <div id="promptLibraryModalContent" style="display: none;">
+        <div class="prompt-library-container">
+            <div class="prompt-list-container">
+                <div class="prompt-list custom-scrollbar"></div>
+                <div class="prompt-list-buttons">
+                    <button class="add-prompt-button">+</button>
+                    <button class="delete-prompt-button">x</button>
+                </div>
+            </div>
+            <div class="prompt-content">
+                <textarea class="prompt-content-textarea custom-scrollbar"></textarea>
+                <div class="prompt-buttons">
+                    <button class="set-instructions-button">Set Instructions</button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -41,7 +41,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let inferenceOverride = selectedModel;
 
     // Fetch the content from the custom instructions textarea using the nodeIndex
-    const customInstructionsTextarea = document.getElementById(`custom-instructions-textarea-${nodeIndex}`);
+    const customInstructionsTextarea = node.customInstructionsTextarea || document.getElementById(`custom-instructions-textarea-${nodeIndex}`); // Include deprecated fallback for previous Ai Node html.
     const customInstructions = customInstructionsTextarea ? customInstructionsTextarea.value.trim() : "";
 
     // Append custom instructions if they exist.
