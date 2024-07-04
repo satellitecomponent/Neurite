@@ -986,8 +986,6 @@ function setInstructions(node) {
             node.titleInput.value = selectedPromptTitle.value;
         }
     }
-
-    closeModal('promptLibraryModalContent');
 }
 
 function setupPromptLibraryListeners(node) {
