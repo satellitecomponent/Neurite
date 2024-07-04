@@ -119,11 +119,8 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     const checkboxArray1 = createCheckboxArray(llmNodeCount, firstSixOptions);
     aiNodeSettingsContainer.appendChild(checkboxArray1);
 
-    const customInstructionsTextareaDiv = createCustomInstructionsTextarea(llmNodeCount);
-    aiNodeSettingsContainer.appendChild(customInstructionsTextareaDiv);
-
-    // Assuming the textarea is the first child of the returned div
-    const customInstructionsTextarea = customInstructionsTextareaDiv.children[0];
+    const { containerDiv, textarea: customInstructionsTextarea } = createCustomInstructionsTextarea(llmNodeCount);
+    aiNodeSettingsContainer.appendChild(containerDiv);
 
     // Add settings container to the ainodewrapperDiv
     ainodewrapperDiv.appendChild(aiNodeSettingsContainer);
@@ -263,6 +260,10 @@ function initAiNode(node) {
     let localLLMSelect = node.content.querySelector(`.local-llm-dropdown-container-${node.index}`);
     node.localLLMSelect = localLLMSelect;
 
+
+    let customInstructionsTextarea = node.content.querySelector('.custom-instructions-textarea');
+    node.customInstructionsTextarea = customInstructionsTextarea;
+
     // Initialize inference dropdowns
     initInferenceDropdown(node);
 
@@ -274,6 +275,7 @@ function initAiNode(node) {
     setupAiNodeSettingsButtonListeners(node);
     setupAiNodeLocalLLMDropdownListeners(node);
     setupAiNodeSliderListeners(node);
+    setupCustomInstructionsListeners(node);
 
     // Functions
 
@@ -804,15 +806,222 @@ function createCheckboxArray(llmNodeCount, subsetOptions) {
 }
 
 function createCustomInstructionsTextarea(llmNodeCount) {
-    const textareaDiv = document.createElement('div');
-    textareaDiv.className = 'textarea-container';
+    const containerDiv = document.createElement('div');
+    containerDiv.className = 'custom-instructions-container';
+
+    const promptLibraryButton = document.createElement('button');
+    promptLibraryButton.textContent = 'Prompt Library';
+    promptLibraryButton.className = 'prompt-library-button';
 
     const textarea = document.createElement('textarea');
-    textarea.id = `custom-instructions-textarea-${llmNodeCount}`;
-    textarea.className = 'custom-scrollbar';  // Apply the custom-scrollbar class here
+    textarea.className = 'custom-instructions-textarea custom-scrollbar';
     textarea.placeholder = 'Enter custom instructions here...';
+    textarea.id = `custom-instructions-textarea`; // Add a unique id
 
-    textareaDiv.appendChild(textarea);
+    containerDiv.appendChild(promptLibraryButton);
+    containerDiv.appendChild(textarea);
 
-    return textareaDiv;
+    return { containerDiv, textarea };
+}
+
+function setupCustomInstructionsListeners(node) {
+    const promptLibraryButton = node.content.querySelector('.prompt-library-button');
+
+    if (!promptLibraryButton || !node.customInstructionsTextarea) {
+        //console.error('Custom instructions elements not found for node:', node);
+        return;
+    }
+
+    promptLibraryButton.onclick = () => openPromptLibrary(node);
+}
+
+const promptLibrary = JSON.parse(localStorage.getItem('promptLibrary')) || {
+    prompts: [
+        {
+            title: 'Neurite',
+            content: `neurite.network unleashes a new dimension of digital interface...
+...the fractal dimension.
+
+Bridging Fractals and Thought
+Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.
+
+For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
+
+Why Fractals?
+The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from polynomial equations, to art and music - even the cosmic web.
+
+Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.
+
+The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
+
+Why Nodes?
+Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
+neurite.network connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.` }
+    ],
+    currentPromptIndex: -1
+};
+
+function openPromptLibrary(node) {
+    openModal('promptLibraryModalContent');
+    renderPromptList();
+    setupPromptLibraryListeners(node);
+
+    // Select the first prompt by default if none is selected
+    if (promptLibrary.currentPromptIndex === -1 && promptLibrary.prompts.length > 0) {
+        selectPrompt(0);
+    } else if (promptLibrary.currentPromptIndex !== -1) {
+        // Ensure the current prompt is visually selected
+        selectPrompt(promptLibrary.currentPromptIndex);
+    }
+}
+
+function renderPromptList() {
+    const promptList = document.querySelector('.prompt-list');
+    promptList.innerHTML = '';
+    promptLibrary.prompts.forEach((prompt, index) => {
+        const listItem = document.createElement('div');
+        const input = document.createElement('input');
+        input.value = prompt.title;
+        input.className = index === promptLibrary.currentPromptIndex ? 'selected' : '';
+        input.onclick = () => selectPrompt(index);
+        input.onchange = (e) => updatePromptTitle(index, e.target.value);
+        listItem.appendChild(input);
+        promptList.appendChild(listItem);
+    });
+}
+
+function selectPrompt(index) {
+    promptLibrary.currentPromptIndex = index;
+
+    const inputs = document.querySelectorAll('.prompt-list input');
+    inputs.forEach((input, i) => {
+        if (i === index) {
+            input.classList.add('selected');
+        } else {
+            input.classList.remove('selected');
+        }
+    });
+
+    const textarea = document.querySelector('.prompt-content-textarea');
+    if (textarea) {
+        textarea.value = promptLibrary.prompts[index].content;
+    } else {
+        console.error('Prompt content textarea not found');
+    }
+}
+
+// Function to save the entire promptLibrary to localStorage
+function savePromptLibrary() {
+    localStorage.setItem('promptLibrary', JSON.stringify(promptLibrary));
+}
+
+// Modify functions that change the promptLibrary to save after changes
+function updatePromptTitle(index, newTitle) {
+    promptLibrary.prompts[index].title = newTitle;
+    savePromptLibrary();
+}
+
+function addNewPrompt() {
+    promptLibrary.prompts.push({ title: 'New Prompt', content: '' });
+    renderPromptList();
+    selectPrompt(promptLibrary.prompts.length - 1);
+    savePromptLibrary();
+}
+
+function deleteCurrentPrompt() {
+    if (promptLibrary.currentPromptIndex !== -1) {
+        const currentIndex = promptLibrary.currentPromptIndex;
+        promptLibrary.prompts.splice(currentIndex, 1);
+
+        // Determine the new index to select
+        let newIndex;
+        if (currentIndex > 0) {
+            // If not deleting the first prompt, select the one above
+            newIndex = currentIndex - 1;
+        } else if (promptLibrary.prompts.length > 0) {
+            // If deleting the first prompt and others remain, select the new first prompt
+            newIndex = 0;
+        } else {
+            // If deleting the last prompt, set to -1
+            newIndex = -1;
+        }
+
+        renderPromptList();
+
+        const textarea = document.querySelector('.prompt-content-textarea');
+        if (textarea) {
+            if (newIndex !== -1) {
+                textarea.value = promptLibrary.prompts[newIndex].content;
+            } else {
+                textarea.value = '';
+            }
+        } else {
+            console.error('Prompt content textarea not found');
+        }
+
+        selectPrompt(newIndex);
+        savePromptLibrary();
+    }
+}
+
+
+function setInstructions(node) {
+    if (!node.customInstructionsTextarea) {
+        console.error('Custom instructions textarea not found');
+        return;
+    }
+
+    const promptContentTextarea = document.querySelector('.prompt-content-textarea');
+    if (!promptContentTextarea) {
+        console.error('Prompt content textarea not found');
+        return;
+    }
+
+    node.customInstructionsTextarea.value = promptContentTextarea.value;
+
+    // Set the node's title input to the selected prompt's title
+    if (promptLibrary.currentPromptIndex !== -1 && node.titleInput) {
+        const selectedPromptTitle = document.querySelector('.prompt-list input.selected');
+        if (selectedPromptTitle) {
+            node.titleInput.value = selectedPromptTitle.value;
+        }
+    }
+
+    closeModal('promptLibraryModalContent');
+}
+
+function setupPromptLibraryListeners(node) {
+    const setInstructionsButton = document.querySelector('.set-instructions-button');
+    const addPromptButton = document.querySelector('.add-prompt-button');
+    const deletePromptButton = document.querySelector('.delete-prompt-button');
+    const promptContentTextarea = document.querySelector('.prompt-content-textarea');
+
+    if (setInstructionsButton) {
+        setInstructionsButton.onclick = () => setInstructions(node);
+    } else {
+        console.error('Set Instructions button not found');
+    }
+
+    if (addPromptButton) {
+        addPromptButton.onclick = addNewPrompt;
+    } else {
+        console.error('Add Prompt button not found');
+    }
+
+    if (deletePromptButton) {
+        deletePromptButton.onclick = deleteCurrentPrompt;
+    } else {
+        console.error('Delete Prompt button not found');
+    }
+
+    if (promptContentTextarea) {
+        promptContentTextarea.oninput = function () {
+            if (promptLibrary.currentPromptIndex !== -1) {
+                promptLibrary.prompts[promptLibrary.currentPromptIndex].content = this.value;
+                savePromptLibrary();
+            }
+        };
+    } else {
+        console.error('Prompt Content textarea not found');
+    }
 }
