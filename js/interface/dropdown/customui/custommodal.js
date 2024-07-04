@@ -78,6 +78,9 @@ function openModal(contentId) {
         case 'zetSearchModal':
             modalTitle.textContent = 'Search Notes';
             break;
+        case 'promptLibraryModalContent':
+            modalTitle.textContent = 'Prompt Library';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
