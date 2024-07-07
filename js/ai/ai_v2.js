@@ -199,6 +199,12 @@ async function callAiApi({
         return;
     }
 
+    // Generate a unique requestId only if using proxy
+    const requestId = useProxy ? Date.now().toString() : null;
+    if (requestId) {
+        params.body.requestId = requestId;
+    }
+
     let requestOptions = {
         method: "POST",
         headers: params.headers,
@@ -207,11 +213,6 @@ async function callAiApi({
     };
 
     onBeforeCall();
-
-    let requestId;
-    if (params.body.requestId) {
-        requestId = params.body.requestId;
-    }
 
     try {
         const response = await fetch(params.API_URL, requestOptions);
@@ -229,6 +230,18 @@ async function callAiApi({
     } catch (error) {
         if (error.name === 'AbortError') {
             console.warn('Response Halted:');
+            // Send a cancellation request to the server only if using proxy
+            if (useProxy && requestId) {
+                try {
+                    await fetch('/cancel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requestId })
+                    });
+                } catch (cancelError) {
+                    console.error("Error cancelling request on server:", cancelError);
+                }
+            }
         } else {
             console.error("Error:", error);
             onError(error.message || error);

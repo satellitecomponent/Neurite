@@ -125,7 +125,9 @@ function modifyResponseByApiType(apiType, response, res, stream) {
     }
 }
 
-// Helper function to handle API requests and cancellation
+// Store active requests
+const activeRequests = new Map();
+
 async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, additionalOptions = {}) {
     const { model, messages, max_tokens, temperature, stream, requestId } = req.body;
     const requestBody = {
@@ -141,6 +143,12 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
         requestBody.requestId = requestId;
     }
     const cancelToken = axios.CancelToken.source();
+
+    // Store the cancel token if requestId is provided
+    if (requestId) {
+        activeRequests.set(requestId, cancelToken);
+    }
+
     try {
         const headers = {
             'Content-Type': 'application/json',
@@ -161,8 +169,24 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
             console.error('Error details:', error.response ? error.response.data : error.message);
             res.status(500).json({ error: 'Failed to call API' });
         }
+    } finally {
+        if (requestId) {
+            activeRequests.delete(requestId);
+        }
     }
 }
+
+// Cancellation endpoint
+app.post('/cancel', (req, res) => {
+    const { requestId } = req.body;
+    if (activeRequests.has(requestId)) {
+        activeRequests.get(requestId).cancel('Request cancelled by client');
+        activeRequests.delete(requestId);
+        res.status(200).json({ message: 'Request cancelled successfully' });
+    } else {
+        res.status(404).json({ error: 'Request not found' });
+    }
+});
 
 // Proxy routes
 app.post('/openai', async (req, res) => {
