@@ -42,7 +42,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the loader and error icons container (keeping inline styles)
     let statusIconsContainer = document.createElement("div");
     statusIconsContainer.className = 'status-icons-container';
-    statusIconsContainer.style.cssText = 'position: absolute; top: 40px; right: 90px; width: 20px; height: 20px;';
+    statusIconsContainer.style.cssText = 'position: absolute; top: 50px; right: 90px; width: 20px; height: 20px;';
 
     // Create the loader icon
     let aiLoadingIcon = document.createElement("div");
