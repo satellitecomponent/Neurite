@@ -250,9 +250,6 @@ async function checkProxyServer() {
 
     if (useProxy) {
         ollamaLibrary = await getOllamaLibrary();
-        baseOllamaUrl = 'http://localhost:7070/ollama/';
-    } else {
-        baseOllamaUrl = 'http://127.0.0.1:11434/api/';
     }
 
     await ollamaSelectOnPageLoad();
@@ -304,7 +301,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
                 API_URL = "http://localhost:7070/anthropic";
                 break;
             case 'ollama':
-                API_URL = "http://localhost:7070/ollama/chat";
+                API_URL = "http://127.0.0.1:11434/api/chat"; // Always fetch Ollama client side.
                 break;
             case 'custom':
                 // Assume 'modelName' is the name or identifier you are working with
