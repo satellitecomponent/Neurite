@@ -73,60 +73,84 @@ function modifyRequestByApiType(apiType, requestBody, headers, apiKey) {
     }
 }
 
-// Function to modify the response based on the API type
-function modifyResponseByApiType(apiType, response, res, stream) {
-    switch (apiType) {
-        case 'anthropic':
-            if (stream) {
-                let responseText = '';
-                response.data.on('data', (chunk) => {
-                    responseText += chunk.toString();
-                    const lines = responseText.split('\n');
-                    responseText = lines.pop();
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.slice(6);
-                            if (data !== '[DONE]') {
-                                try {
-                                    const payload = JSON.parse(data);
-                                    if (payload.type === 'content_block_delta') {
-                                        const content = payload.delta.text;
-                                        const transformedResponse = {
-                                            choices: [{ delta: { content } }],
-                                        };
-                                        res.write(`data: ${JSON.stringify(transformedResponse)}\n\n`);
+const activeRequests = new Map();
+
+function modifyResponseByApiType(apiType, response, res, stream, requestId) {
+    return new Promise((resolve, reject) => {
+        const cleanup = () => {
+            if (requestId) {
+                activeRequests.delete(requestId);
+            }
+        };
+
+        switch (apiType) {
+            case 'anthropic':
+                if (stream) {
+                    let responseText = '';
+                    response.data.on('data', (chunk) => {
+                        responseText += chunk.toString();
+                        const lines = responseText.split('\n');
+                        responseText = lines.pop();
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data !== '[DONE]') {
+                                    try {
+                                        const payload = JSON.parse(data);
+                                        if (payload.type === 'content_block_delta') {
+                                            const content = payload.delta.text;
+                                            const transformedResponse = {
+                                                choices: [{ delta: { content } }],
+                                            };
+                                            res.write(`data: ${JSON.stringify(transformedResponse)}\n\n`);
+                                        }
+                                    } catch (error) {
+                                        console.error('Error parsing JSON:', error);
                                     }
-                                } catch (error) {
-                                    console.error('Error parsing JSON:', error);
                                 }
                             }
                         }
-                    }
-                });
-                response.data.on('end', () => {
-                    res.write(`data: [DONE]\n\n`);
-                    res.end();
-                });
-            } else {
-                const content = response.data.content.map(block => block.text).join('');
-                const transformedResponse = {
-                    choices: [{ message: { content: content.trim() } }],
-                };
-                res.json(transformedResponse);
-            }
-            break;
-        default:
-            if (stream) {
-                response.data.pipe(res);
-            } else {
-                res.json(response.data);
-            }
-            break;
-    }
+                    });
+                    response.data.on('end', () => {
+                        res.write(`data: [DONE]\n\n`);
+                        res.end();
+                        cleanup();
+                        resolve();
+                    });
+                    response.data.on('error', (error) => {
+                        cleanup();
+                        reject(error);
+                    });
+                } else {
+                    const content = response.data.content.map(block => block.text).join('');
+                    const transformedResponse = {
+                        choices: [{ message: { content: content.trim() } }],
+                    };
+                    res.json(transformedResponse);
+                    cleanup();
+                    resolve();
+                }
+                break;
+            default:
+                if (stream) {
+                    response.data.pipe(res);
+                    response.data.on('end', () => {
+                        cleanup();
+                        resolve();
+                    });
+                    response.data.on('error', (error) => {
+                        cleanup();
+                        reject(error);
+                    });
+                } else {
+                    res.json(response.data);
+                    cleanup();
+                    resolve();
+                }
+                break;
+        }
+    });
 }
-
-// Store active requests
-const activeRequests = new Map();
 
 async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, additionalOptions = {}) {
     const { model, messages, max_tokens, temperature, stream, requestId } = req.body;
@@ -138,15 +162,10 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
         stream,
         ...additionalOptions
     };
-    // Only include requestId in the request body if it is provided
-    if (requestId) {
-        requestBody.requestId = requestId;
-    }
     const cancelToken = axios.CancelToken.source();
 
-    // Store the cancel token if requestId is provided
     if (requestId) {
-        activeRequests.set(requestId, cancelToken);
+        activeRequests.set(requestId, { cancelToken, res });
     }
 
     try {
@@ -159,15 +178,17 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
             responseType: stream ? 'stream' : 'json',
             cancelToken: cancelToken.token
         });
-        modifyResponseByApiType(apiType, response, res, stream);
+
+        await modifyResponseByApiType(apiType, response, res, stream, requestId);
     } catch (error) {
         if (axios.isCancel(error)) {
-            console.log('Request canceled:', requestId);
-            res.status(499).json({ error: 'Request canceled by the client' });
+            console.log('Request already canceled:', requestId);
         } else {
             console.error('Error calling API:', error);
             console.error('Error details:', error.response ? error.response.data : error.message);
-            res.status(500).json({ error: 'Failed to call API' });
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Failed to call API' });
+            }
         }
     } finally {
         if (requestId) {
@@ -176,14 +197,18 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
     }
 }
 
-// Cancellation endpoint
 app.post('/cancel', (req, res) => {
     const { requestId } = req.body;
     if (activeRequests.has(requestId)) {
-        activeRequests.get(requestId).cancel('Request cancelled by client');
+        const { cancelToken, res: requestRes } = activeRequests.get(requestId);
+        cancelToken.cancel('Request cancelled by client');
+        if (!requestRes.headersSent) {
+            requestRes.status(499).json({ error: 'Request canceled by the client' });
+        }
         activeRequests.delete(requestId);
         res.status(200).json({ message: 'Request cancelled successfully' });
     } else {
+        console.log('Request not found for cancellation:', requestId);
         res.status(404).json({ error: 'Request not found' });
     }
 });
