@@ -229,15 +229,18 @@ async function callAiApi({
         return responseData;
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.warn('Response Halted:');
+            console.log('Response Halted');
             // Send a cancellation request to the server only if using proxy
             if (useProxy && requestId) {
                 try {
-                    await fetch('/cancel', {
+                    const response = await fetch('http://localhost:7070/cancel', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ requestId })
                     });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                 } catch (cancelError) {
                     console.error("Error cancelling request on server:", cancelError);
                 }
