@@ -114,14 +114,14 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
     function onBeforeCall() {
         node.aiResponding = true;
         node.regenerateButton.innerHTML = '<svg width="24" height="24"><use xlink:href="#pause-icon"></use></svg>';
-        document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'block';
-        document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'none';
+        node.content.querySelector(`#aiLoadingIcon-${node.index}`).style.display = 'block';
+        node.content.querySelector(`#aiErrorIcon-${node.index}`).style.display = 'none';
     }
 
     function onAfterCall() {
         node.aiResponding = false;
         node.regenerateButton.innerHTML = '<svg width="24" height="24" class="icon"><use xlink:href="#refresh-icon"></use></svg>';
-        document.getElementById(`aiLoadingIcon-${node.index}`).style.display = 'none';
+        node.content.querySelector(`#aiLoadingIcon-${node.index}`).style.display = 'none';
     }
 
     function onStreamingResponse(content) {
@@ -133,14 +133,15 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
 
     function onError(errorMsg) {
         console.error("Error calling Chat API:", errorMsg);
-        document.getElementById(`aiErrorIcon-${node.index}`).style.display = 'block';
+        node.content.querySelector(`#aiErrorIcon-${node.index}`).style.display = 'block';
         if (node.haltCheckbox) {
             node.haltCheckbox.checked = true;
         }
     }
 
     // Prepare the parameters for callAiApi
-    const customTemperature = parseFloat(document.getElementById(`node-temperature-${node.index}`).value);
+    const temperatureInput = node.content.querySelector(`#node-temperature-${node.index}`);
+    const customTemperature = parseFloat(temperatureInput.value);
 
     // Call the generic API function
     return callAiApi({
