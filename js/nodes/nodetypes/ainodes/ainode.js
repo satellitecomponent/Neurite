@@ -42,7 +42,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     // Create the loader and error icons container (keeping inline styles)
     let statusIconsContainer = document.createElement("div");
     statusIconsContainer.className = 'status-icons-container';
-    statusIconsContainer.style.cssText = 'position: absolute; top: 50px; right: 90px; width: 20px; height: 20px;';
+    statusIconsContainer.style.cssText = 'position: absolute; top: 42px; right: 90px; width: 20px; height: 20px;';
 
     // Create the loader icon
     let aiLoadingIcon = document.createElement("div");
@@ -131,7 +131,7 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     let windowDiv = node.windowDiv;
     windowDiv.style.resize = 'both';
     windowDiv.style.minWidth = `450px`;
-    windowDiv.style.minHeight = `500px`;
+    windowDiv.style.minHeight = `535px`;
 
     // Append the ainodewrapperDiv to windowDiv of the node
     windowDiv.appendChild(ainodewrapperDiv);
