@@ -71,19 +71,25 @@ document.addEventListener('contextmenu', function (event) {
 function openCustomContextMenu(x, y, target) {
     const menu = document.getElementById('customContextMenu');
     positionContextMenu(menu, x, y);
-
     // Reposition the suggestion box if it's already displayed
     if (globalSuggestions.container.style.display === 'block') {
         globalSuggestions.position(x, y);
     }
-
     clearMenuOptions(menu);
-
     const node = findNodeForElement(target);
     if (node) {
         populateMenuForNode(menu, node, x, y);
+        return;
+    }
+    const edge = findEdgeForElement(target);
+    if (edge) {
+        populateMenuForEdge(menu, edge);
+        return;
+    }
+    if (target.id === 'svg_bg' || target.closest('#svg_bg')) {
+        populateMenuForBackground(menu, target);
     } else {
-        populateMenuForOthers(menu, target);
+        populateMenuForGeneric(menu);
     }
 }
 
@@ -94,6 +100,16 @@ function findNodeForElement(element) {
             if (node.content === element || node.content.contains(element)) {
                 return node;
             }
+        }
+    }
+    return null;
+}
+
+function findEdgeForElement(element) {
+    if (element instanceof SVGElement) {
+        const pathElement = element.closest('path');
+        if (pathElement) {
+            return edgeSVGMap.get(pathElement) || null;
         }
     }
     return null;
@@ -140,24 +156,41 @@ function populateMenuForNode(menu, node, pageX, pageY) {
     // Load pinned items each time the menu is opened
     loadPinnedItemsToContextMenu(menu, node);
 }
-let rightClickFileInput = null; // Declare a variable to hold the file input element
 
-function populateMenuForOthers(menu, target) {
-    if (target.id === 'svg_bg' || target.closest('#svg_bg')) {
-        // Option to create a Text Node (without calling draw)
-        addNodeCreationOption(menu, '+ Note', createNodeFromWindow, false);
-        // Option to create an LLM Node
-        addNodeCreationOption(menu, '+ Ai', createLLMNode, true);
-        // Option to create a Link Node or Search Google
-        addNodeCreationOption(menu, '+ Link', returnLinkNodes, false);
-        // Option to select a file
-        addFileSelectionOption(menu, '+ File', handleFileSelection);
-        addPasteOption(menu, target);
-    } else {
-        // Generic action for non-SVG targets
-        addGenericOption(menu, 'Generic Action', handleGenericAction);
-    }
+function populateMenuForEdge(menu, edge) {
+    // Option to change direction
+    menu.appendChild(createMenuItem('updateDirection', 'update-direction', () => {
+        edge.toggleDirection();
+    }));
+
+    // Option to delete edge
+    menu.appendChild(createMenuItem('delete', 'delete-edge', () => {
+        edge.removeEdgeInstance();
+        hideContextMenu();
+    }));
 }
+
+
+function populateMenuForBackground(menu, target) {
+    // Option to create a Text Node (without calling draw)
+    addNodeCreationOption(menu, '+ Note', createNodeFromWindow, false);
+    // Option to create an LLM Node
+    addNodeCreationOption(menu, '+ Ai', createLLMNode, true);
+    // Option to create a Link Node or Search Google
+    addNodeCreationOption(menu, '+ Link', returnLinkNodes, false);
+    // Option to select a file
+    addFileSelectionOption(menu, '+ File', handleFileSelection);
+    addPasteOption(menu, target);
+}
+
+function populateMenuForGeneric(menu) {
+    // Generic action for non-SVG targets
+    addGenericOption(menu, 'Generic Action', handleGenericAction);
+}
+
+
+
+let rightClickFileInput = null; // Declare a variable to hold the file input element
 
 function addFileSelectionOption(menu, text, fileSelectionFunction) {
     const li = document.createElement('li');
