@@ -12,6 +12,9 @@ function findExistingEdge(node1, node2) {
 // Global map to store directionality states of edges
 const edgeDirectionalityMap = new Map();
 
+// Global map to store references to Edge instances
+const edgeSVGMap = new Map();
+
 class Edge {
     constructor(pts, length = 0.6, strength = 0.1, style = {
         stroke: "red",
@@ -28,6 +31,7 @@ class Edge {
         this.directionality = { start: null, end: null };
 
         this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        edgeSVGMap.set(this.html, this);
         for (const [key, value] of Object.entries(style)) {
             this.html.setAttribute(key, value);
         }
@@ -36,6 +40,7 @@ class Edge {
 
         // Predefine the arrow SVG and initially set it to not display
         this.arrowSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        edgeSVGMap.set(this.arrowSvg, this);
         this.arrowSvg.classList.add('edge-arrow');
         this.arrowSvg.style.display = 'none';
 
@@ -43,6 +48,7 @@ class Edge {
 
         // Predefine the border SVG
         this.borderSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        edgeSVGMap.set(this.borderSvg, this);
         this.borderSvg.style.display = 'none';
         this.borderSvg.classList.add('edge-border');
         htmledges.insertBefore(this.borderSvg, this.arrowSvg);
@@ -89,21 +95,20 @@ class Edge {
             this.draw();
         }
     }
+    removeEdgeInstance() {
+        const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
+        if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
+            const startTitle = connectedNodes[0].title;
+            const endTitle = connectedNodes[1].title;
+            removeEdgeFromAllInstances(startTitle, endTitle);
+        } else {
+            this.remove();
+        }
+    }
+
     ondblclick = (event) => {
         if (nodeMode) {
-            // Capture the titles and textNode flags of the connected nodes for later use
-            const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
-            // only if both nodes have the isTextNode flag
-            if (connectedNodes[0].isTextNode && connectedNodes[1].isTextNode) {
-                // Remove edges from all relevant CodeMirror instances
-                const startTitle = connectedNodes[0].title;
-                const endTitle = connectedNodes[1].title;
-
-                // Call the function to remove edges from all instances
-                removeEdgeFromAllInstances(startTitle, endTitle);
-            } else {
-                this.remove();
-            }
+            this.removeEdgeInstance();
             // Prevent the event from propagating further
             cancel(event);
         }
@@ -432,6 +437,10 @@ class Edge {
                 node.updateEdgeData();
             }
         });
+
+        edgeSVGMap.delete(this.html);
+        edgeSVGMap.delete(this.arrowSvg);
+        edgeSVGMap.delete(this.borderSvg);
 
         // Remove SVG elements from the DOM
         if (this.arrowSvg && this.arrowSvg.parentNode) {
