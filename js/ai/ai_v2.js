@@ -109,7 +109,7 @@ async function handleStreamingForLLMnode(response, node) {
     return fullResponse; // return the entire response
 }
 
-async function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
+async function callchatLLMnode(messages, node, stream = false, inferenceOverride = null) {
     // Define the callbacks
     function onBeforeCall() {
         node.aiResponding = true;
@@ -117,26 +117,29 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
         node.content.querySelector(`#aiLoadingIcon-${node.index}`).style.display = 'block';
         node.content.querySelector(`#aiErrorIcon-${node.index}`).style.display = 'none';
     }
-
     function onAfterCall() {
         node.aiResponding = false;
         node.regenerateButton.innerHTML = '<svg width="24" height="24" class="icon"><use xlink:href="#refresh-icon"></use></svg>';
         node.content.querySelector(`#aiLoadingIcon-${node.index}`).style.display = 'none';
     }
-
     function onStreamingResponse(content) {
         if (node.shouldContinue && content.trim() !== "[DONE]") {
             node.aiResponseTextArea.value += content;
             node.aiResponseTextArea.dispatchEvent(new Event("input"));
         }
     }
-
     function onError(errorMsg) {
         console.error("Error calling Chat API:", errorMsg);
         node.content.querySelector(`#aiErrorIcon-${node.index}`).style.display = 'block';
         if (node.haltCheckbox) {
             node.haltCheckbox.checked = true;
         }
+    }
+
+    // Determine the inference override if not provided
+    if (!inferenceOverride) {
+        const { provider, model } = determineAiNodeModel(node);
+        inferenceOverride = { provider, model };
     }
 
     // Prepare the parameters for callAiApi
@@ -217,16 +220,29 @@ async function callAiApi({
 
     try {
         const response = await fetch(params.API_URL, requestOptions);
+
         if (!response.ok) throw await response.json();
 
         let responseData = '';
         if (stream) {
             responseData = await streamAiResponse(response, onStreamingResponse);
         } else {
-            const data = await response.json();
-            responseData = data.choices && data.choices[0].message ? data.choices[0].message.content.trim() : '';
-        }
+            const text = await response.text();
+            try {
+                const data = JSON.parse(text);
 
+                // Extract content from the response, regardless of the exact structure
+                responseData = extractContentFromResponse(data);
+
+                if (!responseData) {
+                    console.error("Unable to extract content from response:", data);
+                    throw new Error("Unable to extract content from API response");
+                }
+            } catch (parseError) {
+                console.error("Error parsing JSON response:", parseError);
+                throw new Error("Invalid JSON response from API");
+            }
+        }
         return responseData;
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -253,6 +269,26 @@ async function callAiApi({
     } finally {
         onAfterCall();
     }
+}
+
+function extractContentFromResponse(data) {
+    // Try to extract content from various possible locations in the response
+    if (data.choices && data.choices[0]) {
+        if (data.choices[0].message && data.choices[0].message.content) {
+            return data.choices[0].message.content.trim();
+        }
+        if (data.choices[0].text) {
+            return data.choices[0].text.trim();
+        }
+    }
+    if (data.message && data.message.content) {
+        return data.message.content.trim();
+    }
+    if (data.content) {
+        return data.content.trim();
+    }
+    // If we can't find the content in any of the expected locations, return null
+    return null;
 }
 
 async function streamAiResponse(response, onStreamingResponse, delay = 10) {
