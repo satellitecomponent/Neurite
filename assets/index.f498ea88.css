@@ -2858,6 +2858,10 @@ textarea:focus {
     transition: transform 0.3s ease;
 }
 
+code.language-markdown {
+    white-space: break-spaces !important;
+}
+
 .user-prompt {
     background-color: rgb(22 20 22);
     font-size: 20px;

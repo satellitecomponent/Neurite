@@ -132,9 +132,7 @@ function populateOllamaModal(models) {
         console.error('ollamaModelList element not found');
         return;
     }
-
     ollamaModelList.innerHTML = ''; // Clear the existing list
-
     models.forEach(model => {
         const listItem = createModelListItem(model, select);
         ollamaModelList.appendChild(listItem);
@@ -181,12 +179,16 @@ function createModelListItem(model, select) {
 
     // Restore progress bar if model is being installed
     if (ollamaCurrentInstallNamesMap.has(model.name)) {
-        installOllamaModelFromList(model.name, progressBar, listItem, select, loadingIcon);
+        loadingIcon.style.display = 'block'; // Show the loading icon for models being installed
+        const progress = ollamaCurrentInstallNamesMap.get(model.name);
+        progressBar.style.width = `${progress}%`;
+        if (progress < 100) {
+            installOllamaModelFromList(model.name, progressBar, listItem, select, loadingIcon);
+        }
     }
 
     return listItem;
 }
-
 
 const ollamaCurrentInstallNamesMap = new Map();
 
@@ -209,6 +211,7 @@ async function installOllamaModelFromList(modelName, progressBar, listItem, sele
         progressBar.style.width = `${progress}%`;
         ollamaCurrentInstallNamesMap.set(modelName, progress);
     });
+
     if (success) {
         console.log(`Model ${modelName} installed successfully`);
         listItem.classList.remove('disconnected');

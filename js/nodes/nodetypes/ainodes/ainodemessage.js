@@ -86,7 +86,7 @@ async function sendLLMNodeMessage(node, message = null) {
 
         // Call generateKeywords function to get keywords
         const count = 3; // Set the number of desired keywords
-        const keywordsArray = await generateKeywords(node.latestUserMessage, count);
+        const keywordsArray = await generateKeywords(node.latestUserMessage, count, node);
 
         // Join the keywords array into a single string when needed for operations that require a string
         const keywordsString = keywordsArray.join(' ');
@@ -192,7 +192,7 @@ async function sendLLMNodeMessage(node, message = null) {
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\n Provide CONTEXT from the given snippets. CITE your sources! Use [Snippet n](source) to display references to exact snippets.`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\nProvide CONTEXT from the given snippets for use as citations of your sources! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
         };
         messages.push(embedMessage);
     }

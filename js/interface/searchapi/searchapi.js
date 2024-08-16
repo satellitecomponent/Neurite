@@ -1,18 +1,16 @@
 //searchapi.js
 
-async function generateKeywords(message, count, specificContext = null) {
+async function generateKeywords(message, count, specificContext = null, node = null) {
     const lastPromptsAndResponses = specificContext || getLastPromptsAndResponses(2, 150);
     const isEmpty = !lastPromptsAndResponses || !/\S/.test(lastPromptsAndResponses);
 
     if (isEmpty) {
-        // If the context is empty, return the 'count' longest words from the user message
-        const keywords = message
+        return message
             .split(' ')
             .filter(word => word.trim().length > 0)
             .sort((a, b) => b.length - a.length)
             .slice(0, count)
             .map(word => word.trim());
-        return keywords;
     }
 
     const messages = [
@@ -30,13 +28,18 @@ async function generateKeywords(message, count, specificContext = null) {
         },
     ];
 
-    const response = await callchatAPI(messages, false, 0);
+    let response;
+    if (node) {
+        response = await callchatLLMnode(messages, node, false, 0);
+    } else {
+        response = await callchatAPI(messages, false, 0);
+    }
+
     console.log(`Generate Keywords Ai Response:`, response);
 
-    // Extract keywords by finding the part between quotations
     const regex = /"(.*?)"/g;
-    let match;
     const keywords = [];
+    let match;
     while (match = regex.exec(response)) {
         keywords.push(match[1].trim());
     }
@@ -99,15 +102,13 @@ async function performSearch(searchQuery) {
 }
 
 async function constructSearchQuery(userMessage, recentContext = null, node = null) {
-    // Check if the user's message is a URL
     if (isUrl(userMessage)) {
-        document.getElementById("prompt").value = ''; // Clear the input field
-        let linkNode = createLinkNode(userMessage, userMessage, userMessage); // Create a link node with the URL
-        setupNodeForPlacement(linkNode); // Attach the node for user interaction
-        return null; // End function execution as no search query is needed
+        document.getElementById("prompt").value = '';
+        let linkNode = createLinkNode(userMessage, userMessage, userMessage);
+        setupNodeForPlacement(linkNode);
+        return null;
     }
 
-    // Prepare the recent context for the query
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
     const queryContext = [
         {
@@ -116,7 +117,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
         },
         {
             role: "system",
-            content: "Generate the search query most relevant to the current user message. This will be used for both Google Programmable Search and embedded vector search."
+            content: "Without unnecessary preface or summary... From the provided context history, predict a relevant search query within quotation marks."
         },
         {
             role: "user",
@@ -124,20 +125,26 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
         }
     ];
 
-    // Attempt to generate a search query using the chat API
     try {
-        const searchQuery = await callchatAPI(queryContext, false, 0);
-        console.log("Generated Search Query:", searchQuery);
+        let apiResponse;
+        if (node) {
+            apiResponse = await callchatLLMnode(queryContext, node, false, 0);
+        } else {
+            apiResponse = await callchatAPI(queryContext, false, 0);
+        }
 
-        // Check if the search query is empty, null, or undefined
+        const extractedQuery = apiResponse.match(/"([^"]*)"/);
+        const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
+        console.log("Search Query:", searchQuery);
+
         if (!searchQuery || searchQuery.trim().length === 0) {
             console.warn("Received empty search query, using user message as fallback.");
-            return userMessage; // Use user's original message as fallback
+            return userMessage;
         }
-        return searchQuery; // Return the valid search query
+        return searchQuery;
     } catch (error) {
         console.error("Error generating search query:", error);
-        return userMessage; // Fallback to the user's message if an error occurs
+        return userMessage;
     }
 }
 
