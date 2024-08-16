@@ -41,7 +41,6 @@ async function sendMessage(event, autoModeMessage = null) {
         originalUserMessage = message;
     }
 
-    const embedCheckbox = document.getElementById("embed-checkbox");
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
@@ -157,7 +156,7 @@ async function sendMessage(event, autoModeMessage = null) {
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n Provide RELEVANT information from the given <topNchunks>. CITE sources!`
+            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n> Provide CONTEXT from the given snippets for use as citations of your sources! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
         };
 
         messages.push(embedMessage);
