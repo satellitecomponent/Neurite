@@ -163,28 +163,19 @@ function getTextareaContentForNode(node) {
     }
 
     if (!node.isTextNode) {
-        //console.warn('Node is not a text node. Skipping text area and editable div logic.');
+        //console.warn('Node is not a text node. Skipping getText.');
         return null;
     }
 
-    const editableDiv = node.contentEditableDiv;
-    const hiddenTextarea = node.textarea;
+    const editableTextarea = node.contentEditableDiv;
 
-    if (!editableDiv || !hiddenTextarea) {
-        console.warn('Either editableDiv or hiddenTextarea is not found.');
+    if (!editableTextarea) {
+        console.warn('editableTextarea not found.');
         return null;
     }
-
-    // Sync and log content before and after syncing
-    //console.log('Before Sync:', editableDiv.innerText, hiddenTextarea.value);
-    syncHiddenTextareaWithInputTextarea(hiddenTextarea, editableDiv);
-    //console.log('After Sync:', editableDiv.innerText, hiddenTextarea.value);
-
-    // Trigger input to process any dependent logic
-    hiddenTextarea.dispatchEvent(new Event('input'));
 
     // Return the textarea content
-    return hiddenTextarea.value;
+    return editableTextarea.value;
 }
 
 function testNodeText(title) {
