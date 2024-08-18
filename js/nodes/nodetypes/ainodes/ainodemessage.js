@@ -192,7 +192,7 @@ async function sendLLMNodeMessage(node, message = null) {
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\nProvide CONTEXT from the given snippets for use as citations of your sources! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
+            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\nProvide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
         };
         messages.push(embedMessage);
     }
