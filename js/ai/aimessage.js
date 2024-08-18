@@ -156,7 +156,7 @@ async function sendMessage(event, autoModeMessage = null) {
         // Construct the embed message
         const embedMessage = {
             role: "system",
-            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n> Provide CONTEXT from the given snippets for use as citations of your sources! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
+            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n> Provide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
         };
 
         messages.push(embedMessage);
