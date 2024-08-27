@@ -557,11 +557,11 @@ function reconstructSavedNode(node) {
     node.sensor = new NodeSensor(node, 3);
 }
 
-const autosaveEnabledCheckbox = document.getElementById("autosave-enabled")
+const autosaveEnabledCheckbox = document.getElementById("autosave-enabled");
 
 function autosave() {
     if (selectedSaveTitle !== null && autosaveEnabledCheckbox.checked) {
-        neuriteSaveEvent(selectedSaveTitle)
+        neuriteSaveEvent(selectedSaveTitle);
     }
 }
 
@@ -586,11 +586,10 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
                 console.error('Failed to load state from file:', error);
-                // Handle errors gracefully, maybe display a message to users
                 displayErrorMessage('Failed to load the requested network state.');
             });
     } else {
-        // Existing logic to load from local storage
+        // Load from local storage if no state provided in URL
         const value = localStorage.getItem(LATEST_LOADED_INDEX_KEY) ?? null;
         selectedSaveIndex = value !== null ? parseInt(value) : null;
 
@@ -608,9 +607,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        // Autosave setup remains unchanged
-        autosaveEnabledCheckbox.checked = localStorage.getItem("autosave-enabled") ?? false;
-        autosaveEnabledCheckbox.addEventListener("change", (e) => localStorage.setItem("autosave-enabled", !!e.target.checked));
+        // Set the autosave checkbox state based on stored value
+        const autosaveEnabled = localStorage.getItem("autosave-enabled");
+        autosaveEnabledCheckbox.checked = autosaveEnabled === "true"; // Ensure it loads as a boolean
+
+        // Save state when the checkbox is toggled
+        autosaveEnabledCheckbox.addEventListener("change", (e) => {
+            localStorage.setItem("autosave-enabled", e.target.checked);
+        });
+
+        // Set up autosave at intervals
         setInterval(autosave, 8000);
     }
 });
