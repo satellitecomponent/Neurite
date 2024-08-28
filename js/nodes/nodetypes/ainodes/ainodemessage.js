@@ -63,15 +63,15 @@ async function sendLLMNodeMessage(node, message = null) {
     }
 
     if (node.shouldAppendQuestion) {
-        // List the available recipients with spaces replaced by underscores, add '@' symbol, and use '@all' if the node title is empty
+        // List the available recipients with spaces replaced by underscores, add '@' symbol, and use '@no_name' if the node title is empty
         const recipientList = connectedAiNodes.map(node => {
             const title = node.getTitle().trim();
-            return title ? `@${title.replace(/\s+/g, '_')}` : '@all';
+            return title ? `@${title.replace(/\s+/g, '_')}` : '@no_name';
         }).join(', ');
 
         messages.push({
             role: "system",
-            content: `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Use @self for internal thoughts, and @all to broadcast to all connected recipients. /exit disconnects you from the conversation. Remember, each response is expected to exclusively represent the voice of ${aiIdentity}.`
+            content: `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Use @self for internal thoughts, and @all to broadcast to all connected recipients. /exit disconnects you from the conversation. @user prompts the user. Remember, each response is expected to exclusively represent the voice of ${aiIdentity}.`
         });
     }
 
@@ -441,11 +441,32 @@ class AiNodeMessageLoop {
                 continue;
             }
 
+            // Prompt user if the message is directed to @user
+            if (recipient.toLowerCase() === 'user') {
+                const userResponse = await new Promise(resolve => {
+                    const response = prompt(`${message}`);
+                    resolve(response);
+                });
+
+                if (userResponse) {
+                    // Handle the user's response by sending it back to the AI node that prompted
+                    const responseMessage = `@user says,\n${userResponse.trim()}`;
+                    this.processTargetNode(this.node, responseMessage);
+                }
+                continue;
+            }
+
             let targetNodes = [];
 
             // Handle @all to broadcast to all connected nodes
             if (recipient.toLowerCase() === 'all') {
                 targetNodes = connectedAiNodes;
+            } else if (recipient.toLowerCase() === 'no_name') {
+                // Handle @no_name to send to all connected nodes with an empty title
+                targetNodes = connectedAiNodes.filter(node => {
+                    const title = this.normalizeRecipient(node.getTitle());
+                    return title === '';
+                });
             } else {
                 const normalizedRecipient = this.normalizeRecipient(recipient);
                 const targetNode = connectedAiNodes.find(node =>
@@ -512,7 +533,7 @@ class AiNodeMessageLoop {
         console.log("Parsing messages...");
         const messages = [];
         const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-        let senderName = this.node.getTitle();
+        let senderName = this.node.getTitle() || "no_name";
 
         let accumulatedMessage = '';
         let currentRecipients = [];
