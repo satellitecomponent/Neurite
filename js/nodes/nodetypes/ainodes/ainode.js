@@ -152,10 +152,30 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     node.push_extra_cb((node) => {
         return {
+            f: "textarea",
+            a: {
+                p: [0, 0, 1],
+                v: node.titleInput.value
+            }
+        };
+    });
+
+    node.push_extra_cb((node) => {
+        return {
             f: "textareaId",
             a: {
                 p: customInstructionsTextarea.id,
                 v: customInstructionsTextarea.value
+            }
+        };
+    });
+
+    node.push_extra_cb((node) => {
+        return {
+            f: "textareaId",
+            a: {
+                p: promptTextArea.id,
+                v: promptTextArea.value
             }
         };
     });
