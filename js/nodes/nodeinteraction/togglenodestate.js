@@ -48,7 +48,11 @@ function collapseNode(node) {
         if (!originalSizes.has(node)) {
             originalSizes.set(node, {
                 width: getComputedStyle(div).width,
-                height: getComputedStyle(div).height
+                height: getComputedStyle(div).height,
+                minWidth: getComputedStyle(div).minWidth,
+                minHeight: getComputedStyle(div).minHeight,
+                maxWidth: getComputedStyle(div).maxWidth,
+                maxHeight: getComputedStyle(div).maxHeight
             });
         }
         let titleInput = div.querySelector('.title-input');
@@ -73,14 +77,15 @@ function collapseNode(node) {
                     child.style.display = 'none';
                 }
             });
-            div.style.display = 'inline-block'; // or 'block' depending on your layout needs
-            //div.style.position = 'relative'; // only if you need specific positioning
-            div.style.width = '60px';
-            div.style.height = '60px';
-            div.style.borderRadius = '50%';
-            // Capture the box-shadow of the window div
-            let boxShadow = getComputedStyle(div).boxShadow;
 
+            div.style.display = 'inline-block';
+            div.style.minWidth = '60px';  // Override min-width
+            div.style.minHeight = '60px'; // Override min-height
+            div.style.width = '60px';     // Set width
+            div.style.height = '60px';    // Set height
+            div.style.maxWidth = '60px';  // Override max-width
+            div.style.maxHeight = '60px'; // Override max-height
+            div.style.borderRadius = '50%';
             div.style.boxShadow = 'none'; // Remove box-shadow from div
             div.style.backdropFilter = 'none';
             div.classList.add('collapsed');
@@ -100,7 +105,7 @@ function collapseNode(node) {
             let circle = document.createElement('div');
             circle.className = 'collapsed-circle';
             circle.style.borderRadius = '50%';
-            circle.style.boxShadow = boxShadow;
+            circle.style.boxShadow = getComputedStyle(div).boxShadow;
 
             div.appendChild(circle);
 
@@ -131,7 +136,6 @@ function collapseNode(node) {
 
             circle.addEventListener('dblclick', handleCircleDoubleClick);
 
-            //Flag for toggleanchored in node class
             div.collapsed = true;
         } else {
             expandNode(node, div);
@@ -144,6 +148,10 @@ function expandNode(node, div, circle) {
         const originalSize = originalSizes.get(node);
         div.style.width = originalSize.width;
         div.style.height = originalSize.height;
+        div.style.minWidth = originalSize.minWidth;
+        div.style.minHeight = originalSize.minHeight;
+        div.style.maxWidth = originalSize.maxWidth;
+        div.style.maxHeight = originalSize.maxHeight;
     }
     // Reset the window properties
     div.style.display = '';

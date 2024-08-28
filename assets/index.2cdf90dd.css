@@ -1096,6 +1096,15 @@ input[type="text"i]:hover {
     padding-bottom: 4px;
 }
 
+.mention {
+    background-color: #5b5b6d;
+    color: #8ac6f2;
+    border-radius: 10px;
+    padding-inline: 6px;
+    padding-top: 2px;
+    padding-bottom: 4px;
+}
+
 
 textarea#rawTextArea {
     background-color: #222226;

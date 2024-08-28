@@ -43,6 +43,17 @@ function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = un
     windowDiv.style.minWidth = `150px`;
     windowDiv.style.minHeight = `200px`;
 
+    node.push_extra_cb((node) => {
+        return {
+            f: "textarea",
+            a: {
+                p: [0, 0, 1],
+                v: node.titleInput.value
+            }
+        };
+    });
+
+
     node.isLink = true;
 
     initLinkNode(node);

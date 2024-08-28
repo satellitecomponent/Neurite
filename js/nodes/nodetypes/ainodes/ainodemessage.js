@@ -63,12 +63,17 @@ async function sendLLMNodeMessage(node, message = null) {
     }
 
     if (node.shouldAppendQuestion) {
+        // List the available recipients with spaces replaced by underscores, add '@' symbol, and use '@no_name' if the node title is empty
+        const recipientList = connectedAiNodes.map(node => {
+            const title = node.getTitle().trim();
+            return title ? `@${title.replace(/\s+/g, '_')}` : '@no_name';
+        }).join(', ');
+
         messages.push({
             role: "system",
-            content: `The LAST LINE of your response is DELIVERED to any current CONNECTIONS. TAKE INITIATIVE!`
+            content: `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Use @self for internal thoughts, and @all to broadcast to all connected recipients. /exit disconnects you from the conversation. @user prompts the user. Remember, each response is expected to exclusively represent the voice of ${aiIdentity}.`
         });
     }
-
 
     if (document.getElementById(`code-checkbox-${nodeIndex}`).checked) {
         messages.push(aiNodeCodeMessage());
@@ -130,7 +135,7 @@ async function sendLLMNodeMessage(node, message = null) {
     let searchResults = [];
 
     if (isGoogleSearchEnabled(nodeIndex)) {
-        
+
         searchResultsData = await performSearch(searchQuery);
         if (searchResultsData) {
             searchResults = processSearchResults(searchResultsData);
@@ -231,12 +236,12 @@ async function sendLLMNodeMessage(node, message = null) {
     allConnectedNodesData.forEach(info => {
         if (info.data && info.data.replace) {
             if (info.isLLM) {
-                // Check if the AI node is present in the connectedAiNodes array
+                /* Check if the AI node is present in the connectedAiNodes array
                 if (connectedAiNodes.some(aiNode => aiNode.uuid === info.node.uuid)) {
                     [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
                         info, llmNodeInfo, remainingTokens, totalTokenCount, maxContextSize
                     );
-                }
+                }*/
             } else {
                 [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
                     info, textNodeInfo, remainingTokens, totalTokenCount, maxContextSize
@@ -254,14 +259,14 @@ async function sendLLMNodeMessage(node, message = null) {
         });
     }
 
-    // For LLM Nodes
+    /* For LLM Nodes
     if (llmNodeInfo.length > 0) {
         let intro = "AI you are CONVERSING with:";
         messages.push({
             role: "system",
             content: intro + "\n\n" + llmNodeInfo.join("\n\n")
         });
-    }
+    }*/
 
     if (messageTrimmed) {
         messages.push({
@@ -331,17 +336,15 @@ async function sendLLMNodeMessage(node, message = null) {
 
     // AI call
     callchatLLMnode(messages, node, true, inferenceOverride)
-        .finally(async () => {
+        .then(async () => {
             node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';
 
-            // Determine if there are any connected AI nodes
             connectedAiNodes = calculateAiNodeDirectionalityLogic(node);
             hasConnectedAiNode = connectedAiNodes.length > 0;
 
             if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                textToSend = await getLastLineFromTextArea(node.aiResponseTextArea);
-                await aiNodeMessageLoop.questionConnectedAiNodes(textToSend);
+                await aiNodeMessageLoop.questionConnectedAiNodes();
             }
         })
         .catch((error) => {
@@ -375,68 +378,277 @@ function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, ma
 class AiNodeMessageLoop {
     constructor(node, clickQueues) {
         this.node = node;
-        this.clickQueues = clickQueues || {}; // If clickQueues is not passed, initialize as an empty object
+        this.clickQueues = clickQueues || {}; // Initialize clickQueues if not passed
     }
-
 
     async processClickQueue(nodeId) {
         const queue = this.clickQueues[nodeId] || [];
         while (true) {
             if (queue.length > 0) {
-                const connectedNode = queue[0].connectedNode;
+                const { connectedNode, sendButton } = queue[0];
 
-                // If the node is not connected or the response is halted, 
-                // break out of the loop to stop processing this node's queue.
-                if (connectedNode.aiResponseHalted) {
+                // Check if the connected node still has connections
+                const connectedAiNodes = calculateAiNodeDirectionalityLogic(connectedNode);
+                if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
+                    console.warn(`Node ${connectedNode.index} has no more connections or its AI response is halted. Exiting queue.`);
                     break;
                 }
 
-                // Check if AI is not responding to attempt the click again
+                // If AI is not responding, attempt the click
                 if (!connectedNode.aiResponding) {
-                    const { sendButton } = queue.shift();
+                    queue.shift();  // Remove the processed message from the queue
                     sendButton.click();
                 }
             }
-            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            await new Promise(resolve => setTimeout(resolve, 4000));  // Wait before processing the next message
+        }
+
+        // Clean up the queue after processing
+        delete this.clickQueues[nodeId];
+    }
+
+    async questionConnectedAiNodes() {
+        console.log("Questioning connected AI nodes...");
+        const lastResponse = this.getLastAiResponse();
+        const connectedAiNodes = calculateAiNodeDirectionalityLogic(this.node);
+
+        const parsedMessages = this.parseMessages(lastResponse);
+        for (const { recipient, message } of parsedMessages) {
+            console.log(`Parsed message for ${recipient}: ${message}`);
+
+            // Handle /exit command
+            if (message === '/exit') {
+                this.node.haltResponse();
+
+                const connectedAiNodeSet = new Set(connectedAiNodes.map(node => node.uuid));
+
+                for (let i = this.node.edges.length - 1; i >= 0; i--) {
+                    const edge = this.node.edges[i];
+
+                    if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {
+                        edge.remove();
+                    }
+                }
+
+                console.log("AI has exited the conversation.");
+                break;
+            }
+
+            // Skip processing if the message is directed to @self
+            if (recipient.toLowerCase() === 'self') {
+                console.log("Skipping self-directed message.");
+                continue;
+            }
+
+            // Prompt user if the message is directed to @user
+            if (recipient.toLowerCase() === 'user') {
+                const userResponse = await new Promise(resolve => {
+                    const response = prompt(`${message}`);
+                    resolve(response);
+                });
+
+                if (userResponse) {
+                    // Handle the user's response by sending it back to the AI node that prompted
+                    const responseMessage = `@user says,\n${userResponse.trim()}`;
+                    this.processTargetNode(this.node, responseMessage);
+                }
+                continue;
+            }
+
+            let targetNodes = [];
+
+            // Handle @all to broadcast to all connected nodes
+            if (recipient.toLowerCase() === 'all') {
+                targetNodes = connectedAiNodes;
+            } else if (recipient.toLowerCase() === 'no_name') {
+                // Handle @no_name to send to all connected nodes with an empty title
+                targetNodes = connectedAiNodes.filter(node => {
+                    const title = this.normalizeRecipient(node.getTitle());
+                    return title === '';
+                });
+            } else {
+                const normalizedRecipient = this.normalizeRecipient(recipient);
+                const targetNode = connectedAiNodes.find(node =>
+                    this.normalizeRecipient(node.getTitle()) === normalizedRecipient
+                );
+
+                if (targetNode) {
+                    targetNodes.push(targetNode);
+                } else {
+                    console.warn(`No connected node found for recipient ${recipient}`);
+                    continue;
+                }
+            }
+
+            // Process each target node
+            for (const connectedNode of targetNodes) {
+                this.processTargetNode(connectedNode, message);
+            }
         }
     }
 
-    async questionConnectedAiNodes(lastLine) {
-        const connectedAiNodes = calculateAiNodeDirectionalityLogic(this.node);
+    processTargetNode(connectedNode, message) {
+        let uniqueNodeId = connectedNode.index;
 
-        for (const connectedNode of connectedAiNodes) {
-            let uniqueNodeId = connectedNode.index;
-
-            if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-                console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
-                continue;
-            }
-
-            let promptElement = document.getElementById(`nodeprompt-${uniqueNodeId}`);
-            let sendButton = document.getElementById(`prompt-form-${uniqueNodeId}`);
-
-            if (!promptElement || !sendButton) {
-                console.error(`Elements for ${uniqueNodeId} are not found`);
-                continue;
-            }
-
-            if (promptElement instanceof HTMLTextAreaElement) {
-                promptElement.value += `\n${lastLine}`;
-            } else if (promptElement instanceof HTMLDivElement) {
-                promptElement.innerHTML += `<br>${lastLine}`;
-            } else {
-                console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
-            }
-
-            promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
-
-            if (!this.clickQueues[uniqueNodeId]) {
-                this.clickQueues[uniqueNodeId] = [];
-                this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
-            }
-
-            this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+        if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
+            console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
+            return;
         }
+
+        let promptElement = connectedNode.content.querySelector(`#nodeprompt-${uniqueNodeId}`);
+        let sendButton = connectedNode.content.querySelector(`#prompt-form-${uniqueNodeId}`);
+
+        if (!promptElement || !sendButton) {
+            console.error(`Elements for ${uniqueNodeId} are not found`);
+            return;
+        }
+
+        if (promptElement instanceof HTMLTextAreaElement) {
+            promptElement.value += `\n${message}`;
+        } else if (promptElement instanceof HTMLDivElement) {
+            promptElement.innerHTML += `<br>${message}`;
+        } else {
+            console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+        }
+
+        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+
+        if (!this.clickQueues[uniqueNodeId]) {
+            this.clickQueues[uniqueNodeId] = [];
+            this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
+        }
+
+        this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+    }
+
+    normalizeRecipient(recipient) {
+        // Remove '@' only if it's the first character
+        recipient = recipient.startsWith('@') ? recipient.substring(1) : recipient;
+        // Normalize by converting to lowercase and treating underscores and spaces as equivalent
+        return recipient.toLowerCase().replace(/[\s_]/g, '');
+    }
+
+    parseMessages(text) {
+        console.log("Parsing messages...");
+        const messages = [];
+        const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+        let senderName = this.node.getTitle() || "no_name";
+
+        let accumulatedMessage = '';
+        let currentRecipients = [];
+        let isSelfMessage = false;
+
+        text.split('\n').forEach(line => {
+            console.log(`Processing line: ${line}`);
+            line = line.trim();
+
+            // Check for the /exit command
+            if (line.toLowerCase().includes('/exit')) {
+                messages.push({ recipient: 'all', message: `${senderName} says,\n${line}` });
+                messages.push({ recipient: 'self', message: '/exit' });
+                return; // Stop further processing
+            }
+
+            let lastIndex = 0;
+            let match;
+            let lineRecipients = [];
+            let lineMessage = '';
+
+            while ((match = mentionPattern.exec(line)) !== null) {
+                const beforeMention = line.substring(lastIndex, match.index).trim();
+
+                // If a self message is encountered, finalize the message and stop accumulating further text
+                if (match[1].toLowerCase() === 'self') {
+                    if (accumulatedMessage.trim() || beforeMention) {
+                        currentRecipients.forEach(recipient => {
+                            messages.push({
+                                recipient: recipient,
+                                message: `${senderName} says,\n${(accumulatedMessage + beforeMention).trim()}`
+                            });
+                        });
+                    }
+                    accumulatedMessage = ''; // Reset accumulated message after finalizing
+                    isSelfMessage = true;
+                    break; // Stop processing this line after @self
+                }
+
+                // Finalize any accumulated message before this new mention
+                if (accumulatedMessage.trim() && currentRecipients.length > 0) {
+                    currentRecipients.forEach(recipient => {
+                        messages.push({
+                            recipient: recipient,
+                            message: `${senderName} says,\n${accumulatedMessage.trim()}`
+                        });
+                    });
+                    accumulatedMessage = ''; // Reset accumulated message after sending
+                }
+
+                // Include any text before the mention
+                if (beforeMention) {
+                    lineMessage += beforeMention + ' ';
+                }
+
+                // Add the mention itself to the message
+                lineMessage += match[0] + ' ';
+
+                // Add the mention to the list of recipients for this line
+                const recipient = match[1].toLowerCase();
+                if (!lineRecipients.includes(recipient)) {
+                    lineRecipients.push(recipient);
+                }
+
+                lastIndex = match.index + match[0].length;
+            }
+
+            // Capture any remaining text after the last mention in the line
+            if (!isSelfMessage) {
+                const remainingText = line.substring(lastIndex).trim();
+                if (remainingText) {
+                    lineMessage += remainingText + ' ';
+                }
+            }
+
+            // Accumulate the message for all recipients from this line
+            if (lineRecipients.length > 0) {
+                accumulatedMessage += lineMessage;
+                currentRecipients = lineRecipients; // Update current recipients to include all recipients found in this line
+            } else if (!isSelfMessage) {
+                accumulatedMessage += line + ' ';
+            }
+
+            // Reset self message flag for next line
+            isSelfMessage = false;
+        });
+
+        // Finalize the last message if it exists
+        if (accumulatedMessage.trim()) {
+            currentRecipients.forEach(recipient => {
+                messages.push({
+                    recipient: recipient,
+                    message: `${senderName} says,\n${accumulatedMessage.trim()}`
+                });
+            });
+        }
+
+        console.log(`Parsed messages: ${JSON.stringify(messages)}`);
+        return messages;
+    }
+
+    getLastAiResponse() {
+        const responseWrappers = this.node.aiResponseDiv.querySelectorAll('.response-wrapper');
+        if (responseWrappers.length > 0) {
+            const lastWrapper = responseWrappers[responseWrappers.length - 1];
+            const aiResponseDiv = lastWrapper.querySelector('.ai-response');
+            if (aiResponseDiv) {
+                // Use textContent instead of innerText to preserve formatting
+                const responseText = aiResponseDiv.textContent.trim();
+                //console.log(`Last AI response: ${responseText}`);
+                return responseText;
+            }
+        }
+        console.warn("No AI response found.");
+        return '';
     }
 }
 

@@ -252,9 +252,15 @@ class ResponseHandler {
     }
 
     appendMarkdownSegment(responseDiv, segment) {
+        // Accumulate the markdown content in the response div's dataset
         responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
 
-        let parsedHtml = marked.parse(responseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
+        // Apply special styling to @mentions within the current segment only
+        const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+        const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, '<span class="mention">$&</span>');
+
+        // Parse and replace the inner HTML with the highlighted content, but avoid extra new lines
+        let parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
         responseDiv.innerHTML = parsedHtml;
     }
 
