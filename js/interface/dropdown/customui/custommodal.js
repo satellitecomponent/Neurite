@@ -142,6 +142,14 @@ function openModal(contentId) {
     });
 }
 
+function getModalState(modalId, itemId, defaultValue = true) {
+    // Use the correct key for retrieving modal values
+    const modalStates = JSON.parse(localStorage.getItem('modalInputValues') || '{}');
+
+    // Check if the item exists in the saved states, return defaultValue if it doesn't exist
+    return modalStates[itemId] !== undefined ? modalStates[itemId] : defaultValue;
+}
+
 // Function to close the modal
 function closeModal() {
     switch (currentOpenModalContentId) {
