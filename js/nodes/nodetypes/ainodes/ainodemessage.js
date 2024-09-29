@@ -69,9 +69,29 @@ async function sendLLMNodeMessage(node, message = null) {
             return title ? `@${title.replace(/\s+/g, '_')}` : '@no_name';
         }).join(', ');
 
+        let promptContent = `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Multiple mentions on the same line send to each mention. `;
+
+        if (getModalState('aiModal', 'enable-self')) {
+            promptContent += `Use @self for internal thoughts. `;
+        }
+
+        if (getModalState('aiModal', 'enable-all')) {
+            promptContent += `Use @all to broadcast to all connected recipients. `;
+        }
+
+        if (getModalState('aiModal', 'enable-exit')) {
+            promptContent += `/exit disconnects you from the conversation. `;
+        }
+
+        if (getModalState('aiModal', 'enable-user')) {
+            promptContent += `@user prompts the user. `;
+        }
+
+        promptContent += `Remember, each response is expected to exclusively represent the voice of ${aiIdentity}. @ symbols start a mention if not preceded by text.`;
+
         messages.push({
             role: "system",
-            content: `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Use @self for internal thoughts, and @all to broadcast to all connected recipients. /exit disconnects you from the conversation. @user prompts the user. Remember, each response is expected to exclusively represent the voice of ${aiIdentity}.`
+            content: promptContent
         });
     }
 
@@ -387,92 +407,70 @@ class AiNodeMessageLoop {
             if (queue.length > 0) {
                 const { connectedNode, sendButton } = queue[0];
 
-                // Check if the connected node still has connections
                 const connectedAiNodes = calculateAiNodeDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
                     console.warn(`Node ${connectedNode.index} has no more connections or its AI response is halted. Exiting queue.`);
                     break;
                 }
 
-                // If AI is not responding, attempt the click
                 if (!connectedNode.aiResponding) {
-                    queue.shift();  // Remove the processed message from the queue
+                    queue.shift(); // Remove the processed message from the queue
                     sendButton.click();
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 4000));  // Wait before processing the next message
+            await new Promise(resolve => setTimeout(resolve, 2500));  // Wait before processing the next message
         }
 
-        // Clean up the queue after processing
         delete this.clickQueues[nodeId];
     }
 
     async questionConnectedAiNodes() {
-        console.log("Questioning connected AI nodes...");
+        //console.log("Questioning connected AI nodes...");
         const lastResponse = this.getLastAiResponse();
         const connectedAiNodes = calculateAiNodeDirectionalityLogic(this.node);
 
-        const parsedMessages = this.parseMessages(lastResponse);
+        let parsedMessages = this.parseMessages(lastResponse);
+        if (parsedMessages.length === 0) {
+            console.warn("Standard parsing failed. Using fallback method.");
+            parsedMessages = this.fallbackParse(lastResponse);
+        }
+
         for (const { recipient, message } of parsedMessages) {
-            console.log(`Parsed message for ${recipient}: ${message}`);
+            if (!message.trim()) {
+                //console.log(`Skipping empty message for recipient: ${recipient}`);
+                continue;
+            }
+
+            //console.log(`Processing message for ${recipient}: ${message}`);
 
             // Handle /exit command
-            if (message === '/exit') {
+            if (message.includes('/exit')) {
                 this.node.haltResponse();
-
-                const connectedAiNodeSet = new Set(connectedAiNodes.map(node => node.uuid));
-
-                for (let i = this.node.edges.length - 1; i >= 0; i--) {
-                    const edge = this.node.edges[i];
-
-                    if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {
-                        edge.remove();
-                    }
-                }
-
-                console.log("AI has exited the conversation.");
+                this.removeEdgesToConnectedNodes(connectedAiNodes);
+                //console.log("AI has exited the conversation.");
                 break;
             }
 
-            // Skip processing if the message is directed to @self
-            if (recipient.toLowerCase() === 'self') {
-                console.log("Skipping self-directed message.");
-                continue;
-            }
-
-            // Prompt user if the message is directed to @user
-            if (recipient.toLowerCase() === 'user') {
-                const userResponse = await new Promise(resolve => {
-                    const response = prompt(`${message}`);
-                    resolve(response);
-                });
-
+            // Handle messages to specific recipients or 'all'
+            let targetNodes = [];
+            if (recipient === 'all') {
+                targetNodes = connectedAiNodes;
+            } else if (recipient === 'user') {
+                const userResponse = await this.getUserResponse(message);
                 if (userResponse) {
-                    // Handle the user's response by sending it back to the AI node that prompted
                     const responseMessage = `@user says,\n${userResponse.trim()}`;
-                    this.processTargetNode(this.node, responseMessage);
+                    this.processTargetNode(this.node, responseMessage, true);
                 }
                 continue;
-            }
-
-            let targetNodes = [];
-
-            // Handle @all to broadcast to all connected nodes
-            if (recipient.toLowerCase() === 'all') {
-                targetNodes = connectedAiNodes;
-            } else if (recipient.toLowerCase() === 'no_name') {
-                // Handle @no_name to send to all connected nodes with an empty title
-                targetNodes = connectedAiNodes.filter(node => {
-                    const title = this.normalizeRecipient(node.getTitle());
-                    return title === '';
-                });
+            } else if (recipient === 'self') {
+                //console.log("Skipping self-directed message.");
+                continue;
             } else {
-                const normalizedRecipient = this.normalizeRecipient(recipient);
+                // Handle specific recipient
                 const targetNode = connectedAiNodes.find(node =>
-                    this.normalizeRecipient(node.getTitle()) === normalizedRecipient
+                    this.normalizeRecipient(node.getTitle()) === this.normalizeRecipient(recipient)
                 );
-
                 if (targetNode) {
                     targetNodes.push(targetNode);
                 } else {
@@ -481,29 +479,53 @@ class AiNodeMessageLoop {
                 }
             }
 
-            // Process each target node
             for (const connectedNode of targetNodes) {
                 this.processTargetNode(connectedNode, message);
             }
         }
     }
 
-    processTargetNode(connectedNode, message) {
-        let uniqueNodeId = connectedNode.index;
+    removeEdgesToConnectedNodes(connectedAiNodes) {
+        const connectedAiNodeSet = new Set(connectedAiNodes.map(node => node.uuid));
+        for (let i = this.node.edges.length - 1; i >= 0; i--) {
+            const edge = this.node.edges[i];
+            if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {
+                edge.remove();
+            }
+        }
+    }
+
+    async getUserResponse(message) {
+        return await new Promise(resolve => {
+            const response = prompt(`${message}`);
+            resolve(response);
+        });
+    }
+
+    processTargetNode(connectedNode, message, skipClickQueue = false) {
+        const uniqueNodeId = connectedNode.index;
 
         if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
             console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
             return;
         }
 
-        let promptElement = connectedNode.content.querySelector(`#nodeprompt-${uniqueNodeId}`);
-        let sendButton = connectedNode.content.querySelector(`#prompt-form-${uniqueNodeId}`);
+        const promptElement = connectedNode.content.querySelector(`#nodeprompt-${uniqueNodeId}`);
+        const sendButton = connectedNode.content.querySelector(`#prompt-form-${uniqueNodeId}`);
 
         if (!promptElement || !sendButton) {
             console.error(`Elements for ${uniqueNodeId} are not found`);
             return;
         }
 
+        this.updatePromptElement(promptElement, message);
+
+        if (!skipClickQueue) {
+            this.enqueueClick(uniqueNodeId, sendButton, connectedNode);
+        }
+    }
+
+    updatePromptElement(promptElement, message) {
         if (promptElement instanceof HTMLTextAreaElement) {
             promptElement.value += `\n${message}`;
         } else if (promptElement instanceof HTMLDivElement) {
@@ -513,126 +535,110 @@ class AiNodeMessageLoop {
         }
 
         promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+    }
 
+    enqueueClick(uniqueNodeId, sendButton, connectedNode) {
         if (!this.clickQueues[uniqueNodeId]) {
             this.clickQueues[uniqueNodeId] = [];
             this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
         }
-
         this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
     }
 
+    fallbackParse(text) {
+        //console.log("Using fallback parsing method");
+        const senderName = this.node.getTitle() || "no_name";
+        return [{
+            recipient: 'all',
+            message: `${senderName} says,\n${text.trim()}`
+        }];
+    }
+
+    isValidRecipient(mention) {
+        const validRecipients = ['self', 'all', 'user'];
+        return validRecipients.includes(mention) || this.isConnectedNode(mention);
+    }
+
+    isConnectedNode(nodeName) {
+        const connectedNodes = calculateAiNodeDirectionalityLogic(this.node);
+        return connectedNodes.some(node => this.normalizeRecipient(node.getTitle()) === this.normalizeRecipient(nodeName));
+    }
+
+    extractMentionType(mention) {
+        if (mention === 'self') return 'self';
+        if (mention === 'all') return 'all';
+        if (mention === 'user') return 'user';
+        return mention;
+    }
+
     normalizeRecipient(recipient) {
-        // Remove '@' only if it's the first character
-        recipient = recipient.startsWith('@') ? recipient.substring(1) : recipient;
-        // Normalize by converting to lowercase and treating underscores and spaces as equivalent
-        return recipient.toLowerCase().replace(/[\s_]/g, '');
+        return recipient.toLowerCase().replace(/[\s@_-]/g, '');
     }
 
     parseMessages(text) {
-        console.log("Parsing messages...");
+        //console.log("Parsing messages...");
+        //console.log("Input text:", text);  // Log the input text
         const messages = [];
-        const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-        let senderName = this.node.getTitle() || "no_name";
+        const mentionPattern = /@([a-zA-Z0-9._-]+)(?:[\s,:]|$)/g;
+        const senderName = this.node.getTitle() || "no_name";
 
-        let accumulatedMessage = '';
-        let currentRecipients = [];
-        let isSelfMessage = false;
+        let currentRecipient = 'all';
+        let currentMessage = '';
 
-        text.split('\n').forEach(line => {
-            console.log(`Processing line: ${line}`);
-            line = line.trim();
+        // Split the text into paragraphs
+        const paragraphs = text.split(/\n\s*\n/);
 
-            // Check for the /exit command
-            if (line.toLowerCase().includes('/exit')) {
-                messages.push({ recipient: 'all', message: `${senderName} says,\n${line}` });
-                messages.push({ recipient: 'self', message: '/exit' });
-                return; // Stop further processing
-            }
+        for (const paragraph of paragraphs) {
+            const parts = paragraph.split(mentionPattern);
 
-            let lastIndex = 0;
-            let match;
-            let lineRecipients = [];
-            let lineMessage = '';
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 2 === 0) {
+                    // This is message content
+                    currentMessage += parts[i];
+                } else {
+                    // This is a mention
+                    const mention = parts[i].toLowerCase();
 
-            while ((match = mentionPattern.exec(line)) !== null) {
-                const beforeMention = line.substring(lastIndex, match.index).trim();
-
-                // If a self message is encountered, finalize the message and stop accumulating further text
-                if (match[1].toLowerCase() === 'self') {
-                    if (accumulatedMessage.trim() || beforeMention) {
-                        currentRecipients.forEach(recipient => {
-                            messages.push({
-                                recipient: recipient,
-                                message: `${senderName} says,\n${(accumulatedMessage + beforeMention).trim()}`
-                            });
-                        });
+                    if (this.isValidRecipient(mention)) {
+                        if (currentMessage.trim()) {
+                            this.finalizeMessage(messages, currentRecipient, currentMessage.trim(), senderName);
+                        }
+                        currentRecipient = this.extractMentionType(mention);
+                        currentMessage = '';
+                    } else {
+                        currentMessage += `@${parts[i]}`;
                     }
-                    accumulatedMessage = ''; // Reset accumulated message after finalizing
-                    isSelfMessage = true;
-                    break; // Stop processing this line after @self
-                }
-
-                // Finalize any accumulated message before this new mention
-                if (accumulatedMessage.trim() && currentRecipients.length > 0) {
-                    currentRecipients.forEach(recipient => {
-                        messages.push({
-                            recipient: recipient,
-                            message: `${senderName} says,\n${accumulatedMessage.trim()}`
-                        });
-                    });
-                    accumulatedMessage = ''; // Reset accumulated message after sending
-                }
-
-                // Include any text before the mention
-                if (beforeMention) {
-                    lineMessage += beforeMention + ' ';
-                }
-
-                // Add the mention itself to the message
-                lineMessage += match[0] + ' ';
-
-                // Add the mention to the list of recipients for this line
-                const recipient = match[1].toLowerCase();
-                if (!lineRecipients.includes(recipient)) {
-                    lineRecipients.push(recipient);
-                }
-
-                lastIndex = match.index + match[0].length;
-            }
-
-            // Capture any remaining text after the last mention in the line
-            if (!isSelfMessage) {
-                const remainingText = line.substring(lastIndex).trim();
-                if (remainingText) {
-                    lineMessage += remainingText + ' ';
                 }
             }
 
-            // Accumulate the message for all recipients from this line
-            if (lineRecipients.length > 0) {
-                accumulatedMessage += lineMessage;
-                currentRecipients = lineRecipients; // Update current recipients to include all recipients found in this line
-            } else if (!isSelfMessage) {
-                accumulatedMessage += line + ' ';
+            // Finalize the message for this paragraph
+            if (currentMessage.trim()) {
+                this.finalizeMessage(messages, currentRecipient, currentMessage.trim(), senderName);
+                currentMessage = '';
             }
-
-            // Reset self message flag for next line
-            isSelfMessage = false;
-        });
-
-        // Finalize the last message if it exists
-        if (accumulatedMessage.trim()) {
-            currentRecipients.forEach(recipient => {
-                messages.push({
-                    recipient: recipient,
-                    message: `${senderName} says,\n${accumulatedMessage.trim()}`
-                });
-            });
         }
 
-        console.log(`Parsed messages: ${JSON.stringify(messages)}`);
+        //console.log(`Parsed ${messages.length} messages`);
+        //console.log(`Parsed messages: ${JSON.stringify(messages)}`);
+
+        if (messages.length === 0) {
+            console.warn("No messages parsed. Using fallback method.");
+            return this.fallbackParse(text);
+        }
+
         return messages;
+    }
+
+    finalizeMessage(messages, recipient, message, senderName) {
+        //console.log(`Finalizing message for recipient: ${recipient}`);
+        if (message.trim()) {  // Only add non-empty messages
+            messages.push({
+                recipient: recipient,
+                message: `${senderName} says,\n${message.trim()}`
+            });
+        } else {
+            //console.log("Skipping empty message");
+        }
     }
 
     getLastAiResponse() {
@@ -641,10 +647,7 @@ class AiNodeMessageLoop {
             const lastWrapper = responseWrappers[responseWrappers.length - 1];
             const aiResponseDiv = lastWrapper.querySelector('.ai-response');
             if (aiResponseDiv) {
-                // Use textContent instead of innerText to preserve formatting
-                const responseText = aiResponseDiv.textContent.trim();
-                //console.log(`Last AI response: ${responseText}`);
-                return responseText;
+                return aiResponseDiv.textContent.trim();
             }
         }
         console.warn("No AI response found.");

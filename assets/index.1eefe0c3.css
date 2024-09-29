@@ -2554,6 +2554,15 @@ input[type=range] {
     gap: 10px;
 }
 
+.single-column-layout {
+    padding-top: 5px;
+    padding-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr; /* Single column layout */
+    gap: 15px; /* Adjusts the spacing between the items */
+    align-items: center;
+}
+
 .ainodewrapperDiv {
     display: flex;
     flex-direction: column;
