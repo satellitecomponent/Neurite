@@ -215,15 +215,28 @@
     </div>
 
     <div id="aiModal" style="display: none;">
-        <div class="checkboxarray">
+        <h3 class="modal-title">Zettelkasten AI</h3>
+        <div class="single-column-layout">
             <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
-            <label for="forget-checkbox"><strong>Selective Forgetting </strong></label>
+            <label for="forget-checkbox"><strong>Selective Forgetting</strong></label>
             <input type="checkbox" id="novelty-checkbox">
             <label for="novelty-checkbox"><strong>Shuffle Wiki Results</strong></label>
-            <input type="checkbox" id="use-all-connected-ai-nodes" />
-            <label for="use-all-connected-ai-nodes"><strong>Message All Connected Ai</strong></label>
             <input type="checkbox" id="ai-nodes-checkbox">
             <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes</strong></label>
+        </div>
+
+        <h3 class="modal-title">Multi-Agent</h3>
+        <div class="single-column-layout">
+            <input type="checkbox" id="use-all-connected-ai-nodes">
+            <label for="use-all-connected-ai-nodes"><strong>Message All Connected AI</strong></label>
+            <input type="checkbox" id="enable-exit" checked>
+            <label for="enable-exit"><strong>/exit</strong></label>
+            <input type="checkbox" id="enable-all" checked>
+            <label for="enable-all"><strong>@all</strong></label>
+            <input type="checkbox" id="enable-self" checked>
+            <label for="enable-self"><strong>@self</strong></label>
+            <input type="checkbox" id="enable-user" checked>
+            <label for="enable-user"><strong>@user</strong></label>
         </div>
     </div>
 
@@ -321,6 +334,10 @@
                 <textarea class="prompt-content-textarea custom-scrollbar"></textarea>
                 <div class="prompt-buttons">
                     <button class="set-instructions-button">Set Instructions</button>
+                    <!-- Import and Export Buttons -->
+                    <input type="file" class="import-prompt-button" accept="application/json" style="display: none;" />
+                    <button class="import-prompt-label set-instructions-button">Import Prompts</button>
+                    <button class="export-prompt-button set-instructions-button">Export Prompts</button>
                 </div>
             </div>
         </div>
@@ -572,10 +589,15 @@
                                             <label for="groq-select">Groq</label>
                                             <div class="dropdown-container">
                                                 <select id="groq-select" class="model-selector custom-select">
+                                                    <option value="gemma2-9b-it">Gemma2-9b-it</option>
                                                     <option value="gemma-7b-it">Gemma-7b-it</option>
                                                     <option value="mixtral-8x7b-32768">Mixtral 8x7b 32k</option>
-                                                    <option value="llama3-8b-8192">Llama3-8b</option>
+                                                    <option value="llama-3.2-3b-preview">Llama 3.2 3b</option>
+                                                    <option value="llama-3.2-1b-preview">Llama 3.2 1b</option>
+                                                    <option value="llama-3.1-70b-versatile">Llama 3.1 70b</option>
+                                                    <option value="llama-3.1-8b-instant">Llama 3.1 8b</option>
                                                     <option value="llama3-70b-8192">Llama3-70b</option>
+                                                    <option value="llama3-8b-8192">Llama3-8b</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -1344,6 +1366,7 @@
 
     <script src="js/nodes/nodetypes/ainodes/responsehandler.js"></script>
     <script src="js/nodes/nodetypes/ainodes/ainode.js"></script>
+    <script src="js/nodes/nodetypes/ainodes/promptlibrary.js"></script>
     <script src="js/nodes/nodetypes/ainodes/ainodemessage.js"></script>
 
     <script src="js/ai/ai_v2.js"></script>

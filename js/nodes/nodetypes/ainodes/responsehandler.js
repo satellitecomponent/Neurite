@@ -252,17 +252,23 @@ class ResponseHandler {
     }
 
     appendMarkdownSegment(responseDiv, segment) {
-        // Accumulate the markdown content in the response div's dataset
+        // Update the dataset with the new segment
         responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
 
-        // Apply special styling to @mentions within the current segment only
-        const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-        const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, '<span class="mention">$&</span>');
+        // Updated regex to handle mentions more flexibly
+        // Matches mentions starting with @, and including any subsequent @ symbols until a space or end of string
+        const mentionPattern = /(?<=^|\s)@[a-zA-Z0-9._@-]+/g;
 
-        // Parse and replace the inner HTML with the highlighted content, but avoid extra new lines
+        // Replace mentions with a span for highlighting
+        const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, (match) => {
+            return `<span class="mention">${match}</span>`;
+        });
+
+        // Properly parse and render the updated content using the marked library
         let parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
         responseDiv.innerHTML = parsedHtml;
     }
+
 
     getOrCreateResponseDiv(index) {
         let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
