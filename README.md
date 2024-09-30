@@ -1,6 +1,5 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
-![GitHub Sponsors](https://img.shields.io/github/sponsors/satellitecomponent?color=red&link=https%3A%2F%2Fgithub.com%2Fsponsors%2Fsatellitecomponent)
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
 
