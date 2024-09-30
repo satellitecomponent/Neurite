@@ -1,15 +1,121 @@
 
-# Neurite
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/satellitecomponent?color=red&link=https%3A%2F%2Fgithub.com%2Fsponsors%2Fsatellitecomponent)
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
-## `Introduction`
+
+# 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
+
+⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
+
+🌱 This is an open-source project in active development.
+<table>
+  <tr>
+    <td>
+      <h2>Table of Contents</h2>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#how-to-use-neurite">How to Use Neurite</a></li>
+        <li><a href="#synchronized-knowledge-management">Synchronized Knowledge Management</a></li>
+        <li><a href="#fractalgpt">FractalGPT</a></li>
+        <li><a href="#multi-agent-ui">Multi-Agent UI</a></li>
+        <li><a href="#user-guide">User Guide</a></li>
+        <li><a href="#local-server-setup">Local Server Setup</a></li>
+        <li><a href="#neural-api">Neural API</a></li>
+        <li><a href="#future-of-neurite">Future of Neurite</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+      </ol>
+    </td>
+    <td style="width: 35%;">
+      <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="Neurite Image" style="width: 100%;">
+    </td>
+  </tr>
+</table>
+
+# Overview
 
 ### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 ### ***...the fractal dimension.***
 
+<table>
+  <thead>
+    <tr>
+      <th><strong>Category</strong></th>
+      <th><strong>Feature</strong></th>
+      <th><strong>Description</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="2"><strong>Fractal Navigation</strong></td>
+      <td>Real-time Fractal Zoom</td>
+      <td>Navigate and explore iterative equations in real-time. Evolve and organize an <code>infinite digital garden</code> with the help of fractal mathematics.</td>
+    </tr>
+    <tr>
+      <td>Fractal Customization</td>
+      <td>Display the <code>Mandelbrot set</code>, the <code>Burning Ship</code> fractal, the <code>Julia set</code>, and more. Customize the <code>color</code>, <code>quality</code>, and <code>speed</code> of generation—among other <code>unique fractal controls</code>, such as <code>generating fractal lines according to mouse position.</code></td>
+    </tr>
+    <tr>
+      <td rowspan="1"><strong>Multi-Agent UI</strong></td>
+      <td>AI Node Networks</td>
+      <td>Connect and manage multiple <code>AI nodes</code>, enabling <code>collaberative communication</code> between multiple AI and the user via <code>graph-based multi-agent conversation</code>.</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><strong>FractalGPT</strong></td>
+      <td>Structured Memory Mapping</td>
+      <td>The <code>Zettelkasten AI</code> responds as a <code>graph of thoughts</code>.</td>
+    </tr>
+    <tr>
+      <td>Non-Linear Memory Access</td>
+      <td>Retrieve AI memories and conversation histories <code>non-linearly</code>, enabling contextual responses that utilize <code>graph search</code>.</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><strong>Synchronized Knowledge</strong></td>
+      <td>Bi-Directional Sync</td>
+      <td>Sync updates between the <code>fractal mind-mapping</code> workspace and <code>Zettelkasten Archives</code>, ensuring consistency between visual graph representations and text-based notes.</td>
+    </tr>
+    <tr>
+      <td>Custom Formatting</td>
+      <td>Neurite is <code>not locked into a specific note-taking format</code>. Instead, set <code>custom tags</code> to represent personalized note headings and reference brackets.</td>
+    </tr>
+    <tr>
+      <td>Custom Note Creation</td>
+      <td>Text nodes support <code>code highlighting and execution</code>. Define and test <code>custom nodes</code> without ever leaving Neurite.</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><strong>Mind-Mapping</strong></td>
+      <td>Physics-Based Graphs</td>
+      <td>Nodes are <code>physics simulated</code> to fall towards the fractal visualization. Utilize this feature to <code>scatter and arrange</code> your thoughts.</td>
+    </tr>
+    <tr>
+      <td>Multimedia Interaction</td>
+      <td>Represent text, image, video, audio, webpages, PDFs, and AI agents.</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><strong>AI Integration</strong></td>
+      <td>Wolfram Alpha and Wikipedia Search</td>
+      <td>Integrate <code>external knowledge sources</code>, like Wolfram Alpha and Wikipedia, with results displayed as nodes in the fractal workspace.</td>
+    </tr>
+    <tr>
+      <td>Web and PDF Integration</td>
+      <td>Retrieve and store information from websites and PDFs using a <code>local vector database</code> for contextual AI responses.</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><strong>Neural API</strong></td>
+      <td>Neural API</td>
+      <td>Execute Neurite’s functions and code sequences within the fractal environment through an exposed API, allowing <code>advanced users</code> to build custom interactions.</td>
+    </tr>
+    <tr>
+      <td>Function Calling Panel</td>
+      <td>Directly execute Neurite functions and animations from a <code>built-in terminal</code> panel.</td>
+    </tr>
+  </tbody>
+</table>
 
+
+## `Introduction`
 
 ## Bridging Fractals and Thought
 
@@ -50,23 +156,6 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 
 ## `Complexity Inspires Creativity / Basins Attract`
 ### Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape tracing your ever-branching pathways of thought.
-
-# 🌐 **[Available](https://satellitecomponent.github.io/Neurite/) through Github Pages:** [neurite.network](https://satellitecomponent.github.io/Neurite/) 🌐
-⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
-
-🌱 This is an open-source project in active development, feel feel to join our team on [Discord](https://discord.gg/6fdmDF8SmT)
-## `Table of Contents`
-
-1. [Introduction](#introduction)
-2. [How to Use Neurite](#how-to-use-neurite)
-3. [Synchronized Knowledge Management](#synchronized-knowledge-management)
-4. [FractalGPT](#fractalgpt)
-5. [Multi-Agent UI](#multi-agent-ui)
-6. [User Guide](#user-guide)
-7. [Local Server Setup](#local-server-setup)
-8. [Neural API](#neural-api)
-9. [Future of Neurite](#future-of-neurite)
-10. [Gallery](#gallery)
 
 ## `How to Use Neurite`
 
@@ -380,7 +469,7 @@ The Localhost Servers are an important component of Neurite that serve as an opt
 
 *alternatively clone the entire repo.
 
-### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha, and Wikipedia.
+### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha Results, and Wikipedia Results.
 - The localhost servers require npm and Node.js
 - Without any servers running, Wolfram, Wiki, the Vector Database and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
@@ -436,7 +525,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
     </td>
     <!-- Right: Description of the Function Calling Panel -->
     <td valign="top" width="60%">
-      <h3>Expirimental Update: Function Calling Panel</h3>
+      <h3>Experimental Update: Function Calling Panel</h3>
       <p>This feature is a terminal that allows you to execute Neurite's code from within Neurite itself.</p>
       <p>Included with the function calling panel update is our Neural API. The Neural API is a growing collection of existing features within Neurite, made for sequencing animations of function calls. The current features include:</p>
       <ul>
@@ -460,84 +549,10 @@ console.log(neuralAPI);</code></pre>
 
 ## `Future of Neurite`
 
-### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for generating ideas. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing thought.
+### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for thought. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing connections.
 🚧 `Neurite is in active development.` 🚧 
 
-
-<table>
-  <thead>
-    <tr>
-      <th><strong>Category</strong></th>
-      <th><strong>Feature</strong></th>
-      <th><strong>Description</strong></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td rowspan="2"><strong>Fractal Navigation</strong></td>
-      <td>Real-time Fractal Zoom</td>
-      <td>Navigate and explore iterative equations in real-time. Evolve and organize an <code>infinite digital garden</code> with the help of fractal mathematics.</td>
-    </tr>
-    <tr>
-      <td>Fractal Customization</td>
-      <td>Display the <code>Mandelbrot set</code>, the <code>Burning Ship</code> fractal, the <code>Julia set</code>, and more. Customize the color, quality, and speed of generation—among other <code>unique fractal controls</code>, such as generating fractal lines according to mouse position.</td>
-    </tr>
-    <tr>
-      <td rowspan="1"><strong>Multi-Agent UI</strong></td>
-      <td>AI Node Networks</td>
-      <td>Connect and manage multiple <code>AI nodes</code>, allowing them to communicate with each other or the user through <code>graph-based multi-agent conversation</code>.</td>
-    </tr>
-    <tr>
-      <td rowspan="2"><strong>FractalGPT</strong></td>
-      <td>Structured Memory Mapping</td>
-      <td>The <code>Zettelkasten AI</code> responds as a <code>graph of thoughts</code>.</td>
-    </tr>
-    <tr>
-      <td>Non-Linear Memory Access</td>
-      <td>Retrieve AI memories and conversation histories in a <code>non-linear</code> fashion, enabling contextual responses based on <code>graph search</code>.</td>
-    </tr>
-    <tr>
-      <td rowspan="3"><strong>Synchronized Knowledge</strong></td>
-      <td>Bi-Directional Sync</td>
-      <td>Sync updates between the <code>fractal mind-mapping</code> workspace and <code>Zettelkasten Archives</code>, ensuring consistency between visual graph representations and text-based notes.</td>
-    </tr>
-    <tr>
-      <td>Custom Formatting</td>
-      <td>Neurite is <code>not locked into a specific note-taking format</code>. Instead, set <code>custom tags</code> to represent note headings and reference brackets.</td>
-    </tr>
-    <tr>
-      <td>Custom Note Creation</td>
-      <td>Text nodes support <code>code highlighting and execution</code>. Define and test <code>custom nodes</code> without ever leaving Neurite.</td>
-    </tr>
-    <tr>
-      <td rowspan="2"><strong>Mind-Mapping</strong></td>
-      <td>Physics-Based Graphs</td>
-      <td>Nodes are <code>physics simulated</code> to fall towards the fractal visualization. Utilize this feature to <code>scatter and arrange</code> your thoughts.</td>
-    </tr>
-    <tr>
-      <td>Multimedia Interaction</td>
-      <td>Represent text, image, video, audio, webpages, PDFs, and AI agents.</td>
-    </tr>
-    <tr>
-      <td rowspan="2"><strong>AI Integration</strong></td>
-      <td>Wolfram Alpha and Wikipedia Search</td>
-      <td>Integrate <code>external knowledge sources</code>, like Wolfram Alpha and Wikipedia, with results displayed as nodes in the fractal workspace.</td>
-    </tr>
-    <tr>
-      <td>Web and PDF Integration</td>
-      <td>Retrieve and store information from websites and PDFs using a <code>local vector database</code> for contextual AI responses.</td>
-    </tr>
-    <tr>
-      <td rowspan="2"><strong>Neural API</strong></td>
-      <td>Neural API</td>
-      <td>Execute Neurite’s functions and code sequences within the fractal environment through an exposed API, allowing <code>advanced users</code> to build custom interactions.</td>
-    </tr>
-    <tr>
-      <td>Function Calling Panel</td>
-      <td>Directly execute Neurite functions and animations from a <code>built-in terminal</code> panel.</td>
-    </tr>
-  </tbody>
-</table>
+See our contributing guidelines [here](https://github.com/satellitecomponent/Neurite/tree/local-ai).
 
 🚧
 
@@ -552,7 +567,6 @@ If you are a developer who is interested in contributing to this project, contac
    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/7593dbcf-1eb7-415b-9f83-b817229f0c17" alt="whyfractals4" width="70%">
     <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d5800897-1eb8-4113-8a9e-75ce029eb67a" alt="whyfractals6" width="70%">
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
-   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="SKM2" width="70%">
              <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac" alt="SKM3" width="70%">
 </p>
