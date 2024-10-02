@@ -50,16 +50,16 @@
     <tr>
       <td rowspan="2"><strong>Fractal Navigation</strong></td>
       <td>Real-time Fractal Zoom</td>
-      <td>Navigate and explore iterative equations in real-time. Evolve and organize an <code>infinite digital garden</code> with the help of fractal mathematics.</td>
+      <td>Navigate and explore iterative equations in real-time. Evolve and organize an <code>infinite digital garden</code> with the help of <code>fractal mathematics</code>.</td>
     </tr>
     <tr>
       <td>Fractal Customization</td>
-      <td>Display the <code>Mandelbrot set</code>, the <code>Burning Ship</code> fractal, the <code>Julia set</code>, and more. Customize the <code>color</code>, <code>quality</code>, and <code>speed</code> of generation—among other <code>unique fractal controls</code>, such as <code>generating fractal lines according to mouse position.</code></td>
+      <td>Display the <code>Mandelbrot set</code>, the <code>Burning Ship</code> fractal, the <code>Julia set</code>, and more. Customize the <code>color</code>, <code>quality</code>, and <code>speed</code> of generation—among other <code>unique fractal controls</code>, such as <code>generating the fractal according to your current mouse position.</code></td>
     </tr>
     <tr>
       <td rowspan="1"><strong>Multi-Agent UI</strong></td>
       <td>AI Node Networks</td>
-      <td>Connect and manage multiple <code>AI nodes</code>, enabling <code>collaberative communication</code> between multiple AI and the user via <code>graph-based multi-agent conversation</code>.</td>
+      <td>Connect and manage multiple <code>AI nodes</code>, enabling <code>collaborative communication</code> between multiple AI and the user via <code>graph-based multi-agent conversation</code>.</td>
     </tr>
     <tr>
       <td rowspan="2"><strong>FractalGPT</strong></td>
@@ -77,7 +77,7 @@
     </tr>
     <tr>
       <td>Custom Formatting</td>
-      <td>Neurite is <code>not locked into a specific note-taking format</code>. Instead, set <code>custom tags</code> to represent personalized note headings and reference brackets.</td>
+      <td>Neurite <code>is not locked into a specific note-taking format</code>. Set <code>custom tags</code> for personalized note headings and reference brackets.</td>
     </tr>
     <tr>
       <td>Custom Note Creation</td>
