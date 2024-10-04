@@ -172,7 +172,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   <!-- Navigation -->
   <tr>
     <td rowspan="2"><strong>Navigation</strong></td>
-    <td><code>Click and drag</code></td>
+    <td><code>Click and Drag</coDe></td>
     <td>Move around</td>
   </tr>
   <tr>
@@ -181,7 +181,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   </tr>
   <!-- Node Management -->
   <tr>
-    <td rowspan="4"><strong>Node Essentials</strong></td>
+    <td rowspan="6"><strong>Node Essentials</strong></td>
     <td><code>Shift + double click</code></td>
     <td>Create text node</td>
   </tr>
@@ -190,12 +190,20 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
     <td>Freeze time</td>
   </tr>
   <tr>
-    <td><code>Hold Shift + click</code></td>
+    <td><code>Hold Shift + Click</code></td>
     <td>Connect two nodes</td>
   </tr>
+    <tr>
+    <td><code>Hold Shift + Double Click</code></td>
+    <td>Expand collapsed node.</td>
+  </tr>
   <tr>
-    <td><code>Double click</code></td>
+    <td><code>Double Click</code></td>
     <td>Anchor a node</td>
+  </tr>
+    <tr>
+    <td><code>Right Click</code></td>
+    <td>List and run Node Methods. (delete, connect, extractText, zoomTo, among many others!)</td>
   </tr>
   <!-- Node Selection & Arrangement -->
   <tr>
