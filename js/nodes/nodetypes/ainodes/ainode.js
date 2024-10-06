@@ -379,7 +379,7 @@ function setupAiNodeResponseDivListeners(node) {
     // Add a 'wheel' event listener
     aiResponseDiv.addEventListener('wheel', function (event) {
         // If the Shift key is not being held down, stop the event propagation
-        if (!event.shiftKey) {
+        if (!nodeMode) {
             event.stopPropagation();
         }
     }, { passive: false });
@@ -571,7 +571,7 @@ function setupAiNodeSettingsButtonListeners(node) {
 }
 
 function conditionalStopPropagation(event) {
-    if (!altHeld) {
+    if (!event.getModifierState(controls.altKey.value)) {
         event.stopPropagation();
     }
 }

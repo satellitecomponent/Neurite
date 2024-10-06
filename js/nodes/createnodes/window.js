@@ -84,7 +84,7 @@ function addWindowEventListeners(node) {
 
 function setupHeaderContainerListeners(headerContainer) {
     headerContainer.onmousedown = function (event) {
-        if (event.altKey) {
+        if (event.getModifierState(controls.altKey.value)) {
             cancel(event); // Prevent dragging if Alt key is pressed
         }
     };
@@ -98,7 +98,7 @@ function setupWindowDivListeners(node) {
     let clickStartX, clickStartY;
 
     windowDiv.addEventListener('mousedown', (event) => {
-        if (event.altKey) {
+        if (event.getModifierState(controls.altKey.value)) {
             // Record the starting position of the mouse only if the Alt key is held
             clickStartX = event.clientX;
             clickStartY = event.clientY;
@@ -106,7 +106,7 @@ function setupWindowDivListeners(node) {
     });
 
     windowDiv.addEventListener('mouseup', (event) => {
-        if (event.altKey) {
+        if (event.getModifierState(controls.altKey.value)) {
             const distanceMoved = Math.sqrt(Math.pow(event.clientX - clickStartX, 2) + Math.pow(event.clientY - clickStartY, 2));
             // Check if the mouse has moved more than a certain threshold
             const dragThreshold = 10; // pixels, adjust this value as needed
@@ -148,7 +148,7 @@ function setupTitleInputListeners(titleInput) {
 
     titleInput.addEventListener('mousemove', (event) => {
         if (isMouseDown) { isDragging = true; }
-        if (isDragging && !altHeld) {
+        if (isDragging && !event.getModifierState(controls.altKey.value)) {
             titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
         }
     });
