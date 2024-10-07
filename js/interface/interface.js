@@ -50,133 +50,258 @@ for (const k of ["paste", "mousemove", "mousedown", "dblclick", "click"]) {
     })
 }
 
+function performZoom(amount, dest) {
+    // Invert the zoom factor by taking the reciprocal of the scale amount
+    zoom = zoom.scale(1 / amount);
+    pan = dest.scale(1 - (1 / amount)).plus(pan.scale(1 / amount));
+}
 
+// Variables for Mouse Interaction
+let isMouseZooming = false;
+let mouseZoomStartY = 0;
 
-document.addEventListener('wheel', (event) => {
-    isAnimating = false;
+let isMousePanning = false;
+let mouseDownPos = new vec2(0, 0);
 
-    // Get the element that the user is scrolling on
-    let targetElement = event.target;
+let mousePanButton = settings.panClick;
+let mouseZoomButton = settings.zoomClick;
 
-    while (targetElement) {
-        // Check if the target is a textarea or contenteditable
-        if (targetElement.tagName.toLowerCase() === 'textarea' ||
-            targetElement.contentEditable === 'true') {
-            return;
-        }
+let isRotating = false;
+let rotateStartPos = new vec2(0, 0);
+let rotatePrevPos = new vec2(0, 0);
 
-        if (targetElement.tagName.toLowerCase() === 'textarea' ||
-            targetElement.contentEditable === 'true') {
-            return;
-        }
+// Constants
+const DRAG_THRESHOLD = 1; // pixels
 
-        // Check if the target is an instance of the custom dropdown
-        if (targetElement.classList.contains('options-replacer')) {
-            return;
-        }
+// Flag to track if a control drag occurred
+let controlDragOccurred = false;
 
-        // Check if the target is an instance of the custom tooltip
-        if (targetElement.classList.contains('tooltip')) {
-            return;
-        }
+// Modified 'mousemove' Event Listener
+svg.addEventListener("mousemove", (event) => {
+    mousePos = new vec2(event.pageX, event.pageY);
 
-        // Check if the target is a node title
-        if (targetElement.classList.contains('node-title-sd')) {
-            return;
-        }
+    if (isRotating) {
+        // Rotating logic
+        let currentPos = new vec2(event.pageX, event.pageY);
+        let deltaPos = currentPos.minus(rotatePrevPos);
 
-        targetElement = targetElement.parentElement;
-    }
-    if (nodeMode !== 1 && event.getModifierState(settings.rotateModifier)) {
-        autopilotSpeed = 0;
-        coordsLive = true;
-        let amount = event.wheelDelta * settings.rotateModifierSpeed;
-        let p = toZ(new vec2(event.pageX, event.pageY));
+        // Compute angle delta based on mouse movement
+        let angleDelta = (deltaPos.x - deltaPos.y) * settings.dragRotateSpeed;
+
+        // Update rotation incrementally
+        let deltaRotation = new vec2(Math.cos(angleDelta), Math.sin(angleDelta));
+        rotation = rotation.cmult(deltaRotation);
+
+        // Adjust zoom and pan to reflect rotation around the pivot point
+        let p = toZ(rotateStartPos);
         let zc = p.minus(pan);
-        // p = zoom*center+pan = zoom'*center+pan'
-        // zoom' = zoom*rot
-        // pan' = pan + (zoom*center-zoom*rot*center)
-        //      = pan + (1-rot) * zoom*center
-        let r = new vec2(Math.cos(amount), Math.sin(amount));
-        zoom = zoom.cmult(r);
-        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
-        cancel(event);
-        return;
-    }
-    if (settings.scroll === "zoom") {
-        autopilotSpeed = 0;
-        deselectCoordinate();
-        hideContextMenu();
-        coordsLive = true;
-        let dest = toZ(mousePos);
-        regenAmount += Math.abs(event.wheelDelta);
-        let amount = Math.exp(event.wheelDelta * settings.zoomSpeed);
-        zoom = zoom.scale(amount);
-        pan = dest.scale(1 - amount).plus(pan.scale(amount));
-        cancel(event);
-    } else if (settings.scroll === "pan") {
-        autopilotSpeed = 0;
-        coordsLive = true;
-        let dest = toZ(mousePos);
-        let dp;
-        let amount;
-        if (event.ctrlKey) {
-            dp = new vec2(0, 0);
-            amount = event.deltaY * settings.zoomSpeed;
-        } else {
-            dp = toDZ(new vec2(event.deltaX, event.deltaY).scale(settings.panSpeed));
-            amount = event.deltaZ * settings.zoomSpeed;
+
+        zoom = zoom.cmult(deltaRotation);
+        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
+
+        // Update rotatePrevPos for the next movement
+        rotatePrevPos = currentPos;
+
+        // Check if movement exceeds drag threshold
+        if (deltaPos.mag() > DRAG_THRESHOLD) {
+            controlDragOccurred = true;
         }
-        regenAmount += Math.hypot(event.deltaX, event.deltaY, event.deltaZ);
-        amount = Math.exp(amount)
-        zoom = zoom.scale(amount);
-        pan = dest.scale(1 - amount).plus(pan.scale(amount)).plus(dp);
-        cancel(event);
+
+        event.preventDefault();
+    } else if (isMouseZooming) {
+        // Zooming logic
+        let dragDistance = event.clientY - mouseZoomStartY;
+        let amount = Math.exp(-dragDistance * settings.dragZoomSpeed);
+        let dest = toZ(mousePos);
+        performZoom(amount, dest);
+        mouseZoomStartY = event.clientY;
+        regenAmount += Math.abs(dragDistance);
+
+        // Check if movement exceeds drag threshold
+        if (Math.abs(dragDistance) > DRAG_THRESHOLD) {
+            controlDragOccurred = true;
+        }
+
+        event.preventDefault();
+    } else if (isMousePanning) {
+        // Panning logic
+        isAnimating = false;
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let delta = mousePos.minus(mouseDownPos);
+        pan = pan.minus(toDZ(delta));
+        regenAmount += delta.mag() * 0.25;
+        mouseDownPos = mousePos.scale(1);
+
+        // Check if movement exceeds drag threshold
+        if (delta.mag() > DRAG_THRESHOLD) {
+            controlDragOccurred = true;
+        }
+    }
+});
+
+// Modified 'mousedown' Event Listener
+svg.addEventListener("mousedown", (event) => {
+    // Record the initial position on mousedown
+    mouseDownPos = new vec2(event.pageX, event.pageY);
+
+    // Reset controlDragOccurred flag
+    controlDragOccurred = false;
+
+    // Handle zooming and rotating
+    if (
+        settings.zoomClick !== "scroll" &&
+        event.button === mouseZoomButton &&
+        event.getModifierState(settings.rotateModifier)
+    ) {
+        // Start rotating
+        isRotating = true;
+        rotateStartPos = new vec2(event.pageX, event.pageY);
+        rotatePrevPos = rotateStartPos; // Initialize rotatePrevPos
+        event.preventDefault();
+    } else if (event.button === mouseZoomButton) {
+        // Start zooming
+        isMouseZooming = true;
+        mouseZoomStartY = event.clientY;
         event.preventDefault();
     }
-});
 
-let mouseDown = false;
-let mouseDownPos = new vec2(0, 0);
-let isMousePanning = false;
-
-addEventListener("mousedown", (event) => {
-    // Only set mouseDown for left-click (button 0)
-    if (event.button === 0) {
+    // Handle panning
+    if (event.button === mousePanButton) {
+        // Start panning
         autopilotSpeed = 0;
         mouseDownPos = mousePos.scale(1);
-        mouseDown = true;
-        isMousePanning = false;  // Reset panning flag
+        isMousePanning = true;
+        event.preventDefault();
     }
-    cancel(event);
+
+    // Handle context menu button press
+    if (event.button === parseInt(settings.contextKey)) {
+        // Reset controlDragOccurred flag
+        controlDragOccurred = false;
+
+        // Prevent default behavior to suppress browser context menu if it's the assigned button
+        if (controls.contextMenuButton.value === 2) { // Assuming 2 is right-click
+            event.preventDefault();
+        }
+    }
 });
 
+// Modified 'mouseup' Event Listener
 addEventListener("mouseup", (event) => {
-    // Reset flags on any mouse button release
-    mouseDown = false;
-    isMousePanning = false;
+    if (isRotating && event.button === mouseZoomButton) {
+        // End rotating
+        isRotating = false;
+        event.preventDefault();
+    }
+    if (event.button === mouseZoomButton && isMouseZooming) {
+        // End zooming
+        isMouseZooming = false;
+        event.preventDefault();
+    }
+    if (event.button === mousePanButton && isMousePanning) {
+        // End panning
+        isMousePanning = false;
+    }
+
+    // Handle context menu opening
+    if (event.button === parseInt(settings.contextKey)) {
+        // If a control drag did NOT occur, open the custom context menu
+        if (!controlDragOccurred) {
+            // Open custom context menu
+            openCustomContextMenu(event.pageX, event.pageY, event.target);
+        }
+        // Do not reset 'controlDragOccurred' here; let 'contextmenu' handler manage it
+        event.preventDefault();
+    }
+
     if (movingNode !== undefined) {
         movingNode.onmouseup(event);
     }
     isDraggingIcon = false;
 });
 
-addEventListener("mousemove", (event) => {
-    if (mouseDown && event.buttons === 1) {  // Check if left button is still pressed
-        if (!isMousePanning) {
-            // First mousemove after mousedown, start panning
-            isMousePanning = true;
-            mouseDownPos = mousePos.scale(1);  // Reset mouseDownPos
-        } else {
-            // Subsequent mousemoves, perform panning
-            isAnimating = false;
-            autopilotSpeed = 0;
-            coordsLive = true;
-            let delta = mousePos.minus(mouseDownPos);
-            pan = pan.minus(toDZ(delta));
-            regenAmount += delta.mag() * 0.25;
-            mouseDownPos = mousePos.scale(1);
-        }
+// Modified 'contextmenu' Event Listener
+document.addEventListener('contextmenu', function (event) {
+    // Function to check if the default context menu should be used
+    function shouldUseDefaultContextMenu(target) {
+        return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content, .tooltip') ||
+            target.tagName === 'IFRAME' ||
+            target.tagName === 'IMG' ||
+            target.tagName === 'VIDEO';
+    }
+
+    // If a control drag occurred, prevent both native and custom context menus
+    if (controlDragOccurred) {
+        event.preventDefault();
+        // Reset the flag after preventing context menu
+        controlDragOccurred = false;
+        return;
+    }
+
+    // Allow context menu if not dragging
+    // The rest of the existing logic remains intact
+
+    // If the control for context menu is not set to right-click, allow the default context menu
+    if (controls.contextMenuButton.value !== 2) {
+        return; // Allow the default context menu
+    }
+
+    // If the default context menu should be used, do nothing
+    if (event.ctrlKey || shouldUseDefaultContextMenu(event.target)) {
+        hideContextMenu();
+        return; // Allow the default context menu
+    }
+
+    // Prevent the default context menu when right-click is configured for custom context
+    event.preventDefault();
+});
+
+// Wheel event listener
+svg.addEventListener('wheel', (event) => {
+    isAnimating = false;
+
+    // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
+    if (settings.zoomClick === "scroll" && nodeMode !== 1 && event.getModifierState(settings.rotateModifier)) {
+        autopilotSpeed = 0;
+        coordsLive = true;
+
+        let amount = event.deltaY * settings.rotateModifierSpeed;
+        let p = toZ(mousePos);
+        let zc = p.minus(pan);
+
+        // Update the rotation by rotating the vector by the given amount
+        let newRotation = new vec2(Math.cos(amount), Math.sin(amount));
+        rotation = rotation.cmult(newRotation); // Compose rotations
+
+        // Apply zoom rotation and adjust pan
+        zoom = zoom.cmult(newRotation); // Rotate the zoom
+        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(newRotation)));
+
+        cancel(event);
+        return;
+    }
+
+    if (settings.zoomClick === "scroll") {
+        // Zooming via scroll wheel
+        autopilotSpeed = 0;
+        deselectCoordinate();
+        hideContextMenu();
+        coordsLive = true;
+        let dest = toZ(mousePos);
+        regenAmount += Math.abs(event.deltaY);
+        let amount = Math.exp(event.deltaY * settings.zoomSpeed);
+        performZoom(amount, dest);
+        cancel(event);
+    } else if (settings.panClick === "scroll") {
+        // Panning via scroll wheel
+        autopilotSpeed = 0;
+        coordsLive = true;
+        let dest = toZ(mousePos);
+        let dp = toDZ(new vec2(event.deltaX, event.deltaY).scale(settings.panSpeed));
+        regenAmount += Math.hypot(event.deltaX, event.deltaY);
+        pan = pan.plus(dp);
+        cancel(event);
     }
 });
 
@@ -237,15 +362,18 @@ svg.addEventListener("touchmove", (ev) => {
             // Calculate the rotation angle between the previous and current touch points
             const anglePrev = Math.atan2(p2p.y - p1p.y, p2p.x - p1p.x);
             const angleNow = Math.atan2(p2n.y - p1n.y, p2n.x - p1n.x);
-            const rotationAngle = anglePrev - angleNow; // Flip the rotation direction
+            const rotationAngle = anglePrev - angleNow; // Calculate rotation between previous and current touch points
 
-            // Apply the rotation to the zoom vector
-            const rotatedZoom = zoom.rot(rotationAngle);
+            // Update the global rotation vector
+            let rotationDelta = new vec2(Math.cos(rotationAngle), Math.sin(rotationAngle));
+            rotation = rotation.cmult(rotationDelta); // Update rotation
 
-            // Update the zoom and pan based on the midpoint, zoom factor, and rotation
-            const newZoom = rotatedZoom.scale(zoomFactor);
+            // Rotate the zoom based on the new rotation angle
+            zoom = zoom.rot(rotationAngle);
+
+            // Continue updating the pan as you already do
             const zoomDiff = newZoom.minus(zoom);
-            const panDiff = midpointNow.minus(midpointPrev).cmult(zoom); // Optimize pan calculation
+            const panDiff = midpointNow.minus(midpointPrev).cmult(zoom);
             pan = pan.minus(panDiff);
             zoom = newZoom;
 

@@ -179,6 +179,7 @@ var mousePos = new vec2(0, 0);
 var mousePath = "";
 var zoom = new vec2(1, 0); //bigger is farther out
 var pan = new vec2(0, 0);
+var rotation = new vec2(1, 0);
 
 function lerp(a, b, t) {
     return a * (1 - t) + b * t;
@@ -744,7 +745,7 @@ document.addEventListener('keydown', function (event) {
     if (event.altKey) {
         switch (event.key) {
             case 'f': // Alt+F for toggling preservation
-                console.log(`Alt+F pressed. Adding preservation to SVG elements.`);
+                console.log(`Adding preservation fractal lines.`);
                 Array.from(svg_bg.children).forEach(element => {
                     if (!element.classList.contains('preserve')) {
                         element.classList.add('preserve');
@@ -757,7 +758,7 @@ document.addEventListener('keydown', function (event) {
                 console.log(`Screenshot taken and downloaded.`);
                 break;
             case 'c': // Alt+C to clear all preservations
-                console.log(`Alt+C pressed. Clearing all preservation tags.`);
+                console.log(`Clearing all preserved fractal lines.`);
                 Array.from(svg_bg.children).forEach(element => {
                     element.classList.remove('preserve');
                 });
@@ -768,6 +769,7 @@ document.addEventListener('keydown', function (event) {
 
 function download_svg_screenshot(name) {
     var svg = document.getElementById("svg_bg");
+    var bgColorInput = document.getElementById('colorPicker').value;
 
     // Ensure the SVG has explicit dimensions
     svg.setAttribute("width", svg.clientWidth);
@@ -784,8 +786,15 @@ function download_svg_screenshot(name) {
         canvas.width = svg.clientWidth;
         canvas.height = svg.clientHeight;
         var ctx = canvas.getContext('2d');
-        ctx.fillStyle = "rgb(0, 0, 0)";  // Set background color if needed
-        ctx.fillRect(0, 0, canvas.width, canvas.height);  // Fill background
+
+        // If the selected color is not black, use it as the background color
+        if (bgColorInput !== "#000000") {
+            ctx.fillStyle = bgColorInput;  // Set background color from the input
+            ctx.fillRect(0, 0, canvas.width, canvas.height);  // Fill background
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);  // Keep it transparent
+        }
+
         ctx.drawImage(img, 0, 0);
 
         // Create an <a> element for the download

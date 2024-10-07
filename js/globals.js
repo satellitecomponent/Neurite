@@ -37,15 +37,57 @@ const storedInputValues = localStorage.getItem('modalInputValues');
         modalInputValues = JSON.parse(storedInputValues);
     }
 
+
+var controls = {
+    altKey: {
+        default: "Alt",
+        value: "Alt"
+    },
+    shiftKey: {
+        default: "Shift",
+        value: "Shift"
+    },
+    controlKey: {
+        default: "Control",
+        value: "Control"
+    },
+    scrollMode: {
+        default: ('GestureEvent' in window) ? "pan" : "zoom",
+        value: ('GestureEvent' in window) ? "pan" : "zoom"
+    },
+    zoomClick: {
+        default: "scroll", // Default to Scroll Wheel
+        value: "scroll"
+    },
+    panClick: {
+        default: 0, // Default to Left Click
+        value: 0
+    },
+    contextMenuButton: {
+        default: 2, // Default to Right Click
+        value: 2
+    }
+};
+
 var settings = {
-    zoomSpeed: 0.0005,
+    zoomSpeed: 0.001,
+    dragZoomSpeed: 0.005,
     panSpeed: 1,
     zoomContentExp: 0.5,
     gestureZoomSpeed: 0.001,
     gestureRotateSpeed: Math.PI / 180,
-    scroll: ('GestureEvent' in window) ? "pan" : "zoom",
-    nodeModeKey: "Shift", //"CapsLock",
+
+    nodeModeKey: controls.shiftKey.value, //"CapsLock",
     nodeModeTrigger: "down", //"toggle"
+
+    scroll: controls.scrollMode.value,
+    zoomClick: controls.zoomClick.value,
+    panClick: controls.panClick.value,
+    rotateModifier: controls.altKey.value,
+    contextKey: controls.contextMenuButton.value,
+
+    rotateModifierSpeed: Math.PI / 180 / 36,
+    dragRotateSpeed: 0.01,
 
     //slider adjustment
     maxLines: 128,
@@ -58,8 +100,6 @@ var settings = {
     opacity: 1,
 
 
-    rotateModifier: "Alt",
-    rotateModifierSpeed: Math.PI / 180 / 36,
 
     iterations: 256,
 
