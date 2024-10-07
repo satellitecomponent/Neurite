@@ -31,7 +31,7 @@ function toggleNodeState(nodeOrTitle, event) {
     }
 
     // Check if the alt key is being held
-    if (event && event.altKey) {
+    if (event && event.getModifierState(controls.altKey.value)) {
         let allConnectedNodes = getAllConnectedNodes(node);
         allConnectedNodes.forEach(connectedNode => {
             toggleNodeState(connectedNode); // Pass the connected node
@@ -220,7 +220,7 @@ let dragBox = null;
 let startX, startY;
 
 document.addEventListener('mousedown', function (event) {
-    if (event.button === 0 && event.altKey) { // Right-click and Ctrl key
+    if (event.button === 0 && event.getModifierState(controls.altKey.value)) {
         event.preventDefault();
         event.stopPropagation();
         isDraggingDragBox = true;

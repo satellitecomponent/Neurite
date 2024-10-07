@@ -84,14 +84,148 @@
         <text x="0" y="0" class="white">fps:</text>
     </svg>
 
-    <!-- Modals -->
-    <div id="customModal" class="modal">
+    <!-- Default Modal Structure -->
+    <div id="customModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header" id="modal-header">
                 <h2 class="modal-title"></h2>
                 <span class="close">&times;</span>
             </div>
             <div class="modal-body"></div>
+
+            <!-- Generic Overlay Inside Modal -->
+            <div class="modal-overlay" style="display: none;">
+                <div class="modal-overlay-content">
+                    <button class="modal-overlay-close">&times;</button>
+                    <div class="modal-overlay-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Modal Content -->
+    <div id="controls-modal" class="modal-content-template" style="display: none;">
+        <table>
+            <tr>
+                <td>
+                    <div class="label-container">
+                        <button class="question-button" data-explanation-id="node-mode-explanation">
+                            <svg><use href="#question-mark"></use></svg>
+                        </button>
+                        <strong>Node-Mode</strong>
+                    </div>
+                </td>
+                <td><button id="shiftKeyInput" class="linkbuttons">{{currentShiftKey}}</button></td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label-container">
+                        <button class="question-button" data-explanation-id="selection-explanation">
+                            <svg><use href="#question-mark"></use></svg>
+                        </button>
+                        <strong>Selection</strong>
+                    </div>
+                </td>
+                <td><button id="altKeyInput" class="linkbuttons">{{currentAltKey}}</button></td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label-container">
+                        <button class="question-button" data-explanation-id="pan-explanation">
+                            <svg><use href="#question-mark"></use></svg>
+                        </button>
+                        <strong>Pan</strong>
+                    </div>
+                </td>
+                <td>
+                    <select id="panClickSelect">
+                        <option value="0">Left Click</option>
+                        <option value="1">Middle Click</option>
+                        <option value="2">Right Click</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label-container">
+                        <button class="question-button" data-explanation-id="zoom-explanation">
+                            <svg><use href="#question-mark"></use></svg>
+                        </button>
+                        <strong>Zoom</strong>
+                    </div>
+                </td>
+                <td>
+                    <select id="zoomClickSelect">
+                        <option value="scroll">Scroll Wheel</option>
+                        <option value="0">Left Click</option>
+                        <option value="1">Middle Click</option>
+                        <option value="2">Right Click</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label-container">
+                        <button class="question-button" data-explanation-id="context-menu-explanation">
+                            <svg><use href="#question-mark"></use></svg>
+                        </button>
+                        <strong>Context Menu</strong>
+                    </div>
+                </td>
+                <td>
+                    <select id="contextMenuButtonSelect">
+                        <option value="1">Middle Click</option>
+                        <option value="2">Right Click</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Hidden Explanation Templates -->
+        <div id="node-mode-explanation" class="explanation-content" style="display: none;">
+            <strong>Node Mode: ({{shiftKey}})</strong>
+            <ul>
+                <li>Hold {{shiftKey}} to freeze all nodes in place.</li>
+                <li>Hold {{shiftKey}} + Scroll on a node to rescale.</li>
+                <li>Hold {{shiftKey}} + Click note titles to connect them.</li>
+                <li>Hold {{shiftKey}} + Double Click the canvas to create a text node.</li>
+                <li>Hold {{shiftKey}} + Double Click to expand a collapsed node.</li>
+            </ul>
+        </div>
+
+        <div id="selection-explanation" class="explanation-content" style="display: none;">
+            <strong>Selection: ({{altKey}})</strong>
+            <ul>
+                <li>{{altKey}} + Drag nodes to avoid text selection.</li>
+                <li>{{altKey}} + Click to select a node.</li>
+                <li>{{altKey}} + Drag to select multiple nodes.</li>
+                <li>{{altKey}} + {{zoomClick}} to rotate the canvas.</li>
+                <li>{{altKey}} + Double Click the canvas to create an Ai node.</li>
+            </ul>
+        </div>
+
+        <div id="pan-explanation" class="explanation-content" style="display: none;">
+            <strong>Pan: ({{panClick}})</strong>
+            <ul>
+                <li>{{panClick}} and Drag to navigate the canvas.</li>
+            </ul>
+        </div>
+
+        <div id="zoom-explanation" class="explanation-content" style="display: none;">
+            <strong>Zoom: ({{zoomClick}})</strong>
+            <ul>
+                <li>{{zoomClick}} to zoom the canvas view.</li>
+                <li>When set to a click, drag up or down to zoom.</li>
+            </ul>
+        </div>
+
+        <div id="context-menu-explanation" class="explanation-content" style="display: none;">
+            <strong>Context Menu:</strong>
+            <ul>
+                <li>{{contextMenuButton}} the canvas to create nodes.</li>
+                <li>{{contextMenuButton}} a node to access and perform its existing methods.</li>
+                <li>Click the runMethod text input to list available actions and add them to your {{contextMenuButton}}.</li>
+            </ul>
         </div>
     </div>
 
@@ -1018,69 +1152,14 @@
                                 <td><input type="checkbox" id="instructions-checkbox"><label for="instructions-checkbox">Prompt the Ai to explain Neurite</label></td>
                             </tr>
                             <tr>
-                                <td><a href="https://github.com/satellitecomponent/Neurite" id="clickable-link">Github Link</a></td>
+                                <td><strong>CONTROLS</strong></td>
+                                <td>
+                                    <button id="controls-button" class="key-button">Adjust input settings.</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><a href="https://github.com/satellitecomponent/Neurite" id="clickable-link">Neurite Github</a></td>
                                 <td>Visit our Github for extended documentation.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>CLICK AND DRAG</strong></td>
-                                <td>Move around the fractal.</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>
-                                        SCROLL WHEEL
-                                        <br />PINCH on touchpad
-                                    </strong>
-                                </td>
-                                <td>Zoom in/out.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHIFT + DOUBLE CLICK</strong></td>
-                                <td>Creates a text node</td>
-                            </tr>
-                            <tr>
-                                <td><strong>DOUBLE CLICK</strong></td>
-                                <td>'Anchor' a window in place.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHIFT (hold)</strong></td>
-                                <td>Freeze Windows</td>
-                            </tr>
-                            <tr>
-                                <td><strong>ALT/Option + SCROLL</strong></td>
-                                <td>Rotate the view.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>ALT/Option + DRAG</strong></td>
-                                <td>Allows drag events to pass through node textareas.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>ALT/Option + DOUBLE CLICK</strong></td>
-                                <td>Creates an ai chat node</td>
-                            </tr>
-                            <tr>
-                                <td><strong>SHIFT + SCROLL</strong></td>
-                                <td>Resize a window.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>CTRL + CLICK or DRAG</strong></td>
-                                <td>Selects multiple nodes. Allows for multiple nodes to be re-scaled</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Local LLM</strong>
-                                </td>
-                                <td>Download The LocalHost Servers Folder, then run your own instance of Ollama. More info at <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a> or <a href="https://ollama.com/" target="_blank" id="clickable-link">Ollama</a></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Local Embeddings</strong>
-                                </td>
-                                <td>In the Ai tab, check Local Embeddings. The embeddings model will download into your browser cache.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>LocalHost Servers</strong></td>
-                                <td>Wiki, Wolfram, and Webpage Extraction currently require setting up of personal localhosts.<br /> More info on our <a href="https://github.com/satellitecomponent/Neurite" target="_blank" id="clickable-link">Github</a><br /> The Ai How-To Checkbox at the top of the instructions will allow the ai to explain basic set-up.</td>
                             </tr>
                             <tr>
                                 <td>
@@ -1234,6 +1313,12 @@
             <symbol id="crossed-eyeball-symbol" viewBox="0 0 24 24">
                 <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3.933 13.909A4.357 4.357 0 0 1 3 12c0-1 4-6 9-6m7.6 3.8A5.068 5.068 0 0 1 21 12c0 1-3 6-9 6-.314 0-.62-.014-.918-.04M5 19 19 5m-4 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </symbol>
+            <symbol id="question-mark" viewBox="0 0 24 24">
+                <svg class="w-[24px] h-[24px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M9.529 9.988a2.502 2.502 0 1 1 5 .191A2.441 2.441 0 0 1 12 12.582V14m-.01 3.008H12M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+            </symbol>
+
         </defs>
     </svg>
 
@@ -1302,6 +1387,7 @@
     <script src="js/zettelkasten/zetsplitter.js"></script>
 
     <script src="js/interface/dropdown/customui/customdropdown.js"></script>
+    <script src="js/interface/dropdown/customui/customcontrols.js"></script>
     <script src="js/interface/dropdown/customui/togglepanel.js"></script>
     <script src="js/interface/dropdown/customui/custommodal.js"></script>
     <script src="js/interface/dropdown/customui/displaysavedcoords.js"></script>

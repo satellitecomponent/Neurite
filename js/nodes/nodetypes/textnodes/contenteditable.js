@@ -105,21 +105,21 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
     };
 
     userInputTextarea.addEventListener('mousedown', function (event) {
-        if (isEventInsideElement(event, userInputTextarea) && !event.altKey) {
+        if (isEventInsideElement(event, userInputTextarea) && !event.getModifierState(controls.altKey.value)) {
             event.stopPropagation();
             // We still allow default behavior, so the contenteditable div remains interactable.
         }
     }, true); // Use capture phase to catch the event early
 
     document.addEventListener('keydown', function (event) {
-        if (event.altKey && document.activeElement === userInputTextarea) {
+        if (event.getModifierState(controls.altKey.value) && document.activeElement === userInputTextarea) {
             userInputTextarea.style.userSelect = 'none';
             userInputTextarea.style.pointerEvents = 'none';
         }
     });
 
     document.addEventListener('keyup', function (event) {
-        if (!event.altKey) {
+        if (!event.getModifierState(controls.altKey.value)) {
             userInputTextarea.style.userSelect = 'auto';
             userInputTextarea.style.pointerEvents = 'auto';
         }

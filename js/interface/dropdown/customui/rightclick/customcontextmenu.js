@@ -47,25 +47,6 @@ function clearMenuOptions(menu) {
 }
 
 
-document.addEventListener('contextmenu', function (event) {
-    // Function to check if default context menu should be used
-    function shouldUseDefaultContextMenu(target) {
-        return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content, .tooltip') ||
-            target.tagName === 'IFRAME' ||
-            target.tagName === 'IMG' ||
-            target.tagName === 'VIDEO';
-    }
-
-    // Exit if Ctrl key is pressed or default context menu should be used
-    if (event.ctrlKey || shouldUseDefaultContextMenu(event.target)) {
-        hideContextMenu();
-        return;
-    }
-
-    // Prevent the default context menu and show the custom one
-    event.preventDefault();
-    openCustomContextMenu(event.pageX, event.pageY, event.target);
-});
 
 
 function openCustomContextMenu(x, y, target) {
