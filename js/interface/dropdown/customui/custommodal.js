@@ -4,6 +4,9 @@ const modal = document.getElementById('customModal');
 const closeBtn = modal.querySelector('.close');
 // Get the modal content element
 const modalContent = modal.querySelector('.modal-content');
+const modalOverlay = modal.querySelector('.modal-overlay');
+const modalOverlayCloseBtn = modalOverlay.querySelector('.modal-overlay-close');
+const modalOverlayBody = modalOverlay.querySelector('.modal-overlay-body');
 
 // Function to store input values and perform modal-specific actions
 const storeInputValue = debounce(function (input, contentId) {
@@ -25,6 +28,7 @@ let currentOpenModalContentId = null;
 
 // Function to open the modal
 function openModal(contentId) {
+    hideContextMenu();
     //console.log(`Opened Modal: ${contentId}`);
     const content = document.getElementById(contentId);
     if (!content) {
@@ -48,7 +52,7 @@ function openModal(contentId) {
             initializeTagInputs();
             break;
         case 'aiModal':
-            modalTitle.textContent = 'Experimental Ai Controls';
+            modalTitle.textContent = 'Ai Controls';
             break;
         case 'alertModal':
             modalTitle.textContent = 'Alert';
@@ -80,6 +84,9 @@ function openModal(contentId) {
             break;
         case 'promptLibraryModalContent':
             modalTitle.textContent = 'Prompt Library';
+            break;
+        case 'controls-modal':
+            modalTitle.textContent = 'Adjust Controls';
             break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
@@ -173,6 +180,33 @@ function closeModal() {
 
 // Event listener for the close button
 closeBtn.addEventListener('click', closeModal);
+
+// Function to open the generic overlay with specific content
+function openModalOverlay(explanationId) {
+    const explanationContent = document.getElementById(explanationId);
+    if (!explanationContent) {
+        console.error(`No explanation found for ID: ${explanationId}`);
+        return;
+    }
+
+    // Populate the overlay with the explanation content
+    modalOverlayBody.innerHTML = explanationContent.innerHTML;
+
+    modalOverlay.style.display = 'block';
+}
+
+
+// Function to close the generic overlay
+function closeModalOverlay() {
+    modalOverlay.style.display = 'none';
+    modalOverlayBody.innerHTML = ''; // Clear the overlay content
+}
+
+// Event listener for closing the overlay
+modalOverlayCloseBtn.addEventListener('click', closeModalOverlay);
+
+
+
 
 // Event listener to prevent all events from passing through the modal content
 modalContent.addEventListener('click', stopEventPropagation);

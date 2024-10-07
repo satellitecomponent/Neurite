@@ -2,7 +2,7 @@
     // Cancel the default behavior of the event
     cancel(e);
 
-    if (e.altKey) {
+    if (e.getModifierState(controls.altKey.value)) {
         // Alt + double click behavior
         e.preventDefault();
         // Assuming that the createLLMNode function takes x, y coordinates
