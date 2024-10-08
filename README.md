@@ -561,6 +561,7 @@ console.log(neuralAPI);</code></pre>
 
 See our contributing guidelines [here](https://github.com/satellitecomponent/Neurite/tree/local-ai).
 
+Special thanks to [Flowbite](https://flowbite.com/) for the svg icons.
 🚧
 
 ## `Gallery`
