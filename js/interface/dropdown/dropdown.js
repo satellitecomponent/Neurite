@@ -1,4 +1,6 @@
-﻿const aiTab = new AiTab();
+﻿
+
+const aiTab = new AiTab();
 const editTab = new EditTab(settings);
 
 // Function to save the value of a specific slider or color picker
@@ -37,7 +39,7 @@ function restoreInputValues() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', restoreInputValues);
+restoreInputValues();
 
         //disable ctl +/- zoom on browser
         document.addEventListener('keydown', (event) => {
@@ -133,33 +135,3 @@ function openTab(tabId, element) {
             cancel(e);
         });
 
-// Get all the menu items.
-const menuItems = document.querySelectorAll(".menu-item");
-
-// Add a click event listener to each menu item
-menuItems.forEach(function (item) {
-    item.addEventListener("click", function () {
-        // Remove the "selected" class from all the menu items
-        // menuItems.forEach(function(item) {
-        //   item.classList.remove("selected");
-        // });
-
-        // Add the "selected" class to the clicked menu item
-        item.classList.add("selected");
-    });
-});
-
-function updateLoadingIcon(element, percentage) {
-    const loaderFill = element.querySelector('.loader-fill');
-
-    if (loaderFill) {
-        // Set a timeout to remove the initial animation class after 8 seconds
-        setTimeout(() => {
-            loaderFill.classList.remove('initial-animation');
-        }, 8000); // 8000 milliseconds = 8 seconds
-
-        // Scale from 0 to 1 based on the percentage
-        const scale = percentage / 100;
-        loaderFill.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    }
-}

@@ -78,6 +78,7 @@ let controlDragOccurred = false;
 
 // Modified 'mousemove' Event Listener
 svg.addEventListener("mousemove", (event) => {
+    if (isDraggingDragBox) { return; }
     mousePos = new vec2(event.pageX, event.pageY);
 
     if (isRotating) {
@@ -142,6 +143,7 @@ svg.addEventListener("mousemove", (event) => {
 
 // Modified 'mousedown' Event Listener
 svg.addEventListener("mousedown", (event) => {
+
     // Record the initial position on mousedown
     mouseDownPos = new vec2(event.pageX, event.pageY);
 
