@@ -5,17 +5,16 @@ Currently, the script is configured to run the following servers:
 
 webscrape, a Node.js server for web scraping located in the webscrape directory
 
-wikisearch, a Node.js for wiki searching located in the wikisearch directory
+wiki-search, a Node.js for wiki searching located in the wikisearch directory
 
 wolfram-alpha, a Node.js server interfacing with Wolfram Alpha located in the wolfram-alpha directory
 
-and now,
-
 ai-proxy, a Node.js server for handling api calls between Neurite's js interface and local or cloud hosted large langauge models.
 
-and,
-
 automation, a Node.js server for running Neurite via Playwright, currently used for a headless browser option as well as for taking automated screenshots of Neurite.
+
+direct-access, a Node.js server that uses fs to enable basic filetree access.
+
 
 # Prerequisites
 

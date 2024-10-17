@@ -554,6 +554,10 @@ function reconstructSavedNode(node) {
         initLinkNode(node);
     }
 
+    if (node.isFileTree) {
+        initFileTreeNode(node);
+    }
+
     node.sensor = new NodeSensor(node, 3);
 }
 
@@ -565,7 +569,7 @@ function autosave() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function initializeSaveNetworks() {
     const urlParams = new URLSearchParams(window.location.search);
     const stateFromURL = urlParams.get('state');
 
@@ -619,4 +623,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Set up autosave at intervals
         setInterval(autosave, 8000);
     }
-});
+}
+
+initializeSaveNetworks();
