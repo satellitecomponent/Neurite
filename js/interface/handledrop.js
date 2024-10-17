@@ -460,7 +460,7 @@ class DropHandler {
                 break;
             case 'edges-icon':
                 const fileTreeNode = createFileTreeNode();
-                this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
+                this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -fileTreeNode.content.offsetHeight / 4)));
                 break;
             default:
                 console.warn(`No handler defined for icon: ${iconName}`);
