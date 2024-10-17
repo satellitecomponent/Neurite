@@ -1,4 +1,6 @@
-﻿const aiTab = new AiTab();
+﻿
+
+const aiTab = new AiTab();
 const editTab = new EditTab(settings);
 
 // Function to save the value of a specific slider or color picker

@@ -20,8 +20,10 @@ function handleKeyDown(event) {
     return true;
 }
 
+
 const promptInput = Elem.byId('prompt');
 if (promptInput) On.keydown(promptInput, handleKeyDown);
+
 
 function autoGrow(event) {
     const textarea = event.target;

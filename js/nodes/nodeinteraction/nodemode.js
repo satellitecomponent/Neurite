@@ -1,3 +1,4 @@
+
 Node.stopFollowingMouse = function(node){ node.followingMouse = 0 }
 
 class NodeMode {

@@ -11,12 +11,12 @@ const Mouse = {
     initialY: 0,
     isDragging: false
 };
-Mouse.onDraggingInit = function(e){
+Mouse.onDraggingInit = function (e) {
     Mouse.initialX = e.clientX;
     Mouse.initialY = e.clientY;
     Mouse.downIcon = true;
 }
-Mouse.onDraggingSuspected = function(e){
+Mouse.onDraggingSuspected = function (e) {
     if (!Mouse.downIcon || Mouse.isDragging) return;
 
     const dx2 = Math.pow(e.clientX - Mouse.initialX, 2);
@@ -24,7 +24,7 @@ Mouse.onDraggingSuspected = function(e){
     const distance = Math.sqrt(dx2 + dy2);
     if (distance > Mouse.dragThreshold) Mouse.isDragging = true;
 }
-Mouse.onDraggingFinish = function(e){
+Mouse.onDraggingFinish = function (e) {
     Mouse.downIcon = false;
     Mouse.isDragging = false;
 }
@@ -36,7 +36,7 @@ function makeIconDraggable(iconDiv) {
     On.mousemove(iconDiv, Mouse.onDraggingSuspected);
     On.mouseup(iconDiv, Mouse.onDraggingFinish);
 
-    On.dragstart(iconDiv, (e)=>{
+    On.dragstart(iconDiv, (e) => {
         if (!Mouse.isDragging) {
             e.preventDefault();
             return;
@@ -53,7 +53,7 @@ function makeIconDraggable(iconDiv) {
         e.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
     });
 
-    On.click(iconDiv, (e)=>{
+    On.click(iconDiv, (e) => {
         if (!Mouse.isDragging) {
             if (iconDiv.classList.contains('note-icon')) {
                 Modal.open('noteModal');
@@ -90,7 +90,7 @@ class DropHandler {
         };
     }
 
-    dragOverHandler = (ev)=>{
+    dragOverHandler = (ev) => {
         ev.preventDefault(); // Allow drop
         ev.dataTransfer.dropEffect = 'copy'; // Show a copy icon when dragging
     }
@@ -182,7 +182,7 @@ class DropHandler {
 
                 const reader = new FileReader();
 
-                On.load(reader, (e)=>{
+                On.load(reader, (e) => {
                     const textContent = reader.result;
                     this.createCodeNode({ name: fileName }, textContent, codeLanguage);
                 });
@@ -242,7 +242,7 @@ class DropHandler {
         Logger.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
     }
 
-    handleDrop = async (ev)=>{
+    handleDrop = async (ev) => {
         ev.preventDefault();
 
         // **Handle Folder Drops First**
@@ -300,7 +300,7 @@ class DropHandler {
 
         const reader = new FileReader();
 
-        On.load(reader, (e)=>{
+        On.load(reader, (e) => {
             const contentOrBlob = e.target.result;
             if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
                 this.processFile(fileName, contentOrBlob, mimeType);
@@ -491,13 +491,13 @@ function createHtmlNode(title, pastedData) {
 }
 
 // Existing paste event listener
-On.paste(window, (e)=>{
+On.paste(window, (e) => {
     const cd = (e.clipboardData || window.clipboardData);
     const pastedData = cd.getData("text");
     handlePasteData(pastedData, e.target);
 });
 
-On.paste(window, (e)=>{
+On.paste(window, (e) => {
     let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
     if (codeMirrorWrapper.contains(e.target)) {
         Logger.debug("Paste detected in CodeMirror");

@@ -30,4 +30,9 @@
     "dir": "./direct-access",
     "main": "direct-access.js"
   }
+  {
+    "name": "DirectAccess",
+    "dir": "./direct-access",
+    "main": "direct-access.js"
+  }
 ]

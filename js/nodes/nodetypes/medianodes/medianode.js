@@ -20,3 +20,4 @@ function createMediaNode(type, metadataOrFile, url) {
     NodeView.addAtNaturalScale(node, name, [elem]);
     return node;
 }
+

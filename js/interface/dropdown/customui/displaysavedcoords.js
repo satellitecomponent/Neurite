@@ -240,6 +240,7 @@ function getSavedViewsFromCache() {
         }
     }
 
+
     return { ...defaultSavedViews };
 }
 

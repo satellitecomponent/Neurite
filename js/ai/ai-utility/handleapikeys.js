@@ -42,6 +42,7 @@ function setupInferenceDropdowns(container) {
     });
 }
 
+
 setupInferenceDropdowns(Elem.byId('template-dropdowns'));
 
 
@@ -53,6 +54,7 @@ CustomDropdown.loadSelect = function(dropdown){
 }
 
 CustomDropdown.loadSelect(CustomDropdown.model);
+
 
 function saveApiConfig() {
     const endpoint = Elem.byId('apiEndpoint').value;
@@ -212,6 +214,7 @@ function clearKeys() {
 }
 
 // From ai.js
+
 
 const Proxy = {};
 

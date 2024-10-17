@@ -1,39 +1,39 @@
 class Path {
     static directoryFetcher = class DirectoryFetcher { // from the Node.js server
         static baseUrl = 'http://localhost:9099/api/navigate?path=';
-        constructor(path){
+        constructor(path) {
             this.url = DirectoryFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;
         }
-        onResponse(res){ return res.json().then(this.onData) }
-        onData(data){
+        onResponse(res) { return res.json().then(this.onData) }
+        onData(data) {
             Logger.debug("Directory data:", data);
             return data;
         }
-        onFailure(){ return `Failed to fetch contents of directory ${this.path}:` }
+        onFailure() { return `Failed to fetch contents of directory ${this.path}:` }
     }
     static fileFetcher = class FileFetcher {
         blob = null;
         content = null;
         static baseUrl = 'http://localhost:9099/api/read-file?path=';
-        constructor(path){
+        constructor(path) {
             this.url = FileFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;
         }
-        isTextMime(mimeType){
+        isTextMime(mimeType) {
             return mimeType.startsWith('text/')
                 || mimeType.startsWith('application/json')
                 || mimeType.startsWith('application/xml')
         }
-        onResponse(res){
+        onResponse(res) {
             this.mimeType = res.headers.get('Content-Type') || '';
             const isText = this.isTextMime(this.mimeType);
             if (isText) res.text().then(this.onText);
             else res.blob().then(this.onBlob);
         }
-        onText = (text)=>{ this.content = text }
-        onBlob = (blob)=>{ this.blob = blob }
-        onFailure(){ return `Failed to fetch content of file ${this.path}:` }
+        onText = (text) => { this.content = text }
+        onBlob = (blob) => { this.blob = blob }
+        onFailure() { return `Failed to fetch content of file ${this.path}:` }
     }
 }
 
@@ -126,7 +126,7 @@ class FileTree {
 
             On.click(itemElement, this.selectItem.bind(this, itemElement));
             if (item.type === 'directory') {
-                On.click(itemElement, async (e)=>{
+                On.click(itemElement, async (e) => {
                     const newPath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
                     if (itemElement.classList.contains('expanded')) {
                         this.collapseDirectory(childContainer, itemElement);
@@ -153,9 +153,9 @@ class FileTree {
         itemElement.classList.add('selected');
     }
 
-    addDragEvents(type, mime, itemElement, item, itemPath){
+    addDragEvents(type, mime, itemElement, item, itemPath) {
         itemElement.setAttribute('draggable', 'true');
-        On.dragstart(itemElement, (e)=>{
+        On.dragstart(itemElement, (e) => {
             e.stopPropagation();
             const path = (itemPath === '/' ? `/${item.name}` : `${itemPath}/${item.name}`);
             const metadata = JSON.stringify({ name: item.name, path, type: item.type });
@@ -164,7 +164,7 @@ class FileTree {
             if (icon) e.dataTransfer.setDragImage(icon, 10, 10);
             Logger.debug(type, "drag started with metadata:", path);
         });
-        On.dragend(itemElement, (e)=>{
+        On.dragend(itemElement, (e) => {
             e.stopPropagation();
             Logger.debug(type, "drag ended:", item.name);
         });
@@ -200,7 +200,7 @@ class FileTree {
         return itemElement;
     }
 
-    getIconId(type, name){
+    getIconId(type, name) {
         if (type === 'directory') return '#folder-icon';
 
         const extension = name.split('.').pop().toLowerCase();
