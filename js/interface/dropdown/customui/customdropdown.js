@@ -207,12 +207,11 @@ function setupModelSelect(selectElement) {
     }
 }
 
-function initializeCustomSelects() {
+document.addEventListener('DOMContentLoaded', function () {
+    // Setup for all existing custom-selects, excluding those with the ignoreSetup class
     let selects = document.querySelectorAll('select.custom-select:not(.ignoreSetup)');
     selects.forEach(select => setupModelSelect(select));
-}
-
-initializeCustomSelects();
+});
 
 function updateSelectedOptionDisplay(selectElement) {
     // Update the custom dropdown display to show the selected value

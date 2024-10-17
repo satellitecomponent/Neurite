@@ -115,9 +115,8 @@ function updateJuliaDisplay(fractalType) {
     document.getElementById("julia-y").textContent = juliaConstant.y.toFixed(2);
 }
 
-function initializeFractalSelect() {
-    const fractalSelect = document.getElementById("fractal-select");
-    const fractalType = fractalSelect.value;
+document.addEventListener("DOMContentLoaded", function () {
+    const fractalType = document.getElementById("fractal-select").value;
     updateMandStep();
     updateJuliaDisplay(fractalType);
 
@@ -128,12 +127,9 @@ function initializeFractalSelect() {
     tab2Element.addEventListener("mousemove", updateJuliaConstant);
     tab2Element.addEventListener("mouseup", stopDragging);
     tab2Element.addEventListener("mouseleave", stopDragging);
+});
 
-    fractalSelect.addEventListener("change", (e) => {
-        updateMandStep();
-        updateJuliaDisplay(e.target.value);
-    });
-}
-
-initializeFractalSelect();
-
+document.getElementById("fractal-select").addEventListener("change", (e) => {
+    updateMandStep();
+    updateJuliaDisplay(e.target.value);
+});

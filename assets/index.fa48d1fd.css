@@ -1,5 +1,4 @@
-
-html, body {
+﻿html, body {
     overscroll-behavior-x: none;
 }
 
@@ -851,6 +850,8 @@ input[type="text"i] {
 /* Minimal change on hover for interactivity */
 input[type="text"i]:hover {
     background-color: #1e1e22; /* Slightly lighter background on hover */
+}
+
 }
 
         .submenu-btn {
@@ -3490,23 +3491,6 @@ code.language-markdown {
     color: #922b47 !important;
 }
 
-#clear-function-calls-button {
-    position: absolute;
-    top: 80px;
-    right: 5px;
-    z-index: 10;
-    background-color: #87253e63;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-    #clear-function-calls-button:hover {
-        background-color: #ff1a1a;
-        color: white;
-    }
-
 
 .function-prompt-textarea {
     overflow-y: hidden;
@@ -3763,75 +3747,3 @@ code.language-markdown {
     .pin-button:hover {
         transform: scale(1.4); /* Scale up on hover */
     }
-
-/* File tree styles */
-.fileTreeContainer {
-    padding: 10px;
-    overflow-y: auto;
-    max-height: 400px;
-    width: 40vw;
-    max-width: 40vw;
-}
-
-.file-item {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 5px;
-    user-select: none;
-}
-
-    .file-item:hover {
-        background-color: #333;
-    }
-
-    /* Highlight selected items */
-    .file-item.selected {
-        background-color: #444;
-    }
-
-/* Style the input for renaming */
-.rename-input {
-    width: 100%;
-    padding: 2px;
-    font-size: inherit;
-    border: 1px solid #999;
-    background-color: #222;
-    color: white;
-}
-
-.file-icon {
-    width: 20px;
-    min-width: 20px;
-    height: 20px;
-    margin-right: 8px;
-}
-
-.file-name {
-    flex-grow: 1;
-    word-break: break-all;
-}
-
-.folder-content {
-    margin-left: 20px;
-    border-left: 1px solid gray;
-    padding-left: 10px;
-}
-
-
-/* File tree styles */
-.nodeFileTreeContainer {
-    overflow-y: scroll;
-    overflow-x: hidden;
-    max-width: 100%;
-    width: 280px;
-}
-
-#modal-header .modal-filepath-input {
-    font-size: 20px;
-    margin-right: 40px;
-    margin-left: 10px;
-    border-style: solid;
-    border-width: 2px 4px 0px 0px;
-    border-color: #747474 #747474 transparent transparent;
-}

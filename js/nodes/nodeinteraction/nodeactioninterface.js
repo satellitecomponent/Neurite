@@ -133,7 +133,6 @@ class BaseNodeActions {
         return {
             //'updateSensor': ["refresh", "renew", "sensor update"],
             'zoomTo': ["focus on", "center on", "highlight", "zoom in", "go to"],
-            'follow': ["focus on", "center on", "highlight", "zoom in", "go to", "track"],
             'delete': ["remove", "erase", "discard", "delete node"],
             'toggleSelect': ["select", "choose", "highlight", "deselect"],
             'toggleCollapse': ["collapse", "fold", "minimize", "expand", "unfold", "maximize"],
@@ -156,11 +155,6 @@ class BaseNodeActions {
     // Common methods for all nodes
     updateSensor() { this.node.updateSensor(); }
     zoomTo() { neuriteZoomToNodeTitle(this.node); }
-    follow() {
-        autopilotSpeed = settings.autopilotSpeed;
-        autopilotReferenceFrame = this.node;
-        hideContextMenu();
-    }
     connect() {
         setupConnectModal(this.node);
         hideContextMenu();
@@ -180,10 +174,7 @@ class BaseNodeActions {
         updateNodeStartAutomataAction(); // This will now handle the automata start logic
     }
     delete() {
-        applyActionToSelectedNodes((node) => {
-            node.remove();
-        }, this.node);
-        hideContextMenu();
+        this.node.remove();
     }
     spawnNode() {
         // Call spawnTextNode with the current node

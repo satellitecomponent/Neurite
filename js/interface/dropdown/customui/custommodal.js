@@ -30,13 +30,6 @@ let currentOpenModalContentId = null;
 function openModal(contentId) {
     hideContextMenu();
     //console.log(`Opened Modal: ${contentId}`);
-
-    // Clear filepath input from header.
-    const existingInput = document.querySelector('.modal-filepath-input');
-    if (existingInput) {
-        existingInput.remove();
-    }
-
     const content = document.getElementById(contentId);
     if (!content) {
         console.error(`No content found for ID: ${contentId}`);
@@ -257,8 +250,7 @@ function isInputElement(element) {
     const inputTypes = ['input', 'select', 'textarea', 'button'];
     return inputTypes.includes(element.tagName.toLowerCase()) ||
         element.classList.contains('custom-select') ||
-        element.closest('.vdb-search-result') ||
-        element.closest('#modal-file-tree-container'); // Added condition
+        element.closest('.vdb-search-result');
 }
 
 // Event listener for mousemove on the document

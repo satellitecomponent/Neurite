@@ -7,12 +7,14 @@ function makeIconDraggable(iconDiv) {
     iconDiv.setAttribute('draggable', 'true'); // Set draggable to true by default
 
     iconDiv.addEventListener('mousedown', function (event) {
-        initialMousePosition = { x: event.clientX, y: event.clientY };
-        mouseDownIcon = true;
+        if (!iconDiv.classList.contains('edges-icon')) {
+            initialMousePosition = { x: event.clientX, y: event.clientY };
+            mouseDownIcon = true;
+        }
     });
 
     iconDiv.addEventListener('mousemove', function (event) {
-        if (mouseDownIcon && !isDraggingIcon) {
+        if (mouseDownIcon && !isDraggingIcon && !iconDiv.classList.contains('edges-icon')) {
             const currentMousePosition = { x: event.clientX, y: event.clientY };
             const distance = Math.sqrt(
                 Math.pow(currentMousePosition.x - initialMousePosition.x, 2) +
@@ -48,6 +50,9 @@ function makeIconDraggable(iconDiv) {
 
     iconDiv.addEventListener('click', function (event) {
         if (!isDraggingIcon) {
+            // Handle the click event here
+            //console.log('Icon clicked:', iconDiv.classList[1]);
+            // Add your custom click event handling logic
             if (iconDiv.classList.contains('note-icon')) {
                 openModal('noteModal');
             }
@@ -56,9 +61,6 @@ function makeIconDraggable(iconDiv) {
             }
             if (iconDiv.classList.contains('link-icon')) {
                 openModal('importLinkModalContent');
-            }
-            if (iconDiv.classList.contains('edges-icon')) {
-                openFileTreeModal();
             }
         }
     });
@@ -69,413 +71,65 @@ icons.forEach(icon => {
     makeIconDraggable(icon);
 });
 
-
-class DropHandler {
-    constructor(dropAreaId) {
-        this.dropArea = document.getElementById(dropAreaId);
-        this.initialize();
-
-        // Define handlers for different base types
-        this.typeHandlers = {
-            image: this.createImageNode.bind(this),
-            video: this.createMediaNode.bind(this, 'video'),
-            audio: this.createMediaNode.bind(this, 'audio'),
-            text: this.createTextNode.bind(this),
-            code: this.createCodeNode.bind(this), // Use createCodeNode for code files
-            application: this.handleApplication.bind(this), // Handle PDFs and other application types
-            unknown: this.handleUnknown.bind(this)
-        };
-    }
-
-    // Handle drag over event
-    dragOverHandler(ev) {
-        ev.preventDefault(); // Allow drop
-        ev.dataTransfer.dropEffect = 'copy'; // Show a copy icon when dragging
-    }
-
-    // Initialize event listeners
-    initialize() {
-        this.dropArea.addEventListener('dragover', this.dragOverHandler.bind(this));
-        this.dropArea.addEventListener('drop', this.handleDrop.bind(this));
-    }
-
-    determineBaseType(mimeType) {
-        if (!mimeType) return 'unknown';
-
-        const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
-
-        // Define exceptions for 'application/' types that are not code or text
-        const nonTextApplicationTypes = [
-            'application/pdf',
-            'application/zip',
-            'application/x-rar-compressed',
-            'application/x-7z-compressed',
-            'application/x-tar',
-            'application/gzip',
-            // Add more non-text 'application/' types as needed
-        ];
-
-        if (nonTextApplicationTypes.includes(mimeTypeWithoutParams)) {
-            return 'application';
-        }
-
-        // Define common code-related MIME types (text/* and remaining application/*)
-        const codeRelatedMimeTypes = ['text/', 'application/'];
-        const imageRelatedMimeTypes = ['image/'];
-        const videoRelatedMimeTypes = ['video/'];
-        const audioRelatedMimeTypes = ['audio/'];
-
-        // Code types
-        if (codeRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) {
-            const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
-            return codeLanguage ? 'code' : 'text';
-        }
-
-        // Non-code types
-        if (imageRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'image';
-        if (videoRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'video';
-        if (audioRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'audio';
-
-        return 'unknown'; // Handle any other types not defined
-    }
-
-    // Map MIME types to code languages
-    getCodeLanguageFromMimeType(mimeType) {
-        const mimeTypeToLanguageMap = {
-            'application/javascript': 'javascript',
-            'application/typescript': 'typescript',
-            'application/json': 'json',
-            'application/xml': 'xml',
-            'application/x-sh': 'bash',
-            'application/x-python-code': 'python',
-            'application/x-httpd-php': 'php',
-            'text/x-java-source': 'java',
-            'text/x-csrc': 'c',
-            'text/x-c++src': 'cpp',
-            'text/x-csharp': 'csharp',
-            'text/x-go': 'go',
-            'application/x-rust': 'rust',
-            'application/xhtml+xml': 'html',
-            'text/html': 'html',
-            'text/css': 'css',
-            'text/javascript': 'javascript',
-            'text/markdown': 'markdown', // Optional
-        };
-
-        return mimeTypeToLanguageMap[mimeType.toLowerCase()] || null; // Ensure case-insensitive matching
-    }
-
-    // Process the file based on its base type
-    processFile(fileName, content, mimeType, blob = null) {
-        const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
-        const baseType = this.determineBaseType(mimeTypeWithoutParams);
-
-        //console.log(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
-
-        // Route to code file handler
-        if (baseType === 'code') {
-            const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
-            if (!content) {
-                //console.error(`Content is undefined for code file: ${fileName}`);
-                // Attempt to read blob as text if content is undefined
-                if (blob) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const textContent = reader.result;
-                        this.createCodeNode({ name: fileName }, textContent, codeLanguage);
-                    };
-                    reader.onerror = (error) => {
-                        console.error(`Error reading blob for code file: ${fileName}`, error);
-                    };
-                    reader.readAsText(blob);
-                }
-                return;
-            }
-            //console.log(`Creating code node for: ${fileName}, Language: ${codeLanguage}`);
-            this.createCodeNode({ name: fileName }, content, codeLanguage);
-            return;
-        }
-
-        // Route to text handler
-        if (baseType === 'text') {
-            if (!content) {
-                console.error(`Content is undefined for text file: ${fileName}`);
-                return;
-            }
-            this.typeHandlers[baseType]({ name: fileName }, null, content, mimeTypeWithoutParams);
-            return;
-        }
-
-        // Handle application types (PDFs, etc.)
-        if (baseType === 'application') {
-            if (mimeTypeWithoutParams === 'application/pdf') {
-                if (!blob) {
-                    console.error(`Blob is undefined for PDF file: ${fileName}`);
-                    return;
-                }
-                const objectURL = URL.createObjectURL(blob);
-                this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
-            } else {
-                if (!content) {
-                    console.error(`Content is undefined for application file: ${fileName}`);
-                    return;
-                }
-                // Treat other application types as text
-                this.typeHandlers['text']({ name: fileName }, null, content, mimeTypeWithoutParams);
-            }
-            return;
-        }
-
-        // Handle binary files (image, video, audio)
-        if (['image', 'video', 'audio'].includes(baseType)) {
-            if (!blob) {
-                console.error(`Blob is undefined for binary file: ${fileName}`);
-                return;
-            }
-            const objectURL = URL.createObjectURL(blob);
-            this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
-            return;
-        }
-
-        // If we get here, it's unhandled
-        console.warn(`Unhandled file type: ${mimeTypeWithoutParams} for file: ${fileName}`);
-    }
-
-    // Handle the drop event
-    async handleDrop(ev) {
-        ev.preventDefault();
-
-        // **Handle Folder Drops First**
-        const folderMetadataJSON = ev.dataTransfer.getData('application/my-app-folder');
-        if (folderMetadataJSON && isJSON(folderMetadataJSON)) {
-            const folderMetadata = JSON.parse(folderMetadataJSON);
-            await this.processFolderDrop(folderMetadata);
-            return;
-        }
-
-        // **Handle File Drops**
-        const fileMetadataJSON = ev.dataTransfer.getData('application/my-app-file');
-        if (fileMetadataJSON && isJSON(fileMetadataJSON)) {
-            const fileMetadata = JSON.parse(fileMetadataJSON);
-            await this.processCustomDrop(fileMetadata);
-            return;
-        }
-
-        // Attempt to retrieve JSON data
-        const data = ev.dataTransfer.getData('text');
-        if (data && isJSON(data)) {
-            const parsedData = JSON.parse(data);
-            if (parsedData.type === 'icon') {
-                // Handle the icon drop
-                this.handleIconDrop(ev, parsedData.iconName);
-                return;
-            }
-
-            // Handle specific div types
-            this.handleDivDrop(parsedData);
-            return;
-        }
-
-        // Handle standard OS file drops
-        this.handleOSFileDrop(ev);
-    }
-
-    // Handle the custom drop
-    async processCustomDrop(metadata) {
-        try {
-            const fileResponse = await fetchFileContent(metadata.path);
-            if (!fileResponse) throw new Error(`Failed to fetch file content for: ${metadata.path}`);
-
-            const { content, blob, mimeType } = fileResponse;
-
-            if (content === null && blob === null) {
-                throw new Error('No content received');
-            }
-
-            this.processFile(metadata.name, content, mimeType, blob);
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    // Handle OS file drops
-    processOSFile(file) {
-        const mimeType = file.type || '';
-        const fileName = file.name;
-
-        const reader = new FileReader();
-
-        reader.onload = (event) => {
-            const contentOrBlob = event.target.result;
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-                this.processFile(fileName, contentOrBlob, mimeType);
-            } else {
-                const blob = new Blob([contentOrBlob], { type: mimeType });
-                this.processFile(fileName, null, mimeType, blob);
-            }
-        };
-
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-            reader.readAsText(file);  // Read as text
-        } else {
-            reader.readAsArrayBuffer(file);  // Read as binary
-        }
-    }
-
-    // Handle folder drops
-    async processFolderDrop(folderMetadata) {
-        try {
-            const { name, path } = folderMetadata;
-
-            // **Create a File Tree Node Starting from the Dropped Folder's Path**
-            const node = await createFileTreeNode(path);
-            this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
-        } catch (error) {
-            console.error('Error processing folder drop:', error);
-        }
-    }
-
-    // Create a text node
-    createTextNode(metadata, url, content, mimeType) {
-        const text = typeof content === 'string' ? content : undefined;
-        const name = metadata.name || metadata;
-        const node = createNodeFromWindow(name, text, true);
-    }
-
-    // Create a code node with syntax highlighting
-    createCodeNode(metadata, content, codeLanguage) {
-        const name = metadata.name || 'Code';
-        if (!codeLanguage) {
-            console.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`);
-        }
-        const language = codeLanguage || 'plaintext';
-        const codeBlock = `\`\`\`${language}\n${content}\n\`\`\``;
-        const node = createNodeFromWindow(name, codeBlock, true);
-    }
-
-    // Centralized handler for 'application' base type (e.g., PDFs)
-    createPDFNode(name, url) {
-        const node = createLinkNode(name, name, url);
-        node.fileName = name; // Store file name in node
-        this.afterNodeCreation(node);
-    }
-
-    handleApplication(metadataOrFile, url, content, mimeType) {
-        if (mimeType && mimeType.endsWith('pdf')) {
-            this.createPDFNode(metadataOrFile.name, url);
-        } else {
-            console.log("Unsupported application type:", mimeType);
-        }
-    }
-
-    handleUnknown(metadataOrFile, url, content, mimeType) {
-        console.log("Unsupported file type:", mimeType || metadataOrFile.type);
-    }
-
-    // Create an image node
-    createImageNode(metadataOrFile, url) {
-        const imageElement = document.createElement('img');
-        imageElement.src = url;
-        imageElement.onload = () => {
-            const node = createImageNode(imageElement, metadataOrFile.name || metadataOrFile);
-            this.afterNodeCreation(node);
-        };
-    }
-
-    // Create a media node (video/audio)
-    createMediaNode(type, metadataOrFile, url) {
-        const node = createMediaNode(type, metadataOrFile, url);
-        let offset;
-
-        // Check if the media type is audio to apply different offset
-        if (type === 'audio') {
-            offset = new vec2(0, -node.content.offsetHeight / 4); // Adjust for audio
-        } else {
-            offset = new vec2(0, -node.content.offsetHeight / 1.2); // Default offset for video or other media
-        }
-
-        this.afterNodeCreation(node, toDZ(offset));
-    }
-
-    afterNodeCreation(node, mouseAnchor = toDZ(new vec2(0, 0))) {
-        setupNodeForPlacement(node, mouseAnchor);
-    }
-
-
-    // Handle standard OS file drops
-    handleOSFileDrop(ev) {
-        const files = ev.dataTransfer.files; // Get the files from the drop event
-
-        if (!files || files.length === 0) {
-            console.warn('No files detected in OS drop');
-            return;
-        }
-
-        for (const file of files) {
-            this.processOSFile(file); // Process each file
-        }
-    }
-
-    // Process each OS file
-    processOSFile(file) {
-        const mimeType = file.type || ''; // Get the file's MIME type
-        const fileName = file.name;
-
-        const reader = new FileReader();
-
-        reader.onload = (event) => {
-            const contentOrBlob = event.target.result;
-
-            // Determine if the file is text or binary and process accordingly
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-                this.processFile(fileName, contentOrBlob, mimeType);
-            } else {
-                const blob = new Blob([contentOrBlob], { type: mimeType });
-                this.processFile(fileName, null, mimeType, blob);
-            }
-        };
-
-        // For text-based files, read the content as text, otherwise read it as binary
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-            reader.readAsText(file);  // Read as text
-        } else {
-            reader.readAsArrayBuffer(file);  // Read as binary
-        }
-    }
-
-    // Handle icon drops
-    handleIconDrop(event, iconName) {
-        //console.log(`Dropped icon: ${iconName}`);
-
-        switch (iconName) {
-            case 'note-icon':
-                const textNode = createNodeFromWindow(``, ``, true); // The last parameter sets followMouse to true
-                break;
-            case 'ai-icon':
-                const llmNode = createLLMNode('', undefined, undefined, undefined, undefined);
-                this.afterNodeCreation(llmNode);
-                break;
-            case 'link-icon':
-                returnLinkNodes();
-                break;
-            case 'edges-icon':
-                const fileTreeNode = createFileTreeNode();
-                this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
-                break;
-            default:
-                console.warn(`No handler defined for icon: ${iconName}`);
-                break;
-        }
-
-        event.stopPropagation();
+function makeEdgesIconNotDraggable(iconDiv) {
+    iconDiv.addEventListener('dragstart', function (event) {
         event.preventDefault();
+    });
+}
+
+const edgesIcons = document.querySelectorAll('.edges-icon');
+edgesIcons.forEach(icon => {
+    makeEdgesIconNotDraggable(icon);
+});
+
+
+function handleIconDrop(event, iconName) {
+
+    console.log(`Dropped icon: ${iconName}`);
+
+    switch (iconName) {
+        case 'note-icon':
+            node = createNodeFromWindow(``, ``, true); // The last parameter sets followMouse to true
+            console.log('Handle drop for the note icon');
+            break;
+        case 'ai-icon':
+            node = createLLMNode('', undefined, undefined, undefined, undefined);
+            node.followingMouse = 1;
+            node.draw();
+            node.mouseAnchor = toDZ(new vec2(0,0));
+            console.log('Handle drop for the ai icon');
+            break;
+        case 'link-icon':
+            returnLinkNodes();
+            break;
+        case 'edges-icon':
+            console.log('Handle drop for the edges icon');
+            break;
+        default:
+            console.warn(`No handler defined for icon: ${iconName}`);
+            break;
     }
 
-    // Handle specific div drops
-    handleDivDrop(parsedData) {
-        let [title, content] = parsedData;
+    event.stopPropagation();
+    event.preventDefault();
+}
 
+function dropHandler(ev) {
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData('text');
+    if (data && isJSON(data)) {
+        const parsedData = JSON.parse(data);
+        if (parsedData.type === 'icon') {
+            // Handle the icon drop
+            handleIconDrop(ev, parsedData.iconName);
+            return;
+        }
+        // Now only try destructuring if the data isn't an icon
+        let [title, content] = parsedData;
+        // If this is one of the three specific types of divs, handle it here
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
+            //console.log(`Dropped div "${title}": "${content}"`);
+
             if (title === 'Code Block') {
                 // Split the content into lines
                 let lines = content.split('\n');
@@ -486,22 +140,176 @@ class DropHandler {
                 }
 
                 // Add the triple backticks at the start of the first line and at the end of the content
+                // If the first line exists, add the backticks directly before it. If not, just start with backticks
                 content = (lines[0] ? "```" + lines[0] : "```") + "\n" + lines.slice(1).join('\n') + "\n```";
 
                 shouldAddCodeButton = true;
             }
 
+
+
             const defaultTitle = getDefaultTitle();
             const fullTitle = title + ' ' + defaultTitle;
-            const node = createNodeFromWindow(fullTitle, content, true);
+            node = createNodeFromWindow(fullTitle, content, true);
 
             // Stop the drop event from being handled further
             return;
         }
     }
+    let files = [];
+    if (ev.dataTransfer.items) {
+        // Use DataTransferItemList interface to access the file(s)
+        [...ev.dataTransfer.items].forEach((item, i) => {
+            // If dropped items aren't files, reject them
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                files.push(file);
+                console.log(`… file[${i}].name = ${file.name}`);
+            }
+        });
+    } else {
+        // Use DataTransfer interface to access the file(s)
+        [...ev.dataTransfer.files].forEach((file, i) => {
+            files.push(file)
+            console.log(`… file[${i}].name = ${file.name}`);
+        });
+    }
+    console.log(files);
+    //https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
+    if (FileReader && files && files.length) {
+        for (let i = 0; i < files.length; i++) {
+
+            let reader = new FileReader();
+
+            let baseType;
+            if (files[i].type) {
+                baseType = files[i].type.split("/")[0];
+            } else if (files[i].name.toLowerCase().endsWith(".txt")) {
+                baseType = "text";
+            } else if (files[i].name.toLowerCase().endsWith(".md")) {
+                baseType = "markdown";
+            } else {
+                console.log("Unhandled file type:", files[i]);
+                baseType = "unknown";
+            }
+
+            let url = URL.createObjectURL(files[i]);
+            let img;
+            let content = [];
+
+            let add = function (scale) {
+                let node = windowify(files[i].name, content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
+                /*node.push_extra_cb((node) => { //superceeded by new rewindowify (todo)
+                  return {
+                    f: "textarea",
+                    a: {
+                      p: [0, 1],
+                      v: files[i].name.value
+                    }
+                  };
+                })*/
+                htmlnodes_parent.appendChild(node.content);
+                registernode(node);
+                setupNodeForPlacement(node);
+            }
+            console.log("loading " + baseType);
+            switch (baseType) {
+                case "image":
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        let base64DataUrl = e.target.result;
+                        let imageElement = document.createElement('img');
+                        imageElement.src = base64DataUrl;
+                        imageElement.onload = function () {
+                            let node = createImageNode(imageElement, files[i].name); // Pass only imageElement and title
+                            htmlnodes_parent.appendChild(node.content);
+                            node.followingMouse = 1;
+                            node.draw();
+                            node.mouseAnchor = toDZ(new vec2(0, 0));
+                        };
+                    };
+                    reader.readAsDataURL(files[i]);
+                    break;
+                case "video":
+                    img = document.createElement('video');
+                    img.style = "display: block";
+                    img.setAttribute("controls", "");
+                    content = [
+                        img
+                    ];
+                    add(0.5);
+                    img.src = url;
+                    break;
+                case "audio":
+                    img = new Audio();
+                    img.setAttribute("controls", "");
+                    //let c = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    //c.setAttribute("viewBox","0 0 128 64");
+                    //let name = document.createElementNS("http://www.w3.org/2000/svg","text");
+                    //name.setAttribute("x","0");name.setAttribute("y","0");
+                    //name.appendChild(document.createTextNode(files[i].name));
+                    //c.appendChild(name);
+                    img.style = "display: block";
+                    content = [
+                        img
+                    ];
+                    add(0.5);
+                    //div.appendChild(c);
+                    img.src = url;
+                    break;
+                case "text":
+                    let textReader = new FileReader();
+                    textReader.onload = function (e) {
+                        let text = e.target.result;
+                        let node = createNodeFromWindow(files[i].name, text);
+                    }
+                    textReader.readAsText(files[i]);
+                    break;
+                case "markdown":
+                    let mdReader = new FileReader();
+                    mdReader.onload = function (e) {
+                        let mdText = e.target.result;
+                        let htmlContent = marked.parse(mdText, { mangle: false, headerIds: false });
+                        let htmlContainer = document.createElement('div');
+                        htmlContainer.innerHTML = htmlContent;
+                        htmlContainer.style.overflow = 'auto';
+                        htmlContainer.style.backgroundColor = '#222226'; // Set background color
+                        htmlContainer.style.width = '100%'; // Set width to 100% of the node
+                        htmlContainer.style.height = '100%'; // Set height to 100% of the node
+                        createHtmlNode(files[i].name, htmlContainer.outerHTML);
+                    }
+                    mdReader.readAsText(files[i]);
+                    break;
+                case "application": // Handle PDF files
+                    if (files[i].type.endsWith("pdf")) {
+                        let reader = new FileReader();
+                        reader.readAsArrayBuffer(files[i]);
+
+                        reader.onload = function () {
+                            let url = URL.createObjectURL(new Blob([reader.result], { type: 'application/pdf' }));
+                            let node = createLinkNode(files[i].name, files[i].name, url); // Pass file name
+                            node.fileName = files[i].name; // Store file name in node
+                            setupNodeForPlacement(node);
+                        };
+
+                        reader.onerror = function (err) {
+                            console.error('Error reading PDF file:', err);
+                        };
+                    }
+                    break;
+            }
+        }
+    } else {
+        // fallback -- perhaps submit the input to an iframe and temporarily store
+        // them on the server until the user's session ends.
+        console.log("FileReader not supported or no files");
+    }
 }
 
-const dropHandlerInstance = new DropHandler('neurite-workspace');
+
+function dragOverHandler(ev) {
+    ev.preventDefault();
+}
 
 //Paste event listener...
 function handlePasteData(pastedData, target) {
@@ -537,9 +345,9 @@ function isHtmlContent(data) {
 }
 
 
-function setupNodeForPlacement(node, mouseAnchor = toDZ(new vec2(0, 0))) {
+function setupNodeForPlacement(node) {
     node.followingMouse = 1;
-    node.mouseAnchor = mouseAnchor;
+    node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 4));
 }
 
 function createHtmlNode(title, pastedData) {
@@ -548,7 +356,7 @@ function createHtmlNode(title, pastedData) {
     let node = windowify(title, [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
     htmlnodes_parent.appendChild(node.content);
     registernode(node);
-    setupNodeForPlacement(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
+    setupNodeForPlacement(node);
 }
 
 // Existing paste event listener

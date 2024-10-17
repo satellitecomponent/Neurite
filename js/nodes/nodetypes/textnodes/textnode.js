@@ -3,8 +3,6 @@ function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x 
     n.classList.add('custom-scrollbar', 'node-textarea');
     n.onmousedown = cancel;
 
-    n.value = text;
-
     let node = addNodeAtNaturalScale(name, [n]); // Just add the textarea for now
 
     let windowDiv = node.windowDiv;  // Find the window div

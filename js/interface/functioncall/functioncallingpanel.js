@@ -259,7 +259,7 @@ function addFunctionCallItem(functionName, code, isError = false) {
     item.classList.add('function-call-item');
 
     // Generate a UUID for the item
-    const itemId = generateUUID();
+    const itemId = generateUUID(); // Implement this function to generate a UUID
     item.setAttribute('data-item-id', itemId);
 
     // Replace newline characters with <br> tags for HTML rendering
@@ -272,8 +272,7 @@ function addFunctionCallItem(functionName, code, isError = false) {
         code: code,
         zoom: currentCoords.zoom,
         pan: currentCoords.pan,
-        functionName: functionName,
-        isError: isError
+        functionName: functionName
     };
     item.setAttribute('data-call-data', JSON.stringify(callData));
 
@@ -283,7 +282,7 @@ function addFunctionCallItem(functionName, code, isError = false) {
 
         const errorIcon = document.getElementById('funcErrorIcon').cloneNode(true);
         errorIcon.style.display = 'inline-block';
-        errorIcon.classList.add('func-error-icon');
+        errorIcon.classList.add('func-error-icon'); // Add a class for styling
 
         item.insertBefore(errorIcon, item.firstChild);
     }
@@ -292,13 +291,13 @@ function addFunctionCallItem(functionName, code, isError = false) {
     item.addEventListener('mouseenter', () => {
         item.classList.add('hover-state');
         if (isError) {
-            item.classList.add('error-hover-state');
+            item.classList.add('error-hover-state'); // Add error-specific hover state
         }
     });
     item.addEventListener('mouseleave', () => {
         item.classList.remove('hover-state');
         if (isError) {
-            item.classList.remove('error-hover-state');
+            item.classList.remove('error-hover-state'); // Remove error-specific hover state
         }
     });
 
@@ -306,10 +305,11 @@ function addFunctionCallItem(functionName, code, isError = false) {
         if (item.classList.contains('active-state')) {
             clearActiveStates();
         } else {
+            // If the item is not active, set it to active and clear other active states
             clearActiveStates();
             item.classList.add('active-state');
             if (isError) {
-                item.classList.add('error-active-state');
+                item.classList.add('error-active-state'); // Add error-specific active state
             }
         }
     });
@@ -317,9 +317,7 @@ function addFunctionCallItem(functionName, code, isError = false) {
     functionCallList.appendChild(item);
     item.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-    // Save function call data to local storage
-    saveFunctionCallsToLocalStorage();
-
+    // Return the UUID for further reference
     return itemId;
 }
 
@@ -360,9 +358,6 @@ function generateTitleForCode(code) {
 const functionRunButton = document.getElementById('function-run-button');
 functionRunButton.addEventListener('click', runNeuriteCode);
 
-// Function Call List
-
-const clearButton = document.getElementById('clear-function-calls-button');
 const functionCallList = document.querySelector('.function-call-list');
 
 functionCallList.addEventListener('click', function (event) {
@@ -381,71 +376,6 @@ functionCallList.addEventListener('click', function (event) {
         }
     }
 });
-
-
-// Show the Clear button when the mouse enters the function call list
-functionCallList.addEventListener('mouseenter', () => {
-    if (functionCallList.children.length > 0) { // Only show if there are items
-        clearButton.style.display = 'block';
-    }
-});
-
-// Hide the Clear button when the mouse leaves the function call list and clear button
-functionCallList.addEventListener('mouseleave', (event) => {
-    if (!clearButton.contains(event.relatedTarget)) {
-        clearButton.style.display = 'none';
-    }
-});
-
-// Keep the Clear button visible when hovering over it
-clearButton.addEventListener('mouseenter', () => {
-    clearButton.style.display = 'block';
-});
-
-// Hide the Clear button when leaving the button
-clearButton.addEventListener('mouseleave', () => {
-    clearButton.style.display = 'none';
-});
-
-// Clear the function call list and local storage when the Clear button is clicked
-clearButton.addEventListener('click', () => {
-    // Clear the UI
-    functionCallList.innerHTML = '';
-
-    // Clear local storage
-    clearFunctionCallsFromLocalStorage();
-
-    // Hide the Clear button after clearing
-    clearButton.style.display = 'none';
-});
-
-
-function saveFunctionCallsToLocalStorage() {
-    const items = functionCallList.querySelectorAll('div');
-    const functionCalls = Array.from(items).map(item => {
-        const callData = item.getAttribute('data-call-data');
-        return JSON.parse(callData);
-    });
-
-    localStorage.setItem('neuriteFunctionCalls', JSON.stringify(functionCalls));
-}
-
-function restoreFunctionCallsFromLocalStorage() {
-    const storedFunctionCalls = localStorage.getItem('neuriteFunctionCalls');
-    if (storedFunctionCalls) {
-        const functionCalls = JSON.parse(storedFunctionCalls);
-        functionCalls.forEach(callData => {
-            const { functionName, code, isError } = callData;
-            addFunctionCallItem(functionName, code, isError);
-        });
-    }
-}
-
-restoreFunctionCallsFromLocalStorage();
-
-function clearFunctionCallsFromLocalStorage() {
-    localStorage.removeItem('neuriteFunctionCalls');
-}
 
 
 

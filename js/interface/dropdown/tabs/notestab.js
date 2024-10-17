@@ -21,12 +21,12 @@ function handleKeyDown(event) {
     return true;
 }
 
-
+document.addEventListener('DOMContentLoaded', () => {
     const promptInput = document.getElementById('prompt');
     if (promptInput) {
         promptInput.addEventListener('keydown', handleKeyDown);
     }
-
+});
 
 function autoGrow(event) {
     const textarea = event.target;

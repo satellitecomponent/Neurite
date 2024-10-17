@@ -1,47 +1,11 @@
 class SyntaxHighlighter {
-    static escapeHTML(text) {
-        return text.replace(/[&<>"']/g, function (match) {
-            switch (match) {
-                case '&': return '&amp;';
-                case '<': return '&lt;';
-                case '>': return '&gt;';
-                case '"': return '&quot;';
-                case "'": return '&#39;';
-            }
-        });
-    }
-
-    static escapeHTMLOutsideCodeBlocks(content) {
-        const codeBlockRegex = /(```)(html|css|js|javascript|python)?(\s*[\r\n]+)([\s\S]*?)(```)/gi;
-        let result = '';
-        let lastIndex = 0;
-        let match;
-
-        while ((match = codeBlockRegex.exec(content)) !== null) {
-            // Escape the content before this code block
-            let beforeCode = content.slice(lastIndex, match.index);
-            result += this.escapeHTML(beforeCode);
-            // Add the code block as is, wrapped with spellcheck="false"
-            result += `<div spellcheck="false">${match[0]}</div>`;
-            lastIndex = match.index + match[0].length;
-        }
-        // Escape any content after the last code block
-        if (lastIndex < content.length) {
-            let afterCode = content.slice(lastIndex);
-            result += this.escapeHTML(afterCode);
-        }
-        return result;
-    }
-
     static applyCodeBlockHighlighting(content) {
-        // Regex to capture multiline code blocks including HTML
-        const codeBlockRegex = /<div spellcheck="false">(```)(html|css|js|javascript|python)?(\s*[\r\n]+)([\s\S]*?)(```)<\/div>/gi;
+        // Update the regex to capture multiline code blocks including HTML
+        const codeBlockRegex = /(```)(html|css|js|javascript|python)?(\s*[\r\n]+)([\s\S]*?)(```)/gi;
         return content.replace(codeBlockRegex, (match, startDelimiter, languageLabel, leadingWhitespace, codeText, endDelimiter) => {
             const language = this.mapLanguage(languageLabel || '');
             const formattedCode = this.highlightCode(codeText, language);
-            // Ensure languageLabel is not undefined
-            const languageLabelText = languageLabel ? languageLabel : '';
-            return `<div style="font-size: inherit">${startDelimiter}${languageLabelText}${leadingWhitespace}${formattedCode}${endDelimiter}</div>`;
+            return `${startDelimiter}${languageLabel}${leadingWhitespace}${formattedCode}${endDelimiter}`;
         });
     }
 
@@ -60,7 +24,15 @@ class SyntaxHighlighter {
         let highlightedCode = '';
         CodeMirror.runMode(code, language, (text, style) => {
             let className = style ? `class="neurite-${style}"` : '';
-            let escapedText = this.escapeHTML(text);
+            let escapedText = text.replace(/[&<>"']/g, function (match) {
+                switch (match) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                }
+            });
             highlightedCode += `<span ${className}>${escapedText}</span>`;
         });
         return highlightedCode;
@@ -105,21 +77,13 @@ class SyntaxHighlighter {
     }
 }
 
-
 class ZetSyntaxDisplay {
     static syncAndHighlight(displayDiv, hiddenTextarea) {
         let content = hiddenTextarea.value;
 
-        // Escape HTML outside of code blocks
-        content = SyntaxHighlighter.escapeHTMLOutsideCodeBlocks(content);
-
-        // Apply code block highlighting
         content = SyntaxHighlighter.applyCodeBlockHighlighting(content);
-
-        // Apply additional highlighting
         content = SyntaxHighlighter.applyNodeTitleHighlighting(content);
         content = SyntaxHighlighter.applyZettelkastenSyntax(content);
-
         content += '\n'; // Adds visual spacing
 
         displayDiv.innerHTML = content;

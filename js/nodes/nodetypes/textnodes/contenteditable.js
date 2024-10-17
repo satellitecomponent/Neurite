@@ -64,7 +64,6 @@ function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
 
 function addEventsToUserInputTextarea(userInputTextarea, textarea, node, displayDiv) {
     syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
-    ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
 
     userInputTextarea.addEventListener('input', function (event) {
         if (!isEditableDivProgrammaticChange) {

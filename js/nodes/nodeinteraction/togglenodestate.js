@@ -215,6 +215,7 @@ document.addEventListener('contextmenu', function (event) {
     }
 });
 */
+let isDraggingDragBox = false;
 let dragBox = null;
 let startX, startY;
 
