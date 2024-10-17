@@ -240,7 +240,6 @@ function getSavedViewsFromCache() {
         }
     }
 
-
     return { ...defaultSavedViews };
 }
 
@@ -278,7 +277,7 @@ function saveCurrentView() {
 On.change(Elem.byId('fractal-select'), displaySavedCoordinates);
 On.click(Elem.byId('saveCoordinatesBtn'), saveCurrentView);
 
-On.click(Elem.byId('deleteCoordinatesBtn'), (e)=>{
+On.click(Elem.byId('deleteCoordinatesBtn'), (e) => {
     if (Coordinate.selectedIndex !== null) {
         deleteSavedView(Coordinate.selectedIndex);
     } else {
@@ -340,13 +339,13 @@ const Coordinate = {
     selectedDiv: null,
     selectedIndex: null
 }
-Coordinate.deselect = function(){
+Coordinate.deselect = function () {
     if (!this.selectedDiv) return;
 
     this.selectedDiv.classList.remove('selected-coordinate');
     this.resetSelected();
 }
-Coordinate.resetSelected = function(){
+Coordinate.resetSelected = function () {
     this.selectedDiv = null;
     this.selectedIndex = null;
 }
@@ -373,7 +372,7 @@ function appendViewsToContainer(views, containerId, startIndex) {
         const coordElement = Html.make.div('saved-coordinate-item');
         coordElement.textContent = view.title;
 
-        On.click(coordElement, (e)=>{
+        On.click(coordElement, (e) => {
             returnToSavedView(view);
 
             // Update selected state
@@ -389,7 +388,7 @@ function appendViewsToContainer(views, containerId, startIndex) {
         });
 
         // Reset the scale when mouse leaves the selected item
-        On.mouseleave(coordElement, (e)=>{
+        On.mouseleave(coordElement, (e) => {
             if (coordElement.classList.contains('selected-coordinate')) {
                 coordElement.style.transform = 'scale(1)';
             }
@@ -412,7 +411,7 @@ function displaySavedCoordinates() {
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
 }
 
-On.DOMContentLoaded(document, (e)=>{
+On.DOMContentLoaded(document, (e) => {
     updateSavedViewsCache();
     displaySavedCoordinates();
 });
