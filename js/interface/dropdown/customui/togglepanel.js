@@ -1,3 +1,5 @@
+// Defines Sliding Panels.
+
 function togglePanel(panelContainer) {
     // Close any open custom dropdowns within the panel
     const openDropdowns = panelContainer.querySelectorAll('.options-replacer.show');

@@ -377,10 +377,6 @@ function setResizeEventListeners(resizeHandle, node) {
     };
 
     let windowDiv = node.windowDiv;
-    // Find these elements once and store them for later use.
-    const editorWrapperDiv = windowDiv.querySelector('.editorWrapperDiv');
-    const editorIframe = editorWrapperDiv ? editorWrapperDiv.querySelector('iframe') : null;
-
 
     let startX;
     let startY;
@@ -430,12 +426,16 @@ function setResizeEventListeners(resizeHandle, node) {
         }
 
         const aiNodeWrapperDiv = node.ainodewrapperDiv;
-
-        // If aiNodeWrapperDiv exists, set its dimensions
         if (aiNodeWrapperDiv) {
             aiNodeWrapperDiv.style.flexGrow = '1';
             aiNodeWrapperDiv.style.width = '100%';
         }
+
+        const fileTreeContainer = node.fileTreeContainer;
+        if (fileTreeContainer) {
+            fileTreeContainer.style.width = '100%';
+        }
+
     };
 
     const handleMouseUp = () => {

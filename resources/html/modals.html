@@ -1,0 +1,402 @@
+    <!-- Default Modal Structure -->
+<div id="customModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header" id="modal-header">
+            <h2 class="modal-title"></h2>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body"></div>
+
+        <!-- Generic Overlay Inside Modal -->
+        <div class="modal-overlay" style="display: none;">
+            <div class="modal-overlay-content">
+                <button class="modal-overlay-close">&times;</button>
+                <div class="modal-overlay-body"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="fileTreeModal" style="display: none;">
+     <div id="modal-file-tree-container" class="fileTreeContainer custom-scrollbar"></div>
+</div>
+
+<!-- Controls Modal Content -->
+<div id="controls-modal" class="modal-content-template" style="display: none;">
+    <table>
+        <tr>
+            <td>
+                <div class="label-container">
+                    <button class="question-button" data-explanation-id="node-mode-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Node-Mode</strong>
+                </div>
+            </td>
+            <td><button id="shiftKeyInput" class="linkbuttons">{{currentShiftKey}}</button></td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label-container">
+                    <button class="question-button" data-explanation-id="selection-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Selection</strong>
+                </div>
+            </td>
+            <td><button id="altKeyInput" class="linkbuttons">{{currentAltKey}}</button></td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label-container">
+                    <button class="question-button" data-explanation-id="pan-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Pan</strong>
+                </div>
+            </td>
+            <td>
+                <select id="panClickSelect">
+                    <option value="0">Left Click</option>
+                    <option value="1">Middle Click</option>
+                    <option value="2">Right Click</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label-container">
+                    <button class="question-button" data-explanation-id="zoom-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Zoom</strong>
+                </div>
+            </td>
+            <td>
+                <select id="zoomClickSelect">
+                    <option value="scroll">Scroll Wheel</option>
+                    <option value="0">Left Click</option>
+                    <option value="1">Middle Click</option>
+                    <option value="2">Right Click</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label-container">
+                    <button class="question-button" data-explanation-id="context-menu-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Context Menu</strong>
+                </div>
+            </td>
+            <td>
+                <select id="contextMenuButtonSelect">
+                    <option value="1">Middle Click</option>
+                    <option value="2">Right Click</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Hidden Explanation Templates -->
+    <div id="node-mode-explanation" class="explanation-content" style="display: none;">
+        <strong>Node Mode: ({{shiftKey}})</strong>
+        <ul>
+            <li>Hold {{shiftKey}} to freeze all nodes in place.</li>
+            <li>Hold {{shiftKey}} + Scroll on a node to rescale.</li>
+            <li>Hold {{shiftKey}} + Click note titles to connect them.</li>
+            <li>Hold {{shiftKey}} + Double Click the canvas to create a text node.</li>
+            <li>Hold {{shiftKey}} + Double Click to expand a collapsed node.</li>
+        </ul>
+    </div>
+
+    <div id="selection-explanation" class="explanation-content" style="display: none;">
+        <strong>Selection: ({{altKey}})</strong>
+        <ul>
+            <li>{{altKey}} + Drag nodes to avoid text selection.</li>
+            <li>{{altKey}} + Click to select a node.</li>
+            <li>{{altKey}} + Drag to select multiple nodes.</li>
+            <li>{{altKey}} + {{zoomClick}} to rotate the canvas.</li>
+            <li>{{altKey}} + Double Click the canvas to create an Ai node.</li>
+        </ul>
+    </div>
+
+    <div id="pan-explanation" class="explanation-content" style="display: none;">
+        <strong>Pan: ({{panClick}})</strong>
+        <ul>
+            <li>{{panClick}} and Drag to navigate the canvas.</li>
+        </ul>
+    </div>
+
+    <div id="zoom-explanation" class="explanation-content" style="display: none;">
+        <strong>Zoom: ({{zoomClick}})</strong>
+        <ul>
+            <li>{{zoomClick}} to zoom the canvas view.</li>
+            <li>When set to a click, drag up or down to zoom.</li>
+        </ul>
+    </div>
+
+    <div id="context-menu-explanation" class="explanation-content" style="display: none;">
+        <strong>Context Menu:</strong>
+        <ul>
+            <li>{{contextMenuButton}} the canvas to create nodes.</li>
+            <li>{{contextMenuButton}} a node to access and perform its existing methods.</li>
+            <li>Click the runMethod text input to list available actions and add them to your {{contextMenuButton}}.</li>
+        </ul>
+    </div>
+</div>
+
+<div id="zetSearchModal" style="display: none;">
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+        <!-- Added margin for spacing -->
+        <input id="Searchbar" class="Searchbar" placeholder="search notes..." onkeydown="if(event.key === 'Enter') event.preventDefault();" />
+    </div>
+    <div id="search-results" class="custom-scrollbar">
+        <div class="results-display-div"></div>
+    </div>
+</div>
+
+<div id="noteModal" style="display: none;">
+    <!-- Content for the note modal -->
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="padding-bottom: 20px;">
+            <label for="node-tag">Node Tag:</label>
+            <input type="text" id="node-tag" value="##" style="width:80px;" />
+        </div>
+        <div>
+            <label for="node-tag">Link Tag:</label>
+            <input type="text" id="ref-tag" value="[[" style="width:80px;" />
+        </div>
+    </div>
+    <br />
+    <div style="display: flex; justify-content: space-evenly; align-items: center;">
+        <label for="zetPathTypeDropdown" style="margin-right: 10px;">Placement Style</label>
+        <div class="dropdown-container" title="Determine what path the Zettelkasten decides to place nodes on.">
+            <select id="zetPathTypeDropdown" class="model-selector custom-select ignoreSetup">
+                <option value="Radial">Radial</option>
+                <option value="Spiral">Spiral</option>
+                <option value="Branching">Branching</option>
+                <option value="Random">Random</option>
+            </select>
+        </div>
+    </div>
+    <br />
+    <div class="gridLayout">
+
+        <!-- Node Count Slider : For Radial-->
+        <div class="settingsSlider radial-slider" title="Defines the number of steps or nodes in the path.">
+            <label for="radialPathLengthSlider">Number of Nodes</label>
+            <input type="range" id="radialPathLengthSlider" name="radial-path-length-slider" min="1" max="64" step="1">
+        </div>
+        <!-- Distance Slider: : For Radial-->
+        <div class="settingsSlider radial-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+            <label for="radialPathDistanceSlider">Node Spacing</label>
+            <input type="range" id="radialPathDistanceSlider" name="radial-path-distance-slider" min="0.1" max="8" step="0.1">
+        </div>
+        <!-- Scale Slider : For Radial-->
+        <div class="settingsSlider radial-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+            <label for="radialScaleSlider">Node Size</label>
+            <input type="range" id="radialScaleSlider" name="radial-scale-slider" min="0.1" max="2" step="0.01">
+        </div>
+        <!-- Radial Branch Depth Slider: For Radial -->
+        <div class="settingsSlider radial-slider" title="Sets the starting radius from the center for the first node.">
+            <label for="radialDepthSlider">Number of Radii</label>
+            <input type="range" id="radialDepthSlider" name="radial-depth-slider" min="1" max="32" step="1">
+        </div>
+
+        <!-- Node Count Slider : For Spiral-->
+        <div class="settingsSlider spiral-slider" title="Defines the number of steps or nodes in the path.">
+            <label for="spiralPathLengthSlider">Number of Nodes</label>
+            <input type="range" id="spiralPathLengthSlider" name="spiral-path-length-slider" min="1" max="100" step="1">
+        </div>
+        <!-- Distance Slider: : For Spiral-->
+        <div class="settingsSlider spiral-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+            <label for="spiralPathDistanceSlider">Node Spacing</label>
+            <input type="range" id="spiralPathDistanceSlider" name="spiral-path-distance-slider" min="0.1" max="4" step="0.1">
+        </div>
+        <!-- Scale Slider : For Spiral-->
+        <div class="settingsSlider spiral-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+            <label for="spiralScaleSlider">Node Size</label>
+            <input type="range" id="spiralScaleSlider" name="spiral-scale-slider" min="0.1" max="2" step="0.01">
+        </div>
+        <!-- Curl Slider: For Spiral -->
+        <div class="settingsSlider spiral-slider" title="Adjusts the curl of the spiral. Negative values create counterclockwise spirals, while positive values create clockwise spirals.">
+            <label for="curlSlider">Curl</label>
+            <input type="range" id="curlSlider" name="curl-slider" min="-1" max="1" step="0.01">
+        </div>
+
+
+
+        <!-- Node Count Slider : For Branching-->
+        <div class="settingsSlider branching-slider" title="Defines the number of steps or nodes in the path.">
+            <label for="branchingPathLengthSlider">Number of Nodes</label>
+            <input type="range" id="branchingPathLengthSlider" name="branching-path-length-slider" min="1" max="100" value="64" step="1">
+        </div>
+        <!-- Distance Slider: : For Branching-->
+        <div class="settingsSlider branching-slider" title="Sets the general spacing between nodes, affecting how spread out the path is.">
+            <label for="pathDistanceSlider">Node Spacing</label>
+            <input type="range" id="branchingPathDistanceSlider" name="path-distance-slider" min="0.1" max="4" value="1" step="0.1">
+        </div>
+        <!-- Scale Slider : For Branching-->
+        <div class="settingsSlider branching-slider" title="Adjusts the size of each node. Affects how large or small nodes appear.">
+            <label for="branchingScaleSlider">Node Size</label>
+            <input type="range" id="branchingScaleSlider" name="branching-scale-slider" min="0.1" max="2" value="0.98" step="0.01">
+        </div>
+        <!-- Branching Factor Slider: For Branching -->
+        <div class="settingsSlider branching-slider" title="Controls the number of branches emanating from each node.">
+            <label for="branchingFactorSlider">Branching Factor</label>
+            <input type="range" id="branchingFactorSlider" name="branching-factor-slider" min="2" max="12" value="4" step="1">
+        </div>
+    </div>
+</div>
+
+<div id="apiConfigModalContent" style="display: none;">
+    <div class="api-modal-content">
+        <label for="apiEndpoint">API Endpoint:</label>
+        <input type="text" id="apiEndpoint" class="api-modal-input" placeholder="Enter API Endpoint URL">
+
+        <label for="apiEndpointKey">API Key (Optional):</label>
+        <input type="text" id="apiEndpointKey" class="api-modal-input" placeholder="Enter API Key">
+
+        <label for="apiModelName">Model Name:</label>
+        <input type="text" id="apiModelName" class="api-modal-input" placeholder="Enter Model Name">
+
+        <button class="api-modal-button" onclick="saveApiConfig()">Save Configuration</button>
+    </div>
+</div>
+
+<div id="aiModal" style="display: none;">
+    <h3 class="modal-title">Zettelkasten AI</h3>
+    <div class="single-column-layout">
+        <input type="checkbox" id="forget-checkbox" name="forget-checkbox">
+        <label for="forget-checkbox"><strong>Selective Forgetting</strong></label>
+        <input type="checkbox" id="novelty-checkbox">
+        <label for="novelty-checkbox"><strong>Shuffle Wiki Results</strong></label>
+        <input type="checkbox" id="ai-nodes-checkbox">
+        <label for="ai-nodes-checkbox"><strong>AI Generated AI Nodes</strong></label>
+    </div>
+
+    <h3 class="modal-title">Multi-Agent</h3>
+    <div class="single-column-layout">
+        <input type="checkbox" id="use-all-connected-ai-nodes">
+        <label for="use-all-connected-ai-nodes"><strong>Message All Connected AI</strong></label>
+        <input type="checkbox" id="enable-exit" checked>
+        <label for="enable-exit"><strong>/exit</strong></label>
+        <input type="checkbox" id="enable-all" checked>
+        <label for="enable-all"><strong>@all</strong></label>
+        <input type="checkbox" id="enable-self" checked>
+        <label for="enable-self"><strong>@self</strong></label>
+        <input type="checkbox" id="enable-user" checked>
+        <label for="enable-user"><strong>@user</strong></label>
+    </div>
+</div>
+
+<div id="importLinkModalContent" style="display: none;">
+    <div class="import-modal-content">
+        <div>
+            <label for="importLinkTextarea">Text:</label>
+            <br />
+            <textarea id="importLinkTextarea" class="custom-scrollbar importLinkTextarea" rows="10"></textarea>
+        </div>
+
+        <div>
+            <label for="maxSentencesPerNote">Note Length:</label>
+            <input type="range" id="maxSentencesPerNote" value="5" min="1" max="20">
+        </div>
+
+        <div>
+            <input type="checkbox" id="connectNotes">
+            <label for="connectNotes">Connect</label>
+        </div>
+
+
+        <button class="api-modal-button" onclick="confirmImport()">Confirm Import</button>
+    </div>
+</div>
+
+<div id="nodeConnectionModal" style="display:none;">
+    <input type="text" id="connectModalSearchBar" placeholder="search notes...">
+    <ul id="nodeList" class="custom-scrollbar"></ul>
+</div>
+
+<div id="ollamaManagerModal" style="display: none;">
+    <div id="ollamaModelList" class="custom-scrollbar"></div>
+</div>
+
+<div id="vectorDbModal" style="display: none;">
+    <div id="key-list" class="scrollable-list" title="Embedded Documents">
+        <!-- Stored keys will be dynamically added here -->
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+        <button id="chunkAndStoreButton" class="linkbuttons" title="Send Text to Embeddings Database">Upload File</button>
+        <button id="delete-vectordb-docs" class="linkbuttons" title="Delete Document from Embeddings Database">Delete File(s)</button>
+    </div>
+    <input type="file" id="fileInput" style="display: none;" />
+</div>
+
+<div id="vectorDbImportConfirmModal" style="display: none;">
+    <div class="gridLayout">
+        <div class="raw-text">
+            <h3>Raw Text</h3>
+            <textarea id="rawTextArea" class="custom-scrollbar" rows="20" cols="50"></textarea>
+        </div>
+        <div class="chunked-text">
+            <h3>Chunked Text</h3>
+            <div id="chunkedTextDisplay" class="scrollable-list"></div>
+        </div>
+    </div>
+    <div class="gridLayout" style="padding-top: 8px; padding-bottom: 6px;">
+        <div class="settingsSlider" title="Size of Document Snippets (Set Before Embedding">
+            <label for="maxChunkSizeSlider">Chunk Size: <span id="maxChunkSizeValue"></span></label>
+            <input type="range" min="50" max="4096" value="1024" class="slider" id="maxChunkSizeSlider">
+        </div>
+        <div class="settingsSlider" title="Overlap Between Document Snippets (Set Before Embedding)">
+            <label for="overlapSizeSlider">Overlap: <span id="overlapSizeDisplay"></span></label>
+            <input type="range" id="overlapSizeSlider" name="overlapSize" min="0" max="100" value="10">
+        </div>
+    </div>
+    <button id="confirmChunkAndStoreButton" class="api-modal-button">Confirm and Store</button>
+    <button id="cancelChunkAndStoreButton" class="api-modal-button">Cancel</button>
+</div>
+
+<div id="vectorDbSearchModal" style="display: none;">
+    <div class="search-container">
+        <input type="text" id="vectorDbSearchInput" placeholder="Search...">
+    </div>
+    <div id="vectorDbSearchDisplay" class="vector-db-search-results custom-scrollbar">
+        <!-- Search results will be dynamically added here -->
+    </div>
+    <div class="settingsSlider centered" style="margin-bottom: 10px;" title="Number of Embedded Document Snippets to Retrieve for AI Response">
+        <label for="topN">Top <span id="topNValue">5</span> Results</label>
+        <input type="range" id="topNSlider" name="topN" min="1" max="100" value="5">
+    </div>
+</div>
+
+<div id="promptLibraryModalContent" style="display: none;">
+    <div class="prompt-library-container">
+        <div class="prompt-list-container">
+            <div class="prompt-list custom-scrollbar"></div>
+            <div class="prompt-list-buttons">
+                <button class="add-prompt-button">+</button>
+                <button class="delete-prompt-button">x</button>
+            </div>
+        </div>
+        <div class="prompt-content">
+            <textarea class="prompt-content-textarea custom-scrollbar"></textarea>
+            <div class="prompt-buttons">
+                <button class="set-instructions-button">Set Instructions</button>
+                <!-- Import and Export Buttons -->
+                <input type="file" class="import-prompt-button" accept="application/json" style="display: none;" />
+                <button class="import-prompt-label set-instructions-button">Import Prompts</button>
+                <button class="export-prompt-button set-instructions-button">Export Prompts</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="alertModal" style="display: none;">
+    <!-- Content for the alert modal -->
+    <p>This is an alert message.</p>
+    <button>OK</button>
+</div>

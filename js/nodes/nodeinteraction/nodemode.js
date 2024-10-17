@@ -1,4 +1,5 @@
 const edgesIcon = document.querySelector('.edges-icon');
+
 let lockedNodeMode = false;
 
 function toggleNodeModeState() {
@@ -25,8 +26,6 @@ function enforceCapsLockState(event) {
 
     toggleNodeModeState();  // Update the visual state
 }
-
-edgesIcon.addEventListener('click', toggleNodeMode);
 
 addEventListener("keydown", (event) => {
     if (event.key === settings.nodeModeKey) {
