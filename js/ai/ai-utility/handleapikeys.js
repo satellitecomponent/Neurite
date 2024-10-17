@@ -46,20 +46,22 @@ function setupInferenceDropdowns(container) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const templateDropdownsContainer = document.getElementById('template-dropdowns');
-    // Delay the visibility update to ensure saved options are loaded
-    setTimeout(() => {
-        setupInferenceDropdowns(templateDropdownsContainer);
-    }, 100); // Adjust the timeout duration as needed
-});
+
+const templateDropdownsContainer = document.getElementById('template-dropdowns');
+
+setupInferenceDropdowns(templateDropdownsContainer);
 
 
 
-document.addEventListener('DOMContentLoaded', function () {
+
+
+function loadCustomModelSelect() {
     const select = document.getElementById('custom-model-select');
     loadDropdownFromLocalStorage(select, 'customModelDropdown');
-});
+    refreshCustomDropdownDisplay(select);
+}
+
+loadCustomModelSelect();
 
 function saveApiConfig() {
     const endpoint = document.getElementById('apiEndpoint').value;
@@ -228,7 +230,7 @@ function clearKeys() {
 
 // From ai.js
 
-let useProxy = true;
+let useProxy = false;
 let baseOllamaUrl = 'http://127.0.0.1:11434/api/';
 let ollamaLibrary = null;
 
@@ -258,8 +260,8 @@ async function checkProxyServer() {
     await ollamaSelectOnPageLoad();
 }
 
-// Call the checkProxyServer function when the page loads
-window.addEventListener('load', checkProxyServer);
+
+checkProxyServer();
 
 // Function to provide API keys to the proxy server
 async function provideAPIKeys() {

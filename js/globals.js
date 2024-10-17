@@ -389,6 +389,19 @@ function decodeHTML(html) {
     return txt.value;
 }
 
+//filepath.js
+
+let currentPath = '/'; // Default path
+
+    const storedPath = localStorage.getItem('currentPath');
+    if (storedPath) {
+        currentPath = storedPath;
+    } else {
+        localStorage.setItem('currentPath', currentPath);
+    }
+
+    //togglenodestate.js
+let isDraggingDragBox = false;
 //editornode.js
 
 //interface.js
