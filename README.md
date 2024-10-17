@@ -472,7 +472,7 @@ npm start
 
 The Localhost Servers are an important component of Neurite that serve as an optional backend and enable complete functionality.
 
-### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2FLocalhost%2520Servers). 
+### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers). 
 
 *alternatively clone the entire repo.
 
