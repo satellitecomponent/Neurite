@@ -351,7 +351,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
         <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
         <li><strong>Ai Logic Circuits:</strong>
           <ul>
-            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of converstion across connected Ai Nodes between two-way, sending, or receiving.</li>
+            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of conversation across connected Ai Nodes between two-way, sending, or receiving.</li>
           </ul>
         </li>
         <li><strong>Graph Context:</strong>
