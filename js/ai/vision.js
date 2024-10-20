@@ -42,37 +42,52 @@ function calculateImageTokenCost(width, height, detailLevel) {
     return (totalTiles * 170) + 85;
 }
 
-// Asynchronously convert an image to a base64 string
-// The convertImageToBase64 function should take a blob URL, create an Image object,
-// load the blob URL, and then perform the canvas draw and toDataURL conversion.
-function convertImageToBase64(imageElement, callback) {
-    // Create an off-screen canvas element
-    let canvas = document.createElement('canvas');
-    canvas.width = imageElement.naturalWidth;
-    canvas.height = imageElement.naturalHeight;
-
-    let ctx = canvas.getContext('2d');
-    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
-
-    // Convert the canvas content to a base64 string (assuming png format)
-    let base64String = canvas.toDataURL('image/png');
-    callback(base64String);
-
-    // Clean up the canvas element
-    canvas = null;
+// Convert a blob URL to base64 data
+function convertImageToBase64(blobUrl) {
+    return new Promise((resolve, reject) => {
+        // Fetch the blob data from the blob URL
+        fetch(blobUrl)
+            .then(response => response.blob())
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]); // Return the base64 string without the prefix
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob); // Read the blob as data URL
+            })
+            .catch(error => {
+                console.error('Error fetching or converting the blob URL:', error);
+                reject(error);
+            });
+    });
 }
 
-function getImageNodeData(node) {
-    // If there's no image URL but there is base64 image data
+
+async function getImageNodeData(node) {
+    // If the image data is a blob URL, convert it to base64
+    if (node.imageData.startsWith('blob:')) {
+        try {
+            const base64Data = await convertImageToBase64(node.imageData);
+            return {
+                type: 'image_data',
+                image_data: base64Data // Return the base64-encoded image data
+            };
+        } catch (error) {
+            console.error('Error converting blob to base64:', error);
+            return null;
+        }
+    }
+
+    // If there's already base64-encoded imageData
     if (node.imageData) {
         return {
-            type: 'image_url',
-            image_url: {
-                url: node.imageData // Provide the base64 data as the url property of the image_url object
-            }
+            type: 'image_data',
+            image_data: node.imageData // Assuming this is already base64-encoded
         };
     }
-    // If there's no image data or URL, return null or an appropriate placeholder
+
+    // If there's no image data, return null
     return null;
 }
 
