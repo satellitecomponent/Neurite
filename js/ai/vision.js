@@ -42,6 +42,7 @@ function calculateImageTokenCost(width, height, detailLevel) {
     return (totalTiles * 170) + 85;
 }
 
+
 // Asynchronously convert an image to a base64 string
 // The convertImageToBase64 function should take a blob URL, create an Image object,
 // load the blob URL, and then perform the canvas draw and toDataURL conversion.
@@ -56,17 +57,31 @@ function convertImageToBase64(imageElement, callback) {
     callback(canvas.toDataURL('image/png')); // base64 string
 }
 
-function getImageNodeData(node) {
-    // If there's no image URL but there is base64 image data
+
+async function getImageNodeData(node) {
+    // If the image data is a blob URL, convert it to base64
+    if (node.imageData.startsWith('blob:')) {
+        try {
+            const base64Data = await convertImageToBase64(node.imageData);
+            return {
+                type: 'image_data',
+                image_data: base64Data // Return the base64-encoded image data
+            };
+        } catch (error) {
+            console.error('Error converting blob to base64:', error);
+            return null;
+        }
+    }
+
+    // If there's already base64-encoded imageData
     if (node.imageData) {
         return {
-            type: 'image_url',
-            image_url: {
-                url: node.imageData // Provide the base64 data as the url property of the image_url object
-            }
+            type: 'image_data',
+            image_data: node.imageData // Assuming this is already base64-encoded
         };
     }
-    // If there's no image data or URL, return null or an appropriate placeholder
+
+    // If there's no image data, return null
     return null;
 }
 

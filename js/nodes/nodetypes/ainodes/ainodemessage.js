@@ -201,14 +201,20 @@ AiNode.sendMessage = async function(node, message = null){
 
     const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
 
-    allConnectedNodes.forEach(connectedNode => {
+    allConnectedNodes.forEach(async (connectedNode) => {
         if (connectedNode.isImageNode) {
-            const imageData = getImageNodeData(connectedNode);
+            const imageData = await getImageNodeData(connectedNode);
             if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
-                // Construct an individual message for each image
+                // Construct the message with base64 image formatted as a data URL
                 messages.push({
                     role: 'user',
-                    content: [imageData] // Contains only the image data
+                    content: {
+                        type: 'image_url',
+                        image_url: {
+                            url: `data:image/jpeg;base64,${imageData.image_data}` // Properly format the base64 image data as a data URL
+                        },
+                        //detail: 'high' // Set high detail for better quality
+                    }
                 });
                 remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
             } else {
