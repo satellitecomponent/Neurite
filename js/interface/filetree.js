@@ -98,7 +98,7 @@ class FileTree {
     async loadDirectory(path, parentElement) {
         if (!useProxy) {  // Strict inequality check
             const errorElement = document.createElement('p');
-            errorElement.textContent = 'Localhost servers for Neurite are not enabled. \n Download the servers here ';
+            errorElement.textContent = 'Localhost servers for Neurite are not enabled. \n Download the servers ';
 
             const linkElement = document.createElement('a');
             linkElement.href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';

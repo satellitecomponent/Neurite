@@ -395,7 +395,7 @@ function appendViewsToContainer(views, containerId, startIndex) {
         coordElement.classList.add('saved-coordinate-item');
 
         coordElement.addEventListener('click', () => {
-            neuriteReturnToSavedView(view);
+            returnToSavedView(view);
 
             // Update selected state
             document.querySelectorAll('.saved-coordinate-item').forEach(div => {
@@ -437,12 +437,12 @@ function displaySavedCoordinates() {
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+
     // Update the cache
     updateSavedViewsCache();
 
     displaySavedCoordinates();
-});
+
 
 function deselectCoordinate() {
     // If there's no selected coordinate, exit the function immediately
