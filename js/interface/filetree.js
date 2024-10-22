@@ -1,60 +1,55 @@
-// Function to fetch directory contents from the Node.js server
-async function fetchDirectoryContents(path) {
-    try {
-        const response = await fetch(`http://localhost:9099/api/navigate?path=${encodeURIComponent(path)}`);
-        const data = await response.json();
-        //console.log('Directory data:', data);
-        return data;
-    } catch (error) {
-        console.error('Error fetching directory contents:', error);
-        return null;
+async function fetchDirectoryContents(path) { // from the Node.js server
+    const response = await Request.send(new fetchDirectoryContents.ct(path));
+    if (!response) return;
+
+    const data = await response.json();
+    //console.log('Directory data:', data);
+    return data;
+}
+fetchDirectoryContents.ct = class {
+    constructor(path){
+        this.url = 'http://localhost:9099/api/navigate?path=' + encodeURIComponent(path);
+        this.path = path;
     }
+    onFailure(){ return `Failed to fetch contents of directory ${this.path}:` }
 }
 
 async function fetchFileContent(path) {
-    try {
-        const response = await fetch(`http://localhost:9099/api/read-file?path=${encodeURIComponent(path)}`);
+    const response = await Request.send(new fetchFileContent.ct(path));
+    if (!response) return;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const mimeType = response.headers.get('Content-Type') || '';
-
-        // Handle text content
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/json') || mimeType.startsWith('application/xml')) {
-            const textContent = await response.text();
-            return { content: textContent, blob: null, mimeType };
-        } else {
-            // Handle binary content (e.g., PDFs)
-            const blob = await response.blob();
-            return { content: null, blob, mimeType };
-        }
-
-    } catch (error) {
-        console.error('Error fetching file content:', error);
-        return null;
+    const mimeType = response.headers.get('Content-Type') || '';
+    if (mimeType.startsWith('text/') || mimeType.startsWith('application/json') || mimeType.startsWith('application/xml')) {
+        const textContent = await response.text();
+        return { content: textContent, blob: null, mimeType };
+    } else {
+        const blob = await response.blob();
+        return { content: null, blob, mimeType };
     }
+}
+fetchFileContent.ct = class {
+    constructor(path){
+        this.url = 'http://localhost:9099/api/read-file?path=' + encodeURIComponent(path);
+        this.path = path;
+    }
+    onFailure(){ return `Failed to fetch content of file ${this.path}:` }
 }
 
 class FileTree {
     constructor(containerElement, filePathInput, filePath = '/', shouldSavePath = false, onPathChangeCallback = null) {
-        if (!(containerElement instanceof HTMLElement) || !(filePathInput instanceof HTMLInputElement)) {
-            throw new Error('Container must be a valid HTMLElement and file path input must be an input element');
-        }
+        if (!(containerElement instanceof HTMLElement)) throw new Error("Container must be a valid HTMLElement");
+        if (!(filePathInput instanceof HTMLInputElement)) throw new Error("File path input must be an input element");
 
         this.container = containerElement;
         this.filePathInput = filePathInput;
-        this.currentPath = filePath; // Set the file path during construction
-        this.selectedElement = null; // Keep track of the selected item
-        this.shouldSavePath = shouldSavePath; // New parameter to control saving path
-        this.onPathChangeCallback = onPathChangeCallback; // Callback to handle path changes
+        this.currentPath = filePath;
+        this.selectedElement = null;
+        this.shouldSavePath = shouldSavePath;
+        this.onPathChangeCallback = onPathChangeCallback;
 
-        // Set the input value to the current path and bind the event handler
         this.filePathInput.value = this.currentPath;
         this.filePathInput.addEventListener('keypress', this.handlePathInput.bind(this));
 
-        // Initialize the file tree with the current path
         this.init(this.currentPath);
     }
 
@@ -78,18 +73,17 @@ class FileTree {
     handlePathInput(event) {
         if (event.key === 'Enter') {
             const newPath = this.filePathInput.value.trim();
+            if (!newPath) {
+                console.log("Invalid path");
+                return;
+            }
 
-            if (newPath) {
-                // Clear the container and load the new directory
-                this.container.innerHTML = '';
-                this.init(newPath);
+            this.container.innerHTML = '';
+            this.init(newPath); // load the new directory
 
-                // Trigger the callback to update the node's filePath
-                if (this.onPathChangeCallback) {
-                    this.onPathChangeCallback(newPath);
-                }
-            } else {
-                console.log('Invalid path');
+            // Trigger the callback to update the node's filePath
+            if (this.onPathChangeCallback) {
+                this.onPathChangeCallback(newPath);
             }
         }
     }
@@ -114,7 +108,6 @@ class FileTree {
         }
 
         const contents = await fetchDirectoryContents(path);
-
         if (!contents) {
             const errorElement = document.createElement('p');
             errorElement.textContent = 'Error loading directory contents.';
@@ -152,12 +145,10 @@ class FileTree {
     }
 
     selectItem(itemElement) {
-        // Clear previously selected item
         if (this.selectedElement) {
             this.selectedElement.classList.remove('selected');
         }
 
-        // Mark the clicked element as selected
         this.selectedElement = itemElement;
         itemElement.classList.add('selected');
     }
@@ -174,12 +165,12 @@ class FileTree {
             if (icon) {
                 event.dataTransfer.setDragImage(icon, 10, 10);
             }
-            //console.log('Drag started with metadata:', filePath);
+            //console.log("Drag started with metadata:", filePath);
         });
 
         itemElement.addEventListener('dragend', (event) => {
             event.stopPropagation();
-            //console.log('Drag ended:', item.name);
+            //console.log("Drag ended:", item.name);
         });
     }
 
@@ -194,38 +185,34 @@ class FileTree {
             if (icon) {
                 event.dataTransfer.setDragImage(icon, 10, 10);
             }
-            //console.log('Folder Drag started with metadata:', folderPath);
+            //console.log("Folder Drag started with metadata:", folderPath);
         });
 
         itemElement.addEventListener('dragend', (event) => {
             event.stopPropagation();
-            //console.log('Folder Drag ended:', item.name);
+            //console.log("Folder Drag ended:", item.name);
         });
     }
 
     collapseDirectory(childContainer, itemElement) {
         childContainer.style.display = 'none';
         const iconUse = itemElement.querySelector('.file-icon use');
-        if (iconUse) {
-            iconUse.setAttribute('href', '#folder-icon');
-        }
+        if (iconUse) iconUse.setAttribute('href', '#folder-icon');
         itemElement.classList.remove('expanded');
     }
 
     expandDirectory(childContainer, itemElement) {
         childContainer.style.display = 'block';
         const iconUse = itemElement.querySelector('.file-icon use');
-        if (iconUse) {
-            iconUse.setAttribute('href', '#folder-open-icon');
-        }
+        if (iconUse) iconUse.setAttribute('href', '#folder-open-icon');
     }
 
     createFileItem(name, type) {
         const itemElement = document.createElement('div');
         itemElement.classList.add('file-item');
 
-        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        const icon = SVG.create.svg();
+        const use = SVG.create.use();
         icon.classList.add('file-icon');
         use.setAttribute('href', type === 'directory' ? '#folder-icon' : this.getFileIcon(name.split('.').pop().toLowerCase()));
         icon.appendChild(use);
@@ -278,34 +265,27 @@ class FileTree {
                 return '#file-text-icon'; // Default icon
         }
     }
-}
 
-// Function to open the file tree modal and initialize the file tree
-function openFileTreeModal() {
-    // Open the modal first
-    openModal('fileTreeModal');
+    static openModal() {
+        Modal.open('fileTreeModal');
 
-    // Get the modal container element (use querySelector or getElementById)
-    const fileTreeContainer = document.getElementById('modal-file-tree-container');
-    const modalHeader = document.querySelector('.modal-header');
+        const fileTreeContainer = Elem.byId('modal-file-tree-container');
+        const modalHeader = document.querySelector('.modal-header');
+        if (!fileTreeContainer || !modalHeader) {
+            console.error("File tree container or modal header not found!");
+            return;
+        }
 
-    if (!fileTreeContainer || !modalHeader) {
-        console.error('File tree container or modal header not found!');
-        return;
+        const modalHeaderInput = document.createElement('input');
+        modalHeaderInput.type = 'text';
+        modalHeaderInput.classList.add('modal-filepath-input'); // Custom class for styling
+        modalHeaderInput.placeholder = 'Enter file path...'; // Placeholder text
+        modalHeaderInput.value = currentPath; // Set default value from localStorage
+
+        const closeButton = modalHeader.querySelector('.close');
+        modalHeader.insertBefore(modalHeaderInput, closeButton);
+
+        // Pass true to ensure it updates localStorage when the user navigates
+        const fileTree = new FileTree(fileTreeContainer, modalHeaderInput, currentPath, true);
     }
-
-    // Create the input element to be placed in the modal header
-    const modalHeaderInput = document.createElement('input');
-    modalHeaderInput.type = 'text';
-    modalHeaderInput.classList.add('modal-filepath-input'); // Custom class for styling
-    modalHeaderInput.placeholder = 'Enter file path...'; // Placeholder text
-    modalHeaderInput.value = currentPath; // Set default value from localStorage
-
-    // Insert the input before the close button in the modal header
-    const closeButton = modalHeader.querySelector('.close');
-    modalHeader.insertBefore(modalHeaderInput, closeButton);
-
-    // Initialize the FileTree class with the container element and the input
-    // Pass true to ensure it updates localStorage when the user navigates
-    const fileTree = new FileTree(fileTreeContainer, modalHeaderInput, currentPath, true);
 }

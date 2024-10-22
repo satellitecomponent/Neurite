@@ -17,7 +17,7 @@ function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    edges.push(edge);
+    Graph.edges.push(edge);
     return edge;
 }
 
@@ -81,7 +81,7 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    edges.push(edge);
+    Graph.edges.push(edge);
     return edge;
 }
 
@@ -104,7 +104,7 @@ function getConnectedNodes(node) {
 
 function getNodeData(node) {
     if (node.isImageNode) {
-        //console.log(`Skipping image node ${node.uuid}`);
+        //console.log("Skipping image node", node.uuid);
         return null;
     }
     const titleElement = node.titleInput;
@@ -125,7 +125,7 @@ function getNodeData(node) {
         // Handle regular text content
         let contentText = getTextareaContentForNode(node);
         if (!contentText) {
-            console.warn('No content found for node');
+            console.warn("No content found for node");
             return null;
         }
         const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
@@ -148,50 +148,41 @@ function topologicalSort(node, visited, stack, filterAfterLLM = false, branchUUI
         }
     }
 
-    let connectedNodes = getConnectedNodes(node);
-
-    for (let connectedNode of connectedNodes) {
+    for (let connectedNode of getConnectedNodes(node)) {
         if (visited.has(connectedNode.uuid)) continue;
 
-        let nextFilterAfterLLM = connectedNode.isLLM ? true : filterAfterLLM;
-
+        const nextFilterAfterLLM = connectedNode.isLLM ? true : filterAfterLLM;
         topologicalSort(connectedNode, visited, stack, nextFilterAfterLLM, branchUUID);
     }
 }
 
-function traverseConnectedNodes(node, callback, filterAfterLLM = false) {
-    let visited = new Set();
-    let stack = [];
+function traverseConnectedNodes(node, cb, filterAfterLLM = false) {
+    const visited = new Set();
+    const stack = [];
     topologicalSort(node, visited, stack, filterAfterLLM, filterAfterLLM ? null : undefined);
 
     while (stack.length > 0) {
-        let currentNode = stack.pop();
-
-        if (currentNode.uuid === node.uuid) {
-            continue;
-        }
-
-        callback(currentNode);
+        const currentNode = stack.pop();
+        if (currentNode.uuid !== node.uuid) cb(currentNode);
     }
 }
 
 function getAllConnectedNodesData(node, filterAfterLLM = false) {
-    let allConnectedNodesData = [];
-
-    traverseConnectedNodes(node, currentNode => {
-        let currentNodeData = getNodeData(currentNode);
-        allConnectedNodesData.push({ node: currentNode, data: currentNodeData, isLLM: currentNode.isLLM });
-    }, filterAfterLLM);
-
+    const allConnectedNodesData = [];
+    const cb = (currentNode)=>{
+        allConnectedNodesData.push({
+            node: currentNode,
+            data: getNodeData(currentNode),
+            isLLM: currentNode.isLLM
+        })
+    }
+    traverseConnectedNodes(node, cb, filterAfterLLM);
     return allConnectedNodesData;
 }
 
 function getAllConnectedNodes(node, filterAfterLLM = false) {
-    let allConnectedNodes = [];
-
-    traverseConnectedNodes(node, currentNode => {
-        allConnectedNodes.push(currentNode);
-    }, filterAfterLLM);
-
+    const allConnectedNodes = [];
+    const cb = allConnectedNodes.push.bind(allConnectedNodes);
+    traverseConnectedNodes(node, cb, filterAfterLLM);
     return allConnectedNodes;
 }

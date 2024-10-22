@@ -25,7 +25,7 @@ neurite.network connects physics simulation of graphs with an underlying fractal
 };
 
 function openPromptLibrary(node) {
-    openModal('promptLibraryModalContent');
+    Modal.open('promptLibraryModalContent');
     renderPromptList();
     setupPromptLibraryListeners(node);
 
@@ -270,7 +270,7 @@ function exportPromptLibraryAsJSON(promptLibrary) {
 
     // Create a Blob and download the JSON file
     const blob = new Blob([jsonString], { type: "application/json" });
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = "promptLibrary.json";
     document.body.appendChild(link);

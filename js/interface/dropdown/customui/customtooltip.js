@@ -85,12 +85,10 @@ class Tooltip {
             }
         });
 
-        this.tooltipElement.addEventListener('click', (event) => {
-            event.stopPropagation();
-        });
+        this.tooltipElement.addEventListener('click', Elem.stopPropagationOfEvent);
 
         this.tooltipElement.addEventListener('mousedown', (event) => {
-            hideContextMenu();
+            ContextMenu.hide();
             event.stopPropagation();
         });
 

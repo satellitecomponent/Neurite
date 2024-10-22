@@ -14,15 +14,15 @@
 
 // Utility methods // 
     findNearbyNodes() {
-        this.agent.sensor.callUpdate();
-        const sparseNodes = this.agent.sensor.nearbyNodes;
-        return sparseNodes.map(sparseNode => globalProcessedNodeMap[sparseNode.uuid]);
+        const sensor = this.agent.sensor;
+        sensor.callUpdate();
+        return sensor.nearbyNodes.map(ProcessedNodes.getByNode);
     }
 
     findNodesWithinExtendedRadius() {
-        this.agent.sensor.callUpdate();
-        const sparseNodes = this.agent.sensor.nodesWithinExtendedRadius;
-        return sparseNodes.map(sparseNode => globalProcessedNodeMap[sparseNode.uuid]);
+        const sensor = this.agent.sensor;
+        sensor.callUpdate();
+        return sensor.nodesWithinExtendedRadius.map(ProcessedNodes.getByNode);
     }
 
     switchState(newState) {
@@ -44,16 +44,14 @@ class MovementAgentState extends BaseAgentState {
         };
     }
     nodesAreConnected(node1, node2) {
-        // Check if node1's edges contain node2's uuid and vice versa
-        const isConnected = node1.edges.includes(node2.uuid) || node2.edges.includes(node1.uuid);
-        return isConnected;
+        return node1.edges.includes(node2.uuid) || node2.edges.includes(node1.uuid)
     }
     findAllConnectedNodes(node, visited = new Set()) {
         visited.add(node.uuid);
         node.edges.forEach(edgeUuid => {
-            if (!visited.has(edgeUuid)) {
-                this.findAllConnectedNodes(globalProcessedNodeMap[edgeUuid], visited);
-            }
+            if (visited.has(edgeUuid)) return;
+
+            this.findAllConnectedNodes(ProcessedNodes.getById(edgeUuid), visited);
         });
         return Array.from(visited); // Returns all connected node UUIDs, including the starting node
     }
@@ -61,33 +59,25 @@ class MovementAgentState extends BaseAgentState {
         let sumX = 0, sumY = 0;
         let validNodeCount = 0;
         connectedNodesUuids.forEach(nodeUuid => {
-            const node = globalProcessedNodeMap[nodeUuid];
-            if (node) {
-                sumX += node.pos.x;
-                sumY += node.pos.y;
-                validNodeCount++;
-            }
+            const node = ProcessedNodes.getById(nodeUuid);
+            if (!node) return;
+
+            sumX += node.pos.x;
+            sumY += node.pos.y;
+            validNodeCount += 1;
         });
-        if (validNodeCount > 0) {
-            return new vec2(sumX / validNodeCount, sumY / validNodeCount);
-        } else {
-            // If no valid nodes are found, return the agent's position as the centroid
-            return this.agent.pos;
-        }
+        return (validNodeCount < 1) ? this.agent.pos
+             : new vec2(sumX / validNodeCount, sumY / validNodeCount)
     }
     calculateScaleFactorForComponents(componentUuidsA, componentUuidsB) {
         const scaleA = this.calculateAverageScaleForComponent(componentUuidsA);
         const scaleB = this.calculateAverageScaleForComponent(componentUuidsB);
-        const scaleDifference = scaleA - scaleB;
-        const scaleFactor = 1 + Math.tanh(scaleDifference / this.agent.scale);
-        return scaleFactor;
+        return 1 + Math.tanh((scaleA - scaleB) / this.agent.scale);
     }
     calculateAverageScaleForComponent(componentUuids) {
-        let totalScale = 0;
-        componentUuids.forEach(uuid => {
-            const node = globalProcessedNodeMap[uuid];
-            totalScale += node.scale;
-        });
+        const totalScale = componentUuids.reduce(
+            (totalScale, uuid)=>(totalScale + ProcessedNodes.getById(uuid).scale), 0
+        );
         return totalScale / componentUuids.length;
     }
     updateState() {
@@ -132,7 +122,7 @@ class MovementAgentState extends BaseAgentState {
             // Find the distance to the closest node in the component
             let minDistanceToAgent = Infinity;
             uuids.forEach(uuid => {
-                const node = globalProcessedNodeMap[uuid];
+                const node = ProcessedNodes.getById(uuid);
                 if (node) {
                     const distanceToAgentNode = this.agent.pos.distanceTo(node.pos);
                     minDistanceToAgent = Math.min(minDistanceToAgent, distanceToAgentNode);
@@ -160,7 +150,7 @@ class MovementAgentState extends BaseAgentState {
         const movePromises = [];
         const connectedNodes = this.findAllConnectedNodes(this.agent);
         connectedNodes.forEach(nodeUuid => {
-            const node = globalProcessedNodeMap[nodeUuid];
+            const node = ProcessedNodes.getById(nodeUuid);
             const nodeActions = node.actions;
             // Calculate new position for each node using the movement vector
             const newPosition = new vec2(node.pos.x + movementVector.x, node.pos.y + movementVector.y);
@@ -188,24 +178,21 @@ class CellularAutomataManager {
     // No longer need to store a static list of agents. We'll dynamically reference the latest node data.
 
     updateNextAgent() {
-        const nodeKeys = Object.keys(globalProcessedNodeMap); // Get an array of node UUIDs
+        const nodeKeys = ProcessedNodes.getUuids();
+        if (nodeKeys.length === 0) return;
 
-        if (nodeKeys.length === 0) return; // If no nodes, do nothing
+        if (this.currentAgentIndex >= nodeKeys.length) this.currentAgentIndex = 0;
 
-        if (this.currentAgentIndex >= nodeKeys.length) {
-            this.currentAgentIndex = 0; // Reset index if it exceeds the number of nodes
-        }
-
-        const currentNodeData = globalProcessedNodeMap[nodeKeys[this.currentAgentIndex]];
+        const currentNodeData = ProcessedNodes.getById(nodeKeys[this.currentAgentIndex]);
         const agentState = new this.AgentStateClass(currentNodeData); // Dynamically create an agent state for the current node
-        agentState.updateState(); // Update state
-        agentState.performActions(); // Perform actions based on the updated state
+        agentState.updateState();
+        agentState.performActions();
 
         this.currentAgentIndex = (this.currentAgentIndex + 1) % nodeKeys.length; // Move to the next node
     }
 
     startAutomata() {
-        updateGlobalProcessedNodeMap(nodeMap);
+        ProcessedNodes.update();
         if (this.automataInterval) clearInterval(this.automataInterval);
         this.automataInterval = setInterval(() => this.updateNextAgent(), this.intervalMs);
     }

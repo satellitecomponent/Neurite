@@ -1,61 +1,53 @@
 function findExistingEdge(node1, node2) {
-    // Assuming each node's edges array contains references to edges
-    for (let edge of node1.edges) {
-        if (node2.edges.includes(edge)) {
-            return edge; // Return the common edge if found
-        }
-    }
-    return null; // Return null if no common edge exists
+    return node1.edges.find(node2.edges.includes, node2.edges);
 }
 
-
-// Global map to store directionality states of edges
-const edgeDirectionalityMap = new Map();
-
-// Global map to store references to Edge instances
-const edgeSVGMap = new Map();
-
 class Edge {
-    constructor(pts, length = 0.6, strength = 0.1, style = {
-        stroke: "red",
-        "stroke-width": "0.01",
-        fill: "red"
-    }) {
+    static directionalityMap = new Map(); // directionality states of edges
+    static SvgMap = new Map(); // references to Edge instances
+
+    constructor(pts, length = 0.6, strength = 0.1, style){
         this.pts = pts;
         this.length = length;
         this.currentLength = this.length;
         this.strength = strength;
-        this.style = style;
+        this.style = style || {
+            stroke: "red",
+            "stroke-width": "0.01",
+            fill: "red"
+        };
         this.maxWidth = 0.05;
 
         this.directionality = { start: null, end: null };
+        const svgMap = Edge.SvgMap;
 
-        this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        edgeSVGMap.set(this.html, this);
+        this.html = SVG.create.path();
+        svgMap.set(this.html, this);
         for (const [key, value] of Object.entries(style)) {
             this.html.setAttribute(key, value);
         }
         htmledges.appendChild(this.html);
 
-
-        // Predefine the arrow SVG and initially set it to not display
-        this.arrowSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        edgeSVGMap.set(this.arrowSvg, this);
+        this.arrowSvg = SVG.create.path();
+        svgMap.set(this.arrowSvg, this);
         this.arrowSvg.classList.add('edge-arrow');
         this.arrowSvg.style.display = 'none';
 
         htmledges.appendChild(this.arrowSvg);
 
-        // Predefine the border SVG
-        this.borderSvg = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        edgeSVGMap.set(this.borderSvg, this);
+        this.borderSvg = SVG.create.path();
+        svgMap.set(this.borderSvg, this);
         this.borderSvg.style.display = 'none';
         this.borderSvg.classList.add('edge-border');
         htmledges.insertBefore(this.borderSvg, this.arrowSvg);
 
         this.edgeKey = this.createEdgeKey(pts);
         this.restoreDirectionality();
-        this.attachEventListeners();
+
+        this.attachEventListeners(this.html);
+        this.attachEventListeners(this.arrowSvg);
+        this.attachEventListeners(this.borderSvg);
+
         //console.log("Creating edge with pts:", pts);
         //console.log("Directionality after assignment:", this.directionality);
     }
@@ -76,20 +68,14 @@ class Edge {
         return o;
     }
 
-    attachEventListeners() {
-        const addEventListeners = (svgElement) => {
-            svgElement.addEventListener('wheel', this.onwheel.bind(this));
-            svgElement.addEventListener('mouseover', this.onmouseover.bind(this));
-            svgElement.addEventListener('mouseout', this.onmouseout.bind(this));
-            svgElement.addEventListener('dblclick', this.ondblclick.bind(this));
-            svgElement.addEventListener('click', this.onclick.bind(this));
-        };
-
-        addEventListeners(this.html); // Also attach to main path element
-        addEventListeners(this.arrowSvg);
-        addEventListeners(this.borderSvg);
+    attachEventListeners(elem){
+        elem.addEventListener('wheel', this.onwheel.bind(this));
+        elem.addEventListener('mouseover', this.onmouseover.bind(this));
+        elem.addEventListener('mouseout', this.onmouseout.bind(this));
+        elem.addEventListener('dblclick', this.ondblclick.bind(this));
+        elem.addEventListener('click', this.onclick.bind(this));
     }
-    onclick = (event) => {
+    onclick(e){
         if (!nodeMode) {
             this.toggleDirection();
             this.draw();
@@ -106,57 +92,45 @@ class Edge {
         }
     }
 
-    ondblclick = (event) => {
+    ondblclick(e){
         if (nodeMode) {
             this.removeEdgeInstance();
-            // Prevent the event from propagating further
-            cancel(event);
+            cancel(e);
         }
     }
-    onmouseover = (event) => {
+    onmouseover(e){
         this.mouseIsOver = true;
         this.arrowSvg.classList.add('edge-arrow-hover');
-        this.borderSvg.classList.add('edge-border-hover'); // Class for hovered state of the border
+        this.borderSvg.classList.add('edge-border-hover'); // hovered state of the border
     }
-
-    onmouseout = (event) => {
+    onmouseout(e){
         this.mouseIsOver = false;
         this.arrowSvg.classList.remove('edge-arrow-hover');
-        this.borderSvg.classList.remove('edge-border-hover'); // Class for normal state of the border
+        this.borderSvg.classList.remove('edge-border-hover'); // normal state of the border
     }
-
-    onwheel = (event) => {
+    onwheel(e){
         if (nodeMode) {
-            let amount = Math.exp(event.wheelDelta * -settings.zoomSpeed);
-            let selectedNodes = getSelectedNodes(); // Function to get currently selected nodes
-            let scaleAllConnectedEdges = false;
+            const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
             // Determine if this edge should be scaled based on both nodes being selected
-            if (selectedNodes.length > 0 && this.pts.every(pt => selectedNodes.includes(pt))) {
-                scaleAllConnectedEdges = true;
-                let uniqueEdges = collectEdgesFromSelectedNodes(selectedNodes);
-                uniqueEdges.forEach(edge => edge.scaleLength(amount));
-            }
-
-            // Default behavior when not both nodes are selected
-            if (!scaleAllConnectedEdges) {
+            if (SelectedNodes.uuids.size > 0 && this.pts.every(pt => SelectedNodes.uuids.has(pt))) {
+                SelectedNodes.collectEdges().forEach(edge => edge.scaleLength(amount));
+            } else {
                 this.scaleLength(amount);
             }
 
-            cancel(event);  // Prevent default behavior and stop propagation
+            cancel(e);
         }
-    };
-
+    }
 
     scaleLength(amount) {
-        let avg = this.center();
+        const avg = this.center();
         this.length *= amount;
-        this.pts.forEach(n => {
+        const pts = this.pts;
+        pts.forEach(n => {
             n.pos = n.pos.minus(avg).scale(amount).plus(avg);
         });
-        if (this.pts.length > 0 && this.pts[0]) {
-            this.pts[0].updateEdgeData();  // Update the first point's edge data
-        }
+        if (pts[0]) pts[0].updateEdgeData();
     }
 
     createEdgeKey(pts) {
@@ -164,353 +138,317 @@ class Edge {
     }
 
     restoreDirectionality() {
-        if (edgeDirectionalityMap.has(this.edgeKey)) {
-            this.directionality = edgeDirectionalityMap.get(this.edgeKey);
-        } else {
-            this.directionality = { start: null, end: null }; // Explicitly handle null directionality
-        }
+        this.directionality = Edge.directionalityMap.get(this.edgeKey)
+                            || { start: null, end: null }; // Explicitly handle null directionality
     }
     toggleDirection() {
-        // Initialize directionality if it's null
-        if (!this.directionality.start || !this.directionality.end) {
-            this.directionality.start = this.pts[0];
-            this.directionality.end = this.pts[1];
+        const pts = this.pts;
+        const direction = this.directionality;
+        // Initialize direction if it's null
+        if (!direction.start || !direction.end) {
+            direction.start = pts[0];
+            direction.end = pts[1];
         } else {
             // Switch direction or reset
-            if (this.directionality.start === this.pts[0]) {
-                this.directionality.start = this.pts[1];
-                this.directionality.end = this.pts[0];
-            } else if (this.directionality.start === this.pts[1]) {
-                this.directionality.start = null;
-                this.directionality.end = null;
+            if (direction.start === pts[0]) {
+                direction.start = pts[1];
+                direction.end = pts[0];
+            } else if (direction.start === pts[1]) {
+                direction.start = null;
+                direction.end = null;
             }
         }
 
         // Update all instances of CodeMirror that include these nodes
-        if (this.pts[0].isTextNode && this.pts[1].isTextNode) {
-            const startTitle = this.pts[0].getTitle();
-            const endTitle = this.pts[1].getTitle();
-
-            // Get the edge information
+        if (pts[0].isTextNode && pts[1].isTextNode) {
+            const startTitle = pts[0].getTitle();
+            const endTitle = pts[1].getTitle();
             const { startNodeInfo, endNodeInfo } = getEdgeInfo(startTitle, endTitle);
-
-            // Handle edge additions and removals based on new directionality
-            if (this.directionality.start === this.pts[0]) {
+            // Handle edge additions and removals based on new direction
+            if (direction.start === pts[0]) {
                 if (endNodeInfo) {
-                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cm);
                 }
                 if (startNodeInfo) {
-                    removeEdgeFromZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                    removeEdgeFromZettelkasten(startTitle, endTitle, startNodeInfo.cm);
                 }
-            } else if (this.directionality.start === this.pts[1]) {
+            } else if (direction.start === pts[1]) {
                 if (startNodeInfo) {
-                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cm);
                 }
                 if (endNodeInfo) {
-                    removeEdgeFromZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                    removeEdgeFromZettelkasten(endTitle, startTitle, endNodeInfo.cm);
                 }
             } else {
                 if (startNodeInfo) {
-                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cmInstance);
+                    addEdgeToZettelkasten(startTitle, endTitle, startNodeInfo.cm);
                 }
                 if (endNodeInfo) {
-                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cmInstance);
+                    addEdgeToZettelkasten(endTitle, startTitle, endNodeInfo.cm);
                 }
             }
         }
 
-        edgeDirectionalityMap.set(this.edgeKey, this.directionality);
+        Edge.directionalityMap.set(this.edgeKey, direction);
     }
-    // Method to check directionality relative to a given node
     getDirectionRelativeTo(node) {
-        if (this.directionality.end === node) {
-            return "outgoing";
-        } else if (this.directionality.start === node) {
-            return "incoming";
-        }
-        return "none";
+        if (this.directionality.end === node) return 'outgoing';
+        if (this.directionality.start === node) return 'incoming';
+        return 'none';
     }
     center() {
-        return this.pts.reduce((t, n, i, a) => {
-            return t.plus(n.pos);
-        }, new vec2(0, 0)).unscale(this.pts.length);
+        const cb = (t, n)=>t.plus(n.pos) ;
+        return this.pts.reduce(cb, new vec2(0, 0)).unscale(this.pts.length);
     }
     draw() {
-        this.html.setAttribute("stroke", this.mouseIsOver ? "lightskyblue" : this.style.stroke);
-        this.html.setAttribute("fill", this.mouseIsOver ? "lightskyblue" : this.style.fill);
+        this.html.setAttribute('stroke', this.mouseIsOver ? "lightskyblue" : this.style.stroke);
+        this.html.setAttribute('fill', this.mouseIsOver ? "lightskyblue" : this.style.fill);
 
         const stressValue = Math.max(this.stress(), 0.01);
         let wscale = this.style['stroke-width'] / (0.5 + stressValue) * (this.mouseIsOver ? 2 : 1.6);
         wscale = Math.min(wscale, this.maxWidth);
 
-        let validPath = true;
-        let path = "";
+        const direction = this.directionality;
+        const hasDirection = (direction.start && direction.end);
 
-        if (this.directionality.start && this.directionality.end) {
-            // Use straight edge for directionality cases
+        let path = '';
+        if (hasDirection) {
             path = this.createStraightEdgePath(wscale);
         } else {
-            // Use curved edge for non-directionality cases
             path = this.createCurvedEdgePath(wscale);
         }
+        if (!path) return;
+        this.html.setAttribute('d', path);
 
-        if (validPath) {
-            this.html.setAttribute("d", path);
-
-            if (this.directionality.start && this.directionality.end) {
-                let startPoint = this.directionality.start.pos;
-                let endPoint = this.directionality.end.pos;
-                let startScale = this.directionality.start.scale;
-                let endScale = this.directionality.end.scale;
-
-                // Create the main arrow SVG and retrieve points
-                let { arrowPath, arrowBase1, arrowBase2, arrowTip } = createArrowSvg(startPoint, endPoint, startScale, endScale, wscale);
-                this.arrowSvg.setAttribute("d", arrowPath);
-                this.arrowSvg.style.display = '';
-
-                // Create the border SVG using the points from the arrow SVG
-                let borderPath = createBorderSvg(arrowBase1, arrowBase2, arrowTip);
-                this.borderSvg.setAttribute("d", borderPath);
-                this.borderSvg.style.display = '';
-            } else {
-                this.arrowSvg.style.display = 'none';
-                this.borderSvg.style.display = 'none';
-            }
+        if (!hasDirection) {
+            this.arrowSvg.style.display = 'none';
+            this.borderSvg.style.display = 'none';
+            return;
         }
+
+        const arrowSvg = createArrowSvg(
+            direction.start.pos,
+            direction.end.pos,
+            direction.start.scale,
+            direction.end.scale,
+            wscale
+        );
+        this.arrowSvg.setAttribute('d', arrowSvg.arrowPath);
+        this.arrowSvg.style.display = '';
+
+        const borderPath = createBorderSvg(arrowSvg);
+        this.borderSvg.setAttribute('d', borderPath);
+        this.borderSvg.style.display = '';
     }
 
     createStraightEdgePath(wscale) {
-        let path = "M ";
-        let c = this.center();
-        let validPath = true;
+        const path = ["M "];
+        const c = this.center();
 
         // Constructing the straight edge path
-        for (let n of this.pts) {
-            let r = n.scale * wscale;
-            let minusC = n.pos.minus(c);
-            let rotated = minusC.rot90();
+        for (const n of this.pts) {
+            if (n.pos.isInvalid()) return '';
 
+            const rotated = n.pos.minus(c).rot90();
             if (rotated.x !== 0 || rotated.y !== 0) {
-                let left = rotated.normed(r);
+                const left = rotated.normed(n.scale * wscale);
+                if (left.isInvalid()) return '';
 
-                if (!isNaN(left.x) && !isNaN(left.y) && !isNaN(n.pos.x) && !isNaN(n.pos.y)) {
-                    path += toSVG(n.pos.minus(left)).str();
-                    path += " L ";
-                    path += toSVG(left.plus(n.pos)).str() + " ";
-                } else {
-                    validPath = false;
-                    break;
-                }
+                path.push(toSVG(n.pos.minus(left)).str(),
+                          " L ",
+                          toSVG(left.plus(n.pos)).str(), " ");
             }
         }
 
         // Closing the straight edge path
-        let firstPoint = this.pts[0].pos.minus(this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale));
-        if (!isNaN(firstPoint.x) && !isNaN(firstPoint.y)) {
-            path += " " + toSVG(firstPoint).str() + "z";
-        } else {
-            validPath = false;
-        }
+        const argMinus = this.pts[0].pos.minus(c).rot90().normed(this.pts[0].scale * wscale);
+        const firstPoint = this.pts[0].pos.minus(argMinus);
+        if (firstPoint.isInvalid()) return '';
 
-        return validPath ? path : "";
+        path.push(" ", toSVG(firstPoint).str(), "z");
+        return path.join('');
     }
 
     createCurvedEdgePath(wscale) {
-        let path = "M ";
-        let validPath = true;
+        if (this.pts.length < 2) return '';
 
         // Constructing the curved edge path
-        if (this.pts.length >= 2) {
-            let startPoint = this.pts[0].pos;
-            let endPoint = this.pts[this.pts.length - 1].pos;
-            let startScale = this.pts[0].scale || 1; // Provide a default value if undefined
-            let endScale = this.pts[this.pts.length - 1].scale || 1; // Provide a default value if undefined
+        const startPoint = this.pts[0].pos;
+        const endPoint = this.pts[this.pts.length - 1].pos;
+        const startScale = this.pts[0].scale || 1; // Provide a default value if undefined
+        const endScale = this.pts[this.pts.length - 1].scale || 1; // Provide a default value if undefined
 
-            let horizontal = (startPoint.x - endPoint.x) / 1.1;
-            let vertical = (startPoint.y - endPoint.y);
-            let distance = Math.sqrt(horizontal * horizontal + vertical * vertical);
-            let curve = 1;
+        const horizontal = (startPoint.x - endPoint.x) / 1.1;
+        const vertical = (startPoint.y - endPoint.y);
+        const distance = Math.sqrt(horizontal * horizontal + vertical * vertical);
 
-            let positiveVertical = vertical > 0;
-            curve = Math.min(curve, Math.abs(vertical)) / 2;
+        // Calculate the perpendicular vector with adjusted scale based on node scales
+        const startPerp = new vec2(vertical, -horizontal).normed(startScale * wscale);
+        const endPerp = new vec2(vertical, -horizontal).normed(endScale * wscale);
 
-            // Calculate the perpendicular vector with adjusted scale based on node scales
-            let startPerp = new vec2(vertical, -horizontal).normed(startScale * wscale);
-            let endPerp = new vec2(vertical, -horizontal).normed(endScale * wscale);
+        // Calculate the points for the curved path
+        const startLeft = startPoint.minus(startPerp);
+        if (startLeft.isInvalid()) return '';
 
-            // Calculate the points for the curved path
-            let startLeft = startPoint.minus(startPerp);
-            let startRight = startPoint.plus(startPerp);
-            let endLeft = endPoint.minus(endPerp);
-            let endRight = endPoint.plus(endPerp);
+        const startRight = startPoint.plus(startPerp);
+        if (startRight.isInvalid()) return '';
 
-            // Adjust the control points based on the distance
-            let controlPointLeft1 = startLeft.minus(new vec2(horizontal, 0)).minus(new vec2(0, positiveVertical ? curve * distance : -curve * distance));
-            let controlPointLeft2 = endLeft.plus(new vec2(horizontal, 0)).plus(new vec2(0, positiveVertical ? curve * distance : -curve * distance));
-            let controlPointRight1 = startRight.minus(new vec2(horizontal, 0)).plus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
-            let controlPointRight2 = endRight.plus(new vec2(horizontal, 0)).minus(new vec2(0, positiveVertical ? -curve * distance : curve * distance));
+        const endLeft = endPoint.minus(endPerp);
+        if (endLeft.isInvalid()) return '';
 
-            // Validate the calculated points before adding them to the path string
-            if (
-                !isNaN(startLeft.x) && !isNaN(startLeft.y) &&
-                !isNaN(controlPointLeft1.x) && !isNaN(controlPointLeft1.y) &&
-                !isNaN(controlPointLeft2.x) && !isNaN(controlPointLeft2.y) &&
-                !isNaN(endLeft.x) && !isNaN(endLeft.y) &&
-                !isNaN(endRight.x) && !isNaN(endRight.y) &&
-                !isNaN(controlPointRight2.x) && !isNaN(controlPointRight2.y) &&
-                !isNaN(controlPointRight1.x) && !isNaN(controlPointRight1.y) &&
-                !isNaN(startRight.x) && !isNaN(startRight.y)
-            ) {
-                // Construct the curved path
-                path += toSVG(startLeft).str();
-                path += " C ";
-                path += toSVG(controlPointLeft1).str() + ", ";
-                path += toSVG(controlPointLeft2).str() + ", ";
-                path += toSVG(endLeft).str();
-                path += " L ";
-                path += toSVG(endRight).str();
-                path += " C ";
-                path += toSVG(controlPointRight2).str() + ", ";
-                path += toSVG(controlPointRight1).str() + ", ";
-                path += toSVG(startRight).str();
-                path += " Z";
-            } else {
-                validPath = false;
-            }
-        } else {
-            validPath = false;
-        }
+        const endRight = endPoint.plus(endPerp);
+        if (endRight.isInvalid()) return '';
 
-        return validPath ? path : "";
+        const curve = Math.min(1, Math.abs(vertical)) / 2;
+        const vecLeft = new vec2(0, (vertical > 0 ? 1 : -1) * curve * distance);
+        const vecRight = new vec2(0, (vertical > 0 ? -1 : 1) * curve * distance);
+        const vecBase = new vec2(horizontal, 0);
+
+        // Adjust the control points based on the distance
+        const controlPointLeft1 = startLeft.minus(vecBase).minus(vecLeft);
+        if (controlPointLeft1.isInvalid()) return '';
+
+        const controlPointLeft2 = endLeft.plus(vecBase).plus(vecLeft);
+        if (controlPointLeft2.isInvalid()) return '';
+
+        const controlPointRight1 = startRight.minus(vecBase).plus(vecRight);
+        if (controlPointRight1.isInvalid()) return '';
+
+        const controlPointRight2 = endRight.plus(vecBase).minus(vecRight);
+        if (controlPointRight2.isInvalid()) return '';
+
+        // Construct the curved path
+        return "M "
+            + toSVG(startLeft).str()
+            + " C "
+            + toSVG(controlPointLeft1).str() + ", "
+            + toSVG(controlPointLeft2).str() + ", "
+            + toSVG(endLeft).str()
+            + " L "
+            + toSVG(endRight).str()
+            + " C "
+            + toSVG(controlPointRight2).str() + ", "
+            + toSVG(controlPointRight1).str() + ", "
+            + toSVG(startRight).str()
+            + " Z";
     }
     step(dt) {
-        if (dt === undefined || isNaN(dt)) {
-            dt = 0;
-        } else {
-            dt = Math.min(dt, 1);  // Clamp dt to a maximum of 1
-        }
+        dt = (isNaN(dt) ? 0 : Math.min(dt, 1));  // Clamp dt to a maximum of 1
 
-        let avg = this.center();
+        const avg = this.center();
         for (let n of this.pts) {
-            if (n.anchorForce === 0) {  // Only apply force if the anchor force is zero
-                let d = n.pos.minus(avg);
-                let dMag = d.mag();
+            if (n.anchorForce !== 0) continue; // Only apply force if the anchor force is zero
 
-                // Update the current length of the edge
-                this.currentLength = dMag;
+            const d = n.pos.minus(avg);
+            const dMag = d.mag();
 
-                // Apply force to either shorten or lengthen the edge to the desired length
-                if (dMag !== this.length) {
-                    let dampingFactor = 0.4;
-                    let forceAdjustment = (1 - this.length / (dMag + 1e-300)) * dampingFactor;
-                    let f = d.scale(forceAdjustment);
-                    n.force = n.force.plus(f.scale(-this.strength));
-                }
-            }
+            // Update the current length of the edge
+            this.currentLength = dMag;
+
+            // Apply force to either shorten or lengthen the edge to the desired length
+            if (dMag === this.length) continue;
+
+            const dampingFactor = 0.4;
+            const forceAdjustment = (1 - this.length / (dMag + 1e-300)) * dampingFactor;
+            const f = d.scale(forceAdjustment);
+            n.force = n.force.plus(f.scale(-this.strength));
         }
         this.draw();
     }
     stress() {
-        let avg = this.center();
-        return this.pts.reduce((t, n, i, a) => {
-            return t + n.pos.minus(avg).mag() - this.length;
-        }, 0) / (this.length + 1);
+        const avg = this.center();
+        const cb = (t, n)=>(t + n.pos.minus(avg).mag() - this.length) ;
+        return this.pts.reduce(cb, 0) / (this.length + 1);
     }
     scaleEdge(amount) {
         this.length *= amount;
     }
 
     remove() {
-        edgeDirectionalityMap.set(this.edgeKey, this.directionality);
+        Edge.directionalityMap.set(this.edgeKey, this.directionality);
 
         // Remove the edge from the global edge array
-        let index = edges.indexOf(this);
-        if (index !== -1) {
-            edges.splice(index, 1);
-        }
+        const edges = Graph.edges;
+        const index = edges.indexOf(this);
+        if (index > -1) edges.splice(index, 1);
 
         // Remove this edge from both connected nodes' edges arrays
         this.pts.forEach((node) => {
-            index = node.edges.indexOf(this);
-            if (index !== -1) {
-                node.edges.splice(index, 1);
-                node.updateEdgeData();
-            }
+            const index = node.edges.indexOf(this);
+            if (index < 0) return;
+
+            node.edges.splice(index, 1);
+            node.updateEdgeData();
         });
 
-        edgeSVGMap.delete(this.html);
-        edgeSVGMap.delete(this.arrowSvg);
-        edgeSVGMap.delete(this.borderSvg);
+        const arrowSvg = this.arrowSvg;
+        const borderSvg = this.borderSvg;
+        const svgMap = Edge.SvgMap;
+        svgMap.delete(this.html);
+        svgMap.delete(arrowSvg);
+        svgMap.delete(borderSvg);
 
-        // Remove SVG elements from the DOM
-        if (this.arrowSvg && this.arrowSvg.parentNode) {
-            this.arrowSvg.parentNode.removeChild(this.arrowSvg);
-        }
-        if (this.borderSvg && this.borderSvg.parentNode) {
-            this.borderSvg.parentNode.removeChild(this.borderSvg);
-        }
-
-        // Remove the main path of the edge
-        if (this.html && this.html.parentNode) {
-            this.html.parentNode.removeChild(this.html);
-        }
+        // Remove from the DOM
+        if (arrowSvg?.parentNode) arrowSvg.parentNode.removeChild(arrowSvg);
+        if (borderSvg?.parentNode) borderSvg.parentNode.removeChild(borderSvg);
+        const html = this.html;
+        if (html?.parentNode) html.parentNode.removeChild(html);
     }
 }
 function createArrowSvg(startPoint, endPoint, startScale, endScale, wscale) {
-    let perspectiveFactor = 0.5; // Range [0, 1]
+    const perspectiveFactor = 0.5; // Range [0, 1]
+    const adjustedStartScale = 1 + (startScale - 1) * perspectiveFactor;
+    const adjustedEndScale = 1 + (endScale - 1) * perspectiveFactor;
+    const totalAdjustedScale = adjustedStartScale + adjustedEndScale;
+    const startWeight = adjustedEndScale / totalAdjustedScale;
+    const endWeight = adjustedStartScale / totalAdjustedScale;
+    const midPoint = startPoint.scale(startWeight).plus(endPoint.scale(endWeight));
 
-    let adjustedStartScale = 1 + (startScale - 1) * perspectiveFactor;
-    let adjustedEndScale = 1 + (endScale - 1) * perspectiveFactor;
-
-    let totalAdjustedScale = adjustedStartScale + adjustedEndScale;
-    let startWeight = adjustedEndScale / totalAdjustedScale;
-    let endWeight = adjustedStartScale / totalAdjustedScale;
-
-    let midPoint = startPoint.scale(startWeight).plus(endPoint.scale(endWeight));
-
-    let arrowScaleFactor = 1.5;
-    let arrowLength = ((startScale + endScale) / 2 * wscale * 5) * arrowScaleFactor;
-    let arrowWidth = ((startScale + endScale) / 2 * wscale * 3) * arrowScaleFactor;
-
-    let direction = endPoint.minus(startPoint);
-    let directionNormed = direction.normed(arrowLength);
-    let perp = new vec2(-directionNormed.y, directionNormed.x).normed(arrowWidth);
+    const arrowScaleFactor = 1.5;
+    const arrowLength = ((startScale + endScale) / 2 * wscale * 5) * arrowScaleFactor;
+    const arrowWidth = ((startScale + endScale) / 2 * wscale * 3) * arrowScaleFactor;
+    const direction = endPoint.minus(startPoint);
+    const directionNormed = direction.normed(arrowLength);
+    const perp = new vec2(-directionNormed.y, directionNormed.x).normed(arrowWidth);
 
     let arrowBase1 = midPoint.minus(perp);
     let arrowBase2 = midPoint.plus(perp);
     let arrowTip = midPoint.plus(directionNormed);
 
-    let arrowFlipFactor = 0.85;
-    let arrowBaseCenterX = (arrowBase1.x + arrowBase2.x) / 2;
-    let arrowBaseCenterY = (arrowBase1.y + arrowBase2.y) / 2;
-    let arrowCenterX = arrowBaseCenterX * arrowFlipFactor + arrowTip.x * (1 - arrowFlipFactor);
-    let arrowCenterY = arrowBaseCenterY * arrowFlipFactor + arrowTip.y * (1 - arrowFlipFactor);
-    let arrowCenter = new vec2(arrowCenterX, arrowCenterY);
+    const arrowFlipFactor = 0.85;
+    const arrowBaseCenterX = (arrowBase1.x + arrowBase2.x) / 2;
+    const arrowBaseCenterY = (arrowBase1.y + arrowBase2.y) / 2;
+    const arrowCenterX = arrowBaseCenterX * arrowFlipFactor + arrowTip.x * (1 - arrowFlipFactor);
+    const arrowCenterY = arrowBaseCenterY * arrowFlipFactor + arrowTip.y * (1 - arrowFlipFactor);
+    const arrowCenter = new vec2(arrowCenterX, arrowCenterY);
 
     arrowBase1 = rotatePoint(arrowBase1, arrowCenter);
     arrowBase2 = rotatePoint(arrowBase2, arrowCenter);
     arrowTip = rotatePoint(arrowTip, arrowCenter);
 
-    let arrowPath = `M ${toSVG(arrowBase1).str()} L ${toSVG(arrowTip).str()} L ${toSVG(arrowBase2).str()} Z`;
-    return { arrowPath, arrowBase1, arrowBase2, arrowTip }; // Return the points along with the path
+    const arrowPath = "M " + toSVG(arrowBase1).str()
+                    + " L " + toSVG(arrowTip).str()
+                    + " L " + toSVG(arrowBase2).str() + " Z";
+    return { arrowPath, arrowBase1, arrowBase2, arrowTip };
 }
 
-function createBorderSvg(arrowBase1, arrowBase2, arrowTip) {
-    let arrowMidX = (arrowBase1.x + arrowBase2.x + arrowTip.x) / 3;
-    let arrowMidY = (arrowBase1.y + arrowBase2.y + arrowTip.y) / 3;
-    let arrowMidPoint = new vec2(arrowMidX, arrowMidY);
+function createBorderSvg(arrowSvg) {
+    const { arrowBase1, arrowBase2, arrowTip } = arrowSvg;
+
+    const arrowMidX = (arrowBase1.x + arrowBase2.x + arrowTip.x) / 3;
+    const arrowMidY = (arrowBase1.y + arrowBase2.y + arrowTip.y) / 3;
+    const arrowMidPoint = new vec2(arrowMidX, arrowMidY);
 
     const offsetScale = 1.4;
-    let borderBase1 = arrowMidPoint.plus(arrowBase1.minus(arrowMidPoint).scale(offsetScale));
-    let borderBase2 = arrowMidPoint.plus(arrowBase2.minus(arrowMidPoint).scale(offsetScale));
-    let borderTip = arrowMidPoint.plus(arrowTip.minus(arrowMidPoint).scale(offsetScale));
+    const borderBase1 = arrowMidPoint.plus(arrowBase1.minus(arrowMidPoint).scale(offsetScale));
+    const borderBase2 = arrowMidPoint.plus(arrowBase2.minus(arrowMidPoint).scale(offsetScale));
+    const borderTip = arrowMidPoint.plus(arrowTip.minus(arrowMidPoint).scale(offsetScale));
 
-    let borderPath = `M ${toSVG(borderBase1).str()} L ${toSVG(borderTip).str()} L ${toSVG(borderBase2).str()} Z`;
-    return borderPath;
+    return "M " + toSVG(borderBase1).str()
+         + " L " + toSVG(borderTip).str()
+         + " L " + toSVG(borderBase2).str() + " Z";
 }
 
 function rotatePoint(point, center) {
-    let dx = point.x - center.x;
-    let dy = point.y - center.y;
-    return new vec2(center.x - dx, center.y - dy);
+    return new vec2(2 * center.x - point.x, 2 * center.y - point.y);
 }

@@ -1,9 +1,9 @@
 //console.log("test");
 document.body.style.overflow = 'hidden';
-var svg = document.getElementById("svg_bg");
-let svg_bg = svg.getElementById("bg");
-let svg_viewmat = svg.getElementById("viewmatrix");
-let svg_mousePath = svg.getElementById("mousePath");
+var svg = Elem.byId('svg_bg');
+let svg_bg = svg.getElementById('bg');
+let svg_viewmat = svg.getElementById('viewmatrix');
+let svg_mousePath = svg.getElementById('mousePath');
 var svg_viewbox_size = 65536;
 
 let time = () => (current_time === undefined) ? 0 : current_time;
@@ -16,6 +16,9 @@ class vec2 {
         }
         this.x = x;
         this.y = y;
+    }
+    isInvalid(){
+        return isNaN(this.x) || isNaN(this.y)
     }
     plus(o) {
         return new vec2(this.x + o.x, this.y + o.y);
@@ -164,127 +167,103 @@ class vec2 {
         return new vec2(u, v);
     }
     lerpto(o, t) {
+        const lerp = Math.lerp;
         return new vec2(lerp(this.x, o.x, t), lerp(this.y, o.y, t));
     }
     ctostring() {
-        return ("" + this.y).startsWith("-") ? this.x + "-i" + (-this.y) : this.x + "+i" + this.y;
+        return (this.y < 0 ? this.x + "-i" + (-this.y) : this.x + "+i" + this.y)
     }
 }
 
 function toSVG(coords) {
-    return coords.minus(SVGpan).scale(SVGzoom);
+    return coords.minus(SVG.pan).scale(SVG.zoom)
 }
 
 var mousePos = new vec2(0, 0);
-var mousePath = "";
+var mousePath = '';
 var zoom = new vec2(1, 0); //bigger is farther out
 var pan = new vec2(0, 0);
 var rotation = new vec2(1, 0);
 
-function lerp(a, b, t) {
-    return a * (1 - t) + b * t;
+Math.lerp = function(a, b, t){
+    return a * (1 - t) + b * t
 }
 
 //settings object moved to dropdown.js
 
-function windowScaleAndOffset() {
-    let svgbb = svg.getBoundingClientRect();
-    let s = Math.min(svgbb.width, svgbb.height); //Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
-    let off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
-    return {
-        s: s,
-        o: new vec2(-(off - svgbb.right) / 2, -(off - svgbb.bottom) / 2)
-    }
+SVG.windowScale = function(svgbb){
+    if (!svgbb) svgbb = svg.getBoundingClientRect();
+    return Math.min(svgbb.width, svgbb.height); //Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
+}
+SVG.updateScaleAndOffset = function(){
+    const svgbb = svg.getBoundingClientRect();
+    SVG.scale = SVG.windowScale(svgbb);
+
+    const off = (svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom);
+    SVG.offset = new vec2(-(off - svgbb.right) / 2, -(off - svgbb.bottom) / 2);
 }
 
 function toZ(c) {
-    let {
-        s,
-        o
-    } = windowScaleAndOffset();
-    return c.minus(o).unscale(s).minus(new vec2(.5, .5)).scale(2).cmult(zoom).cadd(pan);
+    SVG.updateScaleAndOffset();
+    return c.minus(SVG.offset).unscale(SVG.scale).minus(new vec2(.5, .5)).scale(2).cmult(zoom).cadd(pan);
 }
 
 function toS(c) {
-    let {
-        s,
-        o
-    } = windowScaleAndOffset();
-    return c.unscale(s).scale(2);
+    return c.unscale(SVG.windowScale()).scale(2)
 }
-
 function toDZ(c) {
-    let {
-        s,
-        o
-    } = windowScaleAndOffset();
-    return c.unscale(s).scale(2).cmult(zoom);
+    return toS(c).cmult(zoom)
 }
 
 function fromZ(z) {
-    let {
-        s,
-        o
-    } = windowScaleAndOffset();
-    return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5, .5)).scale(s).plus(o);
+    SVG.updateScaleAndOffset();
+    return fromZtoUV(z).scale(SVG.scale).plus(SVG.offset);
 }
-
 function fromZtoUV(z) {
-    return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5, .5));
+    return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5, .5))
 }
-var SVGzoom = 8192;
-var SVGpan = new vec2(0, 0);
-let recenterThreshold = 0.01;
-let rezoomThreshold = 0.1;
-let rezoomFactor = 8192;
-let old_rotation = 0;
 
-function updateViewbox() {
+SVG.oldPan = new vec2(0, 0);
+SVG.pan = new vec2(0, 0);
+
+SVG.updateViewbox = function(){
     //let lc = toSVG(toZ(new vec2(0,0)));
-    let zm = zoom.mag();
+    const zm = zoom.mag();
     let lc = toSVG(new vec2(-zm, -zm).plus(pan));
-    let d = zm * 2 * SVGzoom;
-    let r = zoom.ang();
+    const d = zm * 2 * this.zoom;
+    const r = zoom.ang();
     //let rotCenter = fromZ(pan);// = {let s = window.innerWidth; return new vec2(.5*s,.5*s);}
-    let oldSVGzoom = SVGzoom;
-    let oldSVGpan = SVGpan;
-    
-    let recalc = false;
-    if (d < Math.abs(recenterThreshold * lc.x) || d < Math.abs(recenterThreshold * lc.y)) {
-        SVGpan = pan.scale(1);
+
+    if (d < Math.abs(this.recenterThreshold * lc.x) || d < Math.abs(this.recenterThreshold * lc.y)) {
+        this.updatePan(pan.scale(1));
         lc = toSVG(toZ(new vec2(0, 0)));
         //console.log("recentering...");
-        recalc = true;
     }
-    if (d < rezoomThreshold || d > rezoomFactor / rezoomThreshold) {
-        SVGzoom *= rezoomFactor / d;
+    if (d < this.rezoomThreshold || d > this.rezoomFactor / this.rezoomThreshold) {
+        this.updateZoom(this.zoom * this.rezoomFactor / d);
         //console.log("rezooming...");
-        recalc = true;
     }
-    if (recalc) {
-        recalc_svg(oldSVGpan,oldSVGzoom);
-    }
+    if (this.needsRecalc) this.recalc();
 
-    let c = toSVG(pan); //center of rotation
+    const c = toSVG(pan); //center of rotation
     //where it ends up if you do the rotation about SVGpan
-    let rc = c.cmult(zoom.unscale(zm).cconj());
-    //
+    const rc = c.cmult(zoom.unscale(zm).cconj());
     lc = lc.plus(rc.minus(c));
 
-    svg.setAttribute("viewBox", lc.x + " " + lc.y + " " + d + " " + d);
+    svg.setAttribute("viewBox", lc.x + ' ' + lc.y + ' ' + d + ' ' + d);
 
 
-    if (r !== old_rotation) {
-        old_rotation = r;
-        svg_viewmat.setAttribute("transform", "rotate(" + (-r * 180 / Math.PI) + ")");
-        //svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+" "+c.x+" "+c.y+")");
+    if (r !== this.oldRotation) {
+        this.oldRotation = r;
+        svg_viewmat.setAttribute("transform", "rotate(" + (-r * 180 / Math.PI) + ')');
+        //svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+" "+c.x+" "+c.y+')');
     }
 
 
     return
 
     // the below has the issue of low-res svg when changing the matrix in firefox
-    //svg.setAttribute("viewBox", (-svg_viewbox_size / 2) + " " + (-svg_viewbox_size / 2) + " " + svg_viewbox_size + " " + svg_viewbox_size);
+    //svg.setAttribute("viewBox", (-svg_viewbox_size / 2) + ' ' + (-svg_viewbox_size / 2) + ' ' + svg_viewbox_size + ' ' + svg_viewbox_size);
     // z = bal(uv)*zoom+pan
     // svg = (z-svgpan)*svgzoom
     // want matrix to go svg -> bal(uv)*65536
@@ -294,58 +273,62 @@ function updateViewbox() {
     //let t = zoom.crecip().scale(svg_viewbox_size / SVGzoom / 2);
     //let p = pan.minus(SVGpan).scale(-svg_viewbox_size / 2).cdiv(zoom);
 
-    //svg_viewmat.setAttribute("transform", "matrix(" + t.x + " " + (t.y) + " " + (-t.y) + " " + (t.x) + " " + (p.x) + " " + (p.y) + ")");
-    //svg_bg.setAttribute("transform","matrix("+z.x+" "+(-z.y)+" "+(z.y)+" "+(z.x)+" "+SVGpan.x+" "+SVGpan.y+")");
+    //svg_viewmat.setAttribute("transform", "matrix(" + t.x + ' ' + (t.y) + ' ' + (-t.y) + ' ' + (t.x) + ' ' + (p.x) + ' ' + (p.y) + ')');
+    //svg_bg.setAttribute("transform","matrix("+z.x+' '+(-z.y)+' '+(z.y)+' '+(z.x)+' '+SVGpan.x+' '+SVGpan.y+')');
 
 }
 
 
-function recalc_svg(oldSVGpan,oldSVGzoom) {
-    let node = svg_bg;
-    for (let c of node.children){
-        let path = c.getAttribute("d");
-        let parts = path.split(/[, ]+/g);
+SVG.recalc = function(){
+    const oldPan = this.oldPan;
+    const oldZoom = this.oldZoom;
+    const pan = this.pan;
+    const zoom = this.zoom;
+    for (let c of svg_bg.children){
+        const r = [];
         let coord = 0;
-        let r = [];
+        const parts = c.getAttribute('d').split(/[, ]+/g);
         for (let p of parts){
             if (p.length && !isNaN(Number(p))){
-                let c = coord?'y':'x';
-                p = Number(p)/oldSVGzoom + oldSVGpan[c];
-                p = (p-SVGpan[c])*SVGzoom;
-                coord = 1-coord;
+                let c = coord ? 'y' : 'x';
+                p = Number(p) / oldZoom + oldPan[c];
+                p = (p - pan[c]) * zoom;
+                coord = 1 - coord;
             }
             r.push(p);
         }
-        c.setAttribute("d",r.join(" "));
-        c.setAttribute("stroke-width",c.getAttribute("stroke-width")*SVGzoom/oldSVGzoom);
+        c.setAttribute('d', r.join(' '));
+        c.setAttribute('stroke-width', c.getAttribute('stroke-width') * zoom / oldZoom);
     }
+    this.needsRecalc = false;
 }
 
+const Body = {
+    isPanning: false
+}
+Body.startPanning = function(e){
+    Body.isPanning = true;
+    Coordinate.deselect();
+    this.style.userSelect = 'none'; // Disable text selection
+}
+Body.onMousemove = function(e){
+    mousePos.x = e.pageX;
+    mousePos.y = e.pageY;
+    mousePath = '';
+}
+Body.stopPanning = function(e){
+    if (!Body.isPanning) return;
 
-document.getElementById("body").addEventListener("mousedown", (event) => {
-    isPanning = true;
-    deselectCoordinate();
-    document.body.style.userSelect = "none"; // Disable text selection
-}, false);
-
-document.getElementById("body").addEventListener("mousemove", (event) => {
-    mousePos.x = event.pageX;
-    mousePos.y = event.pageY;
-    mousePath = "";
-}, false);
-
-document.getElementById("body").addEventListener("mouseup", (event) => {
-    if (isPanning) {
-        isPanning = false;
-        document.body.style.userSelect = "auto"; // Re-enable text selection
-    }
-}, false);
-document.getElementById("body").addEventListener("mouseleave", (event) => {
-    if (isPanning) {
-        isPanning = false;
-        document.body.style.userSelect = "auto"; // Re-enable text selection
-    }
-}, false);
+    Body.isPanning = false;
+    this.style.userSelect = "auto"; // Re-enable text selection
+}
+Body.addEventListeners = function(body){
+    body.addEventListener('mousedown', this.startPanning);
+    body.addEventListener('mousemove', this.onMousemove);
+    body.addEventListener('mouseup', this.stopPanning);
+    body.addEventListener('mouseleave', this.stopPanning);
+}
+Body.addEventListeners(document.body);
 
 function mand_step(z, c) {
     return z.cmult(z).cadd(c);
@@ -376,24 +359,23 @@ function mand_unstep(z, c) {
     return z.csub(c).sqrt();
 }
 
-function mand_i(z, iters = 16) {
-    let c = z;
+
+
+const Fractal = {}
+
+Fractal.mand_i = function(z, iters = 16){
+    const c = z;
     for (let i = 0; i < iters; i++) {
-        if (z.mag2() > 4) {
-            return i;
-        }
+        if (z.mag2() > 4) return i;
+
         z = mand_step(z, c);
     }
     return (z.mag2() > 4) ? iters : iters + 1;
 }
 
-
-
-function mandelbrott_dist(iters, c, z) {
-    let bailout = 1e8; //large so z^2+c -> z^2
-    if (z === undefined) {
-        z = new vec2(0, 0);
-    }
+Fractal.mandDist = function(iters, c, z){
+    const bailout = 1e8; //large so z^2+c -> z^2
+    if (z === undefined) z = new vec2(0, 0);
     let pz = z;
     for (let i = 0; i < iters; i++) {
         if (z.mag2() > bailout) {
@@ -412,10 +394,9 @@ function mandelbrott_dist(iters, c, z) {
 }
 
 function mandelbrott_grad(iters, c, z) {
-    let bailout = 1e8; //large so z^2+c -> z^2
-    if (z === undefined) {
-        z = new vec2(0, 0);
-    }
+    const bailout = 1e8; //large so z^2+c -> z^2
+    if (z === undefined) z = new vec2(0, 0);
+
     let dz = new vec2(1, 0);
     for (let i = 0; i < iters; i++) {
         if (z.mag2() > bailout) {
@@ -433,104 +414,100 @@ function mandelbrott_grad(iters, c, z) {
     return new vec2(0, 0);
 }
 
-function mandGrad(maxIters, c, z) {
+Fractal.mandGrad = function(maxIters, c, z){
     //return mandelbrott_grad(maxIters,c,z);
-    let e = 1e-10;
-    let d = mandelbrott_dist(maxIters, c, z);
+    const mandDist = Fractal.mandDist;
+    const e = 1e-10;
+    const d = mandDist(maxIters, c, z);
     return new vec2(
-        mandelbrott_dist(maxIters, c.plus(new vec2(e, 0)), z) - d,
-        mandelbrott_dist(maxIters, c.plus(new vec2(0, e)), z) - d
+        mandDist(maxIters, c.plus(new vec2(e, 0)), z) - d,
+        mandDist(maxIters, c.plus(new vec2(0, e)), z) - d
     ).unscale(e);
 
     //let re = 1.00000001;
     //let e = 1e-100;
     //if (z === undefined) { z = c;}
-    //let d = mandelbrott_dist(maxIters,c,z);
+    //let d = mandDist(maxIters,c,z);
     //let f = (v) => (Math.abs(v)<e?v+e:v*re);
     //let fz = new vec2(f(z.x),f(z.y));
     //return new vec2(
-    //    mandelbrott_dist(maxIters,c,new vec2(fz.x,z.y))-d,
-    //    mandelbrott_dist(maxIters,c,new vec2(z.x,fz.y))-d
+    //    mandDist(maxIters,c,new vec2(fz.x,z.y))-d,
+    //    mandDist(maxIters,c,new vec2(z.x,fz.y))-d
     //    ).div(fz.minus(z));
 }
 
-function gradzr(f, z, epsilon = 1e-6) {
-    let r = f(z);
+Fractal.gradzr = function(f, z, epsilon = 1e-6){
+    const r = f(z);
     return new vec2(f(z.plus(new vec2(epsilon, 0))) - r, f(z.plus(new vec2(0, epsilon))) - r).unscale(epsilon);
 }
 
-
-function* trace_circle(iters, z0, step) {
-    if (step === undefined) {
-        step = 0.5;
-    }
-    let level = mandelbrott_dist(iters, z0);
+function* trace_circle(iters, z0, step = 0.5) {
+    const mandDist = Fractal.mandDist;
+    const level = mandDist(iters, z0);
     let z = z0;
     while (true) {
         yield z;
-        let vz = mandelbrott_dist(iters, z);
-        let gz = mandGrad(iters, z);
+        const vz = mandDist(iters, z);
+        const gz = Fractal.mandGrad(iters, z);
         z = z.plus(gz.cmult(new vec2(level - vz, step).unscale(gz.mag2())));
     }
 }
 
-function mcol(iters, z) {
-    let i = mandelbrott_dist(iters, z);
-    if (i >= iters) {
-        i = findInfimum(iters, z);
-        //i = findPeriod(z);
-        return scol(i.i * 123 + 2, (1 - nodeMode_v), 128, 32 + (1 - nodeMode_v) * 48);
-    } else {
-        return scol(i);
+Fractal.mandColor = function(iters, z){
+    let i = Fractal.mandDist(iters, z);
+    if (i < iters) return Color.strRgb(i);
+
+    i = findInfimum(iters, z);
+    //i = findPeriod(z);
+    return Color.strRgb(i.i * 123 + 2, (1 - nodeMode_v), 128, 32 + (1 - nodeMode_v) * 48);
+}
+
+let rSlider = Elem.byId('rSlider');
+let cSlider = Elem.byId('cSlider');
+let sSlider = Elem.byId('sSlider');
+
+const Color = {
+    pickers: {}
+}
+Color.setPickers = function(){
+    Color.pickers = {
+        r: Elem.byId('rColor'),
+        g: Elem.byId('gColor'),
+        b: Elem.byId('bColor')
     }
 }
+Color.setPickers();
 
-let rSlider = document.getElementById("rSlider");
-let cSlider = document.getElementById("cSlider");
-let sSlider = document.getElementById("sSlider");
-
-function hexToRgb(hex) {
-    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? [
-        parseInt(result[1], 16),
-        parseInt(result[2], 16),
-        parseInt(result[3], 16)
-    ] : null;
+Color.getNormalized = function(color, index){
+    const hex = Color.pickers[color].value.slice(2 * index - 1, 2 * index + 1);
+    return parseInt(hex, 16) / 255; // Normalize to [0, 1]
 }
+Color.rgbLerp = function(i, r = rSlider.value, c = cSlider.value, s = sSlider.value) {
+    const cos = Math.cos;
+    const normalized = Color.getNormalized;
+    const red = normalized("r", 1) * (c - s * cos(i / 2 ** .9));
+    const green = normalized("g", 2) * (c - s * cos(i / 3 ** .9));
+    const blue = normalized("b", 3) * (c - s * cos(i / 5 ** .9));
 
-let colorPickerR = document.getElementById("rColor");
-let colorPickerG = document.getElementById("gColor");
-let colorPickerB = document.getElementById("bColor");
-
-function col(i, r = rSlider.value, c = cSlider.value, s = sSlider.value) {
-    if (nodeMode) {
-        r = nodeMode_v;
-    }
-
-    let colorR = hexToRgb(colorPickerR.value)[0] / 255; // Normalize to [0, 1]
-    let colorG = hexToRgb(colorPickerG.value)[1] / 255; // Normalize to [0, 1]
-    let colorB = hexToRgb(colorPickerB.value)[2] / 255; // Normalize to [0, 1]
-
-    let rgb = [colorR * (c - s * Math.cos(i / 2 ** .9)), colorG * (c - s * Math.cos(i / 3 ** .9)), colorB * (c - s * Math.cos(i / 5 ** .9))];
-    let y = 0.17697 * rgb[0] + 0.81240 * rgb[1] + 0.01063 * rgb[2];
-    return [lerp(rgb[0], y, r), lerp(rgb[1], y, r), lerp(rgb[2], y, r)];
+    const lerp = Math.lerp;
+    if (nodeMode) r = nodeMode_v;
+    const y = 0.17697 * red + 0.81240 * green + 0.01063 * blue;
+    return [lerp(red, y, r), lerp(green, y, r), lerp(blue, y, r)];
 }
-
-function scol(i, r = rSlider.value, c = cSlider.value, s = sSlider.value) {
-    c = col(i, r, c, s);
-    return "RGB(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + ")";
+Color.strRgb = function(i, r, c, s){
+    const round = Math.round;
+    const rgb = Color.rgbLerp(i, r, c, s);
+    return 'RGB(' + round(rgb[0]) + ',' + round(rgb[1]) + ',' + round(rgb[2]) + ')';
 }
 
 
-//let l = document.getElementById("link");
+//let l = Elem.byId('link);
 //l.style.position="absolute";
 //l.style.left="100px";
 //l.style.top="100px";
 
 
-function outlineMand(start, step, iters) {
-    iters = iters === undefined ? 256 : iters;
-    step = step === undefined ? 0.1 : step;
+function outlineMand(start, step = 0.1, iters = 256) {
     let a0 = start.pang();
     let path = "M " + toSVG(start).str() + "\nL ";
     let pz = start;
@@ -538,42 +515,36 @@ function outlineMand(start, step, iters) {
     let minD2 = 0.25 / 200 / 200;
     for (let z of trace_circle(iters, start, step)) {
         //if (z.minus(pz).mag2() < minD2){ continue;}
-        if (z.pang() <= a0 && pz.pang() > a0) {
-            break;
-        }
+        if (z.pang() <= a0 && pz.pang() > a0) break;
+
         maxlen--;
-        if (maxlen <= 0) {
-            break;
-        }
-        path += toSVG(z).str() + " ";
+        if (maxlen <= 0) break;
+
+        path += toSVG(z).str() + ' ';
         pz = z;
     }
     return path;
 }
 
-function addPath(path, stroke, fill) {
-    if (stroke === undefined) {
-        stroke = "red"
-    }
-    if (fill === undefined) {
-        stroke = "none"
-    }
-    let pathn = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    pathn.setAttribute("fill", fill);
-    pathn.setAttribute("stroke", stroke);
-    pathn.setAttribute("d", path);
+function addPath(path, stroke = 'red', fill = 'none') {
+    const pathn = SVG.create.path();
+    pathn.setAttribute('fill', fill);
+    pathn.setAttribute('stroke', stroke);
+    pathn.setAttribute('d', path);
     svg.appendChild(pathn);
     return pathn;
 }
 
 function* iter() {
+    const mandDist = Fractal.mandDist;
+    const strRgb = Color.strRgb;
     for (let x = 8; x > 0.3; x *= 1 - 1 / 8) {
-        let pathn = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        //pathn.setAttribute("fill",scol(mandelbrott_dist(1024,new vec2(x,0))));
-        pathn.setAttribute("fill", "none");
-        pathn.setAttribute("stroke", scol(mandelbrott_dist(1024, new vec2(x, 0))));
-        pathn.setAttribute("stroke-width", "" + (SVGzoom * 0.01));
-        pathn.setAttribute("d", "");
+        let pathn = SVG.create.path();
+        //pathn.setAttribute('fill',strRgb(mandDist(1024,new vec2(x,0))));
+        pathn.setAttribute('fill', 'none');
+        pathn.setAttribute('stroke', strRgb(mandDist(1024, new vec2(x, 0))));
+        pathn.setAttribute('stroke-width', String(SVG.zoom * 0.01));
+        pathn.setAttribute('d', '');
         svg.children[1].appendChild(pathn);
         let start = new vec2(x, 0);
         let a0 = start.pang();
@@ -583,32 +554,28 @@ function* iter() {
         let maxlen = 1 << 12;
         let minD2 = 0.01 / 200 / 200;
         for (let z of trace_circle(1024, start, 0.1)) {
+            if (z.pang() <= a0 && pz.pang() > a0) break;
 
-            if (z.pang() <= a0 && pz.pang() > a0) {
-                break;
-            }
             maxlen--;
             if (maxlen <= 0) {
-                pathn.setAttribute("d", path + " z");
+                pathn.setAttribute('d', path + " z");
                 yield;
                 maxlen = 1 << 12;
             }
-            if (z.minus(pz).mag2() < minD2) {
-                continue;
-            }
-            path += toSVG(l(z)).str() + " ";
+            if (z.minus(pz).mag2() < minD2) continue;
+
+            path += toSVG(l(z)).str() + ' ';
             pz = z;
         }
-        pathn.setAttribute("d", path + " z");
+        pathn.setAttribute('d', path + " z");
         yield;
     }
 }
 
 function random_screen_pt_z() {
-    let svgbb = svg.getBoundingClientRect();
+    const svgbb = svg.getBoundingClientRect();
     return toZ(new vec2(Math.random() * svgbb.width, Math.random() * svgbb.height));
 }
-
 
 // https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
 // Standard Normal variate using Box-Muller transform.
@@ -620,15 +587,17 @@ function gaussianRandom2() {
 }
 
 function render_hair(n) {
-    let iters = settings.iterations;
-    let maxLines = settings.maxLines;
+    const mandDist = Fractal.mandDist;
+    const mand_i = Fractal.mand_i;
+    const iters = settings.iterations;
+    const maxLines = settings.maxLines;
     let tries = 1;
     let pt;
     if (Math.random() > flashlight_fraction){
         do {
             pt = random_screen_pt_z();
             for (let i = (1 - Math.random() ** 2) * (tries * 4); i > 1; i--) {
-                let gz = mandGrad(iters, pt)
+                const gz = Fractal.mandGrad(iters, pt)
                 pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
                 //if (mand_i(pt,iters) > iters){
                 //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
@@ -639,16 +608,15 @@ function render_hair(n) {
         /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
           return;
           }*/
-    }else{
+    } else {
         pt = gaussianRandom2().scale(flashlight_stdev).cmult(zoom).cadd(toZ(mousePos));
     }
 
-    //let level = mandelbrott_dist(256,pt);
+    //let level = mandDist(256,pt);
     //let width = 1/(level+5)**2;
-    //let width = 1/(mandGrad(256,pt).mag()**1.5+1);
+    //let width = 1/(Fractal.mandGrad(256,pt).mag()**1.5+1);
 
-
-    let r = "M " + toSVG(pt).str() + " " + settings.renderDChar + " ";
+    let r = "M " + toSVG(pt).str() + ' ' + settings.renderDChar + ' ';
     let length = 0;
     let n0 = n;
     let opt = pt;
@@ -656,6 +624,7 @@ function render_hair(n) {
     let opacity = settings.outerOpacity;
 
     if (mand_i(pt, iters) > iters) {
+        const mand_iter_n = Fractal.mand_iter_n;
         //interior coloring
         /*let p = findPeriod(pt,pt,1e-12,iters);
         for (; n > 0; n--){
@@ -666,21 +635,22 @@ function render_hair(n) {
             if (mand_i(npt,iters)<=iters){
                 break;
             }
-            r += toSVG(npt).str()+" ";
+            r += toSVG(npt).str()+' ';
             length += npt.minus(pt).mag();
             pt = npt;
         }*/
+        const gradzr = Fractal.gradzr;
         let p = findInfimum(iters, pt);
         for (; n > 0; n--) {
-            let delta = gradzr(((z) => (mand_iter_n(p.i, z, z).mag2())), pt, 1e-5);
+            const func = (z)=>mand_iter_n(p.i, z, z).mag2();
+            let delta = gradzr(func, pt, 1e-5);
             delta = delta.unscale(delta.mag() + 1e-300).scale(zoom.mag() * .1);
             //debugger
             npt = pt.plus(delta.scale(-settings.renderStepSize));
-            if (mand_i(npt, iters) <= iters) {
-                break;
-            }
+            if (mand_i(npt, iters) <= iters) break;
             if (!toSVG(npt).isFinite()) break;
-            r += toSVG(npt).str() + " ";
+
+            r += toSVG(npt).str() + ' ';
             na += 1;
             length += npt.minus(pt).mag();
             pt = npt;
@@ -689,30 +659,32 @@ function render_hair(n) {
 
         length /= 4;
     } else {
-        if (mandelbrott_dist(iters, pt) < settings.maxDist) return;
+        if (mandDist(iters, pt) < settings.maxDist) return;
+
         for (let p of trace_circle(iters, pt, Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
             //console.log(p);
             //if ((n&3) == 0)
             if (!toSVG(p).isFinite()) break;
-            r += toSVG(p).str() + " ";
+
+            r += toSVG(p).str() + ' ';
             na += 1;
             n -= 1;
-            if (n < 0) {
-                break;
-            }
+            if (n < 0) break;
+
             length += p.minus(pt).mag();
             pt = p;
         }
-        color = scol(mandelbrott_dist(iters, pt));
+        color = Color.strRgb(mandDist(iters, pt));
     }
     if (na === 0) return;
-    let width = Math.min(settings.renderWidthMult * length / n0, 0.1);
-    let pathn = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    pathn.setAttribute("fill", "none");
-    pathn.setAttribute("stroke", mcol(iters, opt));
-    pathn.setAttribute("stroke-width", "" + width * SVGzoom);
-    pathn.setAttribute("stroke-opacity", "" + opacity);
-    pathn.setAttribute("d", r);
+
+    const width = Math.min(settings.renderWidthMult * length / n0, 0.1);
+    const pathn = SVG.create.path();
+    pathn.setAttribute('fill', 'none');
+    pathn.setAttribute('stroke', Fractal.mandColor(iters, opt));
+    pathn.setAttribute('stroke-width', String(width * SVG.zoom));
+    pathn.setAttribute('stroke-opacity', String(opacity));
+    pathn.setAttribute('d', r);
     svg_bg.appendChild(pathn);
     if (maxLines === 0) {
         // Quick removal of all non-preserved children
@@ -744,21 +716,21 @@ function render_hair(n) {
 document.addEventListener('keydown', function (event) {
     if (event.altKey) {
         switch (event.key) {
-            case 'f': // Alt+F for toggling preservation
-                console.log(`Adding preservation fractal lines.`);
+            case 'f': // toggle preservation
+                console.log("Adding preservation fractal lines.");
                 Array.from(svg_bg.children).forEach(element => {
                     if (!element.classList.contains('preserve')) {
                         element.classList.add('preserve');
-                        console.log(`Preservation added to element with id: ${element.id}`);
+                        console.log("Preservation added to element with id:", element.id);
                     }
                 });
                 break;
-            case 's': // Alt+S for taking a screenshot
+            case 's': // take screenshot
                 download_svg_screenshot("NeuriteSVG" + new Date().toISOString());
-                console.log(`Screenshot taken and downloaded.`);
+                console.log("Screenshot taken and downloaded.");
                 break;
-            case 'c': // Alt+C to clear all preservations
-                console.log(`Clearing all preserved fractal lines.`);
+            case 'c': // clear all preservations
+                console.log("Clearing all preserved fractal lines.");
                 Array.from(svg_bg.children).forEach(element => {
                     element.classList.remove('preserve');
                 });
@@ -768,27 +740,26 @@ document.addEventListener('keydown', function (event) {
 });
 
 function download_svg_screenshot(name) {
-    var svg = document.getElementById("svg_bg");
-    var bgColorInput = document.getElementById('colorPicker').value;
+    var svg = Elem.byId('svg_bg');
+    var bgColorInput = Elem.byId('colorPicker').value;
 
     // Ensure the SVG has explicit dimensions
-    svg.setAttribute("width", svg.clientWidth);
-    svg.setAttribute("height", svg.clientHeight);
+    svg.setAttribute('width', svg.clientWidth);
+    svg.setAttribute('height', svg.clientHeight);
 
-    var xml = new XMLSerializer().serializeToString(svg);
-    var svgBlob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
-    var url = URL.createObjectURL(svgBlob);
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
 
-    var img = new Image();
+    const img = new Image();
     img.onload = function () {
-        // Create canvas with dimensions of the SVG
-        var canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = svg.clientWidth;
         canvas.height = svg.clientHeight;
         var ctx = canvas.getContext('2d');
 
         // If the selected color is not black, use it as the background color
-        if (bgColorInput !== "#000000") {
+        if (bgColorInput !== '#000000') {
             ctx.fillStyle = bgColorInput;  // Set background color from the input
             ctx.fillRect(0, 0, canvas.width, canvas.height);  // Fill background
         } else {
@@ -797,28 +768,23 @@ function download_svg_screenshot(name) {
 
         ctx.drawImage(img, 0, 0);
 
-        // Create an <a> element for the download
-        var a = document.createElement('a');
+        // for the download
+        const a = document.createElement('a');
         a.download = name + ".png";
         a.href = canvas.toDataURL("image/png");
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
 
-        // Clean up by revoking the created URL
+        // Clean up
         URL.revokeObjectURL(url);
-    };
-    img.src = url;
-    img.onerror = function () {
-        console.error('Failed to load the image');
     }
+    img.src = url;
+    img.onerror = console.error.bind(console, 'Failed to load the image');
 }
 
 function gcd(a, b) {
-    if (b === 0) {
-        return a;
-    }
-    return gcd(b, a % b);
+    return (b === 0 ? a : gcd(b, a % b))
 }
 
 function findPeriod(c, z = new vec2(0, 0), epsilon2 = 1e-7, maxiters = 256) {
@@ -828,8 +794,9 @@ function findPeriod(c, z = new vec2(0, 0), epsilon2 = 1e-7, maxiters = 256) {
     for (; i < maxiters; i++) {
         if (zf.minus(z).mag2() <= epsilon2) {
             p = i;
-            break
+            break;
         }
+
         zf = mand_step(zf, c);
         zf = mand_step(zf, c);
         z = mand_step(z, c);
@@ -845,23 +812,21 @@ function findPeriod(c, z = new vec2(0, 0), epsilon2 = 1e-7, maxiters = 256) {
     return p;
 }
 
-function mand_iter_n(n, c, z = new vec2(0, 0)) {
-    for (let i = 0; i < n; i++) {
+Fractal.mand_iter_n = function(n, c, z = new vec2(0, 0)){
+    for (let i = 0; i < n; i += 1) {
         z = mand_step(z, c);
     }
     return z;
 }
 
-function findInfimum(iters, z, c = undefined) {
-    if (c === undefined) {
-        c = z;
-    }
+function findInfimum(iters, z, c) {
+    if (c === undefined) c = z;
     let besti = 0;
     let bestz = z;
     let bestd = z.mag2();
     for (let i = 1; i <= iters; i++) {
         z = mand_step(z, c);
-        let d = z.mag2();
+        const d = z.mag2();
         if (d < bestd) {
             bestd = d;
             besti = i;
@@ -875,15 +840,15 @@ function findInfimum(iters, z, c = undefined) {
 }
 
 function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", "spike"]) {
-    let points = [];
+    const points = [];
 
     if (methods.includes("cardioid")) {
         // Generate points for the main cardioid
         for (let i = 0; i < numPoints; i++) {
-            let theta = (i / numPoints) * 2 * Math.PI;
-            let r = (1 - Math.cos(theta)) / 2;
-            let x = r * Math.cos(theta) + 0.25;
-            let y = r * Math.sin(theta);
+            const theta = (i / numPoints) * 2 * Math.PI;
+            const r = (1 - Math.cos(theta)) / 2;
+            const x = r * Math.cos(theta) + 0.25;
+            const y = r * Math.sin(theta);
             points.push({ x, y });
         }
     }
@@ -891,10 +856,10 @@ function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", 
     if (methods.includes("disk")) {
         // Generate points for the period-2 disk
         for (let i = 0; i < numPoints; i++) {
-            let theta = (i / numPoints) * 2 * Math.PI;
-            let r = 0.25;
-            let x = r * Math.cos(theta) - 1;
-            let y = r * Math.sin(theta);
+            const theta = (i / numPoints) * 2 * Math.PI;
+            const r = 0.25;
+            const x = r * Math.cos(theta) - 1;
+            const y = r * Math.sin(theta);
             points.push({ x, y });
         }
     }
@@ -902,8 +867,8 @@ function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", 
     if (methods.includes("spike")) {
         // Generate points along the negative real axis spike
         for (let i = 0; i < numPoints; i++) {
-            let x = -2 + (2 * i / numPoints); // Range from -2 to 0
-            let y = 0; // Imaginary part is close to zero
+            const x = -2 + (2 * i / numPoints); // Range from -2 to 0
+            const y = 0; // Imaginary part is close to zero
             points.push({ x, y });
         }
     }
@@ -912,11 +877,12 @@ function generateBoundaryPoints(numPoints = 100, methods = ["cardioid", "disk", 
 }
 
 
+
 /* This code could be further adapted to create a movement feature that is limited to the perimeter of the Mandelbrot Set.
 
 function calculatePixelSpacing(svgElement) {
 // Extract scaling factors based on the current zoom level and SVG dimensions
-const scalingFactors = extractScalingFactors(svgElement);
+const scalingFactors = scalingFactorsFromElem(svgElement);
 
 // Base spacing at the default zoom level (no zoom)
 const baseSpacing = 10; // This can be adjusted based on the level of detail desired
@@ -928,7 +894,6 @@ const adjustedSpacing = baseSpacing / Math.max(scalingFactors.scaleX, scalingFac
 return adjustedSpacing;
 }
 
-    
 function isMandelbrotPixel(c, maxIter, escapeRadius) {
 let z = new vec2(0, 0);
 
@@ -981,15 +946,15 @@ for (let x = 0; x < window.innerWidth; x += pixelSpacing) {
 }
 
 function markBoundaryPoint(x, y, svgElement) {
-let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-circle.setAttribute("cx", x);
-circle.setAttribute("cy", y);
-circle.setAttribute("r", 2 * perimeterScaleFactor); // Apply scaling to the radius as well
-circle.setAttribute("fill", "red");
+const circle = SVG.create.circle();
+circle.setAttribute('cx', x);
+circle.setAttribute('cy', y);
+circle.setAttribute('r', 2 * perimeterScaleFactor); // Apply scaling to the radius as well
+circle.setAttribute('fill', 'red');
 circle.classList.add("perimeter-point");
 svgElement.appendChild(circle);
 }
 
-let svgElement = document.getElementById("svg_bg");
+let svgElement = Elem.byId('svg_bg');
 renderPerimeter(svgElement);
 */

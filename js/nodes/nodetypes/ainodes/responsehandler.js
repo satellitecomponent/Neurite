@@ -4,24 +4,16 @@
 function makeDivDraggable(div, customTitle, handle) {
     handle = handle || div; // Default to the div itself if no handle is provided
 
-    handle.addEventListener('mousedown', function () {
-        // When the mouse button is pressed down, make the div draggable
-        div.setAttribute('draggable', 'true');
-    });
+    const resetDraggable = div.setAttribute.bind(div, 'draggable', 'false');
+    const setDraggable = div.setAttribute.bind(div, 'draggable', 'true');
 
-    handle.addEventListener('mouseup', function () {
-        // When the mouse button is released, make the div non-draggable
-        div.setAttribute('draggable', 'false');
-    });
+    handle.addEventListener('mousedown', setDraggable);
+    handle.addEventListener('mouseup', resetDraggable);
 
     div.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', JSON.stringify([customTitle, div.innerText]));
     });
-
-    // When dragging ends, make sure the div is non-draggable
-    div.addEventListener('dragend', function () {
-        div.setAttribute('draggable', 'false');
-    });
+    div.addEventListener('dragend', resetDraggable);
 }
 
 
@@ -30,7 +22,7 @@ function makeDivDraggable(div, customTitle, handle) {
 class ResponseHandler {
     constructor(node) {
         this.node = node;
-        this.previousContent = "";
+        this.previousContent = '';
         this.inCodeBlock = false;
         this.codeBlockContent = '';
         this.codeBlockStartIndex = -1;
@@ -157,10 +149,10 @@ class ResponseHandler {
 
     reattachTooltips(responseDiv) {
         responseDiv.querySelectorAll('a.snippet-ref').forEach(link => {
-            if (link.dataset.snippetData) {
-                this.tooltip.detachTooltipEvents(link);  // First, detach any existing events
-                this.tooltip.attachTooltipEvents(link);
-            }
+            if (!link.dataset.snippetData) return;
+
+            this.tooltip.detachTooltipEvents(link);
+            this.tooltip.attachTooltipEvents(link);
         });
     }
 
@@ -174,7 +166,7 @@ class ResponseHandler {
             });
             if (snippet) {
                 return {
-                    source: source,
+                    source,
                     relevanceScore: snippet.relevanceScore,
                     text: snippet.text
                 };
@@ -194,15 +186,13 @@ class ResponseHandler {
             const responseDiv = recentResponseDivs[i];
             const links = responseDiv.querySelectorAll('a.snippet-ref');
             for (let link of links) {
-                if (link.dataset.snippetData) {
-                    const snippetDataList = JSON.parse(link.dataset.snippetData);
-                    const matchingSnippet = snippetDataList.find(snippet =>
-                        snippet.source === source && snippet.snippetNumber === snippetNumber
-                    );
-                    if (matchingSnippet) {
-                        return matchingSnippet;
-                    }
-                }
+                if (!link.dataset.snippetData) continue;
+
+                const snippetDataList = JSON.parse(link.dataset.snippetData);
+                const matchingSnippet = snippetDataList.find(snippet =>
+                    snippet.source === source && snippet.snippetNumber === snippetNumber
+                );
+                if (matchingSnippet) return matchingSnippet;
             }
         }
         return null;
@@ -213,38 +203,35 @@ class ResponseHandler {
             const href = link.getAttribute('href');
             const text = link.textContent;
             const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
-            if (snippetMatch) {
-                const snippetNumbers = snippetMatch[1].split(',').map(Number);
-                const source = href;
-                const snippetDataList = snippetNumbers.map(snippetNumber => this.findSnippetData(snippetNumber, source)).filter(Boolean);
-                this.addTooltipEventListeners(link, snippetDataList);
-            }
+            if (!snippetMatch) return;
+
+            const snippetNumbers = snippetMatch[1].split(',').map(Number);
+            const cb = (snippetNumber)=>this.findSnippetData(snippetNumber, href) ;
+            const snippetDataList = snippetNumbers.map(cb).filter(Boolean);
+            this.addTooltipEventListeners(link, snippetDataList);
         });
     }
 
     addTooltipEventListeners(link, snippetDataList) {
-        if (snippetDataList.length > 0) {
-            link.classList.add('snippet-ref');
-            link.dataset.snippetData = JSON.stringify(snippetDataList);
-            this.tooltip.attachTooltipEvents(link);
-        }
+        if (snippetDataList.length < 1) return;
+
+        link.classList.add('snippet-ref');
+        link.dataset.snippetData = JSON.stringify(snippetDataList);
+        this.tooltip.attachTooltipEvents(link);
     }
 
     handleMarkdown(markdown) {
         if (this.node.aiResponding || this.node.localAiResponding) {
             let segments = markdown.split('\n\n\n');
-            let linkFound = false;  // Flag to determine if any links exist
+            let linkFound = false;
 
             segments.forEach((segment, index) => {
                 let responseDiv = this.getOrCreateResponseDiv(index);
                 this.appendMarkdownSegment(responseDiv, segment);
                 // Check for links as segments are processed to avoid re-querying later
-                if (!linkFound && responseDiv.querySelector('a')) {
-                    linkFound = true;
-                }
+                if (!linkFound && responseDiv.querySelector('a')) linkFound = true;
             });
 
-            // Only attach tooltips if a link was found
             if (linkFound) {
                 this.attachSnippetTooltips(this.node.aiResponseDiv);
             }
@@ -261,7 +248,7 @@ class ResponseHandler {
 
         // Replace mentions with a span for highlighting
         const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, (match) => {
-            return `<span class="mention">${match}</span>`;
+            return `<span class="mention">${match}</span>`
         });
 
         // Properly parse and render the updated content using the marked library
@@ -271,43 +258,41 @@ class ResponseHandler {
 
 
     getOrCreateResponseDiv(index) {
-        let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
-
+        const lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
         if (index === 0 && lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
             return lastWrapperDiv.querySelector('.ai-response');
-        } else {
-            let handleDiv = this.createHandleDiv();
-            let responseDiv = document.createElement('div');
-            responseDiv.className = 'ai-response';
-
-            let wrapperDiv = document.createElement('div');
-            wrapperDiv.className = 'response-wrapper';
-            wrapperDiv.appendChild(handleDiv);
-            wrapperDiv.appendChild(responseDiv);
-
-            this.node.aiResponseDiv.appendChild(wrapperDiv);
-            this.initAiResponseDiv(responseDiv);
-
-            return responseDiv;
         }
+
+        const responseDiv = document.createElement('div');
+        responseDiv.className = 'ai-response';
+
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'response-wrapper';
+        wrapperDiv.appendChild(this.createHandleDiv());
+        wrapperDiv.appendChild(responseDiv);
+
+        this.node.aiResponseDiv.appendChild(wrapperDiv);
+        this.initAiResponseDiv(responseDiv);
+
+        return responseDiv;
     }
 
     createHandleDiv() {
-        let handleDiv = document.createElement('div');
+        const handleDiv = document.createElement('div');
         handleDiv.className = 'drag-handle';
         handleDiv.innerHTML = `
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-    `;
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        `;
         return handleDiv;
     }
 
     getMarkedRenderer() {
-        let renderer = new marked.Renderer();
+        const renderer = new marked.Renderer();
         renderer.image = function (href, title, text) {
             // Check if the image URL is a valid URL
-            if (isUrl(href)) {
+            if (String.isUrl(href)) {
                 return `<img src="${href}" alt="${text}" title="${title || ''}" />`;
             } else {
                 // If the image URL is not a valid URL, treat it as a relative path
@@ -372,24 +357,19 @@ class ResponseHandler {
         let codeContent = content;
 
         // Check if the content starts with a language string
-        let languageStringEndIndex = content.indexOf('\n');
+        const languageStringEndIndex = content.indexOf('\n');
         if (languageStringEndIndex !== -1) {
             languageString = content.substring(0, languageStringEndIndex).trim();
             codeContent = content.substring(languageStringEndIndex + 1);
         }
 
-        let encodedContent = encodeHTML(codeContent);
-        let decodedContent = decodeHTML(encodedContent);
-
         if (!isFinal && this.node.lastBlockId) {
-            let oldBlock = document.getElementById(this.node.lastBlockId);
-            if (oldBlock) {
-                oldBlock.parentNode.removeChild(oldBlock);
-            }
+            const oldBlock = Elem.byId(this.node.lastBlockId);
+            if (oldBlock) oldBlock.parentNode.removeChild(oldBlock);
         }
 
-        let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
-        let existingContainerDiv = document.getElementById(codeBlockDivId);
+        const codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
+        let existingContainerDiv = Elem.byId(codeBlockDivId);
 
         if (!existingContainerDiv) {
             existingContainerDiv = document.createElement('div');
@@ -402,38 +382,38 @@ class ResponseHandler {
                 existingContainerDiv.classList.add('user-prompt-codeblock');
             }
 
-            let languageLabelDiv = document.createElement('div');
+            const languageLabelDiv = document.createElement('div');
             languageLabelDiv.className = "language-label";
             existingContainerDiv.appendChild(languageLabelDiv);
 
-            let existingWrapperDiv = document.createElement('div');
+            const existingWrapperDiv = document.createElement('div');
             existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
             existingContainerDiv.appendChild(existingWrapperDiv);
 
-            let preDiv = document.createElement('pre');
+            const preDiv = document.createElement('pre');
             preDiv.className = "code-block";
             existingWrapperDiv.appendChild(preDiv);
         }
 
-        let existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
-        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
+        const existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
+        const preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
 
-        let codeElement = document.createElement("code");
-        codeElement.className = `language-${languageString || this.currentLanguage}`;
-        codeElement.textContent = decodedContent;
+        const codeElement = document.createElement('code');
+        codeElement.className = 'language-' + (languageString || this.currentLanguage);
+        codeElement.textContent = decodeHTML(encodeHTML(codeContent));
 
         Prism.highlightElement(codeElement);
 
         preDiv.innerHTML = '';
         preDiv.appendChild(codeElement);
 
-        let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
+        const languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
         languageLabelDiv.innerText = languageString || this.currentLanguage;
         languageLabelDiv.style.display = 'flex';
         languageLabelDiv.style.justifyContent = 'space-between';
         languageLabelDiv.style.alignItems = 'center';
 
-        let copyButton = document.createElement('button');
+        const copyButton = document.createElement('button');
         copyButton.innerText = 'Copy';
         copyButton.className = 'copy-btn';
 
@@ -441,119 +421,91 @@ class ResponseHandler {
 
         this.initCodeBlockDiv(existingContainerDiv);
 
-        if (isFinal) {
-            this.node.codeBlockCount++;
-            this.node.lastBlockId = null;
-        } else {
-            this.node.lastBlockId = codeBlockDivId;
-        }
+        if (isFinal) this.node.codeBlockCount += 1;
+        this.node.lastBlockId = (isFinal ? null : codeBlockDivId);
     }
 
     setupUserPrompt(promptDiv) {
         // Make the prompt div draggable
         makeDivDraggable(promptDiv, 'Prompt');
 
-        let isEditing = false; // Flag to check if user is editing the content
+        let isEditing = false;
 
-        let handleKeyDown = function (event) {
+        const handleKeyDown = function handleKeyDown(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 this.removeResponsesUntil(promptDiv.id);
 
                 // Get the HTML content of the promptDiv and replace <br> with newline
-                let message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                const message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
 
                 //console.log(`Sending message: "${message}"`);
-                sendLLMNodeMessage(this.node, message);
+                AiNode.sendMessage(this.node, message);
             }
         }.bind(this);
 
-        // Set an onBlur event handler to handle when the div loses focus
-        promptDiv.addEventListener('blur', function () {
-            // If the div is in editing mode
-            if (isEditing) {
-                // Remove the .editing class
+        function onBlur(){
+            if (isEditing) { // div loses focus
                 promptDiv.classList.remove('editing');
-                // Set contentEditable to false when div loses focus
                 promptDiv.contentEditable = false;
 
-                // Reset isEditing
                 isEditing = false;
 
                 // Reset styles to non-editing state
                 promptDiv.style.backgroundColor = '';
                 promptDiv.style.color = '';
 
-                // Reset the cursor style to move
                 promptDiv.style.cursor = "move";
 
                 // Make the div draggable
                 makeDivDraggable(promptDiv, 'Prompt');
                 promptDiv.ondragstart = function () { return isEditing ? false : null; };
 
-                // Remove the keydown event listener
                 promptDiv.removeEventListener('keydown', handleKeyDown);
             }
-        }.bind(this));
+        }
 
-        // Add a double click listener to the prompt div
-        promptDiv.addEventListener('dblclick', function (event) {
-            // Prevent the default action of double click
-            event.preventDefault();
+        function onDblclick(e){
+            e.preventDefault();
+            e.stopPropagation();
 
-            // Stop the event from propagating
-            event.stopPropagation();
-
-            // Toggle isEditing
             isEditing = !isEditing;
-
-            if (isEditing) {
-                // Add the .editing class
+            if (isEditing) { // entering edit mode
                 promptDiv.classList.add('editing');
-                // Set contentEditable to true when entering edit mode
                 promptDiv.contentEditable = true;
-
-                // Remove draggable attribute
                 promptDiv.removeAttribute('draggable');
 
-                // Set the cursor style to text
-                promptDiv.style.cursor = "text";
-
                 // Set the background and text color to match original, remove inherited text decoration
-                promptDiv.style.backgroundColor = "inherit";
-                promptDiv.style.color = "#bbb";
-                promptDiv.style.textDecoration = "none";
-                promptDiv.style.outline = "none";
-                promptDiv.style.border = "none";
+                const style = promptDiv.style;
+                style.cursor = 'text';
+                style.backgroundColor = 'inherit';
+                style.color = '#bbb';
+                style.textDecoration = 'none';
+                style.outline = 'none';
+                style.border = 'none';
 
-                // Focus the div
                 promptDiv.focus();
-
-                // Add the keydown event listener when the promptDiv enters edit mode
                 promptDiv.addEventListener('keydown', handleKeyDown);
 
                 // Set promptDiv non-draggable
                 promptDiv.ondragstart = function () { return false; };
-            } else {
-                // Remove the .editing class
+            } else { // leaving edit mode
                 promptDiv.classList.remove('editing');
-                // Set contentEditable to false when leaving edit mode
                 promptDiv.contentEditable = false;
 
-
-                // Handle leaving edit mode
-                promptDiv.style.backgroundColor = '';
-                promptDiv.style.color = '';
-
-                // Set the cursor style to move
-                promptDiv.style.cursor = "move";
+                const style = promptDiv.style;
+                style.backgroundColor = '';
+                style.color = '';
+                style.cursor = "move";
 
                 makeDivDraggable(promptDiv, 'Prompt');
                 promptDiv.ondragstart = function () { return isEditing ? false : null; };
                 promptDiv.removeEventListener('keydown', handleKeyDown);
             }
+        }
 
-        }.bind(this));
+        promptDiv.addEventListener('blur', onBlur.bind(this));
+        promptDiv.addEventListener('dblclick', onDblclick.bind(this));
     }
 
     setupCodeBlock(codeBlockDiv) {
@@ -609,7 +561,7 @@ class ResponseHandler {
         }
 
         // Handling the textarea as per the old version
-        const lines = this.node.aiResponseTextArea.value.split("\n");
+        const lines = this.node.aiResponseTextArea.value.split('\n');
 
         // Find the index of the last "Prompt:"
         let lastPromptIndex = lines.length - 1;
@@ -620,7 +572,7 @@ class ResponseHandler {
         // Remove all lines from the last "Prompt:" to the end
         if (lastPromptIndex >= 0) {
             lines.length = lastPromptIndex;
-            this.node.aiResponseTextArea.value = lines.join("\n");
+            this.node.aiResponseTextArea.value = lines.join('\n');
             this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength here
         }
 
@@ -633,10 +585,8 @@ class ResponseHandler {
             this.currentLanguage = "javascript";
 
             // Remove the partial code block from the div if present
-            let codeBlockDiv = document.getElementById(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
-            if (codeBlockDiv) {
-                codeBlockDiv.parentNode.removeChild(codeBlockDiv);
-            }
+            const codeBlockDiv = Elem.byId(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
+            if (codeBlockDiv) codeBlockDiv.parentNode.removeChild(codeBlockDiv);
 
             // Remove the partial code block from the textarea
             let codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
@@ -662,15 +612,15 @@ const nodeResponseHandlers = new Map();
 
 
 /*
-document.getElementById("localLLM").addEventListener("change", function () {
+Elem.byId('localLLM).addEventListener('change', function () {
     let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
     for (let i = 0; i < llmNodes.length; i++) {
         let selectContainer = llmNodes[i].closest('.select-container');  // Find the closest parent .select-container
 
         if (this.checked) {
-            selectContainer.style.display = "block";
+            selectContainer.style.display = 'block';
         } else {
-            selectContainer.style.display = "none";
+            selectContainer.style.display = 'none';
         }
     }
 });

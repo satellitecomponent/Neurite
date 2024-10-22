@@ -1,99 +1,81 @@
-function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    let n = document.createElement("textarea");
-    n.classList.add('custom-scrollbar', 'node-textarea');
-    n.onmousedown = cancel;
+const TextNode = {};
 
-    n.value = text;
+TextNode.create = function(name = '', text = '', sx, sy, x, y){
+    const textarea = document.createElement('textarea');
+    textarea.classList.add('custom-scrollbar', 'node-textarea');
+    textarea.onmousedown = cancel;
+    textarea.value = text;
 
-    let node = addNodeAtNaturalScale(name, [n]); // Just add the textarea for now
-
-    let windowDiv = node.windowDiv;  // Find the window div
-    let editorWrapper = createSyntaxTextarea();  // Now this includes both the input and display div
+    const editorWrapper = createSyntaxTextarea();  // Now this includes both the input and display div
     editorWrapper.id = 'text-syntax-wrapper';
 
-    let htmlView = document.createElement("iframe");
+    const htmlView = document.createElement('iframe');
     htmlView.id = 'html-iframe';
     htmlView.classList.add('html-iframe', 'hidden');
 
-    let pythonView = document.createElement("div");
+    const pythonView = document.createElement('div');
     pythonView.id = 'python-frame';
     pythonView.classList.add('python-frame', 'hidden');
 
-    windowDiv.appendChild(htmlView);
-    windowDiv.appendChild(pythonView);
-    windowDiv.appendChild(editorWrapper);  // Append the editor wrapper to window div
-
-    windowDiv.style.minWidth = `100px`;
-    windowDiv.style.minHeight = `100px`;
-
+    const node = addNodeAtNaturalScale(name, [textarea]); // Just add the textarea for now
+    const divWindow = node.windowDiv;
+    divWindow.append(htmlView, pythonView, editorWrapper);
+    divWindow.style.minWidth = '100px';
+    divWindow.style.minHeight = '100px';
 
     // Handle position and scale if necessary
     if (sx !== undefined) {
-        x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
-        y = x.y;
-        x = x.x;
+        const pos = (new vec2(sx, sy)).cmult(zoom).plus(pan);
+        y = pos.y;
+        x = pos.x;
     }
 
-    if (x !== undefined) {
-        node.pos.x = x;
-    }
+    if (x !== undefined) node.pos.x = x;
+    if (y !== undefined) node.pos.y = y;
 
-    if (y !== undefined) {
-        node.pos.y = y;
-    }
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
+    node.push_extra_cb( (node)=>({
+            f: 'textarea',
             a: {
                 p: [0, 0, 1],
                 v: node.titleInput.value
             }
-        };
-    });
+        })
+    );
 
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
+    node.push_extra_cb( (node)=>({
+            f: 'textarea',
             a: {
                 p: [0, 1, 0],
-                v: n.value
+                v: textarea.value
             }
-        };
-    });
+        })
+    );
 
     node.isTextNode = true;
     node.codeEditingState = 'edit';
 
-    initTextNode(node);
+    TextNode.init(node);
 
     return node;
 }
 
-function initTextNode(node) {
-    let textNodeSyntaxWrapper = node.content.querySelector('#text-syntax-wrapper');
-    node.textNodeSyntaxWrapper = textNodeSyntaxWrapper;
+TextNode.init = function(node){
+    const content = node.content;
 
     //No longer a contentEditableDiv, returned to textarea
-    let contentEditableDiv = node.content.querySelector('.editable-div');
-    node.contentEditableDiv = contentEditableDiv;
+    const divContentEditable = content.querySelector('.editable-div');
+    node.contentEditableDiv = divContentEditable;
 
-    let displayDiv = node.content.querySelector('.syntax-display-div');;
-    node.displayDiv = displayDiv;
+    const divDisplay = content.querySelector('.syntax-display-div');
+    node.displayDiv = divDisplay;
 
-    let textarea = node.content.querySelector('textarea');
+    const textarea = content.querySelector('textarea');
     node.textarea = textarea;
    
-    let htmlView = node.content.querySelector('#html-iframe');
-    node.htmlView = htmlView;
+    node.htmlView = content.querySelector('#html-iframe');
+    node.pythonView = content.querySelector('#python-frame');
+    node.textNodeSyntaxWrapper = content.querySelector('#text-syntax-wrapper');
 
-    let pythonView = node.content.querySelector('#python-frame');
-    node.pythonView = pythonView
-
-    addEventListenersToTextNode(node)
-}
-
-function addEventListenersToTextNode(node) {
     // Attach events for contentEditable and textarea
-    addEventsToUserInputTextarea(node.contentEditableDiv, node.textarea, node, node.displayDiv);
+    addEventsToUserInputTextarea(divContentEditable, textarea, node, divDisplay);
 }

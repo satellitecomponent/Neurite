@@ -27,14 +27,14 @@ async function forget(userMessage, combinedContext) {
     const response = await callchatAPI(forgetQueryContext);
     console.log(response)
     // Extract the node titles to forget from the AI's response
-    const titlesToForget = new Set(response.split("\n"));
+    const titlesToForget = new Set(response.split('\n'));
     console.log(titlesToForget)
     return titlesToForget;
 }
 
 function extractTitlesFromContent(content) {
-    let titles = new Set();
-    let regex = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`, 'gm');
+    const titles = new Set();
+    const regex = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`, 'gm');
     let match;
     while ((match = regex.exec(content)) !== null) {
         titles.add(match[1].trim());
@@ -43,32 +43,26 @@ function extractTitlesFromContent(content) {
 }
 
 function removeTitlesFromContext(contentStr, titlesToForget) {
-    let newContent = "";
-    const lines = contentStr.split("\n"); // Split content into lines
-    lines.forEach(line => {
-        const trimLine = line.trim();
-        const match = trimLine.match(nodeTitleRegexGlobal);
+    const keptLines = [];
+    contentStr.split('\n').forEach(line => {
+        const match = line.trim().match(nodeTitleRegexGlobal);
         if (match && match[1]) {
-            const title = match[1].trim(); // Extract the title from the match
-            if (!titlesToForget.has(title)) {
-                newContent += line + "\n";  // Preserve this line if the title is not in the forget list
-            }
+            const title = match[1].trim();
+            if (!titlesToForget.has(title)) keptLines.push(line);
         } else {
-            newContent += line + "\n";  // Include lines that do not match the node tag
+            keptLines.push(line);
         }
     });
-    return newContent.trim(); // Trim the trailing newline from the last line addition
+    return keptLines.join('\n');
 }
 
 function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget, nodeTag) {
     return nodes
         .map((node) => {
-            if (!node) {
-                return null;
-            }
+            if (!node) return null;
 
             const titleElement = node.titleInput;
-            const title = titleElement && titleElement.value !== "" ? titleElement.value.trim() : "No title found";
+            const title = titleElement && titleElement.value !== '' ? titleElement.value.trim() : "No title found";
 
             // If title already present in context, don't include the node
             if (existingTitles.has(title) || titlesToForget.has(title)) {
@@ -79,10 +73,9 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
 
             const contents = getTextareaContentForNode(fullNodeObject);
 
-
             return `${tagValues.nodeTag} ${title}\n ${contents}`;
         })
-        .filter(content => content !== null); // Remove nulls
+        .filter(content => content !== null);
 }
 
 
@@ -97,7 +90,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
           } else {
               return ''; // Return an empty string or a placeholder message if connectedNode is undefined
            }
-       }).join("\n")
+       }).join('\n')
           : '';
  
       const edgeInfo = node.edges
@@ -107,7 +100,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
                } else {
                    return ''; // Return an empty string or a placeholder message if connectedNode is undefined
                }
-          }).join("\n"); 
+          }).join('\n'); 
 const createdAt = node.createdAt;
 
 UUID: ${node.uuid}\n       Creation Time: ${createdAt} */

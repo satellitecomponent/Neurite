@@ -1,18 +1,11 @@
 
 // Function to handle various events on the node panel
-function handlePanelEvent(event) {
-    cancel(event); // Prevents the event from bubbling up to parent elements
+function handlePanelEvent(e) {
+    cancel(e);
 }
 
-function handlePanelMouseMove(event) {
-    // Check if the event target is inside the functionCallPanel
-    if (functionCallPanel.contains(event.target)) {
-        // If the event is inside functionCallPanel, don't stop its propagation
-        return;
-    }
-
-    // For all other elements, stop propagation
-    cancel(event);
+function handlePanelMouseMove(e) {
+    if (!functionCallPanel.contains(e.target)) cancel(e);
 }
 
 // Add event listeners to the node panel for different types of events
@@ -23,13 +16,13 @@ nodePanel.addEventListener('wheel', handlePanelEvent);     // For scroll (wheel 
 nodePanel.addEventListener('dragstart', handlePanelEvent); // Prevents dragging from propagating
 nodePanel.addEventListener('dragend', handlePanelEvent);   // Optional, handle end of drag
 
-const functionLoadingIcon = document.getElementById('functionLoadingIcon');
-const functionErrorIcon = document.getElementById('functionErrorIcon');
+const functionLoadingIcon = Elem.byId('functionLoadingIcon');
+const functionErrorIcon = Elem.byId('functionErrorIcon');
 
 //buttons
 
-const functionSendButton = document.getElementById('function-send-button');
-const functionRegenButton = document.getElementById('function-regen-button');
+const functionSendButton = Elem.byId('function-send-button');
+const functionRegenButton = Elem.byId('function-regen-button');
 
 
 CodeMirror.defineMode("ignoreCodeBlocks", function (config) {
@@ -69,7 +62,7 @@ CodeMirror.defineMode("ignoreCodeBlocks", function (config) {
     };
 });
 
-const neuriteFunctionCM = CodeMirror.fromTextArea(document.getElementById('neurite-function-cm'), {
+const neuriteFunctionCM = CodeMirror.fromTextArea(Elem.byId('neurite-function-cm'), {
     mode: "ignoreCodeBlocks", // Use the custom mode
     lineNumbers: false,
     lineWrapping: true,
@@ -89,14 +82,14 @@ function updateNeuriteFunctionCMContent(content) {
 let userScrolledUpFunctionPanel = false;
 
 // Scroll event listener
-neuriteFunctionCM.on("scroll", function () {
+neuriteFunctionCM.on('scroll', function () {
     var scrollInfo = neuriteFunctionCM.getScrollInfo();
     var atBottom = scrollInfo.height - scrollInfo.top - scrollInfo.clientHeight < 1;
     userScrolledUpFunctionPanel = !atBottom;
 });
 
 // Change event listener
-neuriteFunctionCM.on("change", function () {
+neuriteFunctionCM.on('change', function () {
     if (!userScrolledUpFunctionPanel) {
         // Scroll to the bottom
         var scrollInfo = neuriteFunctionCM.getScrollInfo();
@@ -147,7 +140,7 @@ function runNeuriteCode() {
 
     // Set up a global error handler
     window.onerror = function (message, source, lineno, colno, error) {
-        customLog(`${message}`, error);
+        customLog(message, error);
         return false;
     };
 
@@ -177,7 +170,7 @@ function runNeuriteCode() {
         }
     } catch (error) {
         console.error('Error executing code:', error);
-        itemId = addFunctionCallItem(`${error.message}`, code, true);
+        itemId = addFunctionCallItem(error.message, code, true);
     }
 
     // Cleanup
@@ -189,26 +182,25 @@ function runNeuriteCode() {
 // Function to update the UI with the current title
 function updateFunctionCallItem(title, itemId, error = null) {
     const item = document.querySelector(`[data-item-id="${itemId}"]`);
+    if (!item) return;
 
-    if (item) {
-        // Update the innerHTML of the item
-        item.innerHTML = title.replace(/\n/g, '<br>');
+    // Update the innerHTML of the item
+    item.innerHTML = title.replace(/\n/g, '<br>');
 
-        // Update callData with the new title
-        const callData = JSON.parse(item.getAttribute('data-call-data'));
-        callData.functionName = title.replace(/<br>/g, '\n'); // Convert <br> back to \n for the data structure
-        item.setAttribute('data-call-data', JSON.stringify(callData));
+    // Update callData with the new title
+    const callData = JSON.parse(item.getAttribute('data-call-data'));
+    callData.functionName = title.replace(/<br>/g, '\n'); // Convert <br> back to \n for the data structure
+    item.setAttribute('data-call-data', JSON.stringify(callData));
 
-        // Style error logs if there's an error
-        if (error) {
-            const errorLogs = item.getElementsByClassName('error-log');
-            for (const errorLog of errorLogs) {
-                errorLog.style.color = '#cb1b1b'; // Style for error logs
-            }
+    // Style error logs if there's an error
+    if (error) {
+        const errorLogs = item.getElementsByClassName('error-log');
+        for (const errorLog of errorLogs) {
+            errorLog.style.color = '#cb1b1b'; // Style for error logs
         }
-
-        item.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
+
+    item.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 
@@ -242,7 +234,7 @@ function formatResultAsTitle(result) {
         titleString = titleString.substring(0, 197) + '...';
     }
 
-    return `Result: ${titleString}`;
+    return "Result: " + titleString;
 }
 
 function generateUUID() {
@@ -258,7 +250,6 @@ function addFunctionCallItem(functionName, code, isError = false) {
     const item = document.createElement('div');
     item.classList.add('function-call-item');
 
-    // Generate a UUID for the item
     const itemId = generateUUID();
     item.setAttribute('data-item-id', itemId);
 
@@ -277,11 +268,10 @@ function addFunctionCallItem(functionName, code, isError = false) {
     };
     item.setAttribute('data-call-data', JSON.stringify(callData));
 
-    // Add a specific class if it's an error
     if (isError) {
         item.classList.add('error-item');
 
-        const errorIcon = document.getElementById('funcErrorIcon').cloneNode(true);
+        const errorIcon = Elem.byId('funcErrorIcon').cloneNode(true);
         errorIcon.style.display = 'inline-block';
         errorIcon.classList.add('func-error-icon');
 
@@ -291,15 +281,11 @@ function addFunctionCallItem(functionName, code, isError = false) {
     // Hover events
     item.addEventListener('mouseenter', () => {
         item.classList.add('hover-state');
-        if (isError) {
-            item.classList.add('error-hover-state');
-        }
+        if (isError) item.classList.add('error-hover-state');
     });
     item.addEventListener('mouseleave', () => {
         item.classList.remove('hover-state');
-        if (isError) {
-            item.classList.remove('error-hover-state');
-        }
+        if (isError) item.classList.remove('error-hover-state');
     });
 
     item.addEventListener('click', () => {
@@ -308,40 +294,32 @@ function addFunctionCallItem(functionName, code, isError = false) {
         } else {
             clearActiveStates();
             item.classList.add('active-state');
-            if (isError) {
-                item.classList.add('error-active-state');
-            }
+            if (isError) item.classList.add('error-active-state');
         }
     });
 
     functionCallList.appendChild(item);
     item.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-    // Save function call data to local storage
     saveFunctionCallsToLocalStorage();
 
     return itemId;
 }
 
-// Function to clear active states from all items
 function clearActiveStates() {
-    const items = functionCallList.querySelectorAll('div');
-    items.forEach(item => {
+    functionCallList.querySelectorAll('div').forEach(item => {
         item.classList.remove('active-state');
         item.classList.remove('error-active-state'); // Add this line
     });
 }
 
 function generateTitleForCode(code) {
-    // Regular expressions for block and line comments
     const blockCommentRegex = /\/\*([\s\S]*?)\*\//;
     const lineCommentRegex = /\/\/(.*)/;
 
-    // Find matches for both comment types
     const blockMatch = code.match(blockCommentRegex);
     const lineMatch = code.match(lineCommentRegex);
 
-    // Determine the positions of the matches
     const blockCommentPos = blockMatch ? blockMatch.index : -1;
     const lineCommentPos = lineMatch ? code.indexOf(lineMatch[0]) : -1;
 
@@ -354,10 +332,10 @@ function generateTitleForCode(code) {
     }
 
     // If no title is extracted, use a default title with timestamp
-    return title || `Code executed at ${new Date().toLocaleString()}`;
+    return title || ("Code executed at " + new Date().toLocaleString());
 }
 
-const functionRunButton = document.getElementById('function-run-button');
+const functionRunButton = Elem.byId('function-run-button');
 functionRunButton.addEventListener('click', runNeuriteCode);
 
 // Function Call List

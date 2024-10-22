@@ -1,75 +1,50 @@
-async function setupConnectModal(originNode) {
+Modal.Connect = {}
+
+Modal.Connect.setup = function(originNode){
     const maxNodes = 8;
-    openModal(`nodeConnectionModal`);  // Open the connection modal
-    const nodeList = document.getElementById('nodeList');
-    const searchBar = document.getElementById('connectModalSearchBar');
-
-    // Set initial search bar value and clear previous contents
+    Modal.open('nodeConnectionModal');
+    const searchBar = Elem.byId('connectModalSearchBar');
     searchBar.value = originNode.getTitle();
-    nodeList.innerHTML = '';
+    Elem.byId('nodeList').innerHTML = ''; // clear previous contents
 
-    // Populate initially with the origin node title
-    await updateNodeList(originNode.getTitle(), maxNodes, originNode);
-
-    // Event listener for search bar input
-    searchBar.addEventListener('input', async () => {
-        const searchInput = searchBar.value.trim();
-        await updateNodeList(searchInput.length > 0 ? searchInput : originNode.getTitle(), maxNodes, originNode);
-    });
+    const update = Modal.Connect.updateNodeList.bind(null, originNode, maxNodes);
+    update();
+    searchBar.addEventListener('input', update);
 }
-async function updateNodeList(searchTerm, maxNodes, originNode) {
-    let nodes;
 
-    if (searchTerm) {
-        let allNodes = await searchNodesBy(searchTerm, maxNodes);
-        nodes = allNodes.slice(0, maxNodes); // Limit the results
-    } else {
-        nodes = Object.values(nodeMap); // Get all nodes from the nodeMap
-    }
+Modal.Connect.updateNodeList = function(originNode, maxNodes){
+    const nodeList = Elem.byId('nodeList');
 
-    const nodeList = document.getElementById('nodeList');
-    nodeList.innerHTML = '';
-
-    if (nodes.length === 0) {
+    const searchInput = Elem.byId('connectModalSearchBar').value.trim();
+    const searchTerm = (searchInput.length > 0 ? searchInput : originNode.getTitle());
+    const nodes = nodesForSearchTerm(searchTerm, maxNodes);
+    if (nodes.length < 1) {
         nodeList.innerHTML = '<li>No notes found.</li>';
         return;
     }
 
+    nodeList.innerHTML = '';
     nodes.forEach(node => {
-        if (node !== originNode) {
-            const li = document.createElement('li');
-            const title = node.getTitle().trim() || 'Untitled'; // Check for empty title and set to 'Untitled'
-            li.textContent = title;
-            li.className = findExistingEdge(node, originNode) ? 'connected' : 'disconnected';
-            li.onclick = () => {
-                const connected = handleConnectOrRemove(node, originNode);
-                updateUIAfterConnectionChange(li, connected);
-            };
-            nodeList.appendChild(li);
+        if (node === originNode) return;
+
+        const li = document.createElement('li');
+        li.textContent = node.getTitle().trim() || 'Untitled';
+        li.className = (findExistingEdge(node, originNode) ? 'connected' : 'disconnected');
+        li.onclick = function onClick(){
+            const existingEdge = findExistingEdge(node, originNode);
+            if (!existingEdge) {
+                connectNodes(node, originNode);
+                li.className = 'connected';
+                return;
+            }
+
+            if (node.isTextNode && originNode.isTextNode) {
+                removeEdgeFromAllInstances(node.getTitle(), originNode.getTitle());
+            } else {
+                existingEdge.remove();
+            }
+            li.className = 'disconnected';
         }
+        nodeList.appendChild(li);
     });
-}
-function updateUIAfterConnectionChange(li, connected) {
-    if (connected) {
-        li.className = 'connected';
-    } else {
-        li.className = 'disconnected';
-    }
-}
-
-
-function handleConnectOrRemove(node, originNode) {
-    const existingEdge = findExistingEdge(node, originNode);
-
-    if (existingEdge) {
-        if (node.isTextNode && originNode.isTextNode) {
-            removeEdgeFromAllInstances(node.getTitle(), originNode.getTitle());
-        } else {
-            existingEdge.remove();
-        }
-        return false; // Indicates the connection was removed
-    } else {
-        connectNodes(node, originNode);
-        return true; // Indicates a connection was added
-    }
 }

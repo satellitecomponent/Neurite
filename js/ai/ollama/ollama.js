@@ -1,238 +1,224 @@
-﻿
-async function ollamaSelectOnPageLoad() {
-    const select = document.getElementById('local-model-select');
-    const openModalButton = document.getElementById('openOllamaModalButton');
+﻿const Ollama = {
+    baseUrl: 'http://127.0.0.1:11434/api/',
+    curInstalledNames: new Map(),
+    defaultModels: [],
+    library: null
+};
 
-    await refreshOllamaModelList(select);
-    restoreSelectSelectedValue(select.id);
-    updateSelectedOptionDisplay(select);
+Ollama.selectOnPageLoad = async function(){
+    const select = Elem.byId('local-model-select');
 
-    openModalButton.addEventListener('click', async () => {
-        openModal('ollamaManagerModal');
-        await refreshOllamaModal();
+    await Ollama.refreshModelList();
+    Select.restoreSelectedValue(select);
+    Select.updateSelectedOption(select);
+
+    Elem.byId('openOllamaModalButton').addEventListener('click', ()=>{
+        Modal.open('ollamaManagerModal');
+        Ollama.refreshModal();
     });
 
-    select.addEventListener('change', function () {
-        // Store the selected value on change
-        storeSelectSelectedValue(select.id);
-    });
+    const onChange = Select.storeSelectedValue.bind(Select, select.id);
+    select.addEventListener('change', onChange);
 }
 
-function updateOllamaDropdownOptions(select, tags) {
+Ollama.updateDropdownOptions = function(select, tags){
     // Clear existing options
     while (select.firstChild) {
         select.removeChild(select.firstChild);
     }
 
-    // Add new options using addOptionToCustomDropdown
     tags.forEach(tag => {
-        const displayText = tag.name;
-        addOptionToCustomDropdown(select, { text: displayText, value: tag.model });
-        updateSelectedOptionDisplay(select);
+        CustomDropdown.addOption(select, tag.name, tag.model);
+        Select.updateSelectedOption(select);
     });
 }
 
-async function refreshOllamaModelList(select) {
+Ollama.refreshModelList = async function(){
     const tags = await receiveOllamaModelList();
-    updateOllamaDropdownOptions(select, tags);
-    refreshCustomDropdownDisplay(select);
+    const select = Elem.byId('local-model-select');
+    Ollama.updateDropdownOptions(select, tags);
+    CustomDropdown.refreshDisplay(select);
 }
 
-async function refreshOllamaModal() {
-    // Assuming `local-model-select` is the id of the dropdown inside the modal
-    const selectId = 'local-model-select';
-
-    // Store the selected value before refreshing
-    storeSelectSelectedValue(selectId);
+Ollama.refreshModal = async function(){
+    Select.storeSelectedValue('local-model-select');
 
     const tags = await receiveOllamaModelList();
-    const availableModels = await getAvailableModels();
-    const allModels = mergeModelLists(availableModels, tags);
-    populateOllamaModal(allModels);
-}
+    const ct = new Ollama.ctAvailableModels(tags);
+    if (!Ollama.library) Ollama.library = await getOllamaLibrary();
+    Ollama.forEachNameAndTitleInLibrary(Ollama.library, ct.pushModelByNameAndTitle, ct);
 
-
-async function getAvailableModels() {
-    if (!ollamaLibrary) {
-        ollamaLibrary = await getOllamaLibrary();
+    const ollamaModelList = Elem.byId('ollamaModelList');
+    if (!ollamaModelList) {
+        console.error('ollamaModelList element not found');
+        return;
     }
 
-    const cleanedModels = [];
-
-    ollamaLibrary.forEach(model => {
+    const list = new Ollama.ModelList(ollamaModelList);
+    list.populate(ct.availableModels);
+}
+Ollama.forEachNameAndTitleInLibrary = function(library, cb, ct){
+    library.forEach(model => {
         const lines = model.name.split('\n').map(line => line.trim());
         const name = lines[0];
         const description = lines.find(line => line.length > 0 && line !== name);
         const sizes = lines.filter(line => /^\d+[Bb]$/.test(line)).map(size => size.toLowerCase());
 
         if (sizes.length === 0) {
-            cleanedModels.push({
-                name: name,
-                title: description || ''
-            });
+            cb.call(ct, name, description)
         } else if (sizes.length === 1) {
-            cleanedModels.push({
-                name: name,
-                title: description || ''
-            });
+            cb.call(ct, name, description)
         } else {
             const minSize = Math.min(...sizes.map(size => parseInt(size)));
             sizes.forEach(size => {
-                if (parseInt(size) === minSize) {
-                    cleanedModels.push({
-                        name: name,
-                        title: description || ''
-                    });
-                } else {
-                    cleanedModels.push({
-                        name: `${name}:${size}`,
-                        title: description || ''
-                    });
-                }
+                const key = (parseInt(size) === minSize) ? name : (name + ':' + size);
+                cb.call(ct, key, description);
             });
         }
     });
-
-    return cleanedModels;
+}
+Ollama.ctAvailableModels = class {
+    constructor(installedModels){
+        this.availableModels = [];
+        this.installedModelNames = installedModels.map(model => model.name);
+    }
+    pushModelByNameAndTitle(name, title = ''){
+        this.availableModels.push({
+            name,
+            title,
+            installed: this.installedModelNames.includes(name)
+        })
+    }
 }
 
-function mergeModelLists(availableModels, installedModels) {
-    const installedModelNames = installedModels.map(model => model.name);
-    return availableModels.map(model => ({
-        ...model,
-        installed: installedModelNames.includes(model.name)
-    }));
+Ollama.ModelList = class {
+    constructor(divList){
+        this.divList = divList;
+    }
+    populate(models){
+        this.divList.innerHTML = ''; // Clear the existing list
+        models.forEach(this.appendModel, this);
+    }
+    appendModel(model){
+        const listItem = new Ollama.ModelListItem(model);
+        this.divList.appendChild(listItem.divItem);
+    }
 }
 
-function addOllamaDeleteButton(model, listItem) {
-    const deleteButton = document.createElement('button');
-    const select = document.getElementById('local-model-select');
-    deleteButton.textContent = 'x';
-    deleteButton.className = 'deletebuttons';
-    deleteButton.addEventListener('click', async (event) => {
-        event.stopPropagation(); // Prevent the click from triggering the list item click event
-        const success = await deleteOllamaModel(model.name);
+Ollama.ModelListItem = class {
+    constructor(model){
+        this.model = model;
+        this.progressBar = this.makeProgressBar();
+        this.modelName = this.makeModelName(model.name);
+        this.loadingIcon = this.makeLoadingIcon();
+        this.divItem = this.createDivItem(model);
+        this.init();
+    }
+    createDivItem(model){
+        const divItem = document.createElement('div');
+        divItem.className = "model-item " + (model.installed ? 'connected' : 'disconnected');
+        divItem.style.position = 'relative';
+        divItem.title = model.title; // for the tooltip
+        divItem.append(this.progressBar, this.modelName, this.loadingIcon);
+        if (model.installed) divItem.append(this.makeBtnDelete());
+        return divItem;
+    }
+    makeProgressBar(){
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        return progressBar;
+    }
+    makeModelName(name){
+        const modelName = document.createElement('div');
+        modelName.textContent = name;
+        modelName.className = 'model-name';
+        return modelName;
+    }
+    makeLoadingIcon(){
+        const loadingIcon = document.createElement('div');
+        loadingIcon.className = 'loader';
+        const style = loadingIcon.style;
+        style.display = 'none';
+        style.position = 'absolute';
+        style.right = '15px';
+        style.width = '15px';
+        style.height = '15px';
+        return loadingIcon;
+    }
+    makeBtnDelete(){
+        const btnDelete = document.createElement('button');
+        btnDelete.textContent = 'x';
+        btnDelete.className = 'deletebuttons';
+        btnDelete.addEventListener('click', this.onDelete.bind(this));
+        return btnDelete;
+    }
+    async onDelete(e){
+        e.stopPropagation();
+        const success = await Ollama.deleteModel(this.model.name);
+        if (!success) return;
+
+        this.divItem.classList.add('disconnected');
+        this.divItem.classList.remove('connected');
+        Ollama.refreshModelList();
+        Ollama.refreshModal();
+    }
+    init(){
+        this.divItem.addEventListener('click', this.onClick.bind(this));
+
+        // Restore progress bar if model is being installed
+        if (Ollama.curInstalledNames.has(this.model.name)) {
+            this.loadingIcon.style.display = 'block'; // Show the loading icon for models being installed
+            const progress = Ollama.curInstalledNames.get(this.model.name);
+            this.progressBar.style.width = `${progress}%`;
+            if (progress < 100) this.installModel();
+        }
+    }
+    onClick(){
+        const model = this.model;
+        if (!model.installed) {
+            if (!Ollama.curInstalledNames.has(model.name)) {
+                Ollama.curInstalledNames.set(model.name, 0);
+                this.loadingIcon.style.display = 'block'; // Show the loading icon when starting the installation
+                this.installModel();
+            } else {
+                console.log(`Model ${model.name} is already being installed`);
+            }
+        } else {
+            console.log(`Model ${model.name} is already installed`);
+        }
+    }
+    onProgress(progress){
+        this.progressBar.style.width = progress + '%';
+        Ollama.curInstalledNames.set(this.model.name, progress);
+    }
+    async installModel() {
+        await pullOllamaModelWithProgress(this.model.name, this.onProgress.bind(this))
+        .then(this.onAfterPullingModel.bind(this))
+    }
+    onAfterPullingModel(success){
+        const modelName = this.model.name;
         if (success) {
-            console.log(`Model ${model.name} deleted successfully`);
-            listItem.classList.add('disconnected');
-            listItem.classList.remove('connected');
-            refreshOllamaModelList(select);
-            refreshOllamaModal();
+            console.log(`Model ${modelName} installed successfully`);
+            this.divItem.classList.remove('disconnected');
+            this.divItem.classList.add('connected');
+            this.progressBar.style.width = '100%';
+            this.model.installed = true;
+            this.divItem.append(this.makeBtnDelete());
+            Ollama.curInstalledNames.delete(modelName);
+            this.loadingIcon.style.display = 'none'; // Hide the loading icon when installation is complete
+            Ollama.refreshModelList();
         } else {
-            console.error(`Failed to delete model ${model.name}`);
-        }
-    });
-    listItem.appendChild(deleteButton);
-}
-
-function populateOllamaModal(models) {
-    const select = document.getElementById('local-model-select');
-    const ollamaModelList = document.getElementById('ollamaModelList');
-    if (!ollamaModelList) {
-        console.error('ollamaModelList element not found');
-        return;
-    }
-    ollamaModelList.innerHTML = ''; // Clear the existing list
-    models.forEach(model => {
-        const listItem = createModelListItem(model, select);
-        ollamaModelList.appendChild(listItem);
-    });
-}
-
-function createModelListItem(model, select) {
-    const listItem = document.createElement('div');
-    listItem.className = `model-item ${model.installed ? 'connected' : 'disconnected'}`;
-    listItem.style.position = 'relative';
-    listItem.title = model.title; // Set the title attribute for the tooltip
-
-    // Create progress bar element
-    const progressBar = document.createElement('div');
-    progressBar.className = 'progress-bar';
-    listItem.appendChild(progressBar);
-
-    // Create model name element
-    const modelName = document.createElement('div');
-    modelName.textContent = model.name;
-    modelName.className = 'model-name';
-    listItem.appendChild(modelName);
-
-    // Create loading icon element
-    const loadingIcon = document.createElement('div');
-    loadingIcon.className = 'loader';
-    listItem.appendChild(loadingIcon);
-    loadingIcon.style.display = 'none'; // Hide the loading icon initially
-
-    // Add styles for the loading icon
-    Object.assign(loadingIcon.style, {
-        position: 'absolute',
-        right: '15px',
-        width: '15px',
-        height: '15px'
-    });
-
-    // Create delete button element if the model is installed
-    if (model.installed) {
-        addOllamaDeleteButton(model, listItem);
-    }
-
-    listItem.addEventListener('click', () => handleOllamaModelClick(model, progressBar, listItem, select, loadingIcon));
-
-    // Restore progress bar if model is being installed
-    if (ollamaCurrentInstallNamesMap.has(model.name)) {
-        loadingIcon.style.display = 'block'; // Show the loading icon for models being installed
-        const progress = ollamaCurrentInstallNamesMap.get(model.name);
-        progressBar.style.width = `${progress}%`;
-        if (progress < 100) {
-            installOllamaModelFromList(model.name, progressBar, listItem, select, loadingIcon);
+            console.error("Failed to install model " + modelName);
+            Ollama.curInstalledNames.delete(modelName);
+            this.loadingIcon.style.display = 'none'; // Hide the loading icon on installation failure
         }
     }
-
-    return listItem;
 }
-
-const ollamaCurrentInstallNamesMap = new Map();
-
-async function handleOllamaModelClick(model, progressBar, listItem, select, loadingIcon) {
-    if (!model.installed) {
-        if (!ollamaCurrentInstallNamesMap.has(model.name)) {
-            ollamaCurrentInstallNamesMap.set(model.name, 0);
-            loadingIcon.style.display = 'block'; // Show the loading icon when starting the installation
-            installOllamaModelFromList(model.name, progressBar, listItem, select, loadingIcon);
-        } else {
-            console.log(`Model ${model.name} is already being installed`);
-        }
-    } else {
-        console.log(`Model ${model.name} is already installed`);
-    }
-}
-
-async function installOllamaModelFromList(modelName, progressBar, listItem, select, loadingIcon) {
-    const success = await pullOllamaModelWithProgress(modelName, (progress) => {
-        progressBar.style.width = `${progress}%`;
-        ollamaCurrentInstallNamesMap.set(modelName, progress);
-    });
-
-    if (success) {
-        console.log(`Model ${modelName} installed successfully`);
-        listItem.classList.remove('disconnected');
-        listItem.classList.add('connected');
-        progressBar.style.width = '100%';
-        addOllamaDeleteButton({ name: modelName, installed: true }, listItem);
-        ollamaCurrentInstallNamesMap.delete(modelName);
-        loadingIcon.style.display = 'none'; // Hide the loading icon when installation is complete
-        refreshOllamaModelList(select);
-    } else {
-        console.error(`Failed to install model ${modelName}`);
-        ollamaCurrentInstallNamesMap.delete(modelName);
-        loadingIcon.style.display = 'none'; // Hide the loading icon on installation failure
-    }
-}
-
 
 
 
 // This is for the case of not using the Ai-Proxy Server. Update by copying the returned library from Ai-Proxy.
-const defaultOllamaModels = [
+Ollama.defaultModels = [
     {
         "name": "llama3\n        \n        \n\n  \n  Meta Llama 3: The most capable openly available LLM to date\n  \n  \n  \n    \n    8B\n    \n    70B\n    \n  \n  \n  \n    \n      \n        \n          \n        \n        1.3M\n        \n           Pulls\n        \n      \n    \n    \n      \n        \n          \n          \n        \n        67 Tags\n      \n    \n    \n      \n        \n      \n      Updated \n      12 days ago"
     },

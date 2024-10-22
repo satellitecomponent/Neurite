@@ -4,11 +4,9 @@
 
 class NeuralNetwork {
     constructor(neuronCounts) {
-        this.levels = [];
+        const levels = this.levels = [];
         for (let i = 0; i < neuronCounts.length - 1; i++) {
-            this.levels.push(new Level(
-                neuronCounts[i], neuronCounts[i + 1]
-            ));
+            levels.push( new Level(neuronCounts[i], neuronCounts[i + 1]) );
         }
     }
 
@@ -23,6 +21,7 @@ class NeuralNetwork {
     }
 
     static mutate(network, amount = 1) {
+        const lerp = Math.lerp;
         network.levels.forEach(level => {
             for (let i = 0; i < level.biases.length; i++) {
                 level.biases[i] = lerp(
@@ -81,11 +80,7 @@ class Level {
                 sum += level.inputs[j] * level.weights[j][i];
             }
 
-            if (sum > level.biases[i]) {
-                level.outputs[i] = 1;
-            } else {
-                level.outputs[i] = 0;
-            }
+            level.outputs[i] = (sum > level.biases[i] ? 1 : 0);
         }
 
         return level.outputs;

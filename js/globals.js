@@ -24,18 +24,34 @@ if (!RegExp.escape) {
             cuList.push(c);
         }
         //6. Let L be a String whose elements are, in order, the elements of cuList.
-        let L = cuList.join("");
+        let L = cuList.join('');
         // 7. Return L.
         return L;
     };
 }
-// Store the values of the input elements
-let modalInputValues = {};
 
-const storedInputValues = localStorage.getItem('modalInputValues');
-    if (storedInputValues) {
-        modalInputValues = JSON.parse(storedInputValues);
+
+
+class Modal {
+    static current = null;
+    static div = document.getElementById('customModal');
+    static inputValues = {};
+    static isDragging = false;
+    static mouseOffsetX = 0;
+    static mouseOffsetY = 0;
+
+    constructor(id, title, funcInit){
+        this.id = id;
+        this.title = title;
+        this.init = funcInit;
     }
+    static loadInputValues(){
+        const storedValues = localStorage.getItem('modalInputValues');
+        if (storedValues) Modal.inputValues = JSON.parse(storedValues);
+    }
+}
+Modal.loadInputValues();
+
 
 
 var controls = {
@@ -117,7 +133,7 @@ var settings = {
         hover: ["RGB(100,100,100)", "RGB(200,200,255)"],
         click: ["RGB(70,70,70)", "RGB(100,100,100)"],
         initial: ["none", "RGB(170,170,170)"],
-        focus: ["none", "RGB(200,200,255)"] // Assuming this is your focus state
+        focus: ["none", "RGB(200,200,255)"]
     },
 
     maxDist: 4,
@@ -177,8 +193,11 @@ window.addEventListener('message', function (event) {
     }
 });
 
-var nodes = [];
-var edges = [];
+const Graph = {
+    nodes: [],
+    edges: []
+};
+
 var nodeMode_v = 0;
 var nodeMode = 0;
 
@@ -189,69 +208,73 @@ var NodeUUID = 0;
 
 var nodeMap = {};
 
-// Global Processed Node Map
-let globalProcessedNodeMap = {};
+const ProcessedNodes = {
+    map: {}
+};
+ProcessedNodes.update = function(){
+    const existingUUIDs = new Set(ProcessedNodes.getUuids());
+    const tempProcessedNodeMap = {};
 
-function updateGlobalProcessedNodeMap(nodeMap) {
-    // Collect current UUIDs in globalProcessedNodeMap
-    const existingUUIDs = new Set(Object.keys(globalProcessedNodeMap));
-
-    // Reset globalProcessedNodeMap
-    let tempProcessedNodeMap = {};
-
-    // Use addNodeToGlobalProcessedMap function for each node, updating or adding new
-    for (let key in nodeMap) {
-        const node = nodeMap[key];
-        addNodeToGlobalProcessedMap(node, tempProcessedNodeMap);
-        existingUUIDs.delete(node.uuid); // Remove from set to track as 'still exists'
+    for (const uuid in nodeMap) {
+        const node = nodeMap[uuid];
+        ProcessedNodes.addNodeToMap(node, tempProcessedNodeMap);
+        existingUUIDs.delete(uuid); // Remove from set to track as 'still exists'
     }
 
     // Remove any nodes that weren't in the updated nodeMap (stale nodes)
-    existingUUIDs.forEach(uuid => {
-        removeNodeFromGlobalProcessedMap(uuid);
-    });
-
-    // Update globalProcessedNodeMap after all operations to minimize state inconsistencies
-    globalProcessedNodeMap = tempProcessedNodeMap;
-
-    // Log or perform additional operations as needed
-    //console.log("Global Processed Node Map has been updated with removal of stale nodes.");
+    existingUUIDs.forEach(ProcessedNodes.removeById);
+    ProcessedNodes.map = tempProcessedNodeMap;
 }
-
-function addNodeToGlobalProcessedMap(node, processedMap) {
+ProcessedNodes.addNodeToMap = function(node, processedMap){
     const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
 
     processedMap[node.uuid] = {
         uuid: node.uuid,
-        type: getNodeType(node),
+        type: Node.getType(node),
         pos: node.pos,
         scale: node.scale,
         sensor: node.sensor,
         state: node.state,
-        actions: getNodeActions(node),
+        actions: NodeActions.forNode(node),
         edges: edgesUUIDs
     };
 }
+ProcessedNodes.filter = function(cb, ct){
+    const map = ProcessedNodes.map;
+    const foundNodes = [];
+    for (const uuid in map) {
+        if (cb.call(ct, map[uuid])) foundNodes.push(node);
+    }
+    return foundNodes;
+}
+ProcessedNodes.getById = function(nodeUuid){
+    return ProcessedNodes.map[nodeUuid]
+}
+ProcessedNodes.getByNode = function(node){
+    return ProcessedNodes.getById(node.uuid)
+}
+ProcessedNodes.getUuids = function(){
+    return Object.keys(ProcessedNodes.map)
+}
+ProcessedNodes.removeById = function(nodeUuid){
+    const map = ProcessedNodes.map;
 
-function removeNodeFromGlobalProcessedMap(nodeUuid) {
-    // First, remove the node's UUID from the edges of all other nodes
-    Object.values(globalProcessedNodeMap).forEach(node => {
+    // remove the node's UUID from the edges of all other nodes
+    for (const uuid in map) {
+        const node = map[uuid];
         node.edges = node.edges.filter(edgeUuid => edgeUuid !== nodeUuid);
-    });
+    }
 
-    // Then, remove the node itself from the map
-    delete globalProcessedNodeMap[nodeUuid];
-
-    // Log or additional operations can be performed here
+    delete map[nodeUuid];
 }
 
 
 var draggedNode = null;
 var mousedownNode = undefined;
 
-let htmlnodes_parent = document.getElementById("nodes");
+let htmlnodes_parent = Elem.byId('nodes');
 let htmlnodes = htmlnodes_parent.children;
-let htmledges = document.getElementById("edges");
+let htmledges = Elem.byId('edges');
 
 //Zettelkasten
 
@@ -261,46 +284,39 @@ let restoreZettelkastenEvent = false;
 
 let bypassZettelkasten = false;
 
-var nodeTagInput;
-var refTagInput;
+const Tag = {
+    node: Modal.inputValues['node-tag'] || "##",
+    ref: Modal.inputValues['ref-tag'] || "[["
+}
+Tag.initializeInputs = function(){
+    const nodeTagInput = Elem.byId('node-tag');
+    const refTagInput = Elem.byId('ref-tag');
+    if (!nodeTagInput || !refTagInput) return;
 
-// Globally available variables for the tags
-var nodeTag = modalInputValues['node-tag'] || "##";
-var refTag = modalInputValues['ref-tag'] || "[[";
+    nodeTagInput.value = Tag.node;
+    refTagInput.value = Tag.ref;
+    nodeTagInput.addEventListener('input', function () {
+        const nodeTag = nodeTagInput.value.trim();
+        Tag.node = (nodeTag === '' ? ' ' : nodeTag);
 
-function initializeTagInputs() {
-    var nodeTagInput = document.getElementById('node-tag');
-    var refTagInput = document.getElementById('ref-tag');
-    if (nodeTagInput && refTagInput) {
-        nodeTagInput.value = nodeTag; // Set the current value
-        refTagInput.value = refTag; // Set the current value
-        nodeTagInput.addEventListener('input', function () {
-            nodeTag = nodeTagInput.value.trim();
-            if (nodeTag === '') {
-                nodeTag = ' ';
-            }
-            updateNodeTitleRegex();  // Update the regex with the new nodeTag
-            updateAllZetMirrorModes();
-            updateAllZettelkastenProcessors();
-        });
-        refTagInput.addEventListener('input', function () {
-            refTag = refTagInput.value.trim();
-            if (refTag === '') {
-                refTag = ' ';
-            }
-            updateAllZetMirrorModes();
-            updateAllZettelkastenProcessors();
-        });
-    }
+        updateNodeTitleRegex();  // Update the regex with the new nodeTag
+        updateAllZetMirrorModes();
+        updateAllZettelkastenProcessors();
+    });
+    refTagInput.addEventListener('input', function () {
+        const refTag = refTagInput.value.trim();
+        Tag.ref = (refTag === '' ? ' ' : refTag);
+
+        updateAllZetMirrorModes();
+        updateAllZettelkastenProcessors();
+    });
 }
 
-let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
 
 function updateNodeTitleRegex() {
-    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
 }
-
-const LLM_TAG = "AI:";
 
 const bracketsMap = {
     '(': ')',
@@ -311,7 +327,7 @@ const bracketsMap = {
     '[[': ']]',
     '{{': '}}',
     '<<': '>>',
-    '«': '»',      // Guillemet
+    'ï¿½': 'ï¿½',      // Guillemet
     '/*': '*/',
     '<!--': '-->',
     '#[': ']#',
@@ -332,27 +348,67 @@ const getClosingBracket = (openingBracket) => {
 let isBracketLinks = false;
 
 const checkBracketsMap = () => {
-    return Object.keys(bracketsMap).includes(`${tagValues.refTag}`);
+    return Object.keys(bracketsMap).includes(tagValues.refTag);
 }
 
 const tagValues = {
     get nodeTag() {
-        return nodeTag;
+        return Tag.node;
     },
     get refTag() {
-        const refValue = refTag;
+        const refValue = Tag.ref;
         isBracketLinks = Object.keys(bracketsMap).includes(refValue);
         return refValue;
     }
 };
 
+const Keys = {};
+
+const LLM_TAG = "AI:";
+
+Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) );
+
 const PROMPT_IDENTIFIER = "Prompt:";
+
+const SVG = {
+    needsRecalc: false,
+    oldRotation: 0,
+    oldZoom: 8192,
+    recenterThreshold: 0.01,
+    rezoomFactor: 8192,
+    rezoomThreshold: 0.1,
+    zoom: 8192,
+    refresh: '<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>',
+    use: {
+        pause: '<use xlink:href="#pause-icon"></use>',
+        play: '<use xlink:href="#play-icon"></use>'
+    }
+};
+SVG.pause = `<svg width="24" height="24">${SVG.use.pause}</svg>`;
+SVG.play = `<svg width="24" height="24">${SVG.use.play}</use></svg>`;
+SVG.updatePan = function(newPan){
+    this.oldPan = this.pan;
+    this.pan = newPan;
+    this.needsRecalc = true;
+}
+SVG.updateZoom = function(newZoom){
+    this.oldZoom = this.zoom;
+    this.zoom = newZoom;
+    this.needsRecalc = true;
+}
+SVG.create = document.createElementNS.bind(document, 'http://www.w3.org/2000/svg');
+SVG.create.circle = SVG.create.bind(Elem, 'circle');
+SVG.create.path = SVG.create.bind(Elem, 'path');
+SVG.create.svg = SVG.create.bind(Elem, 'svg');
+SVG.create.use = SVG.create.bind(Elem, 'use');
 
 //ai.js
 
 
 // nodedef.js ainodemessage.js
-let llmNodeCount = 0;
+const AiNode = {
+    count: 0
+};
 
 //ai.js and interface.js
 class LRUCache {
@@ -406,34 +462,25 @@ let isDraggingDragBox = false;
 
 //interface.js
 
-// Check if a string is valid JSON
-function isJSON(str) {
+String.isJson = function(str){
     try {
         JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
+        return true;
+    } catch(err){}
+    return false;
 }
+String.isUrl = function(str){
+    if (!URL.canParse(str)) return false;
 
-
-// Check if the user's message is a URL
-const isUrl = (text) => {
-    try {
-        const url = new URL(text);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-        return false;
-    }
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
 }
-
-const isIframe = (text) => {
+String.isIframe = function(str){
     try {
-        const doc = new DOMParser().parseFromString(text, "text/html");
+        const doc = new DOMParser().parseFromString(str, "text/html");
         return doc.body.childNodes[0] && doc.body.childNodes[0].nodeName.toLowerCase() === 'iframe';
-    } catch (_) {
-        return false;
-    }
+    } catch(err){}
+    return false;
 }
 
 function getIframeUrl(iframeContent) {
@@ -452,7 +499,7 @@ function cancel(event) {
 }
 
 function triggerInputEvent(elementId) {
-    document.getElementById(elementId).dispatchEvent(new Event('input'));
+    Elem.byId(elementId).dispatchEvent(new Event('input'))
 }
 
 function clearTextSelections() {
@@ -470,32 +517,43 @@ function clearTextSelections() {
     }
 }
 
-//debounce
-
+function callWithDelay(func, delay){
+    return new Promise( (resolve)=>{
+        setTimeout( ()=>{
+            func();
+            resolve();
+        }, delay)
+    })
+}
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
-        const later = () => {
+        function later(){
             clearTimeout(timeout);
             func(...args);
-        };
+        }
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
 }
 
-const debouncedTextareaUpdates = new Map();
-
-function updateTextareaAndDispatchEvent(targetTextarea, text) {
-    targetTextarea.value = text;
-    targetTextarea.dispatchEvent(new Event('change'));
+const TextArea = {
+    debouncedUpdates: new Map()
+};
+TextArea.append = function(text){
+    this.value += text;
+    this.dispatchEvent(new Event('input'));
+}
+TextArea.update = function(text) {
+    this.value = text;
+    this.dispatchEvent(new Event('change'));
     //console.log(`Event triggered`);
 }
 
-function getDebouncedTextareaUpdate(targetTextarea) {
-    if (!debouncedTextareaUpdates.has(targetTextarea)) {
-        const debouncedUpdate = debounce(updateTextareaAndDispatchEvent, 20);
-        debouncedTextareaUpdates.set(targetTextarea, debouncedUpdate);
+function getDebouncedTextareaUpdate(textarea) {
+    const debouncedUpdates = TextArea.debouncedUpdates;
+    if (!debouncedUpdates.has(textarea)) {
+        debouncedUpdates.set(textarea, debounce(TextArea.update.bind(textarea), 20));
     }
-    return debouncedTextareaUpdates.get(targetTextarea);
+    return debouncedUpdates.get(textarea);
 }

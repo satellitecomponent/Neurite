@@ -1,197 +1,181 @@
+const LinkNode = {};
 
-function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    let a = document.createElement("a");
+LinkNode.createAnchor = function(link, name){
+    const a = document.createElement('a');
     a.id = 'link-element';
-    a.setAttribute("href", link);
-    a.setAttribute("target", "_blank");
+    a.setAttribute('href', link);
+    a.setAttribute('target', "_blank");
     a.textContent = name;
     a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
+    return a;
+}
+LinkNode.createLinkWrapper = function(link, name){
+    const div = document.createElement('div');
+    div.id = 'link-wrapper';
+    div.style.width = '300px';
+    div.style.padding = '20px 0';
+    div.appendChild(LinkNode.createAnchor(link, name));
+    return div;
+}
+LinkNode.createIframeWrapper = function(){
+    const div = document.createElement('div');
+    div.id = 'iframe-wrapper';
+    const style = div.style;
+    style.padding = '10px';
+    style.width = '100%';
+    style.height = '100%';
+    style.flexGrow = '1';
+    style.flexShrink = '1';
+    style.display = 'none';
+    style.boxSizing = 'border-box';
+    return div;
+}
+LinkNode.createContentWrapper = function(link, name){
+    const div = document.createElement('div');
+    const style = div.style;
+    style.display = 'flex';
+    style.flexDirection = 'column';
+    style.alignItems = 'center';
+    style.height = '100%';
+    style.width = '100%';
+    div.append(LinkNode.createLinkWrapper(link, name),
+               LinkNode.createIframeWrapper());
+    return div;
+}
+LinkNode.create = function(link = '', name = '', text = '', sx, sy, x, y) {
+    const nodeName = link.startsWith('blob:') ? name : link;
+    const node = addNodeAtNaturalScale(nodeName, []);
 
-    let linkWrapper = document.createElement("div");
-    linkWrapper.id = 'link-wrapper';
-    linkWrapper.style.width = "300px";
-    linkWrapper.style.padding = "20px 0"; // Add vertical padding
-    linkWrapper.appendChild(a);
+    const windowDiv = node.windowDiv;
+    windowDiv.appendChild(LinkNode.createContentWrapper(link, name));
+    windowDiv.style.minWidth = '150px';
+    windowDiv.style.minHeight = '200px';
 
-    let iframeWrapper = document.createElement("div");
-    iframeWrapper.id = 'iframe-wrapper';
-    iframeWrapper.style.padding = "10px";
-    iframeWrapper.style.width = "100%";
-    iframeWrapper.style.height = "100%";
-    iframeWrapper.style.flexGrow = "1";
-    iframeWrapper.style.flexShrink = "1";
-    iframeWrapper.style.display = "none";
-    iframeWrapper.style.boxSizing = "border-box";
-
-    let contentWrapper = document.createElement("div");
-    contentWrapper.style.display = "flex";
-    contentWrapper.style.flexDirection = "column";
-    contentWrapper.style.alignItems = "center";
-    contentWrapper.style.height = "100%";
-    contentWrapper.style.width = "100%";
-
-    contentWrapper.appendChild(linkWrapper);
-    contentWrapper.appendChild(iframeWrapper);
-
-    // Determine the parameter for addNodeAtNaturalScale
-    let nodeName = link.startsWith('blob:') ? name : link;
-    let node = addNodeAtNaturalScale(nodeName, []);
-
-    let windowDiv = node.windowDiv;
-
-    windowDiv.appendChild(contentWrapper);
-    windowDiv.style.minWidth = `150px`;
-    windowDiv.style.minHeight = `200px`;
-
-    node.push_extra_cb((node) => {
-        return {
+    node.push_extra_cb( (node)=>({
             f: "textarea",
             a: {
                 p: [0, 0, 1],
                 v: node.titleInput.value
             }
-        };
-    });
-
+        })
+    );
 
     node.isLink = true;
-
-    initLinkNode(node);
-
+    LinkNode.init(node);
     return node;
 }
 
 // To-Do: Find method to refresh saves of link nodes before the save update.
 
-function initLinkNode(node) {
-    let iframeWrapper = node.content.querySelector("#iframe-wrapper");
+LinkNode.createIframe = function(wrapper){
+    const iframe = document.createElement('iframe');
+    const style = iframe.style;
+    style.width = '100%';
+    style.height = '100%';
+    style.border = 'none';
+    style.overflow = 'auto';
+    if (wrapper) wrapper.appendChild(iframe); // Append once and reuse
+    return iframe;
+}
+LinkNode.init = function(node){
+    const iframeWrapper = node.content.querySelector("#iframe-wrapper");
     node.iframeWrapper = iframeWrapper;
+    node.iframe = iframeWrapper.querySelector("iframe")
+                || LinkNode.createIframe(iframeWrapper);
 
-    let iframe = iframeWrapper.querySelector("iframe");
-    if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.setAttribute("style", "width: 100%; height: 100%; border: none; overflow: auto;");
-        iframeWrapper.appendChild(iframe); // Append once and reuse
-    }
-    node.iframe = iframe;
-
-    let link = node.content.querySelector("#link-element");
+    const link = node.content.querySelector("#link-element");
     node.link = link;
+    node.linkUrl = (link ? link.getAttribute('href') : '');
+    node.linkWrapper = node.content.querySelector("#link-wrapper");
 
-    let linkUrl = link ? link.getAttribute("href") : "";
-
-    node.linkUrl = linkUrl;
-
-    let linkWrapper = node.content.querySelector("#link-wrapper");
-    node.linkWrapper = linkWrapper;
-
-    addEventListenersToLinkNode(node)
+    LinkNode.setupLinkListeners(node);
+    LinkNode.setupSearchBarListener(node);
 }
 
-function addEventListenersToLinkNode(node) {
-    setupLinkNodeLinkListeners(node);
-    setupLinkNodeSearchBarListener(node)
+LinkNode.setupLinkListeners = function(node){
+    const a = node.link;
+
+    const onMouseOver = Elem.setBothColors.bind(a, '#888', '#1a1a1d');
+    a.addEventListener('mouseover', onMouseOver);
+
+    const onMouseOut = Elem.setBothColors.bind(a, '#bbb', '#222226');
+    a.addEventListener('mouseout', onMouseOut);
+
+    function onClick(e) {
+        e.preventDefault();
+        LinkNode.handleIframe(node);
+    }
+    a.addEventListener('click', onClick);
 }
 
-function setupLinkNodeLinkListeners(node) {
-    let a = node.link;
+LinkNode.setupSearchBarListener = function(node){
+    const titleInput = node.titleInput;
+    function onKeyPress(e){
+        if (e.key === 'Enter') {
+            e.preventDefault();
 
-    a.addEventListener('mouseover', function () {
-        this.style.color = '#888';
-        this.style.backgroundColor = '#1a1a1d'; // Change background color on hover
-    }, false);
-
-    a.addEventListener('mouseout', function () {
-        this.style.color = '#bbb';
-        this.style.backgroundColor = '#222226'; // Reset background color when mouse leaves
-    }, false);
-
-    // Overwrite click event to display the iframe
-    a.addEventListener('click', function (event) {
-        event.preventDefault(); // Prevent default link behavior
-        handleLinkNodeIframe(node.iframeWrapper, node.linkWrapper, node.linkUrl);
-    }, false);
-}
-
-function setupLinkNodeSearchBarListener(node) {
-    let titleInput = node.titleInput;
-    titleInput.addEventListener('keypress', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent default behavior
-            let inputValue = titleInput.value;
-
-            if (isUrl(inputValue)) {
-                updateIframeSrc(node.iframeWrapper, node.linkWrapper, inputValue);
+            const inputValue = titleInput.value;
+            if (String.isUrl(inputValue)) {
+                LinkNode.updateIframeSrc(node, inputValue);
                 node.linkUrl = inputValue;
-                node.link.href = inputValue; // Update the href attribute of the <a> element
-                node.link.textContent = inputValue; // Update the text content of the <a> element
+                node.link.href = inputValue;
+                node.link.textContent = inputValue;
             } else {
                 handleNaturalLanguageSearch(inputValue);
             }
         }
-    });
-}
-
-function updateIframeSrc(iframeWrapper, linkWrapper, url) {
-    // Remove existing iframe if it exists
-    while (iframeWrapper.firstChild) {
-        iframeWrapper.removeChild(iframeWrapper.firstChild);
     }
-
-    // Create a new iframe and set the src attribute
-    const iframe = document.createElement("iframe");
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.overflow = "auto";
-    iframe.setAttribute("src", url);
-
-    iframeWrapper.appendChild(iframe);
-
-    linkWrapper.style.display = "none";
-    iframeWrapper.style.display = "block";
+    titleInput.addEventListener('keypress', onKeyPress);
 }
 
-function handleLinkNodeIframe(iframeWrapper, linkWrapper, link) {
-    if (iframeWrapper.style.display === "none") {
-        updateIframeSrc(iframeWrapper, linkWrapper, link)
+LinkNode.updateIframeSrc = function(node, url){
+    const iframeWrapper = node.iframeWrapper;
+    LinkNode.removeIframe(iframeWrapper);
+
+    const iframe = LinkNode.createIframe(iframeWrapper);
+    iframe.setAttribute('src', url || node.linkUrl);
+
+    node.linkWrapper.style.display = 'none';
+    iframeWrapper.style.display = 'block';
+}
+
+LinkNode.handleIframe = function(node){
+    const iframeWrapper = node.iframeWrapper;
+    if (iframeWrapper.style.display === 'none') {
+        LinkNode.updateIframeSrc(node)
     } else {
-        linkWrapper.style.display = "block";
-        iframeWrapper.style.display = "none";
+        node.linkWrapper.style.display = 'block';
+        iframeWrapper.style.display = 'none';
     }
 }
 
-async function handleLinkNodeProxyDisplay(iframeWrapper, linkWrapper, link) {
-    // Remove existing iframe if it exists
-    while (iframeWrapper.firstChild) {
-        iframeWrapper.removeChild(iframeWrapper.firstChild);
+LinkNode.removeIframe = function(wrapper){
+    while (wrapper.firstChild) {
+        wrapper.removeChild(wrapper.firstChild);
     }
+}
 
-    if (iframeWrapper.style.display === "none" || !iframeWrapper.style.display) {
-        linkWrapper.style.display = "none";
-        iframeWrapper.style.display = "block";
+LinkNode.handleProxyDisplay = async function(node){
+    const iframeWrapper = node.iframeWrapper;
+    LinkNode.removeIframe(iframeWrapper);
 
-        try {
-            const response = await fetch('http://localhost:4000/raw-proxy?url=' + encodeURIComponent(link));
-            if (response.ok) {
-                const webpageContent = await response.text();
-                // Create a new iframe and set the srcdoc attribute
-                const iframe = document.createElement("iframe");
-                iframe.style.width = "100%";
-                iframe.style.height = "100%";
-                iframe.style.overflow = "auto";
-                iframe.setAttribute("srcdoc", webpageContent);
+    const isHidden = (iframeWrapper.style.display === 'none' || !iframeWrapper.style.display);
+    node.linkWrapper.style.display = (isHidden ? 'none' : 'block');
+    iframeWrapper.style.display = (isHidden ? 'block' : 'none');
+    if (!isHidden) return;
 
-                iframeWrapper.appendChild(iframe);
-            } else {
-                console.error('Failed to fetch webpage content:', response.statusText);
-                alert("An error occurred displaying the webpage through a proxy server. Please ensure that the extract server is running on your localhost.");
-            }
-        } catch (error) {
-            console.error('Error fetching webpage content:', error);
-            alert("An error occurred displaying the webpage. Please check your network and try again.");
-        }
+    const response = await Request.send(new LinkNode.ctDisplayProxy(node));
+    if (response) {
+        const webpageContent = await response.text();
+        const iframe = LinkNode.createIframe(iframeWrapper);
+        iframe.setAttribute('srcdoc', webpageContent);
     } else {
-        linkWrapper.style.display = "block";
-        iframeWrapper.style.display = "none";
+        alert("An error occurred displaying the webpage through a proxy server. Please ensure that the extract server is running on your localhost.");
     }
+}
+LinkNode.ctDisplayProxy = class {
+    constructor(node){
+        this.url = 'http://localhost:4000/raw-proxy?url=' + encodeURIComponent(node.linkUrl);
+    }
+    onFailure(){ return "Failed to display the webpage through a proxy server:" }
 }

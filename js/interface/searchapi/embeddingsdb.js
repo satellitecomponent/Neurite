@@ -1,126 +1,125 @@
-let embeddingsWorker;
+const Embeddings = {
+    fetchFromModel: {
+        "local-embeddings-gte-small": "fetchLocal",
+        "local-embeddings-all-MiniLM-L6-v2": "fetchLocal",
+        "mxbai-embed-large": "fetchOllama",
+        "nomic-embed-text": "fetchOllama",
+        "all-minilm": "fetchOllama",
+        "text-embedding-ada-002": "fetchOpenAI",
+        "text-embedding-3-large": "fetchOpenAI",
+        "text-embedding-3-small": "fetchOpenAI"
+    },
+    selectModel: null,
+    worker: null
+}
+
 let browserEmbeddingsInitialized = {};
 
-function initializeEmbeddingsWorker() {
-    embeddingsWorker = new Worker('embeddings.js');
+Embeddings.initializeWorker = function(){
+    Embeddings.selectModel = Elem.byId('embeddingsModelSelect');
 
-    embeddingsWorker.onmessage = function (e) {
-        if (e.data.type === 'ready') {
-            browserEmbeddingsInitialized[e.data.model] = true;
-        } else if (e.data.type === 'error') {
-            console.error('Main: Error from embeddings worker:', e.data.error);
+    const worker = Embeddings.worker = new Worker('embeddings.js');
+
+    function onMessage(e){
+        const data = e.data;
+        if (data.type === 'ready') {
+            browserEmbeddingsInitialized[data.model] = true;
+        } else { // data.type === 'error'
+            console.error('Error from embeddings worker:', data.error);
         }
-    };
+    }
 
-    embeddingsWorker.onerror = function (error) {
-        console.error('Main: Error from embeddings worker:', error);
-    };
+    worker.onmessage = onMessage;
+    worker.onerror = console.error.bind(console, "Error from embeddings worker:");
 
     // Initialize both models
-    embeddingsWorker.postMessage({ type: 'initialize', model: 'local-embeddings-gte-small' });
-    embeddingsWorker.postMessage({ type: 'initialize', model: 'local-embeddings-all-MiniLM-L6-v2' });
+    worker.postMessage({ type: 'initialize', model: 'local-embeddings-gte-small' });
+    worker.postMessage({ type: 'initialize', model: 'local-embeddings-all-MiniLM-L6-v2' });
 }
 
-// Initialize the worker when the page loads
-initializeEmbeddingsWorker();
+Embeddings.initializeWorker();
 
-async function fetchEmbeddings(text, source = null) {
-    const model = source || document.getElementById("embeddingsModelSelect").value;
+Embeddings.fetch = function(text, source){
+    const model = source || Embeddings.selectModel.value;
+    const fetch = Embeddings.fetchFromModel[model];
+    if (!fetch) return Promise.reject(new Error("Unsupported model: " + model));
 
     try {
-        switch (model) {
-            case "local-embeddings-gte-small":
-            case "local-embeddings-all-MiniLM-L6-v2":
-                return await fetchLocalEmbeddings(text, model);
+        return Embeddings[fetch](model, text)
+    } catch (err) {
+        console.error(`Error generating embeddings for model ${model}:`, err);
+        return Promise.resolve([]);
+    }
+}
 
-            case "mxbai-embed-large":
-            case "nomic-embed-text":
-            case "all-minilm":
-                return await fetchOllamaEmbeddings(model, text);
-
-            case "text-embedding-ada-002":
-            case "text-embedding-3-large":
-            case "text-embedding-3-small":
-                return await fetchOpenAIEmbeddings(model, text);
-
-            default:
-                throw new Error(`Unsupported model: ${model}`);
+Embeddings.fetchLocal = function(model, text){
+    return new Promise( (resolve, reject)=>{
+        if (!browserEmbeddingsInitialized[model]) {
+            return reject(new Error(`Embeddings worker is not initialized for ${model}.`))
         }
-    } catch (error) {
-        console.error(`Error generating embeddings for model ${model}:`, error);
-        return [];
-    }
-}
 
-async function fetchLocalEmbeddings(text, model) {
-    if (!browserEmbeddingsInitialized[model]) {
-        throw new Error(`Embeddings worker is not initialized for ${model}.`);
-    }
-    return new Promise((resolve, reject) => {
-        const messageHandler = function (e) {
-            embeddingsWorker.removeEventListener('message', messageHandler);
-            if (e.data.type === 'error') {
-                reject(new Error(e.data.error));
-            } else if (e.data.type === 'result') {
-                resolve(e.data.data);
+        const worker = Embeddings.worker;
+        function onMessage(e){
+            worker.removeEventListener('message', onMessage);
+            const data = e.data;
+            if (data.type === 'result') {
+                resolve(data.data)
+            } else { // data.type === 'error'
+                reject(new Error(data.error))
             }
-        };
-        embeddingsWorker.addEventListener('message', messageHandler);
-        embeddingsWorker.postMessage({ text: text, model: model });
-    });
+        }
+        worker.addEventListener('message', onMessage);
+        worker.postMessage({ text, model });
+    })
 }
 
-async function fetchOllamaEmbeddings(model, text) {
+Embeddings.fetchOllama = async function(model, text){
     const modelList = await receiveOllamaModelList(true);
     const isModelAvailable = modelList.some(m => m.name === model);
 
     if (!isModelAvailable) {
         const isPulled = await pullOllamaModelWithProgress(model);
         if (!isPulled) {
-            throw new Error(`Failed to pull Ollama model: ${model}`);
+            throw new Error("Failed to pull Ollama model: " + model);
         }
     }
 
     const embedding = await generateOllamaEmbedding(model, text);
     if (!embedding) {
-        throw new Error(`Failed to generate Ollama embedding for model: ${model}`);
+        throw new Error("Failed to generate Ollama embedding for model: " + model);
     }
     return embedding;
 }
 
-async function fetchOpenAIEmbeddings(model, text) {
-    const API_KEY = document.getElementById("api-key-input").value;
-    const API_URL = "https://api.openai.com/v1/embeddings";
+Embeddings.fetchOpenAI = async function(model, text){
+    const API_URL = 'https://api.openai.com/v1/embeddings';
     const headers = new Headers({
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        "Authorization": "Bearer " + Elem.byId('api-key-input').value
     });
 
     const response = await fetch(API_URL, {
-        method: "POST",
-        headers: headers,
+        method: 'POST',
+        headers,
         body: JSON.stringify({ model, input: text })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
+        throw new Error("OpenAI API error: " + JSON.stringify(data));
     }
 
-    const data = await response.json();
     return data.data[0].embedding;
 }
 
 function cosineSimilarity(vecA, vecB) {
-    if (!vecA || !vecB || vecA.length !== vecB.length) {
-        return 0;
-    }
+    if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
 
     let dotProduct = 0;
     for (let i = 0; i < vecA.length; i++) {
         dotProduct += vecA[i] * vecB[i];
     }
-
     return dotProduct;
 }
 
@@ -139,36 +138,29 @@ function initializeKeyFilters() {
     }
 }
 
-// Call this when your application starts
 initializeKeyFilters();
 
-async function getAllKeys() {
-    try {
-        const response = await fetch(`http://localhost:4000/get-keys`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const keys = await response.json();
+// Return all keys, including filtered ones
+Keys.getAll = async function(){
+    const response = await Request.send(new Keys.getAll.ct());
+    if (!response) return [];
 
-        // Return all keys, including filtered ones
-        return keys;
-    } catch (error) {
-        console.error('Error fetching keys:', error);
-        return [];
+    return await response.json();
+}
+Keys.getAll.ct = class {
+    constructor(){
+        this.url = 'http://localhost:4000/get-keys';
     }
+    onFailure(){ return "Failed to fetch keys:" }
 }
 
-function getVisibleKeys(keys) {
-    return keys.filter(key => !keyFilters.get(key));
+Keys.getVisible = function(keys){
+    return keys.filter( (key)=>(!keyFilters.get(key)) )
 }
 
-async function getRelevantKeys(userInput, recentContext = null, searchQuery, filteredKeys) {
+Keys.getRelevant = async function(userInput, recentContext = null, searchQuery, filteredKeys){
     const visibleKeys = filteredKeys;
-
-    // Early return if there are 3 or fewer keys
-    if (visibleKeys.length <= 3) {
-        return visibleKeys;
-    }
+    if (visibleKeys.length <= 3) return visibleKeys;
 
     // Use recent context or fetch the last prompts and responses if not provided
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
@@ -183,23 +175,23 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery, fil
         });
     });
 
-    let keysDisplayContent = "";
-    let indexToFileMap = {};
+    const keysDisplay = [];
+    const indexToFileMap = {};
     directoryMap.forEach((files, directory) => {
-        keysDisplayContent += `Directory: ${directory}\n`;
+        keysDisplay.push("Directory: ", directory, '\n');
         files.forEach(file => {
-            keysDisplayContent += ` ${file.index}. ${file.filename}\n`;
+            keysDisplay.push(" ", file.index, ". ", file.filename, '\n');
             indexToFileMap[file.index] = visibleKeys[file.index - 1]; // Correct index for full key
         });
     });
 
     const aiPrompt = [
         { role: "system", content: `Determine the filepaths to select. Given the User Message and Search Query "${searchQuery}", identify between ONE and THREE numbered documents from the list most relevant to this context.` },
-        { role: "system", content: `Here is the list of files:\n${keysDisplayContent}` }
+        { role: "system", content: "Here is the list of files:\n" + keysDisplay.join('') }
     ];
 
-    if (recentContext && recentContext.trim() !== "") {
-        aiPrompt.push({ role: "system", content: `The following recent conversation may provide context:\n${recentContext}` });
+    if (recentContext && recentContext.trim() !== '') {
+        aiPrompt.push({ role: "system", content: "The following recent conversation may provide context:\n" + recentContext });
     }
 
     aiPrompt.push({ role: "user", content: userInput });
@@ -216,63 +208,58 @@ async function getRelevantKeys(userInput, recentContext = null, searchQuery, fil
     const relevantKeys = relevantKeyNumbers.map(number => indexToFileMap[number]).filter(key => key !== undefined);
 
     // Return all keys if the response does not select any keys
-    if (relevantKeys.length === 0) {
-        return visibleKeys;
-    }
+    if (relevantKeys.length === 0) return visibleKeys;
 
     console.log("Selected Document Keys", relevantKeys);
     return relevantKeys;
 }
 
+Keys.fetchAndDisplayAll = function(){
+    const onError = console.error.bind(console, "(Server disconnect) Failed to fetch keys:");
+    return Keys.getAll().catch(onError).then(Keys.display);
+}
+Keys.display = function(keys){
+    const keyList = Elem.byId('key-list');
+    keyList.innerHTML = '';
+    const uniqueGitHubRepos = new Set();
+    for (const key of keys) {
+        const listItem = document.createElement('p');
+        listItem.title = key; // sets the hover text
 
+        const keyText = document.createElement('span');
+        keyText.textContent = key;
 
+        const eyeballIcon = SVG.create.svg();
+        eyeballIcon.classList.add("eyeball-icon");
+        eyeballIcon.innerHTML = `<use xlink:href="${keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol'}"></use>`;
 
-async function fetchAndDisplayAllKeys() {
-    try {
-        const keys = await getAllKeys();
-        const keyList = document.getElementById("key-list");
-        keyList.innerHTML = "";
-        const uniqueGitHubRepos = new Set();
-        for (let key of keys) {
-            const listItem = document.createElement("p");
-            listItem.title = key; // Add this line to set the hover text
+        listItem.append(keyText, eyeballIcon);
 
-            const keyText = document.createElement("span");
-            keyText.textContent = key;
-
-            const eyeballIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            eyeballIcon.classList.add("eyeball-icon");
-            eyeballIcon.innerHTML = `<use xlink:href="${keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol'}"></use>`;
-
-            listItem.appendChild(keyText);
-            listItem.appendChild(eyeballIcon);
-
-            if (isGitHubUrl(key)) {
-                const [protocol, empty, domain, owner, repo] = key.split('/');
-                const rootRepo = `${protocol}//${domain}/${owner}/${repo}`;
-                if (!uniqueGitHubRepos.has(rootRepo)) {
-                    uniqueGitHubRepos.add(rootRepo);
-                    keyList.appendChild(listItem);
-                }
-            } else {
+        if (isGitHubUrl(key)) {
+            const [protocol, empty, domain, owner, repo] = key.split('/');
+            const rootRepo = `${protocol}//${domain}/${owner}/${repo}`;
+            if (!uniqueGitHubRepos.has(rootRepo)) {
+                uniqueGitHubRepos.add(rootRepo);
                 keyList.appendChild(listItem);
             }
-
-            listItem.addEventListener("click", (event) => {
-                if (event.target !== eyeballIcon && event.target !== eyeballIcon.querySelector('use')) {
-                    event.stopPropagation();
-                    listItem.classList.toggle("selected");
-                }
-            });
-
-            eyeballIcon.addEventListener("click", (event) => {
-                event.stopPropagation();
-                toggleKeyFilter(key);
-                updateEyeballIcon(eyeballIcon, key);
-            });
+        } else {
+            keyList.appendChild(listItem);
         }
-    } catch (error) {
-        console.error(`(Server disconnect) Failed to fetch keys:`, error);
+
+        function onItemClicked(e){
+            if (e.target !== eyeballIcon && e.target !== eyeballIcon.querySelector('use')) {
+                e.stopPropagation();
+                listItem.classList.toggle("selected");
+            }
+        }
+        function onIconClicked(e){
+            e.stopPropagation();
+            toggleKeyFilter(key);
+            updateEyeballIcon(eyeballIcon, key);
+        }
+
+        listItem.addEventListener('click', onItemClicked);
+        eyeballIcon.addEventListener('click', onIconClicked);
     }
 }
 
@@ -281,58 +268,51 @@ function updateEyeballIcon(eyeballIcon, key) {
     useElement.setAttribute('xlink:href', keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol');
 }
 
-function toggleKeyFilter(key) {
-    keyFilters.set(key, !keyFilters.get(key));
-    localStorage.setItem('keyFilters', JSON.stringify(Array.from(keyFilters)));
-}
+Keys.deleteSelected = async function(){
+    const items = Elem.byId('key-list').getElementsByClassName("selected");
+    const selectedKeys = Array.from(items).map(el => el.title || el.textContent.trim());
 
-async function deleteSelectedKeys() {
-    const keyList = document.getElementById('key-list');
-    const selectedElements = Array.from(keyList.getElementsByClassName("selected"));
-    const selectedKeys = selectedElements.map(el => el.title || el.textContent.trim());
-
-    if (selectedKeys.length === 0) {
+    if (selectedKeys.length < 1) {
         alert("No keys selected for deletion.");
         return;
     }
 
-    let keysToDelete = [];
-    for (let key of selectedKeys) {
+    const keysToDelete = [];
+    for (const key of selectedKeys) {
         if (isGitHubUrl(key)) {
-            // If the selected key is a GitHub repo root, find all associated keys
-            const allKeys = await getAllKeys();
+            // find all associated keys
+            const allKeys = await Keys.getAll();
             const associatedKeys = allKeys.filter(k => k.startsWith(key));
-            keysToDelete = keysToDelete.concat(associatedKeys);
+            keysToDelete.push(...associatedKeys);
         } else {
-            // If it's not a GitHub repo, just delete the single key
             keysToDelete.push(key);
         }
     }
 
-    const confirmMessage = `Are you sure you want to delete the following keys?\n\n${keysToDelete.join('\n')}\n\nThis action cannot be undone.`;
-
+    const confirmMessage = "Are you sure you want to delete the following keys?\n\n"
+                         + keysToDelete.join('\n') + "\n\nThis action cannot be undone.";
     if (confirm(confirmMessage)) {
-        for (let key of keysToDelete) {
-            await deleteKey(key);
-        }
-        await fetchAndDisplayAllKeys();
+        await Promise.all(keysToDelete.map(Keys.deleteKey))
+        .then(Keys.fetchAndDisplayAll)
     }
 }
-
-
-async function deleteKey(key) {
-    const response = await fetch(`http://localhost:4000/delete-chunks?key=${encodeURIComponent(key)}`, {
-        method: 'DELETE'
-    });
-    if (!response.ok) {
-        console.error(`Failed to delete chunks for key ${key}:`, response.statusText);
+Keys.deleteKey = async function(key){
+    return await Request.send(new Keys.deleteKey.ct(key))
+}
+Keys.deleteKey.ct = class {
+    constructor(key){
+        this.url = 'http://localhost:4000/delete-chunks?key=' + encodeURIComponent(key);
+        this.options = {
+            method: 'DELETE'
+        };
+        this.key = key;
     }
+    onFailure(){ return `Failed to delete chunks for key ${this.key}:` }
 }
 
 function handleFileUploadVDBSelection() {
-    const fileInput = document.getElementById('fileInput');
+    const fileInput = Elem.byId('fileInput');
     fileInput.click();
-
     fileInput.onchange = uploadFileToVectorDB;
 }
 
@@ -344,153 +324,146 @@ async function processFileContent(file) {
         switch (fileType) {
             case 'application/pdf':
                 return await extractTextFromPDF(fileURL);
-            case 'text/plain':
-                return await fetchFile(fileURL);
             case 'application/json':
                 return await fetchJsonFile(fileURL);
+            case 'text/plain':
             case 'text/html':
-                return await fetchFile(fileURL);
             case 'application/xml':
             case 'text/xml':
-                return await fetchFile(fileURL);
             case 'text/csv':
-                return await fetchFile(fileURL);
+                return await fetchTextFile(fileURL);
             default:
-                console.warn(`Unsupported file type: ${fileType}`);
-                return null;
+                console.warn("Unsupported file type:", fileType);
         }
-    } catch (error) {
-        console.error(`Error processing file content: ${error}`);
-        return null;
+    } catch (err) {
+        console.error("Error processing file content:", err);
     } finally {
-        // Revoke the object URL to release memory
-        URL.revokeObjectURL(fileURL);
+        URL.revokeObjectURL(fileURL); // release memory
     }
 }
 
-// Generic fetch function for supported file types
 async function fetchFile(fileURL) {
+    const response = await fetch(fileURL);
+    if (!response.ok) throw new Error(response.statusText);
+    return response;
+}
+async function fetchTextFile(fileURL) {
     try {
-        const response = await fetch(fileURL);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch file: ${response.statusText}`);
-        }
+        const response = await fetchFile(fileURL);
         return await response.text();
-    } catch (error) {
-        console.error(`Error fetching file: ${error}`);
-        throw error;
+    } catch (err) {
+        console.error("Error fetching text file:", err);
+        throw err;
     }
 }
-
 async function fetchJsonFile(fileURL) {
     try {
-        const response = await fetch(fileURL);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch JSON file: ${response.statusText}`);
-        }
+        const response = await fetchFile(fileURL);
         return JSON.stringify(await response.json());
-    } catch (error) {
-        console.error(`Error fetching JSON file: ${error}`);
-        throw error;
+    } catch (err) {
+        console.error("Error fetching JSON file:", err);
+        throw err;
     }
 }
 
 async function uploadFileToVectorDB() {
-    const fileInput = document.getElementById('fileInput');
-    const chunkAndStoreButton = document.getElementById('chunkAndStoreButton');
-    let dotCount = 0;
+    const fileInput = Elem.byId('fileInput');
+    if (fileInput.files.length < 1) {
+        alert("Please select a file to upload");
+        return;
+    }
 
+    const btnChunkAndStore = Elem.byId('chunkAndStoreButton');
+
+    let dotCount = 0;
     const dotInterval = setInterval(() => {
         dotCount = (dotCount + 1) % 4;
-        chunkAndStoreButton.textContent = chunkAndStoreButton.textContent.replace(/\.+$/, '') + ".".repeat(dotCount);
+        btnChunkAndStore.textContent = btnChunkAndStore.textContent.replace(/\.+$/, '') + '.'.repeat(dotCount);
     }, 500);
 
     try {
-        if (fileInput.files.length === 0) {
-            alert("Please select a file to upload");
-            return;
-        }
-
         const file = fileInput.files[0];
-        chunkAndStoreButton.textContent = "Reading File";
+        btnChunkAndStore.textContent = "Reading File";
         const fileText = await processFileContent(file);
         if (!fileText) {
             alert("Failed to extract text from the file");
             return;
         }
 
-        chunkAndStoreButton.textContent = "Processing Input";
+        btnChunkAndStore.textContent = "Processing Input";
         await receiveAndStoreByType(fileText, file.name, file.name);
 
-        chunkAndStoreButton.textContent = "Upload Complete";
-    } catch (error) {
-        console.error(`Failed to process and store input:`, error);
-        chunkAndStoreButton.textContent = "Process Failed";
+        btnChunkAndStore.textContent = "Upload Complete";
+    } catch (err) {
+        console.error("Failed to process and store input:", err);
+        btnChunkAndStore.textContent = "Process Failed";
     } finally {
         clearInterval(dotInterval);
-        fileInput.value = "";
+        fileInput.value = '';
     }
 }
 
-// Extract text from PDF files using PDF.js
+// using PDF.js
 async function extractTextFromPDF(pdfLink) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.9.179/build/pdf.worker.min.js';
     const loadingTask = pdfjsLib.getDocument(pdfLink);
 
     try {
         const pdf = await loadingTask.promise;
-        let extractedText = '';
+        const extracted = [];
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            extractedText += textContent.items.map(item => item.str).join(' ');
+            extracted.push(textContent.items.map(item => item.str).join(' '));
         }
-        return extractedText;
-    } catch (error) {
-        console.error('Error extracting text from PDF:', error);
-        throw new Error('Failed to extract text from PDF');
+        return extracted.join('');
+    } catch (err) {
+        console.error("Error extracting text from PDF:", err);
+        throw new Error("Failed to extract text from PDF");
     }
 }
 
 async function fetchLinkContentText(link) {
     if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
         return await extractTextFromPDF(link);
-    } else if (isGitHubUrl(link)) {
+    }
+
+    if (isGitHubUrl(link)) {
         const details = extractGitHubRepoDetails(link);
         if (!details) {
-            console.error('Invalid GitHub URL:', link);
-            return null;
+            console.error("Invalid GitHub URL:", link);
+            return;
         }
+
         return await fetchGitHubRepoContent(details.owner, details.repo);
-    } else {
-        try {
-            const response = await fetch(`http://localhost:4000/proxy?url=${encodeURIComponent(link)}`);
-            if (!response.ok) {
-                console.error(`Failed to fetch web page content for ${link}:`, response.statusText);
-                return null;
-            }
-            const contentType = response.headers.get("content-type");
-            if (!contentType.includes("text")) {
-                console.warn(`Content type for ${link} is not text: ${contentType}`);
-                return null;
-            }
-            return await response.text();
-        } catch (error) {
-            console.error(`Failed to fetch web page content for ${link}:`, error);
-            return null;
-        }
     }
+
+    const response = Request.send(new fetchLinkContentText.ct(link));
+    if (!response) return;
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType.includes("text")) {
+        console.warn(`Content type for ${link} is not text:`, contentType);
+        return;
+    }
+
+    return await response.text();
+}
+fetchLinkContentText.ct = class {
+    constructor(link){
+        this.url = 'http://localhost:4000/proxy?url=' + encodeURIComponent(link);
+        this.link = link;
+    }
+    onFailure(){ return `Failed to fetch web page content for ${this.link}:` }
 }
 
-async function storeTextData(storageKey, text) {
-    const chunkedText = await handleChunkText(text, MAX_CHUNK_SIZE, overlapSize, storageKey);
+async function storeTextData(storageId, text) {
+    const chunkedText = await handleChunkText(text, MAX_CHUNK_SIZE, overlapSize, storageId);
+    if (chunkedText === null) return;
 
-    if (chunkedText === null) {
-        return; // Exit the function early
-    }
-    const chunkedEmbeddings = await fetchChunkedEmbeddings(chunkedText, storageKey);
-    await storeEmbeddingsAndChunksInDatabase(storageKey, chunkedText, chunkedEmbeddings);
+    const chunkedEmbeddings = await Embeddings.fetchChunked(chunkedText, storageId);
+    await storeEmbeddingsAndChunksInDatabase(storageId, chunkedText, chunkedEmbeddings);
 }
 
 async function handleNotExtractedLinks(notExtractedLinks, linkNodes) {
@@ -499,13 +472,13 @@ async function handleNotExtractedLinks(notExtractedLinks, linkNodes) {
         const title = linkInfo.key;  // This is already the correct title or URL
 
         const userConfirmed = confirm(`"${title}" is not in the vector store. Extract the content?`);
-        if (userConfirmed) {
-            const success = await extractAndStoreLinkContent(linkInfo.url, title);
-            if (success) {
-                console.log(`Successfully extracted and stored content for "${title}"`);
-            } else {
-                console.warn(`Failed to extract content for "${title}"`);
-            }
+        if (!userConfirmed) continue;
+
+        const success = await extractAndStoreLinkContent(linkInfo.url, title);
+        if (success) {
+            console.log(`Successfully extracted and stored content for "${title}"`);
+        } else {
+            console.warn(`Failed to extract content for "${title}"`);
         }
     }
 }
@@ -518,19 +491,19 @@ async function extractAndStoreLinkContent(link, title) {
         }
         await receiveAndStoreByType(extractedText, title, link);
         return true;
-    } catch (error) {
-        console.error('Error during extraction and storage:', error);
+    } catch (err) {
+        console.error("Error during extraction and storage:", err);
         alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost.");
         return false;
     }
 }
 
-
-async function receiveAndStoreByType(text, storageKey, url) {
+async function receiveAndStoreByType(text, storageId, url) {
     if (!text) {
-        console.error("No text to store for:", storageKey);
+        console.error("No text to store for:", storageId);
         return;
     }
+
     try {
         if (isGitHubUrl(url)) {
             // GitHub handling remains the same
@@ -539,25 +512,27 @@ async function receiveAndStoreByType(text, storageKey, url) {
                 console.error("Invalid GitHub URL:", url);
                 return;
             }
+
             const { owner, repo } = details;
             const path = url.split(`github.com/${owner}/${repo}/`)[1] || '';
             await storeGitHubContent(text, owner, repo, path);
         } else {
-            // Use the storageKey (which is now the title or URL) for non-GitHub URLs
-            await storeTextData(storageKey, text);
+            // Use the storageId (which is now the title or URL) for non-GitHub URLs
+            await storeTextData(storageId, text);
         }
-    } catch (error) {
-        console.error(`Error storing text for ${storageKey}:`, error);
-        removeVectorDbLoadingIndicator(storageKey);
+    } catch (err) {
+        console.error(`Error storing text for ${storageId}:`, err);
+        VectorDb.removeLoadingIndicator(storageId);
     }
 }
 
 // Vector DB
 
 async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
-    console.log(`Preparing to store embeddings and text chunks for key: ${key}`);
-    const selectedModel = document.getElementById("embeddingsModelSelect").value;
-    updateVectorDbProgressBar(key, 0);
+    console.log("Preparing to store embeddings and text chunks for key:", key);
+    const selectedModel = Embeddings.selectModel.value;
+    const updateProgressBar = VectorDb.funcUpdateProgressBarForKey(key);
+    updateProgressBar(0);
 
     try {
         // First, validate all chunks and embeddings
@@ -565,11 +540,9 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
             throw new Error("Mismatch between chunks and embeddings count");
         }
 
-        // Prepare all requests
         const requests = chunks.map((chunk, i) => {
-            const chunkKey = `${key}_chunk_${i}`;
             return {
-                key: chunkKey,
+                key: key + "_chunk_" + i,
                 embeddings: [
                     {
                         embedding: embeddings[i],
@@ -594,84 +567,78 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
                 throw new Error(`Failed to store chunk ${i} for key ${key}: ${response.statusText}`);
             }
 
-            const progress = ((i + 1) / chunks.length) * 100;
-            updateVectorDbProgressBar(key, progress);
+            const progress = 100 * (i + 1) / chunks.length;
+            updateProgressBar(progress);
         }
 
-        console.log(`Completed storing embeddings and chunks for ${key}`);
+        console.log("Completed storing embeddings and chunks for", key);
         return true;
-    } catch (error) {
-        console.error(`Failed to store chunks and embeddings for key ${key}:`, error);
-        throw error;
+    } catch (err) {
+        console.error(`Failed to store chunks and embeddings for key ${key}:`, err);
+        throw err;
     } finally {
-        updateVectorDbProgressBar(key, 100);
+        updateProgressBar(100);
         setTimeout(() => {
-            removeVectorDbLoadingIndicator(key);
-            fetchAndDisplayAllKeys();
+            VectorDb.removeLoadingIndicator(key);
+            Keys.fetchAndDisplayAll();
         }, 500);
     }
 }
 
 async function storeAdditionalEmbedding(key, source, embedding) {
-    try {
-        const response = await fetch('http://localhost:4000/store-additional-embedding', {
+    await Request.send(new storeAdditionalEmbedding.ct(key, source, embedding));
+}
+storeAdditionalEmbedding.ct = class {
+    constructor(key, source, embedding){
+        this.url = 'http://localhost:4000/store-additional-embedding';
+        this.options = {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key, source, embedding })
-        });
+        };
+    }
+    onSuccess(){ return "Additional embedding stored successfully" }
+    onFailure(){ return "Failed to store additional embedding:" }
+}
 
-        if (!response.ok) {
-            throw new Error(`Failed to store additional embedding: ${response.statusText}`);
+async function handleChunkText(text, maxLength, overlapSize, storageId, shouldConfirm = true) {
+    if (!shouldConfirm) return chunkText(text, maxLength, overlapSize);
+
+    try {
+        Modal.open('vectorDbImportConfirmModal');
+        const confirmedChunks = await setupVectorDbImportConfirmModal(text, maxLength, overlapSize, storageId);
+        return confirmedChunks;
+    } catch (err) {
+        if (err.message === "User cancelled the operation") {
+            console.log("User cancelled the chunking operation");
+            return null;
+        } else {
+            console.error("Confirmation failed:", err);
+            throw err;
         }
-
-        console.log('Additional embedding stored successfully');
-    } catch (error) {
-        console.error('Error storing additional embedding:', error);
     }
 }
 
-async function handleChunkText(text, maxLength, overlapSize, storageKey, shouldConfirm = true) {
-    if (shouldConfirm) {
-        try {
-            openModal('vectorDbImportConfirmModal');
-            const confirmedChunks = await setupVectorDbImportConfirmModal(text, maxLength, overlapSize, storageKey);
-            return confirmedChunks;
-        } catch (error) {
-            if (error.message === "User cancelled the operation") {
-                console.log('User cancelled the chunking operation');
-                return null;
-            } else {
-                console.error('Confirmation failed:', error);
-                throw error;
-            }
-        }
-    } else {
-        return chunkText(text, maxLength, overlapSize);
-    }
-}
+Embeddings.fetchChunked = async function(textChunks, key){
+    await VectorDb.openModal();
+    const updateProgressBar = VectorDb.funcUpdateProgressBarForKey(key);
+    updateProgressBar(0);
 
-async function fetchChunkedEmbeddings(textChunks, key) {
-    openModal('vectorDbModal');
-    await openVectorDbModal()
-    updateVectorDbProgressBar(key, 0); // This will create the loading indicator if it doesn't exist
     const chunkEmbeddings = [];
     for (let i = 0; i < textChunks.length; i++) {
-        const embedding = await fetchEmbeddings(textChunks[i]);
+        const embedding = await Embeddings.fetch(textChunks[i]);
         chunkEmbeddings.push(embedding);
-        const progress = ((i + 1) / textChunks.length) * 100;
-        updateVectorDbProgressBar(key, progress);
+        const progress = 100 * (i + 1) / textChunks.length;
+        updateProgressBar(progress);
     }
     return chunkEmbeddings;
 }
-
 
 function chunkText(text, maxLength, overlapSize) {
     // Modified regex to preserve punctuation and spaces
     const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g);
     if (!Array.isArray(sentences)) {
-        console.error('Failed to split text into sentences:', text);
+        console.error("Failed to split text into sentences:", text);
         return [];
     }
 
@@ -680,7 +647,6 @@ function chunkText(text, maxLength, overlapSize) {
     let currentLength = 0;
 
     sentences.forEach(sentence => {
-        // Split sentence into words
         const words = sentence.split(/\s+/);
 
         words.forEach(word => {
@@ -691,18 +657,15 @@ function chunkText(text, maxLength, overlapSize) {
                 if (currentChunk.length > 0) {
                     chunks.push(currentChunk.join(' '));
                 }
-                currentChunk = []; // Start a new chunk
+                currentChunk = [];
                 currentLength = 0;
             }
 
-            // Add word to chunk
             currentChunk.push(word);
             currentLength += wordLength;
 
-            // Handle the edge case where a single word might exceed the maxLength
             if (wordLength > maxLength) {
-                // If the current word itself exceeds maxLength, it's a special case
-                throw new Error(`Word length exceeds maxLength: ${word}`);
+                throw new Error("Word length exceeds maxLength: " + word);
             }
         });
     });
@@ -728,48 +691,37 @@ function chunkText(text, maxLength, overlapSize) {
 // Query function for outside use.
 
 async function fetchEmbeddingsForKeys(keys, source) {
-    try {
-        const response = await fetch('http://localhost:4000/fetch-embeddings-by-keys', {
+    const response = await Request.send(new fetchEmbeddingsForKeys.ct(keys, source));
+    if (!response) return [];
+
+    const selectedEmbeddings = await response.json();
+    return selectedEmbeddings.map(embedding => ({
+        key: embedding.key,
+        embedding: embedding.embedding,
+        text: embedding.text
+    }));
+}
+fetchEmbeddingsForKeys.ct = class {
+    constructor(keys, source){
+        this.url = 'http://localhost:4000/fetch-embeddings-by-keys';
+        this.options = {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ keys, source })
-        });
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.status}`);
-        }
-
-        const selectedEmbeddings = await response.json();
-
-        // Ensure that the embeddings are returned in the expected format
-        const formattedEmbeddings = selectedEmbeddings.map(embedding => ({
-            key: embedding.key,
-            embedding: embedding.embedding,
-            text: embedding.text
-        }));
-
-        return formattedEmbeddings;
-    } catch (error) {
-        console.error(`Error fetching selected embeddings: ${error.message}`);
-        console.error("Full error object:", error);
-        return [];
+        };
     }
+    onFailure(){ return "Failed to fetch selected embeddings:" }
 }
 
 async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
-    const selectedModel = document.getElementById("embeddingsModelSelect").value;
-    let relevantEmbeddings = [];
-
-    // Fetch embeddings for relevant keys or all keys
-    if (relevantKeys.length > 0) {
-        relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
-    } else {
+    if (relevantKeys.length < 1) {
         console.warn("No relevant keys provided for fetching embeddings.");
         return [];
     }
 
-    // Fetch the search query embedding once
+    const selectedModel = Embeddings.selectModel.value;
+    const fetchEmbeddings = Embeddings.fetch;
+    const relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
     const queryEmbedding = await fetchEmbeddings(searchQuery, selectedModel);
 
     // Process embeddings and calculate similarities
@@ -789,20 +741,19 @@ async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
         };
     }));
 
-    // Sort and return top N chunks
     topNChunks.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    console.log("Top N Chunks:", topNChunks.slice(0, topN));
-    return topNChunks.slice(0, topN);
+    const firstN = topNChunks.slice(0, topN);
+    console.log("Top N Chunks:", firstN);
+    return firstN;
 }
 
 // Helper function to calculate cosine similarity for a list of embeddings
 function calculateSimilarity(embeddings, queryEmbedding, source) {
     return embeddings.map(embedding => {
         const embeddingToUse = embedding[source] || embedding.embedding;
-        const similarity = cosineSimilarity(embeddingToUse, queryEmbedding);
         return {
             ...embedding,
-            similarity
+            similarity: cosineSimilarity(embeddingToUse, queryEmbedding)
         };
     });
 }

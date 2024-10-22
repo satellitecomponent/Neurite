@@ -3,7 +3,7 @@ function modulateAiNodeModel(aiNodeInference, hasImageNodes) {
 
     // Check if the local or global model is set to ollama.
     const isOllamaSelected = provider === 'ollama' ||
-        (provider === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
+        (provider === 'GLOBAL' && Elem.byId('model-select').value === 'ollama');
 
     // If image nodes are present, and ollama is not selected, use the vision model.
     if (hasImageNodes && !isOllamaSelected) {
@@ -12,7 +12,7 @@ function modulateAiNodeModel(aiNodeInference, hasImageNodes) {
         // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
         return { provider: 'ollama', model: 'LLaVA' };
     } else if (provider === 'GLOBAL') {
-        return determineGlobalModel();
+        return Ai.determineModel();
     } else {
         // Use the local model selection
         return { provider, model };

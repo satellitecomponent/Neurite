@@ -17,23 +17,17 @@ function toggleNodeMode() {
 
 function enforceCapsLockState(event) {
     const isCapsLockOn = event.getModifierState("CapsLock");
-
-    if (isCapsLockOn) {
-        nodeMode = 1;  // Ensure nodeMode is on when CapsLock is on
-    } else {
-        nodeMode = 0;  // Ensure nodeMode is off when CapsLock is off
-    }
-
+    nodeMode = (isCapsLockOn ? 1 : 0); // on : off
     toggleNodeModeState();  // Update the visual state
 }
 
-addEventListener("keydown", (event) => {
-    if (event.key === settings.nodeModeKey) {
+addEventListener('keydown', (e) => {
+    if (e.key === settings.nodeModeKey) {
         const isCapsLockMode = settings.nodeModeKey === "CapsLock";
 
         if (isCapsLockMode) {
             // Handle CapsLock-specific behavior
-            enforceCapsLockState(event);
+            enforceCapsLockState(e);
         } else if (settings.nodeModeTrigger === "down") {
             nodeMode = 1;
             toggleNodeModeState();
@@ -41,26 +35,24 @@ addEventListener("keydown", (event) => {
         } else if (settings.nodeModeTrigger === "toggle") {
             toggleNodeMode();
         }
-    } else if (event.key === "Escape") {
-        for (let n of nodes) {
-            n.followingMouse = 0;
+    } else if (e.key === 'Escape') {
+        for (const node of Graph.nodes) {
+            node.followingMouse = 0;
         }
     }
 });
 
-addEventListener("keyup", (event) => {
+addEventListener('keyup', (e) => {
     const isCapsLockMode = settings.nodeModeKey === "CapsLock";
 
     if (isCapsLockMode) {
-        // Handle CapsLock-specific behavior during keyup
-        enforceCapsLockState(event);
-    } else if (event.key === settings.nodeModeKey && settings.nodeModeTrigger === "down") {
-        if (lockedNodeMode) {
-            return;  // Don't allow deactivation of nodeMode if it's locked
-        }
+        enforceCapsLockState(e);
+    } else if (e.key === settings.nodeModeKey && settings.nodeModeTrigger === "down") {
+        if (lockedNodeMode) return;
+
         nodeMode = 0;
         toggleNodeModeState();
         autoToggleAllOverlays();
-        cancel(event);
+        cancel(e);
     }
 });
