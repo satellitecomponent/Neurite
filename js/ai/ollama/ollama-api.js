@@ -1,7 +1,7 @@
 
 async function receiveOllamaModelList(includeEmbeddingsModels = false) {
     try {
-        const response = await fetch(`${baseOllamaUrl}tags`);
+        const response = await fetch(Ollama.baseUrl + 'tags');
         if (response.ok) {
             const data = await response.json();
             let models = data.models;
@@ -56,70 +56,23 @@ async function getOllamaLibrary() {
             return models;
         } catch (error) {
             console.error('Error fetching Ollama library from proxy:', error);
-            // Use the default models when an error occurs or the request times out
-            return defaultOllamaModels;
         }
-    } else {
-        return defaultOllamaModels;
     }
-}
-
-
-async function getAvailableModels() {
-    if (!ollamaLibrary) {
-        ollamaLibrary = await getOllamaLibrary();
-    }
-
-    const cleanedModels = [];
-
-    ollamaLibrary.forEach(model => {
-        const lines = model.name.split('\n').map(line => line.trim());
-        const name = lines[0];
-        const description = lines.find(line => line.length > 0 && line !== name);
-        const sizes = lines.filter(line => /^\d+[Bb]$/.test(line)).map(size => size.toLowerCase());
-
-        if (sizes.length === 0) {
-            cleanedModels.push({
-                name: name,
-                title: description || ''
-            });
-        } else if (sizes.length === 1) {
-            cleanedModels.push({
-                name: name,
-                title: description || ''
-            });
-        } else {
-            const minSize = Math.min(...sizes.map(size => parseInt(size)));
-            sizes.forEach(size => {
-                if (parseInt(size) === minSize) {
-                    cleanedModels.push({
-                        name: name,
-                        title: description || ''
-                    });
-                } else {
-                    cleanedModels.push({
-                        name: `${name}:${size}`,
-                        title: description || ''
-                    });
-                }
-            });
-        }
-    });
-
-    return cleanedModels;
+    return Ollama.defaultModels;
 }
 
 async function pullOllamaModelWithProgress(name, onProgress) {
     try {
-        const response = await fetch(`${baseOllamaUrl}pull`, {
+        const response = await fetch(Ollama.baseUrl + 'pull', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, stream: true })
         });
 
+        const curInstalledNames = Ollama.curInstalledNames;
         if (!response.body) {
             console.error('Failed to pull model: No response body');
-            ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on failure
+            curInstalledNames.delete(name); // Remove from active downloads on failure
             return false;
         }
 
@@ -149,54 +102,50 @@ async function pullOllamaModelWithProgress(name, onProgress) {
                     if (typeof onProgress === 'function') {
                         onProgress(100);
                     }
-                    ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on success
+                    curInstalledNames.delete(name); // Remove from active downloads on success
                     return true;
                 }
             }
         }
-    } catch (error) {
-        console.error('Error pulling model:', error);
-        ollamaCurrentInstallNamesMap.delete(name); // Remove from active downloads on error
+    } catch (err) {
+        console.error('Error pulling model:', err);
+        Ollama.curInstalledNames.delete(name); // Remove from active downloads on error
         return false;
     }
 }
 
-async function deleteOllamaModel(name) {
-    try {
-        const response = await fetch(`${baseOllamaUrl}delete`, {
+Ollama.deleteModel = async function(name){
+    return await Request.send(new Ollama.deleteModel.ct(name))
+}
+Ollama.deleteModel.ct = class {
+    constructor(name){
+        this.url = Ollama.baseUrl + 'delete';
+        this.options = {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
-        });
-        if (response.ok) {
-            console.log('Model deleted successfully');
-            return true;
-        } else {
-            console.error('Failed to delete model');
-            return false;
-        }
-    } catch (error) {
-        console.error('Error deleting model:', error);
-        return false;
+        };
+        this.name = name;
     }
+    onSuccess(){ return `Model ${this.name} deleted successfully` }
+    onFailure(){ return `Failed to delete model ${this.name}:` }
 }
 
 async function generateOllamaEmbedding(model, prompt) {
-    try {
-        const response = await fetch(`${baseOllamaUrl}embeddings`, {
+    const response = await Request.send(new generateOllamaEmbedding.ct(model, prompt));
+    if (!response) return;
+
+    const data = await response.json();
+    return data.embedding;
+}
+generateOllamaEmbedding.ct = class {
+    constructor(model, prompt){
+        this.url = Ollama.baseUrl + 'delete';
+        this.options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ model, prompt })
-        });
-        if (response.ok) {
-            const data = await response.json();
-            return data.embedding;
-        } else {
-            console.error('Failed to generate embeddings');
-            return null;
-        }
-    } catch (error) {
-        console.error('Error generating embeddings:', error);
-        return null;
+        };
     }
+    onFailure(){ return "Failed to generate embeddings:" }
 }

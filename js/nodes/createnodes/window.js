@@ -1,75 +1,58 @@
 
 function windowify(title, content, pos, scale, iscale, link) {
-    let odiv = document.createElement('div');
-    let div = document.createElement('div');
-    let buttons = document.getElementById("elements").children[0];
-    let dropdown = document.querySelector('.dropdown');
-    let w = buttons.cloneNode(true);
+    const odiv = document.createElement('div');
+    const div = document.createElement('div');
+    const w = Elem.byId('elements').children[0].cloneNode(true);
     w.className = 'button-container';
 
-    // Create a header container for buttons and title input
-    let headerContainer = document.createElement('div');
+    const headerContainer = document.createElement('div');
     headerContainer.className = 'header-container';
     headerContainer.appendChild(w);
 
     div.appendChild(headerContainer);
     odiv.appendChild(div);
 
-    let innerContent = document.createElement('div');
+    const innerContent = document.createElement('div');
     innerContent.className = 'content';
-    for (let c of content) {
+    for (const c of content) {
         innerContent.appendChild(c);
     }
     div.appendChild(innerContent);
 
 
-    odiv.setAttribute("data-init", "window");
-    div.setAttribute("class", "window");
+    odiv.setAttribute('data-init', 'window');
+    div.setAttribute('class', 'window');
 
-    // Add the title input to the header container
-    let titleInput = document.createElement('input');
+    const titleInput = document.createElement('input');
     titleInput.setAttribute('type', 'text');
     titleInput.setAttribute('value', title);
     titleInput.className = 'title-input';
     headerContainer.appendChild(titleInput);
 
-    // Add resize container and handle
-    let resizeContainer = document.createElement('div');
+    const resizeContainer = document.createElement('div');
     resizeContainer.className = 'resize-container';
     div.appendChild(resizeContainer);
 
-    let resizeHandle = document.createElement('div');
+    const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle';
     resizeContainer.appendChild(resizeHandle);
 
-
-    let node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
-
+    const node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
     div.win = node;
     return rewindowify(node);
 }
 
 function initWindow(node) {
-    let headerContainer = node.content.querySelector('.header-container');
-    node.headerContainer = headerContainer;
+    node.headerContainer = node.content.querySelector('.header-container');
+    node.windowDiv = node.content.querySelector(".window");
+    node.innerContent = node.windowDiv.querySelector('.content');
+    node.dropdown = document.querySelector('.dropdown');
+    node.wrapperDivs = document.getElementsByClassName('wrapperDiv');
 
-    let windowDiv = node.content.querySelector(".window")
-    node.windowDiv = windowDiv;
-
-    let innerContent = node.windowDiv.querySelector('.content');
-    node.innerContent = innerContent;
-
-    const dropdown = document.querySelector('.dropdown');
-    node.dropdown = dropdown;
-
-    const wrapperDivs = document.getElementsByClassName('wrapperDiv');
-    node.wrapperDivs = wrapperDivs;
-
-    let resizeHandle = node.content.querySelector('.resize-handle');
+    const resizeHandle = node.content.querySelector('.resize-handle');
     setResizeEventListeners(resizeHandle, node);
 
-    let titleInput = node.content.querySelector('.title-input');
-    node.titleInput = titleInput;
+    node.titleInput = node.content.querySelector('.title-input');
 
     addWindowEventListeners(node)
 }
@@ -83,9 +66,9 @@ function addWindowEventListeners(node) {
 }
 
 function setupHeaderContainerListeners(headerContainer) {
-    headerContainer.onmousedown = function (event) {
-        if (event.getModifierState(controls.altKey.value)) {
-            cancel(event); // Prevent dragging if Alt key is pressed
+    headerContainer.onmousedown = function (e) {
+        if (e.getModifierState(controls.altKey.value)) {
+            cancel(e); // Prevent dragging if Alt key is pressed
         }
     };
 }
@@ -97,28 +80,23 @@ function setupWindowDivListeners(node) {
 
     let clickStartX, clickStartY;
 
-    windowDiv.addEventListener('mousedown', (event) => {
-        if (event.getModifierState(controls.altKey.value)) {
+    windowDiv.addEventListener('mousedown', (e) => {
+        if (e.getModifierState(controls.altKey.value)) {
             // Record the starting position of the mouse only if the Alt key is held
-            clickStartX = event.clientX;
-            clickStartY = event.clientY;
+            clickStartX = e.clientX;
+            clickStartY = e.clientY;
         }
     });
 
-    windowDiv.addEventListener('mouseup', (event) => {
-        if (event.getModifierState(controls.altKey.value)) {
-            const distanceMoved = Math.sqrt(Math.pow(event.clientX - clickStartX, 2) + Math.pow(event.clientY - clickStartY, 2));
+    windowDiv.addEventListener('mouseup', (e) => {
+        if (e.getModifierState(controls.altKey.value)) {
+            const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
             // Check if the mouse has moved more than a certain threshold
-            const dragThreshold = 10; // pixels, adjust this value as needed
-            if (distanceMoved < dragThreshold) {
-                toggleNodeSelection(node);
-            }
+            const dragThreshold = 10; // pixels
+            if (distanceMoved < dragThreshold) SelectedNodes.toggleNode(node);
         }
 
-        // Check if the right mouse button was released
-        if (event.button !== 2) {
-            hideContextMenu();
-        }
+        if (e.button !== 2) ContextMenu.hide(); // not right mouse button
     });
 
     windowDiv.addEventListener('mousedown', () => {
@@ -142,13 +120,13 @@ function setupTitleInputListeners(titleInput) {
     let isDragging = false;
     let isMouseDown = false;
 
-    titleInput.addEventListener('paste', (event) => event.stopPropagation());
+    titleInput.addEventListener('paste', Elem.stopPropagationOfEvent);
 
     titleInput.addEventListener('mousedown', () => { isMouseDown = true; });
 
-    titleInput.addEventListener('mousemove', (event) => {
+    titleInput.addEventListener('mousemove', (e) => {
         if (isMouseDown) { isDragging = true; }
-        if (isDragging && !event.getModifierState(controls.altKey.value)) {
+        if (isDragging && !e.getModifierState(controls.altKey.value)) {
             titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
         }
     });
@@ -158,7 +136,7 @@ function setupTitleInputListeners(titleInput) {
         isMouseDown = false;
     });
 
-    titleInput.addEventListener('mouseleave', () => { isDragging = false; });
+    titleInput.addEventListener('mouseleave', ()=>(isDragging = false) );
 }
 
 function setupResizeHandleListeners(node) {
@@ -168,119 +146,93 @@ function setupResizeHandleListeners(node) {
 
 
 
-
 function rewindowify(node) {
-    initWindow(node)
+    initWindow(node);
 
     node.push_extra("window");
     let w = node.content;
 
-    let del = w.querySelector("#button-delete");
-    del.classList.add('windowbutton');
+    const btnDel = w.querySelector("#button-delete");
+    btnDel.classList.add('windowbutton');
 
-    let fs = w.querySelector("#button-fullscreen");
-    fs.classList.add('windowbutton');
+    const btnFs = w.querySelector("#button-fullscreen");
+    btnFs.classList.add('windowbutton');
 
-    let col = w.querySelector("#button-collapse");
-    col.classList.add('windowbutton');
+    const btnCol = w.querySelector("#button-collapse");
+    btnCol.classList.add('windowbutton');
 
     let titleInput = node.titleInput;
 
-    function set(e, v, s = "fill") {
-        e.children[0].setAttribute("fill", settings.buttonGraphics[v][0]);
-        e.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
+    function set(btn, v, s = "fill") {
+        btn.children[0].setAttribute('fill', settings.buttonGraphics[v][0]);
+        btn.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
     }
 
-    function ui(e, cb = (() => { }), s = "fill") {
-        e.onmouseenter = (ev) => {
-            set(e, "hover", s);
+    function ui(btn, cb = ()=>{}, s = "fill") {
+        btn.onmouseenter = (e)=>set(btn, "hover", s);
+        btn.onmouseleave = (e) => {
+            const state = (titleInput.matches(':focus') ? 'focus' : 'initial');
+            set(btn, state, s);
+            btn.ready = false;
         };
-        e.onmouseleave = (ev) => {
-            // Check if title input is focused and set the state accordingly
-            if (titleInput.matches(':focus')) {
-                set(e, "focus", s);  // Use the "focus" state when title input is focused
-            } else {
-                set(e, "initial", s); // Otherwise, use the "initial" state
-            }
-            e.ready = false;
-        };
-        e.onmousedown = (ev) => {
-            set(e, "click", s);
-            e.ready = true;
-            cancel(ev);
+        btn.onmousedown = (e) => {
+            set(btn, "click", s);
+            btn.ready = true;
+            cancel(e);
         }
-        e.onmouseup = (ev) => {
-            set(e, "initial", s);
-            cancel(ev);
-            if (e.ready) {
-                cb(ev);
-            }
+        btn.onmouseup = (e) => {
+            set(btn, "initial", s);
+            cancel(e);
+            if (btn.ready) cb(e);
         }
-        e.onmouseleave();
+        btn.onmouseleave();
     }
-    ui(del, () => {
+
+    ui(btnDel, () => {
         const title = node.getTitle();
         if (prevNode === node) {
             prevNode = undefined;
-            mousePath = "";
-            svg_mousePath.setAttribute("d", "");
+            mousePath = '';
+            svg_mousePath.setAttribute('d', '');
         }
         node.remove();
-        // Delete the node from CodeMirror
-
         if (node.isTextNode) {
             nodeInfo = getZetNodeCMInstance(node)
             const parser = nodeInfo.parser;
             parser.deleteNodeByTitle(title);
         }
     });
-    ui(fs, (() => {
+
+    ui(btnFs, () => {
         node.zoom_to_fit();
         zoomTo = zoomTo.scale(1.2);
         autopilotSpeed = settings.autopilotSpeed;
         if (node.isTextNode) {
-            nodeInfo = getZetNodeCMInstance(node)
-            const { ui, paneId } = nodeInfo;
-            ui.scrollToTitle(node.getTitle());
-            zetPanes.switchPane(paneId);
-        }
-    }));
-
-    ui(col, () => toggleNodeState(node, event), "stroke");
-
-    // Add the "mouseup" event listener to the document
-    document.addEventListener('mouseup', () => {
-        if (node.followingMouse) {
-            node.stopFollowingMouse();
+            nodeInfo = getZetNodeCMInstance(node);
+            nodeInfo.ui.scrollToTitle(node.getTitle());
+            zetPanes.switchPane(nodeInfo.paneId);
         }
     });
 
-    // Function to update SVG fill or stroke color based on focus
+    ui(btnCol, ()=>toggleNodeState(node) , "stroke");
+
+    document.addEventListener('mouseup',
+        ()=>{ if (node.followingMouse) node.stopFollowingMouse() }
+    );
+
     function updateSvgStrokeColor(focused) {
-        let fillColor = focused ? settings.buttonGraphics.focus[1] : settings.buttonGraphics.initial[1];
-        let strokeColor = focused ? settings.buttonGraphics.focus[1] : settings.buttonGraphics.initial[1];
+        const fillColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
+        const strokeColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
 
-        let del = node.content.querySelector("#button-delete");
-        let fs = node.content.querySelector("#button-fullscreen");
-        let col = node.content.querySelector("#button-collapse");
-
-        del.children[1].setAttribute('fill', fillColor);
-        fs.children[1].setAttribute('fill', fillColor);
-        col.children[1].setAttribute('stroke', strokeColor);
+        node.content.querySelector("#button-delete").children[1].setAttribute('fill', fillColor);
+        node.content.querySelector("#button-fullscreen").children[1].setAttribute('fill', fillColor);
+        node.content.querySelector("#button-collapse").children[1].setAttribute('stroke', strokeColor);
     }
 
-
-    // Add focus and blur event listeners to the title input
     if (titleInput) {
-        titleInput.addEventListener('focus', function () {
-            updateSvgStrokeColor(true);
-        });
-
-        titleInput.addEventListener('blur', function () {
-            updateSvgStrokeColor(false);
-        });
+        titleInput.addEventListener('focus', updateSvgStrokeColor.bind(null, true));
+        titleInput.addEventListener('blur', updateSvgStrokeColor.bind(null, false));
     }
-
 
     return node;
 }
@@ -307,52 +259,39 @@ function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 0.5, win
 }
 
 function registernode(node) {
-    let id = nodes.length;
+    let id = Graph.nodes.length;
     let div = node.content;
     /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
     div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
     div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
     div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
-    nodes.push(node);
+    Graph.nodes.push(node);
     nodeMap[node.uuid] = node;
 }
 
 
 
-
-function extractScalingFactors(element) {
-    const rect = element.getBoundingClientRect();
+function scalingFactorsFromElem(element) {
     const style = window.getComputedStyle(element);
     const width = parseFloat(style.width);
     const height = parseFloat(style.height);
+    const isZero = (width === 0 || height === 0);
 
-    if (width === 0 || height === 0) {
-        return {
-            scaleX: 1,
-            scaleY: 1
-        };
-    }
-
-    const scaleX = rect.width / width;
-    const scaleY = rect.height / height;
-
+    const rect = element.getBoundingClientRect();
     return {
-        scaleX,
-        scaleY
+        scaleX: (isZero ? 1 : rect.width / width),
+        scaleY: (isZero ? 1 : rect.height / height)
     };
 }
 
 // impact on responsiveness?
-//addEventListener("resize", (event) => { });
-
-var isPanning = false;
+//addEventListener('resize', (e) => { });
 
 function setResizeEventListeners(resizeHandle, node) {
     const inverse2DMatrix = (matrix) => {
         const det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
-        if (det === 0) {
-            return null;
-        }
+        if (det === 0) return null;
+
         const invDet = 1 / det;
         return [
             matrix[3] * invDet,
@@ -364,9 +303,8 @@ function setResizeEventListeners(resizeHandle, node) {
 
     const getDivInverseTransformMatrix = (div) => {
         const transform = window.getComputedStyle(div).transform;
-        if (transform === 'none') {
-            return [1, 0, 0, 1];
-        }
+        if (transform === 'none') return [1, 0, 0, 1];
+
         const matrix = transform
             .split('(')[1]
             .split(')')[0]
@@ -385,22 +323,18 @@ function setResizeEventListeners(resizeHandle, node) {
 
     let isMouseMoving = false;
 
-    const handleMouseMove = (event) => {
-        if (!event.buttons) {
+    const handleMouseMove = (e) => {
+        if (!e.buttons) {
             handleMouseUp();
             return;
         }
+
         isMouseMoving = true;
 
-        // Extract scaling factors from the accumulated transform matrix
-        const {
-            scaleX,
-            scaleY
-        } = extractScalingFactors(windowDiv);
-
-        // Calculate the change in position of the mouse considering the scaling factors
-        const dx = 2 * (event.pageX - startX) / scaleX;
-        const dy = 2 * (event.pageY - startY) / scaleY;
+        // Calculate the change in position of the mouse considering the accumulated transform matrix
+        const scalingFactors = scalingFactorsFromElem(windowDiv);
+        const dx = 2 * (e.pageX - startX) / scalingFactors.scaleX;
+        const dy = 2 * (e.pageY - startY) / scalingFactors.scaleY;
 
         const content = node.innerContent;
         const minWidth = content ? content.offsetWidth + 0 : 100;
@@ -411,12 +345,12 @@ function setResizeEventListeners(resizeHandle, node) {
         windowDiv.style.width = `${newWidth}px`;
         windowDiv.style.height = `${newHeight}px`;
 
-        const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
-        if (textNodeSyntaxWrapper) {
-            textNodeSyntaxWrapper.style.flexGrow = '1';
-            textNodeSyntaxWrapper.style.minHeight = `0px`;
-            textNodeSyntaxWrapper.style.maxHeight = `100%`;
-            textNodeSyntaxWrapper.style.width = `100%`;
+        const style = node.textNodeSyntaxWrapper?.style;
+        if (style) {
+            style.flexGrow = '1';
+            style.minHeight = `0px`;
+            style.maxHeight = `100%`;
+            style.width = `100%`;
         }
 
         const htmlView = node.htmlView;
@@ -435,63 +369,53 @@ function setResizeEventListeners(resizeHandle, node) {
         if (fileTreeContainer) {
             fileTreeContainer.style.width = '100%';
         }
-
     };
 
     const handleMouseUp = () => {
         isMouseMoving = false;
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = 'auto'; // Reset the cursor style
-        // Re-enable pointer events on iframes within the node
+        document.body.style.cursor = 'auto';
         node.enableIframePointerEvents();
     };
-    resizeHandle.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        startX = event.pageX;
-        startY = event.pageY;
+    resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startX = e.pageX;
+        startY = e.pageY;
         startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
         startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
         isMouseMoving = true; // Flag to indicate that a resize operation is in progress
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
-        // Disable pointer events on iframes within the node
         node.disableIframePointerEvents();
     });
 
 }
 
 function resetWindowDivSize(windowDiv) {
-    windowDiv.style.width = 'fit-content';
-    windowDiv.style.height = 'fit-content';
-    windowDiv.style.maxWidth = 'fit-content';
-    windowDiv.style.maxHeight = 'fit-content';
+    const style = windowDiv.style;
+    style.width = 'fit-content';
+    style.height = 'fit-content';
+    style.maxWidth = 'fit-content';
+    style.maxHeight = 'fit-content';
 }
-
 
 function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
     const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-            const {
-                width,
-                height
-            } = entry.contentRect;
+        for (const entry of entries) {
+            const { width, height } = entry.contentRect;
 
-            // Find the buttonsWrapper inside windowDiv
             const buttonsWrapper = windowDiv.querySelector(".buttons-wrapper");
+            if (!buttonsWrapper) continue;
 
-            if (buttonsWrapper) {
-                // Calculate the available height for the iframes
-                let buttonsHeight = buttonsWrapper.offsetHeight || 0;
-                let iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
+            const buttonsHeight = buttonsWrapper.offsetHeight || 0;
+            const iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
 
-                // Update the width and height of iframeWrapper and displayWrapper
-                iframeWrapper.style.width = width + "px";
-                iframeWrapper.style.height = iframeHeight + "px";
-                displayWrapper.style.width = width + "px";
-                displayWrapper.style.height = iframeHeight + "px";
-            }
+            iframeWrapper.style.width = width + 'px';
+            iframeWrapper.style.height = iframeHeight + 'px';
+            displayWrapper.style.width = width + 'px';
+            displayWrapper.style.height = iframeHeight + 'px';
         }
     });
 
@@ -500,13 +424,10 @@ function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
 
 function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight = 80) {
     const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-            const {
-                width,
-                height
-            } = entry.contentRect;
-            iframe.style.width = Math.max(0, width - paddingWidth) + "px";
-            iframe.style.height = Math.max(0, height - paddingHeight) + "px";
+        for (const entry of entries) {
+            const rect = entry.contentRect;
+            iframe.style.width = Math.max(0, rect.width - paddingWidth) + 'px';
+            iframe.style.height = Math.max(0, rect.height - paddingHeight) + 'px';
         }
     });
 

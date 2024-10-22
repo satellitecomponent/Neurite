@@ -1,6 +1,5 @@
 ﻿const LATEST_LOADED_INDEX_KEY = "latest-selected"
-// Attach the neuriteSaveEvent to the save button
-document.getElementById("new-save-button").addEventListener("click", () => neuriteSaveEvent());
+Elem.byId('new-save-button').addEventListener('click', () => neuriteSaveEvent());
 
 function downloadData(title, data) {
     const blob = new Blob([data], { type: 'text/plain' });
@@ -13,40 +12,36 @@ function downloadData(title, data) {
     }, 1);
 }
 
-let selectedSaveTitle = null; // Global variable to track the selected save
-let selectedSaveIndex = null; // Global variable to track the selected save
+let selectedSaveTitle = null;
+let selectedSaveIndex = null;
 
 function updateSavedNetworks() {
-    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-    let container = document.getElementById("saved-networks-container");
+    const saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    const container = Elem.byId('saved-networks-container');
     container.innerHTML = '';
 
     for (let [index, save] of saves.entries()) {
-        let div = document.createElement("div");
+        const div = document.createElement('div');
 
-        // Add a class to the div if it's the selected save
         if (index === selectedSaveIndex) {
             div.classList.add("selected-save");
         }
-        let titleInput = document.createElement("input");
-        let data = document.createElement("span");
-        let loadButton = document.createElement("button");
-        let deleteButton = document.createElement("button");
-        let downloadButton = document.createElement("button");
-        let saveButton = document.createElement("button");
 
+        const titleInput = document.createElement("input");
         titleInput.type = "text";
         titleInput.value = save.title;
-        titleInput.style.border = "none"
-        titleInput.style.width = "100px"
+        titleInput.style.border = 'none';
+        titleInput.style.width = '100px';
         titleInput.addEventListener('change', function () {
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
         });
 
+        const data = document.createElement("span");
         data.textContent = save.data;
-        data.style.display = "none";
+        data.style.display = 'none';
 
+        const saveButton = document.createElement("button");
         saveButton.textContent = "Save";
         saveButton.className = 'linkbuttons';
         saveButton.addEventListener('click', function () {
@@ -57,7 +52,7 @@ function updateSavedNetworks() {
             neuriteSaveEvent(existingTitle = save.title)
         });
 
-
+        const loadButton = document.createElement('button');
         loadButton.textContent = "Load";
         loadButton.className = 'linkbuttons';
         loadButton.addEventListener('click', function () {
@@ -70,7 +65,7 @@ function updateSavedNetworks() {
                 localStorage.setItem(LATEST_LOADED_INDEX_KEY, selectedSaveIndex);
             }
 
-            if (data.textContent === "") {
+            if (data.textContent === '') {
                 var isSure = window.confirm("Are you sure you want an empty save?");
                 if (isSure) {
                     updateLoadState();
@@ -84,8 +79,7 @@ function updateSavedNetworks() {
             updateSavedNetworks();
         });
 
-
-
+        const deleteButton = document.createElement('button');
         deleteButton.textContent = "X";
         deleteButton.className = 'linkbuttons';
         deleteButton.addEventListener('click', function () {
@@ -98,54 +92,40 @@ function updateSavedNetworks() {
                 selectedSaveTitle = null;
             } else {
                 selectedSaveIndex = saves.findIndex(save => save.title === selectedSaveTitle) ?? null;
-
-                if (selectedSaveIndex === null) {
-                    selectedSaveTitle = null
-                }
+                if (selectedSaveIndex === null) selectedSaveTitle = null
             }
 
-            // Update local storage
             localStorage.setItem("saves", JSON.stringify(saves));
-
-            // Update the saved networks container
             updateSavedNetworks();
         });
 
+        const downloadButton = document.createElement('button');
         downloadButton.textContent = "↓";
         downloadButton.className = 'linkbuttons';
         downloadButton.addEventListener('click', function () {
-            // Create a blob from the data
-            var blob = new Blob([save.data], { type: 'text/plain' });
+            const blob = new Blob([save.data], { type: 'text/plain' });
 
-            // Create a temporary anchor and URL
-            var tempAnchor = document.createElement('a');
+            const tempAnchor = document.createElement('a');
             tempAnchor.download = save.title + '.txt';
-            tempAnchor.href = window.URL.createObjectURL(blob);
+            tempAnchor.href = URL.createObjectURL(blob);
 
-            // Simulate a click on the anchor
             tempAnchor.click();
-
-            // Clean up by revoking the object URL
-            setTimeout(function () {
-                window.URL.revokeObjectURL(tempAnchor.href);
-            }, 1);
+            setTimeout(URL.revokeObjectURL.bind(URL, tempAnchor.href), 1);
         });
 
-        div.appendChild(titleInput);
-        div.appendChild(data);
-        div.appendChild(saveButton);
-        div.appendChild(loadButton);
-        div.appendChild(downloadButton);
-        div.appendChild(deleteButton);
+        div.append(titleInput,
+                   data,
+                   saveButton,
+                   loadButton,
+                   downloadButton,
+                   deleteButton);
         container.appendChild(div);
     }
 }
 
-
-// Call updateSavedNetworks on page load to display previously saved networks
 updateSavedNetworks();
 
-let container = document.getElementById("saved-networks-container");
+let container = Elem.byId('saved-networks-container');
 
 // Prevent default drag behaviors
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -178,47 +158,46 @@ function unHighlight() {
 }
 
 function handleSavedNetworksDrop(e) {
-    let dt = e.dataTransfer;
-    let file = dt.files[0];
-
+    const file = e.dataTransfer.files[0];
     if (file && file.name.endsWith('.txt')) {
-        let reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = function (e) {
-            let content = e.target.result;
-            let title = file.name.replace('.txt', '');
-
-            try {
-                // Try saving the data to localStorage
-                let saves = JSON.parse(localStorage.getItem("saves") || "[]");
-                saves.push({ title: title, data: content });
-                localStorage.setItem("saves", JSON.stringify(saves));
-                updateSavedNetworks();
-            } catch (error) {
-                // Before loading, confirm with the user due to size limitations
-                var isSure = window.confirm("The file is too large to store. Would you like to load it anyway?");
-                if (isSure) {
-                    // Proceed with loading if the user confirms
-                    selectedSaveTitle = null;
-                    selectedSaveIndex = null;
-                    loadNet(content, true);
-                }
-            }
-        };
-    } else {
         console.log('File must be a .txt file');
+        return;
     }
+
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = function (e) {
+        const content = e.target.result;
+        const title = file.name.replace('.txt', '');
+
+        try {
+            // Try saving the data to localStorage
+            const saves = JSON.parse(localStorage.getItem("saves") || "[]");
+            saves.push({ title, data: content });
+            localStorage.setItem("saves", JSON.stringify(saves));
+            updateSavedNetworks();
+        } catch (error) {
+            // Before loading, confirm with the user due to size limitations
+            const isSure = window.confirm("The file is too large to store. Would you like to load it anyway?");
+            if (isSure) {
+                // Proceed with loading if the user confirms
+                selectedSaveTitle = null;
+                selectedSaveIndex = null;
+                loadNet(content, true);
+            }
+        }
+    };
 }
 
-document.getElementById("clear-button").addEventListener("click", function () {
-    document.getElementById("clear-sure").setAttribute("style", "display:block");
-    document.getElementById("clear-button").text = "Are you sure?";
+Elem.byId('clear-button').addEventListener('click', function () {
+    Elem.byId('clear-sure').setAttribute('style', "display:block");
+    Elem.byId('clear-button').text = "Are you sure?";
 });
-document.getElementById("clear-unsure-button").addEventListener("click", function () {
-    document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "Clear";
+Elem.byId('clear-unsure-button').addEventListener('click', function () {
+    Elem.byId('clear-sure').setAttribute('style', "display:none");
+    Elem.byId('clear-button').text = "Clear";
 });
-document.getElementById("clear-sure-button").addEventListener("click", function () {
+Elem.byId('clear-sure-button').addEventListener('click', function () {
     let createNewSave = confirm("Create a new save?");
 
     selectedSaveTitle = null;
@@ -227,16 +206,14 @@ document.getElementById("clear-sure-button").addEventListener("click", function 
     clearNet();
     zetPanes.addPane();
 
-    if (createNewSave) {
-        neuriteSaveEvent();
-    }
+    if (createNewSave) neuriteSaveEvent();
 
     updateSavedNetworks();
-    document.getElementById("clear-sure").setAttribute("style", "display:none");
-    document.getElementById("clear-button").text = "Clear";
+    Elem.byId('clear-sure').setAttribute('style', "display:none");
+    Elem.byId('clear-button').text = "Clear";
 });
 
-document.getElementById("clearLocalStorage").onclick = function () {
+Elem.byId('clearLocalStorage').onclick = function () {
     localStorage.clear();
     alert('Local storage has been cleared.');
 }
@@ -248,25 +225,25 @@ function handleSaveConfirmation(title, saveData, force = false) {
     const existingSaves = saves.filter(save => save.title === title);
 
     if (existingSaves.length > 0) {
-        let confirmMessage = existingSaves.length === 1 ?
+        const confirmMessage = existingSaves.length === 1 ?
             `A save with the title "${title}" already exists. Click 'OK' to overwrite, or 'Cancel' to create a duplicate.` :
             `${existingSaves.length} saves with the title "${title}" already exist. Click 'OK' to overwrite all, or 'Cancel' to create a duplicate.`;
 
         if (force || confirm(confirmMessage)) {
             // Overwrite logic - update all saves with the matching title
             saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
-            console.log(`Updated all saves with title: ${title}`);
+            console.log("Updated all saves with title:", title);
         } else {
             // Duplicate logic
             let newTitle = title;
             saves.push({ title: newTitle, data: saveData });
-            console.log(`Created duplicate save: ${newTitle}`);
+            console.log("Created duplicate save:", newTitle);
             title = newTitle; // Update title to reflect new save
         }
     } else {
         // Add new save
         saves.push({ title: title, data: saveData });
-        console.log(`Created new save: ${title}`);
+        console.log("Created new save:", title);
     }
 
     try {
@@ -283,23 +260,22 @@ function handleSaveConfirmation(title, saveData, force = false) {
 
 
 
-
 const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
 
 function replaceNewLinesInLLMSaveData(nodeData) {
-    let tempDiv = document.createElement('div');
+    const tempDiv = document.createElement('div');
     tempDiv.innerHTML = nodeData;
 
     tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
         try {
-            let nodeJson = JSON.parse(node.getAttribute('data-node_json'));
+            const nodeJson = JSON.parse(node.getAttribute('data-node_json'));
             if (nodeJson.isLLM) {
                 node.querySelectorAll('pre').forEach(pre => {
                     pre.innerHTML = pre.innerHTML.replace(/\n/g, NEWLINE_PLACEHOLDER);
                 });
             }
-        } catch (error) {
-            console.warn('Error parsing node JSON:', error);
+        } catch (err) {
+            console.warn("Error parsing node JSON:", err);
         }
     });
 
@@ -337,44 +313,40 @@ function collectAdditionalSaveObjects() {
 
 function restoreAdditionalSaveObjects(d) {
 
-    let savedViewsElement = d.querySelector("#saved-views");
+    const savedViewsElement = d.querySelector("#saved-views");
     if (savedViewsElement) {
         let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
         savedViews = JSON.parse(savedViewsContent);
         if (savedViews) {
-            // Update the cache
             updateSavedViewsCache();
-
             displaySavedCoordinates();
         }
         savedViewsElement.remove();
     }
 
-    let sliderValuesElement = d.querySelector("#saved-input-values");
+    const sliderValuesElement = d.querySelector("#saved-input-values");
     if (sliderValuesElement) {
         const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
         localStorage.setItem('inputValues', sliderValuesContent);
         sliderValuesElement.remove();
     }
 
-    // Restore sliders immediately after their values have been set
     restoreInputValues();
 
-    // Extract the Mandelbrot parameters and directly apply them
-    let mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
+    const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
     if (mandelbrotSaveElement) {
-        let mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
+        const mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
         neuriteSetMandelbrotCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
         mandelbrotSaveElement.remove();
     }
 
-    let fractalTypeSaveElement = d.querySelector("#fractal-type");
+    const fractalTypeSaveElement = d.querySelector("#fractal-type");
     if (fractalTypeSaveElement) {
-        const fractalSelectElement = document.getElementById('fractal-select');
-        let fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
+        const fractalSelectElement = Elem.byId('fractal-select');
+        const fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
         if (fractalType) {
             fractalSelectElement.value = fractalType;
-            updateSelectedOptionDisplay(fractalSelectElement);
+            Select.updateSelectedOption(fractalSelectElement);
             updateJuliaDisplay(fractalType);
         }
         fractalTypeSaveElement.remove();
@@ -388,42 +360,38 @@ function neuriteSaveEvent(existingTitle = null) {
         processor.processInput();
     });
 
-    nodes.forEach((node) => {
-        node.updateEdgeData();  // Update edge data
-        node.updateNodeData();  // Update node extras and other data before saving
+    Graph.nodes.forEach((node) => {
+        node.updateEdgeData();
+        node.updateNodeData();
     });
 
     // Clone the currently selected UUIDs before clearing
-    const savedSelectedNodeUUIDs = cloneSelectedUUIDs();
-
-    // Clear current selections
-    clearNodeSelection();
+    const savedSelectedNodeUUIDs = new Set(SelectedNodes.uuids);
+    SelectedNodes.clear();
 
     // Save the node data
-    let nodeData = document.getElementById("nodes").innerHTML;
+    let nodeData = Elem.byId('nodes').innerHTML;
 
-    restoreNodeSelections(savedSelectedNodeUUIDs);
+    savedSelectedNodeUUIDs.forEach(SelectedNodes.restoreNodeById);
 
-    // Replace new lines in nodeData for LLM nodes
     nodeData = replaceNewLinesInLLMSaveData(nodeData);
 
-    let zettelkastenPanesSaveElements = '';
+    const zettelkastenPanesSaveElements = [];
     window.codeMirrorInstances.forEach((instance, index) => {
-        let paneContent = instance.cmInstance.getValue();
-        let paneName = zetPanes.getPaneName(`zet-pane-${index + 1}`);
-        let paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(paneName)}" style="display:none;">${encodeURIComponent(paneContent)}</div>`;
-        zettelkastenPanesSaveElements += paneSaveElement;
+        const content = instance.getValue();
+        const name = zetPanes.getPaneName('zet-pane-' + (index + 1));
+        const paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(name)}" style="display:none;">${encodeURIComponent(content)}</div>`;
+        zettelkastenPanesSaveElements.push(paneSaveElement);
     });
 
-    let additionalSaveData = collectAdditionalSaveObjects();
-    let saveData = nodeData + zettelkastenPanesSaveElements + additionalSaveData;
+    const saveData = nodeData + zettelkastenPanesSaveElements.join('') + collectAdditionalSaveObjects();
 
-    let title = existingTitle || prompt("Enter a title for this save:");
+    const title = existingTitle || prompt("Enter a title for this save:");
 
-    let saves = JSON.parse(localStorage.getItem("saves") || "[]");
+    const saves = JSON.parse(localStorage.getItem("saves") || "[]");
     if (title) {
         // Before saving, check if we're updating an existing save
-        let indexToUpdate = saves.findIndex(save => save.title === title);
+        const indexToUpdate = saves.findIndex(save => save.title === title);
 
         if (indexToUpdate !== -1) {
             // If we're updating, set this save as the selected one
@@ -440,128 +408,110 @@ function neuriteSaveEvent(existingTitle = null) {
     }
 }
 
-for (let n of htmlnodes) {
-    let node = new Node(undefined, n, true);  // Indicate edge creation with `true`
-    registernode(node);
+for (const htmlnode of htmlnodes) {
+    registernode(new Node(undefined, htmlnode, true)) // Indicate edge creation with `true`
 }
-for (let n of nodes) {
-    n.init(nodeMap);
+for (const node of Graph.nodes) {
+    node.init(nodeMap)
 }
 
 function clearNet() {
-    clearNodeSelection()
+    SelectedNodes.clear();
 
     // Remove all edges
+    const edges = Graph.edges;
     while (edges.length > 0) {
         edges[edges.length - 1].remove();
     }
-    edgeDirectionalityMap.clear();
+    Edge.directionalityMap.clear();
 
     // Remove all nodes
+    const nodes = Graph.nodes;
     while (nodes.length > 0) {
         nodes[nodes.length - 1].remove();
     }
 
-    // Reset LLM node count
-    llmNodeCount = 0;
-
-    // Clear the CodeMirror content
+    AiNode.count = 0;
     zetPanes.resetAllPanes();
 }
 
 function loadNet(text, clobber, createEdges = true) {
-    if (clobber) {
-        clearNet();
-    }
+    if (clobber) clearNet();
 
-    let d = document.createElement("div");
-    d.innerHTML = text;
+    const div = document.createElement('div');
+    div.innerHTML = text;
 
     // Check for the previous single-tab save object
-    let zettelkastenSaveElement = d.querySelector("#zettelkasten-save");
-    if (zettelkastenSaveElement) {
-        zettelkastenSaveElement.remove();
-    }
+    const zettelSaveElem = div.querySelector("#zettelkasten-save");
+    if (zettelSaveElem) zettelSaveElem.remove();
 
     // Check for the new multi-pane save objects
-    let zettelkastenPaneSaveElements = d.querySelectorAll("[id^='zettelkasten-pane-']");
-    zettelkastenPaneSaveElements.forEach((element) => {
-        element.remove();
-    });
+    const zettelkastenPaneSaveElements = div.querySelectorAll("[id^='zettelkasten-pane-']");
+    zettelkastenPaneSaveElements.forEach(
+        (elem)=>elem.remove()
+    );
 
-    restoreAdditionalSaveObjects(d);
+    restoreAdditionalSaveObjects(div);
 
-    let newNodes = [];
-    for (let n of d.children) {
-        let node = new Node(undefined, n, true, undefined, createEdges);
+    const newNodes = [];
+    for (const child of div.children) {
+        const node = new Node(undefined, child, true, undefined, createEdges);
         newNodes.push(node);
         registernode(node);
     }
 
-    populateDirectionalityMap(d, nodeMap);
+    populateDirectionalityMap(div, nodeMap);
 
-    for (let n of newNodes) {
-        htmlnodes_parent.appendChild(n.content);
-
-        n.init(nodeMap); // Initialize the node
-
-        reconstructSavedNode(n); // Reconstruct the saved node
+    for (const node of newNodes) {
+        htmlnodes_parent.appendChild(node.content);
+        node.init(nodeMap);
+        reconstructSavedNode(node);
     }
 
-    if (zettelkastenSaveElement) {
-        let zettelkastenContent = decodeURIComponent(zettelkastenSaveElement.innerHTML);
-        zetPanes.restorePane("Zettelkasten Save", zettelkastenContent);
+    if (zettelSaveElem) {
+        const zettelContent = decodeURIComponent(zettelSaveElem.innerHTML);
+        zetPanes.restorePane("Zettelkasten Save", zettelContent);
     }
 
-    zettelkastenPaneSaveElements.forEach((element) => {
-        let paneContent = decodeURIComponent(element.innerHTML);
-        let paneName = decodeURIComponent(element.getAttribute('data-pane-name'));
-
+    zettelkastenPaneSaveElements.forEach((elem) => {
+        const paneContent = decodeURIComponent(elem.innerHTML);
+        const paneName = decodeURIComponent(elem.getAttribute('data-pane-name'));
         zetPanes.restorePane(paneName, paneContent);
     });
 }
 
 function populateDirectionalityMap(d, nodeMap) {
-    const nodes = Array.from(d.children);
-    nodes.forEach(nodeElement => {
-        if (nodeElement.hasAttribute('data-edges')) {
-            const edgesData = JSON.parse(nodeElement.getAttribute('data-edges'));
-            edgesData.forEach(edgeData => {
-                const edgeKey = edgeData.edgeKey;
-                if (!edgeDirectionalityMap.has(edgeKey)) {
-                    edgeDirectionalityMap.set(edgeKey, {
-                        start: nodeMap[edgeData.directionality.start],
-                        end: nodeMap[edgeData.directionality.end]
-                    });
-                }
+    Array.from(d.children).forEach(nodeElement => {
+        if (!nodeElement.hasAttribute('data-edges')) return;
+
+        const edgesData = JSON.parse(nodeElement.getAttribute('data-edges'));
+        edgesData.forEach(edgeData => {
+            const edgeKey = edgeData.edgeKey;
+            if (Edge.directionalityMap.has(edgeKey)) return;
+
+            Edge.directionalityMap.set(edgeKey, {
+                start: nodeMap[edgeData.directionality.start],
+                end: nodeMap[edgeData.directionality.end]
             });
-        }
+        });
     });
 }
 
 function reconstructSavedNode(node) {
-
-    if (node.isTextNode) {
-        initTextNode(node)
-    }
+    if (node.isTextNode) TextNode.init(node);
 
     if (node.isLLM) {
-        initAiNode(node);
+        AiNode.init(node);
         restoreNewLinesInPreElements(node.aiResponseDiv);
     }
 
-    if (node.isLink) {
-        initLinkNode(node);
-    }
-
-    if (node.isFileTree) {
-        initFileTreeNode(node);
-    }
+    if (node.isLink) LinkNode.init(node);
+    if (node.isFileTree) initFileTreeNode(node);
 
     node.sensor = new NodeSensor(node, 3);
 }
 
-const autosaveEnabledCheckbox = document.getElementById("autosave-enabled");
+const autosaveEnabledCheckbox = Elem.byId('autosave-enabled');
 
 function autosave() {
     if (selectedSaveTitle !== null && autosaveEnabledCheckbox.checked) {
@@ -578,7 +528,7 @@ function initializeSaveNetworks() {
         fetch(`/wiki/pages/neurite-wikis/${stateFromURL}.txt`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
+                    throw new Error("Network response was not ok " + response.statusText);
                 }
                 return response.text();
             })
@@ -589,8 +539,8 @@ function initializeSaveNetworks() {
                 updateSavedNetworks();
             })
             .catch(error => {
-                console.error('Failed to load state from file:', error);
-                displayErrorMessage('Failed to load the requested network state.');
+                console.error("Failed to load state from file:", error);
+                displayErrorMessage("Failed to load the requested network state.");
             });
     } else {
         // Load from local storage if no state provided in URL
@@ -616,11 +566,10 @@ function initializeSaveNetworks() {
         autosaveEnabledCheckbox.checked = autosaveEnabled === "true"; // Ensure it loads as a boolean
 
         // Save state when the checkbox is toggled
-        autosaveEnabledCheckbox.addEventListener("change", (e) => {
+        autosaveEnabledCheckbox.addEventListener('change', (e) => {
             localStorage.setItem("autosave-enabled", e.target.checked);
         });
 
-        // Set up autosave at intervals
         setInterval(autosave, 8000);
     }
 }

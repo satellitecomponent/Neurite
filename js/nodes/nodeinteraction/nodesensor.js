@@ -6,7 +6,7 @@ class NodeSensor {
 
         this.searchRadius = 1;
 
-        this.sensorDataCanvas = document.getElementById('sensorData');
+        this.sensorDataCanvas = Elem.byId('sensorData');
 
         this.nearbyNodes = [];
 
@@ -16,12 +16,6 @@ class NodeSensor {
         this.extendedSearchPosition = null;
         this.extendedSearchRadius = null;
         this.farthestNodeInfo = null;  // Storing the farthest node info
-    }
-
-
-    processNodeMap(nodeMap) {
-        // Use the global function to update the global map
-        updateGlobalProcessedNodeMap(nodeMap);
     }
 
     // Method to calculate the distance considering scale as a proportional factor
@@ -46,23 +40,18 @@ class NodeSensor {
     }
 
     isWithinRange(node, radius) {
-        const distance = this.getDistance(node);
-        return distance <= radius;
+        return this.getDistance(node) <= radius
     }
 
     findNearbyNodes(radius) {
-        let foundNodes = [];
-        for (let key in globalProcessedNodeMap) {
-            const node = globalProcessedNodeMap[key];
-            if (this.isWithinRange(node, radius) && node.uuid !== this.originNode.uuid) {
-                foundNodes.push(node);
-            }
-        }
-        return foundNodes;
+        const originUuid = this.originNode.uuid;
+        return ProcessedNodes.filter( (node)=>{
+            return uuid !== originUuid && this.isWithinRange(node, radius)
+        });
     }
 
     update(nodeMap) {
-        this.processNodeMap(nodeMap);
+        ProcessedNodes.update();
         this.nearbyNodes = [];
 
         // Determine if total nodes are fewer than maxNodeCount
@@ -71,7 +60,7 @@ class NodeSensor {
         } else {
             let searchComplete = false;
             while (!searchComplete) {
-                let potentialNearbyNodes = this.findNearbyNodes(this.searchRadius);
+                const potentialNearbyNodes = this.findNearbyNodes(this.searchRadius);
 
                 if (potentialNearbyNodes.length >= this.maxNodeCount) {
                     this.nearbyNodes = potentialNearbyNodes
@@ -90,19 +79,11 @@ class NodeSensor {
         this.farthestNodeInfo = this.findFarthestNodePosition();
 
         if (this.farthestNodeInfo) {
-            // Calculate the vector from the origin node to the farthest node
-            let vectorToFarthestNode = this.farthestNodeInfo.position.minus(this.originNode.pos);
-
-            // Normalize this vector
-            let normalizedVector = vectorToFarthestNode.normed();
-
-            // Extend the vector by a factor that accounts for the scale of the origin node
-            let extendedVector = normalizedVector.scale(this.extendedRadiusFactor * this.originNode.scale);
-
-            // Add this extended vector to the farthest node's position to get the extended position
+            const vectorToFarthestNode = this.farthestNodeInfo.position.minus(this.originNode.pos);
+            const normalizedVector = vectorToFarthestNode.normed();
+            const extendedVector = normalizedVector.scale(this.extendedRadiusFactor * this.originNode.scale);
             this.extendedSearchPosition = this.farthestNodeInfo.position.plus(extendedVector);
 
-            // Calculate the extended search radius
             this.extendedSearchRadius = this.getDistance({
                 pos: this.extendedSearchPosition,
                 scale: this.originNode.scale
@@ -127,7 +108,7 @@ class NodeSensor {
 
         // Draw the extended search area
         //if (this.extendedSearchPosition && this.extendedSearchRadius) {
-        //    const extendedSearchArea = new SearchArea(this.originNode, this.extendedSearchPosition, this.farthestNodeInfo.scale, { stroke: "blue", fill: "none" });
+        //    const extendedSearchArea = new SearchArea(this.originNode, this.extendedSearchPosition, this.farthestNodeInfo.scale, { stroke: 'blue', fill: 'none' });
         //    extendedSearchArea.draw(this.sensorDataCanvas);
         //}
     }
@@ -147,10 +128,10 @@ class NodeSensor {
     }
 
     drawSearchArea(farthestNodeInfo) {
-        if (farthestNodeInfo) {
-            const searchArea = new SearchArea(this.originNode, farthestNodeInfo.position, farthestNodeInfo.scale);
-            searchArea.draw(this.sensorDataCanvas);
-        }
+        if (!farthestNodeInfo) return;
+
+        const searchArea = new SearchArea(this.originNode, farthestNodeInfo.position, farthestNodeInfo.scale);
+        searchArea.draw(this.sensorDataCanvas);
     }
 
     drawDetections() {
@@ -161,7 +142,7 @@ class NodeSensor {
         });
 
         this.nodesWithinExtendedRadius.forEach(nodeData => {
-            const sensorEdge = new SensorEdge(this.originNode, nodeData, { stroke: "none", fill: "blue" });
+            const sensorEdge = new SensorEdge(this.originNode, nodeData, { stroke: 'none', fill: 'blue' });
             sensorEdge.draw(this.sensorDataCanvas); // Draw within the sensor data group
         });
     }
@@ -171,21 +152,20 @@ class NodeSensor {
             this.sensorDataCanvas.removeChild(this.sensorDataCanvas.firstChild);
         }
     }
-    // Additional methods as needed...
 }
 
 
 // SearchArea class
 class SearchArea {
     constructor(originNode, farthestPoint, farthestScale, style = {
-        stroke: "red",
-        fill: "none"
+        stroke: 'red',
+        fill: 'none'
     }) {
         this.originNode = originNode;
         this.farthestPoint = farthestPoint;
         this.style = style;
-        this.style["stroke-width"] = farthestScale * 52; // Scale the stroke width
-        this.html = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        this.style['stroke-width'] = farthestScale * 52; // Scale the stroke width
+        this.html = SVG.create.circle();
         this.applyStyle();
     }
 
@@ -199,8 +179,8 @@ class SearchArea {
         if (!this.farthestPoint) return; // Do nothing if farthestPoint is not set
 
         // Transform both the origin position and farthest point for SVG rendering
-        let transformedOrigin = toSVG(this.originNode.pos);
-        let transformedFarthestPoint = toSVG(this.farthestPoint);
+        const transformedOrigin = toSVG(this.originNode.pos);
+        const transformedFarthestPoint = toSVG(this.farthestPoint);
 
         // Calculate radius as the direct distance to farthest point after transformation
         const radius = Math.sqrt(
@@ -219,13 +199,13 @@ class SearchArea {
 
 class SensorEdge {
     constructor(originNode, targetData, style = {
-        fill: "red",
-        "stroke-width": "0" // No border stroke
+        fill: 'red',
+        "stroke-width": '0' // No border stroke
     }) {
         this.originNode = originNode;
         this.targetData = targetData;
         this.style = style;
-        this.html = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        this.html = SVG.create.path();
         this.applyStyle();
     }
 
@@ -243,27 +223,26 @@ class SensorEdge {
 
     calculatePath() {
         let path = "M ";
-        let origin = toSVG(this.originNode.pos);
-        let target = toSVG(this.targetData.pos);
+        const origin = toSVG(this.originNode.pos);
+        const target = toSVG(this.targetData.pos);
 
-        let direction = target.minus(origin);
-        let normalizedDirection = direction.normed();
-        let perpendicular = normalizedDirection.rot90();
+        const normalizedDirection = target.minus(origin).normed();
+        const perpendicular = normalizedDirection.rot90();
 
         // Increase the influence of node's scale and add perspective factor
         const widthFactor = 20; // Adjust this value to increase edge thickness
         const perspectiveFactor = 1.5; // Adjust this to enhance perspective effect
 
-        let originScale = this.originNode.scale * widthFactor;
-        let targetScale = this.targetData.scale * widthFactor * perspectiveFactor;
+        const originScale = this.originNode.scale * widthFactor;
+        const targetScale = this.targetData.scale * widthFactor * perspectiveFactor;
 
-        let originPerpendicular = perpendicular.scale(originScale);
-        let targetPerpendicular = perpendicular.scale(targetScale);
+        const originPerpendicular = perpendicular.scale(originScale);
+        const targetPerpendicular = perpendicular.scale(targetScale);
 
-        let corner1 = origin.plus(originPerpendicular);
-        let corner2 = origin.minus(originPerpendicular);
-        let corner3 = target.plus(targetPerpendicular);
-        let corner4 = target.minus(targetPerpendicular);
+        const corner1 = origin.plus(originPerpendicular);
+        const corner2 = origin.minus(originPerpendicular);
+        const corner3 = target.plus(targetPerpendicular);
+        const corner4 = target.minus(targetPerpendicular);
 
         path += corner1.str() + " L " + corner3.str() + " L " + corner4.str() + " L " + corner2.str() + " Z";
 

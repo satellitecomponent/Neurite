@@ -211,24 +211,14 @@ function getSavedViews() {
 
 
 function receiveCurrentView() {
-    // Get current coordinates in standard format
     const standardCoords = neuriteGetMandelbrotCoords();
-
-    // Get current coordinates in function call format
     const functionCallFormat = neuriteGetMandelbrotCoords(true);
-
-    // Prompt user for a title for the saved view
     const title = prompt("Enter a title for the saved view:");
+    if (title === null) return null;
 
-    // Check if the user cancelled the prompt
-    if (title === null) {
-        return null; // Return null to indicate cancellation
-    }
-
-    // Return an object containing the title, standard format, and function call
     return {
-        title: title,
-        standardCoords: standardCoords,
+        title,
+        standardCoords,
         functionCall: functionCallFormat
     };
 }
@@ -253,11 +243,10 @@ function getSavedViewsFromCache() {
             return parsedViews;
         }
     }
-    // If the cached views are in the old format or don't exist, return the default views
+
     return { ...defaultSavedViews };
 }
 
-// Function to initialize saved views
 function initializeSavedViews() {
     const cachedViews = getSavedViewsFromCache();
     savedViews = cachedViews ? cachedViews : { ...defaultSavedViews };
@@ -273,85 +262,71 @@ function saveCurrentView() {
     }
 
     // Get the current fractal type from the dropdown
-    const currentFractalType = document.getElementById('fractal-select').value;
-
-    // Check if savedViews is defined for the current fractal type
+    const currentFractalType = Elem.byId('fractal-select').value;
     if (!savedViews[currentFractalType]) {
         savedViews[currentFractalType] = [];
     }
-
-    // Add the view to the savedViews array for the current fractal type
     savedViews[currentFractalType].push(view);
     console.log("View saved:", view.title);
 
-    // Update the browser cache
     updateSavedViewsCache();
-
-    // Refresh the display of saved coordinates
     displaySavedCoordinates();
 
     // Update button text temporarily
-    const saveButton = document.getElementById('saveCoordinatesBtn');
+    const saveButton = Elem.byId('saveCoordinatesBtn');
     saveButton.textContent = 'Saved!';
     setTimeout(() => saveButton.textContent = 'Save Coordinates', 500);
 }
 
-document.getElementById('fractal-select').addEventListener('change', displaySavedCoordinates);
+Elem.byId('fractal-select').addEventListener('change', displaySavedCoordinates);
+Elem.byId('saveCoordinatesBtn').addEventListener('click', saveCurrentView);
 
-document.getElementById('saveCoordinatesBtn').addEventListener('click', function () {
-    saveCurrentView();
-});
-
-document.getElementById('deleteCoordinatesBtn').addEventListener('click', function () {
-    if (selectedCoordinateIndex !== null) {
-        deleteSavedView(selectedCoordinateIndex);
+Elem.byId('deleteCoordinatesBtn').addEventListener('click', function () {
+    if (Coordinate.selectedIndex !== null) {
+        deleteSavedView(Coordinate.selectedIndex);
     } else {
         alert('No coordinate selected for deletion.');
     }
 });
 
 function deleteSavedView(index) {
-    // Check if the index is within bounds
-    if (index !== null && savedViews[index]) {
-        // Remove the selected view from the array
-        savedViews.splice(index, 1);
-
-        // Update the cache
-        updateSavedViewsCache();
-
-        // Refresh the display of saved coordinates
-        displaySavedCoordinates();
-
-        // Log the deletion
-        console.log("View deleted at index:", index);
-
-        // Reset the selected coordinate index and div if needed
-        selectedCoordinateIndex = null;
-        selectedCoordinateDiv = null;
-    } else {
+    if (index === null || !savedViews[index]) {
         console.error('No coordinate at index for deletion:', index);
+        return;
     }
+
+    // Remove the selected view from the array
+    savedViews.splice(index, 1);
+
+    updateSavedViewsCache();
+    displaySavedCoordinates();
+
+    console.log("View deleted at index:", index);
+
+    Coordinate.resetSelected();
 }
 
 
 function returnToSavedView(savedView, animate = true, speed = 0.0001) {
-    if (savedView && savedView.standardCoords) {
-        // Extract real and imaginary parts from pan
-        const panParts = savedView.standardCoords.pan.split('+i');
-        const panReal = parseFloat(panParts[0]);
-        const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
-
-        // Call neuriteSetMandelbrotCoords with the parsed coordinates
-        neuriteSetMandelbrotCoords(
-            parseFloat(savedView.standardCoords.zoom),
-            panReal,
-            panImaginary,
-            animate,
-            speed
-        );
-    } else {
-        console.log("Saved view not found or invalid:", savedView);
+    const standardCoords = savedView?.standardCoords;
+    if (!standardCoords) {
+        console.log("Missing or invalid saved view:", savedView);
+        return;
     }
+
+    // Extract real and imaginary parts from pan
+    const panParts = standardCoords.pan.split('+i');
+    const panReal = parseFloat(panParts[0]);
+    const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
+
+    // Call neuriteSetMandelbrotCoords with the parsed coordinates
+    neuriteSetMandelbrotCoords(
+        parseFloat(standardCoords.zoom),
+        panReal,
+        panImaginary,
+        animate,
+        speed
+    );
 }
 
 function listSavedViews() {
@@ -367,9 +342,20 @@ function listSavedViews() {
 
 
 
+const Coordinate = {
+    selectedDiv: null,
+    selectedIndex: null
+}
+Coordinate.deselect = function(){
+    if (!this.selectedDiv) return;
 
-let selectedCoordinateDiv = null;  // Global variable to keep track of the selected div
-let selectedCoordinateIndex = null; // Global variable to keep track of the selected index
+    this.selectedDiv.classList.remove('selected-coordinate');
+    this.resetSelected();
+}
+Coordinate.resetSelected = function(){
+    this.selectedDiv = null;
+    this.selectedIndex = null;
+}
 
 function distributeCoordinates(savedViews) {
     const mainCount = Math.round(savedViews.length * 0.50); // 50% for main
@@ -385,7 +371,7 @@ function distributeCoordinates(savedViews) {
 }
 
 function appendViewsToContainer(views, containerId, startIndex) {
-    const container = document.getElementById(containerId);
+    const container = Elem.byId(containerId);
     container.innerHTML = '';
 
     views.forEach((view, index) => {
@@ -395,18 +381,18 @@ function appendViewsToContainer(views, containerId, startIndex) {
         coordElement.classList.add('saved-coordinate-item');
 
         coordElement.addEventListener('click', () => {
-            neuriteReturnToSavedView(view);
+            returnToSavedView(view);
 
             // Update selected state
             document.querySelectorAll('.saved-coordinate-item').forEach(div => {
                 div.classList.remove('selected-coordinate');
-                div.style.transform = ''; // Reset transform
+                div.style.transform = '';
             });
 
             coordElement.classList.add('selected-coordinate');
             coordElement.style.transform = 'scale(0.95)'; // Scale down for selected
-            selectedCoordinateIndex = globalIndex;
-            selectedCoordinateDiv = coordElement;
+            Coordinate.selectedDiv = coordElement;
+            Coordinate.selectedIndex = globalIndex;
         });
 
         // Reset the scale when mouse leaves the selected item
@@ -422,12 +408,8 @@ function appendViewsToContainer(views, containerId, startIndex) {
 
 function displaySavedCoordinates() {
     const savedViews = getSavedViewsFromCache();
-    const currentFractalType = document.getElementById('fractal-select').value;
-
-    // Get the saved views for the current fractal type
+    const currentFractalType = Elem.byId('fractal-select').value;
     const currentFractalViews = savedViews[currentFractalType] || [];
-
-    // Combine the current fractal views with the "all" views
     const allViews = savedViews.all || [];
     const combinedViews = [...currentFractalViews, ...allViews];
 
@@ -438,19 +420,6 @@ function displaySavedCoordinates() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Update the cache
     updateSavedViewsCache();
-
     displaySavedCoordinates();
 });
-
-function deselectCoordinate() {
-    // If there's no selected coordinate, exit the function immediately
-    if (!selectedCoordinateDiv) {
-        return;
-    }
-
-    selectedCoordinateDiv.classList.remove('selected-coordinate');
-    selectedCoordinateDiv = null;
-    selectedCoordinateIndex = null;
-}

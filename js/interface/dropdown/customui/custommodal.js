@@ -1,175 +1,119 @@
-// Get the modal element
-const modal = document.getElementById('customModal');
-// Get the close button element
-const closeBtn = modal.querySelector('.close');
-// Get the modal content element
-const modalContent = modal.querySelector('.modal-content');
-const modalOverlay = modal.querySelector('.modal-overlay');
-const modalOverlayCloseBtn = modalOverlay.querySelector('.modal-overlay-close');
-const modalOverlayBody = modalOverlay.querySelector('.modal-overlay-body');
+const Modals = {
+    aiModal: new Modal('aiModal', "Experimental Ai Controls"),
+    apiConfigModalContent: new Modal('apiConfigModalContent', "Custom Endpoint"),
+    "controls-modal": new Modal('controls-modal'),
+    fileTreeModal: new Modal('fileTreeModal'),
+    importLinkModalContent: new Modal('importLinkModalContent', "Import"),
+    nodeConnectionModal: new Modal('nodeConnectionModal', "Connect Notes"),
+    noteModal: new Modal('noteModal', "Zettelkasten Settings", Tag.initializeInputs),
+    ollamaManagerModal: new Modal('ollamaManagerModal', "Ollama Library"),
+    promptLibraryModalContent: new Modal('promptLibraryModalContent', "Prompt Library"),
+    vectorDbImportConfirmModal: new Modal('vectorDbImportConfirmModal', "Confirm Vector DB Import"), // , setupVectorDbImportConfirmModal
+    vectorDbModal: new Modal('vectorDbModal', "Vector Database"),
+    vectorDbSearchModal: new Modal('vectorDbSearchModal', "Search Vector-DB"),
+    zetSearchModal: new Modal('zetSearchModal', "Search Notes")
+}
 
-// Function to store input values and perform modal-specific actions
-const storeInputValue = debounce(function (input, contentId) {
-    if (input.type === 'checkbox') {
-        modalInputValues[input.id] = input.checked;
-    } else {
-        modalInputValues[input.id] = input.value;
-    }
-    localStorage.setItem('modalInputValues', JSON.stringify(modalInputValues));
+Modal.btnClose = Modal.div.querySelector('.close');
+Modal.content = Modal.div.querySelector('.modal-content');
+Modal.overlay = Modal.div.querySelector('.modal-overlay');
+Modal.overlayCloseBtn = Modal.div.querySelector('.modal-overlay-close');
+Modal.overlayBody = Modal.div.querySelector('.modal-overlay-body');
 
-    // Perform modal-specific actions based on contentId
-    if (contentId === 'noteModal') {
-        updatePathOptions();
-    }
-    // Add more conditions for other modals if needed
+Modal.storeInputValue = debounce(function (input, contentId) {
+    Modal.inputValues[input.id] = (input.type === 'checkbox' ? input.checked : input.value);
+    localStorage.setItem('modalInputValues', JSON.stringify(Modal.inputValues));
+
+    // modal-specific actions
+    if (contentId === 'noteModal') updatePathOptions();
 }, 100);
 
-let currentOpenModalContentId = null;
-
-// Function to open the modal
-function openModal(contentId) {
-    hideContextMenu();
-    //console.log(`Opened Modal: ${contentId}`);
+Modal.open = function(contentId){
+    ContextMenu.hide();
+    //console.log("Opened Modal:", contentId);
 
     // Clear filepath input from header.
     const existingInput = document.querySelector('.modal-filepath-input');
-    if (existingInput) {
-        existingInput.remove();
-    }
+    if (existingInput) existingInput.remove();
 
-    const content = document.getElementById(contentId);
+    const content = Elem.byId(contentId);
     if (!content) {
-        console.error(`No content found for ID: ${contentId}`);
-        return; // Exit the function if content doesn't exist
+        console.error("No content found for ID:", contentId);
+        return;
     }
 
-    const modalBody = modal.querySelector('.modal-body');
-    if (modalBody) {
-        modalBody.innerHTML = content.innerHTML; // Ensure modalBody exists before setting its innerHTML
-    } else {
-        console.error('Modal body element is missing');
-        return; // Exit if there is no modal body
+    const modalBody = Modal.div.querySelector('.modal-body');
+    if (!modalBody) {
+        console.error("Modal body element is missing");
+        return;
     }
 
-    // Set the modal title based on the contentId
-    const modalTitle = modal.querySelector('.modal-title');
-    switch (contentId) {
-        case 'noteModal':
-            modalTitle.textContent = 'Zettelkasten Settings';
-            initializeTagInputs();
-            break;
-        case 'aiModal':
-            modalTitle.textContent = 'Ai Controls';
-            break;
-        case 'alertModal':
-            modalTitle.textContent = 'Alert';
-            break;
-        case 'apiConfigModalContent':
-            modalTitle.textContent = 'Custom Endpoint';
-            break;
-        case 'importLinkModalContent':
-            modalTitle.textContent = 'Import';
-            break;
-        case 'nodeConnectionModal':
-            modalTitle.textContent = 'Connect Notes';
-            break;
-        case 'ollamaManagerModal':
-            modalTitle.textContent = 'Ollama Library';
-            break;
-        case 'vectorDbModal':
-            modalTitle.textContent = 'Vector Database';
-            break;
-        case 'vectorDbSearchModal':
-            modalTitle.textContent = 'Search Vector-DB';
-            break;
-        case 'vectorDbImportConfirmModal':
-            modalTitle.textContent = 'Confirm Vector DB Import';
-            setupVectorDbImportConfirmModal();
-            break;
-        case 'zetSearchModal':
-            modalTitle.textContent = 'Search Notes';
-            break;
-        case 'promptLibraryModalContent':
-            modalTitle.textContent = 'Prompt Library';
-            break;
-        case 'controls-modal':
-            modalTitle.textContent = 'Adjust Controls';
-            break;
-        default:
-            modalTitle.textContent = ''; // Default, clears the title
-    }
+    modalBody.innerHTML = content.innerHTML;
 
-    currentOpenModalContentId = contentId;
+    const modal = Modals[contentId];
+    const modalTitle = Modal.div.querySelector('.modal-title');
+    modalTitle.textContent = modal?.title || '';
+    if (modal.init) modal.init();
 
-    modal.style.display = 'flex';
+    Modal.current = modal;
+    Modal.div.style.display = 'flex';
 
-    // Set up custom selects within the modal
-    let modalSelects = modalBody.querySelectorAll('select.custom-select');
-    modalSelects.forEach(select => {
-        setupModelSelect(select);
-        // Restore the stored value if available
-        if (modalInputValues[select.id] !== undefined) {
-            select.value = modalInputValues[select.id];
-        }
-        // Store the value when changed
-        select.addEventListener('change', function () {
-            storeInputValue(select, contentId);
-        });
+    const storeInputValue = Modal.storeInputValue;
+
+    modalBody.querySelectorAll('select.custom-select').forEach(select => {
+        CustomDropdown.setupModelSelect(select);
+
+        const stored = Modal.inputValues[select.id];
+        if (stored !== undefined) select.value = stored;
+
+        const onChange = storeInputValue.bind(null, select, contentId);
+        select.addEventListener('change', onChange);
     });
 
-    // Set up sliders within the modal
-    let modalSliders = modalBody.querySelectorAll('input[type=range]');
-    modalSliders.forEach(function (slider) {
+    const modalSliders = modalBody.querySelectorAll('input[type=range]');
+    modalSliders.forEach(Modal.setupSlider, modal);
+
+    const modalInputs = modalBody.querySelectorAll('input:not([type=range]), textarea');
+    modalInputs.forEach(Modal.setupInput, modal);
+}
+Modal.setupSlider = function(slider){
+    setSliderBackground(slider);
+
+    const stored = Modal.inputValues[slider.id];
+    if (stored !== undefined) {
+        slider.value = stored;
         setSliderBackground(slider);
-        // Restore the stored value if available
-        if (modalInputValues[slider.id] !== undefined) {
-            slider.value = modalInputValues[slider.id];
-            setSliderBackground(slider); // Update the background after restoring the value
-        }
-        // Store the value when changed
-        slider.addEventListener('input', function () {
-            setSliderBackground(slider);
-            storeInputValue(slider, contentId);
-        });
-    });
+    }
 
-    // Set up other input elements within the modal
-    let modalInputs = modalBody.querySelectorAll('input:not([type=range]), textarea');
-    modalInputs.forEach(function (input) {
-        // Skip file inputs
-        if (input.type === 'file') {
-            return;
-        }
+    slider.addEventListener('input', Modal.onSliderInput.bind(this, slider));
+}
+Modal.onSliderInput = function(slider, e){
+    setSliderBackground(slider);
+    Modal.storeInputValue(slider, this.id);
+}
+Modal.setupInput = function(input){
+    if (input.type === 'file') return;
 
-        // Restore the stored value if available
-        if (modalInputValues[input.id] !== undefined) {
-            if (input.type === 'checkbox') {
-                input.checked = modalInputValues[input.id];
-            } else {
-                input.value = modalInputValues[input.id];
-            }
-        }
-        // Store the value when changed
-        input.addEventListener('input', function () {
-            storeInputValue(input, contentId);
-        });
-    });
+    const stored = Modal.inputValues[input.id];
+    if (stored !== undefined) {
+        const attr = (input.type === 'checkbox' ? 'checked' : 'value');
+        input[attr] = stored;
+    }
+
+    const onInput = Modal.storeInputValue.bind(null, input, this.id);
+    input.addEventListener('input', onInput);
 }
 
-function getModalState(modalId, itemId, defaultValue = true) {
-    // Use the correct key for retrieving modal values
-    const modalStates = JSON.parse(localStorage.getItem('modalInputValues') || '{}');
-
-    // Check if the item exists in the saved states, return defaultValue if it doesn't exist
-    return modalStates[itemId] !== undefined ? modalStates[itemId] : defaultValue;
+Modal.getInputValue = function(modalId, itemId, defaultValue = true) {
+    return Modal.inputValues[itemId] ?? defaultValue;
 }
+Modal.getAiInputValue = Modal.getInputValue.bind(Modal, 'aiModal');
 
-// Function to close the modal
-function closeModal() {
-    switch (currentOpenModalContentId) {
+Modal.close = function(){
+    switch (Modal.current.id) {
         case 'zetSearchModal':
         case 'nodeConnectionModal':
-            clearSearch();
+            Graph.nodes.forEach(clearSearchHighlight);
             break;
         case 'vectorDbImportConfirmModal':
             if (window.currentVectorDbImportReject) {
@@ -177,82 +121,59 @@ function closeModal() {
                 window.currentVectorDbImportReject = null;
             }
             break;
-        // Add more cases for other modals if needed
         default:
             break;
     }
-    modal.style.display = 'none';
-    currentOpenModalContentId = null; // Reset the current content ID
+    Modal.div.style.display = 'none';
+    Modal.current = null;
 }
 
-// Event listener for the close button
-closeBtn.addEventListener('click', closeModal);
+Modal.btnClose.addEventListener('click', Modal.close);
 
-// Function to open the generic overlay with specific content
-function openModalOverlay(explanationId) {
-    const explanationContent = document.getElementById(explanationId);
+Modal.openOverlay = function(explanationId){
+    const explanationContent = Elem.byId(explanationId);
     if (!explanationContent) {
-        console.error(`No explanation found for ID: ${explanationId}`);
+        console.error("No explanation found for ID:", explanationId);
         return;
     }
 
-    // Populate the overlay with the explanation content
-    modalOverlayBody.innerHTML = explanationContent.innerHTML;
-
-    modalOverlay.style.display = 'block';
+    Modal.overlayBody.innerHTML = explanationContent.innerHTML;
+    Modal.overlay.style.display = 'block';
 }
 
+Modal.closeOverlay = function(){
+    Modal.overlay.style.display = 'none';
+    Modal.overlayBody.innerHTML = '';
+}
+Modal.overlayCloseBtn.addEventListener('click', Modal.closeOverlay);
 
-// Function to close the generic overlay
-function closeModalOverlay() {
-    modalOverlay.style.display = 'none';
-    modalOverlayBody.innerHTML = ''; // Clear the overlay content
+
+
+Modal.massAddHandler = function(div, handler){
+    div.addEventListener('click', handler);
+    div.addEventListener('dblclick', handler);
+    div.addEventListener('mousedown', handler);
+    div.addEventListener('touchstart', handler);
+    div.addEventListener('touchend', handler);
+    div.addEventListener('wheel', handler);
+    div.addEventListener('dragstart', handler);
+    div.addEventListener('drag', handler);
+    div.addEventListener('drop', handler);
+}
+// prevent all events from passing through the modal content
+Modal.massAddHandler(Modal.content, stopEventPropagation);
+
+function stopEventPropagation(event){
+    event.stopPropagation()
 }
 
-// Event listener for closing the overlay
-modalOverlayCloseBtn.addEventListener('click', closeModalOverlay);
+Modal.startDragging = function(e){
+    if (isInputElement(e.target)) return;
 
-
-
-
-// Event listener to prevent all events from passing through the modal content
-modalContent.addEventListener('click', stopEventPropagation);
-modalContent.addEventListener('dblclick', stopEventPropagation);
-modalContent.addEventListener('mousedown', stopEventPropagation);
-modalContent.addEventListener('touchstart', stopEventPropagation);
-modalContent.addEventListener('touchend', stopEventPropagation);
-modalContent.addEventListener('wheel', stopEventPropagation);
-modalContent.addEventListener('dragstart', stopEventPropagation);
-modalContent.addEventListener('drag', stopEventPropagation);
-modalContent.addEventListener('drop', stopEventPropagation);
-
-// Function to stop event propagation
-function stopEventPropagation(event) {
-    event.stopPropagation();
+    Modal.isDragging = true;
+    Modal.mouseOffsetX = e.clientX - Modal.div.offsetLeft;
+    Modal.mouseOffsetY = e.clientY - Modal.div.offsetTop;
 }
-
-// Variables to store the initial position and mouse offset
-let isDraggingModal = false;
-let initialModalMouseX;
-let initialModalMouseY;
-let initialModalX;
-let initialModalY;
-
-// Event listener for mousedown on the modal content
-modalContent.addEventListener('mousedown', startDragging);
-
-// Function to start dragging the modal content
-function startDragging(event) {
-    if (!isInputElement(event.target)) {
-        isDraggingModal = true;
-        initialModalMouseX = event.clientX;
-        initialModalMouseY = event.clientY;
-        initialModalX = modal.offsetLeft;
-        initialModalY = modal.offsetTop;
-    }
-}
-
-// Function to check if an element is an input element
 function isInputElement(element) {
     const inputTypes = ['input', 'select', 'textarea', 'button'];
     return inputTypes.includes(element.tagName.toLowerCase()) ||
@@ -261,24 +182,17 @@ function isInputElement(element) {
         element.closest('#modal-file-tree-container'); // Added condition
 }
 
-// Event listener for mousemove on the document
-document.addEventListener('mousemove', dragModalContent);
+Modal.dragContent = function(e){
+    if (!Modal.isDragging) return;
 
-// Function to drag the modal content
-function dragModalContent(event) {
-    if (isDraggingModal) {
-        event.preventDefault();
-        const deltaX = event.clientX - initialModalMouseX;
-        const deltaY = event.clientY - initialModalMouseY;
-        modal.style.left = `${initialModalX + deltaX}px`;
-        modal.style.top = `${initialModalY + deltaY}px`;
-    }
+    e.preventDefault();
+    Modal.div.style.left = (e.clientX - Modal.mouseOffsetX) + 'px';
+    Modal.div.style.top = (e.clientY - Modal.mouseOffsetY) + 'px';
+}
+Modal.stopDragging = function(){
+    Modal.isDragging = false;
 }
 
-// Event listener for mouseup on the document
-document.addEventListener('mouseup', stopDragging);
-
-// Function to stop dragging the modal content
-function stopDragging() {
-    isDraggingModal = false;
-}
+Modal.content.addEventListener('mousedown', Modal.startDragging);
+document.addEventListener('mousemove', Modal.dragContent);
+document.addEventListener('mouseup', Modal.stopDragging);

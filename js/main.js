@@ -1,3 +1,33 @@
+class Elem {
+    static byId = document.getElementById.bind(document);
+    static hideById(id){
+        const elem = Elem.byId(id);
+        if (elem) elem.style.display = 'none';
+    }
+    static setBackgroundColor(color){
+        this.style.backgroundColor = color
+    }
+    static setBackgroundColorPerIsActive(colorActive, colorInactive){
+        this.style.backgroundColor = (this.isActive ? colorActive : colorInactive)
+    }
+    static setBothColors(foreColor, backgroundColor){
+        this.style.backgroundColor = backgroundColor;
+        this.style.color = foreColor;
+    }
+    static stopPropagationOfEvent(e){ e.stopPropagation() }
+}
+
+Request.send = async function(ct){
+    try {
+        const resp = await fetch(ct.url, ct.options);
+        if (!resp.ok) throw new Error("Response status: " + resp.statusText);
+
+        if (ct.onSuccess) console.log(ct.onSuccess());
+        return resp;
+    } catch (err) {
+        if (ct.onFailure) console.error(ct.onFailure(), err);
+    }
+}
 
 class PageLoad {
     constructor() {
@@ -149,34 +179,35 @@ class PageLoad {
 const pageLoader = new PageLoad();
 pageLoader.load();
 
-// Function to load content into a tab
 async function loadTabContent(tabId, fileName) {
-    try {
-        const response = await fetch(`/resources/html/tabs/${fileName}`);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${fileName}: ${response.statusText}`);
-        }
-        const content = await response.text();
-        document.getElementById(tabId).innerHTML = content;
-    } catch (error) {
-        console.error(`Error loading tab content from ${fileName}:`, error);
+    const response = await Request.send(new loadTabContent.ct(fileName));
+    if (!response) return;
+
+    const content = await response.text();
+    Elem.byId(tabId).innerHTML = content;
+}
+loadTabContent.ct = class {
+    constructor(fileName){
+        this.url = '/resources/html/tabs/' + fileName;
+        this.fileName = fileName;
     }
+    onFailure(){ return `Failed to load tab content from ${this.fileName}:` }
 }
 
-async function loadFunctionPanel() {
-    try {
-        const response = await fetch('/resources/html/tabs/functioncallingpanel.html');
-        if (!response.ok) {
-            throw new Error(`Failed to load functionpanel.html: ${response.statusText}`);
-        }
-        const content = await response.text();
-        document.getElementById('left-panel').innerHTML = content;
-    } catch (error) {
-        console.error('Error loading function panel:', error);
+async function loadFunctionPanel(){
+    const response = await Request.send(new loadFunctionPanel.ct());
+    if (!response) return;
+
+    const content = await response.text();
+    Elem.byId('left-panel').innerHTML = content;
+}
+loadFunctionPanel.ct = class {
+    constructor(){
+        this.url = '/resources/html/tabs/functioncallingpanel.html';
     }
+    onFailure(){ return "Failed to load function panel:" }
 }
 
-// Function to load all tabs
 async function loadAllTabs() {
     await Promise.all([
         loadFunctionPanel(),

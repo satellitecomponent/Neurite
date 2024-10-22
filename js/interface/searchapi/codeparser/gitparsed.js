@@ -228,7 +228,7 @@ class YAMLParser extends BaseParser {
 class XMLParser extends BaseParser {
     findChunks() {
         return this.findChunksFromTokens((token) =>
-            token.type === 'tag bracket' && token.string === "<"
+            token.type === 'tag bracket' && token.string === '<'
         );
     }
 
@@ -303,7 +303,7 @@ async function fetchGitHubRepoContent(owner, repo, path = '') {
             }
             const contentType = fileResponse.headers.get('Content-Type');
             if (!contentType.includes('text')) {
-                console.log(`Skipping non-textual content from ${item.download_url}`);
+                console.log("Skipping non-textual content from", item.download_url);
                 continue; // Skip non-text files but continue with others
             }
             const text = await fileResponse.text();
@@ -332,7 +332,7 @@ async function storeGitHubContent(text, owner, repo, path) {
 
     // Fetch embeddings for each chunk
     const key = `https://github.com/${owner}/${repo}/${path}`;
-    const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText, key);
+    const chunkedEmbeddings = await Embeddings.fetchChunked(parsedText, key);
     // Store embeddings and chunks in the database
     await storeEmbeddingsAndChunksInDatabase(key, parsedText, chunkedEmbeddings);
 }

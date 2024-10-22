@@ -1,67 +1,69 @@
 
-function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
+function createLlmNode(name = '', sx, sy, x, y) {
+    const llmNodeCount = AiNode.count;
+
     // Create the AI response textarea
-    let aiResponseTextArea = document.createElement("textarea");
-    aiResponseTextArea.id = `LLMnoderesponse-${llmNodeCount}`;
+    let aiResponseTextArea = document.createElement('textarea');
+    aiResponseTextArea.id = 'LLMnoderesponse-' + llmNodeCount;
     aiResponseTextArea.style.display = 'none';
 
     // Create the AI response container
-    let aiResponseDiv = document.createElement("div");
-    aiResponseDiv.id = `LLMnoderesponseDiv-${llmNodeCount}`;
+    let aiResponseDiv = document.createElement('div');
+    aiResponseDiv.id = 'LLMnoderesponseDiv-' + llmNodeCount;
     aiResponseDiv.classList.add('custom-scrollbar', 'ai-response-div');
 
     // Create the user prompt textarea
-    let promptTextArea = document.createElement("textarea");
-    promptTextArea.id = `nodeprompt-${llmNodeCount}`;
+    let promptTextArea = document.createElement('textarea');
+    promptTextArea.id = 'nodeprompt-' + llmNodeCount;
     promptTextArea.classList.add('custom-scrollbar', 'custom-textarea');
 
     // Create the send button (keeping inline styles)
-    let sendButton = document.createElement("button");
+    let sendButton = document.createElement('button');
     sendButton.type = "submit";
-    sendButton.id = `prompt-form-${llmNodeCount}`;
+    sendButton.id = 'prompt-form-' + llmNodeCount;
     sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    sendButton.innerHTML = `<svg width="24" height="24"><use xlink:href="#play-icon"></use></svg>`;
+    sendButton.innerHTML = SVG.play;
 
     // Create the regenerate button (keeping inline styles)
-    let regenerateButton = document.createElement("button");
+    let regenerateButton = document.createElement('button');
     regenerateButton.type = "button";
     regenerateButton.id = "prompt-form";
     regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    regenerateButton.innerHTML = `<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>`;
+    regenerateButton.innerHTML = SVG.refresh;
 
     // Create settings button (keeping inline styles)
     const aiNodeSettingsButton = document.createElement('button');
     aiNodeSettingsButton.type = "button";
     aiNodeSettingsButton.id = 'aiNodeSettingsButton';
     aiNodeSettingsButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    const settingsIcon = document.getElementById('aiNodeSettingsIcon').cloneNode(true);
+    const settingsIcon = Elem.byId('aiNodeSettingsIcon').cloneNode(true);
     settingsIcon.style.display = 'inline-block';
     aiNodeSettingsButton.appendChild(settingsIcon);
     aiNodeSettingsButton.isActive = false;
 
     // Create the loader and error icons container (keeping inline styles)
-    let statusIconsContainer = document.createElement("div");
+    let statusIconsContainer = document.createElement('div');
     statusIconsContainer.className = 'status-icons-container';
     statusIconsContainer.style.cssText = 'position: absolute; top: 42px; right: 90px; width: 20px; height: 20px;';
 
     // Create the loader icon
-    let aiLoadingIcon = document.createElement("div");
+    let aiLoadingIcon = document.createElement('div');
     aiLoadingIcon.className = 'loader';
-    aiLoadingIcon.id = `aiLoadingIcon-${llmNodeCount}`;
+    aiLoadingIcon.id = 'aiLoadingIcon-' + llmNodeCount;
     aiLoadingIcon.style.display = 'none';
 
     // Create the error icon
-    let aiErrorIcon = document.createElement("div");
+    let aiErrorIcon = document.createElement('div');
     aiErrorIcon.className = 'error-icon-css';
-    aiErrorIcon.id = `aiErrorIcon-${llmNodeCount}`;
+    aiErrorIcon.id = 'aiErrorIcon-' + llmNodeCount;
     aiErrorIcon.style.display = 'none';
 
     // Create the 'X' mark inside the error icon
-    let xMark = document.createElement("div");
+    let xMark = document.createElement('div');
     xMark.className = 'error-x-mark';
-    let xMarkLeft = document.createElement("div");
+    let xMarkLeft = document.createElement('div');
     xMarkLeft.className = 'error-x-mark-left';
-    let xMarkRight = document.createElement("div");
+    let xMarkRight = document.createElement('div');
     xMarkRight.className = 'error-x-mark-right';
     xMark.appendChild(xMarkLeft);
     xMark.appendChild(xMarkRight);
@@ -72,58 +74,29 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     statusIconsContainer.appendChild(aiErrorIcon);
 
     // Create a div to wrap prompt textarea and buttons
-    let buttonDiv = document.createElement("div");
+    let buttonDiv = document.createElement('div');
     buttonDiv.className = 'button-container';
     buttonDiv.appendChild(sendButton);
     buttonDiv.appendChild(regenerateButton);
     buttonDiv.appendChild(aiNodeSettingsButton);
 
     // Create the promptDiv
-    let promptDiv = document.createElement("div");
+    let promptDiv = document.createElement('div');
     promptDiv.className = 'prompt-container';
     promptDiv.appendChild(statusIconsContainer);
     promptDiv.appendChild(promptTextArea);
     promptDiv.appendChild(buttonDiv);
 
     // Wrap elements in a div
-    let ainodewrapperDiv = document.createElement("div");
+    let ainodewrapperDiv = document.createElement('div');
     ainodewrapperDiv.className = 'ainodewrapperDiv';
 
     ainodewrapperDiv.appendChild(aiResponseTextArea);
     ainodewrapperDiv.appendChild(aiResponseDiv);
     ainodewrapperDiv.appendChild(promptDiv);
 
-    const initialTemperature = document.getElementById('model-temperature').value;
-    const initialMaxTokens = document.getElementById('max-tokens-slider').value;
-    const initialMaxContextSize = document.getElementById('max-context-size-slider').value;
-
-    // Create and configure the settings
-    const aiNodeDropdownContainer = createAndConfigureLocalLLMDropdown(llmNodeCount);
-
-    const temperatureSliderContainer = createSlider(`node-temperature-${llmNodeCount}`, 'Temperature', initialTemperature, 0, 1, 0.1);
-    const maxTokensSliderContainer = createSlider(`node-max-tokens-${llmNodeCount}`, 'Max Tokens', initialMaxTokens, 10, 16000, 1);
-    const maxContextSizeSliderContainer = createSlider(`node-max-context-${llmNodeCount}`, 'Max Context', initialMaxContextSize, 1, initialMaxTokens, 1);
-
-
-    // Create settings container
-    const aiNodeSettingsContainer = createSettingsContainer();
-
-
-    // Add the dropdown (LocalLLMSelect) into settings container
-    aiNodeSettingsContainer.appendChild(aiNodeDropdownContainer);  // LocalLLMSelect is the existing dropdown
-    aiNodeSettingsContainer.appendChild(temperatureSliderContainer);
-    aiNodeSettingsContainer.appendChild(maxTokensSliderContainer);
-    aiNodeSettingsContainer.appendChild(maxContextSizeSliderContainer);
-
-    const firstSixOptions = allOptions.slice(0, 6);
-    const checkboxArray1 = createCheckboxArray(llmNodeCount, firstSixOptions);
-    aiNodeSettingsContainer.appendChild(checkboxArray1);
-
-    const { containerDiv, textarea: customInstructionsTextarea } = createCustomInstructionsTextarea(llmNodeCount);
-    aiNodeSettingsContainer.appendChild(containerDiv);
-
-    // Add settings container to the ainodewrapperDiv
-    ainodewrapperDiv.appendChild(aiNodeSettingsContainer);
+    const { containerDiv, textarea: customInstructionsTextarea } = createCustomInstructionsTextarea();
+    ainodewrapperDiv.appendChild(AiNode.makeSettingsContainer(llmNodeCount, containerDiv));
 
     // Pass this div to addNodeAtNaturalScale
     let node = addNodeAtNaturalScale(name, []);
@@ -205,9 +178,9 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
     });
 
     // Fetch default values from DOM elements and sliders
-    const defaultTemperature = document.getElementById('model-temperature').value;
-    const defaultMaxTokens = document.getElementById('max-tokens-slider').value;
-    const defaultMaxContextSize = document.getElementById('max-context-size-slider').value;
+    const defaultTemperature = Elem.byId('model-temperature').value;
+    const defaultMaxTokens = Elem.byId('max-tokens-slider').value;
+    const defaultMaxContextSize = Elem.byId('max-context-size-slider').value;
 
     // Set initial values for sliders using node.push_extra_cb
     node.push_extra_cb((node) => {
@@ -246,86 +219,66 @@ function createLLMNode(name = '', sx = undefined, sy = undefined, x = undefined,
 
     node.isLLM = true;
 
-    initAiNode(node);
+    AiNode.init(node);
 
 
     return node;
 }
 
-function initAiNode(node) {
-    llmNodeCount++;
+AiNode.init = function(node){
+    AiNode.count += 1;
 
-    let ainodewrapperDiv = node.content.querySelector('.ainodewrapperDiv')
-    node.ainodewrapperDiv = ainodewrapperDiv;
+    const content = node.content;
+    node.ainodewrapperDiv = content.querySelector('.ainodewrapperDiv');
+    node.aiResponseDiv = content.querySelector('[id^="LLMnoderesponseDiv-"]');
+    node.aiResponseTextArea = content.querySelector('[id^="LLMnoderesponse-"]');
+    node.promptTextArea = content.querySelector('[id^="nodeprompt-"]');
+    node.sendButton = content.querySelector('[id^="prompt-form-"]');
+    node.haltCheckbox = content.querySelector('input[id^="halt-questions-checkbox"]');
+    node.regenerateButton = content.querySelector('#prompt-form');
 
-    let aiResponseDiv = node.content.querySelector('[id^="LLMnoderesponseDiv-"]');
-    node.aiResponseDiv = aiResponseDiv;
+    // This is now the container for our inferenence select dropdown.
+    node.localLLMSelect = content.querySelector('.local-llm-dropdown-container-' + node.index);
 
-    let aiResponseTextArea = node.content.querySelector('[id^="LLMnoderesponse-"]');
-    node.aiResponseTextArea = aiResponseTextArea;
+    node.customInstructionsTextarea = content.querySelector('.custom-instructions-textarea');
 
-    let promptTextArea = node.content.querySelector('[id^="nodeprompt-"]');
-    node.promptTextArea = promptTextArea;
-
-    let sendButton = node.content.querySelector('[id^="prompt-form-"]');
-    node.sendButton = sendButton;
-
-    let haltCheckbox = node.content.querySelector('input[id^="halt-questions-checkbox"]');
-    node.haltCheckbox = haltCheckbox;
-
-    let regenerateButton = node.content.querySelector('#prompt-form');
-    node.regenerateButton = regenerateButton;
-
-    //This is now the container for our inferenence select dropdown.
-    let localLLMSelect = node.content.querySelector(`.local-llm-dropdown-container-${node.index}`);
-    node.localLLMSelect = localLLMSelect;
-
-
-    let customInstructionsTextarea = node.content.querySelector('.custom-instructions-textarea');
-    node.customInstructionsTextarea = customInstructionsTextarea;
-
-    // Initialize inference dropdowns
-    initInferenceDropdown(node);
+    AiNode.setSelects(node);
 
     // Setup event listeners
-    setupAiNodeResponseDivListeners(node);
-    setupAiNodePromptTextAreaListeners(node);
-    setupAiNodeSendButtonListeners(node);
-    setupAiNodeRegenerateButtonListeners(node);
-    setupAiNodeSettingsButtonListeners(node);
-    setupAiNodeLocalLLMDropdownListeners(node);
-    setupAiNodeSliderListeners(node);
+    AiNode.setupResponseDivListeners(node);
+    AiNode.setupPromptTextAreaListeners(node);
+    AiNode.setupSendButtonListeners(node);
+    AiNode.setupRegenerateButtonListeners(node);
+    AiNode.setupSettingsButtonListeners(node);
+    AiNode.setupLocalLLMDropdownListeners(node);
+    AiNode.setupSliderListeners(node);
     setupCustomInstructionsListeners(node);
 
     // Functions
 
     node.controller = new AbortController();
 
-    //Handles parsing of conversation divs.
-    let responseHandler = new ResponseHandler(node);
+    // Handles parsing of conversation divs.
+    const responseHandler = new ResponseHandler(node);
     nodeResponseHandlers.set(node, responseHandler); // map response handler to node
 
     node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
     responseHandler.restoreAiResponseDiv()
 
-
-    node.haltResponse = () => aiNodeHaltResponse(node);
+    node.haltResponse = AiNode.HaltResponse.bind(AiNode, node);
 }
 
-function aiNodeHaltResponse(node) {
+AiNode.HaltResponse = function(node){
     if (node.aiResponding) {
         // AI is responding, so we want to stop it
         node.controller.abort(); // Send the abort signal to the fetch request
         node.aiResponding = false;
         node.shouldContinue = false;
-        node.regenerateButton.innerHTML = `
-            <svg width="24" height="24" class="icon">
-                <use xlink:href="#refresh-icon"></use>
-            </svg>`;
+        node.regenerateButton.innerHTML = SVG.refresh;
         node.promptTextArea.value = node.latestUserMessage; // Add the last user message to the prompt input
 
         // Access the responseHandler from the nodeResponseHandlers map
-        let responseHandler = nodeResponseHandlers.get(node);
+        const responseHandler = nodeResponseHandlers.get(node);
 
         // If currently in a code block
         if (responseHandler && responseHandler.inCodeBlock) {
@@ -350,30 +303,23 @@ function aiNodeHaltResponse(node) {
         node.aiResponseHalted = true;
     }
 
-    // Update the halt checkbox to reflect the halted state
-    const haltCheckbox = node.haltCheckbox;
-    if (haltCheckbox) {
-        haltCheckbox.checked = true;
-    }
+    if (node.haltCheckbox) node.haltCheckbox.checked = true;
 
     // Reinitialize the controller for future use
     node.controller = new AbortController();
 }
 
-function setupAiNodeResponseDivListeners(node) {
-    let aiResponseDiv = node.aiResponseDiv;
-    let aiResponseTextArea = node.aiResponseTextArea;
-    aiResponseDiv.onmousedown = function (event) {
-        if (!event.altKey) {
-            cancel(event);
-        }
+AiNode.setupResponseDivListeners = function(node){
+    const aiResponseDiv = node.aiResponseDiv;
+    aiResponseDiv.onmousedown = function (e) {
+        if (!e.altKey) cancel(e)
     };
 
     aiResponseDiv.addEventListener('mouseenter', function () {
-        aiResponseDiv.style.userSelect = "text";
+        aiResponseDiv.style.userSelect = 'text'
     });
     aiResponseDiv.addEventListener('mouseleave', function () {
-        aiResponseDiv.style.userSelect = "none";
+        aiResponseDiv.style.userSelect = 'none'
     });
 
     // Add a 'wheel' event listener
@@ -399,7 +345,7 @@ function setupAiNodeResponseDivListeners(node) {
     };
 
     // Call scrollToBottom whenever there's an input
-    aiResponseTextArea.addEventListener('input', scrollToBottom);
+    node.aiResponseTextArea.addEventListener('input', scrollToBottom);
 
 
     // Tolerance in pixels
@@ -425,149 +371,100 @@ function setupAiNodeResponseDivListeners(node) {
     });
 
     document.addEventListener('keyup', function (event) {
-        if (!event.altKey) {
-            aiResponseDiv.style.userSelect = 'text';
-        }
+        if (!event.altKey) aiResponseDiv.style.userSelect = 'text';
     });
-
-    // ... other event listeners for aiResponseDiv ...
 }
 
-
-function setupAiNodePromptTextAreaListeners(node) {
-    let promptTextArea = node.promptTextArea
-
-    promptTextArea.onmousedown = cancel;  // Prevent dragging
-    promptTextArea.addEventListener('input', autoGrow);
-    promptTextArea.addEventListener('focus', autoGrow);
-    promptTextArea.addEventListener('mouseenter', function () {
-        promptTextArea.style.userSelect = "text";
+AiNode.setupPromptTextAreaListeners = function(node){
+    const textArea = node.promptTextArea;
+    textArea.onmousedown = cancel;  // Prevent dragging
+    textArea.addEventListener('input', autoGrow);
+    textArea.addEventListener('focus', autoGrow);
+    textArea.addEventListener('mouseenter', function () {
+        textArea.style.userSelect = 'text';
     });
-    promptTextArea.addEventListener('mouseleave', function () {
-        promptTextArea.style.userSelect = "none";
+    textArea.addEventListener('mouseleave', function () {
+        textArea.style.userSelect = 'none';
     });
-    promptTextArea.addEventListener('keydown', function (e) {
+    textArea.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendLLMNodeMessage(node);
+            AiNode.sendMessage(node);
         }
     });
-    // ... other event listeners for promptTextArea ...
 }
 
-function setupAiNodeSendButtonListeners(node) {
-    let sendButton = node.sendButton;
+AiNode.setupSendButtonListeners = function(node){
+    const button = node.sendButton;
 
-    let haltCheckbox = node.haltCheckbox;
+    const haltCheckbox = node.haltCheckbox;
 
-    sendButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#293e34';
-        this.style.color = '#222226';
-    });
+    button.addEventListener('mouseover', Elem.setBothColors.bind(button, '#222226', '#293e34'));
+    button.addEventListener('mouseout', Elem.setBothColors.bind(button, '#ddd', '#222226'));
+    button.addEventListener('mousedown', Elem.setBackgroundColor.bind(button, '#45a049'));
+    button.addEventListener('mouseup', Elem.setBackgroundColor.bind(button, '#ddd'));
 
-    sendButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = '#222226';
-        this.style.color = '#ddd';
-    });
-    sendButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = '#45a049';
-    });
-    sendButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = '#ddd';
-    });
-
-    sendButton.addEventListener("click", function (e) {
+    button.addEventListener('click', function (e) {
         e.preventDefault();
 
-        // Reset the flag and uncheck the checkbox
         node.aiResponseHalted = false;
         node.shouldContinue = true;
 
-        if (haltCheckbox) {
-            haltCheckbox.checked = false;
-        }
+        if (haltCheckbox) haltCheckbox.checked = false;
 
-        sendLLMNodeMessage(node);
+        AiNode.sendMessage(node);
     });
 
     if (haltCheckbox) {
         haltCheckbox.addEventListener('change', function () {
             node.aiResponseHalted = this.checked;
-            if (this.checked) {
-                node.haltResponse();
-            }
+            if (this.checked) node.haltResponse();
         });
     }
 }
 
-function setupAiNodeRegenerateButtonListeners(node) {
-    let regenerateButton = node.regenerateButton;
-
-    regenerateButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#333';
-    });
-    regenerateButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = '#222226';
-    });
-    regenerateButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = '#45a049';
-    });
-    regenerateButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = '#222226';
-    });
-
+AiNode.setupRegenerateButtonListeners = function(node){
+    const button = node.regenerateButton;
+    const setBackColor = Elem.setBackgroundColor;
+    button.addEventListener('mouseover', setBackColor.bind(button, '#333'));
+    button.addEventListener('mouseout', setBackColor.bind(button, '#222226'));
+    button.addEventListener('mousedown', setBackColor.bind(button, '#45a049'));
+    button.addEventListener('mouseup', setBackColor.bind(button, '#222226'));
 
     node.regenerateResponse = function () {
-        if (!this.aiResponding) {
-            // AI is not responding, so we want to regenerate
-            this.removeLastResponse(); // Remove the last AI response
-            this.promptTextArea.value = this.latestUserMessage; // Restore the last user message into the input prompt
-            this.regenerateButton.innerHTML = `
-    <svg width="24" height="24" class="icon">
-        <use xlink:href="#refresh-icon"></use>
-    </svg>`;
-        }
+        if (this.aiResponding) return;
+
+        this.removeLastResponse();
+        this.promptTextArea.value = this.latestUserMessage;
+        this.regenerateButton.innerHTML = SVG.refresh;
     };
 
-    regenerateButton.addEventListener("click", function () {
+    button.addEventListener('click', function () {
         if (node.aiResponding) {
-            // If the AI is currently responding, halt the response
-            node.haltResponse();
+            node.haltResponse()
         } else {
-            // Otherwise, regenerate the response
-            node.regenerateResponse();
+            node.regenerateResponse()
         }
     });
 }
 
-function setupAiNodeSettingsButtonListeners(node) {
-    let aiNodeSettingsButton = node.content.querySelector('#aiNodeSettingsButton');
-    let aiNodeSettingsContainer = node.content.querySelector('.ainode-settings-container');
+AiNode.setupSettingsButtonListeners = function(node){
+    const button = node.content.querySelector('#aiNodeSettingsButton');
+    const container = node.content.querySelector('.ainode-settings-container');
 
-    aiNodeSettingsButton.addEventListener('mouseover', function () {
-        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
-    });
-    aiNodeSettingsButton.addEventListener('mouseout', function () {
-        this.style.backgroundColor = this.isActive ? '#1e3751' : '#222226';
-    });
-    aiNodeSettingsButton.addEventListener('mousedown', function () {
-        this.style.backgroundColor = '#1e3751';
-    });
-    aiNodeSettingsButton.addEventListener('mouseup', function () {
-        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
-    });
-    aiNodeSettingsButton.addEventListener('click', function (event) {
-        this.isActive = !this.isActive;  // Toggle the active state
-        toggleSettings(event, aiNodeSettingsContainer);  // Call your existing function
-        // Set the background color based on the new active state
-        this.style.backgroundColor = this.isActive ? '#1e3751' : '#333';
+    const setBackColorPerIsActive = Elem.setBackgroundColorPerIsActive;
+    button.addEventListener('mouseover', setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
+    button.addEventListener('mouseout', setBackColorPerIsActive.bind(button, '#1e3751', '#222226'));
+    button.addEventListener('mousedown', Elem.setBackgroundColor.bind(button, '#1e3751'));
+    button.addEventListener('mouseup', setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
+    button.addEventListener('click', function (e) {
+        this.isActive = !this.isActive;
+        toggleSettings(e, container);
+        setBackColorPerIsActive.call(this, '#1e3751', '#333');
     });
 
-    // Add the listener for mousedown event
-    aiNodeSettingsContainer.addEventListener('mousedown', conditionalStopPropagation, false);
-
-    // Add the listener for dblclick event
-    aiNodeSettingsContainer.addEventListener('dblclick', conditionalStopPropagation, false);
+    container.addEventListener('mousedown', conditionalStopPropagation, false);
+    container.addEventListener('dblclick', conditionalStopPropagation, false);
 }
 
 function conditionalStopPropagation(event) {
@@ -576,51 +473,56 @@ function conditionalStopPropagation(event) {
     }
 }
 
-function createSettingsContainer() {
-    const settingsContainer = document.createElement('div');
-    settingsContainer.className = 'ainode-settings-container';
-    settingsContainer.style.display = 'none';  // Initially hidden
+AiNode.makeSettingsContainer = function(nodeIndex, containerDiv){
+    const initialTemperature = Elem.byId('model-temperature').value;
+    const initialMaxTokens = Elem.byId('max-tokens-slider').value;
+    const initialMaxContextSize = Elem.byId('max-context-size-slider').value;
 
-    return settingsContainer;
+    const container = document.createElement('div');
+    container.className = 'ainode-settings-container';
+    container.style.display = 'none';
+    container.append(
+        createAndConfigureLocalLlmSelects(nodeIndex),
+        Elem.makeSlider('node-temperature-' + nodeIndex, 'Temperature', initialTemperature, 0, 1, 0.1),
+        Elem.makeSlider('node-max-tokens-' + nodeIndex, 'Max Tokens', initialMaxTokens, 10, 16000, 1),
+        Elem.makeSlider('node-max-context-' + nodeIndex, 'Max Context', initialMaxContextSize, 1, initialMaxTokens, 1),
+        createCheckboxArray(nodeIndex, allOptions.slice(0, 6)),
+        containerDiv
+    );
+    return container;
 }
 
 // Function to toggle the settings container
 function toggleSettings(event, settingsContainer) {
     event.stopPropagation();
     const display = settingsContainer.style.display;
-    settingsContainer.style.display = display === 'none' || display === '' ? 'grid' : 'none';
+    settingsContainer.style.display = (display === 'none' || display === '' ? 'grid' : 'none');
 }
 
-
-function createSlider(id, label, initialValue, min, max, step) {
+Elem.makeSlider = function(id, label, initialValue, min, max, step){
     const sliderDiv = document.createElement('div');
     sliderDiv.classList.add('slider-container');
 
     const sliderLabel = document.createElement('label');
     sliderLabel.setAttribute('for', id);
-    sliderLabel.innerText = `${label}: ${initialValue}`;
+    sliderLabel.innerText = label + ': ' + initialValue;
 
     const sliderInput = document.createElement('input');
     sliderInput.type = 'range';
     sliderInput.id = id;
-
-    // First, set the min and max
     sliderInput.min = min;
     sliderInput.max = max;
-
-    // Then, set the step and initial value
     sliderInput.step = step;
     sliderInput.value = initialValue;
 
-    sliderDiv.appendChild(sliderLabel);
-    sliderDiv.appendChild(sliderInput);
-
+    sliderDiv.append(sliderLabel, sliderInput);
     return sliderDiv;
 }
 
-function setupAiNodeSliderListeners(node) {
-    const sliders = node.content.querySelectorAll('input[type=range]');
 
+
+AiNode.setupSliderListeners = function(node){
+    const sliders = node.content.querySelectorAll('input[type=range]');
     sliders.forEach(slider => {
         // Attach event listener to each slider
         slider.addEventListener('input', function () {
@@ -631,7 +533,7 @@ function setupAiNodeSliderListeners(node) {
                 const baseLabelText = label.innerText.split(':')[0];
                 label.innerText = `${baseLabelText}: ${slider.value}`;
 
-                setSliderBackground(slider);  // Assuming this is a predefined function
+                setSliderBackground(slider);
             }
             // Additional logic for each slider, if needed
         });
@@ -640,10 +542,9 @@ function setupAiNodeSliderListeners(node) {
         slider.dispatchEvent(new Event('input'));
     });
 
-    setupContextSpecificSliderListeners(node);
+    AiNode.setupContextSpecificSliderListeners(node);
 }
-
-function setupContextSpecificSliderListeners(node) {
+AiNode.setupContextSpecificSliderListeners = function(node){
     // Event listener for maxContextSizeSlider
     const maxContextSizeSlider = node.content.querySelector('#node-max-context-' + node.index);
     if (maxContextSizeSlider) {
@@ -667,128 +568,98 @@ function setupContextSpecificSliderListeners(node) {
     // Additional specific behaviors for other sliders can be added here
 }
 
-function initInferenceDropdown(node) {
-    const nodeIndex = node.index;
-
-    // Query and assign dropdowns to the node
-    node.inferenceSelect = node.content.querySelector(`#inference-select-${nodeIndex}`);
-    node.openAiSelect = node.content.querySelector(`#open-ai-select-${nodeIndex}`);
-    node.anthropicSelect = node.content.querySelector(`#anthropic-select-${nodeIndex}`);
-    node.groqSelect = node.content.querySelector(`#groq-select-${nodeIndex}`);
-    node.localModelSelect = node.content.querySelector(`#local-model-select-${nodeIndex}`);
-    node.customModelSelect = node.content.querySelector(`#custom-model-select-${nodeIndex}`);
+function getSelectByName(node, name){
+    return node.content.querySelector(`#${name}-select-${node.index}`)
 }
 
-function setupAiNodeLocalLLMDropdownListeners(node) {
-    // Setup custom dropdown for each dropdown in the node
+AiNode.setSelects = function(node){
+    node.inferenceSelect = getSelectByName(node, "inference");
+    node.openAiSelect = getSelectByName(node, "open-ai");
+    node.anthropicSelect = getSelectByName(node, "anthropic");
+    node.groqSelect = getSelectByName(node, "groq");
+    node.localModelSelect = getSelectByName(node, "local-model");
+    node.customModelSelect = getSelectByName(node, "custom-model");
+}
+
+AiNode.setupLocalLLMDropdownListeners = function(node){
     const dropdowns = node.localLLMSelect.querySelectorAll('.model-selector.custom-select');
-    dropdowns.forEach(dropdown => {
-        if (!dropdown.dataset.initialized) {
-            // Set the options for the dropdowns within the node
-            refreshAiNodeOptions(node, true); // setOptions to true
-            setupCustomDropdown(dropdown, true); // Set delayListeners to true
-            dropdown.dataset.initialized = 'true'; // Mark this dropdown as initialized
-        } else {
-            restoreDropdownState(dropdown);
-        }
-        addEventListenersToCustomDropdown(dropdown);
+    dropdowns.forEach(AiNode.setupCustomSelect, node);
 
-        dropdown.addEventListener('change', () => {
-            refreshAiNodeOptions(node);
-        });
+    setupInferenceDropdowns(node.localLLMSelect);
+}
+AiNode.setupCustomSelect = function(dropdown){
+    const node = this;
 
-        // Add click event listener to the dropdown container
-        const dropdownContainer = dropdown.closest('.dropdown-container');
-        dropdownContainer.addEventListener('click', () => {
-            refreshAiNodeOptions(node);
-        });
-    });
+    if (!dropdown.dataset.initialized) {
+        AiNode.refreshOptions(node, true);
+        CustomDropdown.setup(dropdown, true);
+        dropdown.dataset.initialized = 'true';
+    } else {
+        CustomDropdown.restoreState(dropdown);
+    }
+    CustomDropdown.addEventListeners(dropdown);
 
-    const templateDropdownsContainer = node.localLLMSelect;
-    setupInferenceDropdowns(templateDropdownsContainer);
+    const refresh = AiNode.refreshOptions.bind(null, node);
+    dropdown.addEventListener('change', refresh);
+    dropdown.closest('.dropdown-container').addEventListener('click', refresh);
 }
 
-function createAndConfigureLocalLLMDropdown(nodeIndex) {
-    const inferenceTemplate = document.createElement('div');
-    inferenceTemplate.className = `local-llm-dropdown-container-${nodeIndex}`; // Add a class for easier selection
-    inferenceTemplate.classList.add('inference-template-wrapper');
+function createAndConfigureLocalLlmSelects(nodeIndex) {
+    const localLlmSelects = document.createElement('div');
+    localLlmSelects.className = `local-llm-dropdown-container-${nodeIndex}`; // for easier selection
+    localLlmSelects.classList.add('inference-template-wrapper');
 
-    // Create dropdown elements without options
-    const inferenceSelect = createDropdown(`inference-select-${nodeIndex}`);
-    const openAiSelect = createDropdown(`open-ai-select-${nodeIndex}`);
-    const anthropicSelect = createDropdown(`anthropic-select-${nodeIndex}`);
-    const groqSelect = createDropdown(`groq-select-${nodeIndex}`);
-    const ollamaSelect = createDropdown(`local-model-select-${nodeIndex}`);
-    const customSelect = createDropdown(`custom-model-select-${nodeIndex}`);
-
-    // Append Inference
-    inferenceTemplate.appendChild(createDropdownWrapper(inferenceSelect, 'wrapper-inference', nodeIndex));
-
-    // Append dropdowns to the node element
-    inferenceTemplate.appendChild(createDropdownWrapper(openAiSelect, 'wrapper-openai', nodeIndex));
-    inferenceTemplate.appendChild(createDropdownWrapper(anthropicSelect, 'wrapper-anthropic', nodeIndex));
-    inferenceTemplate.appendChild(createDropdownWrapper(groqSelect, 'wrapper-groq', nodeIndex));
-    inferenceTemplate.appendChild(createDropdownWrapper(ollamaSelect, 'wrapper-ollama', nodeIndex));
-    inferenceTemplate.appendChild(createDropdownWrapper(customSelect, 'wrapper-custom', nodeIndex));
-
-    return inferenceTemplate;
+    localLlmSelects.append(
+        createSelectWithWrapper('inference', 'inference', nodeIndex),
+        createSelectWithWrapper('open-ai', 'openai', nodeIndex),
+        createSelectWithWrapper('anthropic', 'anthropic', nodeIndex),
+        createSelectWithWrapper('groq', 'groq', nodeIndex),
+        createSelectWithWrapper('local-model', 'ollama', nodeIndex),
+        createSelectWithWrapper('custom-model', 'custom', nodeIndex)
+    );
+    return localLlmSelects;
 }
 
-function syncOptions(sourceId, target, storageKey) {
-    const sourceSelect = document.getElementById(sourceId);
-    const targetSelect = target;
+function syncOptions(sourceId, targetSelect, storageId, setValue) {
+    const sourceSelect = Elem.byId(sourceId);
+    const ct = new ctSyncOptions(sourceSelect, targetSelect);
+    // Remove from targetSelect options missing from sourceSelect
+    Array.from(targetSelect.options).forEach(ct.removeNonExistent, ct);
+    // Add to targetSelect missing options of sourceSelect
+    Array.from(sourceSelect.options).forEach(ct.addNonExistent, ct);
+    if (setValue) targetSelect.value = sourceSelect.value;
+}
+const ctSyncOptions = class {
+    constructor(sourceSelect, targetSelect){
+        this.sourceValues = new Set(Array.from(sourceSelect.options).map(this.valueOf));
+        this.existingValues = new Set(Array.from(targetSelect.options).map(this.valueOf));
+        this.targetSelect = targetSelect;
+    }
+    valueOf(obj){ return obj.value }
+    removeNonExistent(option){
+        if (this.sourceValues.has(option.value)) return;
 
-    // Extract existing values from the source select
-    const sourceValues = new Set(Array.from(sourceSelect.options).map(option => option.value));
-
-    // Remove options from targetSelect that do not exist in sourceSelect
-    Array.from(targetSelect.options).forEach(option => {
-        if (!sourceValues.has(option.value)) {
-            targetSelect.removeChild(option);
-            refreshCustomDropdownDisplay(targetSelect);
-        }
-    });
-
-    // Extract existing values from the target select after removal
-    const existingValues = new Set(Array.from(targetSelect.options).map(option => option.value));
-
-    // Add options from sourceSelect to targetSelect if they do not already exist
-    Array.from(sourceSelect.options).forEach(option => {
+        this.targetSelect.removeChild(option);
+        CustomDropdown.refreshDisplay(this.targetSelect);
+    }
+    addNonExistent(option){
         const optionValue = option.value;
-        if (!existingValues.has(optionValue)) {
-            const optionData = { text: option.text, value: option.value, key: option.getAttribute('data-key') };
-            addOptionToCustomDropdown(targetSelect, optionData);
-            existingValues.add(optionValue);
-        }
-    });
-}
+        if (this.existingValues.has(optionValue)) return;
 
-function refreshAiNodeOptions(node, setValues = false) {
-    // Sync options from global dropdowns to node-specific dropdowns
-    syncOptions('inference-select', node.inferenceSelect, 'inference-select-storage');
-    syncOptions('open-ai-select', node.openAiSelect, 'open-ai-select-storage');
-    syncOptions('anthropic-select', node.anthropicSelect, 'anthropic-select-storage');
-    syncOptions('groq-select', node.groqSelect, 'groq-select-storage');
-    syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage');
-    syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage');
-
-    if (setValues) {
-        // Set the selected value of the target dropdowns based on the selected value of the source dropdowns
-        setSelectedValue('inference-select', node.inferenceSelect);
-        setSelectedValue('open-ai-select', node.openAiSelect);
-        setSelectedValue('anthropic-select', node.anthropicSelect);
-        setSelectedValue('groq-select', node.groqSelect);
-        setSelectedValue('local-model-select', node.localModelSelect);
-        setSelectedValue('custom-model-select', node.customModelSelect);
+        const key = option.getAttribute('data-key');
+        CustomDropdown.addOption(this.targetSelect, option.text, optionValue, key);
+        this.existingValues.add(optionValue);
     }
 }
 
-function setSelectedValue(sourceId, targetSelect) {
-    const sourceSelect = document.getElementById(sourceId);
-    const selectedValue = sourceSelect.value;
-
-    // Set the selected value of the target select element
-    targetSelect.value = selectedValue;
+AiNode.refreshOptions = function(node, setValues = false){
+    // Sync options from global dropdowns to node-specific dropdowns
+    syncOptions('inference-select', node.inferenceSelect, 'inference-select-storage', setValues);
+    syncOptions('open-ai-select', node.openAiSelect, 'open-ai-select-storage', setValues);
+    syncOptions('anthropic-select', node.anthropicSelect, 'anthropic-select-storage', setValues);
+    syncOptions('groq-select', node.groqSelect, 'groq-select-storage', setValues);
+    syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage', setValues);
+    syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage', setValues);
 }
 
 const allOptions = [
@@ -801,7 +672,7 @@ const allOptions = [
 ];
 
 // Function to create a checkbox array with a subset of options
-function createCheckboxArray(llmNodeCount, subsetOptions) {
+function createCheckboxArray(nodeIndex, subsetOptions) {
     const checkboxArrayDiv = document.createElement('div');
     checkboxArrayDiv.className = 'checkboxarray';
 
@@ -810,8 +681,8 @@ function createCheckboxArray(llmNodeCount, subsetOptions) {
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.id = `${option.id}-checkbox-${llmNodeCount}`;
-        checkbox.name = `${option.id}-checkbox-${llmNodeCount}`;
+        checkbox.id = option.id + '-checkbox-' + nodeIndex;
+        checkbox.name = option.id + '-checkbox-' + nodeIndex;
 
         const label = document.createElement('label');
         label.setAttribute('for', checkbox.id);
@@ -825,7 +696,7 @@ function createCheckboxArray(llmNodeCount, subsetOptions) {
     return checkboxArrayDiv;
 }
 
-function createCustomInstructionsTextarea(llmNodeCount) {
+function createCustomInstructionsTextarea() {
     const containerDiv = document.createElement('div');
     containerDiv.className = 'custom-instructions-container';
 
