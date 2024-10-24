@@ -2,7 +2,7 @@ let embeddingsWorker;
 let browserEmbeddingsInitialized = {};
 
 function initializeEmbeddingsWorker() {
-    embeddingsWorker = new Worker('embeddings.js');
+    embeddingsWorker = new Worker('/embeddings.js', { type: 'module' });
 
     embeddingsWorker.onmessage = function (e) {
         if (e.data.type === 'ready') {
