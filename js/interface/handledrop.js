@@ -345,7 +345,7 @@ class DropHandler {
 
     // Centralized handler for 'application' base type (e.g., PDFs)
     createPDFNode(name, url) {
-        const node = createLinkNode(name, name, url);
+        const node = LinkNode.create(name, name, url);
         node.fileName = name;
         this.afterNodeCreation(node);
     }
