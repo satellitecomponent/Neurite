@@ -66,7 +66,9 @@ async function fetchLocalEmbeddings(text, model) {
             }
         };
         embeddingsWorker.addEventListener('message', messageHandler);
-        embeddingsWorker.postMessage({ text: text, model: model });
+
+        // Add type: 'generate' to specify the message type
+        embeddingsWorker.postMessage({ type: 'generate', text: text, model: model });
     });
 }
 
