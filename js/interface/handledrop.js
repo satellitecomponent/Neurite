@@ -431,9 +431,7 @@ class DropHandler {
                 if (lines.length > 1) lines.splice(1, 1);
 
                 // Add the triple backticks at the start of the first line and at the end of the content
-                content = (lines[0] ? "```" + lines[0] : "```") + '\n' + lines.slice(1).join('\n') + "\n```";
-
-                shouldAddCodeButton = true;
+                content = (lines[0] ? "```" + lines[0] : "```") + "\n" + lines.slice(1).join('\n') + "\n```";
             }
 
             const fullTitle = title + ' ' + getDefaultTitle();
