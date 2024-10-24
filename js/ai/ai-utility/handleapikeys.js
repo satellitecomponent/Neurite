@@ -186,8 +186,12 @@ async function loadKeysFromFile() {
             const contents = await file.text();
 
             const keys = JSON.parse(contents);
-            for (provider in Providers) {
-                Elem.byId(provider.inputId).value = keys[provider.storageId || provider.inputId] || '';
+            for (providerId in Providers) {
+                const provider = Providers[providerId];
+                const inputId = provider.inputId;
+                if (!inputId) continue;
+
+                Elem.byId(inputId).value = keys[provider.storageId || inputId] || '';
             }
         } else {
             // Handle lack of support for showOpenFilePicker
@@ -201,9 +205,13 @@ async function loadKeysFromFile() {
 }
 
 function clearKeys() {
-    for (provider in Providers) {
-        localStorage.removeItem(provider.storageId || provider.inputId);
-        Elem.byId(provider.inputId).value = '';
+    for (providerId in Providers) {
+        const provider = Providers[providerId];
+        const inputId = provider.inputId;
+        if (!inputId) continue;
+
+        localStorage.removeItem(provider.storageId || inputId);
+        Elem.byId(inputId).value = '';
     }
 }
 

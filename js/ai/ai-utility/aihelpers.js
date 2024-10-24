@@ -10,11 +10,11 @@ const Providers = {
 }
 
 Ai.determineModel = function(node){
-    const provider = (node? node.inferenceSelect : Elem.byId('inference-select')).value;
-    const aiProvider = Providers[provider];
-    const select = (node ? node[aiProvider.nodeSelectId] : Elem.byId(aiProvider.domSelectId));
-    const model = (provider === 'custom' ? select.options[select.selectedIndex].text : select.value);
-    return { provider, model };
+    const providerId = (node? node.inferenceSelect : Elem.byId('inference-select')).value;
+    const provider = Providers[providerId];
+    const select = (node ? node[provider.nodeSelectId] : Elem.byId(provider.domSelectId));
+    const model = (providerId === 'custom' ? select.options[select.selectedIndex].text : select.value);
+    return { providerId, model };
 }
 
 // Function to check if Embed (Data) is enabled

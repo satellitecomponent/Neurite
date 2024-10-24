@@ -599,7 +599,7 @@ AiNode.setupCustomSelect = function(dropdown){
     }
     CustomDropdown.addEventListeners(dropdown);
 
-    const refresh = AiNode.refreshOptions.bind(null, node);
+    const refresh = AiNode.refreshOptions.bind(null, node, false); // false needed to not setValues
     dropdown.addEventListener('change', refresh);
     dropdown.closest('.dropdown-container').addEventListener('click', refresh);
 }
@@ -652,7 +652,7 @@ const ctSyncOptions = class {
     }
 }
 
-AiNode.refreshOptions = function(node, setValues = false){
+AiNode.refreshOptions = function(node, setValues){
     // Sync options from global dropdowns to node-specific dropdowns
     syncOptions('inference-select', node.inferenceSelect, 'inference-select-storage', setValues);
     syncOptions('open-ai-select', node.openAiSelect, 'open-ai-select-storage', setValues);

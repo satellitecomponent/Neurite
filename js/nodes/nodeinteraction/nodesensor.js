@@ -46,7 +46,7 @@ class NodeSensor {
     findNearbyNodes(radius) {
         const originUuid = this.originNode.uuid;
         return ProcessedNodes.filter( (node)=>{
-            return uuid !== originUuid && this.isWithinRange(node, radius)
+            return node.uuid !== originUuid && this.isWithinRange(node, radius)
         });
     }
 
