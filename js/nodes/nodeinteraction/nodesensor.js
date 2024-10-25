@@ -1,4 +1,3 @@
-
 class NodeSensor {
     constructor(originNode, maxNodeCount, extendedRadiusFactor = 1.1) {
         this.originNode = originNode;
@@ -112,7 +111,6 @@ class NodeSensor {
         //    extendedSearchArea.draw(this.sensorDataCanvas);
         //}
     }
-        
 
     findFarthestNodePosition() {
         let farthestNode = null;
@@ -155,6 +153,7 @@ class NodeSensor {
 }
 
 
+
 // SearchArea class
 class SearchArea {
     constructor(originNode, farthestPoint, farthestScale, style = {
@@ -195,6 +194,7 @@ class SearchArea {
         svgGroup.appendChild(this.html);
     }
 }
+
 
 
 class SensorEdge {

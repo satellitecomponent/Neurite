@@ -1,5 +1,3 @@
-
-
 // Initial Network Class from, https://github.com/gniziemazity/self-driving-car/blob/main/8.%20Optimizing%20neural%20networks/network.js
 
 class NeuralNetwork {

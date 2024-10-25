@@ -1,4 +1,3 @@
-
 function createLlmNode(name = '', sx, sy, x, y) {
     const llmNodeCount = AiNode.count;
 
@@ -216,11 +215,9 @@ function createLlmNode(name = '', sx, sy, x, y) {
         };
     });
 
-
     node.isLLM = true;
 
     AiNode.init(node);
-
 
     return node;
 }
@@ -346,7 +343,6 @@ AiNode.setupResponseDivListeners = function(node){
 
     // Call scrollToBottom whenever there's an input
     node.aiResponseTextArea.addEventListener('input', scrollToBottom);
-
 
     // Tolerance in pixels
     const epsilon = 5;
@@ -518,8 +514,6 @@ Elem.makeSlider = function(id, label, initialValue, min, max, step){
     sliderDiv.append(sliderLabel, sliderInput);
     return sliderDiv;
 }
-
-
 
 AiNode.setupSliderListeners = function(node){
     const sliders = node.content.querySelectorAll('input[type=range]');

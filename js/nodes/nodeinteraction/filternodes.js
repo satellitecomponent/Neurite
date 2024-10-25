@@ -1,4 +1,3 @@
-
 //Node filtering helper functions
 
 async function forget(userMessage, combinedContext) {
@@ -79,6 +78,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
 }
 
 
+
                         //console.log(contents);
 /*
      const connectedNodesInfo = node.edges
@@ -92,7 +92,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
            }
        }).join('\n')
           : '';
- 
+
       const edgeInfo = node.edges
            .map((edge) => {
                if (edge.nodeA && edge.nodeB) {
@@ -100,7 +100,7 @@ function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToFo
                } else {
                    return ''; // Return an empty string or a placeholder message if connectedNode is undefined
                }
-          }).join('\n'); 
+          }).join('\n');
 const createdAt = node.createdAt;
 
 UUID: ${node.uuid}\n       Creation Time: ${createdAt} */

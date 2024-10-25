@@ -1,4 +1,3 @@
-
 // Function for custom slider background
 function setSliderBackground(slider) {
     const min = slider.min ? parseFloat(slider.min) : 0;

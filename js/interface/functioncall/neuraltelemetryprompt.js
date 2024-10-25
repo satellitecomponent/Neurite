@@ -1,4 +1,3 @@
-
 class NeuralTelemetry {
     constructor() {
         // The constructor can be used to initialize any necessary state,
@@ -279,7 +278,6 @@ Returns the user response as a string*/`,
     },
     // ... add more function objects as needed
 };
-
 
 function constructPromptWithFunctions(functions, forVision = false) {
     let prompt = "";

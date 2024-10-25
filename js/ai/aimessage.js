@@ -1,8 +1,6 @@
-
 Elem.byId('auto-mode-checkbox').addEventListener('change', function () {
     if (this.checked) Ai.isFirstAutoModeMessage = true;
 });
-
 
 async function sendMessage(event, autoModeMessage = null) {
     const activeInstance = getActiveZetCMInstanceInfo();
@@ -23,17 +21,14 @@ async function sendMessage(event, autoModeMessage = null) {
 
     promptElement.dispatchEvent(promptEvent);
 
-
     const message = autoModeMessage ? autoModeMessage : promptValue;
     Ai.latestUserMessage = message;
 
     const isAutoModeEnabled = Elem.byId('auto-mode-checkbox').checked;
 
-
     if (isAutoModeEnabled && Ai.originalUserMessage === null) {
         Ai.originalUserMessage = message;
     }
-
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
@@ -103,7 +98,6 @@ async function sendMessage(event, autoModeMessage = null) {
             content: "Google Search RESULTS displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> CITE your sources! Always REMEMBER to follow the <format> message",
         };
     }
-
 
     // Start the message
     let messages = [
@@ -222,7 +216,6 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
     userScrolledUp = false;
 
     // Handle Wolfram Loop after appending the prompt.
-
 
     let wolframData;
 

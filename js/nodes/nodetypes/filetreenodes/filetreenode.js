@@ -32,7 +32,7 @@ function initFileTreeNode(node) {
     addFileTreeContainerListeners(node);
 }
 
-function addFileTreeContainerListeners(node) { 
+function addFileTreeContainerListeners(node) {
 
     // Stop mouse-following when interacting with the file tree container
     node.fileTreeContainer.addEventListener('mousedown', (event) => {

@@ -1,4 +1,3 @@
-
 // Function to handle various events on the node panel
 function handlePanelEvent(e) {
     cancel(e);
@@ -23,7 +22,6 @@ const functionErrorIcon = Elem.byId('functionErrorIcon');
 
 const functionSendButton = Elem.byId('function-send-button');
 const functionRegenButton = Elem.byId('function-regen-button');
-
 
 CodeMirror.defineMode("ignoreCodeBlocks", function (config) {
     var jsMode = CodeMirror.getMode(config, { name: "javascript" });
@@ -96,7 +94,6 @@ neuriteFunctionCM.on('change', function () {
         neuriteFunctionCM.scrollTo(null, scrollInfo.height);
     }
 });
-
 
 // Global log collector
 let logCollector = [];
@@ -202,7 +199,6 @@ function updateFunctionCallItem(title, itemId, error = null) {
 
     item.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
-
 
 function formatResultAsTitle(result) {
     let titleString;
@@ -360,7 +356,6 @@ functionCallList.addEventListener('click', function (event) {
     }
 });
 
-
 // Show the Clear button when the mouse enters the function call list
 functionCallList.addEventListener('mouseenter', () => {
     if (functionCallList.children.length > 0) { // Only show if there are items
@@ -397,7 +392,6 @@ clearButton.addEventListener('click', () => {
     clearButton.style.display = 'none';
 });
 
-
 function saveFunctionCallsToLocalStorage() {
     const items = functionCallList.querySelectorAll('div');
     const functionCalls = Array.from(items).map(item => {
@@ -424,8 +418,6 @@ restoreFunctionCallsFromLocalStorage();
 function clearFunctionCallsFromLocalStorage() {
     localStorage.removeItem('neuriteFunctionCalls');
 }
-
-
 
 function extractCodeBlocks(code) {
     // Regular expression to match code blocks enclosed in triple backticks, ignoring any language label

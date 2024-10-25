@@ -1,4 +1,3 @@
-//console.log("test");
 document.body.style.overflow = 'hidden';
 var svg = Elem.byId('svg_bg');
 let svg_bg = svg.getElementById('bg');
@@ -252,13 +251,11 @@ SVG.updateViewbox = function(){
 
     svg.setAttribute("viewBox", lc.x + ' ' + lc.y + ' ' + d + ' ' + d);
 
-
     if (r !== this.oldRotation) {
         this.oldRotation = r;
         svg_viewmat.setAttribute("transform", "rotate(" + (-r * 180 / Math.PI) + ')');
         //svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+" "+c.x+" "+c.y+')');
     }
-
 
     return
 
@@ -277,7 +274,6 @@ SVG.updateViewbox = function(){
     //svg_bg.setAttribute("transform","matrix("+z.x+' '+(-z.y)+' '+(z.y)+' '+(z.x)+' '+SVGpan.x+' '+SVGpan.y+')');
 
 }
-
 
 SVG.recalc = function(){
     const oldPan = this.oldPan;
@@ -500,12 +496,10 @@ Color.strRgb = function(i, r, c, s){
     return 'RGB(' + round(rgb[0]) + ',' + round(rgb[1]) + ',' + round(rgb[2]) + ')';
 }
 
-
 //let l = Elem.byId('link);
 //l.style.position="absolute";
 //l.style.left="100px";
 //l.style.top="100px";
-
 
 function outlineMand(start, step = 0.1, iters = 256) {
     let a0 = start.pang();

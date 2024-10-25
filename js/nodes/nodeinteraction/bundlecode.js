@@ -61,7 +61,6 @@ async function loadPyodideAndSetup() {
 async function runPythonCode(code, pythonView, uuid) {
     let identifier = uuid; // Retrieve the UUID
     pythonViewMap.set(identifier, pythonView); // Associate the view with the UUID
-    
     pythonView.innerHTML = "Initializing Pyodide and dependencies...";
 
     if (!pyodide) {
@@ -102,9 +101,6 @@ async function runPythonCode(code, pythonView, uuid) {
         currentPythonView = null; // Reset the current Python view
     }
 }
-
-
-
 
 function bundleWebContent(nodesInfo) {
     let htmlContent = [];

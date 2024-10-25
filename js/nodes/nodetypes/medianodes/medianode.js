@@ -24,6 +24,5 @@ function createMediaNode(type, metadataOrFile, url) {
         }
     });
 
-    // Return the node immediately
     return node;
 }

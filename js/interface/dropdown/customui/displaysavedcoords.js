@@ -1,5 +1,3 @@
-
-
 // https://www.mrob.com/pub/muency/colloquialnames.html
 
 const defaultSavedViews = {
@@ -209,7 +207,6 @@ function getSavedViews() {
     }
 }
 
-
 function receiveCurrentView() {
     const standardCoords = neuriteGetMandelbrotCoords();
     const functionCallFormat = neuriteGetMandelbrotCoords(true);
@@ -222,7 +219,6 @@ function receiveCurrentView() {
         functionCall: functionCallFormat
     };
 }
-
 
 function generateCopyPasteSavedViews() {
     return JSON.stringify(savedViews, null, 2);
@@ -306,7 +302,6 @@ function deleteSavedView(index) {
     Coordinate.resetSelected();
 }
 
-
 function returnToSavedView(savedView, animate = true, speed = 0.0001) {
     const standardCoords = savedView?.standardCoords;
     if (!standardCoords) {
@@ -337,8 +332,6 @@ function listSavedViews() {
         };
     });
 }
-
-
 
 
 

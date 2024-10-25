@@ -12,7 +12,7 @@
         // User-defined logic goes here
     }
 
-// Utility methods // 
+// Utility methods //
     findNearbyNodes() {
         const sensor = this.agent.sensor;
         sensor.callUpdate();
@@ -223,7 +223,7 @@ function updateNodeStartAutomataAction() {
     automataManager.toggleAutomata(); // Toggle the state of the automata
 }
 
-/* Usage 
+/* Usage
 // Creating an instance of the CellularAutomataManager
 const automataManager = new CellularAutomataManager();
 
@@ -241,4 +241,4 @@ automataManager.stopAutomata();
 // Updating agent state (if needed)
 automataManager.updateAgentState(AnotherCustomAgentState);
 
-    */
+*/

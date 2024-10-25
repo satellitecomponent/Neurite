@@ -1,5 +1,3 @@
-
-
 // Abstract Base Class (ABC)
 class BaseParser {
     constructor(text, MAX_CHUNK_SIZE, overlapSize) {
@@ -269,7 +267,6 @@ function getGitHubParser(fileExtension, text, MAX_CHUNK_SIZE, overlapSize) {
     return new ParserClass(text, MAX_CHUNK_SIZE, overlapSize);
 }
 
-
 function isGitHubUrl(url) {
     return url.includes('github.com');
 }
@@ -352,9 +349,8 @@ function sanitizeGitHubText(text) {
     return text.replace(/[^\x20-\x7E]/g, '');
 }
 
-
 function githubChunkText(text, maxLength, overlapSize) {
-    // Splits text into chunks with respect to the maximum length, 
+    // Splits text into chunks with respect to the maximum length,
     // ensuring that the end of each chunk coincides with the end of a complete line of code.
     const chunks = [];
     let currentChunk = '';

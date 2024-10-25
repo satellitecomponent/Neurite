@@ -1,4 +1,3 @@
-
 window.startedViaPlaywright = window.startedViaPlaywright || false;
 
 //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
@@ -115,8 +114,6 @@ var settings = {
     renderDChar: "L",
     opacity: 1,
 
-
-
     iterations: 256,
 
     //autopilotRF_Pscale:1,
@@ -145,7 +142,6 @@ var settings = {
 
 var flashlight_stdev = 0.25; // this is the radius of the flashlight
 var flashlight_fraction = 0.73; // this is what fraction of samples are diverted to the flashlight
-
 
 
 
@@ -240,12 +236,15 @@ ProcessedNodes.addNodeToMap = function(node, processedMap){
     };
 }
 ProcessedNodes.filter = function(cb, ct){
-    const map = ProcessedNodes.map;
     const foundNodes = [];
-    for (const uuid in map) {
-        if (cb.call(ct, map[uuid])) foundNodes.push(node);
-    }
+    ProcessedNodes.forEach( (node)=>{
+        if (cb.call(ct, node)) foundNodes.push(node)
+    });
     return foundNodes;
+}
+ProcessedNodes.forEach = function(cb, ct){
+    const map = ProcessedNodes.map;
+    for (const uuid in map) cb.call(ct, map[uuid]);
 }
 ProcessedNodes.getById = function(nodeUuid){
     return ProcessedNodes.map[nodeUuid]
@@ -267,6 +266,7 @@ ProcessedNodes.removeById = function(nodeUuid){
 
     delete map[nodeUuid];
 }
+
 
 
 var draggedNode = null;
@@ -403,7 +403,6 @@ SVG.create.svg = SVG.create.bind(Elem, 'svg');
 SVG.create.use = SVG.create.bind(Elem, 'use');
 
 //ai.js
-
 
 // nodedef.js ainodemessage.js
 const AiNode = {

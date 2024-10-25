@@ -17,7 +17,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
         // Increment the Wolfram call counter
         wolframCallCounter++;
 
-        // Insert the tag and unique title to the note-input 
+        // Insert the tag and unique title to the note-input
         window.currentActiveZettelkastenMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(window.currentActiveZettelkastenMirror.lastLine()));
     }
 
@@ -137,7 +137,6 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
         row.appendChild(imageCell);
         table.appendChild(row);
     }
-
 
     return { table, wolframAlphaTextResult, reformulatedQuery };
 }

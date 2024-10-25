@@ -1,4 +1,3 @@
-
 async function receiveOllamaModelList(includeEmbeddingsModels = false) {
     try {
         const response = await fetch(Ollama.baseUrl + 'tags');

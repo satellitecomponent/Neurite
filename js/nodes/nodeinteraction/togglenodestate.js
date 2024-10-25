@@ -185,8 +185,6 @@ function expandNode(node, div, circle) {
 
 
 
-
-
 //Drag Box Selection
 
 /*

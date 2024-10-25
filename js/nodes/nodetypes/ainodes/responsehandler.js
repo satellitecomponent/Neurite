@@ -1,5 +1,3 @@
-
-
 // Update handleUserPrompt, handleMarkdown, and renderCodeBlock to make the created divs draggable
 function makeDivDraggable(div, customTitle, handle) {
     handle = handle || div; // Default to the div itself if no handle is provided
@@ -15,7 +13,6 @@ function makeDivDraggable(div, customTitle, handle) {
     });
     div.addEventListener('dragend', resetDraggable);
 }
-
 
 //Handles Ai node conversation parsing for Prismjs and a div css.
 //Creates div class, user-prompt, ai-response, code-block
@@ -156,7 +153,6 @@ class ResponseHandler {
         });
     }
 
-
     findSnippetData(snippetNumber, source) {
         // First, check in the current top N chunks
         if (this.node.currentTopNChunks) {
@@ -255,7 +251,6 @@ class ResponseHandler {
         let parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
         responseDiv.innerHTML = parsedHtml;
     }
-
 
     getOrCreateResponseDiv(index) {
         const lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
@@ -609,7 +604,6 @@ class ResponseHandler {
 }
 
 const nodeResponseHandlers = new Map();
-
 
 /*
 Elem.byId('localLLM).addEventListener('change', function () {

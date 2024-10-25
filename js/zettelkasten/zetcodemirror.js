@@ -1,4 +1,3 @@
-
 function getAllInternalZettelkastenNodes() {
     const allNodes = {};
     window.zettelkastenProcessors.forEach(processor => {
@@ -6,7 +5,6 @@ function getAllInternalZettelkastenNodes() {
     });
     return allNodes;
 }
-
 
 let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates
 
@@ -259,7 +257,6 @@ function updateAllZettelkastenProcessors() {
     });
 }
 
-
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
     var node = parserConfig.node || '';
@@ -300,7 +297,6 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
                 const map = { 'html': htmlMixedMode, 'css': cssMode, 'js': jsMode, 'python': pythonMode };
                 return (map[state.inBlock]).token(stream, state.subState);
             }
-
 
             if (stream.match(Prompt)) return "Prompt";
             if (stream.match(node)) return "node";
@@ -372,7 +368,6 @@ function getZetNodeCMInstance(nodeOrTitle) {
     return null;
 }
 
-
 function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -405,6 +400,7 @@ function removeEdgeFromAllInstances(startTitle, endTitle) {
     removeEdgeFromZettelkasten(startTitle, endTitle);
     removeEdgeFromZettelkasten(endTitle, startTitle);
 }
+
 
 
 class ZettelkastenUI {
