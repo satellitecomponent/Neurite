@@ -240,12 +240,15 @@ ProcessedNodes.addNodeToMap = function(node, processedMap){
     };
 }
 ProcessedNodes.filter = function(cb, ct){
-    const map = ProcessedNodes.map;
     const foundNodes = [];
-    for (const uuid in map) {
-        if (cb.call(ct, map[uuid])) foundNodes.push(node);
-    }
+    ProcessedNodes.forEach( (node)=>{
+        if (cb.call(ct, node)) foundNodes.push(node)
+    });
     return foundNodes;
+}
+ProcessedNodes.forEach = function(cb, ct){
+    const map = ProcessedNodes.map;
+    for (const uuid in map) cb.call(ct, map[uuid]);
 }
 ProcessedNodes.getById = function(nodeUuid){
     return ProcessedNodes.map[nodeUuid]
