@@ -1,4 +1,3 @@
-
 function handleKeyDown(event) {
     if (event.key === 'Enter') {
         if (event.shiftKey) {

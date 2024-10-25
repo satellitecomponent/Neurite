@@ -1,4 +1,3 @@
-
 /*
 
 function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
@@ -84,7 +83,6 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     Graph.edges.push(edge);
     return edge;
 }
-
 
 function getConnectedNodes(node) {
     // Get the connected nodes

@@ -152,7 +152,6 @@ class FileTree {
         this.selectedElement = itemElement;
         itemElement.classList.add('selected');
     }
-  
 
     addDragEvents(itemElement, item, path) {
         itemElement.setAttribute('draggable', 'true'); // Make the file item draggable

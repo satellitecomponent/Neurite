@@ -1,4 +1,3 @@
-
 var zoomTo = new vec2(4, 0);
 var panTo = new vec2(0, 0);
 var autopilotReferenceFrame = undefined;
@@ -255,6 +254,7 @@ svg.addEventListener('wheel', (e) => {
         cancel(e);
     }
 });
+
 
 
 //Touchpad controls (WIP)

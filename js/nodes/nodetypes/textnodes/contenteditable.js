@@ -55,8 +55,6 @@ function createSyntaxTextarea() {
     return editorWrapper;
 }
 
-
-
 function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
     displayDiv.scrollTop = userInputTextarea.scrollTop;
     displayDiv.scrollLeft = userInputTextarea.scrollLeft;
@@ -99,7 +97,6 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
         }
     }, 3000);
 
-
     // Highlight Codemirror text on focus of contenteditable div
     userInputTextarea.onfocus = function () {
         syncDisplayFromInputTextareaScroll(this, displayDiv);
@@ -133,11 +130,9 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
         }
     });
 
-
     userInputTextarea.addEventListener('paste', function (event) {
         event.stopPropagation();
     });
-
 }
 
 let isEditableDivProgrammaticChange = false;
@@ -171,7 +166,7 @@ function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
 
         // Count leading empty lines in the textarea
         const leadingEmptyLines = (textareaValue.match(/^(\n*)/) || [''])[0];
-        
+
         // Combine leading empty lines with the content editable value
         const newValue = leadingEmptyLines + contentEditableValue.trimStart();
 

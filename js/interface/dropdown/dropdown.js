@@ -1,6 +1,4 @@
-﻿
-
-const aiTab = new AiTab();
+﻿const aiTab = new AiTab();
 const editTab = new EditTab(settings);
 
 // Function to save the value of a specific slider or color picker
@@ -41,24 +39,23 @@ function restoreInputValues() {
 
 restoreInputValues();
 
-        //disable ctl +/- zoom on browser
-        document.addEventListener('keydown', (event) => {
-            if (event.ctrlKey && (event.key === '+' || event.key === '-' || event.key === '=')) {
-                event.preventDefault();
-            }
-        });
+//disable ctl +/- zoom on browser
+document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && (event.key === '+' || event.key === '-' || event.key === '=')) {
+        event.preventDefault();
+    }
+});
 
-        document.addEventListener('wheel', (event) => {
-            if (event.ctrlKey) {
-                event.preventDefault();
-            }
-        }, {
-            passive: false
-        });
+document.addEventListener('wheel', (event) => {
+    if (event.ctrlKey) {
+        event.preventDefault();
+    }
+}, {
+    passive: false
+});
 
-        document.body.style.transform = "scale(1)";
-        document.body.style.transformOrigin = "0 0";
-
+document.body.style.transform = "scale(1)";
+document.body.style.transformOrigin = "0 0";
 
 function openTab(tabId, element) {
     var i, tabcontent, tablinks;
@@ -78,60 +75,57 @@ function openTab(tabId, element) {
 
     window.currentActiveZettelkastenMirror.refresh();
 }
-        // Get the menu button and dropdown content elements
-        const menuButton = document.querySelector(".menu-button");
-        const dropdownContent = document.querySelector(".dropdown-content");
-        const nodePanel = document.querySelector(".node-panel");
 
+// Get the menu button and dropdown content elements
+const menuButton = document.querySelector(".menu-button");
+const dropdownContent = document.querySelector(".dropdown-content");
+const nodePanel = document.querySelector(".node-panel");
 
-        // Get the first tabcontent element
-        const firstTab = document.querySelector(".tabcontent");
+// Get the first tabcontent element
+const firstTab = document.querySelector(".tabcontent");
 
-        dropdownContent.addEventListener("paste", function (e) {
-        });
-        dropdownContent.addEventListener("wheel", function (e) {
-            cancel(e);
-        });
-        dropdownContent.addEventListener("dblclick", function (e) {
-            cancel(e);
-        });
+dropdownContent.addEventListener("paste", function (e) {
+});
+dropdownContent.addEventListener("wheel", function (e) {
+    cancel(e);
+});
+dropdownContent.addEventListener("dblclick", function (e) {
+    cancel(e);
+});
 
-        // Add an event listener to the menu button
-        menuButton.addEventListener("click", function (event) {
-            // Prevent the click event from propagating
-            event.stopPropagation();
+// Add an event listener to the menu button
+menuButton.addEventListener("click", function (event) {
+    // Prevent the click event from propagating
+    event.stopPropagation();
 
-            // Toggle the "open" class on the menu button and dropdown content
-            menuButton.classList.toggle("open");
-            dropdownContent.classList.toggle("open");
-            nodePanel.classList.toggle("open");
+    // Toggle the "open" class on the menu button and dropdown content
+    menuButton.classList.toggle("open");
+    dropdownContent.classList.toggle("open");
+    nodePanel.classList.toggle("open");
 
-            // If the dropdown is opened, manually set the first tab to active and display its content
-            if (dropdownContent.classList.contains("open")) {
-                var tablinks = document.getElementsByClassName("tablink");
-                var tabcontent = document.getElementsByClassName("tabcontent");
+    // If the dropdown is opened, manually set the first tab to active and display its content
+    if (dropdownContent.classList.contains("open")) {
+        var tablinks = document.getElementsByClassName("tablink");
+        var tabcontent = document.getElementsByClassName("tabcontent");
 
-                // Remove active class from all tablinks and hide all tabcontent
-                for (var i = 0; i < tablinks.length; i++) {
-                    tablinks[i].classList.remove("active");
-                    tabcontent[i].style.display = "none";
-                }
+        // Remove active class from all tablinks and hide all tabcontent
+        for (var i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+            tabcontent[i].style.display = "none";
+        }
 
-                // Open the first tab
-                openTab('tab1', tablinks[0]);
+        // Open the first tab
+        openTab('tab1', tablinks[0]);
 
-                // If there's any selected text, deselect it
-                if (window.getSelection) {
-                    window.getSelection().removeAllRanges();
-                } else if (document.selection) {
-                    document.selection.empty();
-                }
-            }
-            
-        });
+        // If there's any selected text, deselect it
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        } else if (document.selection) {
+            document.selection.empty();
+        }
+    }
+});
 
-
-        dropdownContent.addEventListener("mousedown", (e) => {
-            cancel(e);
-        });
-
+dropdownContent.addEventListener("mousedown", (e) => {
+    cancel(e);
+});

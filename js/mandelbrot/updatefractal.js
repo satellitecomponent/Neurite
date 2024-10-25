@@ -59,8 +59,6 @@ function updateEquation() {
     }
 }
 
-
-
 function updateMandStep() {
     const fractalType = document.getElementById("fractal-select").value;
     const exponentValue = document.getElementById("exponent").value;
@@ -136,4 +134,3 @@ function initializeFractalSelect() {
 }
 
 initializeFractalSelect();
-

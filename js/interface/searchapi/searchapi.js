@@ -1,5 +1,3 @@
-//searchapi.js
-
 async function generateKeywords(message, count, specificContext = null, node = null) {
     const lastPromptsAndResponses = specificContext || getLastPromptsAndResponses(2, 150);
     const isEmpty = !lastPromptsAndResponses || !/\S/.test(lastPromptsAndResponses);
@@ -135,8 +133,6 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
         return userMessage;
     }
 }
-
-
 
 async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
     const fetchEmbeddings = Embeddings.fetch;

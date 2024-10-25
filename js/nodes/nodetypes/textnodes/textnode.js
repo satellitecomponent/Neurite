@@ -71,7 +71,7 @@ TextNode.init = function(node){
 
     const textarea = content.querySelector('textarea');
     node.textarea = textarea;
-   
+
     node.htmlView = content.querySelector('#html-iframe');
     node.pythonView = content.querySelector('#python-frame');
     node.textNodeSyntaxWrapper = content.querySelector('#text-syntax-wrapper');

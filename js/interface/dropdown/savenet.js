@@ -218,8 +218,6 @@ Elem.byId('clearLocalStorage').onclick = function () {
     alert('Local storage has been cleared.');
 }
 
-
-
 function handleSaveConfirmation(title, saveData, force = false) {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
     const existingSaves = saves.filter(save => save.title === title);
@@ -256,10 +254,6 @@ function handleSaveConfirmation(title, saveData, force = false) {
     }
 }
 
-
-
-
-
 const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
 
 function replaceNewLinesInLLMSaveData(nodeData) {
@@ -287,8 +281,6 @@ function restoreNewLinesInPreElements(nodeElement) {
         pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
     });
 }
-
-
 
 function collectAdditionalSaveObjects() {
     // Collecting slider values

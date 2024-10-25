@@ -1,4 +1,3 @@
-
 AiNode.sendMessage = async function(node, message = null){
     if (node.aiResponding) {
         console.log("AI is currently responding. Wait for the current response to complete before sending a new message.");
@@ -116,7 +115,6 @@ AiNode.sendMessage = async function(node, message = null){
         });
     }
 
-
     let searchQuery = null;
     let filteredKeys = null;
 
@@ -219,7 +217,6 @@ AiNode.sendMessage = async function(node, message = null){
         }
     });
 
-
     let messageTrimmed = false;
 
     allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
@@ -307,13 +304,11 @@ AiNode.sendMessage = async function(node, message = null){
         });
     }
 
-
     //Finally, send the user message last.
     messages.push({
         role: "user",
         content: node.latestUserMessage
     });
-
 
     node.aiResponding = true;
     node.userHasScrolled = false;

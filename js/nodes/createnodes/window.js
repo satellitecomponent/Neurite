@@ -1,4 +1,3 @@
-
 function windowify(title, content, pos, scale, iscale, link) {
     const odiv = document.createElement('div');
     const div = document.createElement('div');
@@ -18,7 +17,6 @@ function windowify(title, content, pos, scale, iscale, link) {
         innerContent.appendChild(c);
     }
     div.appendChild(innerContent);
-
 
     odiv.setAttribute('data-init', 'window');
     div.setAttribute('class', 'window');
@@ -144,8 +142,6 @@ function setupResizeHandleListeners(node) {
     setResizeEventListeners(resizeHandle, node);
 }
 
-
-
 function rewindowify(node) {
     initWindow(node);
 
@@ -237,8 +233,6 @@ function rewindowify(node) {
     return node;
 }
 
-
-
 function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 0.5, window_it = true) {
     let node;
     if (window_it) {
@@ -268,8 +262,6 @@ function registernode(node) {
     Graph.nodes.push(node);
     nodeMap[node.uuid] = node;
 }
-
-
 
 function scalingFactorsFromElem(element) {
     const style = window.getComputedStyle(element);

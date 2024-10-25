@@ -106,6 +106,7 @@ class SyntaxHighlighter {
 }
 
 
+
 class ZetSyntaxDisplay {
     static syncAndHighlight(displayDiv, hiddenTextarea) {
         let content = hiddenTextarea.value;

@@ -52,7 +52,6 @@ async function captureScreenshot() {
     }
 }
 
-
 function handleDataAvailable(event) {
     // If there's video data to record, add it to our array
     if (event.data.size > 0) {

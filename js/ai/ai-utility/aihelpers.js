@@ -37,8 +37,6 @@ async function isEmbedEnabled(aiNode) {
 
 
 
-
-
 const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
 
 class TokenCounter {
@@ -95,8 +93,6 @@ function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier)
     // Append the user prompt to the CodeMirror editor
     editor.replaceRange(`\n\n${promptIdentifier} ${userMessage}\n`, { line: lineBeforeAppend, ch: 0 });
 }
-
-
 
 function getLastPromptsAndResponses(count, maxTokens, textarea = zetPanes.getActiveTextarea()) {
     if (!textarea) {
@@ -168,10 +164,6 @@ function extractLastPrompt() {
     console.warn("Prompt not found in the last message. Sending with a blank prompt.");
     return '';
 }
-
-
-//ainodes.js
-
 
 function trimToTokenCount(inputText, maxTokens) {
     const tokens = inputText.match(/[\w]+|[^\s\w]/g);

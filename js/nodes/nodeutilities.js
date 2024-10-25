@@ -1,4 +1,3 @@
-
 function nextUUID() {
     while (nodeMap[NodeUUID] !== undefined) {
         NodeUUID++;

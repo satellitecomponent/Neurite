@@ -1,4 +1,3 @@
-
 let nodefromWindow = false;
 let followMouseFromWindow = false;
 
@@ -114,7 +113,6 @@ class ZettelkastenProcessor {
         processAll = false;
         restoreZettelkastenEvent = false;
     }
-
 
     processLine(line, lines, index, nodes, currentNodeTitle) {
         const currentNode = nodes[currentNodeTitle];
@@ -266,7 +264,6 @@ class ZettelkastenProcessor {
         textarea.addEventListener('input', bodyHandler);
     }
 
-
     //Syncs node titles and Zettelkasten
     createTitleInputEventHandler(node, nodes, nodeLines, inputElement) {
         return (e) => {
@@ -340,7 +337,6 @@ class ZettelkastenProcessor {
             currentNodeInstance.ui.scrollToTitle(node.title);
         };
     }
-
 
     //Syncs node text and Zettelkasten
     getHandleNodeBodyInputEvent(node, textarea) {
