@@ -346,7 +346,7 @@ var gestureStartParams = {
 };
 addEventListener('gesturestart', (e) => {
     e.preventDefault();
-    //console.log(e);
+    Logger.debug(e);
     gestureStartParams.rotation = e.rotation;
     gestureStartParams.scale = e.scale;
     gestureStartParams.x = e.pageX;
@@ -357,7 +357,7 @@ addEventListener('gesturestart', (e) => {
 });
 addEventListener('gesturechange', (e) => {
     e.preventDefault();
-    //console.log(e);
+    Logger.debug(e);
     let d_theta = e.rotation - gestureStartParams.rotation;
     let d_scale = e.scale;
     const r = -e.rotation * settings.gestureRotateSpeed;

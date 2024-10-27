@@ -3,7 +3,7 @@
 async function forget(userMessage, combinedContext) {
     // Trim the combinedContext to remove leading and trailing whitespaces and new lines, then check if it's empty.
     if (!combinedContext.trim()) {
-        //console.log("Combined context is empty or just newlines. Skipping API call.");
+        Logger.debug("Combined context is empty or just newlines. Skipping API call.");
         return new Set(); // Return an empty Set since no titles are to be forgotten.
     }
 
@@ -24,10 +24,10 @@ async function forget(userMessage, combinedContext) {
 
     // Now we'll mock calling the AI API just like you did with the 'callchatAPI' function.
     const response = await callchatAPI(forgetQueryContext);
-    console.log(response)
+    Logger.info(response);
     // Extract the node titles to forget from the AI's response
     const titlesToForget = new Set(response.split('\n'));
-    console.log(titlesToForget)
+    Logger.info(titlesToForget);
     return titlesToForget;
 }
 

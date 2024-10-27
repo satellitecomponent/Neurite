@@ -217,23 +217,23 @@ function testToolTipRegex(text1, text2, minMatchLength = 5, maxMatchLength = 20)
     const processedText1 = processText(text1);
     const processedText2 = processText(text2);
 
-    console.log("Processed Text 1:", processedText1);
-    console.log("Processed Text 2:", processedText2);
+    Logger.info("Processed Text 1:", processedText1);
+    Logger.info("Processed Text 2:", processedText2);
 
     // Split into words
     const words1 = processedText1.split(/\s+/);
     const words2 = processedText2.split(/\s+/);
 
-    console.log("Words 1:", words1);
-    console.log("Words 2:", words2);
+    Logger.info("Words 1:", words1);
+    Logger.info("Words 2:", words2);
 
     // Find matches
     for (let i = 0; i <= words1.length - minMatchLength; i++) {
         for (let length = minMatchLength; length <= Math.min(maxMatchLength, words1.length - i); length++) {
             const phrase = words1.slice(i, i + length).join(' ');
-            console.log("Checking phrase:", phrase);
+            Logger.info("Checking phrase:", phrase);
             if (processedText2.includes(phrase)) {
-                console.log("Match found:", phrase);
+                Logger.info("Match found:", phrase);
                 matches.add(phrase);
             }
         }
@@ -277,12 +277,12 @@ function runToolTipTests() {
     ];
 
     testCases.forEach(testCase => {
-        console.log(`Running test: ${testCase.name}`);
+        Logger.info("Running test:", testCase.name);
         const result = testToolTipRegex(testCase.text1, testCase.text2);
-        console.log("Result:", result);
-        console.log("Expected:", testCase.expected);
-        console.log("Pass:", JSON.stringify(result.sort()) === JSON.stringify(testCase.expected.sort()));
-        console.log("--------------------");
+        Logger.info("Result:", result);
+        Logger.info("Expected:", testCase.expected);
+        Logger.info("Pass:", JSON.stringify(result.sort()) === JSON.stringify(testCase.expected.sort()));
+        Logger.info("--------------------");
     });
 }
 

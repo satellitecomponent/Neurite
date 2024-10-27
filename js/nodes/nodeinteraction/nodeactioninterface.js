@@ -14,11 +14,11 @@ const actionParameterTypes = {
 };
 
 function executeNodeMethod(nodeActions, methodName) {
-    console.log("Executing node method:", methodName);
+    Logger.info("Executing node method:", methodName);
     const methodPattern = /(\w+)(\(.*\))?/;
     const match = methodName.match(methodPattern);
     if (!match) {
-        console.error('Invalid method format:', methodName);
+        Logger.err("Invalid method format:", methodName);
         return;
     }
 
@@ -40,7 +40,7 @@ function executeNodeMethod(nodeActions, methodName) {
         nodeActions[actionName](...params);
         addToRecentSuggestions(methodName); // Update recent calls
     } else {
-        console.error('Invalid method for node:', actionName);
+        Logger.err("Invalid method for node:", actionName)
     }
 }
 
@@ -206,7 +206,7 @@ NodeActions.llm = class LLMNodeActions extends NodeActions.base {
         if (!promptTextarea.value.trim()) {
             const userInput = window.prompt("Please enter your prompt:");
             if (userInput === null || userInput.trim() === '') {
-                console.log("No prompt entered");
+                Logger.info("No prompt entered");
                 return;
             }
 
@@ -229,7 +229,7 @@ NodeActions.llm = class LLMNodeActions extends NodeActions.base {
         if (button instanceof HTMLElement) {
             button.click()
         } else {
-            console.error(name, "button not found or is not a valid element")
+            Logger.err(name, "button not found or is not a valid element")
         }
     }
 }

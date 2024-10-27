@@ -4,9 +4,8 @@ function setModelSelectorsVisibility(inferenceSelect) {
 
     // Get the container of the inference select to scope the selection
     const container = inferenceSelect.closest('.local-llm-dropdown-container-' + nodeIndex) || Elem.byId('template-dropdowns');
-
     if (!container) {
-        console.error('Container not found for inference select', inferenceSelect);
+        Logger.err("Container not found for inference select:", inferenceSelect);
         return;
     }
 
@@ -86,7 +85,7 @@ function fetchCustomModelData(modelName) {
         }
     }
     if (!selectedOption) {
-        console.error("No option found with model name:", modelName);
+        Logger.err("No option found with model name:", modelName);
         return null;
     }
 
@@ -94,7 +93,7 @@ function fetchCustomModelData(modelName) {
     const apiKey = selectedOption.getAttribute('data-key');
 
     if (!apiEndpoint) {
-        console.error("Missing Custom Endpoint:", modelName);
+        Logger.err("Missing Custom Endpoint:", modelName);
         return null;
     }
 
@@ -266,7 +265,7 @@ Proxy.provideAPIKeys.ct = class {
 
 function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
     const { provider, model } = inferenceOverride || Ai.determineModel();
-    console.log('Selected Ai:', model);
+    Logger.info("Selected Ai:", model);
     let API_KEY;
     let API_URL;
     let apiEndpoint;
@@ -287,9 +286,10 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
                 // Assume 'modelName' is the name or identifier you are working with
                 const apiDetails = fetchCustomModelData(model);
                 if (!apiDetails) {
-                    console.error("Failed to fetch API details for the model:", model);
-                    break;  // Exit if no API details are found
+                    Logger.err("Failed to fetch API details for the model:", model);
+                    break;
                 }
+
                 // Now use the API details as needed
                 API_URL = 'http://localhost:7070/custom';
                 apiEndpoint = apiDetails.apiEndpoint;

@@ -165,9 +165,9 @@ function runNeuriteCode() {
         if (result !== undefined) {
             logCollector.push(JSON.stringify(result));
         }
-    } catch (error) {
-        console.error('Error executing code:', error);
-        itemId = addFunctionCallItem(error.message, code, true);
+    } catch (err) {
+        Logger.err('In executing code:', err);
+        itemId = addFunctionCallItem(err.message, code, true);
     }
 
     // Cleanup

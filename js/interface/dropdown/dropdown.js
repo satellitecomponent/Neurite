@@ -12,7 +12,7 @@ function saveInputValue(input) {
 
 const debouncedSaveInputValue = debounce(function (input) {
     saveInputValue(input);
-    //console.log(`saved`);
+    Logger.debug("saved");
 }, 300);
 
 document.querySelectorAll('#tab2 input[type="range"], .color-picker-container input[type="color"]').forEach(function (input) {

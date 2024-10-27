@@ -128,7 +128,7 @@ class ZettelkastenParser {
     }
     addEdge(fromTitle, toTitle, cm) {
         if (!fromTitle || !toTitle) {
-            console.error("One or both titles are empty or undefined.");
+            Logger.err("One or both titles are empty or undefined.");
             return;
         }
 
@@ -191,7 +191,7 @@ class ZettelkastenParser {
 
     removeEdge(fromTitle, toTitle, cm) {
         if (!fromTitle || !toTitle) {
-            console.error("One or both titles are empty or undefined.");
+            Logger.err("One or both titles are empty or undefined.");
             return;
         }
 
@@ -378,7 +378,7 @@ let isEdgeBeingAdded = false;
 function getNodeInfo(title, linkedTitle){
     if (title && linkedTitle) return getZetNodeCMInstance(title);
 
-    console.error("One or both titles are empty or undefined.");
+    Logger.err("One or both titles are empty or undefined.");
 }
 function addEdgeToZettelkasten(title, linkedTitle) {
     const nodeInfo = getNodeInfo(title, linkedTitle);

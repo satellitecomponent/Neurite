@@ -170,7 +170,7 @@ class ZettelkastenProcessor {
         if (!nodeContainsReferences && !nodeReferencesCleared) {
             this.handleRefTags([], changedNodeTitle, nodes, lines);
             nodeReferencesCleared = true;
-            //console.log("References cleared for node:", changedNodeTitle);
+            Logger.debug("References cleared for node:", changedNodeTitle);
         }
     }
 
@@ -191,7 +191,7 @@ class ZettelkastenProcessor {
                 return currentNodeTitle;
             }
 
-            console.log("No existing node found for title:", currentNodeTitle);
+            Logger.info("No existing node found for title:", currentNodeTitle);
         }
 
         if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
@@ -235,7 +235,7 @@ class ZettelkastenProcessor {
 
     establishZettelkastenNode(domNode, currentNodeTitle, nodeLines, nodes) {
         if (!domNode) {
-            console.warn("DOM node is undefined, cannot establish Zettelkasten node.");
+            Logger.warn("DOM node is undefined, cannot establish Zettelkasten node.");
             return null;
         }
 

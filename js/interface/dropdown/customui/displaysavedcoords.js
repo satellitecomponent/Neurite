@@ -192,7 +192,7 @@ function getSavedView(query) {
             functionCall: foundView.functionCall // Assuming this is available in your data structure
         };
     } else {
-        console.warn(`No saved view found for query: "${query}"`);
+        Logger.warn(`No saved view found for query: "${query}"`);
         return null;
     }
 }
@@ -202,7 +202,7 @@ function getSavedViews() {
     if (savedViews && savedViews.length > 0) {
         return savedViews;
     } else {
-        console.warn("No saved views are currently available.");
+        Logger.warn("No saved views are currently available.");
         return [];  // Or return null, depending on how you want to handle this case.
     }
 }
@@ -253,7 +253,7 @@ initializeSavedViews();
 function saveCurrentView() {
     const view = receiveCurrentView();
     if (view === null) {
-        console.log("View save cancelled by user.");
+        Logger.info("View save cancelled by user.");
         return;
     }
 
@@ -263,7 +263,7 @@ function saveCurrentView() {
         savedViews[currentFractalType] = [];
     }
     savedViews[currentFractalType].push(view);
-    console.log("View saved:", view.title);
+    Logger.info("View saved:", view.title);
 
     updateSavedViewsCache();
     displaySavedCoordinates();
@@ -287,7 +287,7 @@ Elem.byId('deleteCoordinatesBtn').addEventListener('click', function () {
 
 function deleteSavedView(index) {
     if (index === null || !savedViews[index]) {
-        console.error('No coordinate at index for deletion:', index);
+        Logger.err("No coordinate at index for deletion:", index);
         return;
     }
 
@@ -297,7 +297,7 @@ function deleteSavedView(index) {
     updateSavedViewsCache();
     displaySavedCoordinates();
 
-    console.log("View deleted at index:", index);
+    Logger.info("View deleted at index:", index);
 
     Coordinate.resetSelected();
 }
@@ -305,7 +305,7 @@ function deleteSavedView(index) {
 function returnToSavedView(savedView, animate = true, speed = 0.0001) {
     const standardCoords = savedView?.standardCoords;
     if (!standardCoords) {
-        console.log("Missing or invalid saved view:", savedView);
+        Logger.info("Missing or invalid saved view:", savedView);
         return;
     }
 

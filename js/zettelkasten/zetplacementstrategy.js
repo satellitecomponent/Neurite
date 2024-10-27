@@ -13,55 +13,55 @@ class NodePlacementStrategy {
     }
 
     calculatePositionAndScale(currentNodeTitle) {
-        //console.log("Calculating position and scale...");
-        //console.log("Current path index:", this.currentPathIndex);
-        //console.log("Path length:", this.path.length);
-        //console.log("random?", this.zetPlacementOverride);
+        Logger.debug("Calculating position and scale...");
+        Logger.debug("Current path index:", this.currentPathIndex);
+        Logger.debug("Path length:", this.path.length);
+        Logger.debug("random?", this.zetPlacementOverride);
 
         if (this.zetPlacementOverride) { // Use the directly passed flag
-            //console.log("Placement override active, creating random node");
+            Logger.debug("Placement override active, creating random node");
             return this.createRandomNode(currentNodeTitle);
         }
 
         const nodeKeys = Object.keys(this.nodeObjects);
 
         if (nodeKeys.length === 0) {
-            //console.log("No nodes in nodeObjects, starting from -1,0.");
+            Logger.debug("No nodes in nodeObjects, starting from -1,0.");
             return createTextNodeWithPosAndScale(currentNodeTitle, '', 0.05, -.5, 0);
         }
 
         if (this.currentPathIndex >= this.path.length) {
-            //console.log("Current path index exceeds path length, resetting to 0");
+            Logger.debug("Current path index exceeds path length, resetting to 0");
             this.currentPathIndex = 0;
         }
 
         const currentPathPoint = this.path[this.currentPathIndex];
-        //console.log("Current path point:", currentPathPoint);
+        Logger.debug("Current path point:", currentPathPoint);
 
         if (!currentPathPoint) {
-            //console.log("Current path point is undefined, creating random node");
+            Logger.debug("Current path point is undefined, creating random node");
             this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             return this.createRandomNode(currentNodeTitle);
         }
 
         if (currentPathPoint.useCreateTextNode) {
-            //console.log("Current path point indicates creating random node");
+            Logger.debug("Current path point indicates creating random node");
             this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             return this.createRandomNode(currentNodeTitle);
         }
 
         const startNode = this.getStartNode(currentPathPoint);
-        //console.log("Start node:", startNode);
+        Logger.debug("Start node:", startNode);
 
         if (!startNode) {
-            //console.log("Start node not found, moving to the next path point");
+            Logger.debug("Start node not found, moving to the next path point");
             this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             return this.calculatePositionAndScale(currentNodeTitle);
         }
 
         const { newX, newY, newScale } = this.calculateNewPosition(startNode, currentPathPoint);
-        //console.log("Calculated position:", { x: newX, y: newY });
-        //console.log("Calculated scale:", newScale);
+        Logger.debug("Calculated position:", { x: newX, y: newY });
+        Logger.debug("Calculated scale:", newScale);
 
         this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
 
@@ -82,15 +82,15 @@ class NodePlacementStrategy {
                 : nodeKeys.length - 1 - currentPathPoint.startNodeIndex;
         }
 
-        //console.log("Start node index:", startNodeIndex);
+        Logger.debug("Start node index:", startNodeIndex);
 
         if (startNodeIndex >= 0 && startNodeIndex < nodeKeys.length) {
             const startNode = this.nodeObjects[nodeKeys[startNodeIndex]];
-           // console.log("Selected start node:", startNode);
+            Logger.debug("Selected start node:", startNode);
             return startNode;
         } else {
             const lastNode = this.nodeObjects[nodeKeys[nodeKeys.length - 1]];
-           // console.log("Start node index out of range, using the last node:", lastNode);
+            Logger.debug("Start node index out of range, using the last node:", lastNode);
             return lastNode;
         }
     }

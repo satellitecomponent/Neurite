@@ -23,11 +23,11 @@ async function receiveOllamaModelList(includeEmbeddingsModels = false) {
 
             return models;
         } else {
-            console.error('Failed to fetch model tags');
+            Logger.err("Failed to fetch model tags");
             return [];
         }
     } catch (error) {
-        console.error('Error fetching model tags:', error);
+        Logger.err("Error fetching model tags:", error);
         return [];
     }
 }
@@ -43,18 +43,18 @@ async function getOllamaLibrary() {
             const response = await Promise.race([
                 fetch('http://localhost:7070/ollama/library'),
                 new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Request timed out')), 2500)
+                    setTimeout( ()=>reject(new Error("Request timed out")) , 2500)
                 ),
             ]);
 
             if (!response.ok) {
-                throw new Error('Failed to fetch Ollama library from proxy');
+                throw new Error("Failed to fetch Ollama library from proxy")
             }
 
             const models = await response.json();
             return models;
-        } catch (error) {
-            console.error('Error fetching Ollama library from proxy:', error);
+        } catch (err) {
+            Logger.err("Error fetching Ollama library from proxy:", err)
         }
     }
     return Ollama.defaultModels;
@@ -70,7 +70,7 @@ async function pullOllamaModelWithProgress(name, onProgress) {
 
         const curInstalledNames = Ollama.curInstalledNames;
         if (!response.body) {
-            console.error('Failed to pull model: No response body');
+            Logger.err("Failed to pull model: No response body");
             curInstalledNames.delete(name); // Remove from active downloads on failure
             return false;
         }
@@ -107,7 +107,7 @@ async function pullOllamaModelWithProgress(name, onProgress) {
             }
         }
     } catch (err) {
-        console.error('Error pulling model:', err);
+        Logger.err("Error pulling model:", err);
         Ollama.curInstalledNames.delete(name); // Remove from active downloads on error
         return false;
     }

@@ -48,8 +48,8 @@ class Edge {
         this.attachEventListeners(this.arrowSvg);
         this.attachEventListeners(this.borderSvg);
 
-        //console.log("Creating edge with pts:", pts);
-        //console.log("Directionality after assignment:", this.directionality);
+        Logger.debug("Creating edge with pts:", pts);
+        Logger.debug("Directionality after assignment:", this.directionality);
     }
     dataObj() {
         let o = {};

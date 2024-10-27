@@ -55,7 +55,7 @@ async function loadPyodideAndSetup() {
         __builtins__.run_code_and_capture_output = run_code_and_capture_output
     `);
 
-    console.log('Pyodide loaded');
+    Logger.info("Pyodide loaded");
 }
 
 async function runPythonCode(code, pythonView, uuid) {
@@ -82,21 +82,21 @@ async function runPythonCode(code, pythonView, uuid) {
                 try {
                     await pyodide.loadPackage(module);
                     loadedPackages[module] = true;
-                } catch (error) {
-                    console.log(`Failed to load module: ${module}`);
+                } catch (err) {
+                    Logger.info("Failed to load module:", module);
                 }
             }
         }
 
         // Pass the UUID when calling Python functions
-        let result = pyodide.runPython(
+        const result = pyodide.runPython(
             `run_code_and_capture_output('''${code}''', '${identifier}')`
         );
 
         pythonViewMap.delete(identifier); // Clean up
         return result;
-    } catch (error) {
-        return error.message;
+    } catch (err) {
+        return err.message;
     } finally {
         currentPythonView = null; // Reset the current Python view
     }
@@ -108,18 +108,18 @@ function bundleWebContent(nodesInfo) {
     let jsContent = [];
 
     for (let nodeInfoObj of nodesInfo) {
-        //console.log(nodeInfoObj); // Log the entire object here
+        Logger.debug(nodeInfoObj);
         let nodeInfo = nodeInfoObj.data;
 
         if (typeof nodeInfo !== "string") {
-            console.warn('Data is not a string:', nodeInfo);
+            Logger.warn("Data is not a string:", nodeInfo);
             continue;
         }
 
         let splitContent = nodeInfo.split("Text Content:", 2);
 
         if (splitContent.length < 2) {
-            console.warn('No content found for node');
+            Logger.warn("No content found for node");
             continue;
         }
 
@@ -142,7 +142,7 @@ function bundleWebContent(nodesInfo) {
                     jsContent.push(code);
                     break;
                 default:
-                    console.warn(`Language ${language} not supported for bundling.`);
+                    Logger.warn("Language", language, "not supported for bundling.")
             }
         }
     }
@@ -161,7 +161,7 @@ function syncContent(node) {
     if (editableDiv && hiddenTextarea) {
         syncHiddenTextareaWithInputTextarea(hiddenTextarea, editableDiv);
     } else {
-        console.warn('Either editableDiv or hiddenTextarea is missing');
+        Logger.warn("Either editableDiv or hiddenTextarea is missing")
     }
 }
 
@@ -185,8 +185,8 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
 
         if (allPythonCode !== '') {
             pythonView.classList.remove('hidden');
-            let result = await runPythonCode(allPythonCode, pythonView, node.uuid);
-            console.log('Python code executed, result:', result);
+            const result = await runPythonCode(allPythonCode, pythonView, node.uuid);
+            Logger.info("Python code executed, result:", result);
         }
 
         if (allWebCode.length > 0) {
@@ -231,12 +231,12 @@ function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initial
         displayDiv.style.display = 'none';
         node.displayDiv = displayDiv;
     } else {
-        console.warn('syntax-display-div not found.');
+        Logger.warn("syntax-display-div not found.")
     }
 
     let allConnectedNodesInfo = getAllConnectedNodesData(node);
     allConnectedNodesInfo.push(...allWebCode);
-    console.log(`allconnectednodesinfo`, allConnectedNodesInfo);
+    Logger.info("allconnectednodesinfo", allConnectedNodesInfo);
     let bundledContent = bundleWebContent(allConnectedNodesInfo);
 
     // Ensuring iframe is interactable
@@ -246,14 +246,14 @@ function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initial
 
     // Use srcdoc to inject the content directly
     htmlView.srcdoc = `${bundledContent.html}\n\n${bundledContent.css}\n\n${bundledContent.js}`;
-    console.log(`htmlView.srcdoc`, htmlView.srcdoc);
+    Logger.info("htmlView.srcdoc", htmlView.srcdoc);
 
     // Ensure the iframe allows interactions
     htmlView.onload = function () {
         const iframeDocument = htmlView.contentDocument || htmlView.contentWindow.document;
         iframeDocument.body.style.pointerEvents = 'auto';
         iframeDocument.body.style.userSelect = 'auto';
-        console.log('Iframe content loaded and interactable.');
+        Logger.info("Iframe content loaded and interactable.");
     };
 }
 

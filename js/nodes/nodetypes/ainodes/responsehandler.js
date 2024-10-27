@@ -120,8 +120,8 @@ class ResponseHandler {
             }
             this.previousContent = content;
             this.previousContentLength = this.previousContent.length;
-        } catch (error) {
-            console.error('Error while processing markdown:', error);
+        } catch (err) {
+            Logger.err("While processing markdown:", err)
         }
     }
 
@@ -434,7 +434,7 @@ class ResponseHandler {
                 // Get the HTML content of the promptDiv and replace <br> with newline
                 const message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
 
-                //console.log(`Sending message: "${message}"`);
+                Logger.debug(`Sending message: "${message}"`);
                 AiNode.sendMessage(this.node, message);
             }
         }.bind(this);

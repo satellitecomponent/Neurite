@@ -236,11 +236,11 @@ SVG.updateViewbox = function(){
     if (d < Math.abs(this.recenterThreshold * lc.x) || d < Math.abs(this.recenterThreshold * lc.y)) {
         this.updatePan(pan.scale(1));
         lc = toSVG(toZ(new vec2(0, 0)));
-        //console.log("recentering...");
+        Logger.debug("recentering...");
     }
     if (d < this.rezoomThreshold || d > this.rezoomFactor / this.rezoomThreshold) {
         this.updateZoom(this.zoom * this.rezoomFactor / d);
-        //console.log("rezooming...");
+        Logger.debug("rezooming...");
     }
     if (this.needsRecalc) this.recalc();
 
@@ -656,7 +656,7 @@ function render_hair(n) {
         if (mandDist(iters, pt) < settings.maxDist) return;
 
         for (let p of trace_circle(iters, pt, Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
-            //console.log(p);
+            //Logger.debug(p);
             //if ((n&3) == 0)
             if (!toSVG(p).isFinite()) break;
 
@@ -702,7 +702,7 @@ function render_hair(n) {
         }
 
         if (activeCount > maxLines) {
-            console.log("Still more active elements than max allowed, but all are preserved.");
+            Logger.info("Still more active elements than max allowed, but all are preserved.")
         }
     }
 }
@@ -711,20 +711,20 @@ document.addEventListener('keydown', function (event) {
     if (event.altKey) {
         switch (event.key) {
             case 'f': // toggle preservation
-                console.log("Adding preservation fractal lines.");
+                Logger.info("Adding preservation fractal lines.");
                 Array.from(svg_bg.children).forEach(element => {
                     if (!element.classList.contains('preserve')) {
                         element.classList.add('preserve');
-                        console.log("Preservation added to element with id:", element.id);
+                        Logger.info("Preservation added to element with id:", element.id);
                     }
                 });
                 break;
             case 's': // take screenshot
                 download_svg_screenshot("NeuriteSVG" + new Date().toISOString());
-                console.log("Screenshot taken and downloaded.");
+                Logger.info("Screenshot taken and downloaded.");
                 break;
             case 'c': // clear all preservations
-                console.log("Clearing all preserved fractal lines.");
+                Logger.info("Clearing all preserved fractal lines.");
                 Array.from(svg_bg.children).forEach(element => {
                     element.classList.remove('preserve');
                 });
@@ -774,7 +774,7 @@ function download_svg_screenshot(name) {
         URL.revokeObjectURL(url);
     }
     img.src = url;
-    img.onerror = console.error.bind(console, 'Failed to load the image');
+    img.onerror = Logger.err.bind(Logger, "Failed to load the image");
 }
 
 function gcd(a, b) {

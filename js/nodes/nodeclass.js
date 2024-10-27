@@ -186,8 +186,8 @@ class Node {
 
     updateSensor() {
         this.sensor.callUpdate();
-        //console.log(this.sensor.nearbyNodes);
-        //console.log('extended radius', this.sensor.nodesWithinExtendedRadius);
+        Logger.debug(this.sensor.nearbyNodes);
+        Logger.debug("extended radius", this.sensor.nodesWithinExtendedRadius);
     }
 
     draw() {
@@ -300,7 +300,7 @@ class Node {
         this.timeoutID = setTimeout(() => {
             clearInterval(this.intervalID);
             this.intervalID = null;
-            //console.log("Movement stopped after 4 seconds.");
+            Logger.debug("Movement stopped after 4 seconds.");
             onComplete(); // even if the target hasn't been reached
         }, 4000); // 4 secs
     }
@@ -355,8 +355,7 @@ class Node {
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
-        //const connectednodes = getAllConnectedNodesData(this)
-        //console.log(connectednodes)
+        Logger.debug(getAllConnectedNodesData(this));
         cancel(e);
     }
     onmousedown(e) {
@@ -463,7 +462,7 @@ class Node {
 
     updateEdgeData() {
         const es = JSON.stringify(this.edges.map((e) => e.dataObj()));
-        //console.log("Saving edge data:", es); // Debug log
+        Logger.debug("Saving edge data:", es);
         this.content.setAttribute('data-edges', es);
     }
 

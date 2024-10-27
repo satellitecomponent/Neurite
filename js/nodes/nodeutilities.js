@@ -23,7 +23,7 @@ SelectedNodes.toggleNode = function(node){
     node.windowDiv.classList.toggle('selected');
     const isSelected = SelectedNodes.uuids.has(node.uuid);
     SelectedNodes.uuids[isSelected ? 'delete' : 'add'](node.uuid);
-    //console.log(isSelected ? 'deselected' : 'selected');
+    Logger.debug(isSelected ? 'deselected' : 'selected');
 }
 
 SelectedNodes.restoreNodeById = function(uuid){
@@ -69,7 +69,7 @@ function edgeFromJSON(o, nodeMap) {
     const pts = o.p.map((k) => nodeMap[k]);
 
     if (pts.includes(undefined)) {
-        console.warn("missing keys", o, nodeMap);
+        Logger.warn("missing keys", o, nodeMap)
     }
 
     // Check if edge already exists
@@ -123,26 +123,25 @@ function getNodeByTitle(title) {
         if (lCaseNodeTitle === lCaseTitle) matchingNodes.push(node);
     }
 
-    // Debugging: Show all matching nodes and their count
-    //console.log(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
-    //console.log("Matching nodes:", matchingNodes);
+    Logger.debug(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
+    Logger.debug("Matching nodes:", matchingNodes);
 
     return (matchingNodes.length > 0 ? matchingNodes[0] : null);
 }
 function getTextareaContentForNode(node) {
     if (!node?.content) {
-        console.warn("Node or node.content is not available");
+        Logger.warn("Node or node.content is not available");
         return null;
     }
 
     if (!node.isTextNode) {
-        //console.warn("Node is not a text node. Skipping getText.");
+        Logger.debug("Node is not a text node. Skipping getText.");
         return null;
     }
 
     const editableTextarea = node.contentEditableDiv;
     if (!editableTextarea) {
-        console.warn('editableTextarea not found.');
+        Logger.warn("editableTextarea not found.");
         return null;
     }
 
@@ -152,22 +151,22 @@ function getTextareaContentForNode(node) {
 function testNodeText(title) {
     Graph.nodes.forEach(node => {
         const textarea = node.content.querySelector('textarea');
-        console.log("From nodes array");
+        Logger.info("From nodes array");
         if (textarea) {
-            console.log("Node UUID:", node.uuid, "- Textarea value from DOM:", textarea.value);
+            Logger.info("Node UUID:", node.uuid, "- Textarea value from DOM:", textarea.value)
         } else {
-            console.log("Node UUID:", node.uuid, "- No textarea found in DOM");
+            Logger.info("Node UUID:", node.uuid, "- No textarea found in DOM")
         }
     });
 
     const node = getNodeByTitle(title);
     if (node) {
-        console.log("Fetching text for node with title:", title);
+        Logger.info("Fetching text for node with title:", title);
         const text = getTextareaContentForNode(node);
-        console.log("Text fetched:", text);
+        Logger.info("Text fetched:", text);
         return text;
     } else {
-        console.warn("Node with title", title, "not found");
+        Logger.warn("Node with title", title, "not found");
         return null;
     }
 }

@@ -546,7 +546,7 @@ TextArea.append = function(text){
 TextArea.update = function(text) {
     this.value = text;
     this.dispatchEvent(new Event('change'));
-    //console.log(`Event triggered`);
+    Logger.debug("Event triggered");
 }
 
 function getDebouncedTextareaUpdate(textarea) {

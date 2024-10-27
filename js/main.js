@@ -17,15 +17,53 @@ class Elem {
     static stopPropagationOfEvent(e){ e.stopPropagation() }
 }
 
+Function.nop = function(){}
+Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Logger = class {
+    addLevel(prefix, funcName, id = funcName){
+        const func = console[funcName].bind(console, prefix);
+        this.#levels.push({ func, id });
+        return this;
+    }
+    get level(){ return this.#level }
+    set level(newLevel){
+        const len = this.#levels.length;
+        this.#level = Math.min(Math.max(-len, newLevel), len);
+        this.#levels.forEach(this.#setFuncPerLevel, this);
+        return this.#level;
+    }
+    get levelId(){ return this.#levels[this.#level - 1]?.id }
+    set levelId(id){
+        this.level = this.#levels.findIndex(Object.hasIdThis, id) + 1
+    }
+    on(){ return this.#switch(1) }
+    off(){ return this.#switch(-1) }
+
+    #levels = [];
+    #level = 0;
+    #setFuncPerLevel(level, index){
+        this[level.id] = (index < this.#level ? level.func : Function.nop)
+    }
+    #switch(factor, dflt = 3){
+        return this.level = factor * Math.abs(this.#level || dflt)
+    }
+}
+Logger = new Logger()
+    .addLevel("ERR:", 'error', 'err')
+    .addLevel("WARN:", 'warn')
+    .addLevel("INFO:", 'info')
+    .addLevel("DEBUG:", 'log', 'debug');
+Logger.levelId = 'info';
+
 Request.send = async function(ct){
     try {
         const resp = await fetch(ct.url, ct.options);
         if (!resp.ok) throw new Error("Response status: " + resp.statusText);
 
-        if (ct.onSuccess) console.log(ct.onSuccess());
+        if (ct.onSuccess) Logger.info(ct.onSuccess());
         return resp;
     } catch (err) {
-        if (ct.onFailure) console.error(ct.onFailure(), err);
+        if (ct.onFailure) Logger.err(ct.onFailure(), err);
     }
 }
 
@@ -133,8 +171,8 @@ class PageLoad {
             }
             const templateContent = await response.text();
             document.body.insertAdjacentHTML('beforeend', templateContent); // Append directly to body
-        } catch (error) {
-            console.error(`Error loading resource ${templateName}:`, error);
+        } catch (err) {
+            Logger.err(`Error loading resource ${templateName}:`, err);
         }
     }
 

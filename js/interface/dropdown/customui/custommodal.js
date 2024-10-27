@@ -30,7 +30,7 @@ Modal.storeInputValue = debounce(function (input, contentId) {
 
 Modal.open = function(contentId){
     ContextMenu.hide();
-    //console.log("Opened Modal:", contentId);
+    Logger.debug("Opened Modal:", contentId);
 
     // Clear filepath input from header.
     const existingInput = document.querySelector('.modal-filepath-input');
@@ -38,13 +38,13 @@ Modal.open = function(contentId){
 
     const content = Elem.byId(contentId);
     if (!content) {
-        console.error("No content found for ID:", contentId);
+        Logger.err("No content found for ID:", contentId);
         return;
     }
 
     const modalBody = Modal.div.querySelector('.modal-body');
     if (!modalBody) {
-        console.error("Modal body element is missing");
+        Logger.err("Modal body element is missing");
         return;
     }
 
@@ -117,7 +117,7 @@ Modal.close = function(){
             break;
         case 'vectorDbImportConfirmModal':
             if (window.currentVectorDbImportReject) {
-                window.currentVectorDbImportReject(new Error('User cancelled the operation'));
+                window.currentVectorDbImportReject(new Error("User cancelled the operation"));
                 window.currentVectorDbImportReject = null;
             }
             break;
@@ -133,7 +133,7 @@ Modal.btnClose.addEventListener('click', Modal.close);
 Modal.openOverlay = function(explanationId){
     const explanationContent = Elem.byId(explanationId);
     if (!explanationContent) {
-        console.error("No explanation found for ID:", explanationId);
+        Logger.err("No explanation found for ID:", explanationId);
         return;
     }
 

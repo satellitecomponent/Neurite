@@ -22,7 +22,7 @@ async function isEmbedEnabled(aiNode) {
     let checkbox = null;
     if (aiNode) {
         checkbox = aiNode.content.querySelector('#embed-checkbox-' + aiNode.index);
-        if (!checkbox) console.log("Data checkbox not found in the AI node");
+        if (!checkbox) Logger.info("Data checkbox not found in the AI node");
     } else {
         checkbox = Elem.byId('embed-checkbox');
     }
@@ -96,7 +96,7 @@ function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier)
 
 function getLastPromptsAndResponses(count, maxTokens, textarea = zetPanes.getActiveTextarea()) {
     if (!textarea) {
-        console.error("No active textarea found");
+        Logger.err("No active textarea found");
         return '';
     }
 
@@ -161,7 +161,7 @@ function extractLastPrompt() {
     const match = promptRegex.exec(lastMessage);
     if (match) return match[1].trim();
 
-    console.warn("Prompt not found in the last message. Sending with a blank prompt.");
+    Logger.warn("Prompt not found in the last message. Sending with a blank prompt.");
     return '';
 }
 

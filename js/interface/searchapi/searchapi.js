@@ -33,7 +33,7 @@ async function generateKeywords(message, count, specificContext = null, node = n
         response = await callchatAPI(messages, false, 0);
     }
 
-    console.log("Generate Keywords Ai Response:", response);
+    Logger.info("Generate Keywords Ai Response:", response);
 
     const regex = /"(.*?)"/g;
     const keywords = [];
@@ -42,7 +42,7 @@ async function generateKeywords(message, count, specificContext = null, node = n
         keywords.push(match[1].trim());
     }
 
-    console.log("Keywords:", keywords);
+    Logger.info("Keywords:", keywords);
     return keywords;
 }
 
@@ -59,7 +59,7 @@ function isGoogleSearchEnabled(nodeIndex = null) {
 
 // console.log("Sending context to AI:", messages);
 async function performSearch(searchQuery) {
-    console.log("Search Query in processLinkInput:", searchQuery);
+    Logger.info("Search Query in processLinkInput:", searchQuery);
 
     const apiKey = Elem.byId('googleApiKey').value;
     const searchEngineId = Elem.byId('googleSearchEngineId').value;
@@ -71,7 +71,7 @@ async function performSearch(searchQuery) {
     const response = await Request.send(new performSearch.ct(apiKey, searchEngineId, searchQuery));
     if (response) {
         const data = await response.json();
-        //console.log('Received data:', data);
+        Logger.debug("Received data:", data);
 
         return data;
     } else {
@@ -82,7 +82,7 @@ async function performSearch(searchQuery) {
 performSearch.ct = class {
     constructor(apiKey, searchEngineId, searchQuery){
         this.url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
-        //console.log("Request URL:", this.url);
+        Logger.debug("Request URL:", this.url);
     }
     onFailure(){ return "Failed to fetch search results:" }
 }
@@ -121,15 +121,15 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
 
         const extractedQuery = apiResponse.match(/"([^"]*)"/);
         const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
-        console.log("Search Query:", searchQuery);
+        Logger.info("Search Query:", searchQuery);
 
         if (!searchQuery || searchQuery.trim().length === 0) {
-            console.warn("Received empty search query, using user message as fallback.");
+            Logger.warn("Received empty search query, using user message as fallback.");
             return userMessage;
         }
         return searchQuery;
-    } catch (error) {
-        console.error("Error generating search query:", error);
+    } catch (err) {
+        Logger.err("In generating search query:", err);
         return userMessage;
     }
 }
