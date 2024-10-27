@@ -66,15 +66,15 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     if (matches.length > 0) {
         reformulatedQuery = matches[matches.length - 1];
     }
-    console.log("reformulated query", reformulatedQuery);
-    console.log("matches", matches);
+    Logger.info("reformulated query", reformulatedQuery);
+    Logger.info("matches", matches);
     let preface = fullResponse.replace(`"${reformulatedQuery}"`, "").trim();
 
     // Append an additional new line
     window.currentActiveZettelkastenMirror.replaceRange(`\n\n`, CodeMirror.Pos(window.currentActiveZettelkastenMirror.lastLine()));
 
-    console.log("Preface:", preface);
-    console.log("Reformulated query:", reformulatedQuery);
+    Logger.info("Preface:", preface);
+    Logger.info("Reformulated query:", reformulatedQuery);
 
     // Call Wolfram Alpha API with the reformulated query
     const apiKey = document.getElementById("wolframApiKey").value;
@@ -92,18 +92,15 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error with Wolfram Alpha API call:", errorData.error);
-        console.error("Full error object:", errorData);
+        Logger.err("With Wolfram Alpha API call:", errorData.error);
+        Logger.err("Full error object:", errorData);
         alert("An error occurred when making a request the Wolfram Alpha. Ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
         return;
     }
 
     const data = await response.json();
-    console.log("Wolfram Alpha data:", data); // Debugging data object
-
-    if (!data.pods) {
-        return;
-    }
+    Logger.info("Wolfram Alpha data:", data); // Debugging data object
+    if (!data.pods) return;
 
     const table = document.createElement("table");
     table.style = "width: 100%; border-collapse: collapse;";

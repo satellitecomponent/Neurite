@@ -152,7 +152,7 @@ function syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea) {
             userInputTextarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
         }
 
-        //console.log(`Synced input textarea: ${userInputTextarea.value}`);
+        Logger.debug("Synced input textarea:", userInputTextarea.value);
         isEditableDivProgrammaticChange = false;
     }
 }
@@ -175,7 +175,7 @@ function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
             textarea.dispatchEvent(new Event('input'));
         }
 
-        //console.log(`Synced hidden textarea: ${textarea.value}`);
+        Logger.debug("Synced hidden textarea:", textarea.value);
         isHiddenTextareaProgrammaticChange = false;
     }
 }

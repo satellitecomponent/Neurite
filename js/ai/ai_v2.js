@@ -29,11 +29,11 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
     }
 
     function onError(errorMsg) {
-        console.error("Error calling Ai API:", errorMsg);
+        Logger.err("Error calling Ai API:", errorMsg);
         Elem.byId('aiErrorIcon').style.display = 'block';
         failCounter += 1;
         if (failCounter >= MAX_FAILS) {
-            console.error("Max attempts reached. Stopping further API calls.");
+            Logger.err("Max attempts reached. Stopping further API calls.");
             shouldContinue = false;
             if (currentController) {
                 currentController.abort();
@@ -119,7 +119,7 @@ function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
         if (node.shouldContinue && content.trim() !== "[DONE]") TextArea.append.call(node.aiResponseTextArea, content)
     }
     function onError(errorMsg) {
-        console.error("Error calling Chat API:", errorMsg);
+        Logger.err("Error calling Chat API:", errorMsg);
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
         if (node.haltCheckbox) node.haltCheckbox.checked = true;
     }
@@ -158,7 +158,7 @@ async function callAiApi({
         try {
             await imitateTextStream(randomResponse, onStreamingResponse);
         } catch (error) {
-            console.error("Error with dummy response:", error);
+            Logger.err("Error with dummy response:", error);
             onError(error.message || error);
         } finally {
             onAfterCall();
@@ -172,8 +172,8 @@ async function callAiApi({
     }
 
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
-    console.log("Message Array", messages);
-    console.log("Token count:", TokenCounter.forMessages(messages));
+    Logger.info("Message Array", messages);
+    Logger.info("Token count:", TokenCounter.forMessages(messages));
 
     if (!params) {
         onError("API key is missing.");
@@ -210,21 +210,21 @@ async function callAiApi({
                 responseData = extractContentFromResponse(data);
 
                 if (!responseData) {
-                    console.error("Unable to extract content from response:", data);
+                    Logger.err("Unable to extract content from response:", data);
                     throw new Error("Unable to extract content from API response");
                 }
-            } catch (parseError) {
-                console.error("Error parsing JSON response:", parseError);
+            } catch (err) {
+                Logger.err("Error parsing JSON response:", err);
                 throw new Error("Invalid JSON response from API");
             }
         }
         return responseData;
     } catch (err) {
         if (err.name === 'AbortError') {
-            console.log('Response Halted');
+            Logger.info('Response Halted');
             if (useProxy && requestId) await Request.send(new Ai.ctCancelRequest(requestId));
         } else {
-            console.error("Error:", err);
+            Logger.err("Error:", err);
             onError(err.message || err);
         }
     } finally {

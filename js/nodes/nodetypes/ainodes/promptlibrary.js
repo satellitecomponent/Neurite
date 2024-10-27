@@ -70,7 +70,7 @@ function selectPrompt(index) {
         if (textarea) {
             textarea.value = promptLibrary.prompts[index].content;
         } else {
-            console.error('Prompt content textarea not found');
+            Logger.err("Prompt content textarea not found")
         }
     } else {
         promptLibrary.currentPromptIndex = -1;
@@ -127,13 +127,13 @@ function deleteCurrentPrompt() {
 
 function setInstructions(node) {
     if (!node.customInstructionsTextarea) {
-        console.error('Custom instructions textarea not found');
+        Logger.err("Custom instructions textarea not found");
         return;
     }
 
     const promptContentTextarea = document.querySelector('.prompt-content-textarea');
     if (!promptContentTextarea) {
-        console.error('Prompt content textarea not found');
+        Logger.err("Prompt content textarea not found");
         return;
     }
 
@@ -161,21 +161,21 @@ function setupPromptLibraryListeners(node) {
     if (setInstructionsButton) {
         setInstructionsButton.onclick = () => setInstructions(node);
     } else {
-        console.error('Set Instructions button not found');
+        Logger.err("Set Instructions button not found")
     }
 
     // Set up Add Prompt button
     if (addPromptButton) {
         addPromptButton.onclick = addNewPrompt;
     } else {
-        console.error('Add Prompt button not found');
+        Logger.err("Add Prompt button not found")
     }
 
     // Set up Delete Prompt button
     if (deletePromptButton) {
         deletePromptButton.onclick = deleteCurrentPrompt;
     } else {
-        console.error('Delete Prompt button not found');
+        Logger.err("Delete Prompt button not found")
     }
 
     // Set up input listener for prompt content textarea
@@ -187,7 +187,7 @@ function setupPromptLibraryListeners(node) {
             }
         };
     } else {
-        console.error('Prompt Content textarea not found');
+        Logger.err("Prompt Content textarea not found")
     }
 
     // Set up Import Prompts functionality
@@ -198,14 +198,14 @@ function setupPromptLibraryListeners(node) {
         };
         importPromptButton.onchange = importPromptLibrary;
     } else {
-        console.error('Import button or label not found');
+        Logger.err("Import button or label not found")
     }
 
     // Set up Export Prompts functionality
     if (exportPromptButton) {
         exportPromptButton.onclick = () => exportPromptLibraryAsJSON(promptLibrary);
     } else {
-        console.error('Export button not found');
+        Logger.err("Export button not found")
     }
 }
 
@@ -218,9 +218,7 @@ function importPromptLibrary(event) {
     reader.onload = function (e) {
         try {
             const importedData = JSON.parse(e.target.result);
-
-            // Log the imported data for debugging
-            //console.log('Imported Data:', importedData);
+            Logger.debug('Imported Data:', importedData);
 
             // Check for validity of the imported data
             if (Array.isArray(importedData) && importedData.every(prompt =>
@@ -248,8 +246,8 @@ function importPromptLibrary(event) {
             } else {
                 alert('Invalid file format. Please make sure you are importing a valid prompt library JSON.');
             }
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
+        } catch (err) {
+            Logger.err("In parsing JSON:", err);
             alert('Failed to import. Please make sure you are using a valid prompt library JSON file.');
         }
 

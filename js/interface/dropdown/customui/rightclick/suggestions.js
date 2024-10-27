@@ -218,7 +218,7 @@ function getDynamicActionDetails(uniqueIdentifier, node) {
     const nodeActions = NodeActions.forNode(node);
     return {
         displayText: uniqueIdentifier,
-        executeAction: () => nodeActions[uniqueIdentifier] ? nodeActions[uniqueIdentifier]() : console.error('Invalid action')
+        executeAction: () => nodeActions[uniqueIdentifier] ? nodeActions[uniqueIdentifier]() : Logger.err("Invalid action")
     };
 }
 

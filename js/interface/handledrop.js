@@ -170,13 +170,13 @@ class DropHandler {
         const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
         const baseType = this.determineBaseType(mimeTypeWithoutParams);
 
-        //console.log(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
+        Logger.debug(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
 
         // Route to code file handler
         if (baseType === 'code') {
             const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
             if (!content) {
-                //console.error(`Content is undefined for code file: ${fileName}`);
+                Logger.debug("Content is undefined for code file:", fileName);
                 // Attempt to read blob as text if content is undefined
                 if (blob) {
                     const reader = new FileReader();
@@ -185,13 +185,13 @@ class DropHandler {
                         this.createCodeNode({ name: fileName }, textContent, codeLanguage);
                     };
                     reader.onerror = (error) => {
-                        console.error("Error reading blob for code file:", fileName, error);
+                        Logger.err("Error reading blob for code file:", fileName, error)
                     };
                     reader.readAsText(blob);
                 }
                 return;
             }
-            //console.log(`Creating code node for: ${fileName}, Language: ${codeLanguage}`);
+            Logger.debug(`Creating code node for: ${fileName}, Language: ${codeLanguage}`);
             this.createCodeNode({ name: fileName }, content, codeLanguage);
             return;
         }
@@ -200,7 +200,7 @@ class DropHandler {
             if (content) {
                 this.typeHandlers[baseType]({ name: fileName }, null, content, mimeTypeWithoutParams);
             } else {
-                console.error("Content is undefined for text file:", fileName);
+                Logger.err("Content is undefined for text file:", fileName)
             }
             return;
         }
@@ -209,14 +209,14 @@ class DropHandler {
         if (baseType === 'application') {
             if (mimeTypeWithoutParams === 'application/pdf') {
                 if (!blob) {
-                    console.error("Blob is undefined for PDF file:", fileName);
+                    Logger.err("Blob is undefined for PDF file:", fileName);
                     return;
                 }
                 const objectURL = URL.createObjectURL(blob);
                 this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
             } else {
                 if (!content) {
-                    console.error("Content is undefined for application file:", fileName);
+                    Logger.err("Content is undefined for application file:", fileName);
                     return;
                 }
                 // Treat other application types as text
@@ -228,7 +228,7 @@ class DropHandler {
         // Handle binary files (image, video, audio)
         if (['image', 'video', 'audio'].includes(baseType)) {
             if (!blob) {
-                console.error("Blob is undefined for binary file:", fileName);
+                Logger.err("Blob is undefined for binary file:", fileName);
                 return;
             }
             const objectURL = URL.createObjectURL(blob);
@@ -236,7 +236,7 @@ class DropHandler {
             return;
         }
 
-        console.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
+        Logger.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
     }
 
     // Handle the drop event
@@ -290,7 +290,7 @@ class DropHandler {
 
             this.processFile(metadata.name, content, mimeType, blob);
         } catch (err) {
-            console.error(err);
+            Logger.err(err)
         }
     }
 
@@ -322,7 +322,7 @@ class DropHandler {
             const node = await createFileTreeNode(folderMetadata.path);
             this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
         } catch (err) {
-            console.error("Error processing folder drop:", err);
+            Logger.err("Error processing folder drop:", err)
         }
     }
 
@@ -336,7 +336,7 @@ class DropHandler {
     createCodeNode(metadata, content, codeLanguage) {
         const name = metadata.name || 'Code';
         if (!codeLanguage) {
-            console.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`);
+            Logger.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`)
         }
         const language = codeLanguage || 'plaintext';
         const codeBlock = `\`\`\`${language}\n${content}\n\`\`\``;
@@ -354,12 +354,12 @@ class DropHandler {
         if (mimeType && mimeType.endsWith('pdf')) {
             this.createPDFNode(metadataOrFile.name, url);
         } else {
-            console.log("Unsupported application type:", mimeType);
+            Logger.info("Unsupported application type:", mimeType)
         }
     }
 
     handleUnknown(metadataOrFile, url, content, mimeType) {
-        console.log("Unsupported file type:", mimeType || metadataOrFile.type);
+        Logger.info("Unsupported file type:", mimeType || metadataOrFile.type)
     }
 
     createImageNode(metadataOrFile, url) {
@@ -385,7 +385,7 @@ class DropHandler {
     handleOSFileDrop(ev) {
         const files = ev.dataTransfer.files;
         if (!files || files.length === 0) {
-            console.warn("No files detected in OS drop");
+            Logger.warn("No files detected in OS drop");
             return;
         }
 
@@ -416,7 +416,7 @@ class DropHandler {
     }
 
     handleIconDrop(event, iconName) {
-        //console.log(`Dropped icon:`, iconName);
+        Logger.debug("Dropped icon:", iconName);
 
         switch (iconName) {
             case 'note-icon':
@@ -433,7 +433,7 @@ class DropHandler {
                 this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -fileTreeNode.content.offsetHeight / 4)));
                 break;
             default:
-                console.warn("No handler defined for icon:", iconName);
+                Logger.warn("No handler defined for icon:", iconName);
                 break;
         }
 
@@ -520,19 +520,19 @@ addEventListener('paste', (e) => {
 addEventListener('paste', (e) => {
     let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
     if (codeMirrorWrapper.contains(e.target)) {
-        //console.log('Paste detected in CodeMirror');
+        Logger.debug("Paste detected in CodeMirror");
 
         // Use setTimeout to defer the execution until after the paste event
         setTimeout(() => {
             processAll = true;
-            //console.log('processAll set to true after paste in CodeMirror');
+            Logger.debug("processAll set to true after paste in CodeMirror");
 
             // Simulate a minor change in content to trigger an input event
             const cursorPos = window.currentActiveZettelkastenMirror.getCursor();
             window.currentActiveZettelkastenMirror.replaceRange(' ', cursorPos); // Insert a temporary space
             window.currentActiveZettelkastenMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
 
-            //console.log('Triggered input event in CodeMirror');
+            Logger.debug("Triggered input event in CodeMirror");
 
             // Additional logic as required
         }, 0);
@@ -542,7 +542,7 @@ addEventListener('paste', (e) => {
         let targetTag = e.target.tagName.toLowerCase();
         if (targetTag === "textarea" || targetTag === "input") {
             e.stopPropagation();
-            //console.log("Paste disabled for textarea and input");
+            Logger.debug("Paste disabled for textarea and input");
         }
     }
 }, true);

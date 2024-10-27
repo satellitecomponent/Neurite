@@ -3,7 +3,7 @@ async function fetchDirectoryContents(path) { // from the Node.js server
     if (!response) return;
 
     const data = await response.json();
-    //console.log('Directory data:', data);
+    Logger.debug("Directory data:", data);
     return data;
 }
 fetchDirectoryContents.ct = class {
@@ -74,7 +74,7 @@ class FileTree {
         if (event.key === 'Enter') {
             const newPath = this.filePathInput.value.trim();
             if (!newPath) {
-                console.log("Invalid path");
+                Logger.info("Invalid path");
                 return;
             }
 
@@ -164,12 +164,12 @@ class FileTree {
             if (icon) {
                 event.dataTransfer.setDragImage(icon, 10, 10);
             }
-            //console.log("Drag started with metadata:", filePath);
+            Logger.debug("Drag started with metadata:", filePath);
         });
 
         itemElement.addEventListener('dragend', (event) => {
             event.stopPropagation();
-            //console.log("Drag ended:", item.name);
+            Logger.debug("Drag ended:", item.name);
         });
     }
 
@@ -184,12 +184,12 @@ class FileTree {
             if (icon) {
                 event.dataTransfer.setDragImage(icon, 10, 10);
             }
-            //console.log("Folder Drag started with metadata:", folderPath);
+            Logger.debug("Folder Drag started with metadata:", folderPath);
         });
 
         itemElement.addEventListener('dragend', (event) => {
             event.stopPropagation();
-            //console.log("Folder Drag ended:", item.name);
+            Logger.debug("Folder Drag ended:", item.name);
         });
     }
 
@@ -271,7 +271,7 @@ class FileTree {
         const fileTreeContainer = Elem.byId('modal-file-tree-container');
         const modalHeader = document.querySelector('.modal-header');
         if (!fileTreeContainer || !modalHeader) {
-            console.error("File tree container or modal header not found!");
+            Logger.err("File tree container or modal header not found!");
             return;
         }
 

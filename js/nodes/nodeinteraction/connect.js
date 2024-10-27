@@ -51,8 +51,7 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     fill: "lightcyan",
     opacity: "0.5"
 }) {
-    // Log UUIDs for debugging
-    //console.log(`Connecting: ${na.uuid} to ${nb.uuid}`);
+    Logger.debug("Connecting:", na.uuid, "to", nb.uuid);
 
     const existingEdge = na.edges.find(edge =>
         edge.pts.some(pt => pt.uuid === nb.uuid) &&
@@ -60,12 +59,12 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     );
 
     if (existingEdge) {
-        //console.log(`Existing edge found between ${na.uuid} and ${nb.uuid}`);
+        Logger.debug("Existing edge found between", na.uuid, "and", nb.uuid);
         return existingEdge;
     }
     // Log positions for debugging
-    //console.log(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
-    //console.log(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
+    Logger.debug(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
+    Logger.debug(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
 
     // Calculate the distance between the two nodes
     const dx = nb.pos.x - na.pos.x;
@@ -96,13 +95,13 @@ function getConnectedNodes(node) {
         connectedNode.uuid !== undefined &&
         connectedNode.uuid !== node.uuid);
 
-    // console.log(`Identified ${connectedNodes.length} connected node(s)`);
+    Logger.debug("Identified", connectedNodes.length, "connected node(s)");
     return connectedNodes;
 }
 
 function getNodeData(node) {
     if (node.isImageNode) {
-        //console.log("Skipping image node", node.uuid);
+        Logger.debug("Skipping image node", node.uuid);
         return null;
     }
     const titleElement = node.titleInput;
@@ -111,7 +110,7 @@ function getNodeData(node) {
     const isLLM = node.isLLM;  // Assuming you have this flag set on the node object.
 
     if (!createdAt) {
-        console.warn(`getNodeData: Creation time for node ${node.uuid} is not defined.`);
+        Logger.warn("getNodeData: Creation time for node", node.uuid, "is not defined.")
     }
 
     if (isLLM) {
@@ -123,7 +122,7 @@ function getNodeData(node) {
         // Handle regular text content
         let contentText = getTextareaContentForNode(node);
         if (!contentText) {
-            console.warn("No content found for node");
+            Logger.warn("No content found for node");
             return null;
         }
         const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;

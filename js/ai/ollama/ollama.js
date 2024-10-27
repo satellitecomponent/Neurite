@@ -50,7 +50,7 @@ Ollama.refreshModal = async function(){
 
     const ollamaModelList = Elem.byId('ollamaModelList');
     if (!ollamaModelList) {
-        console.error('ollamaModelList element not found');
+        Logger.err("ollamaModelList element not found");
         return;
     }
 
@@ -181,10 +181,10 @@ Ollama.ModelListItem = class {
                 this.loadingIcon.style.display = 'block'; // Show the loading icon when starting the installation
                 this.installModel();
             } else {
-                console.log(`Model ${model.name} is already being installed`);
+                Logger.info("Model", model.name, "is already being installed")
             }
         } else {
-            console.log(`Model ${model.name} is already installed`);
+            Logger.info("Model", model.name, "is already installed")
         }
     }
     onProgress(progress){
@@ -198,7 +198,7 @@ Ollama.ModelListItem = class {
     onAfterPullingModel(success){
         const modelName = this.model.name;
         if (success) {
-            console.log(`Model ${modelName} installed successfully`);
+            Logger.info("Model", modelName, "installed successfully");
             this.divItem.classList.remove('disconnected');
             this.divItem.classList.add('connected');
             this.progressBar.style.width = '100%';
@@ -208,7 +208,7 @@ Ollama.ModelListItem = class {
             this.loadingIcon.style.display = 'none'; // Hide the loading icon when installation is complete
             Ollama.refreshModelList();
         } else {
-            console.error("Failed to install model " + modelName);
+            Logger.err("Failed to install model", modelName);
             Ollama.curInstalledNames.delete(modelName);
             this.loadingIcon.style.display = 'none'; // Hide the loading icon on installation failure
         }

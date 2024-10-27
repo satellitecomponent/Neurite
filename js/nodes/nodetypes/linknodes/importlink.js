@@ -1,7 +1,7 @@
 async function importLinkNodeTextToZettelkasten(link) {
     const text = await fetchLinkContentText(link);
     if (!text) {
-        console.error('Failed to retrieve text for importing into Zettelkasten:', link);
+        Logger.err("Failed to retrieve text for importing into Zettelkasten:", link);
         return;
     }
 
@@ -23,7 +23,7 @@ async function confirmImport() {
             const totalLines = window.currentActiveZettelkastenMirror.lineCount();
             window.currentActiveZettelkastenMirror.replaceRange(textChunk, { line: totalLines, ch: 0 });
         } else {
-            console.error('Codemirror instance not found.');
+            Logger.err("Codemirror instance not found.")
         }
     }
 

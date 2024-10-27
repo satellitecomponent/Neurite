@@ -205,10 +205,10 @@ class CellularAutomataManager {
 
     toggleAutomata() {
         if (this.automataInterval) {
-            console.log("Automata stopping...");
+            Logger.info("Automata stopping...");
             this.stopAutomata();
         } else {
-            console.log("Automata starting...");
+            Logger.info("Automata starting...");
             this.startAutomata();
         }
     }

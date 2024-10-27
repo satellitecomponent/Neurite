@@ -140,10 +140,8 @@ async function performVectorDbDisplaySearch() {
             searchResultsContainer.appendChild(resultElement);
         });
     } catch (err) {
-        console.error("Error fetching search results:", err);
-        // Remove the loading icon in case of an error
+        Logger.err("In fetching search results:", err);
         searchResultsContainer.removeChild(loaderElement);
-        // Display an error message or handle the error as needed
     }
 }
 
@@ -172,8 +170,8 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
 
         const titleText = node.titleInput;
         const contentText = node.contentText;
-        // console.log("Extracted title text:", titleText);  // DEBUG
-        // console.log("Extracted content text:", contentText);  // DEBUG
+        Logger.debug("Extracted title text:", titleText);
+        Logger.debug("Extracted content text:", contentText);
 
         const embedding = await fetchEmbeddings(titleText + ' ' + contentText);
         nodeCache.set(compoundKey, embedding);
@@ -184,7 +182,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
     const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
     const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
 
-    //   console.log("Keyword Embedding:", keywordEmbedding);  // DEBUG
+    Logger.debug("Keyword Embedding:", keywordEmbedding);
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
         if (!node.isTextNode) continue;
@@ -208,12 +206,12 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         const keywordMagnitude = Math.magnitude(keywordEmbedding);
         const nodeMagnitude = Math.magnitude(nodeEmbedding);
 
-        //   console.log("Dot Product:", dotProduct);  // DEBUG
-        //   console.log("Keyword Magnitude:", keywordMagnitude);  // DEBUG
-        //   console.log("Node Magnitude:", nodeMagnitude);  // DEBUG
+        Logger.debug("Dot Product:", dotProduct);
+        Logger.debug("Keyword Magnitude:", keywordMagnitude);
+        Logger.debug("Node Magnitude:", nodeMagnitude);
 
         const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-        //console.log("Cosine Similarity:", cosineSimilarity);
+        Logger.debug("Cosine Similarity:", cosineSimilarity);
 
         const similarityThreshold = -1;
         const keywordMatchPercentage = 0.5;
@@ -227,7 +225,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
                 weightedContentScore: weightedContentScore,
                 similarity: cosineSimilarity,
             });
-            //console.log("embeddings", node.content.innerText.trim())
+            Logger.debug("embeddings", node.content.innerText.trim());
         }
     }
 

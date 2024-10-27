@@ -72,7 +72,7 @@ async function sendMessage(event, autoModeMessage = null) {
         try {
             searchQuery = await constructSearchQuery(message);
         } catch (err) {
-            console.error("Error constructing search query:", err);
+            Logger.err("Error constructing search query:", err);
             searchQuery = null;
         }
     }
@@ -140,9 +140,8 @@ async function sendMessage(event, autoModeMessage = null) {
     context = getLastPromptsAndResponses(100, contextSize);
     let topMatchedNodesContent = '';
 
-    // Use the helper function to extract titles
-    let existingTitles = extractTitlesFromContent(context);
-    //console.log(`existingTitles`, existingTitles, context);
+    const existingTitles = extractTitlesFromContent(context);
+    Logger.debug(`existingTitles`, existingTitles, context);
     // Replace the original search and highlight code with neuriteSearchNotes
     const topMatchedNodes = await neuriteSearchNotes(keywordsString);
 
@@ -150,7 +149,7 @@ async function sendMessage(event, autoModeMessage = null) {
 
     const nodeTag = Tag.node;
     const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag);
-    //console.log(nodeContents);
+    Logger.debug(nodeContents);
     topMatchedNodesContent = nodeContents.join("\n\n");
 
     // If forgetting is enabled, extract titles to forget
@@ -158,14 +157,14 @@ async function sendMessage(event, autoModeMessage = null) {
 
         titlesToForget = await forget(message, `${context}\n\n${topMatchedNodesContent}`);
 
-        console.log("Titles to Forget:", titlesToForget);
+        Logger.info("Titles to Forget:", titlesToForget);
 
         // Use helper function to forget nodes from context
         context = removeTitlesFromContext(context, titlesToForget, nodeTag);
 
         // Refilter topMatchedNodesContent by removing titles to forget
         topMatchedNodesContent = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag).join("\n\n");
-        //console.log("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
+        Logger.debug("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
     }
 
     // Check if the content string is not empty
@@ -232,7 +231,7 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
             content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
         };
 
-        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
+        Logger.info("wolframAlphaTextResult:", wolframAlphaTextResult);
         messages.push(wolframAlphaMessage);
     }
 

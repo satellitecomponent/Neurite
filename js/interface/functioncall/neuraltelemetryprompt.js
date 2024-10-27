@@ -66,7 +66,7 @@ const neuralTelemetry = new NeuralTelemetry();
 
 function testGetLastFunctionCalls(n) {
     const lastCalls = neuralTelemetry.getLastFunctionCalls(n);
-    console.log(`Last ${n} function calls:`, lastCalls);
+    Logger.info(`Last ${n} function calls:`, lastCalls);
 }
 
 function createTelemetryPrompt(neuralTelemetry, vision = false) {

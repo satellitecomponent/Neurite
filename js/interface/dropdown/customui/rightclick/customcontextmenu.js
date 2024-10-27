@@ -193,8 +193,7 @@ function createAndDrawNode(createNodeFunction, shouldDraw) {
 }
 
 function handleGenericAction(target) {
-    console.log('Generic action for:', target);
-    // Additional logic for handling generic actions
+    Logger.info("Generic action for:", target);
 }
 
 ContextMenu.hide = function(){
@@ -220,7 +219,7 @@ function addPasteOption(menu, target) {
             const pastedData = await navigator.clipboard.readText();
             handlePasteData(pastedData, target);
         } catch (err) {
-            console.error('Error reading from clipboard:', err);
+            Logger.err("In reading from clipboard:", err);
         }
         ContextMenu.hide();
     };
@@ -243,9 +242,9 @@ function copySelectedText() {
         // There's a text selection
         navigator.clipboard.writeText(selection.toString())
             .then(ContextMenu.hide)
-            .catch(err => console.error('Failed to copy text: ', err));
+            .catch(Logger.err.bind(Logger, "Failed to copy text:"));
     } else {
-        console.log('No text selected');
+        Logger.info("No text selected")
     }
     ContextMenu.hide();
 }

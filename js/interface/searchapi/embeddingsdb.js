@@ -25,12 +25,12 @@ Embeddings.initializeWorker = function(){
         if (data.type === 'ready') {
             browserEmbeddingsInitialized[data.model] = true;
         } else { // data.type === 'error'
-            console.error('Error from embeddings worker:', data.error);
+            Logger.err("From embeddings worker:", data.error);
         }
     }
 
     worker.onmessage = onMessage;
-    worker.onerror = console.error.bind(console, "Error from embeddings worker:");
+    worker.onerror = Logger.err.bind(Logger, "From embeddings worker:");
 
     // Initialize both models
     worker.postMessage({ type: 'initialize', model: 'local-embeddings-gte-small' });
@@ -47,7 +47,7 @@ Embeddings.fetch = function(text, source){
     try {
         return Embeddings[fetch](model, text)
     } catch (err) {
-        console.error(`Error generating embeddings for model ${model}:`, err);
+        Logger.err(`In generating embeddings for model ${model}:`, err);
         return Promise.resolve([]);
     }
 }
@@ -210,12 +210,12 @@ Keys.getRelevant = async function(userInput, recentContext = null, searchQuery, 
     // Return all keys if the response does not select any keys
     if (relevantKeys.length === 0) return visibleKeys;
 
-    console.log("Selected Document Keys", relevantKeys);
+    Logger.info("Selected Document Keys", relevantKeys);
     return relevantKeys;
 }
 
 Keys.fetchAndDisplayAll = function(){
-    const onError = console.error.bind(console, "(Server disconnect) Failed to fetch keys:");
+    const onError = Logger.err.bind(Logger, "(Server disconnect) Failed to fetch keys:");
     return Keys.getAll().catch(onError).then(Keys.display);
 }
 Keys.display = function(keys){
@@ -333,10 +333,10 @@ async function processFileContent(file) {
             case 'text/csv':
                 return await fetchTextFile(fileURL);
             default:
-                console.warn("Unsupported file type:", fileType);
+                Logger.warn("Unsupported file type:", fileType);
         }
     } catch (err) {
-        console.error("Error processing file content:", err);
+        Logger.err("In processing file content:", err)
     } finally {
         URL.revokeObjectURL(fileURL); // release memory
     }
@@ -352,7 +352,7 @@ async function fetchTextFile(fileURL) {
         const response = await fetchFile(fileURL);
         return await response.text();
     } catch (err) {
-        console.error("Error fetching text file:", err);
+        Logger.err("In fetching text file:", err);
         throw err;
     }
 }
@@ -361,7 +361,7 @@ async function fetchJsonFile(fileURL) {
         const response = await fetchFile(fileURL);
         return JSON.stringify(await response.json());
     } catch (err) {
-        console.error("Error fetching JSON file:", err);
+        Logger.err("In fetching JSON file:", err);
         throw err;
     }
 }
@@ -395,7 +395,7 @@ async function uploadFileToVectorDB() {
 
         btnChunkAndStore.textContent = "Upload Complete";
     } catch (err) {
-        console.error("Failed to process and store input:", err);
+        Logger.err("Failed to process and store input:", err);
         btnChunkAndStore.textContent = "Process Failed";
     } finally {
         clearInterval(dotInterval);
@@ -419,7 +419,7 @@ async function extractTextFromPDF(pdfLink) {
         }
         return extracted.join('');
     } catch (err) {
-        console.error("Error extracting text from PDF:", err);
+        Logger.err("In extracting text from PDF:", err);
         throw new Error("Failed to extract text from PDF");
     }
 }
@@ -432,7 +432,7 @@ async function fetchLinkContentText(link) {
     if (isGitHubUrl(link)) {
         const details = extractGitHubRepoDetails(link);
         if (!details) {
-            console.error("Invalid GitHub URL:", link);
+            Logger.err("Invalid GitHub URL:", link);
             return;
         }
 
@@ -444,7 +444,7 @@ async function fetchLinkContentText(link) {
 
     const contentType = response.headers.get("content-type");
     if (!contentType.includes("text")) {
-        console.warn(`Content type for ${link} is not text:`, contentType);
+        Logger.warn("Content type for", link, "is not text:", contentType);
         return;
     }
 
@@ -476,9 +476,9 @@ async function handleNotExtractedLinks(notExtractedLinks, linkNodes) {
 
         const success = await extractAndStoreLinkContent(linkInfo.url, title);
         if (success) {
-            console.log(`Successfully extracted and stored content for "${title}"`);
+            Logger.info(`Successfully extracted and stored content for "${title}"`);
         } else {
-            console.warn(`Failed to extract content for "${title}"`);
+            Logger.warn(`Failed to extract content for "${title}"`);
         }
     }
 }
@@ -492,7 +492,7 @@ async function extractAndStoreLinkContent(link, title) {
         await receiveAndStoreByType(extractedText, title, link);
         return true;
     } catch (err) {
-        console.error("Error during extraction and storage:", err);
+        Logger.err("During extraction and storage:", err);
         alert("An error occurred during extraction. Please ensure that the extract server is running on your localhost.");
         return false;
     }
@@ -500,7 +500,7 @@ async function extractAndStoreLinkContent(link, title) {
 
 async function receiveAndStoreByType(text, storageId, url) {
     if (!text) {
-        console.error("No text to store for:", storageId);
+        Logger.err("No text to store for:", storageId);
         return;
     }
 
@@ -509,7 +509,7 @@ async function receiveAndStoreByType(text, storageId, url) {
             // GitHub handling remains the same
             const details = extractGitHubRepoDetails(url);
             if (!details) {
-                console.error("Invalid GitHub URL:", url);
+                Logger.err("Invalid GitHub URL:", url);
                 return;
             }
 
@@ -521,7 +521,7 @@ async function receiveAndStoreByType(text, storageId, url) {
             await storeTextData(storageId, text);
         }
     } catch (err) {
-        console.error(`Error storing text for ${storageId}:`, err);
+        Logger.err(`In storing text for ${storageId}:`, err);
         VectorDb.removeLoadingIndicator(storageId);
     }
 }
@@ -529,7 +529,7 @@ async function receiveAndStoreByType(text, storageId, url) {
 // Vector DB
 
 async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
-    console.log("Preparing to store embeddings and text chunks for key:", key);
+    Logger.info("Preparing to store embeddings and text chunks for key:", key);
     const selectedModel = Embeddings.selectModel.value;
     const updateProgressBar = VectorDb.funcUpdateProgressBarForKey(key);
     updateProgressBar(0);
@@ -571,10 +571,10 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
             updateProgressBar(progress);
         }
 
-        console.log("Completed storing embeddings and chunks for", key);
+        Logger.info("Completed storing embeddings and chunks for", key);
         return true;
     } catch (err) {
-        console.error(`Failed to store chunks and embeddings for key ${key}:`, err);
+        Logger.err(`Failed to store chunks and embeddings for key ${key}:`, err);
         throw err;
     } finally {
         updateProgressBar(100);
@@ -610,10 +610,10 @@ async function handleChunkText(text, maxLength, overlapSize, storageId, shouldCo
         return confirmedChunks;
     } catch (err) {
         if (err.message === "User cancelled the operation") {
-            console.log("User cancelled the chunking operation");
+            Logger.info("User cancelled the chunking operation");
             return null;
         } else {
-            console.error("Confirmation failed:", err);
+            Logger.err("Confirmation failed:", err);
             throw err;
         }
     }
@@ -638,7 +638,7 @@ function chunkText(text, maxLength, overlapSize) {
     // Modified regex to preserve punctuation and spaces
     const sentences = text.match(/[^.!?]+\s*[.!?]+|[^.!?]+$/g);
     if (!Array.isArray(sentences)) {
-        console.error("Failed to split text into sentences:", text);
+        Logger.err("Failed to split text into sentences:", text);
         return [];
     }
 
@@ -715,7 +715,7 @@ fetchEmbeddingsForKeys.ct = class {
 
 async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
     if (relevantKeys.length < 1) {
-        console.warn("No relevant keys provided for fetching embeddings.");
+        Logger.warn("No relevant keys provided for fetching embeddings.");
         return [];
     }
 
@@ -743,7 +743,7 @@ async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
 
     topNChunks.sort((a, b) => b.relevanceScore - a.relevanceScore);
     const firstN = topNChunks.slice(0, topN);
-    console.log("Top N Chunks:", firstN);
+    Logger.info("Top N Chunks:", firstN);
     return firstN;
 }
 

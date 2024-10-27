@@ -51,7 +51,7 @@ function requestFunctionCall() {
 
         // Check if the user provided input or cancelled the prompt
         if (userMessage === null || userMessage.trim() === '') {
-            console.log("No input provided. Request cancelled.");
+            Logger.info("No input provided. Request cancelled.");
             return;
         }
 
@@ -107,9 +107,9 @@ function getFunctionResponse(requestMessages) {
         onStreamingResponse: (content) => {
             neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
         },
-        onError: (error) => {
+        onError: (err) => {
             functionErrorIcon.style.display = 'block';
-            console.error("Error:", error);
+            Logger.err(err);
         }
     });
 }

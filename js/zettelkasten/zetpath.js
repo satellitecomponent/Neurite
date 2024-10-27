@@ -32,7 +32,7 @@ ZetPath.Spiral = class extends ZetPath {
         this.options = {...options};
     }
     generatePath() {
-        //console.log('Generating spiral path...');
+        Logger.debug("Generating spiral path...");
         const path = this.path = [];
         let angle = 0;
         const options = this.options;
@@ -56,13 +56,13 @@ ZetPath.Spiral = class extends ZetPath {
             const distanceRatio = targetDistance / currentDistance;
             radius *= distanceRatio;
         }
-        //console.log('Spiral path generated:', path);
+        Logger.debug("Spiral path generated:", path);
     }
 }
 
 ZetPath.Branching = class extends ZetPath {
     generatePath() {
-        //console.log('Generating branching path...');
+        Logger.debug("Generating branching path...");
         const path = this.path = [];
         const options = this.options;
         const branchingFactor = options.factor;
@@ -94,7 +94,7 @@ ZetPath.Branching = class extends ZetPath {
         // Start with the branching interval at its max to place the first branch correctly
         generateBranch(totalDepth, 0, 0, branchingInterval);
 
-        //console.log('Updated Branching Path:', path);
+        Logger.debug("Updated Branching Path:", path);
         return path;
     }
 }
@@ -129,9 +129,9 @@ ZetPath.Radial = class extends ZetPath {
 
 ZetPath.Empty = class extends ZetPath {
     generatePath() {
-        //console.log("Generating radial path...");
+        Logger.debug("Generating radial path...");
         this.path = [];
-        //console.log("Updated Radial Path:", this.path);
+        Logger.debug("Updated Radial Path:", this.path);
         return this.path;
     }
 }
@@ -201,7 +201,7 @@ ZetPath.options = {
 let zetPath = createZetPath('Radial', ZetPath.options.default);
 
 function updatePathOptions(targetProcessor = null) {
-    //console.log('Updating path options...');
+    Logger.debug("Updating path options...");
     const styleName = Modal.inputValues.zetPathTypeDropdown || 'Radial';
     const options = {
         zetPlacementOverride: (styleName === 'Random')
@@ -230,7 +230,7 @@ function updatePathOptions(targetProcessor = null) {
         });
     }
 
-    //console.log('Updated path options:', pathObject.zetPath.options);
+    Logger.debug("Updated path options:", pathObject.zetPath.options);
 
     // Adjust visibility of sliders based on path type
     adjustSliderVisibilityBasedOnPathType(styleName);

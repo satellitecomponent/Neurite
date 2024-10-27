@@ -160,7 +160,7 @@ function unHighlight() {
 function handleSavedNetworksDrop(e) {
     const file = e.dataTransfer.files[0];
     if (file && file.name.endsWith('.txt')) {
-        console.log('File must be a .txt file');
+        Logger.info("File must be a .txt file");
         return;
     }
 
@@ -176,7 +176,7 @@ function handleSavedNetworksDrop(e) {
             saves.push({ title, data: content });
             localStorage.setItem("saves", JSON.stringify(saves));
             updateSavedNetworks();
-        } catch (error) {
+        } catch (err) {
             // Before loading, confirm with the user due to size limitations
             const isSure = window.confirm("The file is too large to store. Would you like to load it anyway?");
             if (isSure) {
@@ -230,18 +230,18 @@ function handleSaveConfirmation(title, saveData, force = false) {
         if (force || confirm(confirmMessage)) {
             // Overwrite logic - update all saves with the matching title
             saves = saves.map(save => save.title === title ? { ...save, data: saveData } : save);
-            console.log("Updated all saves with title:", title);
+            Logger.info("Updated all saves with title:", title);
         } else {
             // Duplicate logic
             let newTitle = title;
             saves.push({ title: newTitle, data: saveData });
-            console.log("Created duplicate save:", newTitle);
+            Logger.info("Created duplicate save:", newTitle);
             title = newTitle; // Update title to reflect new save
         }
     } else {
         // Add new save
         saves.push({ title: title, data: saveData });
-        console.log("Created new save:", title);
+        Logger.info("Created new save:", title);
     }
 
     try {
@@ -269,7 +269,7 @@ function replaceNewLinesInLLMSaveData(nodeData) {
                 });
             }
         } catch (err) {
-            console.warn("Error parsing node JSON:", err);
+            Logger.warn("Error parsing node JSON:", err);
         }
     });
 
@@ -530,8 +530,8 @@ function initializeSaveNetworks() {
                 selectedSaveIndex = null;
                 updateSavedNetworks();
             })
-            .catch(error => {
-                console.error("Failed to load state from file:", error);
+            .catch(err => {
+                Logger.err("Failed to load state from file:", err);
                 displayErrorMessage("Failed to load the requested network state.");
             });
     } else {

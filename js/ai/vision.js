@@ -98,9 +98,9 @@ async function callVisionModel(messages, onStreamComplete) {
             updateUiForIdleState();
             if (onStreamComplete) onStreamComplete(); // Call the callback after streaming is complete
         },
-        onError: (error) => {
+        onError: (err) => {
             functionErrorIcon.style.display = 'block';
-            console.error("Error:", error);
+            Logger.err("Error:", err);
         },
         inferenceOverride: inferenceOverride,
     });

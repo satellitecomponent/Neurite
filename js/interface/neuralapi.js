@@ -160,7 +160,7 @@ function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanPar
 
         function onComplete(){
             activeAnimationsCount -= 1;
-            console.log("Animation completed, count:", activeAnimationsCount);
+            Logger.info("Animation completed, count:", activeAnimationsCount);
             resolve();
         }
 
@@ -168,7 +168,7 @@ function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanPar
             (new Transition(0, 1, duration, easeInOutCubic, Transition.interpolateZoomAndPan))
             .setParams(pan, endPan, zoom, endZoom, combinedRotateParams).animate(onComplete)
         } catch (err) {
-            console.error("Error in animation:", err);
+            Logger.err("In animation:", err);
             activeAnimationsCount -= 1;
             reject(err);
         }
@@ -237,13 +237,13 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
             activeAnimationsCount -= 1;
             autopilotSpeed = 0;
             autopilotReferenceFrame = undefined;
-            console.log("Animation completed, count:", activeAnimationsCount);
+            Logger.info("Animation completed, count:", activeAnimationsCount);
             resolve();
         }
         function isComplete(){
             if (autopilotSpeed === 0) {
                 userBailedOut = true;
-                console.log("Animation interrupted by user interaction.");
+                Logger.info("Animation interrupted by user interaction.");
                 return true;
             }
             return zoom.closeEnough(targetZoom, autopilotThreshold) && pan.closeEnough(targetPan, autopilotThreshold);
@@ -252,7 +252,7 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
         try {
             (new Transition(0, 1, duration, easeInOutCubic, update)).animate(onComplete, isComplete)
         } catch (err) {
-            console.error("Error in animation:", err);
+            Logger.err("In animation:", err);
             activeAnimationsCount -= 1;
             autopilotSpeed = 0;
             autopilotReferenceFrame = undefined;
@@ -281,7 +281,7 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
             ui = getZetNodeCMInstance(nodeOrTitle).ui;
             node = ui.scrollToTitle(nodeOrTitle); // Find the node by title
         } else {
-            console.error("Invalid argument. Must be a node title or a node object.");
+            Logger.err("Invalid argument. Must be a node title or a node object.");
             resolve();
             return;
         }
@@ -300,11 +300,11 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
         let intervalCheck;
         const checkForInterruption = () => {
             if (autopilotSpeed === 0) {
-                console.log("Animation interrupted by user interaction.");
+                Logger.info("Animation interrupted by user interaction.");
                 clearInterval(intervalCheck);
                 autopilotSpeed = 0;
                 autopilotReferenceFrame = undefined;
-                activeAnimationsCount--;
+                activeAnimationsCount -= 1;
                 resolve(node);
             }
         };
@@ -314,10 +314,8 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
         // Use a 3-second timeout to end animation
         setTimeout(() => {
             clearInterval(intervalCheck); // Clear interval check regardless of the state
-            if (autopilotSpeed !== 0) {
-                //console.log("Animation completed normally.");
-            }
-            activeAnimationsCount--;
+            if (autopilotSpeed !== 0) Logger.debug("Animation completed normally.");
+            activeAnimationsCount -= 1;
             autopilotSpeed = 0;
             autopilotReferenceFrame = undefined;
             resolve(node);
@@ -360,12 +358,12 @@ async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLev
             }
 
             activeAnimationsCount -= 1;
-            console.log("Search and Zoom sequence completed!", activeAnimationsCount);
-            resolve(matchedNodes); // Resolve the promise with the matched nodes when the sequence is completed
-        } catch (error) {
-            console.error("An error occurred during the Search and Zoom sequence:", error);
+            Logger.info("Search and Zoom sequence completed!", activeAnimationsCount);
+            resolve(matchedNodes);
+        } catch (err) {
+            Logger.err("During the Search and Zoom sequence:", err);
             activeAnimationsCount -= 1;
-            reject(error); // Reject the promise in case of an error
+            reject(err);
         }
     });
 }
@@ -395,7 +393,7 @@ function neuriteResetView(animate = true, duration = 2000) {
 
         function onComplete(){
             activeAnimationsCount -= 1;
-            console.log("Animation completed, count:", activeAnimationsCount);
+            Logger.info("Animation completed, count:", activeAnimationsCount);
             resolve();
         }
 
@@ -403,7 +401,7 @@ function neuriteResetView(animate = true, duration = 2000) {
         try {
             (new Transition(0, 1, duration, easeInOutCubic, update)).animate(onComplete)
         } catch (err) {
-            console.error("Error in animation:", err);
+            Logger.err("In animation:", err);
             activeAnimationsCount -= 1;
             reject(err);
         }
@@ -499,14 +497,14 @@ async function neuriteQueueAnimations(animations) {
 }
 async function waitForAllAnimations(additionalDelay = 0) {
     return new Promise(resolve => {
-        console.log("Waiting for animations to complete...");
+        Logger.info("Waiting for animations to complete...");
         const checkInterval = setInterval(() => {
-            console.log("Active animations count:", activeAnimationsCount);
+            Logger.info("Active animations count:", activeAnimationsCount);
             if (activeAnimationsCount === 0) {
                 clearInterval(checkInterval);
-                console.log("All animations completed. Waiting additional delay...");
+                Logger.info("All animations completed. Waiting additional delay...");
                 setTimeout(() => {
-                    console.log("Additional delay completed.");
+                    Logger.info("Additional delay completed.");
                     resolve();
                 }, additionalDelay); // Wait for the additional delay after animations complete
             }
@@ -527,7 +525,7 @@ function neuriteCaptureScreenshot() {
                 // Create and add the image node
                 createImageNode(img, 'Screenshot', false); // false because it's not a direct URL
             })
-            .catch(error => console.error('Error:', error));
+            .catch(Logger.err.bind(Logger));
     } else {
         // Regular session, use existing screenshot mechanism
         captureScreenshot();
@@ -546,18 +544,18 @@ async function neuriteReturnScreenshot() {
                 .then(base64Image => {
                     resolve("data:image/png;base64," + base64Image);
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    reject(error);
+                .catch(err => {
+                    Logger.err(err);
+                    reject(err);
                 });
         } else {
             // If not in a Playwright session, use captureScreenToBase64
             try {
                 const base64Image = await captureScreenToBase64();
                 resolve(base64Image);
-            } catch (error) {
-                console.error("Error capturing display:", error);
-                reject(error);
+            } catch (err) {
+                Logger.err("In capturing display:", err);
+                reject(err);
             }
         }
     });
@@ -569,7 +567,7 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
 
     const screenshotBase64 = await neuriteReturnScreenshot();
     if (!screenshotBase64) {
-        console.log("Not in a Playwright session or unable to capture screenshot.");
+        Logger.info("Not in a Playwright session or unable to capture screenshot.");
         return;
     }
 
@@ -602,12 +600,12 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
             runNeuriteCode(true); // Run code with increment and decrement of activeAnimations.
 
             await waitForAllAnimations();
-            console.log('awaited');
+            Logger.info("awaited");
             // Recursive call for the next iteration
             await neuriteCallMovementAi(movementIntention, totalIterations, currentIteration + 1);
         });
     } catch (err) {
-        console.error("Error in API call:", err);
+        Logger.err("In API call:", err);
     }
 }
 
@@ -635,13 +633,13 @@ async function neuritePromptZettelkasten(message) {
 
     const promptTextArea = Elem.byId('prompt');
     if (!promptTextArea) {
-        console.error("Prompt textarea not found.");
+        Logger.err("Prompt textarea not found.");
         return;
     }
 
     const form = Elem.byId('prompt-form');
     if (!form) {
-        console.error("Prompt form not found.");
+        Logger.err("Prompt form not found.");
         return;
     }
 
@@ -652,7 +650,7 @@ async function neuritePromptZettelkasten(message) {
     await aiMessagePromise;
 
     activeAnimationsCount -= 1;
-    console.log("AI message processing completed, count:", activeAnimationsCount);
+    Logger.info("AI message processing completed, count:", activeAnimationsCount);
 
     return streamedResponse;
 }
@@ -807,4 +805,4 @@ function buildFunctionNameList() {
 // Initialize and build the list
 initializeFunctionMappings();
 const functionNameList = buildFunctionNameList();
-//console.log(functionNameList);
+Logger.debug(functionNameList);

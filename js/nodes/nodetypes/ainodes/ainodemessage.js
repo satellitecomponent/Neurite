@@ -1,6 +1,6 @@
 AiNode.sendMessage = async function(node, message = null){
     if (node.aiResponding) {
-        console.log("AI is currently responding. Wait for the current response to complete before sending a new message.");
+        Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
     }
 
@@ -102,7 +102,7 @@ AiNode.sendMessage = async function(node, message = null){
         const firstKeyword = keywordsArray[0];
 
         const wikipediaSummaries = await Wikipedia.getSummaries([firstKeyword]);
-        console.log("wikipediasummaries", wikipediaSummaries);
+        Logger.info("wikipediasummaries", wikipediaSummaries);
 
         const summary = (!Array.isArray(wikipediaSummaries) ? "Wiki Disabled" : wikipediaSummaries
             .filter(s => s?.title !== undefined && s?.summary !== undefined)
@@ -122,7 +122,7 @@ AiNode.sendMessage = async function(node, message = null){
         try {
             searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
         } catch (err) {
-            console.error('Error constructing search query:', err);
+            Logger.err("In constructing search query:", err);
             searchQuery = null;
         }
     }
@@ -212,7 +212,7 @@ AiNode.sendMessage = async function(node, message = null){
                 });
                 remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
             } else {
-                console.warn("Not enough tokens to include the image:", connectedNode);
+                Logger.warn("Not enough tokens to include the image:", connectedNode)
             }
         }
     });
@@ -290,7 +290,7 @@ AiNode.sendMessage = async function(node, message = null){
             content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
         };
 
-        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
+        Logger.info("wolframAlphaTextResult:", wolframAlphaTextResult);
         messages.push(wolframAlphaMessage);
 
         // Redefine lastPromptsAndResponses after Wolfram's response.
@@ -332,7 +332,7 @@ AiNode.sendMessage = async function(node, message = null){
         })
         .catch( (err)=>{
             if (haltCheckbox) haltCheckbox.checked = true;
-            console.error("An error occurred while getting response: " + err);
+            Logger.err("While getting response:", err);
             aiErrorIcon.style.display = 'block';
         });
 }
@@ -369,7 +369,7 @@ AiNode.MessageLoop = class {
 
                 const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
-                    console.warn(`Node ${connectedNode.index} has no more connections or its AI response is halted. Exiting queue.`);
+                    Logger.warn("Node", connectedNode.index, "has no more connections or its AI response is halted. Exiting queue.");
                     break;
                 }
 
@@ -386,29 +386,29 @@ AiNode.MessageLoop = class {
     }
 
     async questionConnectedAiNodes() {
-        //console.log("Questioning connected AI nodes...");
+        Logger.debug("Questioning connected AI nodes...");
         const lastResponse = this.getLastAiResponse();
         const connectedAiNodes = AiNode.calculateDirectionalityLogic(this.node);
 
         let parsedMessages = this.parseMessages(lastResponse);
         if (parsedMessages.length === 0) {
-            console.warn("Standard parsing failed. Using fallback method.");
+            Logger.warn("Standard parsing failed. Using fallback method.");
             parsedMessages = this.fallbackParse(lastResponse);
         }
 
         for (const { recipient, message } of parsedMessages) {
             if (!message.trim()) {
-                //console.log("Skipping empty message for recipient:", recipient);
+                Logger.debug("Skipping empty message for recipient:", recipient);
                 continue;
             }
 
-            //console.log(`Processing message for ${recipient}: ${message}`);
+            Logger.debug(`Processing message for ${recipient}: ${message}`);
 
             // Handle /exit command
             if (message.includes('/exit')) {
                 this.node.haltResponse();
                 this.removeEdgesToConnectedNodes(connectedAiNodes);
-                //console.log("AI has exited the conversation.");
+                Logger.debug("AI has exited the conversation.");
                 break;
             }
 
@@ -424,7 +424,7 @@ AiNode.MessageLoop = class {
                 }
                 continue;
             } else if (recipient === 'self') {
-                //console.log("Skipping self-directed message.");
+                Logger.debug("Skipping self-directed message.");
                 continue;
             } else {
                 // Handle specific recipient
@@ -434,7 +434,7 @@ AiNode.MessageLoop = class {
                 if (targetNode) {
                     targetNodes.push(targetNode);
                 } else {
-                    console.warn("No connected node found for recipient", recipient);
+                    Logger.warn("No connected node found for recipient", recipient);
                     continue;
                 }
             }
@@ -466,7 +466,7 @@ AiNode.MessageLoop = class {
         const uniqueNodeId = connectedNode.index;
 
         if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-            console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
+            Logger.warn("AI response for node", uniqueNodeId, "or its connected node is halted. Skipping this node.");
             return;
         }
 
@@ -474,7 +474,7 @@ AiNode.MessageLoop = class {
         const sendButton = connectedNode.content.querySelector('#prompt-form-' + uniqueNodeId);
 
         if (!promptElement || !sendButton) {
-            console.error(`Elements for ${uniqueNodeId} are not found`);
+            Logger.err("Elements for", uniqueNodeId, "are not found");
             return;
         }
 
@@ -491,7 +491,7 @@ AiNode.MessageLoop = class {
         } else if (promptElement instanceof HTMLDivElement) {
             promptElement.innerHTML += "<br>" + message;
         } else {
-            console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+            Logger.err(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`)
         }
 
         promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
@@ -507,7 +507,7 @@ AiNode.MessageLoop = class {
     }
 
     fallbackParse(text) {
-        //console.log("Using fallback parsing method");
+        Logger.debug("Using fallback parsing method");
         const senderName = this.node.getTitle() || "no_name";
         return [{
             recipient: 'all',
@@ -538,8 +538,8 @@ AiNode.MessageLoop = class {
     }
 
     parseMessages(text) {
-        //console.log("Parsing messages...");
-        //console.log("Input text:", text);  // Log the input text
+        Logger.debug("Parsing messages...");
+        Logger.debug("Input text:", text);
         const messages = [];
         const mentionPattern = /@([a-zA-Z0-9._-]+)(?:[\s,:]|$)/g;
         const senderName = this.node.getTitle() || "no_name";
@@ -580,11 +580,11 @@ AiNode.MessageLoop = class {
             }
         }
 
-        //console.log(`Parsed ${messages.length} messages`);
-        //console.log("Parsed messages:", JSON.stringify(messages));
+        Logger.debug("Parsed", messages.length, "messages");
+        Logger.debug("Parsed messages:", JSON.stringify(messages));
 
         if (messages.length === 0) {
-            console.warn("No messages parsed. Using fallback method.");
+            Logger.warn("No messages parsed. Using fallback method.");
             return this.fallbackParse(text);
         }
 
@@ -592,9 +592,9 @@ AiNode.MessageLoop = class {
     }
 
     finalizeMessage(messages, recipient, message, senderName) {
-        //console.log("Finalizing message for recipient:", recipient);
+        Logger.debug("Finalizing message for recipient:", recipient);
         if (!message.trim()) {
-            //console.log("Skipping empty message");
+            Logger.debug("Skipping empty message");
             return;
         }
 
@@ -612,7 +612,7 @@ AiNode.MessageLoop = class {
             if (aiResponseDiv) return aiResponseDiv.textContent.trim();
         }
 
-        console.warn("No AI response found.");
+        Logger.warn("No AI response found.");
         return '';
     }
 }

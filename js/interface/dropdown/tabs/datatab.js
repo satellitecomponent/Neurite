@@ -76,11 +76,11 @@ function testProgressBar(key) {
     const interval = setInterval(() => {
         progress += 1;
         updateProgressBar(progress);
-        console.log(`Progress for ${key}: ${progress}%`);
+        Logger.info(`Progress for ${key}: ${progress}%`);
 
         if (progress >= 100) {
             clearInterval(interval);
-            console.log("Progress complete for", key);
+            Logger.info("Progress complete for", key);
             setTimeout(VectorDb.removeLoadingIndicator.bind(VectorDb, key), 1000);
         }
     }, 1000);

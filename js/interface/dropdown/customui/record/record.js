@@ -24,9 +24,9 @@ async function captureScreenToBase64() {
             resolve(canvas.toDataURL('image/png', 1.0));
         };
 
-        video.onerror = (error) => {
-            console.error('Error capturing video:', error);
-            reject(error);
+        video.onerror = (err) => {
+            Logger.err("In capturing video:", err);
+            reject(err);
         };
     });
 }
@@ -47,8 +47,8 @@ async function captureScreenshot() {
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
         };
-    } catch (error) {
-        console.error('Error:', error);
+    } catch (err) {
+        Logger.err(err)
     }
 }
 
@@ -91,11 +91,9 @@ async function startRecording() {
             recordedChunks = [];
         };
 
-        // Start recording
         mediaRecorder.start();
-    } catch (error) {
-        // The user canceled the screen sharing prompt
-        console.log('Screen sharing canceled');
+    } catch (err) {
+        Logger.info("Screen sharing canceled");
         document.getElementById('recordButton').textContent = 'Record';
     }
 }

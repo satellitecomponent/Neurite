@@ -27,6 +27,6 @@ function createImageNode(imageElement, title) {
 
     node.isImageNode = true;
     node.imageData = imageElement.src; // Store the base64Data directly from imageElement.src
-    //console.log(node.imageData);
+    Logger.debug(node.imageData);
     return node;
 }

@@ -220,7 +220,7 @@ class ZetPanes {
                 if (cm) {
                     cm.refresh();
                 } else {
-                    console.error("Error: CodeMirror instance not found for the active pane.");
+                    Logger.err("CodeMirror instance not found for the active pane.")
                 }
 
                 this.paneDropdown.value = paneId;

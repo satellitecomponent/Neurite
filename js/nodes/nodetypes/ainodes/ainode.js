@@ -713,7 +713,7 @@ function setupCustomInstructionsListeners(node) {
     const promptLibraryButton = node.content.querySelector('.prompt-library-button');
 
     if (!promptLibraryButton || !node.customInstructionsTextarea) {
-        //console.error('Custom instructions elements not found for node:', node);
+        Logger.debug("Custom instructions elements not found for node:", node);
         return;
     }
 
