@@ -350,7 +350,7 @@ function getZetNodeCMInstance(nodeOrTitle) {
     for (let i = 0; i < window.zettelkastenUIs.length; i++) {
         const ui = window.zettelkastenUIs[i];
         const lineNumber = ui.parser.nodeTitleToLineMap.get(title);
-        if (!lineNumber) continue;
+        if (lineNumber === undefined) continue;
 
         const cm = ui.cm;
         const textareaId = cm.getTextArea().id;

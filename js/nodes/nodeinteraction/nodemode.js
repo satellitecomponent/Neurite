@@ -1,58 +1,47 @@
-const edgesIcon = document.querySelector('.edges-icon');
-
-let lockedNodeMode = false;
-
-function toggleNodeModeState() {
-    if (nodeMode) {
-        edgesIcon.classList.add('edges-active');
-    } else {
-        edgesIcon.classList.remove('edges-active');
+class NodeMode {
+    edgesIcon = document.querySelector('.edges-icon');
+    locked = false;
+    key = settings.nodeModeKey;
+    trigger = settings.nodeModeTrigger;
+    val = 0;
+    constructor(){
+        On.keydown(window, this.onKeyDown);
+        On.keyup(window, this.onKeyUp);
     }
-}
 
-function toggleNodeMode() {
-    nodeMode = 1 - nodeMode;  // Toggle nodeMode between 0 and 1
-    toggleNodeModeState();
-}
+    switch(newState){
+        this.val = newState;
+        this.edgesIcon.classList[newState ? 'add' : 'remove']('edges-active');
+    }
+    skipCapsLockState(e){
+        if (this.key !== "CapsLock") return true;
 
-function enforceCapsLockState(event) {
-    const isCapsLockOn = event.getModifierState("CapsLock");
-    nodeMode = (isCapsLockOn ? 1 : 0); // on : off
-    toggleNodeModeState();  // Update the visual state
-}
+        this.switch(e.getModifierState("CapsLock") ? 1 : 0); // on : off
+    }
+    onKeyDown = (e)=>{
+        if (e.key === this.key) {
+            if (!this.skipCapsLockState(e)) return;
 
-On.keydown(window, (e)=>{
-    if (e.key === settings.nodeModeKey) {
-        const isCapsLockMode = settings.nodeModeKey === "CapsLock";
-
-        if (isCapsLockMode) {
-            // Handle CapsLock-specific behavior
-            enforceCapsLockState(e);
-        } else if (settings.nodeModeTrigger === "down") {
-            nodeMode = 1;
-            toggleNodeModeState();
-            autoToggleAllOverlays();
-        } else if (settings.nodeModeTrigger === "toggle") {
-            toggleNodeMode();
-        }
-    } else if (e.key === 'Escape') {
-        for (const node of Graph.nodes) {
-            node.followingMouse = 0;
+            if (this.trigger === "down") {
+                this.switch(1);
+                Interface.autoToggleAllOverlays();
+            } else if (this.trigger === "toggle") {
+                this.switch(1 - this.val); // Toggle between 0 and 1
+            }
+        } else if (e.key === 'Escape') {
+            for (const node of Graph.nodes) {
+                node.followingMouse = 0;
+            }
         }
     }
-});
+    onKeyUp = (e)=>{
+        if (!this.skipCapsLockState(e)) return;
+        if (e.key !== this.key || this.trigger !== "down") return;
+        if (this.locked) return;
 
-On.keyup(window, (e)=>{
-    const isCapsLockMode = settings.nodeModeKey === "CapsLock";
-
-    if (isCapsLockMode) {
-        enforceCapsLockState(e);
-    } else if (e.key === settings.nodeModeKey && settings.nodeModeTrigger === "down") {
-        if (lockedNodeMode) return;
-
-        nodeMode = 0;
-        toggleNodeModeState();
-        autoToggleAllOverlays();
+        this.switch(0);
+        Interface.autoToggleAllOverlays();
         e.stopPropagation();
     }
-});
+}
+NodeMode = new NodeMode();

@@ -76,7 +76,7 @@ class Edge {
         On.click(elem, this.onClick);
     }
     onClick = (e)=>{
-        if (nodeMode) return;
+        if (NodeMode.val) return;
 
         this.toggleDirection();
         this.draw();
@@ -93,7 +93,7 @@ class Edge {
     }
 
     onDblClick = (e)=>{
-        if (!nodeMode) return;
+        if (!NodeMode.val) return;
 
         this.removeEdgeInstance();
         e.stopPropagation();
@@ -109,7 +109,7 @@ class Edge {
         this.borderSvg.classList.remove('edge-border-hover'); // normal state of the border
     }
     onWheel = (e)=>{
-        if (!nodeMode) return;
+        if (!NodeMode.val) return;
 
         const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 

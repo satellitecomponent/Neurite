@@ -245,13 +245,13 @@ class Node {
         if (!this.followingMouse) return;
 
         const p = toZ(mousePos).minus(this.mouseAnchor);
-        const velocity = p.minus(this.pos).unscale(nodeMode ? 1 : dt);
+        const velocity = p.minus(this.pos).unscale(NodeMode.val ? 1 : dt);
 
         this.vel = velocity;
         this.pos = p;
         this.anchor = this.pos;
 
-        if (nodeMode === 1) updateNodeEdgesLength(this);
+        if (NodeMode.val === 1) updateNodeEdgesLength(this);
 
         if (!SelectedNodes.uuids.has(this.uuid)) return;
 
@@ -259,7 +259,7 @@ class Node {
             if (node.uuid === this.uuid || node.anchorForce === 1) return;
 
             node.vel = velocity;
-            if (nodeMode === 1) updateNodeEdgesLength(node);
+            if (NodeMode.val === 1) updateNodeEdgesLength(node);
         });
     }
 
@@ -363,7 +363,7 @@ class Node {
         this.followingMouse = 1;
         window.draggedNode = this;
         movingNode = this;
-        if (nodeMode) {
+        if (NodeMode.val) {
             if (prevNode === undefined) {
                 prevNode = this;
             } else {
@@ -409,7 +409,7 @@ class Node {
         }*/
     }
     onWheel = (e)=>{
-        if (!nodeMode) return;
+        if (!NodeMode.val) return;
 
         let amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 

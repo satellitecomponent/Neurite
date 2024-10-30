@@ -119,7 +119,7 @@ function collapseNode(node) {
         }
 
         function handleCircleDoubleClick(e) {
-            if (nodeMode !== 1) {
+            if (NodeMode.val !== 1) {
                 const classList = circle.classList;
                 if (classList.contains('collapsed-anchor')) {
                     classList.remove('collapsed-anchor');

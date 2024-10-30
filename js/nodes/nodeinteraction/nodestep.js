@@ -1,19 +1,18 @@
 //frame();
-var mousePathPos;
-var current_time = undefined;
+let nodeMode_v = 0;
+let mousePathPos;
+let current_time;
 let regenAmount = 0;
 let regenDebt = 0;
 let avgfps = 0;
 let panToI = new vec2(0, 0);
-let panToI_prev = undefined;
+let panToI_prev;
 
 //let manualConnectionOverride = false;
 
 class NodeSimulation {
-    constructor() {
-        this.prevNodeScale = 1;
-        this.current_time = undefined;
-    }
+    prevNodeScale = 1;
+    current_time = undefined;
 
     processSelectedNodes() {
         processScalingKeys();
@@ -78,14 +77,14 @@ class NodeSimulation {
     updateMousePathWidth() {
         let width = zoom.mag() * 0.0005 * SVG.zoom;
 
-        if (nodeMode && prevNode !== undefined) {
+        if (NodeMode.val && prevNode !== undefined) {
             svg_mousePath.setAttribute('d', "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
             width *= 50;
         } else {
             svg_mousePath.setAttribute('d', mousePath);
         }
 
-        if (!nodeMode && prevNode !== undefined) {
+        if (!NodeMode.val && prevNode !== undefined) {
             prevNode = undefined;
             mousePath = '';
             svg_mousePath.setAttribute('d', '');
@@ -133,7 +132,7 @@ class NodeSimulation {
             render_hair(random() * settings.renderSteps);
         }
         regenAmount = 0;
-        nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
+        nodeMode_v = lerp(nodeMode_v, NodeMode.val, 0.125);
     }
 
     nodeStep(time) {

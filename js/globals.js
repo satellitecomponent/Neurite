@@ -145,53 +145,49 @@ var flashlight_fraction = 0.73; // this is what fraction of samples are diverted
 
 
 
-//interface
+class Interface {
+    overlays = [];
+    altHeld = false;
+    constructor(){
+        On.keydown(document, this.altKeyDown);
+        On.keyup(document, this.altKeyUp);
+        On.message(window, this.onMessage);
+    }
 
-const overlays = [];
-
-const autoToggleAllOverlays = () => {
-    for (const overlay of overlays) {
-        if (altHeld || nodeMode === 1) {
-            overlay.style.display = 'block';
-        } else {
-            overlay.style.display = 'none';
+    autoToggleAllOverlays(){
+        const condition = (this.altHeld || NodeMode.val === 1);
+        for (const overlay of this.overlays) {
+            overlay.style.display = (condition ? 'block' : 'none');
         }
     }
-};
-
-let altHeld = false;
-
-// Global event listeners to set the altHeld flag
-On.keydown(document, (e)=>{
-    if (e.altKey) {
-        altHeld = true;
-        autoToggleAllOverlays();
-        e.preventDefault();  // Prevent default behavior like focusing on the iframe
+    altKeyDown = (e)=>{
+        if (e.altKey) {
+            this.altHeld = true;
+            this.autoToggleAllOverlays();
+            e.preventDefault(); // e.g. focusing on the iframe
+        }
     }
-});
-On.keyup(document, (e)=>{
-    if (!e.altKey) {
-        altHeld = false;
-        autoToggleAllOverlays();
+    altKeyUp = (e)=>{
+        if (!e.altKey) {
+            this.altHeld = false;
+            this.autoToggleAllOverlays();
+        }
     }
-});
-
-On.message(window, (e)=>{
-    const data = e.data;
-    if (typeof data.altHeld !== 'undefined') {
-        altHeld = data.altHeld;
-        autoToggleAllOverlays();
+    onMessage = (e)=>{
+        const data = e.data;
+        if (data.altHeld !== undefined) {
+            this.altHeld = data.altHeld;
+            this.autoToggleAllOverlays();
+        }
+        NodeMode.val = data.nodeMode ?? 0;
     }
-    nodeMode = (typeof data.nodeMode !== 'undefined' ? data.nodeMode : 0);
-});
+}
+Interface = new Interface();
 
 const Graph = {
     nodes: [],
     edges: []
 };
-
-var nodeMode_v = 0;
-var nodeMode = 0;
 
 var movingNode = undefined;
 var NodeUUID = 0;

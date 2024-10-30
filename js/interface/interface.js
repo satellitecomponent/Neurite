@@ -213,7 +213,7 @@ On.wheel(svg, (e)=>{
     isAnimating = false;
 
     // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
-    if (settings.zoomClick === "scroll" && nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
+    if (settings.zoomClick === "scroll" && NodeMode.val !== 1 && e.getModifierState(settings.rotateModifier)) {
         autopilotSpeed = 0;
         coordsLive = true;
 

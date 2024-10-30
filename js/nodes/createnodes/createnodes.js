@@ -5,7 +5,7 @@
         // Alt + double click behavior
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (nodeMode && !prevNode) { // Node mode (Shift) + double click behavior *text nodes
+    } else if (NodeMode.val && !prevNode) { // Node mode (Shift) + double click behavior *text nodes
         createNodeFromWindow();
     }
 });
