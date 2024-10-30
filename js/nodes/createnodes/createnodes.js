@@ -1,6 +1,5 @@
-﻿document.addEventListener('dblclick', function (e) {
-    // Cancel the default behavior of the event
-    cancel(e);
+﻿On.dblclick(document, (e)=>{
+    e.stopPropagation();
 
     if (e.getModifierState(controls.altKey.value)) {
         // Alt + double click behavior

@@ -57,13 +57,13 @@ function performZettelkastenSearch(searchTerm) {
             this.zoom_to();
             autopilotSpeed = settings.autopilotSpeed;
         }
-        function onDblclick(e){
+        function onDblClick(e){
             this.zoom_to();
             skipAutopilot();
             autopilotSpeed = settings.autopilotSpeed;
         }
-        div.addEventListener('click', onClick.bind(node));
-        div.addEventListener('dblclick', onDblclick.bind(node));
+        On.click(div, onClick.bind(node));
+        On.dblclick(div, onDblClick.bind(node));
 
         res.appendChild(div);
     }
@@ -71,21 +71,18 @@ function performZettelkastenSearch(searchTerm) {
 
 function setupZettelkastenSearchBar() {
     const inp = Elem.byId('Searchbar');
-    inp.addEventListener('input',
-        (e)=>performZettelkastenSearch(inp.value)
-    );
+    On.input(inp, performZettelkastenSearch.bind(null, inp.value));
 }
 
 
 
-Elem.byId('vectorDbSearchButton').addEventListener('click', () => {
+On.click(Elem.byId('vectorDbSearchButton'), (e)=>{
     Modal.open('vectorDbSearchModal');
     performVectorDbDisplaySearch();
     // Create a debounced version of performVectorDbDisplaySearch
     const debouncedPerformVectorDbDisplaySearch = debounce(performVectorDbDisplaySearch, 300);
 
-
-    Elem.byId('vectorDbSearchInput').addEventListener('input', debouncedPerformVectorDbDisplaySearch);
+    On.input(Elem.byId('vectorDbSearchInput'), debouncedPerformVectorDbDisplaySearch);
 
     const topNSlider = Elem.byId('topNSlider');
     const topNValue = Elem.byId('topNValue');
@@ -94,7 +91,7 @@ Elem.byId('vectorDbSearchButton').addEventListener('click', () => {
     topNValue.textContent = topNSlider.value;
 
     // Update display value on slider input
-    topNSlider.addEventListener('input', () => {
+    On.input(topNSlider, (e)=>{
         topNValue.textContent = topNSlider.value;
         debouncedPerformVectorDbDisplaySearch(); // Use the debounced function here
     });

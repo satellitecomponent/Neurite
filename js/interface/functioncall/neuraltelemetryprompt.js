@@ -15,8 +15,7 @@ class NeuralTelemetry {
     }
 
     getCurrentEquation() {
-        const equationElement = document.getElementById("equation");
-        return equationElement.innerHTML;
+        return Elem.byId('equation').innerHTML
     }
 
     // Method to get a range of node titles

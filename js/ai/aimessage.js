@@ -1,4 +1,4 @@
-Elem.byId('auto-mode-checkbox').addEventListener('change', function () {
+On.change(Elem.byId('auto-mode-checkbox'), function(e){
     if (this.checked) Ai.isFirstAutoModeMessage = true;
 });
 
@@ -72,7 +72,7 @@ async function sendMessage(event, autoModeMessage = null) {
         try {
             searchQuery = await constructSearchQuery(message);
         } catch (err) {
-            Logger.err("Error constructing search query:", err);
+            Logger.err("In constructing search query:", err);
             searchQuery = null;
         }
     }

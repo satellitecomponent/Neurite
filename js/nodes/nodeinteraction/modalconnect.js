@@ -9,7 +9,7 @@ Modal.Connect.setup = function(originNode){
 
     const update = Modal.Connect.updateNodeList.bind(null, originNode, maxNodes);
     update();
-    searchBar.addEventListener('input', update);
+    On.input(searchBar, update);
 }
 
 Modal.Connect.updateNodeList = function(originNode, maxNodes){
@@ -30,7 +30,7 @@ Modal.Connect.updateNodeList = function(originNode, maxNodes){
         const li = document.createElement('li');
         li.textContent = node.getTitle().trim() || 'Untitled';
         li.className = (findExistingEdge(node, originNode) ? 'connected' : 'disconnected');
-        li.onclick = function onClick(){
+        On.click(li, (e)=>{
             const existingEdge = findExistingEdge(node, originNode);
             if (!existingEdge) {
                 connectNodes(node, originNode);
@@ -44,7 +44,7 @@ Modal.Connect.updateNodeList = function(originNode, maxNodes){
                 existingEdge.remove();
             }
             li.className = 'disconnected';
-        }
+        });
         nodeList.appendChild(li);
     });
 }

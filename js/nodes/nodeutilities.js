@@ -48,7 +48,7 @@ SelectedNodes.getCentroid = function(){
 
     let sumPos = new vec2(0, 0);
     SelectedNodes.forEach(
-        (node)=>(sumPos = sumPos.plus(node.pos))
+        (node)=>{ sumPos = sumPos.plus(node.pos) }
     );
     return sumPos.scale(1 / SelectedNodes.uuids.size);
 }

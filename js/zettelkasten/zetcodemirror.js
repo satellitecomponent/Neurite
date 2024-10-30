@@ -349,9 +349,9 @@ function getZetNodeCMInstance(nodeOrTitle) {
     let title = typeof nodeOrTitle === 'string' ? nodeOrTitle : nodeOrTitle.getTitle();
     for (let i = 0; i < window.zettelkastenUIs.length; i++) {
         const ui = window.zettelkastenUIs[i];
-        if (!ui.parser.nodeTitleToLineMap.has(title)) continue;
-
         const lineNumber = ui.parser.nodeTitleToLineMap.get(title);
+        if (!lineNumber) continue;
+
         const cm = ui.cm;
         const textareaId = cm.getTextArea().id;
         const paneId = textareaId.replace('zet-note-input-', 'zet-pane-');

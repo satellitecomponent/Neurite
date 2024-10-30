@@ -238,26 +238,20 @@ function updatePathOptions(targetProcessor = null) {
 
 function adjustSliderVisibilityBasedOnPathType(styleName) {
     // Show general sliders (without any specific class) by default
-    document.querySelectorAll('.settingsSlider:not(.spiral-slider):not(.branching-slider)').forEach(slider => {
-        slider.style.display = 'block';
-    });
+    document.querySelectorAll('.settingsSlider:not(.spiral-slider):not(.branching-slider)')
+    .forEach(Elem.displayBlock);
 
-    // Hide all specific sliders first to prevent overlap in visibility settings
-    document.querySelectorAll('.spiral-slider, .branching-slider, .radial-slider').forEach(slider => {
-        slider.style.display = 'none';
-    });
+    document.querySelectorAll('.spiral-slider, .branching-slider, .radial-slider')
+    .forEach(Elem.hide); // prevent overlap in visibility settings
 
-    // Conditional display logic for specific sliders
-    if (styleName === 'Branching') {
-        document.querySelectorAll('.branching-slider').forEach(slider => slider.style.display = 'block');
-    } else if (styleName === 'Spiral') {
-        document.querySelectorAll('.spiral-slider').forEach(slider => slider.style.display = 'block');
-    } else if (styleName === 'Radial') {
-        document.querySelectorAll('.radial-slider').forEach(slider => slider.style.display = 'block');
-    }
+    // Show specific sliders
+    const sliderClass = (styleName === 'Branching') ? '.branching-slider'
+                      : (styleName === 'Spiral') ? '.spiral-slider'
+                      : (styleName === 'Radial') ? '.radial-slider' : ''
+    document.querySelectorAll(sliderClass).forEach(Elem.displayBlock);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+On.DOMContentLoaded(document, (e)=>{
     function setDefaultValue(styleName){
         const defaultOptions = ZetPath.options.default[styleName];
         const style = ZetPath.options[styleName];

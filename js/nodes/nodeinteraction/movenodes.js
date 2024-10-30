@@ -1,13 +1,7 @@
 // Global object to track the state of movement keys
 const keyState = {};
-
-window.addEventListener('keydown', (event) => {
-    keyState[event.key] = true;
-});
-
-window.addEventListener('keyup', (event) => {
-    keyState[event.key] = false;
-});
+On.keydown(window, (e)=>{ keyState[e.key] = true } );
+On.keyup(window, (e)=>{ keyState[e.key] = false } );
 
 const directionMap = {
     'ArrowUp': 'up',

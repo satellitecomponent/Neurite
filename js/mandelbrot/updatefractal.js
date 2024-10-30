@@ -22,7 +22,7 @@ let juliaConstant = new vec2(0.256, 0.01);
 function updateJuliaConstant(event) {
     if (!isDragging) return;
 
-    const juliaConstantElement = document.getElementById("julia-constant");
+    const juliaConstantElement = Elem.byId("julia-constant");
     const rect = juliaConstantElement.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
@@ -30,15 +30,15 @@ function updateJuliaConstant(event) {
     juliaConstant.x = x * 4 - 2;
     juliaConstant.y = y * 4 - 2;
 
-    document.getElementById("julia-x").textContent = juliaConstant.x.toFixed(2);
-    document.getElementById("julia-y").textContent = juliaConstant.y.toFixed(2);
+    Elem.byId("julia-x").textContent = juliaConstant.x.toFixed(2);
+    Elem.byId("julia-y").textContent = juliaConstant.y.toFixed(2);
     updateMandStep();
 }
 
 function updateEquation() {
-    const fractalType = document.getElementById("fractal-select").value;
-    const exponentValue = document.getElementById("exponent").value;
-    const equationElement = document.getElementById("equation");
+    const fractalType = Elem.byId("fractal-select").value;
+    const exponentValue = Elem.byId("exponent").value;
+    const equationElement = Elem.byId("equation");
 
     if (fractalType === "mandelbrot") {
         equationElement.innerHTML = `z<sup>${exponentValue}</sup> + c`;
@@ -60,8 +60,8 @@ function updateEquation() {
 }
 
 function updateMandStep() {
-    const fractalType = document.getElementById("fractal-select").value;
-    const exponentValue = document.getElementById("exponent").value;
+    const fractalType = Elem.byId("fractal-select").value;
+    const exponentValue = Elem.byId("exponent").value;
 
     if (fractalType === "mandelbrot") {
         mand_step = (z, c) => {
@@ -107,27 +107,25 @@ function updateMandStep() {
 }
 
 function updateJuliaDisplay(fractalType) {
-    const juliaConstantElement = document.getElementById("julia-constant");
-    juliaConstantElement.style.display = (fractalType === "julia") ? "block" : "none";
-    document.getElementById("julia-x").textContent = juliaConstant.x.toFixed(2);
-    document.getElementById("julia-y").textContent = juliaConstant.y.toFixed(2);
+    Elem.byId("julia-constant").style.display = (fractalType === "julia") ? "block" : "none";
+    Elem.byId("julia-x").textContent = juliaConstant.x.toFixed(2);
+    Elem.byId("julia-y").textContent = juliaConstant.y.toFixed(2);
 }
 
 function initializeFractalSelect() {
-    const fractalSelect = document.getElementById("fractal-select");
+    const fractalSelect = Elem.byId("fractal-select");
     const fractalType = fractalSelect.value;
     updateMandStep();
     updateJuliaDisplay(fractalType);
 
-    const juliaConstantElement = document.getElementById("julia-constant");
-    juliaConstantElement.addEventListener("mousedown", startDragging);
+    On.mousedown(Elem.byId("julia-constant"), startDragging);
 
-    const tab2Element = document.getElementById("tab2");
-    tab2Element.addEventListener("mousemove", updateJuliaConstant);
-    tab2Element.addEventListener("mouseup", stopDragging);
-    tab2Element.addEventListener("mouseleave", stopDragging);
+    const tab2Element = Elem.byId("tab2");
+    On.mousemove(tab2Element, updateJuliaConstant);
+    On.mouseup(tab2Element, stopDragging);
+    On.mouseleave(tab2Element, stopDragging);
 
-    fractalSelect.addEventListener("change", (e) => {
+    On.change(fractalSelect, (e)=>{
         updateMandStep();
         updateJuliaDisplay(e.target.value);
     });

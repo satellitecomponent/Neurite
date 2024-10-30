@@ -95,17 +95,14 @@ LinkNode.init = function(node){
 LinkNode.setupLinkListeners = function(node){
     const a = node.link;
 
-    const onMouseOver = Elem.setBothColors.bind(a, '#888', '#1a1a1d');
-    a.addEventListener('mouseover', onMouseOver);
-
-    const onMouseOut = Elem.setBothColors.bind(a, '#bbb', '#222226');
-    a.addEventListener('mouseout', onMouseOut);
+    On.mouseover(a, Elem.setBothColors.bind(a, '#888', '#1a1a1d'));
+    On.mouseout(a, Elem.setBothColors.bind(a, '#bbb', '#222226'));
 
     function onClick(e) {
         e.preventDefault();
         LinkNode.handleIframe(node);
     }
-    a.addEventListener('click', onClick);
+    On.click(a, onClick);
 }
 
 LinkNode.setupSearchBarListener = function(node){
@@ -125,7 +122,7 @@ LinkNode.setupSearchBarListener = function(node){
             }
         }
     }
-    titleInput.addEventListener('keypress', onKeyPress);
+    On.keypress(titleInput, onKeyPress);
 }
 
 LinkNode.updateIframeSrc = function(node, url){

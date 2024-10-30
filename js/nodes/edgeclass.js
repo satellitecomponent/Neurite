@@ -69,17 +69,17 @@ class Edge {
     }
 
     attachEventListeners(elem){
-        elem.addEventListener('wheel', this.onwheel.bind(this));
-        elem.addEventListener('mouseover', this.onmouseover.bind(this));
-        elem.addEventListener('mouseout', this.onmouseout.bind(this));
-        elem.addEventListener('dblclick', this.ondblclick.bind(this));
-        elem.addEventListener('click', this.onclick.bind(this));
+        On.wheel(elem, this.onWheel);
+        On.mouseover(elem, this.onMouseOver);
+        On.mouseout(elem, this.onMouseOut);
+        On.dblclick(elem, this.onDblClick);
+        On.click(elem, this.onClick);
     }
-    onclick(e){
-        if (!nodeMode) {
-            this.toggleDirection();
-            this.draw();
-        }
+    onClick = (e)=>{
+        if (nodeMode) return;
+
+        this.toggleDirection();
+        this.draw();
     }
     removeEdgeInstance() {
         const connectedNodes = this.pts.map(node => ({ title: node.getTitle(), isTextNode: node.isTextNode }));
@@ -92,35 +92,35 @@ class Edge {
         }
     }
 
-    ondblclick(e){
-        if (nodeMode) {
-            this.removeEdgeInstance();
-            cancel(e);
-        }
+    onDblClick = (e)=>{
+        if (!nodeMode) return;
+
+        this.removeEdgeInstance();
+        e.stopPropagation();
     }
-    onmouseover(e){
+    onMouseOver = (e)=>{
         this.mouseIsOver = true;
         this.arrowSvg.classList.add('edge-arrow-hover');
         this.borderSvg.classList.add('edge-border-hover'); // hovered state of the border
     }
-    onmouseout(e){
+    onMouseOut = (e)=>{
         this.mouseIsOver = false;
         this.arrowSvg.classList.remove('edge-arrow-hover');
         this.borderSvg.classList.remove('edge-border-hover'); // normal state of the border
     }
-    onwheel(e){
-        if (nodeMode) {
-            const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
+    onWheel = (e)=>{
+        if (!nodeMode) return;
 
-            // Determine if this edge should be scaled based on both nodes being selected
-            if (SelectedNodes.uuids.size > 0 && this.pts.every(pt => SelectedNodes.uuids.has(pt))) {
-                SelectedNodes.collectEdges().forEach(edge => edge.scaleLength(amount));
-            } else {
-                this.scaleLength(amount);
-            }
+        const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
-            cancel(e);
+        // Determine if this edge should be scaled based on both nodes being selected
+        if (SelectedNodes.uuids.size > 0 && this.pts.every(pt => SelectedNodes.uuids.has(pt))) {
+            SelectedNodes.collectEdges().forEach(edge => edge.scaleLength(amount));
+        } else {
+            this.scaleLength(amount);
         }
+
+        e.stopPropagation();
     }
 
     scaleLength(amount) {

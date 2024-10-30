@@ -21,7 +21,7 @@ function handleKeyDown(event) {
 }
 
 const promptInput = Elem.byId('prompt');
-if (promptInput) promptInput.addEventListener('keydown', handleKeyDown);
+if (promptInput) On.keydown(promptInput, handleKeyDown);
 
 function autoGrow(event) {
     const textarea = event.target;
@@ -44,9 +44,8 @@ function updateMaxDimensions() {
     maxHeight = window.innerHeight * 0.7;
 }
 
-// Update max dimensions initially and on window resize
 updateMaxDimensions();
-window.addEventListener('resize', updateMaxDimensions);
+On.resize(window, updateMaxDimensions);
 
 // Horizontal drag handle
 let zetHorizDragHandle = Elem.byId('zetHorizDragHandle');
@@ -54,20 +53,20 @@ let zetIsHorizResizing = false;
 let initialX;
 let initialWidth;
 
-zetHorizDragHandle.addEventListener('mousedown', function (event) {
+On.mousedown(zetHorizDragHandle, (e)=>{
     updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsHorizResizing = true;
-    initialX = event.clientX;
+    initialX = e.clientX;
     initialWidth = zetPanes.container.offsetWidth;
 
     // Prevent text selection while resizing
     document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', zetHandleHorizMouseMove);
-    document.addEventListener('mouseup', function () {
+    On.mousemove(document, zetHandleHorizMouseMove);
+    On.mouseup(document, (e)=>{
         zetIsHorizResizing = false;
         // Enable text selection again after resizing
         document.body.style.userSelect = '';
-        document.removeEventListener('mousemove', zetHandleHorizMouseMove);
+        Off.mousemove(document, zetHandleHorizMouseMove);
     });
 });
 
@@ -92,20 +91,20 @@ let zetIsVertResizing = false;
 let initialY;
 let initialHeight;
 
-zetVertDragHandle.addEventListener('mousedown', function (event) {
+On.mousedown(zetVertDragHandle, (e)=>{
     updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsVertResizing = true;
-    initialY = event.clientY;
+    initialY = e.clientY;
     initialHeight = zetPanes.container.offsetHeight;
 
     // Prevent text selection while resizing
     document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', zetHandleVertMouseMove);
-    document.addEventListener('mouseup', function () {
+    On.mousemove(document, zetHandleVertMouseMove);
+    On.mouseup(document, (e)=>{
         zetIsVertResizing = false;
         // Enable text selection again after resizing
         document.body.style.userSelect = '';
-        document.removeEventListener('mousemove', zetHandleVertMouseMove);
+        Off.mousemove(document, zetHandleVertMouseMove);
     });
 });
 
@@ -142,13 +141,13 @@ class ZetPanes {
         CustomDropdown.setupHtmlOptions(this.paneDropdown, createZetContainerDropdown, false);
 
         // + and X buttons
-        this.addPaneButton.addEventListener('click', this.addPane.bind(this));
-        this.deletePaneButton.addEventListener('click', this.removeSelectedPane.bind(this));
+        On.click(this.addPaneButton, this.addPane.bind(this));
+        On.click(this.deletePaneButton, this.removeSelectedPane.bind(this));
 
-        this.paneDropdown.addEventListener('change', () => this.switchPane(this.paneDropdown.value));
+        On.change(this.paneDropdown, () => this.switchPane(this.paneDropdown.value));
 
         this.searchButton = container.querySelector('#notesSearchButton');
-        this.searchButton.addEventListener('click', this.openSearchModal.bind(this));
+        On.click(this.searchButton, this.openSearchModal.bind(this));
 
         this.addPane();
     }

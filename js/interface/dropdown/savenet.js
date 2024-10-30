@@ -1,5 +1,5 @@
 ﻿const LATEST_LOADED_INDEX_KEY = "latest-selected"
-Elem.byId('new-save-button').addEventListener('click', () => neuriteSaveEvent());
+On.click(Elem.byId('new-save-button'), neuriteSaveEvent);
 
 function downloadData(title, data) {
     const blob = new Blob([data], { type: 'text/plain' });
@@ -32,7 +32,7 @@ function updateSavedNetworks() {
         titleInput.value = save.title;
         titleInput.style.border = 'none';
         titleInput.style.width = '100px';
-        titleInput.addEventListener('change', function () {
+        On.change(titleInput, (e)=>{
             save.title = titleInput.value;
             localStorage.setItem("saves", JSON.stringify(saves));
         });
@@ -44,7 +44,7 @@ function updateSavedNetworks() {
         const saveButton = document.createElement("button");
         saveButton.textContent = "Save";
         saveButton.className = 'linkbuttons';
-        saveButton.addEventListener('click', function () {
+        On.click(saveButton, (e)=>{
             if (index !== selectedSaveIndex && !window.confirm(`This will overwrite ${save.title} with the currently selected save, ${selectedSaveTitle} Continue?`)) {
                 return;
             }
@@ -55,8 +55,7 @@ function updateSavedNetworks() {
         const loadButton = document.createElement('button');
         loadButton.textContent = "Load";
         loadButton.className = 'linkbuttons';
-        loadButton.addEventListener('click', function () {
-
+        On.click(loadButton, (e)=>{
             function updateLoadState() {
                 autosave()
 
@@ -82,7 +81,7 @@ function updateSavedNetworks() {
         const deleteButton = document.createElement('button');
         deleteButton.textContent = "X";
         deleteButton.className = 'linkbuttons';
-        deleteButton.addEventListener('click', function () {
+        On.click(deleteButton, (e)=>{
             // Remove the save from the array
             saves.splice(index, 1);
 
@@ -102,7 +101,7 @@ function updateSavedNetworks() {
         const downloadButton = document.createElement('button');
         downloadButton.textContent = "↓";
         downloadButton.className = 'linkbuttons';
-        downloadButton.addEventListener('click', function () {
+        On.click(downloadButton, (e)=>{
             const blob = new Blob([save.data], { type: 'text/plain' });
 
             const tempAnchor = document.createElement('a');
@@ -128,26 +127,23 @@ updateSavedNetworks();
 let container = Elem.byId('saved-networks-container');
 
 // Prevent default drag behaviors
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    container.addEventListener(eventName, preventDefaults, false);
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach( (eName)=>{
+    On[eName](container, (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+    })
 });
 
 // Highlight the drop area when item is dragged over it
-['dragenter', 'dragover'].forEach(eventName => {
-    container.addEventListener(eventName, highlight, false);
-});
+['dragenter', 'dragover'].forEach(
+    (eName)=>On[eName](container, highlight)
+);
 
-['dragleave', 'drop'].forEach(eventName => {
-    container.addEventListener(eventName, unHighlight, false);
-});
+['dragleave', 'drop'].forEach(
+    (eName)=>On[eName](container, unHighlight)
+);
 
-// Handle the drop
-container.addEventListener('drop', handleSavedNetworksDrop, false);
-
-function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-}
+On.drop(container, handleSavedNetworksDrop);
 
 function highlight() {
     container.classList.add('highlight');
@@ -159,14 +155,13 @@ function unHighlight() {
 
 function handleSavedNetworksDrop(e) {
     const file = e.dataTransfer.files[0];
-    if (file && file.name.endsWith('.txt')) {
+    if (!file || !file.name.endsWith('.txt')) {
         Logger.info("File must be a .txt file");
         return;
     }
 
     const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = function (e) {
+    On.load(reader, (e)=>{
         const content = e.target.result;
         const title = file.name.replace('.txt', '');
 
@@ -186,19 +181,20 @@ function handleSavedNetworksDrop(e) {
                 loadNet(content, true);
             }
         }
-    };
+    });
+    reader.readAsText(file);
 }
 
-Elem.byId('clear-button').addEventListener('click', function () {
+On.click(Elem.byId('clear-button'), (e)=>{
     Elem.byId('clear-sure').setAttribute('style', "display:block");
     Elem.byId('clear-button').text = "Are you sure?";
 });
-Elem.byId('clear-unsure-button').addEventListener('click', function () {
+On.click(Elem.byId('clear-unsure-button'), (e)=>{
     Elem.byId('clear-sure').setAttribute('style', "display:none");
     Elem.byId('clear-button').text = "Clear";
 });
-Elem.byId('clear-sure-button').addEventListener('click', function () {
-    let createNewSave = confirm("Create a new save?");
+On.click(Elem.byId('clear-sure-button'), (e)=>{
+    const createNewSave = confirm("Create a new save?");
 
     selectedSaveTitle = null;
     selectedSaveIndex = null;
@@ -213,10 +209,10 @@ Elem.byId('clear-sure-button').addEventListener('click', function () {
     Elem.byId('clear-button').text = "Clear";
 });
 
-Elem.byId('clearLocalStorage').onclick = function () {
+On.click(Elem.byId('clearLocalStorage'), (e)=>{
     localStorage.clear();
-    alert('Local storage has been cleared.');
-}
+    alert("Local storage has been cleared.");
+})
 
 function handleSaveConfirmation(title, saveData, force = false) {
     let saves = JSON.parse(localStorage.getItem("saves") || "[]");
@@ -558,7 +554,7 @@ function initializeSaveNetworks() {
         autosaveEnabledCheckbox.checked = autosaveEnabled === "true"; // Ensure it loads as a boolean
 
         // Save state when the checkbox is toggled
-        autosaveEnabledCheckbox.addEventListener('change', (e) => {
+        On.change(autosaveEnabledCheckbox, (e)=>{
             localStorage.setItem("autosave-enabled", e.target.checked);
         });
 

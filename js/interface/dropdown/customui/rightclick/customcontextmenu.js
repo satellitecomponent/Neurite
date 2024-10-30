@@ -1,13 +1,9 @@
 ContextMenu = {};
 
 ContextMenu.setupEventListeners = function(){
-    const stopPropagation = Elem.stopPropagationOfEvent;
-    const menu = Elem.byId('customContextMenu');
-    menu.addEventListener('mousedown', stopPropagation);
-    menu.addEventListener('mouseup', stopPropagation);
-    menu.addEventListener('click', stopPropagation);
+    ['click', 'mousedown', 'mouseup']
+    .forEach(Event.stopPropagationByNameForThis, Elem.byId('customContextMenu'))
 }
-
 ContextMenu.setupEventListeners();
 
 ContextMenu.position = function(menu, x, y){
@@ -67,14 +63,13 @@ function findNodeForElement(element) {
     }
 }
 
-// Helper function to create a menu item
 function createMenuItem(displayText, uniqueIdentifier, action) {
-    const menuItem = document.createElement('li');
-    menuItem.textContent = displayText;
-    menuItem.dataset.identifier = uniqueIdentifier;
-    menuItem.classList.add('dynamic-option');
-    menuItem.addEventListener('click', action);
-    return menuItem;
+    const li = document.createElement('li');
+    li.textContent = displayText;
+    li.dataset.identifier = uniqueIdentifier;
+    li.classList.add('dynamic-option');
+    On.click(li, action);
+    return li;
 }
 
 // Helper function to remove a menu item
@@ -111,31 +106,31 @@ ContextMenu.populateForEdge = function(menu, edge){
 }
 
 ContextMenu.populateForBackground = function(menu, target){
-    // Option to create a Text Node (without calling draw)
-    addNodeCreationOption(menu, '+ Note', createNodeFromWindow, false);
-    // Option to create an LLM Node
-    addNodeCreationOption(menu, '+ Ai', createLlmNode, true);
-    // Option to create a Link Node or Search Google
-    addNodeCreationOption(menu, '+ Link', returnLinkNodes, false);
-    // Option to select a file
-    addFileSelectionOption(menu, '+ File', handleFileSelection);
-    addPasteOption(menu, target);
+    menu.append(
+        // Option to create a Text Node (without calling draw)
+        makeNodeCreationOption('+ Note', createNodeFromWindow, false),
+        makeNodeCreationOption('+ Ai', createLlmNode, true),
+        // Option to create a Link Node or Search Google
+        makeNodeCreationOption('+ Link', returnLinkNodes, false),
+        makeFileSelectionOption('+ File', handleFileSelection),
+        makePasteOption(target)
+    )
 }
 
 ContextMenu.populateForGeneric = function(menu){ // non-SVG targets
-    addGenericOption(menu, 'Generic Action', handleGenericAction)
+    menu.appendChild(makeGenericOption("Generic Action", handleGenericAction))
 }
 
 
 
 let rightClickFileInput = null; // Declare a variable to hold the file input element
 
-function addFileSelectionOption(menu, text, fileSelectionFunction) {
+function makeFileSelectionOption(text, fileSelectionFunction){
     const li = document.createElement('li');
     li.textContent = text;
     li.classList.add('dynamic-option');
-    li.onclick = () => fileSelectionFunction();
-    menu.appendChild(li);
+    On.click(li, fileSelectionFunction);
+    return li;
 }
 
 function handleFileSelection() {
@@ -143,12 +138,12 @@ function handleFileSelection() {
         // Create the file input element if it doesn't exist
         rightClickFileInput = document.createElement('input');
         rightClickFileInput.type = 'file';
-        rightClickFileInput.onchange = (event) => {
-            const file = event.target.files[0];
+        On.change(rightClickFileInput, (e)=>{
+            const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            On.load(reader, (e)=>{
                 const data = e.target.result;
                 const customEvent = {
                     preventDefault: () => { },
@@ -162,28 +157,28 @@ function handleFileSelection() {
                     }
                 };
                 dropHandler(customEvent);
-            };
+            });
             reader.readAsText(file);
-        };
+        });
     }
     rightClickFileInput.click();
     ContextMenu.hide();
 }
 
-function addNodeCreationOption(menu, text, createNodeFunction, shouldDraw) {
+function makeNodeCreationOption(text, createNodeFunction, shouldDraw){
     const li = document.createElement('li');
     li.textContent = text;
     li.classList.add('dynamic-option');
-    li.onclick = () => createAndDrawNode(createNodeFunction, shouldDraw);
-    menu.appendChild(li);
+    On.click(li, createAndDrawNode.bind(null, createNodeFunction, shouldDraw));
+    return li;
 }
 
-function addGenericOption(menu, text, actionFunction) {
+function makeGenericOption(text, actionFunction){
     const li = document.createElement('li');
     li.textContent = text;
     li.classList.add('dynamic-option');
-    li.onclick = () => actionFunction();
-    menu.appendChild(li);
+    On.click(li, actionFunction);
+    return li;
 }
 
 function createAndDrawNode(createNodeFunction, shouldDraw) {
@@ -201,20 +196,20 @@ ContextMenu.hide = function(){
     Elem.hideById('suggestions-container');
 }
 
-document.addEventListener('mousedown', function (event) {
-    const clickedInsideMenu = Elem.byId('customContextMenu').contains(event.target);
+On.mousedown(document, (e)=>{
+    const clickedInsideMenu = Elem.byId('customContextMenu').contains(e.target);
     if (!clickedInsideMenu) {
         const suggestionsContainer = Elem.byId('suggestions-container');
-        const clickedInsideSuggestions = suggestionsContainer && suggestionsContainer.contains(event.target);
+        const clickedInsideSuggestions = suggestionsContainer && suggestionsContainer.contains(e.target);
         if (!clickedInsideSuggestions) ContextMenu.hide();
     }
 });
 
-function addPasteOption(menu, target) {
-    const pasteLi = document.createElement('li');
-    pasteLi.textContent = 'Paste';
-    pasteLi.classList.add('dynamic-option');
-    pasteLi.onclick = async () => {
+function makePasteOption(target){
+    const li = document.createElement('li');
+    li.textContent = 'Paste';
+    li.classList.add('dynamic-option');
+    On.click(li, async (e)=>{
         try {
             const pastedData = await navigator.clipboard.readText();
             handlePasteData(pastedData, target);
@@ -222,18 +217,18 @@ function addPasteOption(menu, target) {
             Logger.err("In reading from clipboard:", err);
         }
         ContextMenu.hide();
-    };
-    menu.appendChild(pasteLi);
+    });
+    return li;
 }
 
 function addCopyOptionIfTextSelected(menu) {
     if (window.getSelection().isCollapsed) return;
 
-    const copyLi = document.createElement('li');
-    copyLi.textContent = 'Copy';
-    copyLi.classList.add('dynamic-option');
-    copyLi.onclick = copySelectedText;
-    menu.appendChild(copyLi);
+    const li = document.createElement('li');
+    li.textContent = 'Copy';
+    li.classList.add('dynamic-option');
+    On.click(li, copySelectedText);
+    menu.appendChild(li);
 }
 
 function copySelectedText() {

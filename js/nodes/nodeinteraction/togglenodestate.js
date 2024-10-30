@@ -110,9 +110,7 @@ function collapseNode(node) {
 
         div.appendChild(circle);
 
-        circle.ondragstart = function (e) {
-            e.preventDefault();
-        };
+        On.dragstart(circle, Event.preventDefault);
 
         // If window is anchored, switch out for the collapsed node anchor class
         if (div.classList.contains('window-anchored')) {
@@ -134,8 +132,7 @@ function collapseNode(node) {
                 e.stopPropagation();
             }
         }
-
-        circle.addEventListener('dblclick', handleCircleDoubleClick);
+        On.dblclick(circle, handleCircleDoubleClick);
 
         div.collapsed = true;
     }
@@ -188,10 +185,10 @@ function expandNode(node, div, circle) {
 //Drag Box Selection
 
 /*
-document.addEventListener('contextmenu', function (event) {
-    if (event.ctrlKey) {
-        event.preventDefault();
-        event.stopPropagation();
+On.contextmenu(document, (e)=>{
+    if (e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
         // Additional logic for when right-click is combined with Ctrl key
         // ...
     }
@@ -200,7 +197,7 @@ document.addEventListener('contextmenu', function (event) {
 let dragBox = null;
 let startX, startY;
 
-document.addEventListener('mousedown', function (e) {
+On.mousedown(document, (e)=>{
     if (e.button === 0 && e.getModifierState(controls.altKey.value)) {
         e.preventDefault();
         e.stopPropagation();
@@ -216,7 +213,7 @@ document.addEventListener('mousedown', function (e) {
     }
 });
 
-document.addEventListener('mousemove', function (e) {
+On.mousemove(document, (e)=>{
     if (isDraggingDragBox) {
         e.preventDefault();
         e.stopPropagation();
@@ -232,7 +229,7 @@ document.addEventListener('mousemove', function (e) {
     }
 });
 
-document.addEventListener('mouseup', function (e) {
+On.mouseup(document, (e)=>{
     if (isDraggingDragBox) {
         isDraggingDragBox = false;
 

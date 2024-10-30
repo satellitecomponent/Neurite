@@ -33,22 +33,14 @@ function initFileTreeNode(node) {
 }
 
 function addFileTreeContainerListeners(node) {
-
-    // Stop mouse-following when interacting with the file tree container
-    node.fileTreeContainer.addEventListener('mousedown', (event) => {
+    function stopFollowingMouse(e){
         node.followingMouse = 0;
-        event.stopPropagation();
-    });
+        e.stopPropagation();
+    }
 
-    // Also stop mouse-following on dragstart (for dragging from the file tree)
-    node.fileTreeContainer.addEventListener('dragstart', (event) => {
-        node.followingMouse = 0;
-        event.stopPropagation();
-    });
-
-    // Ensure dragend doesn't restart following the mouse
-    node.fileTreeContainer.addEventListener('dragend', Elem.stopPropagationOfEvent);
-
-    // Ensure dragend doesn't restart following the mouse
-    node.fileTreeContainer.addEventListener('dblclick', Elem.stopPropagationOfEvent);
+    const container = node.fileTreeContainer;
+    On.mousedown(container, stopFollowingMouse);
+    On.dragstart(container, stopFollowingMouse);
+    On.dragend(container, Event.stopPropagation);
+    On.dblclick(container, Event.stopPropagation);
 }

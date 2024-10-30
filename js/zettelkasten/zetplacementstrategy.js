@@ -147,4 +147,4 @@ function drawPlacementPreview(event) {
     });
 }
 
-//document.addEventListener('mousemove', drawPlacementPreview);
+// On.mousemove(document, drawPlacementPreview);

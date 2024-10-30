@@ -21,7 +21,7 @@ const zoomInput = Elem.byId('zoom');
 let coordsLive = true;
 const coords = Elem.byId('coordinates');
 
-panInput.addEventListener('input', (e) => {
+On.input(panInput, (e)=>{
     coordsLive = false;
     const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)\s*,?\s*([+-]?i?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
     const m = panInput.value.match(r);
@@ -29,7 +29,7 @@ panInput.addEventListener('input', (e) => {
 
     pan = new vec2(parseFloat(m[0]), parseFloat(m[6].replace(/[iI]/, '')));
 });
-zoomInput.addEventListener('input', (e) => {
+On.input(zoomInput, (e)=>{
     coordsLive = false;
     const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
     const m = zoomInput.value.match(r);
@@ -38,10 +38,10 @@ zoomInput.addEventListener('input', (e) => {
     const z = parseFloat(m);
     if (z !== 0) zoom = zoom.scale(z / zoom.mag());
 });
-for (const k of ['paste', 'mousemove', 'mousedown', 'dblclick', 'click']) {
-    panInput.addEventListener(k, cancel);
-    zoomInput.addEventListener(k, cancel);
-}
+['paste', 'mousemove', 'mousedown', 'dblclick', 'click'].forEach( (eName)=>{
+    On[eName](panInput, Event.stopPropagation);
+    On[eName](zoomInput, Event.stopPropagation);
+});
 
 function performZoom(amount, dest) {
     const inverseAmount = 1 / amount;
@@ -68,7 +68,7 @@ const DRAG_THRESHOLD = 1; // pixels
 
 let controlDragOccurred = false;
 
-svg.addEventListener('mousemove', (e) => {
+On.mousemove(svg, (e)=>{
     if (isDraggingDragBox) return;
 
     mousePos = new vec2(e.pageX, e.pageY);
@@ -118,7 +118,7 @@ svg.addEventListener('mousemove', (e) => {
     }
 });
 
-svg.addEventListener('mousedown', (e) => {
+On.mousedown(svg, (e)=>{
     mouseDownPos = new vec2(e.pageX, e.pageY);
     controlDragOccurred = false;
 
@@ -156,7 +156,7 @@ svg.addEventListener('mousedown', (e) => {
     }
 });
 
-addEventListener('mouseup', (e) => {
+On.mouseup(window, (e)=>{
     if (e.button === mouseZoomButton) {
         if (isMouseZooming || isRotating) {
             isMouseZooming = false;
@@ -175,11 +175,11 @@ addEventListener('mouseup', (e) => {
         e.preventDefault();
     }
 
-    if (movingNode !== undefined) movingNode.onmouseup(e);
+    if (movingNode !== undefined) movingNode.onMouseUp(e);
     Mouse.isDragging = false;
 });
 
-document.addEventListener('contextmenu', function (e) {
+On.contextmenu(document, (e)=>{
     // Function to check if the default context menu should be used
     function shouldUseDefaultContextMenu(target) {
         return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content, .tooltip') ||
@@ -209,7 +209,7 @@ document.addEventListener('contextmenu', function (e) {
     e.preventDefault(); // // suppress browser context menu
 });
 
-svg.addEventListener('wheel', (e) => {
+On.wheel(svg, (e)=>{
     isAnimating = false;
 
     // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
@@ -228,7 +228,7 @@ svg.addEventListener('wheel', (e) => {
         zoom = zoom.cmult(newRotation); // Rotate the zoom
         pan = pan.plus(zc.cmult(new vec2(1, 0).minus(newRotation)));
 
-        cancel(e);
+        e.stopPropagation();
         return;
     }
 
@@ -242,7 +242,7 @@ svg.addEventListener('wheel', (e) => {
         regenAmount += Math.abs(e.deltaY);
         const amount = Math.exp(e.deltaY * settings.zoomSpeed);
         performZoom(amount, dest);
-        cancel(e);
+        e.stopPropagation();
     } else if (settings.panClick === "scroll") {
         // Panning via scroll wheel
         autopilotSpeed = 0;
@@ -251,7 +251,7 @@ svg.addEventListener('wheel', (e) => {
         const dp = toDZ(new vec2(e.deltaX, e.deltaY).scale(settings.panSpeed));
         regenAmount += Math.hypot(e.deltaX, e.deltaY);
         pan = pan.plus(dp);
-        cancel(e);
+        e.stopPropagation();
     }
 });
 
@@ -259,7 +259,7 @@ svg.addEventListener('wheel', (e) => {
 
 //Touchpad controls (WIP)
 let touches = new Map();
-svg.addEventListener('touchstart', (e) => {
+On.touchstart(svg, (e)=>{
     for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches.item(i);
         touches.set(touch.identifier, {
@@ -268,19 +268,19 @@ svg.addEventListener('touchstart', (e) => {
         });
     }
 }, false);
-svg.addEventListener('touchcancel', (e) => {
+On.touchcancel(svg, (e)=>{
     for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches.item(i);
         touches.delete(touch.identifier);
     }
 }, false);
-svg.addEventListener('touchend', (e) => {
+On.touchend(svg, (e)=>{
     for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches.item(i);
         touches.delete(touch.identifier);
     }
 }, false);
-svg.addEventListener('touchmove', (e) => {
+On.touchmove(svg, (e)=>{
     for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches.item(i);
         touches.set(touch.identifier, {
@@ -294,7 +294,7 @@ svg.addEventListener('touchmove', (e) => {
             coordsLive = true;
             const t = [...touches.values()][0];
             pan = pan.plus(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
-            cancel(e);
+            e.stopPropagation();
             break;
         case 2:
             const pts = [...touches.values()];
@@ -327,7 +327,7 @@ svg.addEventListener('touchmove', (e) => {
             zoom = newZoom;
 
             e.preventDefault();
-            cancel(e);
+            e.stopPropagation();
             break;
         default:
             break;
@@ -344,7 +344,7 @@ var gestureStartParams = {
     zoom: new vec2(),
     pan: new vec2()
 };
-addEventListener('gesturestart', (e) => {
+On.gesturestart(window, (e)=>{
     e.preventDefault();
     Logger.debug(e);
     gestureStartParams.rotation = e.rotation;
@@ -355,7 +355,7 @@ addEventListener('gesturestart', (e) => {
     gestureStartParams.pan = pan;
 
 });
-addEventListener('gesturechange', (e) => {
+On.gesturechange(window, (e)=>{
     e.preventDefault();
     Logger.debug(e);
     let d_theta = e.rotation - gestureStartParams.rotation;
@@ -379,6 +379,4 @@ addEventListener('gesturechange', (e) => {
     //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
 
 });
-addEventListener('gestureend', (e) => {
-    e.preventDefault();
-});
+On.gestureend(window, Event.preventDefault);

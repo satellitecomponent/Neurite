@@ -149,12 +149,12 @@ class Node {
     }
     attach() {
         const div = this.content;
-        div.onclick = this.onclick.bind(this);
-        div.ondblclick = this.ondblclick.bind(this);
-        div.onmousedown = this.onmousedown.bind(this);
-        document.onmousemove = this.onmousemove.bind(this);
-        document.onmouseup = this.onmouseup.bind(this);
-        div.onwheel = this.onwheel.bind(this);
+        On.click(div, this.onClick);
+        On.dblclick(div, this.onDblClick);
+        On.mousedown(div, this.onMouseDown);
+        On.mousemove(document, this.onMouseMove);
+        On.mouseup(document, this.onMouseUp);
+        On.wheel(div, this.onWheel);
     }
     json() {
         return JSON.stringify(this, (k, v) => {
@@ -338,7 +338,7 @@ class Node {
         }
         return search(this.content);
     }
-    onclick(event) {
+    onClick = (e)=>{
 
     }
     toggleWindowAnchored(anchored) {
@@ -351,14 +351,14 @@ class Node {
             }
         }
     }
-    ondblclick(e) {
+    onDblClick = (e)=>{
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
         Logger.debug(getAllConnectedNodesData(this));
-        cancel(e);
+        e.stopPropagation();
     }
-    onmousedown(e) {
+    onMouseDown = (e)=>{
         this.mouseAnchor = toZ(new vec2(e.clientX, e.clientY)).minus(this.pos);
         this.followingMouse = 1;
         window.draggedNode = this;
@@ -373,16 +373,16 @@ class Node {
             clearTextSelections();
         }
 
-        window.addEventListener('mouseup', this.stopFollowingMouse.bind(this));
+        On.mouseup(window, this.stopFollowingMouse);
         this.disableIframePointerEvents();
-        cancel(e);
+        e.stopPropagation();
     }
 
-    stopFollowingMouse() {
+    stopFollowingMouse = (e)=>{
         this.followingMouse = 0;
         movingNode = undefined;
 
-        window.removeEventListener('mouseup', this.stopFollowingMouse);
+        Off.mouseup(window, this.stopFollowingMouse);
         this.enableIframePointerEvents();
     }
 
@@ -394,51 +394,51 @@ class Node {
         })
     }
 
-    onmouseup(e) {
+    onMouseUp = (e)=>{
         if (this === window.draggedNode) {
             this.followingMouse = 0;
             window.draggedNode = undefined;
         }
     }
-    onmousemove(e) {
+    onMouseMove = (e)=>{
         if (this === window.draggedNode) prevNode = undefined;
         /*if (this.followingMouse){
         this.pos = this.pos.plus(toDZ(new vec2(e.movementX,e.movementY)));
         this.draw()
-        //cancel(e);
+        //e.stopPropagation();
         }*/
     }
-    onwheel(e) {
-        if (nodeMode) {
-            let amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
+    onWheel = (e)=>{
+        if (!nodeMode) return;
 
-            if (autopilotSpeed !== 0 && this.uuid === autopilotReferenceFrame.uuid) {
-                zoomTo = zoomTo.scale(1 / amount);
-            } else {
-                // Scale selected nodes or individual node
-                let targetWindow = e.target.closest('.window');
-                if (targetWindow && targetWindow.classList.contains('selected')) {
-                    SelectedNodes.forEach((node) => {
-                        node.scale *= amount;
+        let amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
-                        // Only update position if the node is not anchored
-                        if (node.anchorForce !== 1) {
-                            node.pos = node.pos.lerpto(toZ(mousePos), 1 - amount);
-                        }
+        if (autopilotSpeed !== 0 && this.uuid === autopilotReferenceFrame.uuid) {
+            zoomTo = zoomTo.scale(1 / amount);
+        } else {
+            // Scale selected nodes or individual node
+            let targetWindow = e.target.closest('.window');
+            if (targetWindow && targetWindow.classList.contains('selected')) {
+                SelectedNodes.forEach((node) => {
+                    node.scale *= amount;
 
-                        updateNodeEdgesLength(node);
-                    });
-                } else {
-                    this.scale *= amount;
-
-                    // Only update position if not anchored
-                    if (this.anchorForce !== 1) {
-                        this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
+                    // Only update position if the node is not anchored
+                    if (node.anchorForce !== 1) {
+                        node.pos = node.pos.lerpto(toZ(mousePos), 1 - amount);
                     }
+
+                    updateNodeEdgesLength(node);
+                });
+            } else {
+                this.scale *= amount;
+
+                // Only update position if not anchored
+                if (this.anchorForce !== 1) {
+                    this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
                 }
             }
-            cancel(e);
         }
+        e.stopPropagation();
     }
 
     getTitle() {

@@ -12,13 +12,12 @@ Ollama.selectOnPageLoad = async function(){
     Select.restoreSelectedValue(select);
     Select.updateSelectedOption(select);
 
-    Elem.byId('openOllamaModalButton').addEventListener('click', ()=>{
+    On.click(Elem.byId('openOllamaModalButton'), ()=>{
         Modal.open('ollamaManagerModal');
         Ollama.refreshModal();
     });
 
-    const onChange = Select.storeSelectedValue.bind(Select, select.id);
-    select.addEventListener('change', onChange);
+    On.change(select, Select.storeSelectedValue.bind(Select, select.id));
 }
 
 Ollama.updateDropdownOptions = function(select, tags){
@@ -149,10 +148,11 @@ Ollama.ModelListItem = class {
         const btnDelete = document.createElement('button');
         btnDelete.textContent = 'x';
         btnDelete.className = 'deletebuttons';
-        btnDelete.addEventListener('click', this.onDelete.bind(this));
+        On.click(btnDelete, this.onDelete);
         return btnDelete;
     }
-    async onDelete(e){
+
+    onDelete = async (e)=>{
         e.stopPropagation();
         const success = await Ollama.deleteModel(this.model.name);
         if (!success) return;
@@ -163,7 +163,7 @@ Ollama.ModelListItem = class {
         Ollama.refreshModal();
     }
     init(){
-        this.divItem.addEventListener('click', this.onClick.bind(this));
+        On.click(this.divItem, this.onClick);
 
         // Restore progress bar if model is being installed
         if (Ollama.curInstalledNames.has(this.model.name)) {
@@ -173,7 +173,7 @@ Ollama.ModelListItem = class {
             if (progress < 100) this.installModel();
         }
     }
-    onClick(){
+    onClick = (e)=>{
         const model = this.model;
         if (!model.installed) {
             if (!Ollama.curInstalledNames.has(model.name)) {
@@ -187,15 +187,15 @@ Ollama.ModelListItem = class {
             Logger.info("Model", model.name, "is already installed")
         }
     }
-    onProgress(progress){
+    onProgress = (progress)=>{
         this.progressBar.style.width = progress + '%';
         Ollama.curInstalledNames.set(this.model.name, progress);
     }
     async installModel() {
-        await pullOllamaModelWithProgress(this.model.name, this.onProgress.bind(this))
-        .then(this.onAfterPullingModel.bind(this))
+        await pullOllamaModelWithProgress(this.model.name, this.onProgress)
+        .then(this.onAfterPullingModel)
     }
-    onAfterPullingModel(success){
+    onAfterPullingModel = (success)=>{
         const modelName = this.model.name;
         if (success) {
             Logger.info("Model", modelName, "installed successfully");

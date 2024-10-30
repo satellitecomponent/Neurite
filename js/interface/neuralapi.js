@@ -531,9 +531,7 @@ function neuriteCaptureScreenshot() {
         captureScreenshot();
     }
 }
-
-Elem.byId('screenshotButton').addEventListener('click', neuriteCaptureScreenshot);
-
+On.click(Elem.byId('screenshotButton'), neuriteCaptureScreenshot);
 
 async function neuriteReturnScreenshot() {
     return new Promise(async (resolve, reject) => {
@@ -560,7 +558,6 @@ async function neuriteReturnScreenshot() {
         }
     });
 }
-
 
 async function neuriteCallMovementAi(movementIntention, totalIterations = 1, currentIteration = 0) {
     if (currentIteration >= totalIterations) return;

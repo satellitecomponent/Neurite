@@ -7,9 +7,8 @@ function setSliderBackground(slider) {
     slider.style.background = `linear-gradient(to right, #006BB6 0%, #006BB6 ${percentage}%, #18181c ${percentage}%, #18181c 100%)`;
 }
 
-document.querySelectorAll('input[type=range]:not(#customModal input[type=range])').forEach(function (slider) {
+document.querySelectorAll('input[type=range]:not(#customModal input[type=range])')
+.forEach( (slider)=>{
     setSliderBackground(slider);
-    slider.addEventListener('input', function () {
-        setSliderBackground(slider);
-    });
+    On.input(slider, setSliderBackground.bind(null, slider));
 });

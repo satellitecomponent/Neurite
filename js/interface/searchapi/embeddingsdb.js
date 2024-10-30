@@ -29,7 +29,7 @@ Embeddings.initializeWorker = function(){
         }
     }
 
-    worker.onmessage = onMessage;
+    On.message(worker, onMessage);
     worker.onerror = Logger.err.bind(Logger, "From embeddings worker:");
 
     // Initialize both models
@@ -60,7 +60,7 @@ Embeddings.fetchLocal = function(model, text){
 
         const worker = Embeddings.worker;
         function onMessage(e){
-            worker.removeEventListener('message', onMessage);
+            Off.message(worker, onMessage);
             const data = e.data;
             if (data.type === 'result') {
                 resolve(data.data)
@@ -68,7 +68,7 @@ Embeddings.fetchLocal = function(model, text){
                 reject(new Error(data.error))
             }
         }
-        worker.addEventListener('message', onMessage);
+        On.message(worker, onMessage);
         worker.postMessage({ text, model });
     })
 }
@@ -258,8 +258,8 @@ Keys.display = function(keys){
             updateEyeballIcon(eyeballIcon, key);
         }
 
-        listItem.addEventListener('click', onItemClicked);
-        eyeballIcon.addEventListener('click', onIconClicked);
+        On.click(listItem, onItemClicked);
+        On.click(eyeballIcon, onIconClicked);
     }
 }
 
@@ -313,7 +313,7 @@ Keys.deleteKey.ct = class {
 function handleFileUploadVDBSelection() {
     const fileInput = Elem.byId('fileInput');
     fileInput.click();
-    fileInput.onchange = uploadFileToVectorDB;
+    On.change(fileInput, uploadFileToVectorDB);
 }
 
 async function processFileContent(file) {

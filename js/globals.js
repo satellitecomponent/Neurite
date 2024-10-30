@@ -33,7 +33,7 @@ if (!RegExp.escape) {
 
 class Modal {
     static current = null;
-    static div = document.getElementById('customModal');
+    static div = Elem.byId('customModal');
     static inputValues = {};
     static isDragging = false;
     static mouseOffsetX = 0;
@@ -162,31 +162,27 @@ const autoToggleAllOverlays = () => {
 let altHeld = false;
 
 // Global event listeners to set the altHeld flag
-document.addEventListener('keydown', function (event) {
-    if (event.altKey) {
+On.keydown(document, (e)=>{
+    if (e.altKey) {
         altHeld = true;
         autoToggleAllOverlays();
-        event.preventDefault();  // Prevent default behavior like focusing on the iframe
+        e.preventDefault();  // Prevent default behavior like focusing on the iframe
     }
 });
-
-document.addEventListener('keyup', function (event) {
-    if (!event.altKey) {
+On.keyup(document, (e)=>{
+    if (!e.altKey) {
         altHeld = false;
         autoToggleAllOverlays();
     }
 });
 
-window.addEventListener('message', function (event) {
-    if (typeof event.data.altHeld !== 'undefined') {
-        altHeld = event.data.altHeld;
+On.message(window, (e)=>{
+    const data = e.data;
+    if (typeof data.altHeld !== 'undefined') {
+        altHeld = data.altHeld;
         autoToggleAllOverlays();
     }
-    if (typeof event.data.nodeMode !== 'undefined') {
-        nodeMode = event.data.nodeMode;
-    } else {
-        nodeMode = 0;
-    }
+    nodeMode = (typeof data.nodeMode !== 'undefined' ? data.nodeMode : 0);
 });
 
 const Graph = {
@@ -295,7 +291,7 @@ Tag.initializeInputs = function(){
 
     nodeTagInput.value = Tag.node;
     refTagInput.value = Tag.ref;
-    nodeTagInput.addEventListener('input', function () {
+    On.input(nodeTagInput, (e)=>{
         const nodeTag = nodeTagInput.value.trim();
         Tag.node = (nodeTag === '' ? ' ' : nodeTag);
 
@@ -303,7 +299,7 @@ Tag.initializeInputs = function(){
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();
     });
-    refTagInput.addEventListener('input', function () {
+    On.input(refTagInput, (e)=>{
         const refTag = refTagInput.value.trim();
         Tag.ref = (refTag === '' ? ' ' : refTag);
 
@@ -489,12 +485,10 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
-function cancel(event) {
-    if (event.stopPropagation) {
-        event.stopPropagation(); // W3C model
-    } else {
-        event.cancelBubble = true; // IE model
-    }
+Event.preventDefault = function(e){ e.preventDefault() }
+Event.stopPropagation = function(e){ e.stopPropagation() }
+Event.stopPropagationByNameForThis = function(eName){
+    On[eName](this, Event.stopPropagation)
 }
 
 function triggerInputEvent(elementId) {

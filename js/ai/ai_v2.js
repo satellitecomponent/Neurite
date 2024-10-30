@@ -29,7 +29,7 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
     }
 
     function onError(errorMsg) {
-        Logger.err("Error calling Ai API:", errorMsg);
+        Logger.err("In calling Ai API:", errorMsg);
         Elem.byId('aiErrorIcon').style.display = 'block';
         failCounter += 1;
         if (failCounter >= MAX_FAILS) {
@@ -119,7 +119,7 @@ function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
         if (node.shouldContinue && content.trim() !== "[DONE]") TextArea.append.call(node.aiResponseTextArea, content)
     }
     function onError(errorMsg) {
-        Logger.err("Error calling Chat API:", errorMsg);
+        Logger.err("In calling Chat API:", errorMsg);
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
         if (node.haltCheckbox) node.haltCheckbox.checked = true;
     }
@@ -157,9 +157,9 @@ async function callAiApi({
         const randomResponse = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
         try {
             await imitateTextStream(randomResponse, onStreamingResponse);
-        } catch (error) {
-            Logger.err("Error with dummy response:", error);
-            onError(error.message || error);
+        } catch (err) {
+            Logger.err("With dummy response:", err);
+            onError(err.message || err);
         } finally {
             onAfterCall();
         }
@@ -214,17 +214,17 @@ async function callAiApi({
                     throw new Error("Unable to extract content from API response");
                 }
             } catch (err) {
-                Logger.err("Error parsing JSON response:", err);
+                Logger.err("In parsing JSON response:", err);
                 throw new Error("Invalid JSON response from API");
             }
         }
         return responseData;
     } catch (err) {
         if (err.name === 'AbortError') {
-            Logger.info('Response Halted');
+            Logger.info("Response Halted");
             if (useProxy && requestId) await Request.send(new Ai.ctCancelRequest(requestId));
         } else {
-            Logger.err("Error:", err);
+            Logger.err(err);
             onError(err.message || err);
         }
     } finally {

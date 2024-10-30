@@ -32,11 +32,11 @@ Mouse.onDraggingFinish = function(e){
 function makeIconDraggable(iconDiv) {
     iconDiv.setAttribute('draggable', 'true');
 
-    iconDiv.addEventListener('mousedown', Mouse.onDraggingInit);
-    iconDiv.addEventListener('mousemove', Mouse.onDraggingSuspected);
-    iconDiv.addEventListener('mouseup', Mouse.onDraggingFinish);
+    On.mousedown(iconDiv, Mouse.onDraggingInit);
+    On.mousemove(iconDiv, Mouse.onDraggingSuspected);
+    On.mouseup(iconDiv, Mouse.onDraggingFinish);
 
-    iconDiv.addEventListener('dragstart', function (e) {
+    On.dragstart(iconDiv, (e)=>{
         if (!Mouse.isDragging) {
             e.preventDefault();
             return;
@@ -53,7 +53,7 @@ function makeIconDraggable(iconDiv) {
         e.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
     });
 
-    iconDiv.addEventListener('click', function (e) {
+    On.click(iconDiv, (e)=>{
         if (!Mouse.isDragging) {
             if (iconDiv.classList.contains('note-icon')) {
                 Modal.open('noteModal');
@@ -90,14 +90,14 @@ class DropHandler {
         };
     }
 
-    dragOverHandler(ev) {
+    dragOverHandler = (ev)=>{
         ev.preventDefault(); // Allow drop
         ev.dataTransfer.dropEffect = 'copy'; // Show a copy icon when dragging
     }
 
     initialize() {
-        this.dropArea.addEventListener('dragover', this.dragOverHandler.bind(this));
-        this.dropArea.addEventListener('drop', this.handleDrop.bind(this));
+        On.dragover(this.dropArea, this.dragOverHandler);
+        On.drop(this.dropArea, this.handleDrop);
     }
 
     determineBaseType(mimeType) {
@@ -177,21 +177,24 @@ class DropHandler {
             const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
             if (!content) {
                 Logger.debug("Content is undefined for code file:", fileName);
-                // Attempt to read blob as text if content is undefined
-                if (blob) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const textContent = reader.result;
-                        this.createCodeNode({ name: fileName }, textContent, codeLanguage);
-                    };
-                    reader.onerror = (error) => {
-                        Logger.err("Error reading blob for code file:", fileName, error)
-                    };
-                    reader.readAsText(blob);
-                }
+                // Attempt to read blob as text
+                if (!blob) return;
+
+                const reader = new FileReader();
+
+                On.load(reader, (e)=>{
+                    const textContent = reader.result;
+                    this.createCodeNode({ name: fileName }, textContent, codeLanguage);
+                });
+
+                const msgError = "In reading blob for code file:";
+                On.error(reader, Logger.err.bind(Logger, msgError, fileName));
+
+                reader.readAsText(blob);
                 return;
             }
-            Logger.debug(`Creating code node for: ${fileName}, Language: ${codeLanguage}`);
+
+            Logger.debug("Creating code node for:", fileName, ", Language:", codeLanguage);
             this.createCodeNode({ name: fileName }, content, codeLanguage);
             return;
         }
@@ -239,8 +242,7 @@ class DropHandler {
         Logger.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
     }
 
-    // Handle the drop event
-    async handleDrop(ev) {
+    handleDrop = async (ev)=>{
         ev.preventDefault();
 
         // **Handle Folder Drops First**
@@ -300,7 +302,7 @@ class DropHandler {
 
         const reader = new FileReader();
 
-        reader.onload = (e) => {
+        On.load(reader, (e)=>{
             const contentOrBlob = e.target.result;
             if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
                 this.processFile(fileName, contentOrBlob, mimeType);
@@ -308,7 +310,7 @@ class DropHandler {
                 const blob = new Blob([contentOrBlob], { type: mimeType });
                 this.processFile(fileName, null, mimeType, blob);
             }
-        };
+        });
 
         if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
             reader.readAsText(file);
@@ -322,7 +324,7 @@ class DropHandler {
             const node = await createFileTreeNode(folderMetadata.path);
             this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
         } catch (err) {
-            Logger.err("Error processing folder drop:", err)
+            Logger.err("In processing folder drop:", err)
         }
     }
 
@@ -391,27 +393,6 @@ class DropHandler {
 
         for (const file of files) {
             this.processOSFile(file);
-        }
-    }
-
-    processOSFile(file) {
-        const mimeType = file.type || '';
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
-            const contentOrBlob = e.target.result;
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-                this.processFile(file.name, contentOrBlob, mimeType);
-            } else {
-                const blob = new Blob([contentOrBlob], { type: mimeType });
-                this.processFile(file.name, null, mimeType, blob);
-            }
-        };
-
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-            reader.readAsText(file);
-        } else {
-            reader.readAsArrayBuffer(file); // Read as binary
         }
     }
 
@@ -511,13 +492,13 @@ function createHtmlNode(title, pastedData) {
 }
 
 // Existing paste event listener
-addEventListener('paste', (e) => {
+On.paste(window, (e)=>{
     const cd = (e.clipboardData || window.clipboardData);
     const pastedData = cd.getData("text");
     handlePasteData(pastedData, e.target);
 });
 
-addEventListener('paste', (e) => {
+On.paste(window, (e)=>{
     let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
     if (codeMirrorWrapper.contains(e.target)) {
         Logger.debug("Paste detected in CodeMirror");

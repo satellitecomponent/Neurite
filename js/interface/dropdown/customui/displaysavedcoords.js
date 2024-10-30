@@ -274,10 +274,10 @@ function saveCurrentView() {
     setTimeout(() => saveButton.textContent = 'Save Coordinates', 500);
 }
 
-Elem.byId('fractal-select').addEventListener('change', displaySavedCoordinates);
-Elem.byId('saveCoordinatesBtn').addEventListener('click', saveCurrentView);
+On.change(Elem.byId('fractal-select'), displaySavedCoordinates);
+On.click(Elem.byId('saveCoordinatesBtn'), saveCurrentView);
 
-Elem.byId('deleteCoordinatesBtn').addEventListener('click', function () {
+On.click(Elem.byId('deleteCoordinatesBtn'), (e)=>{
     if (Coordinate.selectedIndex !== null) {
         deleteSavedView(Coordinate.selectedIndex);
     } else {
@@ -373,7 +373,7 @@ function appendViewsToContainer(views, containerId, startIndex) {
         coordElement.textContent = `${view.title}`;
         coordElement.classList.add('saved-coordinate-item');
 
-        coordElement.addEventListener('click', () => {
+        On.click(coordElement, (e)=>{
             returnToSavedView(view);
 
             // Update selected state
@@ -389,7 +389,7 @@ function appendViewsToContainer(views, containerId, startIndex) {
         });
 
         // Reset the scale when mouse leaves the selected item
-        coordElement.addEventListener('mouseleave', () => {
+        On.mouseleave(coordElement, (e)=>{
             if (coordElement.classList.contains('selected-coordinate')) {
                 coordElement.style.transform = 'scale(1)';
             }
@@ -412,7 +412,7 @@ function displaySavedCoordinates() {
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+On.DOMContentLoaded(document, (e)=>{
     updateSavedViewsCache();
     displaySavedCoordinates();
 });

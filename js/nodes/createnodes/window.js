@@ -64,11 +64,11 @@ function addWindowEventListeners(node) {
 }
 
 function setupHeaderContainerListeners(headerContainer) {
-    headerContainer.onmousedown = function (e) {
+    On.mousedown(headerContainer, (e)=>{
         if (e.getModifierState(controls.altKey.value)) {
-            cancel(e); // Prevent dragging if Alt key is pressed
+            e.stopPropagation() // Prevent dragging if Alt key is pressed
         }
-    };
+    })
 }
 
 function setupWindowDivListeners(node) {
@@ -78,7 +78,7 @@ function setupWindowDivListeners(node) {
 
     let clickStartX, clickStartY;
 
-    windowDiv.addEventListener('mousedown', (e) => {
+    On.mousedown(windowDiv, (e)=>{
         if (e.getModifierState(controls.altKey.value)) {
             // Record the starting position of the mouse only if the Alt key is held
             clickStartX = e.clientX;
@@ -86,7 +86,7 @@ function setupWindowDivListeners(node) {
         }
     });
 
-    windowDiv.addEventListener('mouseup', (e) => {
+    On.mouseup(windowDiv, (e)=>{
         if (e.getModifierState(controls.altKey.value)) {
             const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
             // Check if the mouse has moved more than a certain threshold
@@ -97,18 +97,18 @@ function setupWindowDivListeners(node) {
         if (e.button !== 2) ContextMenu.hide(); // not right mouse button
     });
 
-    windowDiv.addEventListener('mousedown', () => {
+    On.mousedown(windowDiv, (e)=>{
         autopilotSpeed = 0;
         dropdown.classList.add('no-select');
         Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
     });
 
-    windowDiv.addEventListener('mouseup', () => {
+    On.mouseup(windowDiv, (e)=>{
         dropdown.classList.remove('no-select');
         Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
     });
 
-    window.addEventListener('mouseup', () => {
+    On.mouseup(window, (e)=>{
         dropdown.classList.remove('no-select');
         Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
     });
@@ -118,23 +118,23 @@ function setupTitleInputListeners(titleInput) {
     let isDragging = false;
     let isMouseDown = false;
 
-    titleInput.addEventListener('paste', Elem.stopPropagationOfEvent);
+    On.paste(titleInput, Event.stopPropagation);
 
-    titleInput.addEventListener('mousedown', () => { isMouseDown = true; });
+    On.mousedown(titleInput, (e)=>{ isMouseDown = true } );
 
-    titleInput.addEventListener('mousemove', (e) => {
+    On.mousemove(titleInput, (e)=>{
         if (isMouseDown) { isDragging = true; }
         if (isDragging && !e.getModifierState(controls.altKey.value)) {
             titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
         }
     });
 
-    document.addEventListener('mouseup', () => {
+    On.mouseup(document, (e)=>{
         isDragging = false;
         isMouseDown = false;
     });
 
-    titleInput.addEventListener('mouseleave', ()=>(isDragging = false) );
+    On.mouseleave(titleInput, (e)=>{ isDragging = false } );
 }
 
 function setupResizeHandleListeners(node) {
@@ -165,23 +165,26 @@ function rewindowify(node) {
     }
 
     function ui(btn, cb = ()=>{}, s = "fill") {
-        btn.onmouseenter = (e)=>set(btn, "hover", s);
-        btn.onmouseleave = (e) => {
+        function onMouseLeave(){
             const state = (titleInput.matches(':focus') ? 'focus' : 'initial');
             set(btn, state, s);
             btn.ready = false;
-        };
-        btn.onmousedown = (e) => {
+        }
+
+        On.mouseenter(btn, (e)=>set(btn, "hover", s) );
+        On.mouseleave(btn, onMouseLeave);
+        On.mousedown(btn, (e)=>{
             set(btn, "click", s);
             btn.ready = true;
-            cancel(e);
-        }
-        btn.onmouseup = (e) => {
+            e.stopPropagation();
+        });
+        On.mouseup(btn, (e)=>{
             set(btn, "initial", s);
-            cancel(e);
+            e.stopPropagation();
             if (btn.ready) cb(e);
-        }
-        btn.onmouseleave();
+        });
+
+        onMouseLeave();
     }
 
     ui(btnDel, () => {
@@ -212,8 +215,8 @@ function rewindowify(node) {
 
     ui(btnCol, ()=>toggleNodeState(node) , "stroke");
 
-    document.addEventListener('mouseup',
-        ()=>{ if (node.followingMouse) node.stopFollowingMouse() }
+    On.mouseup(document,
+        (e)=>{ if (node.followingMouse) node.stopFollowingMouse() }
     );
 
     function updateSvgStrokeColor(focused) {
@@ -226,8 +229,8 @@ function rewindowify(node) {
     }
 
     if (titleInput) {
-        titleInput.addEventListener('focus', updateSvgStrokeColor.bind(null, true));
-        titleInput.addEventListener('blur', updateSvgStrokeColor.bind(null, false));
+        On.focus(titleInput, updateSvgStrokeColor.bind(null, true));
+        On.blur(titleInput, updateSvgStrokeColor.bind(null, false));
     }
 
     return node;
@@ -277,7 +280,7 @@ function scalingFactorsFromElem(element) {
 }
 
 // impact on responsiveness?
-//addEventListener('resize', (e) => { });
+// On.resize(window, (e)=>{ } );
 
 function setResizeEventListeners(resizeHandle, node) {
     const inverse2DMatrix = (matrix) => {
@@ -365,12 +368,12 @@ function setResizeEventListeners(resizeHandle, node) {
 
     const handleMouseUp = () => {
         isMouseMoving = false;
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        Off.mousemove(document, handleMouseMove);
+        Off.mouseup(document, handleMouseUp);
         document.body.style.cursor = 'auto';
         node.enableIframePointerEvents();
     };
-    resizeHandle.addEventListener('mousedown', (e) => {
+    On.mousedown(resizeHandle, (e)=>{
         e.preventDefault();
         e.stopPropagation();
         startX = e.pageX;
@@ -378,8 +381,8 @@ function setResizeEventListeners(resizeHandle, node) {
         startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
         startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
         isMouseMoving = true; // Flag to indicate that a resize operation is in progress
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+        On.mousemove(document, handleMouseMove);
+        On.mouseup(document, handleMouseUp);
         node.disableIframePointerEvents();
     });
 

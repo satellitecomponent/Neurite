@@ -3,7 +3,7 @@ const TextNode = {};
 TextNode.create = function(name = '', text = '', sx, sy, x, y){
     const textarea = document.createElement('textarea');
     textarea.classList.add('custom-scrollbar', 'node-textarea');
-    textarea.onmousedown = cancel;
+    On.mousedown(textarea, Event.stopPropagation);
     textarea.value = text;
 
     const editorWrapper = createSyntaxTextarea();  // Now this includes both the input and display div

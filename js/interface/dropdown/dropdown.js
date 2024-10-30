@@ -16,9 +16,7 @@ const debouncedSaveInputValue = debounce(function (input) {
 }, 300);
 
 document.querySelectorAll('#tab2 input[type="range"], .color-picker-container input[type="color"]').forEach(function (input) {
-    input.addEventListener('input', function () {
-        debouncedSaveInputValue(input);
-    });
+    On.input(input, (e)=>debouncedSaveInputValue(input) )
 });
 
 function restoreInputValues() {
@@ -40,16 +38,13 @@ function restoreInputValues() {
 restoreInputValues();
 
 //disable ctl +/- zoom on browser
-document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && (event.key === '+' || event.key === '-' || event.key === '=')) {
-        event.preventDefault();
+On.keydown(document, (e)=>{
+    if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=')) {
+        e.preventDefault();
     }
 });
-
-document.addEventListener('wheel', (event) => {
-    if (event.ctrlKey) {
-        event.preventDefault();
-    }
+On.wheel(document, (e)=>{
+    if (e.ctrlKey) e.preventDefault();
 }, {
     passive: false
 });
@@ -62,7 +57,7 @@ function openTab(tabId, element) {
 
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
+        tabcontent[i].style.display = 'none';
     }
 
     tablinks = document.getElementsByClassName("tablink");
@@ -70,7 +65,7 @@ function openTab(tabId, element) {
         tablinks[i].classList.remove("activeTab");
     }
 
-    document.getElementById(tabId).style.display = "block";
+    Elem.byId(tabId).style.display = 'block';
     element.classList.add("activeTab");
 
     window.currentActiveZettelkastenMirror.refresh();
@@ -84,19 +79,13 @@ const nodePanel = document.querySelector(".node-panel");
 // Get the first tabcontent element
 const firstTab = document.querySelector(".tabcontent");
 
-dropdownContent.addEventListener("paste", function (e) {
+On.paste(dropdownContent, (e)=>{
 });
-dropdownContent.addEventListener("wheel", function (e) {
-    cancel(e);
-});
-dropdownContent.addEventListener("dblclick", function (e) {
-    cancel(e);
-});
+On.wheel(dropdownContent, Event.stopPropagation);
+On.dblclick(dropdownContent, Event.stopPropagation);
 
-// Add an event listener to the menu button
-menuButton.addEventListener("click", function (event) {
-    // Prevent the click event from propagating
-    event.stopPropagation();
+On.click(menuButton, (e)=>{
+    e.stopPropagation();
 
     // Toggle the "open" class on the menu button and dropdown content
     menuButton.classList.toggle("open");
@@ -126,6 +115,4 @@ menuButton.addEventListener("click", function (event) {
     }
 });
 
-dropdownContent.addEventListener("mousedown", (e) => {
-    cancel(e);
-});
+On.mousedown(dropdownContent, Event.stopPropagation);

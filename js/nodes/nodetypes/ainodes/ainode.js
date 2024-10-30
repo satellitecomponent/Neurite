@@ -308,23 +308,19 @@ AiNode.HaltResponse = function(node){
 
 AiNode.setupResponseDivListeners = function(node){
     const aiResponseDiv = node.aiResponseDiv;
-    aiResponseDiv.onmousedown = function (e) {
-        if (!e.altKey) cancel(e)
-    };
+    On.mousedown(aiResponseDiv, (e)=>{
+        if (!e.altKey) e.stopPropagation()
+    });
 
-    aiResponseDiv.addEventListener('mouseenter', function () {
+    On.mouseenter(aiResponseDiv, (e)=>{
         aiResponseDiv.style.userSelect = 'text'
     });
-    aiResponseDiv.addEventListener('mouseleave', function () {
+    On.mouseleave(aiResponseDiv, (e)=>{
         aiResponseDiv.style.userSelect = 'none'
     });
-
-    // Add a 'wheel' event listener
-    aiResponseDiv.addEventListener('wheel', function (event) {
+    On.wheel(aiResponseDiv, (e)=>{
         // If the Shift key is not being held down, stop the event propagation
-        if (!nodeMode) {
-            event.stopPropagation();
-        }
+        if (!nodeMode) e.stopPropagation();
     }, { passive: false });
 
     let userHasScrolled = false;
@@ -341,13 +337,10 @@ AiNode.setupResponseDivListeners = function(node){
         }
     };
 
-    // Call scrollToBottom whenever there's an input
-    node.aiResponseTextArea.addEventListener('input', scrollToBottom);
+    On.input(node.aiResponseTextArea, scrollToBottom);
 
-    // Tolerance in pixels
-    const epsilon = 5;
+    const epsilon = 5; // Tolerance in pixels
 
-    // Function to handle scrolling
     const handleScroll = () => {
         if (Math.abs(aiResponseDiv.scrollTop + aiResponseDiv.clientHeight - aiResponseDiv.scrollHeight) > epsilon) {
             userHasScrolled = true;
@@ -356,33 +349,29 @@ AiNode.setupResponseDivListeners = function(node){
         }
     };
 
-    // Event listener for scrolling
-    aiResponseDiv.addEventListener('scroll', handleScroll);
+    On.scroll(aiResponseDiv, handleScroll);
 
-    // Disable text highlighting when Alt key is down and re-enable when it's up
-    document.addEventListener('keydown', function (event) {
-        if (event.altKey) {
-            aiResponseDiv.style.userSelect = 'none';
-        }
+    // Update text highlighting
+    On.keydown(document, (e)=>{
+        if (e.altKey) aiResponseDiv.style.userSelect = 'none';
     });
-
-    document.addEventListener('keyup', function (event) {
-        if (!event.altKey) aiResponseDiv.style.userSelect = 'text';
+    On.keyup(document, (e)=>{
+        if (!e.altKey) aiResponseDiv.style.userSelect = 'text';
     });
 }
 
 AiNode.setupPromptTextAreaListeners = function(node){
     const textArea = node.promptTextArea;
-    textArea.onmousedown = cancel;  // Prevent dragging
-    textArea.addEventListener('input', autoGrow);
-    textArea.addEventListener('focus', autoGrow);
-    textArea.addEventListener('mouseenter', function () {
+    On.mousedown(textArea, Event.stopPropagation); // Prevent dragging
+    On.input(textArea, autoGrow);
+    On.focus(textArea, autoGrow);
+    On.mouseenter(textArea, (e)=>{
         textArea.style.userSelect = 'text';
     });
-    textArea.addEventListener('mouseleave', function () {
+    On.mouseleave(textArea, (e)=>{
         textArea.style.userSelect = 'none';
     });
-    textArea.addEventListener('keydown', function (e) {
+    On.keydown(textArea, (e)=>{
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             AiNode.sendMessage(node);
@@ -395,12 +384,12 @@ AiNode.setupSendButtonListeners = function(node){
 
     const haltCheckbox = node.haltCheckbox;
 
-    button.addEventListener('mouseover', Elem.setBothColors.bind(button, '#222226', '#293e34'));
-    button.addEventListener('mouseout', Elem.setBothColors.bind(button, '#ddd', '#222226'));
-    button.addEventListener('mousedown', Elem.setBackgroundColor.bind(button, '#45a049'));
-    button.addEventListener('mouseup', Elem.setBackgroundColor.bind(button, '#ddd'));
+    On.mouseover(button, Elem.setBothColors.bind(button, '#222226', '#293e34'));
+    On.mouseout(button, Elem.setBothColors.bind(button, '#ddd', '#222226'));
+    On.mousedown(button, Elem.setBackgroundColor.bind(button, '#45a049'));
+    On.mouseup(button, Elem.setBackgroundColor.bind(button, '#ddd'));
 
-    button.addEventListener('click', function (e) {
+    On.click(button, (e)=>{
         e.preventDefault();
 
         node.aiResponseHalted = false;
@@ -412,9 +401,9 @@ AiNode.setupSendButtonListeners = function(node){
     });
 
     if (haltCheckbox) {
-        haltCheckbox.addEventListener('change', function () {
-            node.aiResponseHalted = this.checked;
-            if (this.checked) node.haltResponse();
+        On.change(haltCheckbox, (e)=>{
+            node.aiResponseHalted = haltCheckbox.checked;
+            if (haltCheckbox.checked) node.haltResponse();
         });
     }
 }
@@ -422,10 +411,10 @@ AiNode.setupSendButtonListeners = function(node){
 AiNode.setupRegenerateButtonListeners = function(node){
     const button = node.regenerateButton;
     const setBackColor = Elem.setBackgroundColor;
-    button.addEventListener('mouseover', setBackColor.bind(button, '#333'));
-    button.addEventListener('mouseout', setBackColor.bind(button, '#222226'));
-    button.addEventListener('mousedown', setBackColor.bind(button, '#45a049'));
-    button.addEventListener('mouseup', setBackColor.bind(button, '#222226'));
+    On.mouseover(button, setBackColor.bind(button, '#333'));
+    On.mouseout(button, setBackColor.bind(button, '#222226'));
+    On.mousedown(button, setBackColor.bind(button, '#45a049'));
+    On.mouseup(button, setBackColor.bind(button, '#222226'));
 
     node.regenerateResponse = function () {
         if (this.aiResponding) return;
@@ -435,7 +424,7 @@ AiNode.setupRegenerateButtonListeners = function(node){
         this.regenerateButton.innerHTML = SVG.refresh;
     };
 
-    button.addEventListener('click', function () {
+    On.click(button, (e)=>{
         if (node.aiResponding) {
             node.haltResponse()
         } else {
@@ -449,18 +438,18 @@ AiNode.setupSettingsButtonListeners = function(node){
     const container = node.content.querySelector('.ainode-settings-container');
 
     const setBackColorPerIsActive = Elem.setBackgroundColorPerIsActive;
-    button.addEventListener('mouseover', setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
-    button.addEventListener('mouseout', setBackColorPerIsActive.bind(button, '#1e3751', '#222226'));
-    button.addEventListener('mousedown', Elem.setBackgroundColor.bind(button, '#1e3751'));
-    button.addEventListener('mouseup', setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
-    button.addEventListener('click', function (e) {
-        this.isActive = !this.isActive;
+    On.mouseover(button, setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
+    On.mouseout(button, setBackColorPerIsActive.bind(button, '#1e3751', '#222226'));
+    On.mousedown(button, Elem.setBackgroundColor.bind(button, '#1e3751'));
+    On.mouseup(button, setBackColorPerIsActive.bind(button, '#1e3751', '#333'));
+    On.click(button, (e)=>{
+        button.isActive = !button.isActive;
         toggleSettings(e, container);
-        setBackColorPerIsActive.call(this, '#1e3751', '#333');
+        setBackColorPerIsActive.call(button, '#1e3751', '#333');
     });
 
-    container.addEventListener('mousedown', conditionalStopPropagation, false);
-    container.addEventListener('dblclick', conditionalStopPropagation, false);
+    On.mousedown(container, conditionalStopPropagation);
+    On.dblclick(container, conditionalStopPropagation);
 }
 
 function conditionalStopPropagation(event) {
@@ -518,18 +507,14 @@ Elem.makeSlider = function(id, label, initialValue, min, max, step){
 AiNode.setupSliderListeners = function(node){
     const sliders = node.content.querySelectorAll('input[type=range]');
     sliders.forEach(slider => {
-        // Attach event listener to each slider
-        slider.addEventListener('input', function () {
-            // Retrieve the associated label within the node
+        On.input(slider, (e)=>{
             const label = node.content.querySelector(`label[for='${slider.id}']`);
-            if (label) {
-                // Extract the base label text (part before the colon)
-                const baseLabelText = label.innerText.split(':')[0];
-                label.innerText = `${baseLabelText}: ${slider.value}`;
+            if (!label) return;
 
-                setSliderBackground(slider);
-            }
-            // Additional logic for each slider, if needed
+            const baseLabelText = label.innerText.split(':')[0];
+            label.innerText = baseLabelText + ": " + slider.value;
+
+            setSliderBackground(slider);
         });
 
         // Trigger the input event to set initial state
@@ -542,14 +527,14 @@ AiNode.setupContextSpecificSliderListeners = function(node){
     // Event listener for maxContextSizeSlider
     const maxContextSizeSlider = node.content.querySelector('#node-max-context-' + node.index);
     if (maxContextSizeSlider) {
-        maxContextSizeSlider.addEventListener('input', function () {
+        On.input(maxContextSizeSlider, (e)=>{
             const maxContextSizeLabel = node.content.querySelector(`label[for='node-max-context-${node.index}']`);
-            if (maxContextSizeLabel) {
-                const maxContextValue = parseInt(this.value, 10);
-                const maxContextMax = parseInt(this.max, 10);
-                const ratio = Math.round((maxContextValue / maxContextMax) * 100);
-                maxContextSizeLabel.innerText = `Context: ${ratio}% (${maxContextValue} tokens)`;
-            }
+            if (!maxContextSizeLabel) return;
+
+            const maxContextValue = parseInt(maxContextSizeSlider.value, 10);
+            const maxContextMax = parseInt(maxContextSizeSlider.max, 10);
+            const ratio = Math.round((maxContextValue / maxContextMax) * 100);
+            maxContextSizeLabel.innerText = `Context: ${ratio}% (${maxContextValue} tokens)`;
         });
     }
 
@@ -594,8 +579,8 @@ AiNode.setupCustomSelect = function(dropdown){
     CustomDropdown.addEventListeners(dropdown);
 
     const refresh = AiNode.refreshOptions.bind(null, node, false); // false needed to not setValues
-    dropdown.addEventListener('change', refresh);
-    dropdown.closest('.dropdown-container').addEventListener('click', refresh);
+    On.change(dropdown, refresh);
+    On.click(dropdown.closest('.dropdown-container'), refresh);
 }
 
 function createAndConfigureLocalLlmSelects(nodeIndex) {
@@ -717,5 +702,5 @@ function setupCustomInstructionsListeners(node) {
         return;
     }
 
-    promptLibraryButton.onclick = () => openPromptLibrary(node);
+    On.click(promptLibraryButton, openPromptLibrary.bind(null, node));
 }

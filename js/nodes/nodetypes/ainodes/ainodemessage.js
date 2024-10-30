@@ -6,7 +6,7 @@ AiNode.sendMessage = async function(node, message = null){
 
     const nodeIndex = node.index;
 
-    const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
+    const maxTokens = node.content.querySelector('#node-max-tokens-' + node.index).value;
     //Initalize count for message trimming
     let contextSize = 0;
 
@@ -192,7 +192,7 @@ AiNode.sendMessage = async function(node, message = null){
 
     let allConnectedNodesData = getAllConnectedNodesData(node, true);
     let totalTokenCount = TokenCounter.forMessages(messages);
-    let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    let remainingTokens = Math.max(0, maxTokens - totalTokenCount);
     const maxContextSize = Elem.byId('node-max-context-' + nodeIndex).value;
 
     let textNodeInfo = [];
@@ -263,7 +263,7 @@ AiNode.sendMessage = async function(node, message = null){
     }
 
     totalTokenCount = TokenCounter.forMessages(messages);
-    remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    remainingTokens = Math.max(0, maxTokens - totalTokenCount);
 
     // calculate contextSize again
     contextSize = Math.min(remainingTokens, maxContextSize);

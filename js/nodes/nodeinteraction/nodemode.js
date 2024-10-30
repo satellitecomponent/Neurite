@@ -21,7 +21,7 @@ function enforceCapsLockState(event) {
     toggleNodeModeState();  // Update the visual state
 }
 
-addEventListener('keydown', (e) => {
+On.keydown(window, (e)=>{
     if (e.key === settings.nodeModeKey) {
         const isCapsLockMode = settings.nodeModeKey === "CapsLock";
 
@@ -42,7 +42,7 @@ addEventListener('keydown', (e) => {
     }
 });
 
-addEventListener('keyup', (e) => {
+On.keyup(window, (e)=>{
     const isCapsLockMode = settings.nodeModeKey === "CapsLock";
 
     if (isCapsLockMode) {
@@ -53,6 +53,6 @@ addEventListener('keyup', (e) => {
         nodeMode = 0;
         toggleNodeModeState();
         autoToggleAllOverlays();
-        cancel(e);
+        e.stopPropagation();
     }
 });
