@@ -46,8 +46,8 @@ function renderPromptList() {
         const input = document.createElement('input');
         input.value = prompt.title;
         input.className = index === promptLibrary.currentPromptIndex ? 'selected' : '';
-        input.onclick = () => selectPrompt(index);
-        input.onchange = (e) => updatePromptTitle(index, e.target.value);
+        On.click(input, selectPrompt.bind(null, index));
+        On.change(input, (e)=>updatePromptTitle(index, e.target.value) );
         listItem.appendChild(input);
         promptList.appendChild(listItem);
     });
@@ -159,51 +159,52 @@ function setupPromptLibraryListeners(node) {
 
     // Set up Set Instructions button
     if (setInstructionsButton) {
-        setInstructionsButton.onclick = () => setInstructions(node);
+        On.click(setInstructionsButton, setInstructions.bind(null, node));
     } else {
         Logger.err("Set Instructions button not found")
     }
 
     // Set up Add Prompt button
     if (addPromptButton) {
-        addPromptButton.onclick = addNewPrompt;
+        On.click(addPromptButton, addNewPrompt);
     } else {
         Logger.err("Add Prompt button not found")
     }
 
     // Set up Delete Prompt button
     if (deletePromptButton) {
-        deletePromptButton.onclick = deleteCurrentPrompt;
+        On.click(deletePromptButton, deleteCurrentPrompt);
     } else {
         Logger.err("Delete Prompt button not found")
     }
 
-    // Set up input listener for prompt content textarea
     if (promptContentTextarea) {
-        promptContentTextarea.oninput = function () {
-            if (promptLibrary.currentPromptIndex !== -1) {
-                promptLibrary.prompts[promptLibrary.currentPromptIndex].content = this.value;
-                savePromptLibrary();
-            }
-        };
+        On.input(promptContentTextarea, (e)=>{
+            if (promptLibrary.currentPromptIndex === -1) return;
+
+            const prompt = promptLibrary.prompts[promptLibrary.currentPromptIndex];
+            prompt.content = promptContentTextarea.value;
+            savePromptLibrary();
+        });
     } else {
         Logger.err("Prompt Content textarea not found")
     }
 
     // Set up Import Prompts functionality
     if (importPromptButton && importButtonLabel) {
-        importButtonLabel.onclick = () => {
+        On.click(importButtonLabel, (e)=>{
             importPromptButton.value = ''; // Reset the file input
             importPromptButton.click(); // Trigger file input when clicked
-        };
-        importPromptButton.onchange = importPromptLibrary;
+        });
+        On.change(importPromptButton, importPromptLibrary);
     } else {
         Logger.err("Import button or label not found")
     }
 
     // Set up Export Prompts functionality
     if (exportPromptButton) {
-        exportPromptButton.onclick = () => exportPromptLibraryAsJSON(promptLibrary);
+        const onClick = exportPromptLibraryAsJSON.bind(null, promptLibrary);
+        On.click(exportPromptButton, onClick);
     } else {
         Logger.err("Export button not found")
     }
@@ -215,7 +216,7 @@ function importPromptLibrary(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    On.load(reader, (e)=>{
         try {
             const importedData = JSON.parse(e.target.result);
             Logger.debug('Imported Data:', importedData);
@@ -253,7 +254,7 @@ function importPromptLibrary(event) {
 
         // Reset the file input to ensure onchange event fires even if the same file is selected again
         event.target.value = '';
-    };
+    });
     reader.readAsText(file);
 }
 

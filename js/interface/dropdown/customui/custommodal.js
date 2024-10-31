@@ -66,8 +66,7 @@ Modal.open = function(contentId){
         const stored = Modal.inputValues[select.id];
         if (stored !== undefined) select.value = stored;
 
-        const onChange = storeInputValue.bind(null, select, contentId);
-        select.addEventListener('change', onChange);
+        On.change(select, storeInputValue.bind(null, select, contentId));
     });
 
     const modalSliders = modalBody.querySelectorAll('input[type=range]');
@@ -77,15 +76,11 @@ Modal.open = function(contentId){
     modalInputs.forEach(Modal.setupInput, modal);
 }
 Modal.setupSlider = function(slider){
-    setSliderBackground(slider);
-
     const stored = Modal.inputValues[slider.id];
-    if (stored !== undefined) {
-        slider.value = stored;
-        setSliderBackground(slider);
-    }
+    if (stored !== undefined) slider.value = stored;
 
-    slider.addEventListener('input', Modal.onSliderInput.bind(this, slider));
+    setSliderBackground(slider);
+    On.input(slider, Modal.onSliderInput.bind(this, slider));
 }
 Modal.onSliderInput = function(slider, e){
     setSliderBackground(slider);
@@ -100,8 +95,7 @@ Modal.setupInput = function(input){
         input[attr] = stored;
     }
 
-    const onInput = Modal.storeInputValue.bind(null, input, this.id);
-    input.addEventListener('input', onInput);
+    On.input(input, Modal.storeInputValue.bind(null, input, this.id));
 }
 
 Modal.getInputValue = function(modalId, itemId, defaultValue = true) {
@@ -128,7 +122,7 @@ Modal.close = function(){
     Modal.current = null;
 }
 
-Modal.btnClose.addEventListener('click', Modal.close);
+On.click(Modal.btnClose, Modal.close);
 
 Modal.openOverlay = function(explanationId){
     const explanationContent = Elem.byId(explanationId);
@@ -145,27 +139,14 @@ Modal.closeOverlay = function(){
     Modal.overlay.style.display = 'none';
     Modal.overlayBody.innerHTML = '';
 }
-Modal.overlayCloseBtn.addEventListener('click', Modal.closeOverlay);
+On.click(Modal.overlayCloseBtn, Modal.closeOverlay);
 
 
 
-Modal.massAddHandler = function(div, handler){
-    div.addEventListener('click', handler);
-    div.addEventListener('dblclick', handler);
-    div.addEventListener('mousedown', handler);
-    div.addEventListener('touchstart', handler);
-    div.addEventListener('touchend', handler);
-    div.addEventListener('wheel', handler);
-    div.addEventListener('dragstart', handler);
-    div.addEventListener('drag', handler);
-    div.addEventListener('drop', handler);
-}
-// prevent all events from passing through the modal content
-Modal.massAddHandler(Modal.content, stopEventPropagation);
-
-function stopEventPropagation(event){
-    event.stopPropagation()
-}
+[
+    'click', 'dblclick', 'mousedown', 'touchstart',
+    'touchend', 'wheel', 'dragstart', 'drag', 'drop'
+].forEach(Event.stopPropagationByNameForThis, Modal.content);
 
 Modal.startDragging = function(e){
     if (isInputElement(e.target)) return;
@@ -193,6 +174,6 @@ Modal.stopDragging = function(){
     Modal.isDragging = false;
 }
 
-Modal.content.addEventListener('mousedown', Modal.startDragging);
-document.addEventListener('mousemove', Modal.dragContent);
-document.addEventListener('mouseup', Modal.stopDragging);
+On.mousedown(Modal.content, Modal.startDragging);
+On.mousemove(document, Modal.dragContent);
+On.mouseup(document, Modal.stopDragging);

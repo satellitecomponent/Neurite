@@ -144,7 +144,7 @@ Ai.haltResponse = function(){
     shouldContinue = false;
     Ai.isFirstAutoModeMessage = true;
 }
-Elem.byId('regen-button').addEventListener('click', function () {
+On.click(Elem.byId('regen-button'), (e)=>{
     if (Ai.isResponding) {
         Ai.haltResponse();
     } else {

@@ -75,8 +75,8 @@ CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, 
 
     if (option.selected) optionDiv.classList.add('selected');
 
-    optionDiv.addEventListener('click', function (event) {
-        event.stopPropagation();
+    On.click(optionDiv, (e)=>{
+        e.stopPropagation();
 
         Array.from(optionsReplacer.children).forEach(
             (child)=>child.classList.remove('selected')
@@ -118,7 +118,7 @@ CustomDropdown.addEventListeners = function(select){
     CustomDropdown.populateOptions(select, optionsReplacer, selectedDiv);
 
     let isPendingFrame = false;
-    selectReplacer.addEventListener('click', function (e) {
+    On.click(selectReplacer, (e)=>{
         if (optionsReplacer.classList.contains('show')) {
             // Dropdown is open, so close it
             window.requestAnimationFrame(() => {
@@ -150,14 +150,13 @@ CustomDropdown.addEventListeners = function(select){
     });
 
     // Close dropdown when clicking outside
-    document.addEventListener('mousedown', function (event) {
-        if (!container.contains(event.target)) {
+    On.mousedown(document, (e)=>{
+        if (!container.contains(e.target)) {
             container.setAttribute('data-outside-click', 'true');
         }
     });
-
-    document.addEventListener('mouseup', function (event) {
-        if (container.getAttribute('data-outside-click') === 'true' && !container.contains(event.target)) {
+    On.mouseup(document, (e)=>{
+        if (container.getAttribute('data-outside-click') === 'true' && !container.contains(e.target)) {
             optionsReplacer.classList.remove('show');
             selectReplacer.classList.add('closed');
             container.style.zIndex = "20"; // Reset the z-index of the parent container
@@ -175,9 +174,9 @@ CustomDropdown.setupModelSelect = function(selectElement){
         Select.updateSelectedOption(selectElement);
     }
 
-    selectElement.addEventListener('change', function onChange(){
-        localStorage.setItem(this.id, this.value);
-        Select.updateSelectedOption(this);
+    On.change(selectElement, (e)=>{
+        localStorage.setItem(selectElement.id, selectElement.value);
+        Select.updateSelectedOption(selectElement);
     });
 }
 
@@ -397,8 +396,8 @@ CustomDropdown.createHtmlOptionDiv = function(select, optionsReplacer, selectedD
 
     if (option.selected) optionDiv.classList.add('selected');
 
-    optionDiv.addEventListener('click', function (event) {
-        event.stopPropagation();
+    On.click(optionDiv, (e)=>{
+        e.stopPropagation();
         Select.selectOption(select, option);
     });
 
@@ -416,7 +415,7 @@ function createZetContainerDropdown(option) {
     optionContent.appendChild(inputDiv);
 
     // Event handler for input changes in the option
-    inputDiv.addEventListener('input', function () {
+    On.input(inputDiv, (e)=>{
         option.text = inputDiv.innerText;
 
         const paneId = option.value;
@@ -426,18 +425,17 @@ function createZetContainerDropdown(option) {
         if (option.selected) Select.updateSelectedOption(option.parentNode);
     });
 
-    inputDiv.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') event.preventDefault(); // prevent adding new lines
+    On.keydown(inputDiv, (e)=>{
+        if (e.key === 'Enter') e.preventDefault() // prevent adding new lines
     });
 
-    inputDiv.addEventListener('paste', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
+    On.paste(inputDiv, (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
     });
 
-    inputDiv.addEventListener('focus', function () {
-        Select.selectOption(option.parentNode, option);
-    });
+    const onFocus = Select.selectOption.bind(Select, option.parentNode, option);
+    On.focus(inputDiv, onFocus);
 
     return optionContent;
 }

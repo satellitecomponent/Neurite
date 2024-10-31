@@ -1,5 +1,5 @@
 // Event listener to open the modal
-Elem.byId('controls-button').addEventListener('click', openControlsModal);
+On.click(Elem.byId('controls-button'), openControlsModal);
 
 // Load controls from local storage or set to default values
 function loadControls() {
@@ -26,39 +26,40 @@ function updateMouseButtons() {
 
 function openControlsModal() {
     Modal.open('controls-modal');
-    initializeKeyInputs();
+    const modal = initializeKeyInputs();
 
     const altKeyChange = prepareForKeyChange.bind(null, 'altKey');
-    Elem.byId('altKeyInput').addEventListener('click', altKeyChange);
+    On.click(Elem.byId('altKeyInput'), altKeyChange);
 
     const shiftKeyChange = prepareForKeyChange.bind(null, 'shiftKey');
-    Elem.byId('shiftKeyInput').addEventListener('click', shiftKeyChange);
+    On.click(Elem.byId('shiftKeyInput'), shiftKeyChange);
 
-    CustomDropdown.setup(Elem.byId('zoomClickSelect'));
-    CustomDropdown.setup(Elem.byId('panClickSelect'));
-    CustomDropdown.setup(Elem.byId('contextMenuButtonSelect'));
+    CustomDropdown.setup(modal.zoomClickSelect);
+    CustomDropdown.setup(modal.panClickSelect);
+    CustomDropdown.setup(modal.contextMenuButtonSelect);
 
-    Elem.byId('zoomClickSelect').addEventListener('change', function () {
-        controls.zoomClick.value = this.value === "scroll" ? "scroll" : parseInt(this.value);
+    On.change(modal.zoomClickSelect, (e)=>{
+        const value = modal.zoomClickSelect.value;
+        controls.zoomClick.value = (value === "scroll" ? "scroll" : parseInt(value));
         updateSettingsFromControls();
     });
 
-    Elem.byId('panClickSelect').addEventListener('change', function () {
-        controls.panClick.value = parseInt(this.value);
+    On.change(modal.panClickSelect, (e)=>{
+        controls.panClick.value = parseInt(modal.panClickSelect.value);
         updateSettingsFromControls();
     });
 
-    Elem.byId('contextMenuButtonSelect').addEventListener('change', function () {
-        controls.contextMenuButton.value = parseInt(this.value);
+    On.change(modal.contextMenuButtonSelect, (e)=>{
+        controls.contextMenuButton.value = parseInt(modal.contextMenuButtonSelect.value);
         updateSettingsFromControls();
     });
 
     setupExplanationButtons();
 }
 function setupExplanationButtons() { // within the modal
-    Modal.div.querySelectorAll('.question-button').forEach(button => {
-        button.addEventListener('click', onExplanationButtonClicked)
-    });
+    Modal.div.querySelectorAll('.question-button').forEach(
+        (button)=>On.click(button, onExplanationButtonClicked)
+    );
 }
 function onExplanationButtonClicked(e){
     const explanationId = this.getAttribute('data-explanation-id');
@@ -68,12 +69,22 @@ function onExplanationButtonClicked(e){
 }
 
 function initializeKeyInputs() {
-    Elem.byId('altKeyInput').innerText = controls.altKey.value || controls.altKey.default;
-    Elem.byId('shiftKeyInput').innerText = controls.shiftKey.value || controls.shiftKey.default;
+    const modal = {
+        altKeyInput: Elem.byId('altKeyInput'),
+        shiftKeyInput: Elem.byId('shiftKeyInput'),
+        zoomClickSelect: Elem.byId('zoomClickSelect'),
+        panClickSelect: Elem.byId('panClickSelect'),
+        contextMenuButtonSelect: Elem.byId('contextMenuButtonSelect')
+    }
 
-    Elem.byId('zoomClickSelect').value = controls.zoomClick.value;
-    Elem.byId('panClickSelect').value = controls.panClick.value;
-    Elem.byId('contextMenuButtonSelect').value = controls.contextMenuButton.value;
+    modal.altKeyInput.innerText = controls.altKey.value || controls.altKey.default;
+    modal.shiftKeyInput.innerText = controls.shiftKey.value || controls.shiftKey.default;
+
+    modal.zoomClickSelect.value = controls.zoomClick.value;
+    modal.panClickSelect.value = controls.panClick.value;
+    modal.contextMenuButtonSelect.value = controls.contextMenuButton.value;
+
+    return modal;
 }
 
 function updateSettingsFromControls() {
@@ -86,7 +97,7 @@ function updateSettingsFromControls() {
     saveControls();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+On.DOMContentLoaded(document, (e)=>{
     loadControls();
     updateSettingsFromControls();
 });
@@ -99,14 +110,14 @@ function prepareForKeyChange(key) {
     setNewKey(key);
 }
 function setNewKey(key) {
-    function handler(e) {
+    function handler(e){
         controls[key].value = e.key;
         Elem.byId(key + 'Input').innerText = e.key;
 
         updateSettingsFromControls();
-        document.removeEventListener('keydown', handler);
+        Off.keydown(document, handler);
     }
-    document.addEventListener('keydown', handler);
+    On.keydown(document, handler);
 }
 
 function populateControlsExplanationPlaceholders() {

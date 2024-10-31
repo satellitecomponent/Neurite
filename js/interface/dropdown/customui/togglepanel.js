@@ -29,10 +29,9 @@ function togglePanel(panelContainer) {
         function onTransitionEnd() {
             panelContainer.classList.add('hidden');
             panelContainer.style.display = 'none'; // Fully hide after animation
-            panelContainer.removeEventListener('transitionend', onTransitionEnd);
+            Off.transitionend(panelContainer, onTransitionEnd);
         }
-
-        panelContainer.addEventListener('transitionend', onTransitionEnd, { once: true });
+        On.transitionend(panelContainer, onTransitionEnd, { once: true });
     }
 }
 

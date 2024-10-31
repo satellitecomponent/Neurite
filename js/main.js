@@ -1,9 +1,8 @@
 class Elem {
     static byId = document.getElementById.bind(document);
-    static hideById(id){
-        const elem = Elem.byId(id);
-        if (elem) elem.style.display = 'none';
-    }
+    static displayBlock(elem){ if (elem) elem.style.display = 'block' }
+    static hide(elem){ if (elem) elem.style.display = 'none' }
+    static hideById(id){ Elem.hide(Elem.byId(id)) }
     static setBackgroundColor(color){
         this.style.backgroundColor = color
     }
@@ -14,7 +13,6 @@ class Elem {
         this.style.backgroundColor = backgroundColor;
         this.style.color = foreColor;
     }
-    static stopPropagationOfEvent(e){ e.stopPropagation() }
 }
 
 Function.nop = function(){}
@@ -54,6 +52,32 @@ Logger = new Logger()
     .addLevel("INFO:", 'info')
     .addLevel("DEBUG:", 'log', 'debug');
 Logger.levelId = 'info';
+
+class Off {
+    static thisEvent(target, cb, options){
+        target.removeEventListener(this, cb, options)
+    }
+}
+class On {
+    static thisEvent(target, cb, options){
+        target.addEventListener(this, cb, options)
+    }
+}
+[
+    'blur', 'change', 'click', 'contextmenu',
+    'dblclick', 'DOMContentLoaded',
+    'drag', 'dragend', 'dragenter', 'dragleave', 'dragover', 'dragstart', 'drop',
+    'error', 'focus', 'gesturechange', 'gestureend', 'gesturestart',
+    'input', 'keydown', 'keypress', 'keyup', 'load', 'loadedmetadata',
+    'message', 'mousedown', 'mouseenter', 'mouseleave',
+    'mousemove', 'mouseout', 'mouseover', 'mouseup',
+    'paste', 'resize', 'scroll',
+    'touchcancel', 'touchend', 'touchmove', 'touchstart', 'transitionend',
+    'visibilitychange', 'wheel'
+].forEach( (eName)=>{
+    On[eName] = On.thisEvent.bind(eName);
+    Off[eName] = Off.thisEvent.bind(eName);
+});
 
 Request.send = async function(ct){
     try {
@@ -193,7 +217,7 @@ class PageLoad {
             const script = document.createElement('script');
             script.src = src;
             script.onload = resolve;
-            script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+            script.onerror = () => reject(new Error("Failed to load script: " + src));
             document.body.appendChild(script);
         });
     }

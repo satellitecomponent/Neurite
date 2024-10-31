@@ -7,39 +7,23 @@ class Tooltip {
             width: '360px',
             ...options
         };
-        this.eventListeners = {
-            mouseenter: this.handleMouseEnter.bind(this),
-            mouseleave: this.handleMouseLeave.bind(this),
-            click: this.handleClick.bind(this)
-        };
     }
 
-    attachTooltipEvents(element) {
-        element.addEventListener('mouseenter', this.eventListeners.mouseenter);
-        element.addEventListener('mouseleave', this.eventListeners.mouseleave);
-        element.addEventListener('click', this.eventListeners.click);
+    attachTooltipEvents(element){ this.switchTooltipEvents(On, element) }
+    detachTooltipEvents(element){ this.switchTooltipEvents(Off, element) }
+    switchTooltipEvents(status, element) {
+        status.mouseenter(element, this.onMouseEnter);
+        status.mouseleave(element, this.onMouseLeave);
+        status.click(element, Event.preventDefault);
     }
-
-    detachTooltipEvents(element) {
-        element.removeEventListener('mouseenter', this.eventListeners.mouseenter);
-        element.removeEventListener('mouseleave', this.eventListeners.mouseleave);
-        element.removeEventListener('click', this.eventListeners.click);
+    onMouseEnter = (e)=>{
+        const snippetDataList = JSON.parse(e.target.dataset.snippetData);
+        this.showTooltip(snippetDataList, e);
     }
-
-    handleMouseEnter(event) {
-        const snippetDataList = JSON.parse(event.target.dataset.snippetData);
-        this.showTooltip(snippetDataList, event);
-    }
-
-    handleMouseLeave(event) {
-        if (!event.relatedTarget || !this.tooltipElement.contains(event.relatedTarget)) {
+    onMouseLeave = (e)=>{
+        if (!e.relatedTarget || !this.tooltipElement.contains(e.relatedTarget)) {
             this.hideTooltip();
         }
-    }
-
-    handleClick(event) {
-        event.preventDefault();
-        // Default click behavior can be implemented here if needed
     }
 
     showTooltip(data, event) {
@@ -72,27 +56,27 @@ class Tooltip {
     }
 
     createTooltipElement() {
-        this.tooltipElement = document.createElement('div');
-        this.tooltipElement.classList.add('tooltip');
-        this.tooltipElement.style.position = 'fixed';
-        this.tooltipElement.style.zIndex = this.options.zIndex;
-        this.tooltipElement.style.width = this.options.width;
-        this.tooltipElement.style.pointerEvents = 'auto';
+        const div = document.createElement('div');
+        div.classList.add('tooltip');
+        div.style.position = 'fixed';
+        div.style.zIndex = this.options.zIndex;
+        div.style.width = this.options.width;
+        div.style.pointerEvents = 'auto';
 
-        this.tooltipElement.addEventListener('mouseleave', (event) => {
-            if (!event.relatedTarget || !event.relatedTarget.hasAttribute('data-snippet-data')) {
+        On.mouseleave(div, (e)=>{
+            if (!e.relatedTarget || !e.relatedTarget.hasAttribute('data-snippet-data')) {
                 this.hideTooltip();
             }
         });
 
-        this.tooltipElement.addEventListener('click', Elem.stopPropagationOfEvent);
+        On.click(div, Event.stopPropagation);
 
-        this.tooltipElement.addEventListener('mousedown', (event) => {
+        On.mousedown(div, (e)=>{
             ContextMenu.hide();
-            event.stopPropagation();
+            e.stopPropagation();
         });
 
-        document.body.appendChild(this.tooltipElement);
+        document.body.appendChild(div);
     }
 
     updateTooltipContent(data) {

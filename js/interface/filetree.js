@@ -48,7 +48,7 @@ class FileTree {
         this.onPathChangeCallback = onPathChangeCallback;
 
         this.filePathInput.value = this.currentPath;
-        this.filePathInput.addEventListener('keypress', this.handlePathInput.bind(this));
+        On.keypress(this.filePathInput, this.handlePathInput.bind(this));
 
         this.init(this.currentPath);
     }
@@ -123,9 +123,9 @@ class FileTree {
             childContainer.classList.add('folder-content');
             childContainer.style.display = 'none'; // Initially hide the child container
 
+            On.click(itemElement, this.selectItem.bind(this, itemElement));
             if (item.type === 'directory') {
-                itemElement.addEventListener('click', () => this.selectItem(itemElement));
-                itemElement.addEventListener('click', async () => {
+                On.click(itemElement, async (e)=>{
                     const newPath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
                     if (itemElement.classList.contains('expanded')) {
                         this.collapseDirectory(childContainer, itemElement);
@@ -135,11 +135,10 @@ class FileTree {
                         await this.loadDirectory(newPath, childContainer);
                     }
                 });
-                this.addDragEventsToFolder(itemElement, item, path);
+                this.addDragEvents("Folder", 'application/my-app-folder', itemElement, item, path);
                 parentElement.appendChild(childContainer);
             } else {
-                itemElement.addEventListener('click', () => this.selectItem(itemElement));
-                this.addDragEvents(itemElement, item, path);
+                this.addDragEvents("File", 'application/my-app-file', itemElement, item, path);
             }
         });
     }
@@ -153,43 +152,20 @@ class FileTree {
         itemElement.classList.add('selected');
     }
 
-    addDragEvents(itemElement, item, path) {
-        itemElement.setAttribute('draggable', 'true'); // Make the file item draggable
-        itemElement.addEventListener('dragstart', (event) => {
-            event.stopPropagation();
-            const filePath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
-            const metadata = JSON.stringify({ name: item.name, path: filePath, type: item.type });
-            event.dataTransfer.setData('application/my-app-file', metadata);
-            const icon = itemElement.querySelector('svg');
-            if (icon) {
-                event.dataTransfer.setDragImage(icon, 10, 10);
-            }
-            Logger.debug("Drag started with metadata:", filePath);
-        });
-
-        itemElement.addEventListener('dragend', (event) => {
-            event.stopPropagation();
-            Logger.debug("Drag ended:", item.name);
-        });
-    }
-
-    addDragEventsToFolder(itemElement, item, path) {
+    addDragEvents(type, mime, itemElement, item, itemPath){
         itemElement.setAttribute('draggable', 'true');
-        itemElement.addEventListener('dragstart', (event) => {
-            event.stopPropagation();
-            const folderPath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
-            const metadata = JSON.stringify({ name: item.name, path: folderPath, type: item.type });
-            event.dataTransfer.setData('application/my-app-folder', metadata);
+        On.dragstart(itemElement, (e)=>{
+            e.stopPropagation();
+            const path = (itemPath === '/' ? `/${item.name}` : `${itemPath}/${item.name}`);
+            const metadata = JSON.stringify({ name: item.name, path, type: item.type });
+            e.dataTransfer.setData(mime, metadata);
             const icon = itemElement.querySelector('svg');
-            if (icon) {
-                event.dataTransfer.setDragImage(icon, 10, 10);
-            }
-            Logger.debug("Folder Drag started with metadata:", folderPath);
+            if (icon) e.dataTransfer.setDragImage(icon, 10, 10);
+            Logger.debug(type, "drag started with metadata:", path);
         });
-
-        itemElement.addEventListener('dragend', (event) => {
-            event.stopPropagation();
-            Logger.debug("Folder Drag ended:", item.name);
+        On.dragend(itemElement, (e)=>{
+            e.stopPropagation();
+            Logger.debug(type, "drag ended:", item.name);
         });
     }
 

@@ -256,12 +256,10 @@ class ZettelkastenProcessor {
 
     attachContentEventListenersToNode(node, nodes, nodeLines) {
         const inputElement = node.nodeObject.titleInput;
-        const titleInputEventHandler = this.createTitleInputEventHandler(node, nodes, nodeLines, inputElement);
-        inputElement.addEventListener('input', titleInputEventHandler);
+        On.input(inputElement, this.createTitleInputEventHandler(node, nodes, nodeLines, inputElement));
 
         const textarea = node.nodeObject.textarea;
-        const bodyHandler = this.getHandleNodeBodyInputEvent(node, textarea);
-        textarea.addEventListener('input', bodyHandler);
+        On.input(textarea, this.getHandleNodeBodyInputEvent(node, textarea));
     }
 
     //Syncs node titles and Zettelkasten
@@ -601,7 +599,7 @@ class ZettelkastenProcessor {
     }
 
     addLLMNodeInputListener(node, nodes) {
-        node.nodeObject.content.children[0].children[0].children[1].addEventListener('input', (e) => {
+        On.input(node.nodeObject.content.children[0].children[0].children[1], (e)=>{
             const oldName = node.title;
             let newName = e.target.value.trim().replace(',', '');
             if (newName === oldName) return;

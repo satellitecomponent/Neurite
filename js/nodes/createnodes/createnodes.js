@@ -1,12 +1,11 @@
-﻿document.addEventListener('dblclick', function (e) {
-    // Cancel the default behavior of the event
-    cancel(e);
+﻿On.dblclick(document, (e)=>{
+    e.stopPropagation();
 
     if (e.getModifierState(controls.altKey.value)) {
         // Alt + double click behavior
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (nodeMode && !prevNode) { // Node mode (Shift) + double click behavior *text nodes
+    } else if (NodeMode.val && !prevNode) { // Node mode (Shift) + double click behavior *text nodes
         createNodeFromWindow();
     }
 });

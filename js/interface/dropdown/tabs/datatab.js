@@ -2,11 +2,12 @@ const VectorDb = {};
 
 VectorDb.openModal = async function(){
     Modal.open('vectorDbModal');
-    Elem.byId('chunkAndStoreButton').addEventListener('click', handleFileUploadVDBSelection);
-    document.querySelector('.linkbuttons[title="Delete Document from Embeddings Database"]').addEventListener('click', Keys.deleteSelected);
+    On.click(Elem.byId('chunkAndStoreButton'), handleFileUploadVDBSelection);
+    const buttonSelector = '.linkbuttons[title="Delete Document from Embeddings Database"]';
+    On.click(document.querySelector(buttonSelector), Keys.deleteSelected);
     await Keys.fetchAndDisplayAll();
 }
-Elem.byId('openVectorDbButton').onclick = VectorDb.openModal;
+On.click(Elem.byId('openVectorDbButton'), VectorDb.openModal);
 
 // Global constants using getters
 Object.defineProperty(window, 'MAX_CHUNK_SIZE', {
@@ -67,7 +68,7 @@ VectorDb.removeLoadingIndicator = function(key){
 VectorDb.funcUpdateProgressBarForKey = function(key){
     const indicator = VectorDb.loadingIndicatorForKey(key);
     const style = indicator.querySelector('.vdb-progress-bar-inner').style;
-    return (progress)=>(style.width = progress + '%')
+    return (progress)=>{ style.width = progress + '%' }
 }
 
 function testProgressBar(key) {
@@ -135,22 +136,22 @@ function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialO
             }
         }
 
-        rawTextArea.addEventListener('input', updateChunkedText);
-        maxChunkSizeSlider.addEventListener('input', () => {
+        On.input(rawTextArea, updateChunkedText);
+        On.input(maxChunkSizeSlider, (e)=>{
             maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
             updateChunkedText();
         });
-        overlapSizeSlider.addEventListener('input', () => {
+        On.input(overlapSizeSlider, (e)=>{
             overlapSizeDisplay.textContent = overlapSizeSlider.value;
             updateChunkedText();
         });
 
-        Elem.byId('confirmChunkAndStoreButton').addEventListener('click', () => {
+        On.click(Elem.byId('confirmChunkAndStoreButton'), (e)=>{
             window.currentVectorDbImportReject = null;
             resolve(currentChunks);
         });
 
-        Elem.byId('cancelChunkAndStoreButton').addEventListener('click', Modal.close);
+        On.click(Elem.byId('cancelChunkAndStoreButton'), Modal.close);
 
         updateChunkedText();
     });

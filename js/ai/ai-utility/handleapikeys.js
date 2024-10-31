@@ -29,19 +29,16 @@ function setupInferenceDropdowns(container) {
     // Set up initial visibility based on the selected inference option
     setModelSelectorsVisibility(inferenceSelect);
 
-    // Add change event listener to the inference select
-    inferenceSelect.addEventListener('change', () => {
+    On.change(inferenceSelect, (e)=>{
         setModelSelectorsVisibility(inferenceSelect);
 
         // Close the dropdown when an option is selected
         const selectReplacer = inferenceSelect.closest('.select-container').querySelector('.select-replacer');
-        if (selectReplacer) {
-            selectReplacer.classList.add('closed');
-            const optionsReplacer = selectReplacer.querySelector('.options-replacer');
-            if (optionsReplacer) {
-                optionsReplacer.classList.remove('show');
-            }
-        }
+        if (!selectReplacer) return;
+
+        selectReplacer.classList.add('closed');
+        const optionsReplacer = selectReplacer.querySelector('.options-replacer');
+        if (optionsReplacer) optionsReplacer.classList.remove('show');
     });
 }
 
@@ -105,10 +102,10 @@ function fetchCustomModelData(modelName) {
 
 function addApiConfigBtnListeners(){
     const onAdd = Modal.open.bind(Modal, 'apiConfigModalContent');
-    Elem.byId('addApiConfigBtn').addEventListener('click', onAdd);
+    On.click(Elem.byId('addApiConfigBtn'), onAdd);
 
     const onDelete = CustomDropdown.deleteSelectedOption.bind(CustomDropdown, CustomDropdown.model);
-    Elem.byId('deleteApiConfigBtn').addEventListener('click', onDelete);
+    On.click(Elem.byId('deleteApiConfigBtn'), onDelete);
 }
 addApiConfigBtnListeners()
 
@@ -264,7 +261,7 @@ Proxy.provideAPIKeys.ct = class {
 }
 
 function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
-    const { provider, model } = inferenceOverride || Ai.determineModel();
+    const { providerId, model } = inferenceOverride || Ai.determineModel();
     Logger.info("Selected Ai:", model);
     let API_KEY;
     let API_URL;
@@ -272,7 +269,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
 
     if (useProxy) {
         // Use the AI proxy server
-        switch (provider) {
+        switch (providerId) {
             case 'GROQ':
                 API_URL = 'http://localhost:7070/groq';
                 break;
@@ -303,7 +300,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
         Proxy.provideAPIKeys();
     } else {
         // Use the direct API endpoints
-        switch (provider) {
+        switch (providerId) {
             case 'GROQ':
                 API_URL = 'https://api.groq.com/openai/v1/chat/completions';
                 API_KEY = Elem.byId('GROQ-api-key-input').value;
@@ -324,14 +321,14 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
         }
     }
 
-    if (!useProxy && !API_KEY && provider !== 'ollama' && provider !== 'custom') {
+    if (!useProxy && !API_KEY && providerId !== 'ollama' && providerId !== 'custom') {
         alert("Please enter your API key");
         return null;
     }
 
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
-    if (!useProxy && (provider === 'OpenAi' || provider === 'GROQ')) {
+    if (!useProxy && (providerId === 'OpenAi' || providerId === 'GROQ')) {
         headers.append("Authorization", `Bearer ${API_KEY}`);
     }
 
@@ -339,7 +336,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
     const temperature = customTemperature ?? parseFloat(Elem.byId('model-temperature').value);
     const body = {model, messages, max_tokens, temperature, stream };
 
-    if (provider === 'ollama' || provider === 'custom') {
+    if (providerId === 'ollama' || providerId === 'custom') {
         body.requestId = Date.now().toString();
     }
 

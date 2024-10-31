@@ -76,7 +76,7 @@ class MovementAgentState extends BaseAgentState {
     }
     calculateAverageScaleForComponent(componentUuids) {
         const totalScale = componentUuids.reduce(
-            (totalScale, uuid)=>(totalScale + ProcessedNodes.getById(uuid).scale), 0
+            (totalScale, uuid)=>(totalScale + ProcessedNodes.getById(uuid).scale) , 0
         );
         return totalScale / componentUuids.length;
     }

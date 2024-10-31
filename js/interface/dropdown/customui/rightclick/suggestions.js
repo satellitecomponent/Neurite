@@ -7,15 +7,15 @@ Suggestions.Component = class {
         this.init();
     }
     makeDivContainer() {
-        const divContainer = document.createElement('div');
-        divContainer.id = 'suggestions-container';
-        divContainer.classList.add('suggestions-container');
-        return divContainer;
+        const div = document.createElement('div');
+        div.id = 'suggestions-container';
+        div.classList.add('suggestions-container');
+        return div;
     }
     init() {
         // Prevent [click (?) and] scroll events from propagating
-        ['wheel'].forEach(eventType => {
-            this.container.addEventListener(eventType, Elem.stopPropagationOfEvent, true);
+        ['wheel'].forEach( (eName)=>{
+            On[eName](this.container, Event.stopPropagation, true)
         });
         document.body.appendChild(this.container);
     }
@@ -55,9 +55,8 @@ Suggestions.Item = class {
     }
     init(){
         this.updateSvgs();
-        const togglePin = this.togglePin.bind(this);
-        this.btnPin.addEventListener('click', togglePin);
-        this.spanText.addEventListener('click', togglePin);
+        On.click(this.btnPin, this.togglePin);
+        On.click(this.spanText, this.togglePin);
     }
 
     makeBtnPin(){
@@ -91,7 +90,7 @@ Suggestions.Item = class {
         return SvgIcon;
     }
 
-    togglePin(e){
+    togglePin = (e)=>{
         e.preventDefault();
         e.stopPropagation();
 
@@ -190,10 +189,10 @@ function pinSuggestionToContextMenu(uniqueIdentifier, menu, node, isAlreadyPinne
 
     if (!menuItem) {
         menuItem = createMenuItem(displayText, uniqueIdentifier, executeAction);
-        menuItem.onclick = () => {
+        On.click(menuItem, (e)=>{
             Suggestions.global.hide();
             addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        };
+        });
         // Insert new menu item at the end, but before the input field if it exists.
         const inputFieldLi = menu.querySelector('.input-item');
         if (inputFieldLi) {
@@ -207,10 +206,10 @@ function pinSuggestionToContextMenu(uniqueIdentifier, menu, node, isAlreadyPinne
     } else {
         menuItem.textContent = displayText;
         menuItem.dataset.identifier = uniqueIdentifier;
-        menuItem.onclick = () => {
+        On.click(menuItem, (e)=>{
             executeAction;
             addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        };
+        });
     }
 }
 
@@ -236,18 +235,13 @@ function loadPinnedItemsToContextMenu(menu, node) {
 }
 
 function setupSuggestionsForInput(menu, inputField, node, fetchSuggestions, pageX, pageY) {
-    inputField.addEventListener('input', function (e) {
-        const value = e.target.value;
-        displaySuggestions(value);
+    On.input(inputField, (e)=>displaySuggestions(e.target.value) );
+
+    On.focus(inputField, (e)=>{
+        if (inputField.value === '') displaySuggestions('');
     });
 
-    inputField.addEventListener('focus', function () {
-        if (inputField.value === '') {
-            displaySuggestions('');
-        }
-    });
-
-    inputField.addEventListener('keypress', function (e) {
+    On.keypress(inputField, (e)=>{
         if (e.key === 'Enter') {
             Suggestions.global.hide();
             executeNodeMethod(NodeActions.forNode(node), e.target.value);

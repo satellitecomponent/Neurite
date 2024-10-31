@@ -49,47 +49,41 @@ function createSyntaxTextarea() {
     }
 
     // Add event listeners to the textarea
-    inputDiv.addEventListener('input', updateEditorHeight);
+    On.input(inputDiv, updateEditorHeight);
 
     // Return the wrapper containing both the editable and the display div
     return editorWrapper;
-}
-
-function syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv) {
-    displayDiv.scrollTop = userInputTextarea.scrollTop;
-    displayDiv.scrollLeft = userInputTextarea.scrollLeft;
 }
 
 function addEventsToUserInputTextarea(userInputTextarea, textarea, node, displayDiv) {
     syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
     ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
 
-    userInputTextarea.addEventListener('input', function (event) {
-        if (!isEditableDivProgrammaticChange) {
-            syncHiddenTextareaWithInputTextarea(textarea, userInputTextarea);
-            if (displayDiv) {
-                ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
-            }
+    On.input(userInputTextarea, (e)=>{
+        if (isEditableDivProgrammaticChange) return;
+
+        syncHiddenTextareaWithInputTextarea(textarea, userInputTextarea);
+        if (displayDiv) {
+            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
         }
     });
 
-    textarea.addEventListener('change', function (event) {
-        if (!isEditableDivProgrammaticChange) {
-            syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
-            if (displayDiv) {
-                ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
-            }
-            highlightWithDelay();
+    On.change(textarea, (e)=>{
+        if (isEditableDivProgrammaticChange) return;
+
+        syncInputTextareaWithHiddenTextarea(userInputTextarea, textarea);
+        if (displayDiv) {
+            ZetSyntaxDisplay.syncAndHighlight(displayDiv, userInputTextarea);
         }
+        highlightWithDelay();
     });
 
-    userInputTextarea.addEventListener('scroll', function (event) {
-        syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv);
-    });
-
-    displayDiv.addEventListener('scroll', function (event) {
-        syncDisplayFromInputTextareaScroll(userInputTextarea, displayDiv);
-    });
+    function syncScroll(){
+        displayDiv.scrollTop = userInputTextarea.scrollTop;
+        displayDiv.scrollLeft = userInputTextarea.scrollLeft;
+    }
+    On.scroll(userInputTextarea, syncScroll);
+    On.scroll(displayDiv, syncScroll);
 
     const highlightWithDelay = debounce(() => {
         if (displayDiv) {
@@ -98,41 +92,38 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
     }, 3000);
 
     // Highlight Codemirror text on focus of contenteditable div
-    userInputTextarea.onfocus = function () {
-        syncDisplayFromInputTextareaScroll(this, displayDiv);
-    };
+    On.focus(userInputTextarea, syncScroll);
 
-    userInputTextarea.addEventListener('mousedown', function (event) {
-        if (isEventInsideElement(event, userInputTextarea) && !event.getModifierState(controls.altKey.value)) {
-            event.stopPropagation();
+    On.mousedown(userInputTextarea, (e)=>{
+        if (isEventInsideElement(e, userInputTextarea) && !e.getModifierState(controls.altKey.value)) {
+            e.stopPropagation();
             // We still allow default behavior, so the contenteditable div remains interactable.
         }
     }, true); // Use capture phase to catch the event early
 
-    document.addEventListener('keydown', function (event) {
-        if (event.getModifierState(controls.altKey.value) && document.activeElement === userInputTextarea) {
-            userInputTextarea.style.userSelect = 'none';
-            userInputTextarea.style.pointerEvents = 'none';
-        }
+    On.keydown(document, (e)=>{
+        if (!e.getModifierState(controls.altKey.value) ||
+            document.activeElement !== userInputTextarea) return;
+
+        userInputTextarea.style.userSelect = 'none';
+        userInputTextarea.style.pointerEvents = 'none';
     });
 
-    document.addEventListener('keyup', function (event) {
-        if (!event.getModifierState(controls.altKey.value)) {
-            userInputTextarea.style.userSelect = 'auto';
-            userInputTextarea.style.pointerEvents = 'auto';
-        }
+    On.keyup(document, (e)=>{
+        if (e.getModifierState(controls.altKey.value)) return;
+
+        userInputTextarea.style.userSelect = 'auto';
+        userInputTextarea.style.pointerEvents = 'auto';
     });
 
-    document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible') {
-            userInputTextarea.style.userSelect = 'auto';
-            userInputTextarea.style.pointerEvents = 'auto';
-        }
+    On.visibilitychange(document, (e)=>{
+        if (document.visibilityState !== 'visible') return;
+
+        userInputTextarea.style.userSelect = 'auto';
+        userInputTextarea.style.pointerEvents = 'auto';
     });
 
-    userInputTextarea.addEventListener('paste', function (event) {
-        event.stopPropagation();
-    });
+    On.paste(userInputTextarea, Event.stopPropagation);
 }
 
 let isEditableDivProgrammaticChange = false;

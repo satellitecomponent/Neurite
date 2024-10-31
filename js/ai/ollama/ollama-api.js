@@ -27,7 +27,7 @@ async function receiveOllamaModelList(includeEmbeddingsModels = false) {
             return [];
         }
     } catch (error) {
-        Logger.err("Error fetching model tags:", error);
+        Logger.err("In fetching model tags:", error);
         return [];
     }
 }
@@ -54,7 +54,7 @@ async function getOllamaLibrary() {
             const models = await response.json();
             return models;
         } catch (err) {
-            Logger.err("Error fetching Ollama library from proxy:", err)
+            Logger.err("In fetching Ollama library from proxy:", err)
         }
     }
     return Ollama.defaultModels;
@@ -107,7 +107,7 @@ async function pullOllamaModelWithProgress(name, onProgress) {
             }
         }
     } catch (err) {
-        Logger.err("Error pulling model:", err);
+        Logger.err("In pulling model:", err);
         Ollama.curInstalledNames.delete(name); // Remove from active downloads on error
         return false;
     }

@@ -17,7 +17,7 @@ let isAiProcessing = false;
 const functionSendSvg = functionSendButton.querySelector('svg');
 const functionPrompt = Elem.byId('function-prompt');
 
-functionSendButton.addEventListener('click', () => {
+On.click(functionSendButton, (e)=>{
     if (isAiProcessing) {
         haltFunctionAi();
     } else {
@@ -25,16 +25,16 @@ functionSendButton.addEventListener('click', () => {
     }
 });
 
-functionPrompt.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault(); // avoid form submission
+On.keydown(functionPrompt, (e)=>{
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // avoid form submission
         requestFunctionCall(); // handle sending the message
     }
 });
 
 let mostRecentFunctionMessage = '';
 
-functionRegenButton.addEventListener('click', () => {
+On.click(functionRegenButton, (e)=>{
     functionPrompt.value = mostRecentFunctionMessage
 });
 

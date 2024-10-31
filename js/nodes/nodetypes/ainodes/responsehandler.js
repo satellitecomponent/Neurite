@@ -5,13 +5,14 @@ function makeDivDraggable(div, customTitle, handle) {
     const resetDraggable = div.setAttribute.bind(div, 'draggable', 'false');
     const setDraggable = div.setAttribute.bind(div, 'draggable', 'true');
 
-    handle.addEventListener('mousedown', setDraggable);
-    handle.addEventListener('mouseup', resetDraggable);
+    On.mousedown(handle, setDraggable);
+    On.mouseup(handle, resetDraggable);
 
-    div.addEventListener('dragstart', function (event) {
-        event.dataTransfer.setData('text/plain', JSON.stringify([customTitle, div.innerText]));
+    On.dragstart(div, (e)=>{
+        const json = JSON.stringify([customTitle, div.innerText]);
+        e.dataTransfer.setData('text/plain', json);
     });
-    div.addEventListener('dragend', resetDraggable);
+    On.dragend(div, resetDraggable);
 }
 
 //Handles Ai node conversation parsing for Prismjs and a div css.
@@ -32,25 +33,13 @@ class ResponseHandler {
 
         this.tooltip = new TopNChunksTooltip();
 
-            // Attach the input event listener for new input
-            this.node.aiResponseTextArea.addEventListener('input', () => {
-                this.processingQueue = this.processingQueue.then(() => this.handleInput());
-            });
+        // Attach the input event listener for new input
+        On.input(this.node.aiResponseTextArea, (e)=>{
+            this.processingQueue = this.processingQueue.then(this.handleInput);
+        });
     }
 
-    initUserPromptDiv(promptDiv) {
-        this.setupUserPrompt(promptDiv);
-    }
-
-    initAiResponseDiv(responseDiv) {
-        this.setupAiResponse(responseDiv);
-    }
-
-    initCodeBlockDiv(codeBlockDiv) {
-        this.setupCodeBlock(codeBlockDiv);
-    }
-
-    async handleInput() {
+    handleInput = async ()=>{
         try {
             let content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
@@ -127,21 +116,20 @@ class ResponseHandler {
 
     restoreAiResponseDiv() {
         const children = this.node.aiResponseDiv.children;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
+        Array.prototype.forEach.call(children, (child)=>{
             const userPromptDiv = child.querySelector('.user-prompt');
             if (userPromptDiv) {
-                this.initUserPromptDiv(userPromptDiv);
+                this.setupUserPrompt(userPromptDiv)
             } else if (child.classList.contains('response-wrapper')) {
                 const responseDiv = child.querySelector('.ai-response');
-                if (responseDiv) {
-                    this.initAiResponseDiv(child);
-                    this.reattachTooltips(responseDiv);
-                }
+                if (!responseDiv) return;
+
+                this.setupAiResponse(child);
+                this.reattachTooltips(responseDiv);
             } else if (child.classList.contains('code-block-container')) {
-                this.initCodeBlockDiv(child);
+                this.setupCodeBlock(child)
             }
-        }
+        })
     }
 
     reattachTooltips(responseDiv) {
@@ -267,7 +255,7 @@ class ResponseHandler {
         wrapperDiv.appendChild(responseDiv);
 
         this.node.aiResponseDiv.appendChild(wrapperDiv);
-        this.initAiResponseDiv(responseDiv);
+        this.setupAiResponse(responseDiv);
 
         return responseDiv;
     }
@@ -307,13 +295,9 @@ class ResponseHandler {
         // Apply logic specific to AI response div
         makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
 
-        handleDiv.addEventListener('mouseover', () => {
-            wrapperDiv.classList.add('hovered');
-        });
-
-        handleDiv.addEventListener('mouseout', () => {
-            wrapperDiv.classList.remove('hovered');
-        });
+        const classList = wrapperDiv.classList;
+        On.mouseover(handleDiv, classList.add.bind(classList, 'hovered'));
+        On.mouseout(handleDiv, classList.remove.bind(classList, 'hovered'));
     }
 
     handleUserPrompt(promptContent) {
@@ -342,7 +326,7 @@ class ResponseHandler {
         // Append the outer div to the response area
         this.node.aiResponseDiv.appendChild(outerDiv);
 
-        this.initUserPromptDiv(promptDiv);
+        this.setupUserPrompt(promptDiv);
 
         this.responseCount++;  // Increment the response count after each prompt
     }
@@ -414,7 +398,7 @@ class ResponseHandler {
 
         languageLabelDiv.appendChild(copyButton);
 
-        this.initCodeBlockDiv(existingContainerDiv);
+        this.setupCodeBlock(existingContainerDiv);
 
         if (isFinal) this.node.codeBlockCount += 1;
         this.node.lastBlockId = (isFinal ? null : codeBlockDivId);
@@ -426,7 +410,7 @@ class ResponseHandler {
 
         let isEditing = false;
 
-        const handleKeyDown = function handleKeyDown(event) {
+        const handleKeyDown = (event)=>{
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 this.removeResponsesUntil(promptDiv.id);
@@ -437,7 +421,7 @@ class ResponseHandler {
                 Logger.debug(`Sending message: "${message}"`);
                 AiNode.sendMessage(this.node, message);
             }
-        }.bind(this);
+        }
 
         function onBlur(){
             if (isEditing) { // div loses focus
@@ -454,13 +438,12 @@ class ResponseHandler {
 
                 // Make the div draggable
                 makeDivDraggable(promptDiv, 'Prompt');
-                promptDiv.ondragstart = function () { return isEditing ? false : null; };
-
-                promptDiv.removeEventListener('keydown', handleKeyDown);
+                On.dragstart(promptDiv, (e)=>(isEditing ? false : null) );
+                Off.keydown(promptDiv, handleKeyDown);
             }
         }
 
-        function onDblclick(e){
+        function onDblClick(e){
             e.preventDefault();
             e.stopPropagation();
 
@@ -480,10 +463,10 @@ class ResponseHandler {
                 style.border = 'none';
 
                 promptDiv.focus();
-                promptDiv.addEventListener('keydown', handleKeyDown);
+                On.keydown(promptDiv, handleKeyDown);
 
                 // Set promptDiv non-draggable
-                promptDiv.ondragstart = function () { return false; };
+                On.dragstart(promptDiv, (e)=>false );
             } else { // leaving edit mode
                 promptDiv.classList.remove('editing');
                 promptDiv.contentEditable = false;
@@ -494,13 +477,13 @@ class ResponseHandler {
                 style.cursor = "move";
 
                 makeDivDraggable(promptDiv, 'Prompt');
-                promptDiv.ondragstart = function () { return isEditing ? false : null; };
-                promptDiv.removeEventListener('keydown', handleKeyDown);
+                On.dragstart(promptDiv, (e)=>(isEditing ? false : null) );
+                Off.keydown(promptDiv, handleKeyDown);
             }
         }
 
-        promptDiv.addEventListener('blur', onBlur.bind(this));
-        promptDiv.addEventListener('dblclick', onDblclick.bind(this));
+        On.blur(promptDiv, onBlur);
+        On.dblclick(promptDiv, onDblClick);
     }
 
     setupCodeBlock(codeBlockDiv) {
@@ -513,7 +496,7 @@ class ResponseHandler {
         // Apply logic specific to code block div
         makeDivDraggable(codeBlockDiv, 'Code Block', languageLabelDiv);
 
-        copyButton.onclick = () => {
+        On.click(copyButton, (e)=>{
             const textarea = document.createElement('textarea');
             textarea.value = decodedContent;
             document.body.appendChild(textarea);
@@ -525,16 +508,15 @@ class ResponseHandler {
             }
 
             document.body.removeChild(textarea);
-        };
+        });
 
-        codeBlockDiv.addEventListener('mouseover', (event) => {
-            if (event.target === languageLabelDiv || event.target === copyButton) {
+        On.mouseover(codeBlockDiv, (e)=>{
+            if (e.target === languageLabelDiv || e.target === copyButton) {
                 codeBlockDiv.classList.add('hovered');
             }
         });
-
-        codeBlockDiv.addEventListener('mouseout', (event) => {
-            if (event.target === languageLabelDiv || event.target === copyButton) {
+        On.mouseout(codeBlockDiv, (e)=>{
+            if (e.target === languageLabelDiv || e.target === copyButton) {
                 codeBlockDiv.classList.remove('hovered');
             }
         });

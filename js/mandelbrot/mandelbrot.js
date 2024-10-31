@@ -319,10 +319,10 @@ Body.stopPanning = function(e){
     this.style.userSelect = "auto"; // Re-enable text selection
 }
 Body.addEventListeners = function(body){
-    body.addEventListener('mousedown', this.startPanning);
-    body.addEventListener('mousemove', this.onMousemove);
-    body.addEventListener('mouseup', this.stopPanning);
-    body.addEventListener('mouseleave', this.stopPanning);
+    On.mousedown(body, this.startPanning);
+    On.mousemove(body, this.onMousemove);
+    On.mouseup(body, this.stopPanning);
+    On.mouseleave(body, this.stopPanning);
 }
 Body.addEventListeners(document.body);
 
@@ -486,7 +486,7 @@ Color.rgbLerp = function(i, r = rSlider.value, c = cSlider.value, s = sSlider.va
     const blue = normalized("b", 3) * (c - s * cos(i / 5 ** .9));
 
     const lerp = Math.lerp;
-    if (nodeMode) r = nodeMode_v;
+    if (NodeMode.val) r = nodeMode_v;
     const y = 0.17697 * red + 0.81240 * green + 0.01063 * blue;
     return [lerp(red, y, r), lerp(green, y, r), lerp(blue, y, r)];
 }
@@ -707,9 +707,9 @@ function render_hair(n) {
     }
 }
 
-document.addEventListener('keydown', function (event) {
-    if (event.altKey) {
-        switch (event.key) {
+On.keydown(document, (e)=>{
+    if (e.altKey) {
+        switch (e.key) {
             case 'f': // toggle preservation
                 Logger.info("Adding preservation fractal lines.");
                 Array.from(svg_bg.children).forEach(element => {

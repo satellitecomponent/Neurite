@@ -1,19 +1,8 @@
-// Function to handle various events on the node panel
-function handlePanelEvent(e) {
-    cancel(e);
-}
-
-function handlePanelMouseMove(e) {
-    if (!functionCallPanel.contains(e.target)) cancel(e);
-}
-
-// Add event listeners to the node panel for different types of events
-nodePanel.addEventListener('click', handlePanelEvent);
-nodePanel.addEventListener('mousedown', handlePanelEvent); // For drag (mousedown)
-nodePanel.addEventListener('mousemove', handlePanelMouseMove);
-nodePanel.addEventListener('wheel', handlePanelEvent);     // For scroll (wheel event)
-nodePanel.addEventListener('dragstart', handlePanelEvent); // Prevents dragging from propagating
-nodePanel.addEventListener('dragend', handlePanelEvent);   // Optional, handle end of drag
+['click', 'mousedown', 'wheel', 'dragstart', 'dragend']
+.forEach(Event.stopPropagationByNameForThis, nodePanel);
+On.mousemove(nodePanel, (e)=>{
+    if (!functionCallPanel.contains(e.target)) e.stopPropagation();
+});
 
 const functionLoadingIcon = Elem.byId('functionLoadingIcon');
 const functionErrorIcon = Elem.byId('functionErrorIcon');
@@ -275,16 +264,16 @@ function addFunctionCallItem(functionName, code, isError = false) {
     }
 
     // Hover events
-    item.addEventListener('mouseenter', () => {
+    On.mouseenter(item, (e)=>{
         item.classList.add('hover-state');
         if (isError) item.classList.add('error-hover-state');
     });
-    item.addEventListener('mouseleave', () => {
+    On.mouseleave(item, (e)=>{
         item.classList.remove('hover-state');
         if (isError) item.classList.remove('error-hover-state');
     });
 
-    item.addEventListener('click', () => {
+    On.click(item, (e)=>{
         if (item.classList.contains('active-state')) {
             clearActiveStates();
         } else {
@@ -332,20 +321,15 @@ function generateTitleForCode(code) {
 }
 
 const functionRunButton = Elem.byId('function-run-button');
-functionRunButton.addEventListener('click', runNeuriteCode);
+On.click(functionRunButton, runNeuriteCode);
 
-// Function Call List
-
-const clearButton = document.getElementById('clear-function-calls-button');
 const functionCallList = document.querySelector('.function-call-list');
-
-functionCallList.addEventListener('click', function (event) {
-    // Check if the clicked target is a div
-    if (event.target.tagName === 'DIV') {
-        if (event.target.classList.contains('active-state')) {
+On.click(functionCallList, (e)=>{
+    if (e.target.tagName === 'DIV') {
+        if (e.target.classList.contains('active-state')) {
             neuriteFunctionCM.setValue('');
             // If the div becomes active, repopulate the CodeMirror
-            const originalText = event.target.originalText;
+            const originalText = e.target.originalText;
             if (originalText) {
                 updateNeuriteFunctionCMContent(originalText);
             }
@@ -355,33 +339,30 @@ functionCallList.addEventListener('click', function (event) {
         }
     }
 });
-
 // Show the Clear button when the mouse enters the function call list
-functionCallList.addEventListener('mouseenter', () => {
+On.mouseenter(functionCallList, (e)=>{
     if (functionCallList.children.length > 0) { // Only show if there are items
         clearButton.style.display = 'block';
     }
 });
-
 // Hide the Clear button when the mouse leaves the function call list and clear button
-functionCallList.addEventListener('mouseleave', (event) => {
-    if (!clearButton.contains(event.relatedTarget)) {
+On.mouseleave(functionCallList, (e)=>{
+    if (!clearButton.contains(e.relatedTarget)) {
         clearButton.style.display = 'none';
     }
 });
 
+const clearButton = Elem.byId('clear-function-calls-button');
 // Keep the Clear button visible when hovering over it
-clearButton.addEventListener('mouseenter', () => {
+On.mouseenter(clearButton, (e)=>{
     clearButton.style.display = 'block';
 });
-
 // Hide the Clear button when leaving the button
-clearButton.addEventListener('mouseleave', () => {
+On.mouseleave(clearButton, (e)=>{
     clearButton.style.display = 'none';
 });
-
 // Clear the function call list and local storage when the Clear button is clicked
-clearButton.addEventListener('click', () => {
+On.click(clearButton, (e)=>{
     // Clear the UI
     functionCallList.innerHTML = '';
 

@@ -100,7 +100,7 @@ async function callVisionModel(messages, onStreamComplete) {
         },
         onError: (err) => {
             functionErrorIcon.style.display = 'block';
-            Logger.err("Error:", err);
+            Logger.err(err);
         },
         inferenceOverride: inferenceOverride,
     });

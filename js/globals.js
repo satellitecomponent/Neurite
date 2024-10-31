@@ -33,7 +33,7 @@ if (!RegExp.escape) {
 
 class Modal {
     static current = null;
-    static div = document.getElementById('customModal');
+    static div = Elem.byId('customModal');
     static inputValues = {};
     static isDragging = false;
     static mouseOffsetX = 0;
@@ -145,57 +145,49 @@ var flashlight_fraction = 0.73; // this is what fraction of samples are diverted
 
 
 
-//interface
+class Interface {
+    overlays = [];
+    altHeld = false;
+    constructor(){
+        On.keydown(document, this.altKeyDown);
+        On.keyup(document, this.altKeyUp);
+        On.message(window, this.onMessage);
+    }
 
-const overlays = [];
-
-const autoToggleAllOverlays = () => {
-    for (const overlay of overlays) {
-        if (altHeld || nodeMode === 1) {
-            overlay.style.display = 'block';
-        } else {
-            overlay.style.display = 'none';
+    autoToggleAllOverlays(){
+        const condition = (this.altHeld || NodeMode.val === 1);
+        for (const overlay of this.overlays) {
+            overlay.style.display = (condition ? 'block' : 'none');
         }
     }
-};
-
-let altHeld = false;
-
-// Global event listeners to set the altHeld flag
-document.addEventListener('keydown', function (event) {
-    if (event.altKey) {
-        altHeld = true;
-        autoToggleAllOverlays();
-        event.preventDefault();  // Prevent default behavior like focusing on the iframe
+    altKeyDown = (e)=>{
+        if (e.altKey) {
+            this.altHeld = true;
+            this.autoToggleAllOverlays();
+            e.preventDefault(); // e.g. focusing on the iframe
+        }
     }
-});
-
-document.addEventListener('keyup', function (event) {
-    if (!event.altKey) {
-        altHeld = false;
-        autoToggleAllOverlays();
+    altKeyUp = (e)=>{
+        if (!e.altKey) {
+            this.altHeld = false;
+            this.autoToggleAllOverlays();
+        }
     }
-});
-
-window.addEventListener('message', function (event) {
-    if (typeof event.data.altHeld !== 'undefined') {
-        altHeld = event.data.altHeld;
-        autoToggleAllOverlays();
+    onMessage = (e)=>{
+        const data = e.data;
+        if (data.altHeld !== undefined) {
+            this.altHeld = data.altHeld;
+            this.autoToggleAllOverlays();
+        }
+        NodeMode.val = data.nodeMode ?? 0;
     }
-    if (typeof event.data.nodeMode !== 'undefined') {
-        nodeMode = event.data.nodeMode;
-    } else {
-        nodeMode = 0;
-    }
-});
+}
+Interface = new Interface();
 
 const Graph = {
     nodes: [],
     edges: []
 };
-
-var nodeMode_v = 0;
-var nodeMode = 0;
 
 var movingNode = undefined;
 var NodeUUID = 0;
@@ -295,7 +287,7 @@ Tag.initializeInputs = function(){
 
     nodeTagInput.value = Tag.node;
     refTagInput.value = Tag.ref;
-    nodeTagInput.addEventListener('input', function () {
+    On.input(nodeTagInput, (e)=>{
         const nodeTag = nodeTagInput.value.trim();
         Tag.node = (nodeTag === '' ? ' ' : nodeTag);
 
@@ -303,7 +295,7 @@ Tag.initializeInputs = function(){
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();
     });
-    refTagInput.addEventListener('input', function () {
+    On.input(refTagInput, (e)=>{
         const refTag = refTagInput.value.trim();
         Tag.ref = (refTag === '' ? ' ' : refTag);
 
@@ -489,12 +481,10 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
-function cancel(event) {
-    if (event.stopPropagation) {
-        event.stopPropagation(); // W3C model
-    } else {
-        event.cancelBubble = true; // IE model
-    }
+Event.preventDefault = function(e){ e.preventDefault() }
+Event.stopPropagation = function(e){ e.stopPropagation() }
+Event.stopPropagationByNameForThis = function(eName){
+    On[eName](this, Event.stopPropagation)
 }
 
 function triggerInputEvent(elementId) {

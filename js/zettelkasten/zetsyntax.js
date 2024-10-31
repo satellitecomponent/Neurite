@@ -127,24 +127,25 @@ class ZetSyntaxDisplay {
     }
 }
 
-document.addEventListener('click', function (event) {
-    if (event.target.classList.contains('node-title-sd')) {
-        const title = event.target.textContent;
+On.click(document, (e)=>{
+    if (e.target.classList.contains('node-title-sd')) {
+        const title = e.target.textContent;
         handleTitleClick(title);
     }
 });
 
 // Manage scroll behavior and temporarily disable pointer events
-document.addEventListener('wheel', function (event) {
-    if (event.target.classList.contains('node-title-sd')) {
-        event.target.style.pointerEvents = 'none'; // Disable pointer events during scroll
+On.wheel(document, (e)=>{
+    const target = e.target;
+    if (target.classList.contains('node-title-sd')) {
+        target.style.pointerEvents = 'none'; // Disable pointer events during scroll
 
         // Clear any existing timeout to avoid conflicts
-        clearTimeout(event.target.pointerEventTimeout);
+        clearTimeout(target.pointerEventTimeout);
 
         // Set a timeout to restore pointer events after a period of inactivity
-        event.target.pointerEventTimeout = setTimeout(() => {
-            event.target.style.pointerEvents = 'auto';
+        target.pointerEventTimeout = setTimeout(() => {
+            target.style.pointerEvents = 'auto';
         }, 20); // Adjust delay as necessary based on user behavior and preferences
     }
 }, { passive: false });
