@@ -175,7 +175,7 @@ class vec2 {
 }
 
 function toSVG(coords) {
-    return coords.minus(SVG.pan).scale(SVG.zoom)
+    return coords.minus(Svg.pan).scale(Svg.zoom)
 }
 
 var mousePos = new vec2(0, 0);
@@ -190,42 +190,42 @@ Math.lerp = function(a, b, t){
 
 //settings object moved to dropdown.js
 
-SVG.windowScale = function(svgbb){
+Svg.windowScale = function(svgbb){
     if (!svgbb) svgbb = svg.getBoundingClientRect();
     return Math.min(svgbb.width, svgbb.height); //Math.hypot(window.innerHeight,window.innerWidth)/2**.5;
 }
-SVG.updateScaleAndOffset = function(){
+Svg.updateScaleAndOffset = function(){
     const svgbb = svg.getBoundingClientRect();
-    SVG.scale = SVG.windowScale(svgbb);
+    Svg.scale = Svg.windowScale(svgbb);
 
     const off = (svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom);
-    SVG.offset = new vec2(-(off - svgbb.right) / 2, -(off - svgbb.bottom) / 2);
+    Svg.offset = new vec2(-(off - svgbb.right) / 2, -(off - svgbb.bottom) / 2);
 }
 
 function toZ(c) {
-    SVG.updateScaleAndOffset();
-    return c.minus(SVG.offset).unscale(SVG.scale).minus(new vec2(.5, .5)).scale(2).cmult(zoom).cadd(pan);
+    Svg.updateScaleAndOffset();
+    return c.minus(Svg.offset).unscale(Svg.scale).minus(new vec2(.5, .5)).scale(2).cmult(zoom).cadd(pan);
 }
 
 function toS(c) {
-    return c.unscale(SVG.windowScale()).scale(2)
+    return c.unscale(Svg.windowScale()).scale(2)
 }
 function toDZ(c) {
     return toS(c).cmult(zoom)
 }
 
 function fromZ(z) {
-    SVG.updateScaleAndOffset();
-    return fromZtoUV(z).scale(SVG.scale).plus(SVG.offset);
+    Svg.updateScaleAndOffset();
+    return fromZtoUV(z).scale(Svg.scale).plus(Svg.offset);
 }
 function fromZtoUV(z) {
     return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5, .5))
 }
 
-SVG.oldPan = new vec2(0, 0);
-SVG.pan = new vec2(0, 0);
+Svg.oldPan = new vec2(0, 0);
+Svg.pan = new vec2(0, 0);
 
-SVG.updateViewbox = function(){
+Svg.updateViewbox = function(){
     //let lc = toSVG(toZ(new vec2(0,0)));
     const zm = zoom.mag();
     let lc = toSVG(new vec2(-zm, -zm).plus(pan));
@@ -275,7 +275,7 @@ SVG.updateViewbox = function(){
 
 }
 
-SVG.recalc = function(){
+Svg.recalc = function(){
     const oldPan = this.oldPan;
     const oldZoom = this.oldZoom;
     const pan = this.pan;
@@ -372,18 +372,18 @@ Fractal.mand_i = function(z, iters = 16){
 Fractal.mandDist = function(iters, c, z){
     const bailout = 1e8; //large so z^2+c -> z^2
     if (z === undefined) z = new vec2(0, 0);
-    let pz = z;
+    let prevZ = z;
     for (let i = 0; i < iters; i++) {
         if (z.mag2() > bailout) {
-            //pz^2 = z
-            //pz^(2^?) = b
-            //ln(pz)2^?=ln(b)
-            //ln(ln(pz))+ln(2)*?=ln(ln(b))
+            //prevZ^2 = z
+            //prevZ^(2^?) = b
+            //ln(prevZ)2^?=ln(b)
+            //ln(ln(prevZ))+ln(2)*?=ln(ln(b))
             let g = Math.log2(Math.log(bailout));
-            let llz = Math.log2(Math.log2(z.mag2()) / 2);
+            const llz = Math.log2(Math.log2(z.mag2()) / 2);
             return i - llz;
         }
-        pz = z;
+        prevZ = z;
         z = mand_step(z, c);
     }
     return iters;
@@ -396,10 +396,10 @@ function mandelbrott_grad(iters, c, z) {
     let dz = new vec2(1, 0);
     for (let i = 0; i < iters; i++) {
         if (z.mag2() > bailout) {
-            //pz^2 = z
-            //pz^(2^?) = b
-            //ln(pz)2^?=ln(b)
-            //ln(ln(pz))+ln(2)*?=ln(ln(b))
+            //prevZ^2 = z
+            //prevZ^(2^?) = b
+            //ln(prevZ)2^?=ln(b)
+            //ln(ln(prevZ))+ln(2)*?=ln(ln(b))
             return dz;
             //let llz = Math.log2(Math.log2(z.mag2()) / 2);
             //return i - llz;
@@ -502,66 +502,70 @@ Color.strRgb = function(i, r, c, s){
 //l.style.top="100px";
 
 function outlineMand(start, step = 0.1, iters = 256) {
-    let a0 = start.pang();
-    let path = "M " + toSVG(start).str() + "\nL ";
-    let pz = start;
-    let maxlen = 1 << 15;
-    let minD2 = 0.25 / 200 / 200;
+    const a0 = start.pang();
+    const data = ["M ", toSVG(start).str(), "\nL "];
+    let prevZ = start;
+    let maxlen = 32768; // 2 ^ 15
+    const minD2 = 0.25 / 200 / 200;
     for (let z of trace_circle(iters, start, step)) {
-        //if (z.minus(pz).mag2() < minD2){ continue;}
-        if (z.pang() <= a0 && pz.pang() > a0) break;
+        //if (z.minus(prevZ).mag2() < minD2){ continue;}
+        if (z.pang() <= a0 && prevZ.pang() > a0) break;
 
-        maxlen--;
+        maxlen -= 1;
         if (maxlen <= 0) break;
 
-        path += toSVG(z).str() + ' ';
-        pz = z;
+        data.push(toSVG(z).str(), ' ');
+        prevZ = z;
     }
-    return path;
+    return data.join('');
 }
 
-function addPath(path, stroke = 'red', fill = 'none') {
-    const pathn = SVG.create.path();
-    pathn.setAttribute('fill', fill);
-    pathn.setAttribute('stroke', stroke);
-    pathn.setAttribute('d', path);
-    svg.appendChild(pathn);
-    return pathn;
+function addPath(data, stroke = 'red', fill = 'none') {
+    const path = Svg.new.path();
+    path.setAttribute('fill', fill);
+    path.setAttribute('stroke', stroke);
+    path.setAttribute('d', data);
+    svg.appendChild(path);
+    return path;
 }
 
 function* iter() {
     const mandDist = Fractal.mandDist;
     const strRgb = Color.strRgb;
     for (let x = 8; x > 0.3; x *= 1 - 1 / 8) {
-        let pathn = SVG.create.path();
-        //pathn.setAttribute('fill',strRgb(mandDist(1024,new vec2(x,0))));
-        pathn.setAttribute('fill', 'none');
-        pathn.setAttribute('stroke', strRgb(mandDist(1024, new vec2(x, 0))));
-        pathn.setAttribute('stroke-width', String(SVG.zoom * 0.01));
-        pathn.setAttribute('d', '');
-        svg.children[1].appendChild(pathn);
+        let path = Svg.new.path();
+        //path.setAttribute('fill',strRgb(mandDist(1024,new vec2(x,0))));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', strRgb(mandDist(1024, new vec2(x, 0))));
+        path.setAttribute('stroke-width', String(Svg.zoom * 0.01));
+        path.setAttribute('d', '');
+        svg.children[1].appendChild(path);
         let start = new vec2(x, 0);
         let a0 = start.pang();
         let l = (m) => m;
-        let path = "M " + toSVG(l(start)).str() + "\nL ";
-        let pz = start;
-        let maxlen = 1 << 12;
+        const data = ["M ", toSVG(l(start)).str(), "\nL "];
+        let prevZ = start;
+        let maxlen = 4096; // 2 ^ 12
         let minD2 = 0.01 / 200 / 200;
         for (let z of trace_circle(1024, start, 0.1)) {
-            if (z.pang() <= a0 && pz.pang() > a0) break;
+            if (z.pang() <= a0 && prevZ.pang() > a0) break;
 
-            maxlen--;
+            maxlen -= 1;
             if (maxlen <= 0) {
-                pathn.setAttribute('d', path + " z");
-                yield;
-                maxlen = 1 << 12;
-            }
-            if (z.minus(pz).mag2() < minD2) continue;
+                data.push(" z");
+                path.setAttribute('d', data.join(''));
+                data.pop();
 
-            path += toSVG(l(z)).str() + ' ';
-            pz = z;
+                yield;
+                maxlen = 4096; // 2 ^ 12
+            }
+            if (z.minus(prevZ).mag2() < minD2) continue;
+
+            data.push(toSVG(l(z)).str(), ' ');
+            prevZ = z;
         }
-        pathn.setAttribute('d', path + " z");
+        data.push(" z");
+        path.setAttribute('d', data.join(''));
         yield;
     }
 }
@@ -673,20 +677,15 @@ function render_hair(n) {
     if (na === 0) return;
 
     const width = Math.min(settings.renderWidthMult * length / n0, 0.1);
-    const pathn = SVG.create.path();
-    pathn.setAttribute('fill', 'none');
-    pathn.setAttribute('stroke', Fractal.mandColor(iters, opt));
-    pathn.setAttribute('stroke-width', String(width * SVG.zoom));
-    pathn.setAttribute('stroke-opacity', String(opacity));
-    pathn.setAttribute('d', r);
-    svg_bg.appendChild(pathn);
+    const path = Svg.new.path();
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', Fractal.mandColor(iters, opt));
+    path.setAttribute('stroke-width', String(width * Svg.zoom));
+    path.setAttribute('stroke-opacity', String(opacity));
+    path.setAttribute('d', r);
+    svg_bg.appendChild(path);
     if (maxLines === 0) {
-        // Quick removal of all non-preserved children
-        Array.from(svg_bg.children).forEach(child => {
-            if (!child.classList.contains('preserve')) {
-                svg_bg.removeChild(child);
-            }
-        });
+        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved)
     } else {
         let activeCount = Array.from(svg_bg.children).filter(child => !child.classList.contains('preserve')).length;
 
@@ -707,17 +706,25 @@ function render_hair(n) {
     }
 }
 
+Fractal.addPreservation = function(child){
+    if (child.classList.contains('preserve')) return;
+
+    child.classList.add('preserve');
+    Logger.info("Preservation added to element with id:", child.id);
+}
+Fractal.clearPreservation = function(child){
+    child.classList.remove('preserve')
+}
+Fractal.removeNonPreserved = function(child){
+    if (child.classList.contains('preserve')) svg_bg.removeChild(child)
+}
+
 On.keydown(document, (e)=>{
     if (e.altKey) {
         switch (e.key) {
             case 'f': // toggle preservation
                 Logger.info("Adding preservation fractal lines.");
-                Array.from(svg_bg.children).forEach(element => {
-                    if (!element.classList.contains('preserve')) {
-                        element.classList.add('preserve');
-                        Logger.info("Preservation added to element with id:", element.id);
-                    }
-                });
+                Elem.forEachChild(svg_bg, Fractal.addPreservation);
                 break;
             case 's': // take screenshot
                 download_svg_screenshot("NeuriteSVG" + new Date().toISOString());
@@ -725,9 +732,7 @@ On.keydown(document, (e)=>{
                 break;
             case 'c': // clear all preservations
                 Logger.info("Clearing all preserved fractal lines.");
-                Array.from(svg_bg.children).forEach(element => {
-                    element.classList.remove('preserve');
-                });
+                Elem.forEachChild(svg_bg, Fractal.clearPreservation);
                 break;
         }
     }
@@ -747,7 +752,7 @@ function download_svg_screenshot(name) {
 
     const img = new Image();
     img.onload = function () {
-        const canvas = document.createElement('canvas');
+        const canvas = Html.new.canvas();
         canvas.width = svg.clientWidth;
         canvas.height = svg.clientHeight;
         var ctx = canvas.getContext('2d');
@@ -763,9 +768,8 @@ function download_svg_screenshot(name) {
         ctx.drawImage(img, 0, 0);
 
         // for the download
-        const a = document.createElement('a');
+        const a = Html.make.a(canvas.toDataURL("image/png"));
         a.download = name + ".png";
-        a.href = canvas.toDataURL("image/png");
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -940,7 +944,7 @@ for (let x = 0; x < window.innerWidth; x += pixelSpacing) {
 }
 
 function markBoundaryPoint(x, y, svgElement) {
-const circle = SVG.create.circle();
+const circle = Svg.new.circle();
 circle.setAttribute('cx', x);
 circle.setAttribute('cy', y);
 circle.setAttribute('r', 2 * perimeterScaleFactor); // Apply scaling to the radius as well

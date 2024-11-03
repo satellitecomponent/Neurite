@@ -42,10 +42,10 @@ function renderPromptList() {
     const promptList = document.querySelector('.prompt-list');
     promptList.innerHTML = '';
     promptLibrary.prompts.forEach((prompt, index) => {
-        const listItem = document.createElement('div');
-        const input = document.createElement('input');
+        const listItem = Html.new.div();
+        const className = (index === promptLibrary.currentPromptIndex ? 'selected' : '');
+        const input = Html.make.input(className);
         input.value = prompt.title;
-        input.className = index === promptLibrary.currentPromptIndex ? 'selected' : '';
         On.click(input, selectPrompt.bind(null, index));
         On.change(input, (e)=>updatePromptTitle(index, e.target.value) );
         listItem.appendChild(input);
@@ -269,8 +269,7 @@ function exportPromptLibraryAsJSON(promptLibrary) {
 
     // Create a Blob and download the JSON file
     const blob = new Blob([jsonString], { type: "application/json" });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    const link = Html.make.a(URL.createObjectURL(blob));
     link.download = "promptLibrary.json";
     document.body.appendChild(link);
     link.click();

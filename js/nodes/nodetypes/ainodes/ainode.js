@@ -1,37 +1,38 @@
+function createAndDrawLlmNode(){
+    createLlmNode().draw()
+}
 function createLlmNode(name = '', sx, sy, x, y) {
     const llmNodeCount = AiNode.count;
 
     // Create the AI response textarea
-    let aiResponseTextArea = document.createElement('textarea');
+    const aiResponseTextArea = Html.new.textarea()
     aiResponseTextArea.id = 'LLMnoderesponse-' + llmNodeCount;
     aiResponseTextArea.style.display = 'none';
 
     // Create the AI response container
-    let aiResponseDiv = document.createElement('div');
+    const aiResponseDiv = Html.make.div('custom-scrollbar ai-response-div');
     aiResponseDiv.id = 'LLMnoderesponseDiv-' + llmNodeCount;
-    aiResponseDiv.classList.add('custom-scrollbar', 'ai-response-div');
 
     // Create the user prompt textarea
-    let promptTextArea = document.createElement('textarea');
+    const promptTextArea = Html.make.textarea('custom-scrollbar custom-textarea');
     promptTextArea.id = 'nodeprompt-' + llmNodeCount;
-    promptTextArea.classList.add('custom-scrollbar', 'custom-textarea');
 
     // Create the send button (keeping inline styles)
-    let sendButton = document.createElement('button');
+    const sendButton = Html.new.button();
     sendButton.type = "submit";
     sendButton.id = 'prompt-form-' + llmNodeCount;
     sendButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    sendButton.innerHTML = SVG.play;
+    sendButton.innerHTML = Svg.play;
 
     // Create the regenerate button (keeping inline styles)
-    let regenerateButton = document.createElement('button');
+    const regenerateButton = Html.new.button();
     regenerateButton.type = "button";
     regenerateButton.id = "prompt-form";
     regenerateButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    regenerateButton.innerHTML = SVG.refresh;
+    regenerateButton.innerHTML = Svg.refresh;
 
     // Create settings button (keeping inline styles)
-    const aiNodeSettingsButton = document.createElement('button');
+    const aiNodeSettingsButton = Html.new.button();
     aiNodeSettingsButton.type = "button";
     aiNodeSettingsButton.id = 'aiNodeSettingsButton';
     aiNodeSettingsButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
@@ -41,66 +42,47 @@ function createLlmNode(name = '', sx, sy, x, y) {
     aiNodeSettingsButton.isActive = false;
 
     // Create the loader and error icons container (keeping inline styles)
-    let statusIconsContainer = document.createElement('div');
-    statusIconsContainer.className = 'status-icons-container';
+    const statusIconsContainer = Html.make.div('status-icons-container');
     statusIconsContainer.style.cssText = 'position: absolute; top: 42px; right: 90px; width: 20px; height: 20px;';
 
     // Create the loader icon
-    let aiLoadingIcon = document.createElement('div');
-    aiLoadingIcon.className = 'loader';
+    const aiLoadingIcon = Html.make.div('loader');
     aiLoadingIcon.id = 'aiLoadingIcon-' + llmNodeCount;
     aiLoadingIcon.style.display = 'none';
 
     // Create the error icon
-    let aiErrorIcon = document.createElement('div');
-    aiErrorIcon.className = 'error-icon-css';
+    const aiErrorIcon = Html.make.div('error-icon-css');
     aiErrorIcon.id = 'aiErrorIcon-' + llmNodeCount;
     aiErrorIcon.style.display = 'none';
 
     // Create the 'X' mark inside the error icon
-    let xMark = document.createElement('div');
-    xMark.className = 'error-x-mark';
-    let xMarkLeft = document.createElement('div');
-    xMarkLeft.className = 'error-x-mark-left';
-    let xMarkRight = document.createElement('div');
-    xMarkRight.className = 'error-x-mark-right';
-    xMark.appendChild(xMarkLeft);
-    xMark.appendChild(xMarkRight);
+    const xMark = Html.make.div('error-x-mark');
+    const xMarkLeft = Html.make.div('error-x-mark-left');
+    const xMarkRight = Html.make.div('error-x-mark-right');
+    xMark.append(xMarkLeft, xMarkRight);
     aiErrorIcon.appendChild(xMark);
 
-    // Append loader and error icons to container
-    statusIconsContainer.appendChild(aiLoadingIcon);
-    statusIconsContainer.appendChild(aiErrorIcon);
+    statusIconsContainer.append(aiLoadingIcon, aiErrorIcon);
 
     // Create a div to wrap prompt textarea and buttons
-    let buttonDiv = document.createElement('div');
-    buttonDiv.className = 'button-container';
-    buttonDiv.appendChild(sendButton);
-    buttonDiv.appendChild(regenerateButton);
-    buttonDiv.appendChild(aiNodeSettingsButton);
+    const buttonDiv = Html.make.div('button-container');
+    buttonDiv.append(sendButton, regenerateButton, aiNodeSettingsButton);
 
     // Create the promptDiv
-    let promptDiv = document.createElement('div');
-    promptDiv.className = 'prompt-container';
-    promptDiv.appendChild(statusIconsContainer);
-    promptDiv.appendChild(promptTextArea);
-    promptDiv.appendChild(buttonDiv);
+    const promptDiv = Html.make.div('prompt-container');
+    promptDiv.append(statusIconsContainer, promptTextArea, buttonDiv);
 
     // Wrap elements in a div
-    let ainodewrapperDiv = document.createElement('div');
-    ainodewrapperDiv.className = 'ainodewrapperDiv';
-
-    ainodewrapperDiv.appendChild(aiResponseTextArea);
-    ainodewrapperDiv.appendChild(aiResponseDiv);
-    ainodewrapperDiv.appendChild(promptDiv);
+    const ainodewrapperDiv = Html.make.div('ainodewrapperDiv');
+    ainodewrapperDiv.append(aiResponseTextArea, aiResponseDiv, promptDiv);
 
     const { containerDiv, textarea: customInstructionsTextarea } = createCustomInstructionsTextarea();
     ainodewrapperDiv.appendChild(AiNode.makeSettingsContainer(llmNodeCount, containerDiv));
 
     // Pass this div to addNodeAtNaturalScale
-    let node = addNodeAtNaturalScale(name, []);
+    const node = addNodeAtNaturalScale(name, []);
 
-    let windowDiv = node.windowDiv;
+    const windowDiv = node.windowDiv;
     windowDiv.style.resize = 'both';
     windowDiv.style.minWidth = `450px`;
     windowDiv.style.minHeight = `535px`;
@@ -222,7 +204,7 @@ function createLlmNode(name = '', sx, sy, x, y) {
     return node;
 }
 
-AiNode.init = function(node){
+AiNode.init = function(node, restoreNewLines){
     AiNode.count += 1;
 
     const content = node.content;
@@ -256,13 +238,19 @@ AiNode.init = function(node){
     node.controller = new AbortController();
 
     // Handles parsing of conversation divs.
-    const responseHandler = new ResponseHandler(node);
-    nodeResponseHandlers.set(node, responseHandler); // map response handler to node
+    const resHandler = new ResponseHandler(node);
+    nodeResponseHandlers.set(node, resHandler); // map response handler to node
 
-    node.removeLastResponse = responseHandler.removeLastResponse.bind(responseHandler);
-    responseHandler.restoreAiResponseDiv()
+    node.removeLastResponse = resHandler.removeLastResponse.bind(resHandler);
+    Elem.forEachChild(resHandler.node.aiResponseDiv, resHandler.restoreResponse, resHandler);
 
     node.haltResponse = AiNode.HaltResponse.bind(AiNode, node);
+
+    if (restoreNewLines) {
+        node.aiResponseDiv.querySelectorAll('pre').forEach( (pre)=>{
+            pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
+        })
+    }
 }
 
 AiNode.HaltResponse = function(node){
@@ -271,30 +259,30 @@ AiNode.HaltResponse = function(node){
         node.controller.abort(); // Send the abort signal to the fetch request
         node.aiResponding = false;
         node.shouldContinue = false;
-        node.regenerateButton.innerHTML = SVG.refresh;
+        node.regenerateButton.innerHTML = Svg.refresh;
         node.promptTextArea.value = node.latestUserMessage; // Add the last user message to the prompt input
 
-        // Access the responseHandler from the nodeResponseHandlers map
-        const responseHandler = nodeResponseHandlers.get(node);
+        // Access the resHandler from the nodeResponseHandlers map
+        const resHandler = nodeResponseHandlers.get(node);
 
         // If currently in a code block
-        if (responseHandler && responseHandler.inCodeBlock) {
+        if (resHandler?.inCodeBlock) {
             // Add closing backticks to the current code block content
-            responseHandler.codeBlockContent += '```\n';
+            resHandler.codeBlockContent += '```\n';
 
             // Render the final code block
-            responseHandler.renderCodeBlock(responseHandler.codeBlockContent, true);
+            resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
 
             // Reset the code block state
-            responseHandler.codeBlockContent = '';
-            responseHandler.codeBlockStartIndex = -1;
-            responseHandler.inCodeBlock = false;
+            resHandler.codeBlockContent = '';
+            resHandler.codeBlockStartIndex = -1;
+            resHandler.inCodeBlock = false;
 
             // Clear the textarea value to avoid reprocessing
-            node.aiResponseTextArea.value = responseHandler.previousContent + responseHandler.codeBlockContent;
+            node.aiResponseTextArea.value = resHandler.previousContent + resHandler.codeBlockContent;
 
             // Update the previous content length
-            responseHandler.previousContentLength = node.aiResponseTextArea.value.length;
+            resHandler.previousContentLength = node.aiResponseTextArea.value.length;
             node.aiResponseTextArea.dispatchEvent(new Event('input'));
         }
         node.aiResponseHalted = true;
@@ -421,7 +409,7 @@ AiNode.setupRegenerateButtonListeners = function(node){
 
         this.removeLastResponse();
         this.promptTextArea.value = this.latestUserMessage;
-        this.regenerateButton.innerHTML = SVG.refresh;
+        this.regenerateButton.innerHTML = Svg.refresh;
     };
 
     On.click(button, (e)=>{
@@ -463,8 +451,7 @@ AiNode.makeSettingsContainer = function(nodeIndex, containerDiv){
     const initialMaxTokens = Elem.byId('max-tokens-slider').value;
     const initialMaxContextSize = Elem.byId('max-context-size-slider').value;
 
-    const container = document.createElement('div');
-    container.className = 'ainode-settings-container';
+    const container = Html.make.div('ainode-settings-container');
     container.style.display = 'none';
     container.append(
         createAndConfigureLocalLlmSelects(nodeIndex),
@@ -485,14 +472,13 @@ function toggleSettings(event, settingsContainer) {
 }
 
 Elem.makeSlider = function(id, label, initialValue, min, max, step){
-    const sliderDiv = document.createElement('div');
-    sliderDiv.classList.add('slider-container');
+    const sliderDiv = Html.make.div('slider-container');
 
-    const sliderLabel = document.createElement('label');
+    const sliderLabel = Html.new.label();
     sliderLabel.setAttribute('for', id);
     sliderLabel.innerText = label + ': ' + initialValue;
 
-    const sliderInput = document.createElement('input');
+    const sliderInput = Html.new.input();
     sliderInput.type = 'range';
     sliderInput.id = id;
     sliderInput.min = min;
@@ -584,9 +570,9 @@ AiNode.setupCustomSelect = function(dropdown){
 }
 
 function createAndConfigureLocalLlmSelects(nodeIndex) {
-    const localLlmSelects = document.createElement('div');
-    localLlmSelects.className = `local-llm-dropdown-container-${nodeIndex}`; // for easier selection
-    localLlmSelects.classList.add('inference-template-wrapper');
+    const className = 'local-llm-dropdown-container-' + nodeIndex
+                    + ' inference-template-wrapper';
+    const localLlmSelects = Html.make.div(className);
 
     localLlmSelects.append(
         createSelectWithWrapper('inference', 'inference', nodeIndex),
@@ -652,23 +638,21 @@ const allOptions = [
 
 // Function to create a checkbox array with a subset of options
 function createCheckboxArray(nodeIndex, subsetOptions) {
-    const checkboxArrayDiv = document.createElement('div');
-    checkboxArrayDiv.className = 'checkboxarray';
+    const checkboxArrayDiv = Html.make.div('checkboxarray');
 
     for (const option of subsetOptions) {
-        const checkboxDiv = document.createElement('div');
+        const checkboxDiv = Html.new.div();
 
-        const checkbox = document.createElement('input');
+        const checkbox = Html.new.input();
         checkbox.type = 'checkbox';
         checkbox.id = option.id + '-checkbox-' + nodeIndex;
         checkbox.name = option.id + '-checkbox-' + nodeIndex;
 
-        const label = document.createElement('label');
+        const label = Html.new.label();
         label.setAttribute('for', checkbox.id);
         label.innerText = option.label;
 
-        checkboxDiv.appendChild(checkbox);
-        checkboxDiv.appendChild(label);
+        checkboxDiv.append(checkbox, label);
         checkboxArrayDiv.appendChild(checkboxDiv);
     }
 
@@ -676,20 +660,14 @@ function createCheckboxArray(nodeIndex, subsetOptions) {
 }
 
 function createCustomInstructionsTextarea() {
-    const containerDiv = document.createElement('div');
-    containerDiv.className = 'custom-instructions-container';
+    const containerDiv = Html.make.div('custom-instructions-container');
+    const promptLibraryButton = Html.make.button('prompt-library-button', 'Prompt Library');
 
-    const promptLibraryButton = document.createElement('button');
-    promptLibraryButton.textContent = 'Prompt Library';
-    promptLibraryButton.className = 'prompt-library-button';
-
-    const textarea = document.createElement('textarea');
-    textarea.className = 'custom-instructions-textarea custom-scrollbar';
+    const textarea = Html.make.textarea('custom-instructions-textarea custom-scrollbar');
     textarea.placeholder = 'Enter custom instructions here...';
     textarea.id = `custom-instructions-textarea`; // Add a unique id
 
-    containerDiv.appendChild(promptLibraryButton);
-    containerDiv.appendChild(textarea);
+    containerDiv.append(promptLibraryButton, textarea);
 
     return { containerDiv, textarea };
 }

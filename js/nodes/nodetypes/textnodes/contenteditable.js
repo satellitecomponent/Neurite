@@ -1,57 +1,29 @@
-function createUserInputTextarea() {
-    let editableDiv = document.createElement('textarea');
-    editableDiv.classList.add('editable-div', 'custom-scrollbar', 'textarea-override'); // Add the override class
-    return editableDiv;
-}
-
 function createSyntaxTextarea() {
-    // Create the editor wrapper
-    let editorWrapper = document.createElement('div');
-    editorWrapper.classList.add('editor-wrapper');
+    const editorWrapper = Html.make.div('editor-wrapper');
 
-    // Create the contentEditable input div using the existing function
-    let inputDiv = createUserInputTextarea();
+    const className = 'editable-div custom-scrollbar textarea-override';
+    const textarea = Html.make.textarea(className);
 
     // Create the overlay div for syntax highlighting
-    let displayDiv = document.createElement('div');
-    displayDiv.classList.add('syntax-display-div', 'custom-scrollbar'); // Use the class for styling
+    const displayDiv = Html.make.div('syntax-display-div custom-scrollbar');
 
-    // Append both divs to the wrapper
-    editorWrapper.appendChild(displayDiv);
-    editorWrapper.appendChild(inputDiv);
+    editorWrapper.append(displayDiv, textarea);
 
-    // Function to update the height of the editor wrapper
     function updateEditorHeight() {
-        // Get the current height and styles of the editor wrapper
         const wrapperHeight = editorWrapper.offsetHeight;
         const wrapperStyle = window.getComputedStyle(editorWrapper);
-        const maxHeight = 300; // Maximum height allowed for the wrapper
+        const maxHeight = 300;
+        if (wrapperStyle.height === '100%' || wrapperHeight >= maxHeight) return;
 
-        // Early exit if the height is set to '100%' or exceeds the maximum allowed height
-        if (wrapperStyle.height === '100%' || wrapperHeight >= maxHeight) {
-            return;
-        }
-
-        // Try to get the bounding rectangle of the editor wrapper
         const wrapperRect = editorWrapper.getBoundingClientRect();
-        const screenHeight = window.innerHeight;
         const bottomOffset = 20; // Space to leave at the bottom of the screen
-
-        // Check if the bounding rectangle is visible and below the bottom of the screen
-        if (wrapperRect.bottom + bottomOffset < screenHeight) {
-            // If visible and within the screen, adjust height based on the inputDiv's scrollHeight
-            editorWrapper.style.height = 'auto';
-            editorWrapper.style.height = inputDiv.scrollHeight + 'px';
-        } else if (!wrapperRect) {
-            editorWrapper.style.height = 'auto';
-            editorWrapper.style.height = inputDiv.scrollHeight + 'px';
+        if (wrapperRect.bottom + bottomOffset < window.innerHeight) { // above the bottom
+            editorWrapper.style.height = textarea.scrollHeight + 'px';
         }
     }
 
-    // Add event listeners to the textarea
-    On.input(inputDiv, updateEditorHeight);
+    On.input(textarea, updateEditorHeight);
 
-    // Return the wrapper containing both the editable and the display div
     return editorWrapper;
 }
 
@@ -95,7 +67,7 @@ function addEventsToUserInputTextarea(userInputTextarea, textarea, node, display
     On.focus(userInputTextarea, syncScroll);
 
     On.mousedown(userInputTextarea, (e)=>{
-        if (isEventInsideElement(e, userInputTextarea) && !e.getModifierState(controls.altKey.value)) {
+        if (userInputTextarea.contains(e.target) && !e.getModifierState(controls.altKey.value)) {
             e.stopPropagation();
             // We still allow default behavior, so the contenteditable div remains interactable.
         }
@@ -169,8 +141,4 @@ function syncHiddenTextareaWithInputTextarea(textarea, contentEditable) {
         Logger.debug("Synced hidden textarea:", textarea.value);
         isHiddenTextareaProgrammaticChange = false;
     }
-}
-
-function isEventInsideElement(event, element) {
-    return element.contains(event.target);
 }

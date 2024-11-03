@@ -3,9 +3,8 @@ On.click(Elem.byId('new-save-button'), neuriteSaveEvent);
 
 function downloadData(title, data) {
     const blob = new Blob([data], { type: 'text/plain' });
-    const tempAnchor = document.createElement('a');
+    const tempAnchor = Html.make.a(window.URL.createObjectURL(blob));
     tempAnchor.download = title + '.txt';
-    tempAnchor.href = window.URL.createObjectURL(blob);
     tempAnchor.click();
     setTimeout(function () {
         window.URL.revokeObjectURL(tempAnchor.href);
@@ -21,13 +20,13 @@ function updateSavedNetworks() {
     container.innerHTML = '';
 
     for (let [index, save] of saves.entries()) {
-        const div = document.createElement('div');
+        const div = Html.new.div();
 
         if (index === selectedSaveIndex) {
             div.classList.add("selected-save");
         }
 
-        const titleInput = document.createElement("input");
+        const titleInput = Html.new.input();
         titleInput.type = "text";
         titleInput.value = save.title;
         titleInput.style.border = 'none';
@@ -37,13 +36,11 @@ function updateSavedNetworks() {
             localStorage.setItem("saves", JSON.stringify(saves));
         });
 
-        const data = document.createElement("span");
+        const data = Html.new.span();
         data.textContent = save.data;
         data.style.display = 'none';
 
-        const saveButton = document.createElement("button");
-        saveButton.textContent = "Save";
-        saveButton.className = 'linkbuttons';
+        const saveButton = Html.make.button('linkbuttons', "Save");
         On.click(saveButton, (e)=>{
             if (index !== selectedSaveIndex && !window.confirm(`This will overwrite ${save.title} with the currently selected save, ${selectedSaveTitle} Continue?`)) {
                 return;
@@ -52,9 +49,7 @@ function updateSavedNetworks() {
             neuriteSaveEvent(existingTitle = save.title)
         });
 
-        const loadButton = document.createElement('button');
-        loadButton.textContent = "Load";
-        loadButton.className = 'linkbuttons';
+        const loadButton = Html.make.button('linkbuttons', "Load");
         On.click(loadButton, (e)=>{
             function updateLoadState() {
                 autosave()
@@ -78,9 +73,7 @@ function updateSavedNetworks() {
             updateSavedNetworks();
         });
 
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = "X";
-        deleteButton.className = 'linkbuttons';
+        const deleteButton = Html.make.button('linkbuttons', "X");
         On.click(deleteButton, (e)=>{
             // Remove the save from the array
             saves.splice(index, 1);
@@ -98,15 +91,12 @@ function updateSavedNetworks() {
             updateSavedNetworks();
         });
 
-        const downloadButton = document.createElement('button');
-        downloadButton.textContent = "↓";
-        downloadButton.className = 'linkbuttons';
+        const downloadButton = Html.make.button('linkbuttons', "↓");
         On.click(downloadButton, (e)=>{
             const blob = new Blob([save.data], { type: 'text/plain' });
 
-            const tempAnchor = document.createElement('a');
+            const tempAnchor = Html.make.a(URL.createObjectURL(blob));
             tempAnchor.download = save.title + '.txt';
-            tempAnchor.href = URL.createObjectURL(blob);
 
             tempAnchor.click();
             setTimeout(URL.revokeObjectURL.bind(URL, tempAnchor.href), 1);
@@ -253,7 +243,7 @@ function handleSaveConfirmation(title, saveData, force = false) {
 const NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
 
 function replaceNewLinesInLLMSaveData(nodeData) {
-    const tempDiv = document.createElement('div');
+    const tempDiv = Html.new.div();
     tempDiv.innerHTML = nodeData;
 
     tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
@@ -270,12 +260,6 @@ function replaceNewLinesInLLMSaveData(nodeData) {
     });
 
     return tempDiv.innerHTML;
-}
-
-function restoreNewLinesInPreElements(nodeElement) {
-    nodeElement.querySelectorAll('pre').forEach(pre => {
-        pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
-    });
 }
 
 function collectAdditionalSaveObjects() {
@@ -348,7 +332,7 @@ function neuriteSaveEvent(existingTitle = null) {
         processor.processInput();
     });
 
-    Graph.nodes.forEach((node) => {
+    Graph.forEachNode( (node)=>{
         node.updateEdgeData();
         node.updateNodeData();
     });
@@ -397,10 +381,9 @@ function neuriteSaveEvent(existingTitle = null) {
 }
 
 for (const htmlnode of htmlnodes) {
-    registernode(new Node(undefined, htmlnode, true)) // Indicate edge creation with `true`
-}
-for (const node of Graph.nodes) {
-    node.init(nodeMap)
+    const node = new Node(undefined, htmlnode, true); // createEdges
+    Graph.registerNode(node);
+    node.init();
 }
 
 function clearNet() {
@@ -414,10 +397,7 @@ function clearNet() {
     Edge.directionalityMap.clear();
 
     // Remove all nodes
-    const nodes = Graph.nodes;
-    while (nodes.length > 0) {
-        nodes[nodes.length - 1].remove();
-    }
+    Graph.forEachNode( (node)=>node.remove() );
 
     AiNode.count = 0;
     zetPanes.resetAllPanes();
@@ -426,7 +406,7 @@ function clearNet() {
 function loadNet(text, clobber, createEdges = true) {
     if (clobber) clearNet();
 
-    const div = document.createElement('div');
+    const div = Html.new.div();
     div.innerHTML = text;
 
     // Check for the previous single-tab save object
@@ -445,15 +425,16 @@ function loadNet(text, clobber, createEdges = true) {
     for (const child of div.children) {
         const node = new Node(undefined, child, true, undefined, createEdges);
         newNodes.push(node);
-        registernode(node);
+        Graph.registerNode(node);
     }
 
-    populateDirectionalityMap(div, nodeMap);
+    Elem.forEachChild(div, populateDirectionalityMap);
 
     for (const node of newNodes) {
         htmlnodes_parent.appendChild(node.content);
-        node.init(nodeMap);
+        node.init();
         reconstructSavedNode(node);
+        node.sensor = new NodeSensor(node, 3);
     }
 
     if (zettelSaveElem) {
@@ -468,35 +449,26 @@ function loadNet(text, clobber, createEdges = true) {
     });
 }
 
-function populateDirectionalityMap(d, nodeMap) {
-    Array.from(d.children).forEach(nodeElement => {
-        if (!nodeElement.hasAttribute('data-edges')) return;
+function populateDirectionalityMap() {
+    const edges = nodeElement.getAttribute('data-edges');
+    if (!edges) return;
 
-        const edgesData = JSON.parse(nodeElement.getAttribute('data-edges'));
-        edgesData.forEach(edgeData => {
-            const edgeKey = edgeData.edgeKey;
-            if (Edge.directionalityMap.has(edgeKey)) return;
+    JSON.parse(edges).forEach( (edgeData)=>{
+        const edgeKey = edgeData.edgeKey;
+        if (Edge.directionalityMap.has(edgeKey)) return;
 
-            Edge.directionalityMap.set(edgeKey, {
-                start: nodeMap[edgeData.directionality.start],
-                end: nodeMap[edgeData.directionality.end]
-            });
+        Edge.directionalityMap.set(edgeKey, {
+            start: Node.byUuid(edgeData.directionality.start),
+            end: Node.byUuid(edgeData.directionality.end)
         });
     });
 }
 
 function reconstructSavedNode(node) {
     if (node.isTextNode) TextNode.init(node);
-
-    if (node.isLLM) {
-        AiNode.init(node);
-        restoreNewLinesInPreElements(node.aiResponseDiv);
-    }
-
+    if (node.isLLM) AiNode.init(node, true); // restoreNewLines
     if (node.isLink) LinkNode.init(node);
-    if (node.isFileTree) initFileTreeNode(node);
-
-    node.sensor = new NodeSensor(node, 3);
+    if (node.isFileTree) FileTreeNode.init(node);
 }
 
 const autosaveEnabledCheckbox = Elem.byId('autosave-enabled');

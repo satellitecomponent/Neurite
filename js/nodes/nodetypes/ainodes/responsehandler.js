@@ -41,19 +41,19 @@ class ResponseHandler {
 
     handleInput = async ()=>{
         try {
-            let content = this.node.aiResponseTextArea.value;
+            const content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
             let trimmedNewContent = newContent.trim();
             if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
                 trimmedNewContent = trimmedNewContent.trimStart();
             }
             // Find the last occurrence of the prompt identifier in the trimmed content
-            let lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
+            const lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
             if (lastPromptIndex !== -1) {
-                let promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
-                let segments = promptContent.split('```');
+                const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
+                const segments = promptContent.split('```');
                 for (let i = 0; i < segments.length; i++) {
-                    let segment = segments[i].trim();
+                    const segment = segments[i].trim();
                     if (segment) {
                         if (i % 2 === 0) {
                             this.handleUserPrompt(segment); // Even segments are regular text
@@ -66,9 +66,9 @@ class ResponseHandler {
             } else {
                 if (this.inCodeBlock) {
                     this.codeBlockContent += newContent;
-                    let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                    const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                     if (endOfCodeBlockIndex !== -1) {
-                        let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                        const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
                         this.renderCodeBlock(codeContent, true);
                         this.codeBlockContent = '';
                         this.codeBlockStartIndex = -1;
@@ -81,7 +81,7 @@ class ResponseHandler {
                 }
 
                 while (newContent.length > 0) {
-                    let startOfCodeBlockIndex = newContent.indexOf('```');
+                    const startOfCodeBlockIndex = newContent.indexOf('```');
                     if (startOfCodeBlockIndex !== -1) {
                         if (startOfCodeBlockIndex > 0) {
                             this.handleMarkdown(newContent.substring(0, startOfCodeBlockIndex));
@@ -89,9 +89,9 @@ class ResponseHandler {
                         this.inCodeBlock = true;
                         this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
                         this.codeBlockContent = newContent.substring(startOfCodeBlockIndex + 3);
-                        let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                        const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                         if (endOfCodeBlockIndex !== -1) {
-                            let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                            const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
                             this.renderCodeBlock(codeContent, true);
                             this.codeBlockContent = '';
                             this.codeBlockStartIndex = -1;
@@ -114,26 +114,23 @@ class ResponseHandler {
         }
     }
 
-    restoreAiResponseDiv() {
-        const children = this.node.aiResponseDiv.children;
-        Array.prototype.forEach.call(children, (child)=>{
-            const userPromptDiv = child.querySelector('.user-prompt');
-            if (userPromptDiv) {
-                this.setupUserPrompt(userPromptDiv)
-            } else if (child.classList.contains('response-wrapper')) {
-                const responseDiv = child.querySelector('.ai-response');
-                if (!responseDiv) return;
+    restoreResponse(child){
+        const divUserPrompt = child.querySelector('.user-prompt');
+        if (divUserPrompt) {
+            this.setupUserPrompt(divUserPrompt)
+        } else if (child.classList.contains('response-wrapper')) {
+            const divResponse = child.querySelector('.ai-response');
+            if (!divResponse) return;
 
-                this.setupAiResponse(child);
-                this.reattachTooltips(responseDiv);
-            } else if (child.classList.contains('code-block-container')) {
-                this.setupCodeBlock(child)
-            }
-        })
+            this.setupAiResponse(child);
+            this.reattachTooltips(divResponse);
+        } else if (child.classList.contains('code-block-container')) {
+            this.setupCodeBlock(child)
+        }
     }
 
-    reattachTooltips(responseDiv) {
-        responseDiv.querySelectorAll('a.snippet-ref').forEach(link => {
+    reattachTooltips(divResponse) {
+        divResponse.querySelectorAll('a.snippet-ref').forEach(link => {
             if (!link.dataset.snippetData) return;
 
             this.tooltip.detachTooltipEvents(link);
@@ -167,9 +164,8 @@ class ResponseHandler {
         const recentResponseDivs = aiResponseDivs.slice(-10);
 
         for (let i = recentResponseDivs.length - 1; i >= 0; i--) {
-            const responseDiv = recentResponseDivs[i];
-            const links = responseDiv.querySelectorAll('a.snippet-ref');
-            for (let link of links) {
+            const links = recentResponseDivs[i].querySelectorAll('a.snippet-ref');
+            for (const link of links) {
                 if (!link.dataset.snippetData) continue;
 
                 const snippetDataList = JSON.parse(link.dataset.snippetData);
@@ -205,70 +201,66 @@ class ResponseHandler {
     }
 
     handleMarkdown(markdown) {
-        if (this.node.aiResponding || this.node.localAiResponding) {
-            let segments = markdown.split('\n\n\n');
-            let linkFound = false;
+        if (!this.node.aiResponding && !this.node.localAiResponding) return;
 
-            segments.forEach((segment, index) => {
-                let responseDiv = this.getOrCreateResponseDiv(index);
-                this.appendMarkdownSegment(responseDiv, segment);
-                // Check for links as segments are processed to avoid re-querying later
-                if (!linkFound && responseDiv.querySelector('a')) linkFound = true;
-            });
+        const segments = markdown.split('\n\n\n');
+        let linkFound = false;
 
-            if (linkFound) {
-                this.attachSnippetTooltips(this.node.aiResponseDiv);
-            }
+        segments.forEach((segment, index) => {
+            const divResponse = this.getOrCreateResponseDiv(index);
+            this.appendMarkdownSegment(divResponse, segment);
+            // Check for links as segments are processed to avoid re-querying later
+            if (!linkFound && divResponse.querySelector('a')) linkFound = true;
+        });
+
+        if (linkFound) {
+            this.attachSnippetTooltips(this.node.aiResponseDiv);
         }
     }
 
-    appendMarkdownSegment(responseDiv, segment) {
+    appendMarkdownSegment(divResponse, segment) {
         // Update the dataset with the new segment
-        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
+        divResponse.dataset.markdown = (divResponse.dataset.markdown || '') + segment;
 
         // Updated regex to handle mentions more flexibly
         // Matches mentions starting with @, and including any subsequent @ symbols until a space or end of string
         const mentionPattern = /(?<=^|\s)@[a-zA-Z0-9._@-]+/g;
 
         // Replace mentions with a span for highlighting
-        const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, (match) => {
+        const highlightedSegment = divResponse.dataset.markdown.replace(mentionPattern, (match) => {
             return `<span class="mention">${match}</span>`
         });
 
         // Properly parse and render the updated content using the marked library
-        let parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
-        responseDiv.innerHTML = parsedHtml;
+        const parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
+        divResponse.innerHTML = parsedHtml;
     }
 
     getOrCreateResponseDiv(index) {
-        const lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
-        if (index === 0 && lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
-            return lastWrapperDiv.querySelector('.ai-response');
+        const divLastWrapper = this.node.aiResponseDiv.lastElementChild;
+        if (index === 0 && divLastWrapper && divLastWrapper.classList.contains('response-wrapper')) {
+            return divLastWrapper.querySelector('.ai-response');
         }
 
-        const responseDiv = document.createElement('div');
-        responseDiv.className = 'ai-response';
+        const divResponse = Html.make.div('ai-response');
 
-        const wrapperDiv = document.createElement('div');
-        wrapperDiv.className = 'response-wrapper';
-        wrapperDiv.appendChild(this.createHandleDiv());
-        wrapperDiv.appendChild(responseDiv);
+        const divWrapper = Html.make.div('response-wrapper');
+        divWrapper.append(this.makeDivHandle(), divResponse);
 
-        this.node.aiResponseDiv.appendChild(wrapperDiv);
-        this.setupAiResponse(responseDiv);
+        this.node.aiResponseDiv.appendChild(divWrapper);
+        this.setupAiResponse(divResponse);
 
-        return responseDiv;
+        return divResponse;
     }
 
-    createHandleDiv() {
-        const handleDiv = document.createElement('div');
-        handleDiv.className = 'drag-handle';
-        handleDiv.innerHTML = `
+    makeDivHandle() {
+        const div = Html.make.div('drag-handle');
+        div.innerHTML = `
             <span class="dot"></span>
             <span class="dot"></span>
             <span class="dot"></span>
         `;
-        return handleDiv;
+        return div;
     }
 
     getMarkedRenderer() {
@@ -279,56 +271,49 @@ class ResponseHandler {
                 return `<img src="${href}" alt="${text}" title="${title || ''}" />`;
             } else {
                 // If the image URL is not a valid URL, treat it as a relative path
-                let basePath = 'path/to/your/images/directory/';
-                let imagePath = basePath + href;
+                const imagePath = 'path/to/your/images/directory/' + href;
                 return `<img src="${imagePath}" alt="${text}" title="${title || ''}" />`;
             }
         };
         return renderer;
     }
 
-    setupAiResponse(responseDiv) {
-        // Find the wrapper and handle divs relative to the responseDiv
-        const wrapperDiv = responseDiv.closest('.response-wrapper');
-        const handleDiv = wrapperDiv.querySelector('.drag-handle');
+    setupAiResponse(divResponse) {
+        // Find the wrapper and handle divs relative to the divResponse
+        const divWrapper = divResponse.closest('.response-wrapper');
+        const divHandle = divWrapper.querySelector('.drag-handle');
 
         // Apply logic specific to AI response div
-        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
+        makeDivDraggable(divWrapper, 'AI Response', divHandle);
 
-        const classList = wrapperDiv.classList;
-        On.mouseover(handleDiv, classList.add.bind(classList, 'hovered'));
-        On.mouseout(handleDiv, classList.remove.bind(classList, 'hovered'));
+        const classList = divWrapper.classList;
+        On.mouseover(divHandle, classList.add.bind(classList, 'hovered'));
+        On.mouseout(divHandle, classList.remove.bind(classList, 'hovered'));
     }
 
     handleUserPrompt(promptContent) {
         if (!promptContent) return;
 
-        // Replace newline characters with <br> tags
-        let formattedContent = promptContent.replace(/\n/g, '<br>');
+        const formattedContent = promptContent.replace(/\n/g, '<br>');
 
-        // Create a new div for the outer container
-        let outerDiv = document.createElement('div');
-        outerDiv.style.width = '100%';
-        outerDiv.style.textAlign = 'right';
+        const divOuter = Html.new.div();
+        divOuter.style.width = '100%';
+        divOuter.style.textAlign = 'right';
 
-        // Create a new div for the user prompt
-        let promptDiv = document.createElement('div');
-        promptDiv.className = 'user-prompt';
-        promptDiv.id = `prompt-${this.responseCount}`;  // Assign a unique ID to each prompt
-        promptDiv.contentEditable = false; // Set contentEditable to false when the promptDiv is created
+        const divPrompt = Html.make.div('user-prompt');
+        divPrompt.id = 'prompt-' + this.responseCount;
+        divPrompt.contentEditable = false;
 
         // Set the innerHTML to display new lines correctly
-        promptDiv.innerHTML = formattedContent;
+        divPrompt.innerHTML = formattedContent;
 
-        // Append the prompt div to the outer div
-        outerDiv.appendChild(promptDiv);
+        divOuter.appendChild(divPrompt);
 
-        // Append the outer div to the response area
-        this.node.aiResponseDiv.appendChild(outerDiv);
+        this.node.aiResponseDiv.appendChild(divOuter);
 
-        this.setupUserPrompt(promptDiv);
+        this.setupUserPrompt(divPrompt);
 
-        this.responseCount++;  // Increment the response count after each prompt
+        this.responseCount += 1;
     }
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
@@ -348,76 +333,63 @@ class ResponseHandler {
         }
 
         const codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
-        let existingContainerDiv = Elem.byId(codeBlockDivId);
+        let divExistingContainer = Elem.byId(codeBlockDivId);
 
-        if (!existingContainerDiv) {
-            existingContainerDiv = document.createElement('div');
-            existingContainerDiv.id = codeBlockDivId;
-            existingContainerDiv.className = "code-block-container";
-            this.node.aiResponseDiv.appendChild(existingContainerDiv);
+        if (!divExistingContainer) {
+            divExistingContainer = Html.make.div('code-block-container');
+            divExistingContainer.id = codeBlockDivId;
+            this.node.aiResponseDiv.appendChild(divExistingContainer);
 
             // Add a specific identifier or class for user-prompt code blocks
             if (isUserPromptCodeBlock) {
-                existingContainerDiv.classList.add('user-prompt-codeblock');
+                divExistingContainer.classList.add('user-prompt-codeblock');
             }
 
-            const languageLabelDiv = document.createElement('div');
-            languageLabelDiv.className = "language-label";
-            existingContainerDiv.appendChild(languageLabelDiv);
+            const divLanguageLabel = Html.make.div('language-label');
+            const divExistingWrapper = Html.make.div('code-block-wrapper custom-scrollbar');
+            divExistingContainer.append(divLanguageLabel, divExistingWrapper);
 
-            const existingWrapperDiv = document.createElement('div');
-            existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
-            existingContainerDiv.appendChild(existingWrapperDiv);
-
-            const preDiv = document.createElement('pre');
-            preDiv.className = "code-block";
-            existingWrapperDiv.appendChild(preDiv);
+            divExistingWrapper.append(Html.make.pre('code-block'));
         }
 
-        const existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
-        const preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
+        const divExistingWrapper = divExistingContainer.getElementsByClassName('code-block-wrapper')[0];
+        const divPre = divExistingWrapper.getElementsByClassName('code-block')[0];
 
-        const codeElement = document.createElement('code');
-        codeElement.className = 'language-' + (languageString || this.currentLanguage);
+        const className = 'language-' + (languageString || this.currentLanguage);
+        const codeElement = Html.make.code(className);
         codeElement.textContent = decodeHTML(encodeHTML(codeContent));
 
         Prism.highlightElement(codeElement);
 
-        preDiv.innerHTML = '';
-        preDiv.appendChild(codeElement);
+        divPre.innerHTML = '';
+        divPre.appendChild(codeElement);
 
-        const languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
-        languageLabelDiv.innerText = languageString || this.currentLanguage;
-        languageLabelDiv.style.display = 'flex';
-        languageLabelDiv.style.justifyContent = 'space-between';
-        languageLabelDiv.style.alignItems = 'center';
+        const divLanguageLabel = divExistingContainer.getElementsByClassName('language-label')[0];
+        divLanguageLabel.innerText = languageString || this.currentLanguage;
+        divLanguageLabel.style.display = 'flex';
+        divLanguageLabel.style.justifyContent = 'space-between';
+        divLanguageLabel.style.alignItems = 'center';
 
-        const copyButton = document.createElement('button');
-        copyButton.innerText = 'Copy';
-        copyButton.className = 'copy-btn';
+        const copyButton = Html.make.button('copy-btn', "Copy");
+        divLanguageLabel.appendChild(copyButton);
 
-        languageLabelDiv.appendChild(copyButton);
-
-        this.setupCodeBlock(existingContainerDiv);
+        this.setupCodeBlock(divExistingContainer);
 
         if (isFinal) this.node.codeBlockCount += 1;
         this.node.lastBlockId = (isFinal ? null : codeBlockDivId);
     }
 
-    setupUserPrompt(promptDiv) {
-        // Make the prompt div draggable
-        makeDivDraggable(promptDiv, 'Prompt');
+    setupUserPrompt(divPrompt) {
+        makeDivDraggable(divPrompt, 'Prompt');
 
         let isEditing = false;
 
         const handleKeyDown = (event)=>{
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                this.removeResponsesUntil(promptDiv.id);
+                this.removeResponsesUntil(divPrompt.id);
 
-                // Get the HTML content of the promptDiv and replace <br> with newline
-                const message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
+                const message = divPrompt.innerHTML.replace(/<br\s*\/?>/gi, '\n');
                 Logger.debug(`Sending message: "${message}"`);
                 AiNode.sendMessage(this.node, message);
             }
@@ -425,21 +397,21 @@ class ResponseHandler {
 
         function onBlur(){
             if (isEditing) { // div loses focus
-                promptDiv.classList.remove('editing');
-                promptDiv.contentEditable = false;
+                divPrompt.classList.remove('editing');
+                divPrompt.contentEditable = false;
 
                 isEditing = false;
 
                 // Reset styles to non-editing state
-                promptDiv.style.backgroundColor = '';
-                promptDiv.style.color = '';
+                divPrompt.style.backgroundColor = '';
+                divPrompt.style.color = '';
 
-                promptDiv.style.cursor = "move";
+                divPrompt.style.cursor = "move";
 
                 // Make the div draggable
-                makeDivDraggable(promptDiv, 'Prompt');
-                On.dragstart(promptDiv, (e)=>(isEditing ? false : null) );
-                Off.keydown(promptDiv, handleKeyDown);
+                makeDivDraggable(divPrompt, 'Prompt');
+                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
+                Off.keydown(divPrompt, handleKeyDown);
             }
         }
 
@@ -449,12 +421,12 @@ class ResponseHandler {
 
             isEditing = !isEditing;
             if (isEditing) { // entering edit mode
-                promptDiv.classList.add('editing');
-                promptDiv.contentEditable = true;
-                promptDiv.removeAttribute('draggable');
+                divPrompt.classList.add('editing');
+                divPrompt.contentEditable = true;
+                divPrompt.removeAttribute('draggable');
 
                 // Set the background and text color to match original, remove inherited text decoration
-                const style = promptDiv.style;
+                const style = divPrompt.style;
                 style.cursor = 'text';
                 style.backgroundColor = 'inherit';
                 style.color = '#bbb';
@@ -462,42 +434,40 @@ class ResponseHandler {
                 style.outline = 'none';
                 style.border = 'none';
 
-                promptDiv.focus();
-                On.keydown(promptDiv, handleKeyDown);
+                divPrompt.focus();
+                On.keydown(divPrompt, handleKeyDown);
 
-                // Set promptDiv non-draggable
-                On.dragstart(promptDiv, (e)=>false );
+                On.dragstart(divPrompt, (e)=>false ); // Make non-draggable
             } else { // leaving edit mode
-                promptDiv.classList.remove('editing');
-                promptDiv.contentEditable = false;
+                divPrompt.classList.remove('editing');
+                divPrompt.contentEditable = false;
 
-                const style = promptDiv.style;
+                const style = divPrompt.style;
                 style.backgroundColor = '';
                 style.color = '';
                 style.cursor = "move";
 
-                makeDivDraggable(promptDiv, 'Prompt');
-                On.dragstart(promptDiv, (e)=>(isEditing ? false : null) );
-                Off.keydown(promptDiv, handleKeyDown);
+                makeDivDraggable(divPrompt, 'Prompt');
+                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
+                Off.keydown(divPrompt, handleKeyDown);
             }
         }
 
-        On.blur(promptDiv, onBlur);
-        On.dblclick(promptDiv, onDblClick);
+        On.blur(divPrompt, onBlur);
+        On.dblclick(divPrompt, onDblClick);
     }
 
-    setupCodeBlock(codeBlockDiv) {
-        // Query necessary child elements within the codeBlockDiv
-        const languageLabelDiv = codeBlockDiv.querySelector('.language-label');
-        const copyButton = codeBlockDiv.querySelector('.copy-btn');
-        const preDiv = codeBlockDiv.querySelector('.code-block');
-        const decodedContent = preDiv.textContent; // Assuming the content is within the <pre> tag
+    setupCodeBlock(divCodeBlock) {
+        // Query necessary child elements within divCodeBlock
+        const divLanguageLabel = divCodeBlock.querySelector('.language-label');
+        const copyButton = divCodeBlock.querySelector('.copy-btn');
+        const decodedContent = divCodeBlock.querySelector('.code-block');
 
         // Apply logic specific to code block div
-        makeDivDraggable(codeBlockDiv, 'Code Block', languageLabelDiv);
+        makeDivDraggable(divCodeBlock, 'Code Block', divLanguageLabel);
 
         On.click(copyButton, (e)=>{
-            const textarea = document.createElement('textarea');
+            const textarea = Html.new.textarea();
             textarea.value = decodedContent;
             document.body.appendChild(textarea);
             textarea.select();
@@ -510,23 +480,23 @@ class ResponseHandler {
             document.body.removeChild(textarea);
         });
 
-        On.mouseover(codeBlockDiv, (e)=>{
-            if (e.target === languageLabelDiv || e.target === copyButton) {
-                codeBlockDiv.classList.add('hovered');
+        On.mouseover(divCodeBlock, (e)=>{
+            if (e.target === divLanguageLabel || e.target === copyButton) {
+                divCodeBlock.classList.add('hovered');
             }
         });
-        On.mouseout(codeBlockDiv, (e)=>{
-            if (e.target === languageLabelDiv || e.target === copyButton) {
-                codeBlockDiv.classList.remove('hovered');
+        On.mouseout(divCodeBlock, (e)=>{
+            if (e.target === divLanguageLabel || e.target === copyButton) {
+                divCodeBlock.classList.remove('hovered');
             }
         });
     }
 
     removeLastResponse() {
         // Handling the div as per the new version
-        let prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
-        let lastPrompt = prompts[prompts.length - 1];
-        let lastPromptId = lastPrompt ? lastPrompt.id : null;
+        const prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
+        const lastPrompt = prompts[prompts.length - 1];
+        const lastPromptId = lastPrompt ? lastPrompt.id : null;
 
         if (lastPrompt) {
             // Remove everything after the last 'user-prompt' div
@@ -543,7 +513,7 @@ class ResponseHandler {
         // Find the index of the last "Prompt:"
         let lastPromptIndex = lines.length - 1;
         while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(`${PROMPT_IDENTIFIER}`)) {
-            lastPromptIndex--;
+            lastPromptIndex -= 1;
         }
 
         // Remove all lines from the last "Prompt:" to the end
@@ -562,11 +532,11 @@ class ResponseHandler {
             this.currentLanguage = "javascript";
 
             // Remove the partial code block from the div if present
-            const codeBlockDiv = Elem.byId(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
-            if (codeBlockDiv) codeBlockDiv.parentNode.removeChild(codeBlockDiv);
+            const divCodeBlock = Elem.byId(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
+            if (divCodeBlock) divCodeBlock.parentNode.removeChild(divCodeBlock);
 
             // Remove the partial code block from the textarea
-            let codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
+            const codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
             if (codeBlockStartLine >= 0) {
                 this.node.aiResponseTextArea.value = this.node.aiResponseTextArea.value.substring(0, codeBlockStartLine);
                 this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength again

@@ -56,8 +56,7 @@ class Tooltip {
     }
 
     createTooltipElement() {
-        const div = document.createElement('div');
-        div.classList.add('tooltip');
+        const div = Html.make.div('tooltip');
         div.style.position = 'fixed';
         div.style.zIndex = this.options.zIndex;
         div.style.width = this.options.width;

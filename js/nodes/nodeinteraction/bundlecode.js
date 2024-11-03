@@ -7,19 +7,19 @@ let pythonViewMap = new Map();
 let builtinModules = ["io", "base64", "sys"];
 
 async function loadPyodideAndSetup() {
-    let pyodideLoadPromise = loadPyodide({
+    const pyodideLoadPromise = loadPyodide({
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.0/full/",
     });
     pyodide = await pyodideLoadPromise;
 
     // Define the JavaScript function to be called from Python
     function outputHTML(html, identifier) {
-        let pythonView = pythonViewMap.get(identifier);
-        if (pythonView) {
-            let resultDiv = document.createElement("div");
-            resultDiv.innerHTML = html || '';
-            pythonView.appendChild(resultDiv);
-        }
+        const pythonView = pythonViewMap.get(identifier);
+        if (!pythonView) return;
+
+        const resultDiv = Html.new.div();
+        resultDiv.innerHTML = html || '';
+        pythonView.appendChild(resultDiv);
     }
     window.outputHTML = outputHTML;
 

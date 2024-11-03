@@ -7,9 +7,8 @@ Suggestions.Component = class {
         this.init();
     }
     makeDivContainer() {
-        const div = document.createElement('div');
+        const div = Html.make.div('suggestions-container');
         div.id = 'suggestions-container';
-        div.classList.add('suggestions-container');
         return div;
     }
     init() {
@@ -60,34 +59,32 @@ Suggestions.Item = class {
     }
 
     makeBtnPin(){
-        const btnPin = document.createElement('button');
-        btnPin.classList.add('pin-button');
-        if (this.isPinned) btnPin.classList.add('pinned');
+        const button = Html.make.button('pin-button');
+        if (this.isPinned) button.classList.add('pinned');
 
-        btnPin.append(this.svgPlus, this.svgMinus);
-        return btnPin;
+        button.append(this.svgPlus, this.svgMinus);
+        return button;
     }
     makeDivItem(){
-        const divItem = document.createElement('div');
-        divItem.classList.add('suggestion-item');
-        divItem.append(this.spanText, this.btnPin);
-        return divItem;
+        const div = Html.make.div('suggestion-item');
+        div.append(this.spanText, this.btnPin);
+        return div;
     }
     makeSpanText(){
-        const spanText = document.createElement('span');
-        spanText.textContent = this.text;
-        return spanText;
+        const span = Html.new.span();
+        span.textContent = this.text;
+        return span;
     }
     makeSvgIcon(key){
-        const SvgIcon = SVG.create.svg();
-        SvgIcon.setAttribute('class', 'icon icon-' + key);
-        SvgIcon.setAttribute('viewBox', '0 0 24 24');
-        SvgIcon.setAttribute('width', '1em');
-        SvgIcon.setAttribute('height', '1em');
-        const use = SVG.create.use();
+        const svg = Svg.new.svg();
+        svg.setAttribute('class', 'icon icon-' + key);
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '1em');
+        svg.setAttribute('height', '1em');
+        const use = Svg.new.use();
         use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#icon-' + key);
-        SvgIcon.appendChild(use);
-        return SvgIcon;
+        svg.appendChild(use);
+        return svg;
     }
 
     togglePin = (e)=>{
@@ -185,10 +182,10 @@ const pinnedItemsManager = new PinnedItemsManager('pinnedContextMenuItems');
 
 function pinSuggestionToContextMenu(uniqueIdentifier, menu, node, isAlreadyPinned = false) {
     const { displayText, executeAction } = getDynamicActionDetails(uniqueIdentifier, node);
-    let menuItem = Array.from(menu.children).find(item => item.dataset.identifier === uniqueIdentifier);
+    const menuItem = Array.from(menu.children).find(item => item.dataset.identifier === uniqueIdentifier);
 
     if (!menuItem) {
-        menuItem = createMenuItem(displayText, uniqueIdentifier, executeAction);
+        const menuItem = ContextMenu.createMenuItem(displayText, uniqueIdentifier, executeAction);
         On.click(menuItem, (e)=>{
             Suggestions.global.hide();
             addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again

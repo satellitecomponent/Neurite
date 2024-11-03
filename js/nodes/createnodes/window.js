@@ -1,38 +1,32 @@
 function windowify(title, content, pos, scale, iscale, link) {
-    const odiv = document.createElement('div');
-    const div = document.createElement('div');
+    const odiv = Html.new.div();
+    const div = Html.make.div('window');
     const w = Elem.byId('elements').children[0].cloneNode(true);
     w.className = 'button-container';
 
-    const headerContainer = document.createElement('div');
-    headerContainer.className = 'header-container';
+    const headerContainer = Html.make.div('header-container');
     headerContainer.appendChild(w);
 
     div.appendChild(headerContainer);
     odiv.appendChild(div);
 
-    const innerContent = document.createElement('div');
-    innerContent.className = 'content';
+    const innerContent = Html.make.div('content');
     for (const c of content) {
         innerContent.appendChild(c);
     }
     div.appendChild(innerContent);
 
     odiv.setAttribute('data-init', 'window');
-    div.setAttribute('class', 'window');
 
-    const titleInput = document.createElement('input');
+    const titleInput = Html.make.input('title-input');
     titleInput.setAttribute('type', 'text');
     titleInput.setAttribute('value', title);
-    titleInput.className = 'title-input';
     headerContainer.appendChild(titleInput);
 
-    const resizeContainer = document.createElement('div');
-    resizeContainer.className = 'resize-container';
+    const resizeContainer = Html.make.div('resize-container');
     div.appendChild(resizeContainer);
 
-    const resizeHandle = document.createElement('div');
-    resizeHandle.className = 'resize-handle';
+    const resizeHandle = Html.make.div('resize-handle');
     resizeContainer.appendChild(resizeHandle);
 
     const node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
@@ -239,31 +233,20 @@ function rewindowify(node) {
 function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 0.5, window_it = true) {
     let node;
     if (window_it) {
-        let pos = toZ(mousePos)
+        const pos = toZ(mousePos)
         if (!Array.isArray(content)) {
             content = [content];
         }
         node = windowify(title, content, pos, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
         htmlnodes_parent.appendChild(node.content);
     } else {
-        let div = document.createElement('div');
+        const div = Html.new.div();
         node = new Node(toZ(mousePos), div, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
         div.appendChild(content);
         htmlnodes_parent.appendChild(div);
     }
-    registernode(node)
+    Graph.registerNode(node)
     return node;
-}
-
-function registernode(node) {
-    let id = Graph.nodes.length;
-    let div = node.content;
-    /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
-    div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
-    div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
-    div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
-    Graph.nodes.push(node);
-    nodeMap[node.uuid] = node;
 }
 
 function scalingFactorsFromElem(element) {

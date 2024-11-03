@@ -75,7 +75,7 @@ class NodeSimulation {
     }
 
     updateMousePathWidth() {
-        let width = zoom.mag() * 0.0005 * SVG.zoom;
+        let width = zoom.mag() * 0.0005 * Svg.zoom;
 
         if (NodeMode.val && prevNode !== undefined) {
             svg_mousePath.setAttribute('d', "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
@@ -110,10 +110,10 @@ class NodeSimulation {
 
     updateNodes(dt) {
         dt *= (1 - nodeMode_v) ** 5;
-        for (const node of Graph.nodes) {
+        Graph.forEachNode( (node)=>{
             node.step(dt);
             //let d = toZ(mousePos).minus(n.pos);
-        }
+        });
         return this;
     }
 
@@ -139,7 +139,7 @@ class NodeSimulation {
         if (SelectedNodes.uuids.size > 0) this.processSelectedNodes();
 
         this.updateAutopilot(time);
-        SVG.updateViewbox();
+        Svg.updateViewbox();
         this.updateMousePath();
         this.updateMousePathWidth();
         const dt = this.updateFPS(time);

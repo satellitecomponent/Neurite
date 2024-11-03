@@ -46,20 +46,14 @@ function calculateImageTokenCost(width, height, detailLevel) {
 // The convertImageToBase64 function should take a blob URL, create an Image object,
 // load the blob URL, and then perform the canvas draw and toDataURL conversion.
 function convertImageToBase64(imageElement, callback) {
-    // Create an off-screen canvas element
-    let canvas = document.createElement('canvas');
+    const canvas = Html.new.canvas();
     canvas.width = imageElement.naturalWidth;
     canvas.height = imageElement.naturalHeight;
 
-    let ctx = canvas.getContext('2d');
-    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+    canvas.getContext('2d')
+    .drawImage(imageElement, 0, 0, canvas.width, canvas.height);
 
-    // Convert the canvas content to a base64 string (assuming png format)
-    let base64String = canvas.toDataURL('image/png');
-    callback(base64String);
-
-    // Clean up the canvas element
-    canvas = null;
+    callback(canvas.toDataURL('image/png')); // base64 string
 }
 
 function getImageNodeData(node) {

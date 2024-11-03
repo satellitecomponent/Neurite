@@ -1,10 +1,13 @@
 const Select = {};
 
-Select.selectOption = function(select, option){
+Select.deselect = function(select){
     const optionsReplacer = select.parentNode.querySelector('.options-replacer');
-    Array.from(optionsReplacer.children).forEach(
+    Elem.forEachChild(optionsReplacer,
         (child)=>child.classList.remove('selected')
     );
+}
+Select.selectOption = function(select, option){
+    Select.deselect(select);
 
     // Set this option as the selected one
     select.parentNode.querySelector(`[data-value="${option.value}"]`).classList.add('selected');
@@ -15,16 +18,13 @@ Select.selectOption = function(select, option){
 }
 
 function createSelectWithWrapper(name, wrapperName, nodeIndex) {
-    const select = document.createElement('select');
+    const select = Html.make.select('model-selector custom-select ignoreSetup');
     select.id = name + '-select-' + nodeIndex;
-    select.className = 'model-selector custom-select ignoreSetup';
 
-    const container = document.createElement('div');
-    container.className = 'dropdown-container';
+    const container = Html.make.div('dropdown-container');
     container.appendChild(select);
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'dropdown-wrapper';
+    const wrapper = Html.make.div('dropdown-wrapper');
     wrapper.id = `wrapper-${wrapperName}-${nodeIndex}`;
     wrapper.appendChild(container);
     return wrapper;
@@ -34,11 +34,9 @@ const CustomDropdown = {
     model: {selectId: 'custom-model-select', storageId: 'customModelDropdown'}
 };
 CustomDropdown.setup = function(select, delayListeners = false){
-    const selectReplacer = document.createElement('div');
-    selectReplacer.className = 'select-replacer closed';
+    const selectReplacer = Html.make.div('select-replacer closed');
 
-    const selectedDiv = document.createElement('div');
-    selectedDiv.className = 'selected-text';
+    const selectedDiv = Html.make.div('selected-text');
 
     // Safeguard against empty select or invalid selectedIndex
     if (select.options.length > 0 && select.selectedIndex >= 0 && select.selectedIndex < select.options.length) {
@@ -46,13 +44,11 @@ CustomDropdown.setup = function(select, delayListeners = false){
     }
     selectReplacer.appendChild(selectedDiv);
 
-    const optionsReplacer = document.createElement('div');
-    optionsReplacer.className = 'options-replacer custom-scrollbar';
+    const optionsReplacer = Html.make.div('options-replacer custom-scrollbar');
     selectReplacer.appendChild(optionsReplacer);
 
     // Replace the original select with the custom dropdown
-    const container = document.createElement('div');
-    container.className = 'select-container';
+    const container = Html.make.div('select-container');
     select.parentNode.insertBefore(container, select);
     container.appendChild(selectReplacer);
     container.appendChild(select);
@@ -68,8 +64,7 @@ CustomDropdown.populateOptions = function(select, optionsReplacer, selectedDiv){
     Array.from(select.options).forEach(create);
 }
 CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, option){
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'dropdown-option';
+    const optionDiv = Html.make.div('dropdown-option');
     optionDiv.setAttribute('data-value', option.value);
     optionDiv.innerText = option.innerText;
 
@@ -78,9 +73,7 @@ CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, 
     On.click(optionDiv, (e)=>{
         e.stopPropagation();
 
-        Array.from(optionsReplacer.children).forEach(
-            (child)=>child.classList.remove('selected')
-        );
+        Select.deselect(select);
 
         // Set this option as the selected one
         optionDiv.classList.add('selected');
@@ -349,12 +342,10 @@ CustomDropdown.addHtmlOption = function(select, optionData, createOptionContent)
 
 CustomDropdown.setupHtmlOptions = function(select, createOptionContent, delayListeners = false){
     // Create the main custom dropdown container
-    const selectReplacer = document.createElement('div');
-    selectReplacer.className = 'select-replacer closed'; // add 'closed' class by default
+    const selectReplacer = Html.make.div('select-replacer closed');
 
     // Create the currently selected value container
-    const selectedDiv = document.createElement('div');
-    selectedDiv.className = 'selected-text';
+    const selectedDiv = Html.make.div('selected-text');
 
     // Safeguard against empty select or invalid selectedIndex
     if (select.options.length > 0 && select.selectedIndex >= 0 && select.selectedIndex < select.options.length) {
@@ -363,15 +354,13 @@ CustomDropdown.setupHtmlOptions = function(select, createOptionContent, delayLis
     selectReplacer.appendChild(selectedDiv);
 
     // Create the dropdown options container
-    const optionsReplacer = document.createElement('div');
-    optionsReplacer.className = 'options-replacer custom-scrollbar';
+    const optionsReplacer = Html.make.div('options-replacer custom-scrollbar');
 
     // Append the options container to the main dropdown container
     selectReplacer.appendChild(optionsReplacer);
 
     // Replace the original select with the custom dropdown
-    const container = document.createElement('div');
-    container.className = 'select-container';
+    const container = Html.make.div('select-container');
     select.parentNode.insertBefore(container, select);
     container.appendChild(selectReplacer);
     container.appendChild(select);
@@ -387,8 +376,7 @@ CustomDropdown.populateHtmlOptions = function(select, optionsReplacer, selectedD
     Array.from(select.options).forEach(create);
 }
 CustomDropdown.createHtmlOptionDiv = function(select, optionsReplacer, selectedDiv, createOptionContent, option){
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'dropdown-option';
+    const optionDiv = Html.make.div('dropdown-option');
     optionDiv.setAttribute('data-value', option.value);
 
     const optionContent = createOptionContent(option);
@@ -405,13 +393,11 @@ CustomDropdown.createHtmlOptionDiv = function(select, optionsReplacer, selectedD
 }
 
 function createZetContainerDropdown(option) {
-    const inputDiv = document.createElement('div');
-    inputDiv.className = 'option-input';
+    const inputDiv = Html.make.div('option-input');
     inputDiv.contentEditable = true;
     inputDiv.innerText = option.text;
 
-    const optionContent = document.createElement('div');
-    optionContent.className = 'option-content';
+    const optionContent = Html.make.div('option-content');
     optionContent.appendChild(inputDiv);
 
     // Event handler for input changes in the option

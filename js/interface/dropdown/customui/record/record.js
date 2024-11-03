@@ -4,14 +4,14 @@ let recordedChunks = [];
 
 async function captureScreenToBase64() {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    const video = document.createElement('video');
+    const video = Html.new.video();
     video.srcObject = stream;
     video.autoplay = true;
     video.style.display = 'none';
 
     return new Promise((resolve, reject) => {
         On.loadedmetadata(video, (e)=>{
-            const canvas = document.createElement('canvas');
+            const canvas = Html.new.canvas();
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -103,15 +103,14 @@ function handleBlob(blob) {
     const url = URL.createObjectURL(blob);
 
     // Create a video element to play the blob
-    const video = document.createElement('video');
+    const video = Html.new.video();
     video.src = url;
     video.controls = true;
     video.style.width = '800px';  // Adjust as needed
     video.style.height = 'auto';  // This will maintain aspect ratio
 
     // Create a download link for the video
-    const link = document.createElement('a');
-    link.href = url;
+    const link = Html.make.a(url);
     link.download = "neuriterecord.webm";
 
     // Set fixed width and height for the button to create a square around the SVG
@@ -145,7 +144,7 @@ function handleBlob(blob) {
     const scale = 1; // You can adjust the scale as needed
     const node = windowify("Recorded Video", content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
     htmlnodes_parent.appendChild(node.content);
-    registernode(node);
+    Graph.registerNode(node);
     node.followingMouse = 1;
     node.draw();
     node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));

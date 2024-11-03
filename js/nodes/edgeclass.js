@@ -21,21 +21,21 @@ class Edge {
         this.directionality = { start: null, end: null };
         const svgMap = Edge.SvgMap;
 
-        this.html = SVG.create.path();
+        this.html = Svg.new.path();
         svgMap.set(this.html, this);
         for (const [key, value] of Object.entries(style)) {
             this.html.setAttribute(key, value);
         }
         htmledges.appendChild(this.html);
 
-        this.arrowSvg = SVG.create.path();
+        this.arrowSvg = Svg.new.path();
         svgMap.set(this.arrowSvg, this);
         this.arrowSvg.classList.add('edge-arrow');
         this.arrowSvg.style.display = 'none';
 
         htmledges.appendChild(this.arrowSvg);
 
-        this.borderSvg = SVG.create.path();
+        this.borderSvg = Svg.new.path();
         svgMap.set(this.borderSvg, this);
         this.borderSvg.style.display = 'none';
         this.borderSvg.classList.add('edge-border');

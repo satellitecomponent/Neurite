@@ -106,13 +106,13 @@ async function handleStreamingForLLMnode(response, node) {
 function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
     function onBeforeCall() {
         node.aiResponding = true;
-        node.regenerateButton.innerHTML = SVG.pause;
+        node.regenerateButton.innerHTML = Svg.pause;
         node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'block';
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'none';
     }
     function onAfterCall() {
         node.aiResponding = false;
-        node.regenerateButton.innerHTML = SVG.refresh;
+        node.regenerateButton.innerHTML = Svg.refresh;
         node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'none';
     }
     function onStreamingResponse(content) {

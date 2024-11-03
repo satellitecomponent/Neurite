@@ -93,7 +93,7 @@ class Node {
         this.mouseAnchor = new vec2(0, 0);
         this.edges = [];
         this.createdAt = new Date().toISOString();
-        this.init = (nodeMap) => { };
+        this.init = Function.nop;
         if (p === undefined) {
             const dataset = thing.dataset;
             let o = JSON.parse(dataset.node_json)
@@ -114,17 +114,17 @@ class Node {
             this.attach();
             this.content.setAttribute('data-uuid', this.uuid);
             if (dataset.edges !== undefined && createEdges) {
-                const edges = JSON.parse(dataset.edges);
-                this.init = ((nodeMap) => {
-                    for (const edge of edges) {
-                        edgeFromJSON(edge, nodeMap);
+                const edgesData = JSON.parse(dataset.edges);
+                this.init = ()=>{
+                    for (const edgeData of edgesData) {
+                        edgeFromJSON(edgeData)
                     }
-                }).bind(this);
+                };
             }
             return;
         }
 
-        this.uuid = String(nextUUID());
+        this.uuid = String(Graph.nextUuid);
         this.pos = p;
         this.scale = scale;
         this.intrinsicScale = intrinsicScale;
@@ -361,8 +361,8 @@ class Node {
     onMouseDown = (e)=>{
         this.mouseAnchor = toZ(new vec2(e.clientX, e.clientY)).minus(this.pos);
         this.followingMouse = 1;
-        window.draggedNode = this;
-        movingNode = this;
+        Graph.draggedNode = this;
+        Graph.movingNode = this;
         if (NodeMode.val) {
             if (prevNode === undefined) {
                 prevNode = this;
@@ -380,7 +380,7 @@ class Node {
 
     stopFollowingMouse = (e)=>{
         this.followingMouse = 0;
-        movingNode = undefined;
+        Graph.movingNode = undefined;
 
         Off.mouseup(window, this.stopFollowingMouse);
         this.enableIframePointerEvents();
@@ -395,13 +395,13 @@ class Node {
     }
 
     onMouseUp = (e)=>{
-        if (this === window.draggedNode) {
+        if (this === Graph.draggedNode) {
             this.followingMouse = 0;
-            window.draggedNode = undefined;
+            Graph.draggedNode = undefined;
         }
     }
     onMouseMove = (e)=>{
-        if (this === window.draggedNode) prevNode = undefined;
+        if (this === Graph.draggedNode) prevNode = undefined;
         /*if (this.followingMouse){
         this.pos = this.pos.plus(toDZ(new vec2(e.movementX,e.movementY)));
         this.draw()
@@ -477,34 +477,29 @@ class Node {
     }
 
     remove() {
-        const nodes = Graph.nodes;
-
         const dels = [];
-        for (const node of nodes) {
+        Graph.forEachNode( (node)=>{
             for (const e of node.edges) {
                 if (e.pts.includes(this)) dels.push(e);
             }
-        }
+        });
         for (const e of dels) {
             e.remove();
         }
 
         // Remove this node from the edges array of any nodes it was connected to
-        for (const node of nodes) {
+        Graph.forEachNode( (node)=>{
             node.edges = node.edges.filter(edge => !edge.pts.includes(this));
-        }
+        });
 
-        // Remove the node from the global nodes array
-        const index = nodes.indexOf(this);
-        if (index !== -1) nodes.splice(index, 1);
-
-        delete nodeMap[this.uuid];
+        Graph.deleteNode(this);
         SelectedNodes.uuids.delete(this.uuid);
 
         this.removed = true;
         this.content.remove();
     }
 
+    static byUuid(uuid){ return Graph.nodes[uuid] }
     static getType(node){
         if (node.isTextNode) return 'text';
         if (node.isLLM) return 'llm';

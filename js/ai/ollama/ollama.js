@@ -107,49 +107,40 @@ Ollama.ModelList = class {
 Ollama.ModelListItem = class {
     constructor(model){
         this.model = model;
-        this.progressBar = this.makeProgressBar();
+        this.progressBar = Html.make.div('progress-bar');
         this.modelName = this.makeModelName(model.name);
         this.loadingIcon = this.makeLoadingIcon();
-        this.divItem = this.createDivItem(model);
+        this.divItem = this.makeDivItem(model);
         this.init();
     }
-    createDivItem(model){
-        const divItem = document.createElement('div');
-        divItem.className = "model-item " + (model.installed ? 'connected' : 'disconnected');
-        divItem.style.position = 'relative';
-        divItem.title = model.title; // for the tooltip
-        divItem.append(this.progressBar, this.modelName, this.loadingIcon);
-        if (model.installed) divItem.append(this.makeBtnDelete());
-        return divItem;
-    }
-    makeProgressBar(){
-        const progressBar = document.createElement('div');
-        progressBar.className = 'progress-bar';
-        return progressBar;
+    makeDivItem(model){
+        const className = "model-item " + (model.installed ? 'connected' : 'disconnected');
+        const div = Html.make.div(className);
+        div.style.position = 'relative';
+        div.title = model.title; // for the tooltip
+        div.append(this.progressBar, this.modelName, this.loadingIcon);
+        if (model.installed) div.append(this.makeBtnDelete());
+        return div;
     }
     makeModelName(name){
-        const modelName = document.createElement('div');
-        modelName.textContent = name;
-        modelName.className = 'model-name';
-        return modelName;
+        const div = Html.make.div('model-name');
+        div.textContent = name;
+        return div;
     }
     makeLoadingIcon(){
-        const loadingIcon = document.createElement('div');
-        loadingIcon.className = 'loader';
-        const style = loadingIcon.style;
+        const div = Html.make.div('loader');
+        const style = div.style;
         style.display = 'none';
         style.position = 'absolute';
         style.right = '15px';
         style.width = '15px';
         style.height = '15px';
-        return loadingIcon;
+        return div;
     }
     makeBtnDelete(){
-        const btnDelete = document.createElement('button');
-        btnDelete.textContent = 'x';
-        btnDelete.className = 'deletebuttons';
-        On.click(btnDelete, this.onDelete);
-        return btnDelete;
+        const button = Html.make.button('deletebuttons', "x");
+        On.click(button, this.onDelete);
+        return button;
     }
 
     onDelete = async (e)=>{

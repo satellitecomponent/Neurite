@@ -369,9 +369,8 @@ function appendViewsToContainer(views, containerId, startIndex) {
 
     views.forEach((view, index) => {
         const globalIndex = startIndex + index;
-        const coordElement = document.createElement('div');
-        coordElement.textContent = `${view.title}`;
-        coordElement.classList.add('saved-coordinate-item');
+        const coordElement = Html.make.div('saved-coordinate-item');
+        coordElement.textContent = view.title;
 
         On.click(coordElement, (e)=>{
             returnToSavedView(view);
