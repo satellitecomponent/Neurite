@@ -27,10 +27,9 @@ Modal.Connect.updateNodeList = function(originNode, maxNodes){
     nodes.forEach(node => {
         if (node === originNode) return;
 
-        const li = document.createElement('li');
-        li.textContent = node.getTitle().trim() || 'Untitled';
-        li.className = (findExistingEdge(node, originNode) ? 'connected' : 'disconnected');
-        On.click(li, (e)=>{
+        const textContent = node.getTitle().trim() || 'Untitled';
+        const className = (findExistingEdge(node, originNode) ? 'connected' : 'disconnected');
+        function onClick(e){
             const existingEdge = findExistingEdge(node, originNode);
             if (!existingEdge) {
                 connectNodes(node, originNode);
@@ -44,7 +43,8 @@ Modal.Connect.updateNodeList = function(originNode, maxNodes){
                 existingEdge.remove();
             }
             li.className = 'disconnected';
-        });
+        }
+        const li = Html.make.li(textContent, className, onClick);
         nodeList.appendChild(li);
     });
 }

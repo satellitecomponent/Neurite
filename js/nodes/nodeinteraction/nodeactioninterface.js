@@ -84,7 +84,7 @@ function applyActionToSelectedNodes(action, node = '') {
     const selectedUuids = SelectedNodes.uuids;
     if (selectedUuids.size > 1 && selectedUuids.has(node.uuid)) {
         selectedUuids.forEach(uuid => {
-            const selectedNode = findNodeByUUID(uuid);
+            const selectedNode = Node.byUuid(uuid);
             if (selectedNode) action(selectedNode);
         });
     } else {

@@ -165,16 +165,12 @@ class ZetPanes {
     }
 
     createPane(paneId, paneName) {
-        const pane = document.createElement('div');
+        const pane = Html.make.div('zet-pane');
         pane.id = paneId;
-        pane.classList.add('zet-pane');
         pane.setAttribute('data-pane-name', paneName);
 
-        const textareaId = 'zet-note-input-' + this.paneCounter;
-        const textareaClass = 'zet-zettelkasten';
-        const textarea = document.createElement('textarea');
-        textarea.id = textareaId;
-        textarea.classList.add(textareaClass);
+        const textarea = Html.make.textarea('zet-zettelkasten');
+        textarea.id = 'zet-note-input-' + this.paneCounter;
         textarea.rows = 10;
         textarea.cols = 50;
         pane.appendChild(textarea);

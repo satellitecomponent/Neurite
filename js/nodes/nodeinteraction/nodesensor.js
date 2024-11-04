@@ -49,12 +49,12 @@ class NodeSensor {
         });
     }
 
-    update(nodeMap) {
+    update() {
         ProcessedNodes.update();
         this.nearbyNodes = [];
 
         // Determine if total nodes are fewer than maxNodeCount
-        if (Object.keys(nodeMap).length <= this.maxNodeCount) {
+        if (Object.keys(Graph.nodes).length <= this.maxNodeCount) {
             this.nearbyNodes = this.findNearbyNodes(Infinity);
         } else {
             let searchComplete = false;
@@ -95,7 +95,7 @@ class NodeSensor {
     }
 
     callUpdate() {
-        this.update(nodeMap);
+        this.update();
         //this.clearSensorDrawings();
         //this.drawDetections();
 
@@ -164,7 +164,7 @@ class SearchArea {
         this.farthestPoint = farthestPoint;
         this.style = style;
         this.style['stroke-width'] = farthestScale * 52; // Scale the stroke width
-        this.html = SVG.create.circle();
+        this.html = Svg.new.circle();
         this.applyStyle();
     }
 
@@ -205,7 +205,7 @@ class SensorEdge {
         this.originNode = originNode;
         this.targetData = targetData;
         this.style = style;
-        this.html = SVG.create.path();
+        this.html = Svg.new.path();
         this.applyStyle();
     }
 

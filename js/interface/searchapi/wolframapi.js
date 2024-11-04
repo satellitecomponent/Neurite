@@ -102,17 +102,17 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     Logger.info("Wolfram Alpha data:", data); // Debugging data object
     if (!data.pods) return;
 
-    const table = document.createElement("table");
+    const table = Html.new.table();
     table.style = "width: 100%; border-collapse: collapse;";
 
     for (const pod of data.pods) {
-        const row = document.createElement("tr");
+        const row = Html.new.tr();
 
-        const titleCell = document.createElement("td");
+        const titleCell = Html.new.td();
         titleCell.textContent = pod.title;
         titleCell.style = "padding: 10px; background-color: #222226;";
 
-        const imageCell = document.createElement("td");
+        const imageCell = Html.new.td();
         imageCell.style = "padding: 10px; text-align: center; background-color: white";
 
         for (let i = 0; i < pod.images.length; i++) {
@@ -122,7 +122,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
             // Adding plaintext to wolframAlphaTextResult
             wolframAlphaTextResult += `${pod.title}: ${plaintext}\n`;
 
-            const img = document.createElement("img");
+            const img = Html.new.img();
             img.alt = `${reformulatedQuery} - ${pod.title}`;
             img.style = "display: block; margin: auto; border: none;";
             img.src = imageUrl;

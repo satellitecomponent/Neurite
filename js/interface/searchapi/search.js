@@ -8,11 +8,11 @@ const matchSearchHighlight = setSearchHighlight.bind(null, 'add', 'remove');
 const nomatchSearchHighlight = setSearchHighlight.bind(null, 'remove', 'add');
 
 function nodesForSearchTerm(searchTerm, maxResults) {
-    if (!searchTerm) return Object.values(nodeMap);
+    if (!searchTerm) return Object.values(Graph.nodes);
 
     const matched = [];
     const keywords = searchTerm.toLowerCase().split(' ');
-    for (const node of Graph.nodes) {
+    Graph.forEachNode( (node)=>{
         let numMatches = 0;
         for (const keyword of keywords) {
             if ([...node.searchStrings()].join().toLowerCase().includes(keyword)) {
@@ -27,7 +27,7 @@ function nodesForSearchTerm(searchTerm, maxResults) {
         } else {
             nomatchSearchHighlight(node);
         }
-    }
+    });
     // Sort by the number of matches in descending order
     matched.sort((a, b) => b.numMatches - a.numMatches);
 
@@ -45,11 +45,8 @@ function performZettelkastenSearch(searchTerm) {
     const res = document.querySelector("#search-results .results-display-div");
     res.innerHTML = '';
     for (const node of nodesForSearchTerm(searchTerm)) {
-        const div = document.createElement('div');
-        div.classList.add("search-result-item");
-
-        const title = document.createElement('div');
-        title.classList.add("search-result-title");
+        const div = Html.make.div('search-result-item');
+        const title = Html.make.div('search-result-title');
         title.appendChild(document.createTextNode(node.getTitle()));
         div.appendChild(title);
 
@@ -108,9 +105,7 @@ async function performVectorDbDisplaySearch() {
     searchResultsContainer.innerHTML = ''; // Clear previous search results
 
     // Create and display the loading icon
-    const loaderElement = document.createElement('div');
-    loaderElement.classList.add("loader");
-    loaderElement.classList.add("loader-centered");
+    const loaderElement = Html.make.div('loader loader-centered');
     searchResultsContainer.appendChild(loaderElement);
 
     try {
@@ -125,8 +120,7 @@ async function performVectorDbDisplaySearch() {
         relevantChunks.forEach(chunk => {
             const [source, chunkNumber] = chunk.key.split('_chunk_');
 
-            const resultElement = document.createElement('div');
-            resultElement.classList.add("vdb-search-result");
+            const resultElement = Html.make.div('vdb-search-result');
             resultElement.innerHTML = `
                 <div class="vdb-result-header">
                     <div class="vdb-result-source">${source}</div>

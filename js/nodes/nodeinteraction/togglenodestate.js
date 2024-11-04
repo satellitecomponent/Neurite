@@ -73,19 +73,13 @@ function collapseNode(node) {
             height: div.offsetHeight
         };
 
-        // Hide all children of the window div except headerContainer and titleInput
-        Array.from(div.children).forEach(child => {
+        const hideButHeaderAndTitle = (child)=>{
             if (child !== headerContainer && child !== titleInput) {
-                child.style.display = 'none';
+                child.style.display = 'none'
             }
-        });
-
-        // Hide all children of headerContainer except titleInput
-        Array.from(headerContainer.children).forEach(child => {
-            if (child !== titleInput) {
-                child.style.display = 'none';
-            }
-        });
+        };
+        Elem.forEachChild(div, hideButHeaderAndTitle);
+        Elem.forEachChild(headerContainer, hideButHeaderAndTitle);
 
         const style = div.style;
         style.display = 'inline-block';
@@ -103,8 +97,7 @@ function collapseNode(node) {
         centerTitleInput(titleInput);
 
         // Create the circle
-        const circle = document.createElement('div');
-        circle.className = 'collapsed-circle';
+        const circle = Html.make.div('collapsed-circle');
         circle.style.borderRadius = '50%';
         circle.style.boxShadow = getComputedStyle(div).boxShadow;
 
@@ -158,14 +151,9 @@ function expandNode(node, div, circle) {
     style.backdropFilter = '';
     div.classList.remove('collapsed');
 
-    for (const child of Array.from(div.children)) {
-        child.style.display = ''; // i.e. show
-    }
-
-    const container = div.querySelector('.header-container');
-    for (const child of Array.from(container.children)) {
-        child.style.display = ''; // i.e. show
-    }
+    const show = (child)=>{ child.style.display = '' } ;
+    Elem.forEachChild(div, show);
+    Elem.forEachChild(div.querySelector('.header-container'), show);
 
     resetTitleInput(div.querySelector('.title-input'));
 
@@ -205,8 +193,7 @@ On.mousedown(document, (e)=>{
         startX = e.pageX;
         startY = e.pageY;
 
-        dragBox = document.createElement('div');
-        dragBox.className = 'drag-box';
+        dragBox = Html.make.div('drag-box');
         dragBox.style.left = startX + 'px';
         dragBox.style.top = startY + 'px';
         document.body.appendChild(dragBox);
@@ -246,7 +233,7 @@ On.mouseup(document, (e)=>{
         };
 
         // Check for intersection with node windows and select them
-        Object.values(nodeMap).forEach(node => {
+        Graph.forEachNode( (node)=>{
             const rect = node.windowDiv.getBoundingClientRect();
             const isNodeSelected = (rect.left < dragBoxBounds.right && rect.right > dragBoxBounds.left &&
                                     rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top);

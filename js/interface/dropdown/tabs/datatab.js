@@ -35,17 +35,15 @@ VectorDb.loadingIndicatorForKey = function(key){
     let indicator = Elem.byId(id);
     if (indicator) return indicator;
 
-    indicator = document.createElement('div');
+    indicator = Html.make.div('vdb-loading-item');
     indicator.id = id;
-    indicator.className = 'vdb-loading-item';
     indicator.innerHTML = `
         <div class="vdb-loading-content">
             <div class="loader" style="margin-right: 10px; flex-shrink: 0;"></div>
             <span class="vdb-loader-text">${key}</span>
         </div>
     `;
-    const bar = document.createElement('div');
-    bar.className = 'vdb-progress-bar-inner';
+    const bar = Html.make.div('vdb-progress-bar-inner');
     indicator.insertBefore(bar, indicator.firstChild);
     return VectorDb.insertLoadingIndicatorByKey(indicator, key);
 }

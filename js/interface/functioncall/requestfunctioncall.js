@@ -8,7 +8,7 @@ function haltFunctionAi() {
 
     // Use global functionSendSvg if it's always the correct element
     if (functionSendSvg) {
-        functionSendSvg.innerHTML = SVG.use.play;
+        functionSendSvg.innerHTML = Svg.use.play;
     }
 }
 
@@ -115,7 +115,7 @@ function getFunctionResponse(requestMessages) {
 }
 
 function updateUiForProcessing() {
-    functionSendSvg.innerHTML = SVG.use.pause;
+    functionSendSvg.innerHTML = Svg.use.pause;
     functionLoadingIcon.style.display = 'block';
     functionErrorIcon.style.display = 'none';
 
@@ -123,6 +123,6 @@ function updateUiForProcessing() {
 }
 
 function updateUiForIdleState() {
-    functionSendSvg.innerHTML = SVG.use.play;
+    functionSendSvg.innerHTML = Svg.use.play;
     functionLoadingIcon.style.display = 'none';
 }

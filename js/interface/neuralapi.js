@@ -23,7 +23,7 @@ class Transition {
                 pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
             }
         }
-        SVG.updateViewbox(pan, zoom);
+        Svg.updateViewbox(pan, zoom);
     }
     static onStep(startTime, onComplete, funcIsComplete, timestamp){
         const progress = Math.min((Date.now() - startTime) / this.duration, 1);
@@ -324,12 +324,12 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
 }
 
 async function neuriteSearchNotes(searchTerm, maxNodesOverride) {
-    Graph.nodes.forEach(clearSearchHighlight);
+    Graph.forEachNode(clearSearchHighlight);
     const matchedPartialNodes = await embeddedSearch(searchTerm, maxNodesOverride);
 
     const fullMatchedNodes = [];
     for (const partialNode of matchedPartialNodes) {
-        const fullNode = Graph.nodes.find(n => n.uuid === partialNode.uuid);
+        const fullNode = Node.byUuid(partialNode.uuid);
         if (!fullNode) continue;
 
         const content = fullNode.content;

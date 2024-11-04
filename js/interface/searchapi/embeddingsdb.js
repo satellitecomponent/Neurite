@@ -223,13 +223,13 @@ Keys.display = function(keys){
     keyList.innerHTML = '';
     const uniqueGitHubRepos = new Set();
     for (const key of keys) {
-        const listItem = document.createElement('p');
+        const listItem = Html.new.p();
         listItem.title = key; // sets the hover text
 
-        const keyText = document.createElement('span');
+        const keyText = Html.new.span();
         keyText.textContent = key;
 
-        const eyeballIcon = SVG.create.svg();
+        const eyeballIcon = Svg.new.svg();
         eyeballIcon.classList.add("eyeball-icon");
         eyeballIcon.innerHTML = `<use xlink:href="${keyFilters.get(key) ? '#crossed-eyeball-symbol' : '#eyeball-symbol'}"></use>`;
 

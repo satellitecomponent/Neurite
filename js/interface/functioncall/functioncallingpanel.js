@@ -232,8 +232,7 @@ function generateUUID() {
 function addFunctionCallItem(functionName, code, isError = false) {
     const currentCoords = neuriteGetMandelbrotCoords(); // Get current coordinates
 
-    const item = document.createElement('div');
-    item.classList.add('function-call-item');
+    const item = Html.make.div('function-call-item');
 
     const itemId = generateUUID();
     item.setAttribute('data-item-id', itemId);

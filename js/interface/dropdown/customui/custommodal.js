@@ -107,7 +107,7 @@ Modal.close = function(){
     switch (Modal.current.id) {
         case 'zetSearchModal':
         case 'nodeConnectionModal':
-            Graph.nodes.forEach(clearSearchHighlight);
+            Graph.forEachNode(clearSearchHighlight);
             break;
         case 'vectorDbImportConfirmModal':
             if (window.currentVectorDbImportReject) {

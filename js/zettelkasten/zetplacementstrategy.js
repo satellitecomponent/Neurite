@@ -138,7 +138,7 @@ function drawPlacementPreview(event) {
 
     const points = window.zettelkastenProcessor.placementStrategy.getPreviewPoints(startX, startY, startScale);
     points.forEach(point => {
-        const circle = SVG.create.circle();
+        const circle = Svg.new.circle();
         circle.setAttribute('cx', point.x);
         circle.setAttribute('cy', point.y);
         circle.setAttribute('r', '5'); // radius

@@ -184,85 +184,65 @@ class Interface {
 }
 Interface = new Interface();
 
-const Graph = {
-    nodes: [],
-    edges: []
-};
-
-var movingNode = undefined;
-var NodeUUID = 0;
 
 
+class ProcessedNodes {
+    map = {};
 
-var nodeMap = {};
+    addNodeToMap(node, processedMap){
+        const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
 
-const ProcessedNodes = {
-    map: {}
-};
-ProcessedNodes.update = function(){
-    const existingUUIDs = new Set(ProcessedNodes.getUuids());
-    const tempProcessedNodeMap = {};
-
-    for (const uuid in nodeMap) {
-        const node = nodeMap[uuid];
-        ProcessedNodes.addNodeToMap(node, tempProcessedNodeMap);
-        existingUUIDs.delete(uuid); // Remove from set to track as 'still exists'
+        processedMap[node.uuid] = {
+            uuid: node.uuid,
+            type: Node.getType(node),
+            pos: node.pos,
+            scale: node.scale,
+            sensor: node.sensor,
+            state: node.state,
+            actions: NodeActions.forNode(node),
+            edges: edgesUUIDs
+        };
+    }
+    filter(cb, ct){
+        const found = [];
+        this.forEach( (node)=>{ if (cb.call(ct, node)) found.push(node) });
+        return found;
+    }
+    forEach(cb, ct){
+        const map = this.map;
+        for (const uuid in map) cb.call(ct, map[uuid]);
     }
 
-    // Remove any nodes that weren't in the updated nodeMap (stale nodes)
-    existingUUIDs.forEach(ProcessedNodes.removeById);
-    ProcessedNodes.map = tempProcessedNodeMap;
-}
-ProcessedNodes.addNodeToMap = function(node, processedMap){
-    const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
+    getById(nodeUuid){ return this.map[nodeUuid] }
+    getByNode(node){ return this.getById(node.uuid) }
+    getUuids(){ return Object.keys(this.map) }
 
-    processedMap[node.uuid] = {
-        uuid: node.uuid,
-        type: Node.getType(node),
-        pos: node.pos,
-        scale: node.scale,
-        sensor: node.sensor,
-        state: node.state,
-        actions: NodeActions.forNode(node),
-        edges: edgesUUIDs
-    };
-}
-ProcessedNodes.filter = function(cb, ct){
-    const foundNodes = [];
-    ProcessedNodes.forEach( (node)=>{
-        if (cb.call(ct, node)) foundNodes.push(node)
-    });
-    return foundNodes;
-}
-ProcessedNodes.forEach = function(cb, ct){
-    const map = ProcessedNodes.map;
-    for (const uuid in map) cb.call(ct, map[uuid]);
-}
-ProcessedNodes.getById = function(nodeUuid){
-    return ProcessedNodes.map[nodeUuid]
-}
-ProcessedNodes.getByNode = function(node){
-    return ProcessedNodes.getById(node.uuid)
-}
-ProcessedNodes.getUuids = function(){
-    return Object.keys(ProcessedNodes.map)
-}
-ProcessedNodes.removeById = function(nodeUuid){
-    const map = ProcessedNodes.map;
-
-    // remove the node's UUID from the edges of all other nodes
-    for (const uuid in map) {
-        const node = map[uuid];
-        node.edges = node.edges.filter(edgeUuid => edgeUuid !== nodeUuid);
+    removeById(nodeUuid){
+        // remove the node's UUID from the edges of all other nodes
+        this.forEach( (node)=>{
+            node.edges = node.edges.filter(Object.isntThis, nodeUuid)
+        });
+        delete this.map[nodeUuid];
     }
+    update(){
+        const existingUUIDs = new Set(this.getUuids());
+        const tempProcessedNodeMap = {};
 
-    delete map[nodeUuid];
+        const nodes = Graph.nodes;
+        for (const uuid in nodes) {
+            const node = nodes[uuid];
+            this.addNodeToMap(node, tempProcessedNodeMap);
+            existingUUIDs.delete(uuid); // Remove from set to track as 'still exists'
+        }
+
+        // Remove any nodes that weren't in the updated nodes (stale nodes)
+        existingUUIDs.forEach(this.removeById);
+        this.map = tempProcessedNodeMap;
+    }
 }
+ProcessedNodes = new ProcessedNodes();
 
 
-
-var draggedNode = null;
-var mousedownNode = undefined;
 
 let htmlnodes_parent = Elem.byId('nodes');
 let htmlnodes = htmlnodes_parent.children;
@@ -362,37 +342,77 @@ Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) 
 
 const PROMPT_IDENTIFIER = "Prompt:";
 
-const SVG = {
-    needsRecalc: false,
-    oldRotation: 0,
-    oldZoom: 8192,
-    recenterThreshold: 0.01,
-    rezoomFactor: 8192,
-    rezoomThreshold: 0.1,
-    zoom: 8192,
-    refresh: '<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>',
-    use: {
+class Html {
+    static create = document.createElement.bind(document);
+    static make = {
+        a(href, className){
+            const a = Html.new.a();
+            if (href !== undefined) a.href = href;
+            if (className !== undefined) a.className = className;
+            return a;
+        },
+        button(className, textContent){
+            const button = Html.new.button();
+            if (className !== undefined) button.className = className;
+            if (textContent !== undefined) button.textContent = textContent;
+            return button;
+        },
+        li(content, className, onClick){
+            const li = Html.new.li();
+            if (content !== undefined) li.append(content);
+            if (className !== undefined) li.className = className;
+            if (onClick !== undefined) On.click(li, onClick);
+            return li;
+        }
+    };
+    static makeWithClass(tagName, className){
+        const elem = Html.new[tagName]();
+        if (className !== undefined) elem.className = className;
+        return elem;
+    }
+    static new = {};
+}
+[
+    'code', 'div', 'iframe', 'input',
+    'pre', 'select', 'span', 'textarea'
+].forEach( (name)=>{ Html.make[name] = Html.makeWithClass.bind(Elem, name) } );
+[
+    'a', 'button', 'code', 'canvas', 'div',
+    'iframe', 'img', 'input', 'label', 'li',
+    'p', 'pre', 'select', 'script', 'span',
+    'table', 'td', 'textarea', 'tr', 'video'
+].forEach( (name)=>{ Html.new[name] = Html.create.bind(Elem, name) } );
+
+class Svg {
+    static needsRecalc = false;
+    static oldRotation = 0;
+    static oldZoom = 8192;
+    static recenterThreshold = 0.01;
+    static rezoomFactor = 8192;
+    static rezoomThreshold = 0.1;
+    static zoom = 8192;
+    static refresh = '<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>';
+    static use = {
         pause: '<use xlink:href="#pause-icon"></use>',
         play: '<use xlink:href="#play-icon"></use>'
+    };
+    static pause = `<svg width="24" height="24">${Svg.use.pause}</svg>`;
+    static play = `<svg width="24" height="24">${Svg.use.play}</use></svg>`;
+    static updatePan(newPan){
+        this.oldPan = this.pan;
+        this.pan = newPan;
+        this.needsRecalc = true;
     }
-};
-SVG.pause = `<svg width="24" height="24">${SVG.use.pause}</svg>`;
-SVG.play = `<svg width="24" height="24">${SVG.use.play}</use></svg>`;
-SVG.updatePan = function(newPan){
-    this.oldPan = this.pan;
-    this.pan = newPan;
-    this.needsRecalc = true;
+    static updateZoom(newZoom){
+        this.oldZoom = this.zoom;
+        this.zoom = newZoom;
+        this.needsRecalc = true;
+    }
+    static create = document.createElementNS.bind(document, 'http://www.w3.org/2000/svg');
+    static new = {};
 }
-SVG.updateZoom = function(newZoom){
-    this.oldZoom = this.zoom;
-    this.zoom = newZoom;
-    this.needsRecalc = true;
-}
-SVG.create = document.createElementNS.bind(document, 'http://www.w3.org/2000/svg');
-SVG.create.circle = SVG.create.bind(Elem, 'circle');
-SVG.create.path = SVG.create.bind(Elem, 'path');
-SVG.create.svg = SVG.create.bind(Elem, 'svg');
-SVG.create.use = SVG.create.bind(Elem, 'use');
+['circle', 'path', 'svg', 'use']
+.forEach( (name)=>{ Svg.new[name] = Svg.create.bind(Elem, name) } );
 
 //ai.js
 
@@ -431,7 +451,7 @@ function encodeHTML(str) {
 }
 
 function decodeHTML(html) {
-    let txt = document.createElement('textarea');
+    const txt = Html.new.textarea();
     txt.innerHTML = html;
     return txt.value;
 }

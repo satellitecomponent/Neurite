@@ -91,11 +91,11 @@ class FileTree {
     // Load the directory contents and display them
     async loadDirectory(path, parentElement) {
         if (!useProxy) {  // Strict inequality check
-            const errorElement = document.createElement('p');
-            errorElement.textContent = 'Localhost servers for Neurite are not enabled. \n Download the servers here ';
+            const errorElement = Html.new.p();
+            errorElement.textContent = "Localhost servers for Neurite are not enabled. \n Download the servers ";
 
-            const linkElement = document.createElement('a');
-            linkElement.href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';
+            const href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';
+            const linkElement = Html.make.a(href);
             linkElement.textContent = 'here';
 
             // Open the link in a new tab
@@ -109,7 +109,7 @@ class FileTree {
 
         const contents = await fetchDirectoryContents(path);
         if (!contents) {
-            const errorElement = document.createElement('p');
+            const errorElement = Html.new.p();
             errorElement.textContent = 'Error loading directory contents.';
             parentElement.appendChild(errorElement);
             return;
@@ -119,9 +119,8 @@ class FileTree {
             const itemElement = this.createFileItem(item.name, item.type);
             parentElement.appendChild(itemElement);
 
-            const childContainer = document.createElement('div');
-            childContainer.classList.add('folder-content');
-            childContainer.style.display = 'none'; // Initially hide the child container
+            const childContainer = Html.make.div('folder-content');
+            Elem.hide(childContainer);
 
             On.click(itemElement, this.selectItem.bind(this, itemElement));
             if (item.type === 'directory') {
@@ -183,62 +182,52 @@ class FileTree {
     }
 
     createFileItem(name, type) {
-        const itemElement = document.createElement('div');
-        itemElement.classList.add('file-item');
+        const itemElement = Html.make.div('file-item');
 
-        const icon = SVG.create.svg();
-        const use = SVG.create.use();
+        const icon = Svg.new.svg();
+        const use = Svg.new.use();
         icon.classList.add('file-icon');
-        use.setAttribute('href', type === 'directory' ? '#folder-icon' : this.getFileIcon(name.split('.').pop().toLowerCase()));
+        use.setAttribute('href', this.getIconId(type, name));
         icon.appendChild(use);
         itemElement.appendChild(icon);
 
-        const nameElement = document.createElement('span');
-        nameElement.classList.add('file-name');
+        const nameElement = Html.make.span('file-name');
         nameElement.textContent = name;
         itemElement.appendChild(nameElement);
 
         return itemElement;
     }
 
-    // Get the appropriate SVG icon based on file extension
-    getFileIcon(extension) {
-        switch (extension) {
-            case 'txt':
-            case 'md':
-                return '#file-text-icon';
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-                return '#file-image-icon';
-            case 'js':
-            case 'html':
-            case 'css':
-            case 'json':
-                return '#file-code-icon';
-            case 'csv':
-                return '#file-csv-icon';
-            case 'pdf':
-                return '#file-pdf-icon';
-            case 'mp3':
-            case 'wav':
-                return '#file-audio-icon';
-            case 'mp4':
-            case 'avi':
-            case 'mov':
-                return '#file-video-icon';
-            case 'zip':
-            case 'rar':
-            case '7z':
-                return '#file-zip-icon';
-            case 'exe':
-            case 'bat':
-            case 'sh':
-                return '#file-exe-icon';
-            default:
-                return '#file-text-icon'; // Default icon
-        }
+    getIconId(type, name){
+        if (type === 'directory') return '#folder-icon';
+
+        const extension = name.split('.').pop().toLowerCase();
+        return FileTree.iconIdFromExtension[extension] || '#file-text-icon'; // default
+    }
+    static iconIdFromExtension = {
+        'txt': '#file-text-icon',
+        'md': '#file-text-icon',
+        'jpg': '#file-image-icon',
+        'jpeg': '#file-image-icon',
+        'png': '#file-image-icon',
+        'gif': '#file-image-icon',
+        'js': '#file-code-icon',
+        'html': '#file-code-icon',
+        'css': '#file-code-icon',
+        'json': '#file-code-icon',
+        'csv': '#file-csv-icon',
+        'pdf': '#file-pdf-icon',
+        'mp3': '#file-audio-icon',
+        'wav': '#file-audio-icon',
+        'mp4': '#file-video-icon',
+        'avi': '#file-video-icon',
+        'mov': '#file-video-icon',
+        'zip': '#file-zip-icon',
+        'rar': '#file-zip-icon',
+        '7z': '#file-zip-icon',
+        'exe': '#file-exe-icon',
+        'bat': '#file-exe-icon',
+        'sh': '#file-exe-icon'
     }
 
     static openModal() {
@@ -251,9 +240,8 @@ class FileTree {
             return;
         }
 
-        const modalHeaderInput = document.createElement('input');
+        const modalHeaderInput = Html.make.input('modal-filepath-input');
         modalHeaderInput.type = 'text';
-        modalHeaderInput.classList.add('modal-filepath-input'); // Custom class for styling
         modalHeaderInput.placeholder = 'Enter file path...'; // Placeholder text
         modalHeaderInput.value = currentPath; // Set default value from localStorage
 

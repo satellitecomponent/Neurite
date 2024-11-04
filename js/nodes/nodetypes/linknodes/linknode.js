@@ -1,16 +1,15 @@
 const LinkNode = {};
 
 LinkNode.createAnchor = function(link, name){
-    const a = document.createElement('a');
+    const a = Html.make.a(link);
     a.id = 'link-element';
-    a.setAttribute('href', link);
     a.setAttribute('target', "_blank");
     a.textContent = name;
     a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
     return a;
 }
 LinkNode.createLinkWrapper = function(link, name){
-    const div = document.createElement('div');
+    const div = Html.new.div();
     div.id = 'link-wrapper';
     div.style.width = '300px';
     div.style.padding = '20px 0';
@@ -18,7 +17,7 @@ LinkNode.createLinkWrapper = function(link, name){
     return div;
 }
 LinkNode.createIframeWrapper = function(){
-    const div = document.createElement('div');
+    const div = Html.new.div();
     div.id = 'iframe-wrapper';
     const style = div.style;
     style.padding = '10px';
@@ -31,7 +30,7 @@ LinkNode.createIframeWrapper = function(){
     return div;
 }
 LinkNode.createContentWrapper = function(link, name){
-    const div = document.createElement('div');
+    const div = Html.new.div();
     const style = div.style;
     style.display = 'flex';
     style.flexDirection = 'column';
@@ -68,7 +67,7 @@ LinkNode.create = function(link = '', name = '', text = '', sx, sy, x, y) {
 // To-Do: Find method to refresh saves of link nodes before the save update.
 
 LinkNode.createIframe = function(wrapper){
-    const iframe = document.createElement('iframe');
+    const iframe = Html.new.iframe();
     const style = iframe.style;
     style.width = '100%';
     style.height = '100%';

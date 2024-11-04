@@ -1,89 +1,113 @@
-function nextUUID() {
-    while (nodeMap[NodeUUID] !== undefined) {
-        NodeUUID++;
+class Graph {
+    draggedNode = null;
+    edges = [];
+    nodes = {};
+    movingNode;
+    #nextUuid = 0;
+
+    deleteNode(node){ delete this.nodes[node.uuid] }
+    edgeForTarget(target){ return Edge.SvgMap.get(target.closest('path')) }
+    forEachNode(cb, ct){
+        const nodes = this.nodes;
+        for (const uuid in nodes) cb.call(ct, nodes[uuid]);
     }
-    return NodeUUID;
+    get nextUuid(){
+        const nodes = this.nodes;
+        while (nodes[this.#nextUuid]) {
+            this.#nextUuid += 1;
+        }
+        return this.#nextUuid;
+    }
+    nodeForTarget(target){
+        return this.nodes[target.closest('[data-uuid]')?.dataset.uuid]
+    }
+    registerNode(node){
+        let id = this.nodes.length;
+        let div = node.content;
+        /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+        div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+        div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+        div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+        this.nodes[node.uuid] = node;
+    }
 }
+Graph = new Graph();
 
 
 
-const SelectedNodes = {
-    uuids: new Set()
-};
-SelectedNodes.forEach = function(cb, ct){
-    SelectedNodes.uuids.forEach(
-        (uuid)=>cb.call(ct, nodeMap[uuid])
-    )
-}
-SelectedNodes.hasNode = function(node){
-    return SelectedNodes.uuids.has(node.uuid)
-}
+class SelectedNodes {
+    uuids = new Set();
 
-SelectedNodes.toggleNode = function(node){
-    node.windowDiv.classList.toggle('selected');
-    const isSelected = SelectedNodes.uuids.has(node.uuid);
-    SelectedNodes.uuids[isSelected ? 'delete' : 'add'](node.uuid);
-    Logger.debug(isSelected ? 'deselected' : 'selected');
-}
+    forEach(cb, ct){
+        this.uuids.forEach( (uuid)=>cb.call(ct, Node.byUuid(uuid)) )
+    }
+    hasNode(node){ return this.uuids.has(node.uuid) }
 
-SelectedNodes.restoreNodeById = function(uuid){
-    const node = findNodeByUUID(uuid);
-    if (!node) return;
+    toggleNode(node){
+        node.windowDiv.classList.toggle('selected');
+        const isSelected = this.uuids.has(node.uuid);
+        this.uuids[isSelected ? 'delete' : 'add'](node.uuid);
+        Logger.debug(isSelected ? 'deselected' : 'selected');
+    }
 
-    node.windowDiv.classList.add('selected');
-    SelectedNodes.uuids.add(uuid);
-}
+    restoreNodeById(uuid){
+        const node = Node.byUuid(uuid);
+        if (!node) return;
 
-SelectedNodes.clear = function(){
-    SelectedNodes.uuids.forEach(SelectedNodes.clearNodeById);
-    SelectedNodes.uuids.clear();
-}
-SelectedNodes.clearNodeById = function(uuid){
-    const node = findNodeByUUID(uuid);
-    if (node) node.windowDiv.classList.remove('selected');
-}
+        node.windowDiv.classList.add('selected');
+        this.uuids.add(uuid);
+    }
 
-SelectedNodes.getCentroid = function(){
-    if (SelectedNodes.uuids.size === 0) return null;
+    clear(){
+        this.uuids.forEach(this.clearNodeById);
+        this.uuids.clear();
+    }
+    clearNodeById(uuid){
+        const node = Node.byUuid(uuid);
+        if (node) node.windowDiv.classList.remove('selected');
+    }
 
-    let sumPos = new vec2(0, 0);
-    SelectedNodes.forEach(
-        (node)=>{ sumPos = sumPos.plus(node.pos) }
-    );
-    return sumPos.scale(1 / SelectedNodes.uuids.size);
-}
+    getCentroid(){
+        if (this.uuids.size === 0) return null;
 
-SelectedNodes.collectEdges = function(){
-    const uniqueEdges = new Set();
-    SelectedNodes.forEach(node => {
-        node.edges.forEach(edge => {
-            if (edge.pts.every(SelectedNodes.hasNode)) uniqueEdges.add(edge);
+        let sumPos = new vec2(0, 0);
+        this.forEach(
+            (node)=>{ sumPos = sumPos.plus(node.pos) }
+        );
+        return sumPos.scale(1 / this.uuids.size);
+    }
+
+    collectEdges(){
+        const uniqueEdges = new Set();
+        this.forEach(node => {
+            node.edges.forEach(edge => {
+                if (edge.pts.every(this.hasNode, this)) uniqueEdges.add(edge);
+            });
         });
-    });
-    return uniqueEdges;
-}
-
-
-
-function edgeFromJSON(o, nodeMap) {
-    const pts = o.p.map((k) => nodeMap[k]);
-
-    if (pts.includes(undefined)) {
-        Logger.warn("missing keys", o, nodeMap)
+        return uniqueEdges;
     }
 
-    // Check if edge already exists
-    for (const e of Graph.edges) {
-        const e_pts = e.pts.map(n => n.uuid).sort();
-        const o_pts = o.p.sort();
-        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) return; // Edge already exists
-    }
+    scale(scaleFactor, centralPoint){
+        this.forEach(node => {
+            node.scale *= scaleFactor;
 
-    const e = new Edge(pts, o.l, o.s, o.g);
-    pts.forEach(Node.addEdgeThis, e);
-    Graph.edges.push(e);
-    return e;
+            // Adjust position to maintain relative spacing only if the node is not anchored
+            if (node.anchorForce !== 1) {
+                const directionToCentroid = node.pos.minus(centralPoint);
+                node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
+            }
+
+            updateNodeEdgesLength(node);
+        });
+
+        // If needed, scale the user screen (global zoom)
+        //zoom = zoom.scale(scaleFactor);
+        //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
+    }
 }
+SelectedNodes = new SelectedNodes();
+
+
 
 function updateNodeEdgesLength(node) {
     node.edges.forEach(edge => {
@@ -92,36 +116,32 @@ function updateNodeEdgesLength(node) {
     })
 }
 
-SelectedNodes.scale = function(scaleFactor, centralPoint){
-    SelectedNodes.forEach(node => {
-        node.scale *= scaleFactor;
+function edgeFromJSON(edgeData) {
+    const nodes = Graph.nodes;
+    const pts = edgeData.p.map((k) => nodes[k]);
+    if (pts.includes(undefined)) Logger.warn("missing keys", edgeData, nodes);
 
-        // Adjust position to maintain relative spacing only if the node is not anchored
-        if (node.anchorForce !== 1) {
-            const directionToCentroid = node.pos.minus(centralPoint);
-            node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
-        }
+    // Check if edge already exists
+    for (const e of Graph.edges) {
+        const e_pts = e.pts.map(n => n.uuid).sort();
+        const o_pts = edgeData.p.sort();
+        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) return; // Edge already exists
+    }
 
-        updateNodeEdgesLength(node);
-    });
-
-    // If needed, scale the user screen (global zoom)
-    //zoom = zoom.scale(scaleFactor);
-    //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
-}
-
-function findNodeByUUID(uuid) {
-    return Graph.nodes.find(node => node.uuid === uuid);
+    const e = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
+    pts.forEach(Node.addEdgeThis, e);
+    Graph.edges.push(e);
+    return e;
 }
 
 function getNodeByTitle(title) {
     const lCaseTitle = title.toLowerCase();
     const matchingNodes = [];
 
-    for (const node of Graph.nodes) {
+    Graph.forEachNode( (node)=>{
         const lCaseNodeTitle = node.getTitle()?.toLowerCase();
         if (lCaseNodeTitle === lCaseTitle) matchingNodes.push(node);
-    }
+    });
 
     Logger.debug(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
     Logger.debug("Matching nodes:", matchingNodes);
@@ -147,9 +167,8 @@ function getTextareaContentForNode(node) {
 
     return editableTextarea.value;
 }
-
 function testNodeText(title) {
-    Graph.nodes.forEach(node => {
+    Graph.forEachNode( (node)=>{
         const textarea = node.content.querySelector('textarea');
         Logger.info("From nodes array");
         if (textarea) {
@@ -173,9 +192,7 @@ function testNodeText(title) {
 
 function getNodeText() {
     const nodes = [];
-    for (const nodeKey in nodeMap) {
-        const node = nodeMap[nodeKey];
-
+    Graph.forEachNode( (node)=>{
         const titleInput = node.titleInput;
         const contentText = node.hiddenTextarea;
 
@@ -184,6 +201,6 @@ function getNodeText() {
             titleInput: titleInput ? titleInput.value : '',
             contentText: contentText ? contentText.value : ''
         });
-    }
+    });
     return nodes;
 }

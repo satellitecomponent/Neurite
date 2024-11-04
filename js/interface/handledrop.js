@@ -321,7 +321,7 @@ class DropHandler {
 
     async processFolderDrop(folderMetadata) {
         try {
-            const node = await createFileTreeNode(folderMetadata.path);
+            const node = await FileTreeNode.create(folderMetadata.path);
             this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
         } catch (err) {
             Logger.err("In processing folder drop:", err)
@@ -365,7 +365,7 @@ class DropHandler {
     }
 
     createImageNode(metadataOrFile, url) {
-        const imageElement = document.createElement('img');
+        const imageElement = Html.new.img();
         imageElement.src = url;
         imageElement.onload = () => {
             const node = createImageNode(imageElement, metadataOrFile.name || metadataOrFile);
@@ -410,7 +410,7 @@ class DropHandler {
                 returnLinkNodes();
                 break;
             case 'edges-icon':
-                const fileTreeNode = createFileTreeNode();
+                const fileTreeNode = FileTreeNode.create();
                 this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -fileTreeNode.content.offsetHeight / 4)));
                 break;
             default:
@@ -483,11 +483,11 @@ function setupNodeForPlacement(node, mouseAnchor) {
 }
 
 function createHtmlNode(title, pastedData) {
-    const content = document.createElement('div');
+    const content = Html.new.div();
     content.innerHTML = pastedData;
     const node = windowify(title, [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
     htmlnodes_parent.appendChild(node.content);
-    registernode(node);
+    Graph.registerNode(node);
     setupNodeForPlacement(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
 }
 

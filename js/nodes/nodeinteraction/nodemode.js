@@ -29,9 +29,7 @@ class NodeMode {
                 this.switch(1 - this.val); // Toggle between 0 and 1
             }
         } else if (e.key === 'Escape') {
-            for (const node of Graph.nodes) {
-                node.followingMouse = 0;
-            }
+            Graph.forEachNode( (node)=>{ node.followingMouse = 0 } )
         }
     }
     onKeyUp = (e)=>{

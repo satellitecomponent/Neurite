@@ -1,6 +1,15 @@
 class Elem {
     static byId = document.getElementById.bind(document);
     static displayBlock(elem){ if (elem) elem.style.display = 'block' }
+    static findChild(elem, cb, ct){
+        return Array.prototype.find.call(elem.children, cb, ct)
+    }
+    static forEachChild(elem, cb, ct){
+        return Array.prototype.forEach.call(elem.children, cb, ct)
+    }
+    static hasTextContentThis(elem){
+        return elem.textContent === this.valueOf()
+    }
     static hide(elem){ if (elem) elem.style.display = 'none' }
     static hideById(id){ Elem.hide(Elem.byId(id)) }
     static setBackgroundColor(color){
@@ -17,6 +26,8 @@ class Elem {
 
 Function.nop = function(){}
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Object.isntThis = function(obj){ return obj !== this.valueOf() }
+Object.isThis = function(obj){ return obj === this.valueOf() }
 Logger = class {
     addLevel(prefix, funcName, id = funcName){
         const func = console[funcName].bind(console, prefix);

@@ -175,7 +175,7 @@ On.mouseup(window, (e)=>{
         e.preventDefault();
     }
 
-    if (movingNode !== undefined) movingNode.onMouseUp(e);
+    if (Graph.movingNode !== undefined) Graph.movingNode.onMouseUp(e);
     Mouse.isDragging = false;
 });
 
