@@ -348,10 +348,10 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
       <h3><a href="https://en.wikipedia.org/wiki/Flow-based_programming">flow-based</a> Ai-Agents ⛓️💭</h3>
       <p>🔄 <strong>Message Looping:</strong> Initiate conversational threads across connected AI nodes.</p>
       <ul>
-        <li><strong>Prompt Generation:</strong> Upon connection, AI nodes are programmed to end responses with a question or prompt, which is then sent to any other connected nodes.</li>
+        <li><strong>Prompt Generation:</strong>Connected nodes send messages to one another. They can begin messages with @ for references to other Ai or @self, and / for a growing range of commands such as /exit to exit a loop.</li>
         <li><strong>Ai Logic Circuits:</strong>
           <ul>
-            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of conversation across connected Ai Nodes between two-way, sending, or receiving.</li>
+            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of conversation across connected Ai Nodes between two-way, or sending/receiving.</li>
           </ul>
         </li>
         <li><strong>Graph Context:</strong>
@@ -433,19 +433,19 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
   </tr>
   <tr>
     <td><strong>Web Search</strong></td>
-    <td>Utilize the Google programmable search API to retrieve webpages that can be sent as context to the AI.</td>
+    <td>Search the web from directly within Neurite. Ai assisted search automation.</td>
   </tr>
   <tr>
     <td><strong>Understands Webpages and PDFs</strong></td>
-    <td>Leverage a local vector database to extend the AI's context window.</td>
+    <td>Leverage a local vector database that allows Ai to retrieve context from webpages and pdfs.</td>
   </tr>
   <tr>
     <td><strong>Wikipedia Results</strong></td>
-    <td>Retrieve the top 3 Wikipedia results or shuffle through the top 20.</td>
+    <td>Retrieve the top 3 Wikipedia results or shuffle through the top 20. (novelty mode)</td>
   </tr>
   <tr>
     <td><strong>Wolfram Alpha Results</strong></td>
-    <td>Display Wolfram Pods as nodes.</td>
+    <td>Local Wolfram Plugin where Ai thinks ahead of the query. Provide Wolfram results to Ai and display them as nodes.</td>
   </tr>
 </table>
 
@@ -493,7 +493,7 @@ As of our recent update, the servers now support an Ai proxy that connects Neuri
 
 ### `Final Notes`
 - `Search`: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- `Saving`: Your networks can be saved within the browser cache, or downloaded as a .txt file. Drag the .txt file into the save box, click load on the imported file, then click the second load button to display the network. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, and the Zettelkasten sync all fully restore when loading networks from the save tab...
+- `Saving`: Your networks can be saved within the browser cache, or downloaded as a .txt file. To re-load a downloaded save, in the save tab, drag the save (which should be a .txt file) into the save box at the top. Then click load on the imported file. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, neuralAPI tasks, and the Zettelkasten sync all fully restore when loading networks from the save tab...
 - `Zettelkasten and Mind Mapping`: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
 - `Fractals`: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
 
