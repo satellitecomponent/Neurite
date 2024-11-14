@@ -84,7 +84,7 @@ Embeddings.fetchOllama = async function(model, text){
         }
     }
 
-    const embedding = await generateOllamaEmbedding(model, text);
+    const embedding = await Ollama.fetchEmbeddings(model, text);
     if (!embedding) {
         throw new Error("Failed to generate Ollama embedding for model: " + model);
     }
@@ -142,15 +142,11 @@ initializeKeyFilters();
 
 // Return all keys, including filtered ones
 Keys.getAll = async function(){
-    const response = await Request.send(new Keys.getAll.ct());
-    if (!response) return [];
-
-    return await response.json();
+    return (await Request.send(new Keys.fetcher())) || []
 }
-Keys.getAll.ct = class {
-    constructor(){
-        this.url = 'http://localhost:4000/get-keys';
-    }
+Keys.fetcher = class {
+    url = 'http://localhost:4000/get-keys';
+    onResponse(res){ return res.json() }
     onFailure(){ return "Failed to fetch keys:" }
 }
 
@@ -297,14 +293,15 @@ Keys.deleteSelected = async function(){
     }
 }
 Keys.deleteKey = async function(key){
-    return await Request.send(new Keys.deleteKey.ct(key))
+    await Request.send(new Keys.eraser(key))
 }
-Keys.deleteKey.ct = class {
+Keys.eraser = class {
+    static baseUrl = 'http://localhost:4000/delete-chunks?key=';
+    options = {
+        method: 'DELETE'
+    };
     constructor(key){
-        this.url = 'http://localhost:4000/delete-chunks?key=' + encodeURIComponent(key);
-        this.options = {
-            method: 'DELETE'
-        };
+        this.url = Keys.eraser.baseUrl + encodeURIComponent(key);
         this.key = key;
     }
     onFailure(){ return `Failed to delete chunks for key ${this.key}:` }
@@ -424,36 +421,32 @@ async function extractTextFromPDF(pdfLink) {
     }
 }
 
-async function fetchLinkContentText(link) {
+Link.fetchContentText = function(link){ // promise
     if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
-        return await extractTextFromPDF(link);
+        return extractTextFromPDF(link);
     }
 
-    if (isGitHubUrl(link)) {
-        const details = extractGitHubRepoDetails(link);
-        if (!details) {
-            Logger.err("Invalid GitHub URL:", link);
-            return;
-        }
+    if (!isGitHubUrl(link)) return Request.send(new Link.textFetcher(link));
 
-        return await fetchGitHubRepoContent(details.owner, details.repo);
+    const details = extractGitHubRepoDetails(link);
+    if (!details) {
+        Logger.err("Invalid GitHub URL:", link);
+        return Promise.resolve();
     }
 
-    const response = Request.send(new fetchLinkContentText.ct(link));
-    if (!response) return;
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType.includes("text")) {
-        Logger.warn("Content type for", link, "is not text:", contentType);
-        return;
-    }
-
-    return await response.text();
+    return fetchGitHubRepoContent(details.owner, details.repo);
 }
-fetchLinkContentText.ct = class {
+Link.textFetcher = class TextFetcher {
+    static baseUrl = 'http://localhost:4000/proxy?url=';
     constructor(link){
-        this.url = 'http://localhost:4000/proxy?url=' + encodeURIComponent(link);
+        this.url = TextFetcher.baseUrl + encodeURIComponent(link);
         this.link = link;
+    }
+    onResponse(res){
+        const contentType = res.headers.get("content-type");
+        if (contentType.includes("text")) return res.text();
+
+        Logger.warn("Content type for", this.link, "is not text:", contentType);
     }
     onFailure(){ return `Failed to fetch web page content for ${this.link}:` }
 }
@@ -485,7 +478,7 @@ async function handleNotExtractedLinks(notExtractedLinks, linkNodes) {
 
 async function extractAndStoreLinkContent(link, title) {
     try {
-        const extractedText = await fetchLinkContentText(link);
+        const extractedText = await Link.fetchContentText(link);
         if (!extractedText) {
             throw new Error("Failed to extract text or text was empty");
         }
@@ -589,13 +582,9 @@ async function storeAdditionalEmbedding(key, source, embedding) {
     await Request.send(new storeAdditionalEmbedding.ct(key, source, embedding));
 }
 storeAdditionalEmbedding.ct = class {
+    url = 'http://localhost:4000/store-additional-embedding';
     constructor(key, source, embedding){
-        this.url = 'http://localhost:4000/store-additional-embedding';
-        this.options = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key, source, embedding })
-        };
+        this.options = Request.makeJsonOptions('POST', { key, source, embedding })
     }
     onSuccess(){ return "Additional embedding stored successfully" }
     onFailure(){ return "Failed to store additional embedding:" }
@@ -691,24 +680,20 @@ function chunkText(text, maxLength, overlapSize) {
 // Query function for outside use.
 
 async function fetchEmbeddingsForKeys(keys, source) {
-    const response = await Request.send(new fetchEmbeddingsForKeys.ct(keys, source));
-    if (!response) return [];
-
-    const selectedEmbeddings = await response.json();
-    return selectedEmbeddings.map(embedding => ({
-        key: embedding.key,
-        embedding: embedding.embedding,
-        text: embedding.text
-    }));
+    return (await Request.send(new fetchEmbeddingsForKeys.ct(keys, source))) || []
 }
 fetchEmbeddingsForKeys.ct = class {
+    url = 'http://localhost:4000/fetch-embeddings-by-keys';
     constructor(keys, source){
-        this.url = 'http://localhost:4000/fetch-embeddings-by-keys';
-        this.options = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keys, source })
-        };
+        this.options = Request.makeJsonOptions('POST', { keys, source })
+    }
+    onResponse(res){ return res.json().then(this.onData) }
+    onData(selectedEmbeddings){
+        return selectedEmbeddings.map( (embedding)=>({
+            key: embedding.key,
+            embedding: embedding.embedding,
+            text: embedding.text
+        }))
     }
     onFailure(){ return "Failed to fetch selected embeddings:" }
 }

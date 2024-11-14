@@ -1,50 +1,55 @@
-Modal.Connect = {}
+Modal.Connect = class {
+    maxNodes = 8;
+    constructor(originNode){
+        this.originNode = originNode;
 
-Modal.Connect.setup = function(originNode){
-    const maxNodes = 8;
-    Modal.open('nodeConnectionModal');
-    const searchBar = Elem.byId('connectModalSearchBar');
-    searchBar.value = originNode.getTitle();
-    Elem.byId('nodeList').innerHTML = ''; // clear previous contents
+        Modal.open('nodeConnectionModal'); // clones searchBar and nodeList
+        this.searchBar = Elem.byId('connectModalSearchBar');
+        this.nodeList = Elem.byId('nodeList');
 
-    const update = Modal.Connect.updateNodeList.bind(null, originNode, maxNodes);
-    update();
-    On.input(searchBar, update);
-}
-
-Modal.Connect.updateNodeList = function(originNode, maxNodes){
-    const nodeList = Elem.byId('nodeList');
-
-    const searchInput = Elem.byId('connectModalSearchBar').value.trim();
-    const searchTerm = (searchInput.length > 0 ? searchInput : originNode.getTitle());
-    const nodes = nodesForSearchTerm(searchTerm, maxNodes);
-    if (nodes.length < 1) {
-        nodeList.innerHTML = '<li>No notes found.</li>';
-        return;
+        this.searchBar.value = originNode.getTitle();
+        this.setContents('');
+        this.updateNodeList();
+        On.input(this.searchBar, this.updateNodeList);
     }
 
-    nodeList.innerHTML = '';
-    nodes.forEach(node => {
+    setContents(html){ this.nodeList.innerHTML = html }
+    updateNodeList = ()=>{
+        const searchInput = this.searchBar.value.trim();
+        const searchTerm = (searchInput.length > 0) ? searchInput
+                         : this.originNode.getTitle();
+        const nodes = nodesForSearchTerm(searchTerm, this.maxNodes);
+        const found = (nodes.length > 0);
+        this.setContents(found ? '' : '<li>No notes found.</li>');
+        if (found) nodes.forEach(this.addItem, this);
+    }
+    addItem(node){
+        const originNode = this.originNode;
         if (node === originNode) return;
 
         const textContent = node.getTitle().trim() || 'Untitled';
-        const className = (findExistingEdge(node, originNode) ? 'connected' : 'disconnected');
-        function onClick(e){
-            const existingEdge = findExistingEdge(node, originNode);
-            if (!existingEdge) {
-                connectNodes(node, originNode);
-                li.className = 'connected';
-                return;
-            }
-
-            if (node.isTextNode && originNode.isTextNode) {
-                removeEdgeFromAllInstances(node.getTitle(), originNode.getTitle());
-            } else {
-                existingEdge.remove();
-            }
-            li.className = 'disconnected';
+        const className = (findExistingEdge(node, originNode))
+                        ? 'connected' : 'disconnected';
+        const li = Html.make.li(textContent, className, this.onItemClicked);
+        li.dataset.nodeId = node.uuid;
+        this.nodeList.appendChild(li);
+    }
+    onItemClicked = (e)=>{
+        const li = e.target;
+        const node = Node.byUuid(li.dataset.nodeId);
+        const originNode = this.originNode;
+        const existingEdge = findExistingEdge(node, originNode);
+        if (!existingEdge) {
+            connectNodes(node, originNode);
+            li.setAttribute('class', 'connected');
+            return;
         }
-        const li = Html.make.li(textContent, className, onClick);
-        nodeList.appendChild(li);
-    });
+
+        if (node.isTextNode && originNode.isTextNode) {
+            removeEdgeFromAllInstances(node, originNode);
+        } else {
+            existingEdge.remove();
+        }
+        li.setAttribute('class', 'disconnected');
+    }
 }

@@ -1,3 +1,5 @@
+Node.stopFollowingMouse = function(node){ node.followingMouse = 0 }
+
 class NodeMode {
     edgesIcon = document.querySelector('.edges-icon');
     locked = false;
@@ -29,7 +31,7 @@ class NodeMode {
                 this.switch(1 - this.val); // Toggle between 0 and 1
             }
         } else if (e.key === 'Escape') {
-            Graph.forEachNode( (node)=>{ node.followingMouse = 0 } )
+            Graph.forEachNode(Node.stopFollowingMouse)
         }
     }
     onKeyUp = (e)=>{

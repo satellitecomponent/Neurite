@@ -1,16 +1,94 @@
 class Graph {
     draggedNode = null;
-    edges = [];
+    edges = {};
+    edgeDirectionalities = {};
+    edgeViews = {};
+    funcPopulate = 'populateForBackground';
+    htmlEdges = Elem.byId('edges');
+    htmlNodes = Elem.byId('nodes');
     nodes = {};
+    nodeViews = {};
+    model = svg;
     movingNode;
     #nextUuid = 0;
+    own = {self: this};
 
-    deleteNode(node){ delete this.nodes[node.uuid] }
-    edgeForTarget(target){ return Edge.SvgMap.get(target.closest('path')) }
-    forEachNode(cb, ct){
-        const nodes = this.nodes;
-        for (const uuid in nodes) cb.call(ct, nodes[uuid]);
+    addEdge(edge){
+        this.addEdgeView(edge.view);
+        this.edges[edge.edgeKey] = edge;
     }
+    addEdgeView(edgeView){
+        this.edgeViews[edgeView.id] = edgeView;
+        this.htmlEdges.append(edgeView.svgArrow, edgeView.svgBorder, edgeView.svgLink);
+    }
+    addNode(node){
+        let id = this.nodes.length;
+        let div = node.content;
+        /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+        div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+        div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+        div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+        if (node.view) this.nodeViews[node.view.id] = node.view;
+        this.nodes[node.uuid] = node;
+    }
+    appendNode(node){ this.htmlNodes.append(node.content) }
+
+    clear(){
+        SelectedNodes.clear();
+        this.forEachEdge(this.deleteEdge, this);
+        this.edgeDirectionalities = {};
+        this.forEachNode(this.deleteNode, this);
+    }
+    deleteEdge(edge){
+        this.edgeDirectionalities[edge.edgeKey] = edge.directionality;
+
+        // Remove this edge from both connected nodes' edges arrays
+        edge.pts.forEach(Node.removeThisEdge, edge);
+
+        this.deleteEdgeView(edge.view);
+        delete this.edges[edge.edgeKey];
+    }
+    deleteEdgeView(edgeView){
+        edgeView.svgArrow.remove();
+        edgeView.svgBorder.remove();
+        edgeView.svgLink.remove();
+        delete this.edgeViews[edgeView.id];
+    }
+    deleteNode(target){
+        const dels = [];
+        this.forEachNode( (node)=>{
+            for (const edge of node.edges) {
+                if (edge.pts.includes(target)) dels.push(edge);
+            }
+        });
+        for (const edge of dels) edge.remove();
+
+        // Remove target node from the edges array of any nodes it was connected to
+        this.forEachNode(Node.filterEdgesToThis, target);
+
+        const uuid = target.uuid;
+        SelectedNodes.uuids.delete(uuid);
+        delete this.nodeViews[uuid];
+        delete this.nodes[uuid];
+
+        target.removed = true;
+        target.content.remove();
+    }
+
+    filterNodes(cb, ct){
+        const arr = [];
+        const nodes = this.nodes;
+        for (const uuid in nodes) {
+            const node = nodes[uuid];
+            if (cb.call(ct, node)) arr.push(node);
+        }
+        return arr;
+    }
+    forEachEdge(cb, ct){ Object.forEach(this.edges, cb, ct) }
+    forEachEdgeView(cb, ct){ Object.forEach(this.edgeViews, cb, ct) }
+    forEachNode(cb, ct){ Object.forEach(this.nodes, cb, ct) }
+    forEachNodeView(cb, ct){ Object.forEach(this.nodeViews, cb, ct) }
+
     get nextUuid(){
         const nodes = this.nodes;
         while (nodes[this.#nextUuid]) {
@@ -18,20 +96,23 @@ class Graph {
         }
         return this.#nextUuid;
     }
-    nodeForTarget(target){
-        return this.nodes[target.closest('[data-uuid]')?.dataset.uuid]
+    setEdgeDirectionalityFromData(edgeData){
+        this.edgeDirectionalities[edgeData.edgeKey] ||= {
+            start: Node.byUuid(edgeData.directionality.start),
+            end: Node.byUuid(edgeData.directionality.end)
+        }
     }
-    registerNode(node){
-        let id = this.nodes.length;
-        let div = node.content;
-        /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
-        div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
-        div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
-        div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
-        this.nodes[node.uuid] = node;
+    viewForElem(target){
+        const viewType = target.dataset.viewType;
+        if (viewType) return this[viewType][target.dataset.viewId];
+
+        const elem = target.closest('[data-view-type]');
+        if (elem) return this[elem.dataset.viewType][elem.dataset.viewId];
     }
 }
 Graph = new Graph();
+svg.dataset.viewType = 'own';
+svg.dataset.viewId = 'self';
 
 
 
@@ -39,32 +120,37 @@ class SelectedNodes {
     uuids = new Set();
 
     forEach(cb, ct){
-        this.uuids.forEach( (uuid)=>cb.call(ct, Node.byUuid(uuid)) )
+        this.uuids.forEach( (uuid)=>{
+            const node = Node.byUuid(uuid);
+            if (node) cb.call(ct, node);
+        })
+    }
+    forEachView(cb, ct){
+        this.uuids.forEach( (id)=>{
+            const nodeView = NodeView.byId(id);
+            if (nodeView) cb.call(ct, nodeView);
+        })
     }
     hasNode(node){ return this.uuids.has(node.uuid) }
 
     toggleNode(node){
-        node.windowDiv.classList.toggle('selected');
+        node.view.toggleSelected();
         const isSelected = this.uuids.has(node.uuid);
         this.uuids[isSelected ? 'delete' : 'add'](node.uuid);
         Logger.debug(isSelected ? 'deselected' : 'selected');
     }
 
-    restoreNodeById(uuid){
-        const node = Node.byUuid(uuid);
-        if (!node) return;
+    restoreNodeById(id){
+        const nodeView = NodeView.byId(id);
+        if (!nodeView) return;
 
-        node.windowDiv.classList.add('selected');
-        this.uuids.add(uuid);
+        nodeView.toggleSelected(true);
+        this.uuids.add(id);
     }
 
     clear(){
-        this.uuids.forEach(this.clearNodeById);
+        this.forEachView(NodeView.toggleSelectedToThis, false);
         this.uuids.clear();
-    }
-    clearNodeById(uuid){
-        const node = Node.byUuid(uuid);
-        if (node) node.windowDiv.classList.remove('selected');
     }
 
     getCentroid(){
@@ -122,33 +208,30 @@ function edgeFromJSON(edgeData) {
     if (pts.includes(undefined)) Logger.warn("missing keys", edgeData, nodes);
 
     // Check if edge already exists
-    for (const e of Graph.edges) {
-        const e_pts = e.pts.map(n => n.uuid).sort();
+    Graph.forEachEdge( (edge)=>{
+        const e_pts = edge.pts.map(n => n.uuid).sort();
         const o_pts = edgeData.p.sort();
         if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) return; // Edge already exists
-    }
+    });
 
-    const e = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
-    pts.forEach(Node.addEdgeThis, e);
-    Graph.edges.push(e);
-    return e;
+    const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
+    pts.forEach(Node.addEdgeThis, edge);
+    Graph.addEdge(edge);
+    return edge;
 }
 
-function getNodeByTitle(title) {
+Node.byTitle = function(title){
     const lCaseTitle = title.toLowerCase();
-    const matchingNodes = [];
-
-    Graph.forEachNode( (node)=>{
-        const lCaseNodeTitle = node.getTitle()?.toLowerCase();
-        if (lCaseNodeTitle === lCaseTitle) matchingNodes.push(node);
-    });
+    const matchingNodes = Graph.filterNodes(
+        (node)=>(node.getTitle()?.toLowerCase() === lCaseTitle)
+    );
 
     Logger.debug(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
     Logger.debug("Matching nodes:", matchingNodes);
 
     return (matchingNodes.length > 0 ? matchingNodes[0] : null);
 }
-function getTextareaContentForNode(node) {
+Node.getTextareaContent = function(node){
     if (!node?.content) {
         Logger.warn("Node or node.content is not available");
         return null;
@@ -178,22 +261,21 @@ function testNodeText(title) {
         }
     });
 
-    const node = getNodeByTitle(title);
-    if (node) {
-        Logger.info("Fetching text for node with title:", title);
-        const text = getTextareaContentForNode(node);
-        Logger.info("Text fetched:", text);
-        return text;
-    } else {
+    const node = Node.byTitle(title);
+    if (!node) {
         Logger.warn("Node with title", title, "not found");
         return null;
     }
+
+    const text = Node.getTextareaContent(node);
+    Logger.info("Node with title:", title, "has text:", text);
+    return text;
 }
 
 function getNodeText() {
     const nodes = [];
     Graph.forEachNode( (node)=>{
-        const titleInput = node.titleInput;
+        const titleInput = node.view.titleInput;
         const contentText = node.hiddenTextarea;
 
         nodes.push({

@@ -140,10 +140,10 @@ function setInstructions(node) {
     node.customInstructionsTextarea.value = promptContentTextarea.value;
 
     // Set the node's title input to the selected prompt's title
-    if (promptLibrary.currentPromptIndex !== -1 && node.titleInput) {
+    if (promptLibrary.currentPromptIndex !== -1 && node.view.titleInput) {
         const selectedPromptTitle = document.querySelector('.prompt-list input.selected');
         if (selectedPromptTitle) {
-            node.titleInput.value = selectedPromptTitle.value;
+            node.view.titleInput.value = selectedPromptTitle.value;
         }
     }
 }

@@ -1,8 +1,7 @@
 function createWolframNode(wolframData) {
-    const { table, reformulatedQuery } = wolframData;
-    let content = [table];
-    let scale = 1;
-    let wolframNode = addNodeAtNaturalScale(`${reformulatedQuery} - Wolfram Alpha Result`, content, scale, 0.5, true);
+    const content = [wolframData.table];
+    const title = wolframData.reformulatedQuery + " - Wolfram Alpha Result";
+    const wolframNode = NodeView.addAtNaturalScale(title, content, 1, 0.5, true);
     wolframNode.followingMouse = 1;
     wolframNode.draw();
     wolframNode.mouseAnchor = toDZ(new vec2(0, -wolframNode.content.offsetHeight / 2 + 6));
@@ -12,7 +11,7 @@ function createWolframNode(wolframData) {
             f: "textarea",
             a: {
                 p: [0, 0, 1],
-                v: node.titleInput.value
+                v: node.view.titleInput.value
             }
         };
     });

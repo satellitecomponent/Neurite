@@ -1,38 +1,40 @@
-async function fetchDirectoryContents(path) { // from the Node.js server
-    const response = await Request.send(new fetchDirectoryContents.ct(path));
-    if (!response) return;
-
-    const data = await response.json();
-    Logger.debug("Directory data:", data);
-    return data;
-}
-fetchDirectoryContents.ct = class {
-    constructor(path){
-        this.url = 'http://localhost:9099/api/navigate?path=' + encodeURIComponent(path);
-        this.path = path;
+class Path {
+    static directoryFetcher = class DirectoryFetcher { // from the Node.js server
+        static baseUrl = 'http://localhost:9099/api/navigate?path=';
+        constructor(path){
+            this.url = DirectoryFetcher.baseUrl + encodeURIComponent(path);
+            this.path = path;
+        }
+        onResponse(res){ return res.json().then(this.onData) }
+        onData(data){
+            Logger.debug("Directory data:", data);
+            return data;
+        }
+        onFailure(){ return `Failed to fetch contents of directory ${this.path}:` }
     }
-    onFailure(){ return `Failed to fetch contents of directory ${this.path}:` }
-}
-
-async function fetchFileContent(path) {
-    const response = await Request.send(new fetchFileContent.ct(path));
-    if (!response) return;
-
-    const mimeType = response.headers.get('Content-Type') || '';
-    if (mimeType.startsWith('text/') || mimeType.startsWith('application/json') || mimeType.startsWith('application/xml')) {
-        const textContent = await response.text();
-        return { content: textContent, blob: null, mimeType };
-    } else {
-        const blob = await response.blob();
-        return { content: null, blob, mimeType };
+    static fileFetcher = class FileFetcher {
+        blob = null;
+        content = null;
+        static baseUrl = 'http://localhost:9099/api/read-file?path=';
+        constructor(path){
+            this.url = FileFetcher.baseUrl + encodeURIComponent(path);
+            this.path = path;
+        }
+        isTextMime(mimeType){
+            return mimeType.startsWith('text/')
+                || mimeType.startsWith('application/json')
+                || mimeType.startsWith('application/xml')
+        }
+        onResponse(res){
+            this.mimeType = res.headers.get('Content-Type') || '';
+            const isText = this.isTextMime(this.mimeType);
+            if (isText) res.text().then(this.onText);
+            else res.blob().then(this.onBlob);
+        }
+        onText = (text)=>{ this.content = text }
+        onBlob = (blob)=>{ this.blob = blob }
+        onFailure(){ return `Failed to fetch content of file ${this.path}:` }
     }
-}
-fetchFileContent.ct = class {
-    constructor(path){
-        this.url = 'http://localhost:9099/api/read-file?path=' + encodeURIComponent(path);
-        this.path = path;
-    }
-    onFailure(){ return `Failed to fetch content of file ${this.path}:` }
 }
 
 class FileTree {
@@ -107,7 +109,7 @@ class FileTree {
             return;
         }
 
-        const contents = await fetchDirectoryContents(path);
+        const contents = await Request.send(new Path.directoryFetcher(path));
         if (!contents) {
             const errorElement = Html.new.p();
             errorElement.textContent = 'Error loading directory contents.';

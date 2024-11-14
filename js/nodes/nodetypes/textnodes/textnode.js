@@ -13,8 +13,8 @@ class TextNode {
         const pythonView = Html.make.div('python-frame hidden');
         pythonView.id = 'python-frame';
 
-        const node = addNodeAtNaturalScale(name, [textarea]);
-        const divWindow = node.windowDiv;
+        const node = NodeView.addAtNaturalScale(name, [textarea]);
+        const divWindow = node.view.div;
         divWindow.append(htmlView, pythonView, editorWrapper);
         divWindow.style.minWidth = '100px';
         divWindow.style.minHeight = '100px';
@@ -33,7 +33,7 @@ class TextNode {
                 f: 'textarea',
                 a: {
                     p: [0, 0, 1],
-                    v: node.titleInput.value
+                    v: node.view.titleInput.value
                 }
             })
         );

@@ -1,5 +1,7 @@
+Link = {};
+
 async function importLinkNodeTextToZettelkasten(link) {
-    const text = await fetchLinkContentText(link);
+    const text = await Link.fetchContentText(link);
     if (!text) {
         Logger.err("Failed to retrieve text for importing into Zettelkasten:", link);
         return;

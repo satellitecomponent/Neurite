@@ -1,252 +1,391 @@
-function windowify(title, content, pos, scale, iscale, link) {
-    const odiv = Html.new.div();
-    const div = Html.make.div('window');
-    const w = Elem.byId('elements').children[0].cloneNode(true);
-    w.className = 'button-container';
-
-    const headerContainer = Html.make.div('header-container');
-    headerContainer.appendChild(w);
-
-    div.appendChild(headerContainer);
-    odiv.appendChild(div);
-
-    const innerContent = Html.make.div('content');
-    for (const c of content) {
-        innerContent.appendChild(c);
+class NodeView {
+    funcPopulate = 'populateForNode';
+    originalSizes = null;
+    constructor(node){
+        this.id = node.uuid;
+        this.model = node;
     }
-    div.appendChild(innerContent);
+    static byId(id){ return Graph.nodeViews[id] }
 
-    odiv.setAttribute('data-init', 'window');
+    static windowify(title, content, pos, scale, iscale, link){
+        const odiv = Html.new.div();
+        const div = Html.make.div('window');
+        const svg = Elem.byId('elements').children[0].cloneNode(true);
+        svg.setAttribute('class', 'button-container');
 
-    const titleInput = Html.make.input('title-input');
-    titleInput.setAttribute('type', 'text');
-    titleInput.setAttribute('value', title);
-    headerContainer.appendChild(titleInput);
+        const headerContainer = Html.make.div('header-container');
+        headerContainer.appendChild(svg);
 
-    const resizeContainer = Html.make.div('resize-container');
-    div.appendChild(resizeContainer);
+        div.appendChild(headerContainer);
+        odiv.appendChild(div);
 
-    const resizeHandle = Html.make.div('resize-handle');
-    resizeContainer.appendChild(resizeHandle);
+        const innerContent = Html.make.div('content');
+        innerContent.append(...content);
+        div.appendChild(innerContent);
 
-    const node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
-    div.win = node;
-    return rewindowify(node);
-}
+        odiv.setAttribute('data-init', 'window');
 
-function initWindow(node) {
-    node.headerContainer = node.content.querySelector('.header-container');
-    node.windowDiv = node.content.querySelector(".window");
-    node.innerContent = node.windowDiv.querySelector('.content');
-    node.dropdown = document.querySelector('.dropdown');
-    node.wrapperDivs = document.getElementsByClassName('wrapperDiv');
+        const titleInput = Html.make.input('title-input');
+        titleInput.setAttribute('type', 'text');
+        titleInput.setAttribute('value', title);
+        headerContainer.appendChild(titleInput);
 
-    const resizeHandle = node.content.querySelector('.resize-handle');
-    setResizeEventListeners(resizeHandle, node);
+        const resizeContainer = Html.make.div('resize-container');
+        div.appendChild(resizeContainer);
 
-    node.titleInput = node.content.querySelector('.title-input');
+        const resizeHandle = Html.make.div('resize-handle');
+        resizeContainer.appendChild(resizeHandle);
 
-    addWindowEventListeners(node)
-}
+        const node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
+        odiv.dataset.viewType = 'nodeViews';
+        odiv.dataset.viewId = node.uuid;
 
-function addWindowEventListeners(node) {
-    setupHeaderContainerListeners(node.headerContainer);
-    setupWindowDivListeners(node);
-    setupTitleInputListeners(node.titleInput);
-    setupResizeHandleListeners(node);
-    observeContentResize(node.innerContent, node.windowDiv);
-}
+        const view = node.view = new NodeView(node);
+        view.buttons = svg;
+        view.headerContainer = headerContainer;
+        view.innerContent = innerContent;
+        view.resizeHandle = resizeHandle;
+        view.titleInput = titleInput;
+        view.div = div;
+        view.rewindowify();
+        return view;
+    }
 
-function setupHeaderContainerListeners(headerContainer) {
-    On.mousedown(headerContainer, (e)=>{
+    init(){
+        this.model.dropdown = document.querySelector('.dropdown');
+        this.model.wrapperDivs = document.getElementsByClassName('wrapperDiv');
+
+        On.mousedown(this.headerContainer, NodeView.onHeaderContainerMouseDown);
+        this.setWindowDivListeners();
+        this.setTitleInputListeners();
+        this.setResizeEventListeners();
+        this.observeContentResize(); // unknown wrappers
+    }
+
+    static onHeaderContainerMouseDown(e){
         if (e.getModifierState(controls.altKey.value)) {
             e.stopPropagation() // Prevent dragging if Alt key is pressed
         }
-    })
-}
-
-function setupWindowDivListeners(node) {
-    const windowDiv = node.windowDiv;
-    const dropdown = node.dropdown;
-    const wrapperDivs = node.wrapperDivs;
-
-    let clickStartX, clickStartY;
-
-    On.mousedown(windowDiv, (e)=>{
-        if (e.getModifierState(controls.altKey.value)) {
-            // Record the starting position of the mouse only if the Alt key is held
-            clickStartX = e.clientX;
-            clickStartY = e.clientY;
-        }
-    });
-
-    On.mouseup(windowDiv, (e)=>{
-        if (e.getModifierState(controls.altKey.value)) {
-            const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
-            // Check if the mouse has moved more than a certain threshold
-            const dragThreshold = 10; // pixels
-            if (distanceMoved < dragThreshold) SelectedNodes.toggleNode(node);
-        }
-
-        if (e.button !== 2) ContextMenu.hide(); // not right mouse button
-    });
-
-    On.mousedown(windowDiv, (e)=>{
-        autopilotSpeed = 0;
-        dropdown.classList.add('no-select');
-        Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
-    });
-
-    On.mouseup(windowDiv, (e)=>{
-        dropdown.classList.remove('no-select');
-        Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
-    });
-
-    On.mouseup(window, (e)=>{
-        dropdown.classList.remove('no-select');
-        Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
-    });
-}
-
-function setupTitleInputListeners(titleInput) {
-    let isDragging = false;
-    let isMouseDown = false;
-
-    On.paste(titleInput, Event.stopPropagation);
-
-    On.mousedown(titleInput, (e)=>{ isMouseDown = true } );
-
-    On.mousemove(titleInput, (e)=>{
-        if (isMouseDown) { isDragging = true; }
-        if (isDragging && !e.getModifierState(controls.altKey.value)) {
-            titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
-        }
-    });
-
-    On.mouseup(document, (e)=>{
-        isDragging = false;
-        isMouseDown = false;
-    });
-
-    On.mouseleave(titleInput, (e)=>{ isDragging = false } );
-}
-
-function setupResizeHandleListeners(node) {
-    const resizeHandle = node.windowDiv.querySelector('.resize-handle');
-    setResizeEventListeners(resizeHandle, node);
-}
-
-function rewindowify(node) {
-    initWindow(node);
-
-    node.push_extra("window");
-    let w = node.content;
-
-    const btnDel = w.querySelector("#button-delete");
-    btnDel.classList.add('windowbutton');
-
-    const btnFs = w.querySelector("#button-fullscreen");
-    btnFs.classList.add('windowbutton');
-
-    const btnCol = w.querySelector("#button-collapse");
-    btnCol.classList.add('windowbutton');
-
-    let titleInput = node.titleInput;
-
-    function set(btn, v, s = "fill") {
-        btn.children[0].setAttribute('fill', settings.buttonGraphics[v][0]);
-        btn.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
     }
 
-    function ui(btn, cb = ()=>{}, s = "fill") {
-        function onMouseLeave(){
-            const state = (titleInput.matches(':focus') ? 'focus' : 'initial');
-            set(btn, state, s);
-            btn.ready = false;
-        }
+    setWindowDivListeners(){
+        const node = this.model;
+        const windowDiv = this.div;
+        const dropdown = node.dropdown;
+        const wrapperDivs = node.wrapperDivs;
 
-        On.mouseenter(btn, (e)=>set(btn, "hover", s) );
-        On.mouseleave(btn, onMouseLeave);
-        On.mousedown(btn, (e)=>{
-            set(btn, "click", s);
-            btn.ready = true;
-            e.stopPropagation();
-        });
-        On.mouseup(btn, (e)=>{
-            set(btn, "initial", s);
-            e.stopPropagation();
-            if (btn.ready) cb(e);
+        let clickStartX, clickStartY;
+
+        On.mousedown(windowDiv, (e)=>{
+            if (e.getModifierState(controls.altKey.value)) {
+                // Record the starting position of the mouse only if the Alt key is held
+                clickStartX = e.clientX;
+                clickStartY = e.clientY;
+            }
         });
 
-        onMouseLeave();
+        On.mouseup(windowDiv, (e)=>{
+            if (e.getModifierState(controls.altKey.value)) {
+                const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
+                // Check if the mouse has moved more than a certain threshold
+                const dragThreshold = 10; // pixels
+                if (distanceMoved < dragThreshold) SelectedNodes.toggleNode(node);
+            }
+
+            if (e.button !== 2) ContextMenu.hide(); // not right mouse button
+        });
+
+        On.mousedown(windowDiv, (e)=>{
+            autopilotSpeed = 0;
+            dropdown.classList.add('no-select');
+            Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
+        });
+
+        On.mouseup(windowDiv, (e)=>{
+            dropdown.classList.remove('no-select');
+            Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
+        });
+
+        On.mouseup(window, (e)=>{
+            dropdown.classList.remove('no-select');
+            Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
+        });
     }
 
-    ui(btnDel, () => {
-        const title = node.getTitle();
-        if (prevNode === node) {
-            prevNode = undefined;
-            mousePath = '';
-            svg_mousePath.setAttribute('d', '');
-        }
-        node.remove();
-        if (node.isTextNode) {
-            nodeInfo = getZetNodeCMInstance(node)
-            const parser = nodeInfo.parser;
-            parser.deleteNodeByTitle(title);
-        }
-    });
+    setTitleInputListeners(){
+        const titleInput = this.titleInput;
+        let isDragging = false;
+        let isMouseDown = false;
 
-    ui(btnFs, () => {
-        node.zoom_to_fit();
-        zoomTo = zoomTo.scale(1.2);
-        autopilotSpeed = settings.autopilotSpeed;
-        if (node.isTextNode) {
-            nodeInfo = getZetNodeCMInstance(node);
-            nodeInfo.ui.scrollToTitle(node.getTitle());
-            zetPanes.switchPane(nodeInfo.paneId);
-        }
-    });
+        On.paste(titleInput, Event.stopPropagation);
 
-    ui(btnCol, ()=>toggleNodeState(node) , "stroke");
+        On.mousedown(titleInput, (e)=>{ isMouseDown = true } );
 
-    On.mouseup(document,
-        (e)=>{ if (node.followingMouse) node.stopFollowingMouse() }
-    );
+        On.mousemove(titleInput, (e)=>{
+            if (isMouseDown) { isDragging = true; }
+            if (isDragging && !e.getModifierState(controls.altKey.value)) {
+                titleInput.selectionStart = titleInput.selectionEnd; // Reset selection
+            }
+        });
 
-    function updateSvgStrokeColor(focused) {
-        const fillColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
-        const strokeColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
+        On.mouseup(document, (e)=>{
+            isDragging = false;
+            isMouseDown = false;
+        });
 
-        node.content.querySelector("#button-delete").children[1].setAttribute('fill', fillColor);
-        node.content.querySelector("#button-fullscreen").children[1].setAttribute('fill', fillColor);
-        node.content.querySelector("#button-collapse").children[1].setAttribute('stroke', strokeColor);
+        On.mouseleave(titleInput, (e)=>{ isDragging = false } );
     }
 
-    if (titleInput) {
-        On.focus(titleInput, updateSvgStrokeColor.bind(null, true));
-        On.blur(titleInput, updateSvgStrokeColor.bind(null, false));
-    }
+    rewindowify(){
+        const node = this.model;
+        this.init();
 
-    return node;
-}
+        node.push_extra("window");
+        const buttons = this.buttons;
 
-function addNodeAtNaturalScale(title, content, scale = 1, nscale_mult = 0.5, window_it = true) {
-    let node;
-    if (window_it) {
-        const pos = toZ(mousePos)
-        if (!Array.isArray(content)) {
-            content = [content];
+        const btnDel = buttons.querySelector('#button-delete');
+        btnDel.classList.add('windowbutton');
+
+        const btnFs = buttons.querySelector('#button-fullscreen');
+        btnFs.classList.add('windowbutton');
+
+        const btnCol = buttons.querySelector('#button-collapse');
+        btnCol.classList.add('windowbutton');
+
+        const titleInput = this.titleInput;
+
+        function set(btn, v, s = "fill") {
+            btn.children[0].setAttribute('fill', settings.buttonGraphics[v][0]);
+            btn.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
         }
-        node = windowify(title, content, pos, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
-        htmlnodes_parent.appendChild(node.content);
-    } else {
-        const div = Html.new.div();
-        node = new Node(toZ(mousePos), div, nscale_mult * (zoom.mag2() ** settings.zoomContentExp), scale);
-        div.appendChild(content);
-        htmlnodes_parent.appendChild(div);
+
+        function ui(btn, cb = ()=>{}, s = "fill") {
+            function onMouseLeave(){
+                const state = (titleInput.matches(':focus') ? 'focus' : 'initial');
+                set(btn, state, s);
+                btn.ready = false;
+            }
+
+            On.mouseenter(btn, (e)=>set(btn, "hover", s) );
+            On.mouseleave(btn, onMouseLeave);
+            On.mousedown(btn, (e)=>{
+                set(btn, "click", s);
+                btn.ready = true;
+                e.stopPropagation();
+            });
+            On.mouseup(btn, (e)=>{
+                set(btn, "initial", s);
+                e.stopPropagation();
+                if (btn.ready) cb(e);
+            });
+
+            onMouseLeave();
+        }
+
+        ui(btnDel, () => {
+            const title = node.getTitle();
+            if (Node.prev === node) {
+                Node.prev = null;
+                nodeSimulation.mousePath = [];
+                nodeSimulation.svg_mousePath.setAttribute('d', '');
+            }
+            node.remove();
+            if (node.isTextNode) {
+                nodeInfo = getZetNodeCMInstance(node)
+                const parser = nodeInfo.parser;
+                parser.deleteNodeByTitle(title);
+            }
+        });
+
+        ui(btnFs, () => {
+            node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.2);
+            autopilotSpeed = settings.autopilotSpeed;
+            if (node.isTextNode) {
+                nodeInfo = getZetNodeCMInstance(node);
+                nodeInfo.ui.scrollToTitle(node.getTitle());
+                zetPanes.switchPane(nodeInfo.paneId);
+            }
+        });
+
+        ui(btnCol, this.toggleCollapse.bind(this), "stroke");
+
+        On.mouseup(document,
+            (e)=>{ if (node.followingMouse) node.stopFollowingMouse() }
+        );
+
+        function updateSvgStrokeColor(focused) {
+            const fillColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
+            const strokeColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
+
+            btnDel.children[1].setAttribute('fill', fillColor);
+            btnFs.children[1].setAttribute('fill', fillColor);
+            btnCol.children[1].setAttribute('stroke', strokeColor);
+        }
+
+        if (titleInput) {
+            On.focus(titleInput, updateSvgStrokeColor.bind(null, true));
+            On.blur(titleInput, updateSvgStrokeColor.bind(null, false));
+        }
     }
-    Graph.registerNode(node)
-    return node;
+
+    static addAtNaturalScale(title, content, iscale = 1, nscale_mult = 0.5, window_it = true) {
+        const scale = nscale_mult * (zoom.mag2() ** settings.zoomContentExp);
+        let node;
+        if (window_it) {
+            const pos = toZ(mousePos);
+            if (!Array.isArray(content)) content = [content];
+            node = NodeView.windowify(title, content, pos, scale, iscale).model;
+        } else {
+            const div = Html.new.div();
+            node = new Node(toZ(mousePos), div, scale, iscale);
+            div.appendChild(content);
+        }
+        Graph.appendNode(node);
+        Graph.addNode(node);
+        return node;
+    }
+
+    // impact on responsiveness?
+    // On.resize(window, (e)=>{ } );
+
+    setResizeEventListeners(){
+        const node = this.model;
+        const inverse2DMatrix = (matrix) => {
+            const det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+            if (det === 0) return null;
+
+            const invDet = 1 / det;
+            return [
+                matrix[3] * invDet,
+                -matrix[1] * invDet,
+                -matrix[2] * invDet,
+                matrix[0] * invDet,
+            ];
+        };
+
+        const getDivInverseTransformMatrix = (div) => {
+            const transform = window.getComputedStyle(div).transform;
+            if (transform === 'none') return [1, 0, 0, 1];
+
+            const matrix = transform
+                .split('(')[1]
+                .split(')')[0]
+                .split(',')
+                .map(parseFloat)
+                .slice(0, 4);
+            return inverse2DMatrix(matrix);
+        };
+
+        let windowDiv = this.div;
+
+        let startX;
+        let startY;
+        let startWidth;
+        let startHeight;
+
+        let isMouseMoving = false;
+
+        const handleMouseMove = (e) => {
+            if (!e.buttons) {
+                handleMouseUp();
+                return;
+            }
+
+            isMouseMoving = true;
+
+            // Calculate the change in position of the mouse considering the accumulated transform matrix
+            const scalingFactors = scalingFactorsFromElem(windowDiv);
+            const dx = 2 * (e.pageX - startX) / scalingFactors.scaleX;
+            const dy = 2 * (e.pageY - startY) / scalingFactors.scaleY;
+
+            const content = this.innerContent;
+            const minWidth = content ? content.offsetWidth + 0 : 100;
+            const minHeight = content ? content.offsetHeight + 35 : 100;
+            const newWidth = Math.max(startWidth + dx, minWidth);
+            const newHeight = Math.max(startHeight + dy, minHeight);
+            windowDiv.style.maxWidth = `${newWidth}px`;
+            windowDiv.style.width = `${newWidth}px`;
+            windowDiv.style.height = `${newHeight}px`;
+
+            const style = node.textNodeSyntaxWrapper?.style;
+            if (style) {
+                style.flexGrow = '1';
+                style.minHeight = `0px`;
+                style.maxHeight = `100%`;
+                style.width = `100%`;
+            }
+
+            const htmlView = node.htmlView;
+            if (htmlView) {
+                htmlView.style.width = '100%';
+                htmlView.style.height = '100%';
+            }
+
+            const aiNodeWrapperDiv = node.ainodewrapperDiv;
+            if (aiNodeWrapperDiv) {
+                aiNodeWrapperDiv.style.flexGrow = '1';
+                aiNodeWrapperDiv.style.width = '100%';
+            }
+
+            const fileTreeContainer = node.fileTreeContainer;
+            if (fileTreeContainer) {
+                fileTreeContainer.style.width = '100%';
+            }
+        };
+
+        const handleMouseUp = () => {
+            isMouseMoving = false;
+            Off.mousemove(document, handleMouseMove);
+            Off.mouseup(document, handleMouseUp);
+            document.body.style.cursor = 'auto';
+            node.enableIframePointerEvents();
+        };
+        On.mousedown(this.resizeHandle, (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            startX = e.pageX;
+            startY = e.pageY;
+            startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
+            startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
+            isMouseMoving = true; // Flag to indicate that a resize operation is in progress
+            On.mousemove(document, handleMouseMove);
+            On.mouseup(document, handleMouseUp);
+            node.disableIframePointerEvents();
+        });
+    }
+
+    resetWindowDivSize(){
+        const style = this.div.style;
+        style.width = 'fit-content';
+        style.height = 'fit-content';
+        style.maxWidth = 'fit-content';
+        style.maxHeight = 'fit-content';
+    }
+    
+    observeContentResize(iframeWrapper, displayWrapper){
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+    
+                const buttonsWrapper = this.div.querySelector(".buttons-wrapper");
+                if (!buttonsWrapper) continue;
+    
+                const buttonsHeight = buttonsWrapper.offsetHeight || 0;
+                const iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
+    
+                iframeWrapper.style.width = width + 'px';
+                iframeWrapper.style.height = iframeHeight + 'px';
+                displayWrapper.style.width = width + 'px';
+                displayWrapper.style.height = iframeHeight + 'px';
+            }
+        });
+    
+        resizeObserver.observe(this.div);
+    }
+
+    toggleSelected(value){ this.div.classList.toggle('selected', value) }
+    static toggleSelectedToThis(nodeView){ nodeView.toggleSelected(this) }
 }
 
 function scalingFactorsFromElem(element) {
@@ -260,144 +399,6 @@ function scalingFactorsFromElem(element) {
         scaleX: (isZero ? 1 : rect.width / width),
         scaleY: (isZero ? 1 : rect.height / height)
     };
-}
-
-// impact on responsiveness?
-// On.resize(window, (e)=>{ } );
-
-function setResizeEventListeners(resizeHandle, node) {
-    const inverse2DMatrix = (matrix) => {
-        const det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
-        if (det === 0) return null;
-
-        const invDet = 1 / det;
-        return [
-            matrix[3] * invDet,
-            -matrix[1] * invDet,
-            -matrix[2] * invDet,
-            matrix[0] * invDet,
-        ];
-    };
-
-    const getDivInverseTransformMatrix = (div) => {
-        const transform = window.getComputedStyle(div).transform;
-        if (transform === 'none') return [1, 0, 0, 1];
-
-        const matrix = transform
-            .split('(')[1]
-            .split(')')[0]
-            .split(',')
-            .map(parseFloat)
-            .slice(0, 4);
-        return inverse2DMatrix(matrix);
-    };
-
-    let windowDiv = node.windowDiv;
-
-    let startX;
-    let startY;
-    let startWidth;
-    let startHeight;
-
-    let isMouseMoving = false;
-
-    const handleMouseMove = (e) => {
-        if (!e.buttons) {
-            handleMouseUp();
-            return;
-        }
-
-        isMouseMoving = true;
-
-        // Calculate the change in position of the mouse considering the accumulated transform matrix
-        const scalingFactors = scalingFactorsFromElem(windowDiv);
-        const dx = 2 * (e.pageX - startX) / scalingFactors.scaleX;
-        const dy = 2 * (e.pageY - startY) / scalingFactors.scaleY;
-
-        const content = node.innerContent;
-        const minWidth = content ? content.offsetWidth + 0 : 100;
-        const minHeight = content ? content.offsetHeight + 35 : 100;
-        const newWidth = Math.max(startWidth + dx, minWidth);
-        const newHeight = Math.max(startHeight + dy, minHeight);
-        windowDiv.style.maxWidth = `${newWidth}px`;
-        windowDiv.style.width = `${newWidth}px`;
-        windowDiv.style.height = `${newHeight}px`;
-
-        const style = node.textNodeSyntaxWrapper?.style;
-        if (style) {
-            style.flexGrow = '1';
-            style.minHeight = `0px`;
-            style.maxHeight = `100%`;
-            style.width = `100%`;
-        }
-
-        const htmlView = node.htmlView;
-        if (htmlView) {
-            htmlView.style.width = '100%';
-            htmlView.style.height = '100%';
-        }
-
-        const aiNodeWrapperDiv = node.ainodewrapperDiv;
-        if (aiNodeWrapperDiv) {
-            aiNodeWrapperDiv.style.flexGrow = '1';
-            aiNodeWrapperDiv.style.width = '100%';
-        }
-
-        const fileTreeContainer = node.fileTreeContainer;
-        if (fileTreeContainer) {
-            fileTreeContainer.style.width = '100%';
-        }
-    };
-
-    const handleMouseUp = () => {
-        isMouseMoving = false;
-        Off.mousemove(document, handleMouseMove);
-        Off.mouseup(document, handleMouseUp);
-        document.body.style.cursor = 'auto';
-        node.enableIframePointerEvents();
-    };
-    On.mousedown(resizeHandle, (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        startX = e.pageX;
-        startY = e.pageY;
-        startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
-        startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
-        isMouseMoving = true; // Flag to indicate that a resize operation is in progress
-        On.mousemove(document, handleMouseMove);
-        On.mouseup(document, handleMouseUp);
-        node.disableIframePointerEvents();
-    });
-
-}
-
-function resetWindowDivSize(windowDiv) {
-    const style = windowDiv.style;
-    style.width = 'fit-content';
-    style.height = 'fit-content';
-    style.maxWidth = 'fit-content';
-    style.maxHeight = 'fit-content';
-}
-
-function observeContentResize(windowDiv, iframeWrapper, displayWrapper) {
-    const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-            const { width, height } = entry.contentRect;
-
-            const buttonsWrapper = windowDiv.querySelector(".buttons-wrapper");
-            if (!buttonsWrapper) continue;
-
-            const buttonsHeight = buttonsWrapper.offsetHeight || 0;
-            const iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
-
-            iframeWrapper.style.width = width + 'px';
-            iframeWrapper.style.height = iframeHeight + 'px';
-            displayWrapper.style.width = width + 'px';
-            displayWrapper.style.height = iframeHeight + 'px';
-        }
-    });
-
-    resizeObserver.observe(windowDiv);
 }
 
 function observeParentResize(parentDiv, iframe, paddingWidth = 50, paddingHeight = 80) {

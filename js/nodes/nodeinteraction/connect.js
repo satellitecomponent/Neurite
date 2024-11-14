@@ -16,7 +16,7 @@ function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    Graph.edges.push(edge);
+    Graph.addEdge(edge);
     return edge;
 }
 
@@ -74,12 +74,12 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     // Half distance to account for radial edge connection.
     const adjustedDistance = distance * 0.5;
 
-    let edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
+    const edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
 
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    Graph.edges.push(edge);
+    Graph.addEdge(edge);
     return edge;
 }
 
@@ -104,30 +104,28 @@ function getNodeData(node) {
         Logger.debug("Skipping image node", node.uuid);
         return null;
     }
-    const titleElement = node.titleInput;
-    const title = titleElement ? titleElement.value : "No title found";
-    const createdAt = node.createdAt;
-    const isLLM = node.isLLM;  // Assuming you have this flag set on the node object.
 
-    if (!createdAt) {
+    const titleInput = node.view.titleInput;
+    const title = titleInput ? titleInput.value : "No title found";
+
+    if (!node.createdAt) {
         Logger.warn("getNodeData: Creation time for node", node.uuid, "is not defined.")
     }
 
-    if (isLLM) {
-        // Handle AI nodes
+    if (node.isLLM) {
         const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.aiResponseTextArea);
         const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nConversation History:${lastPromptsAndResponses}`;
         return nodeInfo;
-    } else {
-        // Handle regular text content
-        let contentText = getTextareaContentForNode(node);
-        if (!contentText) {
-            Logger.warn("No content found for node");
-            return null;
-        }
-        const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
-        return nodeInfo;
     }
+
+    const contentText = Node.getTextareaContent(node);
+    if (!contentText) {
+        Logger.warn("No content found for node");
+        return null;
+    }
+
+    const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
+    return nodeInfo;
 }
 
 function topologicalSort(node, visited, stack, filterAfterLLM = false, branchUUID = undefined) {

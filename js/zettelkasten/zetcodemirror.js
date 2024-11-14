@@ -396,7 +396,9 @@ function getEdgeInfo(startTitle, endTitle) {
     }
 }
 
-function removeEdgeFromAllInstances(startTitle, endTitle) {
+function removeEdgeFromAllInstances(startNode, endNode) {
+    const startTitle = startNode.getTitle();
+    const endTitle = endNode.getTitle();
     removeEdgeFromZettelkasten(startTitle, endTitle);
     removeEdgeFromZettelkasten(endTitle, startTitle);
 }
@@ -432,7 +434,7 @@ class ZettelkastenUI {
 
             if (token.type && token.type.includes("node")) {
                 const title = cm.getLine(pos.line).split(Tag.node)[1].trim();
-                if (title) toggleNodeState(getNodeByTitle(title), e);
+                if (title) Node.byTitle(title).view.toggleCollapse(e);
                 return;
             }
 
@@ -586,25 +588,7 @@ class ZettelkastenUI {
 
         highlightNodeSection(cm, this.parser, title);
 
-        return getNodeByTitle(title);
-    }
-
-    hideNodeText(title) {
-        const cm = this.cm;
-        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(title);
-        for (let i = startLineNo + 1; i <= endLineNo; i++) {
-            cm.addLineClass(i, 'text', 'hidden-text')
-        }
-        cm.refresh();
-    }
-
-    showNodeText(title) {
-        const cm = this.cm;
-        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(title);
-        for (let i = startLineNo + 1; i <= endLineNo; i++) {
-            cm.removeLineClass(i, 'text', 'hidden-text')
-        }
-        cm.refresh();
+        return Node.byTitle(title);
     }
 }
 
@@ -629,7 +613,7 @@ function handleTitleClick(title) {
 
     // Scroll to the title
     //const node = scrollToTitle(title, cm);
-    const node = getNodeByTitle(title);
+    const node = Node.byTitle(title);
     if (!node) return;
 
     const bb = node.content.getBoundingClientRect();
@@ -643,11 +627,4 @@ function handleTitleClick(title) {
         node.zoom_to(.5);
     }
     autopilotSpeed = settings.autopilotSpeed;
-}
-
-function hideNodeText(title, cm) {
-    const { startLineNo, endLineNo } = getNodeSectionRange(title, cm);
-    for (let i = startLineNo + 1; i <= endLineNo; i++) {
-        cm.addLineClass(i, 'text', 'hidden-text');
-    }
 }

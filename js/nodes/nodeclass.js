@@ -1,118 +1,30 @@
-const NodeExtensions = {
-    "window": (node, a) => {
-        rewindowify(node);
-    },
-    "textarea": (node, o) => {
-        let e = node.content;
-        for (const w of o.p) {
-            e = e.children[w];
-        }
-
-        const p = o.p;
-        const v = e.value = o.v;
-
-        node.push_extra_cb( (n)=>({
-            f: "textarea",
-            a: { p, v }
-        }) );
-    },
-    "textareaId": (node, o) => {
-        const textarea = node.content.querySelector('#' + o.p);
-        if (textarea) textarea.value = o.v;
-
-        node.push_extra_cb( (n)=>({
-            f: "textareaId",
-            a: {
-                p: textarea.id,
-                v: textarea.value
-            }
-        }) );
-    },
-    "checkboxId": (node, o) => {
-        // Query for checkboxes based on a specific ID and update their state
-        const checkbox = node.content.querySelector(`input[type="checkbox"][id='${o.p}']`);
-        if (!checkbox) return;
-
-        checkbox.checked = o.v;
-        node.push_extra_cb( (n)=>({
-            f: "checkboxId",
-            a: {
-                p: o.p,  // Pass the ID of the checkbox
-                v: checkbox.checked  // Save the current state
-            }
-        }) );
-    },
-    "sliderId": (node, o) => {
-        // Query for sliders based on a specific ID and update their value
-        const slider = node.content.querySelector(`input[type="range"][id='${o.p}']`);
-        if (!slider) return;
-
-        slider.value = o.v ?? o.d;  // Set the slider's value based on the value provided or the default value
-        node.push_extra_cb( (n)=>({
-            f: "sliderId",
-            a: {
-                p: o.p,  // Pass the ID of the slider
-                v: slider.value  // Save the current value
-            }
-        }) );
-    },
-}
-
-function put(e, p, s = 1) {
-    const svgbb = svg.getBoundingClientRect();
-    e.style.position = 'absolute';
-    e.style.transform = 'scale(' + s + ',' + s + ')';
-    p = fromZtoUV(p);
-    const cond = p.minus(new vec2(0.5, 0.5)).mag2() > 16;
-    e.style.display = (cond ? 'none' : 'initial');
-
-    const w = Math.min(svgbb.width, svgbb.height);
-    const off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
-    p.x = w * p.x - (off - svgbb.right) / 2;
-    p.y = w * p.y - (off - svgbb.bottom) / 2;
-
-    const bb = e.getBoundingClientRect();
-    p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
-    e.style.left = p.x + 'px';
-    e.style.top = p.y + 'px';
-
-    //e.style['margin-top'] = "-"+(e.offsetHeight/2)+'px';//"-50%";
-    //e.style['margin-left'] = "-"+(e.offsetWidth/2)+'px';//"-50%";
-    //e.style['vertical-align']= 'middle';
-    //e.style['text-align']= 'center';
-}
-
-
-let prevNode = undefined;
-
-
 class Node {
+    static prev = null;
+
+    anchor = new vec2(0, 0);
+    anchorForce = 0;
+    createdAt = new Date().toISOString();
+    edges = [];
+    init = Function.nop;
+    mouseAnchor = new vec2(0, 0);
+    save_extras = [];
+
     constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
-        this.anchor = new vec2(0, 0);
-        this.anchorForce = 0;
-        this.mouseAnchor = new vec2(0, 0);
-        this.edges = [];
-        this.createdAt = new Date().toISOString();
-        this.init = Function.nop;
         if (p === undefined) {
             const dataset = thing.dataset;
-            let o = JSON.parse(dataset.node_json)
-            for (const k of ['anchor', 'mouseAnchor', 'vel', 'pos', 'force']) {
-                o[k] = new vec2(o[k]);
+
+            const nodeData = JSON.parse(dataset.node_json)
+            const vecProps = ['anchor', 'mouseAnchor', 'vel', 'pos', 'force'];
+            for (const k in nodeData) {
+                const val = nodeData[k];
+                this[k] = (vecProps.includes(k) ? new vec2(val) : val);
             }
-            for (const k in o) {
-                this[k] = o[k];
-            }
-            this.save_extras = [];
-            this.content = thing;
+
             if (dataset.node_extras) {
-                o = JSON.parse(dataset.node_extras);
-                for (const e of o) {
-                    NodeExtensions[e.f](this, e.a);
-                }
+                const extraData = JSON.parse(dataset.node_extras);
+                for (const e of extraData) Node.Extensions[e.f](this, e.a);
             }
-            this.attach();
-            this.content.setAttribute('data-uuid', this.uuid);
+
             if (dataset.edges !== undefined && createEdges) {
                 const edgesData = JSON.parse(dataset.edges);
                 this.init = ()=>{
@@ -121,31 +33,25 @@ class Node {
                     }
                 };
             }
-            return;
+        } else {
+            this.uuid = String(Graph.nextUuid);
+            this.pos = p;
+            this.scale = scale;
+            this.intrinsicScale = intrinsicScale;
+
+            this.vel = new vec2(0, 0);
+            this.force = new vec2(0, 0);
+            this.frictionConstant = 0.2;
+            this.intervalID = null;
+            this.followingMouse = 0;
+
+            this.randomNodeFlowRange = (Math.random() - 0.5) * settings.flowDirectionRandomRange;
+            this.removed = false;
+            this.sensor = new NodeSensor(this, 3);
         }
 
-        this.uuid = String(Graph.nextUuid);
-        this.pos = p;
-        this.scale = scale;
-        this.intrinsicScale = intrinsicScale;
-
         this.content = thing;
-
-        this.vel = new vec2(0, 0);
-        this.force = new vec2(0, 0);
-        this.frictionConstant = 0.2;
-        this.intervalID = null;
-        this.followingMouse = 0;
-
-        this.randomNodeFlowRange = (Math.random() - 0.5) * settings.flowDirectionRandomRange;
-
-        this.sensor = new NodeSensor(this, 3);
-
-        this.removed = false;
-
-        this.content.setAttribute('data-uuid', this.uuid);
         this.attach();
-        this.save_extras = [];
     }
     attach() {
         const div = this.content;
@@ -160,7 +66,7 @@ class Node {
         return JSON.stringify(this, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
                 k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
-                k === "windowDiv" || k === "agent") { // Exclude windowDiv as well
+                k === "view" || k === "agent") {
                 return undefined;
             }
             return v;
@@ -191,7 +97,30 @@ class Node {
     }
 
     draw() {
-        put(this.content, this.pos, this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp));
+        const e = this.content;
+        const s = this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp);
+
+        const svgbb = svg.getBoundingClientRect();
+        e.style.position = 'absolute';
+        e.style.transform = 'scale(' + s + ',' + s + ')';
+        let p = fromZtoUV(this.pos);
+        const cond = p.minus(new vec2(0.5, 0.5)).mag2() > 16;
+        e.style.display = (cond ? 'none' : 'initial');
+    
+        const w = Math.min(svgbb.width, svgbb.height);
+        const off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
+        p.x = w * p.x - (off - svgbb.right) / 2;
+        p.y = w * p.y - (off - svgbb.bottom) / 2;
+    
+        const bb = e.getBoundingClientRect();
+        p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
+        e.style.left = p.x + 'px';
+        e.style.top = p.y + 'px';
+    
+        //e.style['margin-top'] = "-"+(e.offsetHeight/2)+'px';//"-50%";
+        //e.style['margin-left'] = "-"+(e.offsetWidth/2)+'px';//"-50%";
+        //e.style['vertical-align']= 'middle';
+        //e.style['text-align']= 'center';
     }
 
     step(dt) {
@@ -330,11 +259,8 @@ class Node {
     searchStrings() {
         function* search(e) {
             yield e.textContent;
-            if (e.value)
-                yield e.value;
-            for (let c of e.children) {
-                yield* search(c);
-            }
+            if (e.value) yield e.value;
+            for (const c of e.children) yield* search(c);
         }
         return search(this.content);
     }
@@ -342,14 +268,10 @@ class Node {
 
     }
     toggleWindowAnchored(anchored) {
-        const windowDiv = this.content.querySelector('.window');
-        if (windowDiv && !windowDiv.collapsed) { // Check if not collapsed
-            if (anchored) {
-                windowDiv.classList.add("window-anchored");
-            } else {
-                windowDiv.classList.remove("window-anchored");
-            }
-        }
+        const windowDiv = this.view.div;
+        if (!windowDiv || windowDiv.collapsed) return;
+
+        windowDiv.classList.toggle('window-anchored', anchored);
     }
     onDblClick = (e)=>{
         this.anchor = this.pos;
@@ -364,11 +286,11 @@ class Node {
         Graph.draggedNode = this;
         Graph.movingNode = this;
         if (NodeMode.val) {
-            if (prevNode === undefined) {
-                prevNode = this;
+            if (!Node.prev) {
+                Node.prev = this;
             } else {
-                connectNodes(this, prevNode);
-                prevNode = undefined;
+                connectNodes(this, Node.prev);
+                Node.prev = null;
             }
             clearTextSelections();
         }
@@ -401,7 +323,7 @@ class Node {
         }
     }
     onMouseMove = (e)=>{
-        if (this === Graph.draggedNode) prevNode = undefined;
+        if (this === Graph.draggedNode) Node.prev = null;
         /*if (this.followingMouse){
         this.pos = this.pos.plus(toDZ(new vec2(e.movementX,e.movementY)));
         this.draw()
@@ -411,13 +333,13 @@ class Node {
     onWheel = (e)=>{
         if (!NodeMode.val) return;
 
-        let amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
+        const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
         if (autopilotSpeed !== 0 && this.uuid === autopilotReferenceFrame.uuid) {
             zoomTo = zoomTo.scale(1 / amount);
         } else {
             // Scale selected nodes or individual node
-            let targetWindow = e.target.closest('.window');
+            const targetWindow = e.target.closest('.window');
             if (targetWindow && targetWindow.classList.contains('selected')) {
                 SelectedNodes.forEach((node) => {
                     node.scale *= amount;
@@ -456,9 +378,7 @@ class Node {
         this.edges.push(edge);
         this.updateEdgeData();
     }
-    static addEdgeThis(node){
-        node.addEdge(this)
-    }
+    static addEdgeThis(node){ node.addEdge(this) }
 
     updateEdgeData() {
         const es = JSON.stringify(this.edges.map((e) => e.dataObj()));
@@ -470,40 +390,82 @@ class Node {
         this.edges[index].remove();
         this.edges.splice(index, 1);
     }
-    removeEdges() {
-        for (const i = this.edges.length - 1; i >= 0; i--) {
-            this.removeEdgeByIndex(i)
-        }
-    }
-
-    remove() {
-        const dels = [];
-        Graph.forEachNode( (node)=>{
-            for (const e of node.edges) {
-                if (e.pts.includes(this)) dels.push(e);
-            }
-        });
-        for (const e of dels) {
-            e.remove();
-        }
-
-        // Remove this node from the edges array of any nodes it was connected to
-        Graph.forEachNode( (node)=>{
-            node.edges = node.edges.filter(edge => !edge.pts.includes(this));
-        });
-
-        Graph.deleteNode(this);
-        SelectedNodes.uuids.delete(this.uuid);
-
-        this.removed = true;
-        this.content.remove();
-    }
+    remove(){ Graph.deleteNode(this) }
 
     static byUuid(uuid){ return Graph.nodes[uuid] }
+    static filterEdgesToThis(node){
+        node.edges = node.edges.filter( (edge)=>!edge.pts.includes(this) )
+    }
     static getType(node){
         if (node.isTextNode) return 'text';
         if (node.isLLM) return 'llm';
         if (node.isLink) return 'link';
         return 'base';
     }
+    static remove(node){ node.remove() }
+    static removeThisEdge(node){
+        const index = node.edges.indexOf(this);
+        if (index < 0) return;
+
+        node.edges.splice(index, 1);
+        node.updateEdgeData();
+    }
+}
+
+Node.Extensions = {
+    "window": (node, a)=>{ node.view.rewindowify() },
+    "textarea": (node, o) => {
+        let e = node.content;
+        for (const w of o.p) {
+            e = e.children[w];
+        }
+
+        const p = o.p;
+        const v = e.value = o.v;
+
+        node.push_extra_cb( (n)=>({
+            f: "textarea",
+            a: { p, v }
+        }) );
+    },
+    "textareaId": (node, o) => {
+        const textarea = node.content.querySelector('#' + o.p);
+        if (textarea) textarea.value = o.v;
+
+        node.push_extra_cb( (n)=>({
+            f: "textareaId",
+            a: {
+                p: textarea.id,
+                v: textarea.value
+            }
+        }) );
+    },
+    "checkboxId": (node, o) => {
+        // Query for checkboxes based on a specific ID and update their state
+        const checkbox = node.content.querySelector(`input[type="checkbox"][id='${o.p}']`);
+        if (!checkbox) return;
+
+        checkbox.checked = o.v;
+        node.push_extra_cb( (n)=>({
+            f: "checkboxId",
+            a: {
+                p: o.p,  // Pass the ID of the checkbox
+                v: checkbox.checked  // Save the current state
+            }
+        }) );
+    },
+    "sliderId": (node, o) => {
+        // Query for sliders based on a specific ID and update their value
+        const slider = node.content.querySelector(`input[type="range"][id='${o.p}']`);
+        if (!slider) return;
+
+        slider.value = o.v ?? o.d;  // Set the slider's value based on the value provided or the default value
+        node.push_extra_cb( (n)=>({
+            f: "sliderId",
+            a: {
+                p: o.p,  // Pass the ID of the slider
+                v: slider.value  // Save the current value
+            }
+        }) );
+    },
 }

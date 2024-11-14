@@ -80,17 +80,16 @@ function createLlmNode(name = '', sx, sy, x, y) {
     ainodewrapperDiv.appendChild(AiNode.makeSettingsContainer(llmNodeCount, containerDiv));
 
     // Pass this div to addNodeAtNaturalScale
-    const node = addNodeAtNaturalScale(name, []);
+    const node = NodeView.addAtNaturalScale(name, []);
 
-    const windowDiv = node.windowDiv;
+    const windowDiv = node.view.div;
     windowDiv.style.resize = 'both';
     windowDiv.style.minWidth = `450px`;
     windowDiv.style.minHeight = `535px`;
-
-    // Append the ainodewrapperDiv to windowDiv of the node
     windowDiv.appendChild(ainodewrapperDiv);
+
     // Additional configurations
-    node.id = aiResponseTextArea.id;  // Store the id in the node object
+    node.id = aiResponseTextArea.id;
     node.index = llmNodeCount;
     node.aiResponding = false;
     node.localAiResponding = false;
@@ -109,7 +108,7 @@ function createLlmNode(name = '', sx, sy, x, y) {
             f: "textarea",
             a: {
                 p: [0, 0, 1],
-                v: node.titleInput.value
+                v: node.view.titleInput.value
             }
         };
     });

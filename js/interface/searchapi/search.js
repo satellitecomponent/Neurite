@@ -159,7 +159,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         const cachedEmbedding = nodeCache.get(compoundKey);
         if (cachedEmbedding) return cachedEmbedding;
 
-        const titleText = node.titleInput;
+        const titleText = node.view.titleInput;
         const contentText = node.contentText;
         Logger.debug("Extracted title text:", titleText);
         Logger.debug("Extracted content text:", contentText);
@@ -179,7 +179,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         if (!node.isTextNode) continue;
 
         // Updated to use new property names
-        const titleMatchScore = node.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
+        const titleMatchScore = node.view.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
 
         // Updated to use new property names
         const contentMatchScore = keywords.filter(keyword => {
