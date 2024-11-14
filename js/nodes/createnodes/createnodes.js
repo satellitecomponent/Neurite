@@ -5,7 +5,7 @@
         // Alt + double click behavior
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (NodeMode.val && !prevNode) { // Node mode (Shift) + double click behavior *text nodes
+    } else if (NodeMode.val && !Node.prev) { // Node mode (Shift) + double click behavior *text nodes
         createNodeFromWindow();
     }
 });
@@ -51,7 +51,7 @@ function addNodeTagToZettelkasten(title, content = null) {
     const ui = window.zettelkastenUIs.find(ui => ui.cm === curMirror);
     if (!ui) return;
 
-    node = ui.scrollToTitle(title);
+    const node = ui.scrollToTitle(title);
     node.contentEditableDiv.value = content;
     node.contentEditableDiv.dispatchEvent(new Event('input'));
 }

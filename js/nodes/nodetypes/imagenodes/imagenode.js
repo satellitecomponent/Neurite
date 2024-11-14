@@ -13,14 +13,14 @@ function createImageNode(imageElement, title) {
     imageElement.style.height = `${targetHeight}px`;
 
     // Add the node with the resized image
-    let node = addNodeAtNaturalScale(title, imageElement);
+    let node = NodeView.addAtNaturalScale(title, imageElement);
 
     node.push_extra_cb((node) => {
         return {
             f: "textarea",
             a: {
                 p: [0, 0, 1],
-                v: node.titleInput.value
+                v: node.view.titleInput.value
             }
         };
     });

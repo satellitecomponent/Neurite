@@ -43,38 +43,30 @@ function extractTitlesFromContent(content) {
 
 function removeTitlesFromContext(contentStr, titlesToForget) {
     const keptLines = [];
-    contentStr.split('\n').forEach(line => {
+    contentStr.split('\n').forEach( (line)=>{
         const match = line.trim().match(nodeTitleRegexGlobal);
-        if (match && match[1]) {
-            const title = match[1].trim();
-            if (!titlesToForget.has(title)) keptLines.push(line);
-        } else {
-            keptLines.push(line);
-        }
+        if (match && match[1]
+            && titlesToForget.has(match[1].trim())) return;
+
+        keptLines.push(line);
     });
     return keptLines.join('\n');
 }
 
 function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget, nodeTag) {
-    return nodes
-        .map((node) => {
-            if (!node) return null;
+    const arr = [];
+    nodes.forEach( (node)=>{
+        if (!node) return;
 
-            const titleElement = node.titleInput;
-            const title = titleElement && titleElement.value !== '' ? titleElement.value.trim() : "No title found";
+        const titleInput = node.view.titleInput;
+        const title = (titleInput?.value ? titleInput.value.trim() : "No title found");
+        if (existingTitles.has(title) || titlesToForget.has(title)) return;
 
-            // If title already present in context, don't include the node
-            if (existingTitles.has(title) || titlesToForget.has(title)) {
-                return null;
-            }
-
-            fullNodeObject = getNodeByTitle(title.toLowerCase());
-
-            const contents = getTextareaContentForNode(fullNodeObject);
-
-            return `${tagValues.nodeTag} ${title}\n ${contents}`;
-        })
-        .filter(content => content !== null);
+        const fullNodeObject = Node.byTitle(title.toLowerCase());
+        const contents = Node.getTextareaContent(fullNodeObject);
+        arr.push(`${tagValues.nodeTag} ${title}\n ${contents}`);
+    });
+    return arr;
 }
 
 

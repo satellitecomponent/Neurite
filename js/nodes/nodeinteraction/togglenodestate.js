@@ -1,28 +1,18 @@
-function toggleNodeState(node, event) {
-    if (!node?.content) return;
+NodeView.prototype.toggleCollapse = function(e){
+    if (!this.node.content) return;
 
-    const div = node.windowDiv;
-    if (div?.collapsed) {
-        expandNode(node, div, div.querySelector('.collapsed-circle'));
-    } else {
-        collapseNode(node)(null);
-    }
-    if (node.isTextNode) {
-        ui = getZetNodeCMInstance(node).ui;
-        const title = node.getTitle();
-        if (title) (div?.collapsed ? ui.hideNodeText(title) : ui.showNodeText(title));
-    }
+    const isCollapsed = this.div.classList.contains('collapsed');
+    this[isCollapsed ? 'expand' : 'collapse']();
 
     // Check if the alt key is being held
-    if (event && event.getModifierState(controls.altKey.value)) {
-        getAllConnectedNodes(node).forEach(toggleNodeState);
+    if (e && e.getModifierState(controls.altKey.value)) {
+        getAllConnectedNodes(this.node).forEach(Node.toggleCollapse);
     }
 }
+Node.toggleCollapse = function(node){ node.view.toggleCollapse() }
 
-const originalSizes = new Map();  // A map to store original sizes keyed by node
-
-function centerTitleInput(titleInput){
-    const style = titleInput.style;
+NodeView.prototype.centerTitleInput = function(){
+    const style = this.titleInput.style;
     style.position = 'absolute';
     style.top = '50%';
     style.left = '50%';
@@ -33,8 +23,8 @@ function centerTitleInput(titleInput){
     style.fontSize = '25px';
     style.width = 'fit-content';
 }
-function resetTitleInput(titleInput){
-    const style = titleInput.style;
+NodeView.prototype.resetTitleInput = function(){
+    const style = this.titleInput.style;
     style.position = '';
     style.top = '';
     style.left = '';
@@ -45,103 +35,80 @@ function resetTitleInput(titleInput){
     style.fontSize = '';
 }
 
-function collapseNode(node) {
-    return function (event) {
-        const div = node.content.querySelector('.window');
-
-        if (!originalSizes.has(node)) {
-            const style = getComputedStyle(div);
-            originalSizes.set(node, {
-                width: style.width,
-                height: style.height,
-                minWidth: style.minWidth,
-                minHeight: style.minHeight,
-                maxWidth: style.maxWidth,
-                maxHeight: style.maxHeight
-            });
-        }
-        const titleInput = div.querySelector('.title-input');
-        const headerContainer = div.querySelector('.header-container');
-
-        if (div.collapsed) {
-            expandNode(node, div);
-            return;
-        }
-
-        div.originalSize = {
-            width: div.offsetWidth,
-            height: div.offsetHeight
-        };
-
-        const hideButHeaderAndTitle = (child)=>{
-            if (child !== headerContainer && child !== titleInput) {
-                child.style.display = 'none'
-            }
-        };
-        Elem.forEachChild(div, hideButHeaderAndTitle);
-        Elem.forEachChild(headerContainer, hideButHeaderAndTitle);
-
-        const style = div.style;
-        style.display = 'inline-block';
-        style.minWidth = '60px';
-        style.minHeight = '60px';
-        style.width = '60px';
-        style.height = '60px';
-        style.maxWidth = '60px';
-        style.maxHeight = '60px';
-        style.borderRadius = '50%';
-        style.boxShadow = 'none';
-        style.backdropFilter = 'none';
-        div.classList.add('collapsed');
-
-        centerTitleInput(titleInput);
-
-        // Create the circle
-        const circle = Html.make.div('collapsed-circle');
-        circle.style.borderRadius = '50%';
-        circle.style.boxShadow = getComputedStyle(div).boxShadow;
-
-        div.appendChild(circle);
-
-        On.dragstart(circle, Event.preventDefault);
-
-        // If window is anchored, switch out for the collapsed node anchor class
-        if (div.classList.contains('window-anchored')) {
-            div.classList.remove('window-anchored');
-            circle.classList.add('collapsed-anchor');
-        }
-
-        function handleCircleDoubleClick(e) {
-            if (NodeMode.val !== 1) {
-                const classList = circle.classList;
-                if (classList.contains('collapsed-anchor')) {
-                    classList.remove('collapsed-anchor');
-                } else {
-                    classList.add('collapsed-anchor');
-                }
-            } else {
-                // Call the toggleNodeState function instead of expanding the node directly
-                toggleNodeState(node, e);
-                e.stopPropagation();
-            }
-        }
-        On.dblclick(circle, handleCircleDoubleClick);
-
-        div.collapsed = true;
+NodeView.prototype.hideButHeaderAndTitle = function(child){
+    if (child !== this.headerContainer && child !== this.titleInput) {
+        child.style.display = 'none'
     }
 }
+NodeView.prototype.collapse = function(){
+    const div = this.div;
 
-function expandNode(node, div, circle) {
-    const style = div.style;
-    if (originalSizes.has(node)) {
-        const originalSize = originalSizes.get(node);
-        style.width = originalSize.width;
-        style.height = originalSize.height;
-        style.minWidth = originalSize.minWidth;
-        style.minHeight = originalSize.minHeight;
-        style.maxWidth = originalSize.maxWidth;
-        style.maxHeight = originalSize.maxHeight;
+    if (!this.originalSizes) {
+        const style = getComputedStyle(div);
+        this.originalSizes = {
+            width: style.width,
+            height: style.height,
+            minWidth: style.minWidth,
+            minHeight: style.minHeight,
+            maxWidth: style.maxWidth,
+            maxHeight: style.maxHeight
+        };
     }
+
+    Elem.forEachChild(div, this.hideButHeaderAndTitle, this);
+    Elem.forEachChild(this.headerContainer, this.hideButHeaderAndTitle, this);
+
+    const style = div.style;
+    style.display = 'inline-block';
+    style.minWidth = '60px';
+    style.minHeight = '60px';
+    style.width = '60px';
+    style.height = '60px';
+    style.maxWidth = '60px';
+    style.maxHeight = '60px';
+    style.borderRadius = '50%';
+    style.boxShadow = 'none';
+    style.backdropFilter = 'none';
+    div.classList.add('collapsed');
+
+    this.centerTitleInput();
+
+    // Create the circle
+    const circle = Html.make.div('collapsed-circle');
+    circle.style.borderRadius = '50%';
+    circle.style.boxShadow = getComputedStyle(div).boxShadow;
+
+    div.appendChild(circle);
+
+    // If window is anchored, switch out for the collapsed node anchor class
+    if (div.classList.contains('window-anchored')) {
+        div.classList.remove('window-anchored');
+        circle.classList.add('collapsed-anchor');
+    }
+
+    const handleCircleDoubleClick = (e)=>{
+        if (NodeMode.val !== 1) {
+            circle.classList.toggle('collapsed-anchor')
+        } else {
+            this.toggleCollapse(e);
+            e.stopPropagation();
+        }
+    }
+    On.dblclick(circle, handleCircleDoubleClick);
+    On.dragstart(circle, Event.preventDefault);
+}
+
+NodeView.prototype.expand = function(){
+    const div = this.div;
+    const style = div.style;
+    const originalSize = this.originalSizes;
+    style.width = originalSize.width;
+    style.height = originalSize.height;
+    style.minWidth = originalSize.minWidth;
+    style.minHeight = originalSize.minHeight;
+    style.maxWidth = originalSize.maxWidth;
+    style.maxHeight = originalSize.maxHeight;
+
     // Reset the window properties
     style.display = '';
     style.borderRadius = '';
@@ -153,19 +120,19 @@ function expandNode(node, div, circle) {
 
     const show = (child)=>{ child.style.display = '' } ;
     Elem.forEachChild(div, show);
-    Elem.forEachChild(div.querySelector('.header-container'), show);
+    Elem.forEachChild(this.headerContainer, show);
 
-    resetTitleInput(div.querySelector('.title-input'));
+    this.resetTitleInput();
 
-    // Transfer the .window-anchored class from circle to node.content if present
-    if (circle && circle.classList.contains('collapsed-anchor')) {
+    const circle = div.querySelector('.collapsed-circle');
+    if (!circle) return;
+
+    if (circle.classList.contains('collapsed-anchor')) {
         div.classList.add('window-anchored');
         circle.classList.remove('collapsed-anchor');
     }
 
-    if (circle) div.removeChild(circle);
-
-    div.collapsed = false;
+    div.removeChild(circle);
 }
 
 
@@ -234,7 +201,7 @@ On.mouseup(document, (e)=>{
 
         // Check for intersection with node windows and select them
         Graph.forEachNode( (node)=>{
-            const rect = node.windowDiv.getBoundingClientRect();
+            const rect = node.view.div.getBoundingClientRect();
             const isNodeSelected = (rect.left < dragBoxBounds.right && rect.right > dragBoxBounds.left &&
                                     rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top);
             if (!isNodeSelected) return;

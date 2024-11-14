@@ -153,7 +153,7 @@ AiNode.sendMessage = async function(node, message = null){
         const linkNodes = allConnectedNodes.filter(node => node.isLink);
         const linkInfo = linkNodes.map(node => ({
             url: node.linkUrl,
-            key: node.linkUrl.startsWith('blob:') ? node.titleInput.value : node.linkUrl
+            key: node.linkUrl.startsWith('blob:') ? node.view.titleInput.value : node.linkUrl
         }));
 
         const allKeysFromServer = await Keys.getAll();
@@ -446,7 +446,7 @@ AiNode.MessageLoop = class {
     }
 
     removeEdgesToConnectedNodes(connectedAiNodes) {
-        const connectedAiNodeSet = new Set(connectedAiNodes.map(node => node.uuid));
+        const connectedAiNodeSet = new Set(connectedAiNodes.map(String.uuidOf));
         for (let i = this.node.edges.length - 1; i >= 0; i--) {
             const edge = this.node.edges[i];
             if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {

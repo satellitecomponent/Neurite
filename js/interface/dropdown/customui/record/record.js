@@ -42,7 +42,7 @@ async function captureScreenshot() {
 
         img.onload = function () {
             const node = createImageNode(img, "Screenshot");
-            htmlnodes_parent.appendChild(node.content);
+            Graph.appendNode(node);
             node.followingMouse = 1;
             node.draw();
             node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));
@@ -141,10 +141,10 @@ function handleBlob(blob) {
 
     // Update the content array to include both the video and download link
     const content = [video, link];
-    const scale = 1; // You can adjust the scale as needed
-    const node = windowify("Recorded Video", content, toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), scale);
-    htmlnodes_parent.appendChild(node.content);
-    Graph.registerNode(node);
+    const scale = zoom.mag2() ** settings.zoomContentExp;
+    const node = NodeView.windowify("Recorded Video", content, toZ(mousePos), scale, 1).node;
+    Graph.appendNode(node);
+    Graph.addNode(node);
     node.followingMouse = 1;
     node.draw();
     node.mouseAnchor = toDZ(new vec2(0, -node.content.offsetHeight / 2 + 6));

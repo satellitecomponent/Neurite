@@ -47,18 +47,19 @@ Wikipedia.ctGetSummary = class {
     constructor(keyword, top_n_links){
         const encodedKeyword = encodeURIComponent(keyword);
         this.url = `http://localhost:5000/wikipedia_summaries?keyword=${encodedKeyword}&top_n_links=${top_n_links}`;
+        this.keyword = keyword;
     }
-    onFailure(){ return "Failed to fetch Wikipedia summaries:" }
+    onResponse(res){ return res.json().then(this.onData) }
+    onData = (data)=>Embeddings.fetch(this.keyword)
+                     .then(calculateRelevanceScores.bind(null, data))
+    onFailure(){
+        alert("Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.");
+        return "Failed to fetch Wikipedia summaries:";
+    }
 }
 Wikipedia.getSummary = async function(top_n_links, keyword){
-    const response = await Request.send(new Wikipedia.ctGetSummary(keyword, top_n_links));
-    if (response) {
-        const data = await response.json();
-        return await calculateRelevanceScores(data, await Embeddings.fetch(keyword));
-    } else {
-        alert("Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.");
-        return [];
-    }
+    const ct = new Wikipedia.ctGetSummary(keyword, top_n_links);
+    return (await Request.send(ct)) || [];
 }
 Wikipedia.getSummaries = async function(keywords, top_n_links = 3){
     const allSummariesPromises = keywords.map(Wikipedia.getSummary.bind(null, top_n_links));
@@ -84,7 +85,7 @@ Wikipedia.displayResult = function(result){
     const title = result.title;
     const description = String.dotTruncToLength(result.summary.trim(), 200);
     const link = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(title.replace(' ', '_'));
-    setupNodeForPlacement(LinkNode.create(link, title, description));
+    setupNodeForPlacement(new LinkNode(link, title, description));
 }
 
 String.dotTruncToLength = function(str, maxLength){

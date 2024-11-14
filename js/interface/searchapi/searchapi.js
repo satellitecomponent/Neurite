@@ -58,39 +58,39 @@ function isGoogleSearchEnabled(nodeIndex = null) {
 }
 
 // console.log("Sending context to AI:", messages);
-async function performSearch(searchQuery) {
+function performSearch(searchQuery) { // promise
     Logger.info("Search Query in processLinkInput:", searchQuery);
 
     const apiKey = Elem.byId('googleApiKey').value;
     const searchEngineId = Elem.byId('googleSearchEngineId').value;
     if (!apiKey || !searchEngineId) {
         alert('API Key or Search Engine ID is missing. Please enter them.');
-        return null;
+        return Promise.resolve();
     }
 
-    const response = await Request.send(new performSearch.ct(apiKey, searchEngineId, searchQuery));
-    if (response) {
-        const data = await response.json();
-        Logger.debug("Received data:", data);
-
-        return data;
-    } else {
-        alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.");
-        return null;
-    }
+    const ct = new performSearch.ct(apiKey, searchEngineId, searchQuery);
+    return Request.send(ct);
 }
 performSearch.ct = class {
     constructor(apiKey, searchEngineId, searchQuery){
         this.url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURI(searchQuery)}`;
         Logger.debug("Request URL:", this.url);
     }
-    onFailure(){ return "Failed to fetch search results:" }
+    onResponse(res){ return res.json().then(this.onData) }
+    onData(data){
+        Logger.debug("Received data:", data);
+        return data;
+    }
+    onFailure(){
+        alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.");
+        return "Failed to fetch search results:";
+    }
 }
 
 async function constructSearchQuery(userMessage, recentContext = null, node = null) {
     if (String.isUrl(userMessage)) {
         Elem.byId('prompt').value = '';
-        const linkNode = LinkNode.create(userMessage, userMessage);
+        const linkNode = new LinkNode(userMessage, userMessage);
         setupNodeForPlacement(linkNode);
         return null;
     }
@@ -175,7 +175,7 @@ function processSearchResults(results) {
 
 function displaySearchResult(result){
     const description = String.dotTruncToLength(result.description, 500);
-    const node = LinkNode.create(result.link, result.title, description);
+    const node = new LinkNode(result.link, result.title, description);
     setupNodeForPlacement(node); // Attach to the user's mouse
 }
 async function displayResultsRelevantToMessage(searchResults, message){
@@ -191,7 +191,7 @@ function returnLinkNodes() {
     //for interface.js link node drop handler
 function processLinkInput(linkUrl) {
     if (String.isUrl(linkUrl)) {
-        const node = LinkNode.create(linkUrl, linkUrl);
+        const node = new LinkNode(linkUrl, linkUrl);
         setupNodeForPlacement(node);
     } else {
         return handleNaturalLanguageSearch(linkUrl)

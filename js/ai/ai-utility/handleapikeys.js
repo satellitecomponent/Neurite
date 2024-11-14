@@ -229,9 +229,7 @@ Proxy.checkServer = async function(){
     await Ollama.selectOnPageLoad();
 }
 Proxy.checkServer.ct = class {
-    constructor(){
-        this.url = 'http://localhost:7070/check';
-    }
+    url = 'http://localhost:7070/check';
     onSuccess(){ return "AI proxy server is working" }
     onFailure(){ return "AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through JS until the page is refreshed while the ai-proxy is running. -" }
 }

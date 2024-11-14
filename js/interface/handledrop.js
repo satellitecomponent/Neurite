@@ -281,13 +281,11 @@ class DropHandler {
 
     async processCustomDrop(metadata) {
         try {
-            const fileResponse = await fetchFileContent(metadata.path);
-            if (!fileResponse) throw new Error("Failed to fetch file content for: " + metadata.path);
-
-            const { content, blob, mimeType } = fileResponse;
-
+            const fetcher = new Path.fileFetcher(metadata.path);
+            await Request.send(fetcher);
+            const { blob, content, mimeType } = fetcher;
             if (content === null && blob === null) {
-                throw new Error("No content received");
+                throw new Error("Failed to fetch file content for: " + metadata.path);
             }
 
             this.processFile(metadata.name, content, mimeType, blob);
@@ -347,7 +345,7 @@ class DropHandler {
 
     // Centralized handler for 'application' base type (e.g., PDFs)
     createPDFNode(name, url) {
-        const node = LinkNode.create(name, name, url);
+        const node = new LinkNode(name, name, url);
         node.fileName = name;
         this.afterNodeCreation(node);
     }
@@ -456,11 +454,11 @@ function handlePasteData(pastedData, target) {
     }
 
     if (String.isUrl(pastedData)) {
-        const node = LinkNode.create(pastedData, pastedData);
+        const node = new LinkNode(pastedData, pastedData);
         setupNodeForPlacement(node);
     } else if (String.isIframe(pastedData)) {
         const iframeUrl = getIframeUrl(pastedData);
-        const node = LinkNode.create(iframeUrl, iframeUrl);
+        const node = new LinkNode(iframeUrl, iframeUrl);
         setupNodeForPlacement(node);
     } else if (isHtmlContent(pastedData)) {
         createHtmlNode(pastedData);
@@ -485,9 +483,10 @@ function setupNodeForPlacement(node, mouseAnchor) {
 function createHtmlNode(title, pastedData) {
     const content = Html.new.div();
     content.innerHTML = pastedData;
-    const node = windowify(title, [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
-    htmlnodes_parent.appendChild(node.content);
-    Graph.registerNode(node);
+    const scale = zoom.mag2() ** settings.zoomContentExp;
+    const node = NodeView.windowify(title, [content], toZ(mousePos), scale, 1).node;
+    Graph.appendNode(node);
+    Graph.addNode(node);
     setupNodeForPlacement(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
 }
 

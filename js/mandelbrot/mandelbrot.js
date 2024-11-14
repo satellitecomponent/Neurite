@@ -2,7 +2,6 @@ document.body.style.overflow = 'hidden';
 var svg = Elem.byId('svg_bg');
 let svg_bg = svg.getElementById('bg');
 let svg_viewmat = svg.getElementById('viewmatrix');
-let svg_mousePath = svg.getElementById('mousePath');
 var svg_viewbox_size = 65536;
 
 let time = () => (current_time === undefined) ? 0 : current_time;
@@ -155,9 +154,7 @@ class vec2 {
         return new vec2(r, i);
     }
 
-    str() {
-        return this.x + "," + this.y;
-    }
+    toString(){ return this.x + "," + this.y }
     sqrt() {
         //https://www.johndcook.com/blog/2020/06/09/complex-square-root/
         let l = this.mag();
@@ -179,7 +176,6 @@ function toSVG(coords) {
 }
 
 var mousePos = new vec2(0, 0);
-var mousePath = '';
 var zoom = new vec2(1, 0); //bigger is farther out
 var pan = new vec2(0, 0);
 var rotation = new vec2(1, 0);
@@ -280,21 +276,22 @@ Svg.recalc = function(){
     const oldZoom = this.oldZoom;
     const pan = this.pan;
     const zoom = this.zoom;
-    for (let c of svg_bg.children){
+    for (const child of svg_bg.children){
         const r = [];
         let coord = 0;
-        const parts = c.getAttribute('d').split(/[, ]+/g);
+        const parts = child.getAttribute('d').split(/[, ]+/g);
         for (let p of parts){
             if (p.length && !isNaN(Number(p))){
-                let c = coord ? 'y' : 'x';
+                const c = (coord ? 'y' : 'x');
                 p = Number(p) / oldZoom + oldPan[c];
                 p = (p - pan[c]) * zoom;
                 coord = 1 - coord;
             }
             r.push(p);
         }
-        c.setAttribute('d', r.join(' '));
-        c.setAttribute('stroke-width', c.getAttribute('stroke-width') * zoom / oldZoom);
+        child.setAttribute('d', r.join(' '));
+        const strokeWidth = child.getAttribute('stroke-width');
+        child.setAttribute('stroke-width', strokeWidth * zoom / oldZoom);
     }
     this.needsRecalc = false;
 }
@@ -310,7 +307,7 @@ Body.startPanning = function(e){
 Body.onMousemove = function(e){
     mousePos.x = e.pageX;
     mousePos.y = e.pageY;
-    mousePath = '';
+    nodeSimulation.mousePath = [];
 }
 Body.stopPanning = function(e){
     if (!Body.isPanning) return;
@@ -324,7 +321,6 @@ Body.addEventListeners = function(body){
     On.mouseup(body, this.stopPanning);
     On.mouseleave(body, this.stopPanning);
 }
-Body.addEventListeners(document.body);
 
 function mand_step(z, c) {
     return z.cmult(z).cadd(c);
@@ -503,7 +499,7 @@ Color.strRgb = function(i, r, c, s){
 
 function outlineMand(start, step = 0.1, iters = 256) {
     const a0 = start.pang();
-    const data = ["M ", toSVG(start).str(), "\nL "];
+    const data = ["M ", toSVG(start), "\nL "];
     let prevZ = start;
     let maxlen = 32768; // 2 ^ 15
     const minD2 = 0.25 / 200 / 200;
@@ -514,7 +510,7 @@ function outlineMand(start, step = 0.1, iters = 256) {
         maxlen -= 1;
         if (maxlen <= 0) break;
 
-        data.push(toSVG(z).str(), ' ');
+        data.push(toSVG(z), ' ');
         prevZ = z;
     }
     return data.join('');
@@ -543,7 +539,7 @@ function* iter() {
         let start = new vec2(x, 0);
         let a0 = start.pang();
         let l = (m) => m;
-        const data = ["M ", toSVG(l(start)).str(), "\nL "];
+        const data = ["M ", toSVG(l(start)), "\nL "];
         let prevZ = start;
         let maxlen = 4096; // 2 ^ 12
         let minD2 = 0.01 / 200 / 200;
@@ -561,7 +557,7 @@ function* iter() {
             }
             if (z.minus(prevZ).mag2() < minD2) continue;
 
-            data.push(toSVG(l(z)).str(), ' ');
+            data.push(toSVG(l(z)), ' ');
             prevZ = z;
         }
         data.push(" z");
@@ -614,7 +610,7 @@ function render_hair(n) {
     //let width = 1/(level+5)**2;
     //let width = 1/(Fractal.mandGrad(256,pt).mag()**1.5+1);
 
-    let r = "M " + toSVG(pt).str() + ' ' + settings.renderDChar + ' ';
+    const r = ["M ", toSVG(pt), ' ', settings.renderDChar, ' '];
     let length = 0;
     let n0 = n;
     let opt = pt;
@@ -633,7 +629,7 @@ function render_hair(n) {
             if (mand_i(npt,iters)<=iters){
                 break;
             }
-            r += toSVG(npt).str()+' ';
+            .push(toSVG(npt), ' ');
             length += npt.minus(pt).mag();
             pt = npt;
         }*/
@@ -648,7 +644,7 @@ function render_hair(n) {
             if (mand_i(npt, iters) <= iters) break;
             if (!toSVG(npt).isFinite()) break;
 
-            r += toSVG(npt).str() + ' ';
+            r.push(toSVG(npt), ' ');
             na += 1;
             length += npt.minus(pt).mag();
             pt = npt;
@@ -664,7 +660,7 @@ function render_hair(n) {
             //if ((n&3) == 0)
             if (!toSVG(p).isFinite()) break;
 
-            r += toSVG(p).str() + ' ';
+            r.push(toSVG(p), ' ');
             na += 1;
             n -= 1;
             if (n < 0) break;
@@ -682,7 +678,7 @@ function render_hair(n) {
     path.setAttribute('stroke', Fractal.mandColor(iters, opt));
     path.setAttribute('stroke-width', String(width * Svg.zoom));
     path.setAttribute('stroke-opacity', String(opacity));
-    path.setAttribute('d', r);
+    path.setAttribute('d', r.join(''));
     svg_bg.appendChild(path);
     if (maxLines === 0) {
         Elem.forEachChild(svg_bg, Fractal.removeNonPreserved)

@@ -216,13 +216,11 @@ class SensorEdge {
     }
 
     draw(svgGroup) {
-        let path = this.calculatePath();
-        this.html.setAttribute('d', path);
+        this.html.setAttribute('d', this.calculatePath());
         svgGroup.appendChild(this.html);
     }
 
     calculatePath() {
-        let path = "M ";
         const origin = toSVG(this.originNode.pos);
         const target = toSVG(this.targetData.pos);
 
@@ -244,8 +242,6 @@ class SensorEdge {
         const corner3 = target.plus(targetPerpendicular);
         const corner4 = target.minus(targetPerpendicular);
 
-        path += corner1.str() + " L " + corner3.str() + " L " + corner4.str() + " L " + corner2.str() + " Z";
-
-        return path;
+        return "M " + corner1 + " L " + corner3 + " L " + corner4 + " L " + corner2 + " Z";
     }
 }

@@ -79,20 +79,12 @@ function getNodeMethodSuggestions(value, node) {
     return [...recentSuggestions, ...allValidActionsExcludingRecent];
 }
 
-// Utility function
-function applyActionToSelectedNodes(action, node = '') {
-    const selectedUuids = SelectedNodes.uuids;
-    if (selectedUuids.size > 1 && selectedUuids.has(node.uuid)) {
-        selectedUuids.forEach(uuid => {
-            const selectedNode = Node.byUuid(uuid);
-            if (selectedNode) action(selectedNode);
-        });
-    } else {
-        action(node);
-    }
-}
-
 NodeActions.base = class BaseNodeActions {
+    applyActionToSelectedNodes(action){
+        if (!SelectedNodes.hasNode(this.node)) action(this.node)
+        else SelectedNodes.forEach(action)
+    }
+
     constructor(node) {
         this.node = node;
     }
@@ -114,11 +106,11 @@ NodeActions.base = class BaseNodeActions {
     }
 
     getSelectActionName() {
-        return (SelectedNodes.uuids.has(this.node.uuid) ? 'deselect' : 'select')
+        return (SelectedNodes.hasNode(this.node) ? 'deselect' : 'select')
     }
 
     getCollapseActionName() {
-        return (this.node.windowDiv.collapsed ? 'expand' : 'collapse')
+        return (this.node.view.div.collapsed ? 'expand' : 'collapse')
     }
 
     // Common methods for all nodes
@@ -130,21 +122,21 @@ NodeActions.base = class BaseNodeActions {
         ContextMenu.hide();
     }
     connect() {
-        Modal.Connect.setup(this.node);
+        new Modal.Connect(this.node);
         ContextMenu.hide();
     }
     toggleSelect() {
-        applyActionToSelectedNodes(SelectedNodes.toggleNode, this.node)
+        this.applyActionToSelectedNodes(SelectedNodes.toggleNode)
     }
 
     toggleCollapse() {
-        applyActionToSelectedNodes(toggleNodeState, this.node)
+        this.applyActionToSelectedNodes(Node.toggleCollapse)
     }
     toggleAutomata() {
         updateNodeStartAutomataAction(); // This will now handle the automata start logic
     }
     delete() {
-        applyActionToSelectedNodes( (node)=>node.remove() , this.node);
+        this.applyActionToSelectedNodes(Node.remove);
         ContextMenu.hide();
     }
     spawnNode() {
@@ -176,14 +168,11 @@ NodeActions.text = class TextNodeActions extends NodeActions.base {
         testNodeText(this.node.getTitle());
     }
     delete() {
-        applyActionToSelectedNodes((node) => {
+        this.applyActionToSelectedNodes( (node)=>{
             const nodeTitle = node.getTitle();
-
-            const zetNodeCMInstance = getZetNodeCMInstance(nodeTitle);
-            if (zetNodeCMInstance) {
-                zetNodeCMInstance.parser.deleteNodeByTitle(nodeTitle);
-            }
-        }, this.node);
+            const parser = getZetNodeCMInstance(nodeTitle)?.parser;
+            if (parser) parser.deleteNodeByTitle(nodeTitle);
+        });
 
         ContextMenu.hide();
     }
@@ -247,17 +236,16 @@ NodeActions.link = class LinkNodeActions extends NodeActions.base {
     }
 
     displayIframe() {
-        const node = this.node;
-        handleLinkNodeIframe(node.iframeWrapper, node.linkWrapper, node.linkUrl);
+        this.node.typeNode.handleIframe()
     }
     displayWebpage() {
         this.toggleProxy();
     }
     toggleProxy() {
-        LinkNode.handleProxyDisplay(this.node)
+        this.node.typeNode.handleProxyDisplay()
     }
     extractText() {
-        extractAndStoreLinkContent(this.node.linkUrl, this.node.titleInput.value);
+        extractAndStoreLinkContent(this.node.linkUrl, this.node.view.titleInput.value);
     }
     importText() {
         importLinkNodeTextToZettelkasten(this.node.linkUrl);

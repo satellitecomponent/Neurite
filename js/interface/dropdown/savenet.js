@@ -380,24 +380,14 @@ function neuriteSaveEvent(existingTitle = null) {
     }
 }
 
-for (const htmlnode of htmlnodes) {
+for (const htmlnode of Graph.htmlNodes.children) {
     const node = new Node(undefined, htmlnode, true); // createEdges
-    Graph.registerNode(node);
+    Graph.addNode(node);
     node.init();
 }
 
 function clearNet() {
-    SelectedNodes.clear();
-
-    // Remove all edges
-    const edges = Graph.edges;
-    while (edges.length > 0) {
-        edges[edges.length - 1].remove();
-    }
-    Edge.directionalityMap.clear();
-
-    // Remove all nodes
-    Graph.forEachNode( (node)=>node.remove() );
+    Graph.clear();
 
     AiNode.count = 0;
     zetPanes.resetAllPanes();
@@ -415,9 +405,7 @@ function loadNet(text, clobber, createEdges = true) {
 
     // Check for the new multi-pane save objects
     const zettelkastenPaneSaveElements = div.querySelectorAll("[id^='zettelkasten-pane-']");
-    zettelkastenPaneSaveElements.forEach(
-        (elem)=>elem.remove()
-    );
+    zettelkastenPaneSaveElements.forEach(Elem.remove);
 
     restoreAdditionalSaveObjects(div);
 
@@ -425,13 +413,13 @@ function loadNet(text, clobber, createEdges = true) {
     for (const child of div.children) {
         const node = new Node(undefined, child, true, undefined, createEdges);
         newNodes.push(node);
-        Graph.registerNode(node);
+        Graph.addNode(node);
     }
 
     Elem.forEachChild(div, populateDirectionalityMap);
 
     for (const node of newNodes) {
-        htmlnodes_parent.appendChild(node.content);
+        Graph.appendNode(node);
         node.init();
         reconstructSavedNode(node);
         node.sensor = new NodeSensor(node, 3);
@@ -449,25 +437,15 @@ function loadNet(text, clobber, createEdges = true) {
     });
 }
 
-function populateDirectionalityMap() {
+function populateDirectionalityMap(nodeElement) {
     const edges = nodeElement.getAttribute('data-edges');
-    if (!edges) return;
-
-    JSON.parse(edges).forEach( (edgeData)=>{
-        const edgeKey = edgeData.edgeKey;
-        if (Edge.directionalityMap.has(edgeKey)) return;
-
-        Edge.directionalityMap.set(edgeKey, {
-            start: Node.byUuid(edgeData.directionality.start),
-            end: Node.byUuid(edgeData.directionality.end)
-        });
-    });
+    if (edges) JSON.parse(edges).forEach(Graph.setEdgeDirectionalityFromData);
 }
 
 function reconstructSavedNode(node) {
     if (node.isTextNode) TextNode.init(node);
     if (node.isLLM) AiNode.init(node, true); // restoreNewLines
-    if (node.isLink) LinkNode.init(node);
+    if (node.isLink) node.typeNode.init();
     if (node.isFileTree) FileTreeNode.init(node);
 }
 

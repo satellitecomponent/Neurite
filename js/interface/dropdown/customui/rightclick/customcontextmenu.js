@@ -1,5 +1,4 @@
 class ContextMenu {
-    elem;
     menu = Elem.byId('customContextMenu');
     constructor(){
         this.fileInput = this.makeFileInput();
@@ -41,21 +40,10 @@ class ContextMenu {
             Suggestions.global.position(x, y);
         }
         this.menu.innerHTML = ''; // clear options
-        const funcPopulate = this.funcPopulateForTarget(target);
-        this[funcPopulate](this.elem || target, x, y);
-        this.elem = undefined;
+        const view = Graph.viewForElem(target);
+        if (!view) this.populateForGeneric(target);
+        else this[view.funcPopulate](view.model, x, y);
     }
-    funcPopulateForTarget(target){
-        this.elem = Graph.nodeForTarget(target);
-        if (this.elem) return 'populateForNode';
-
-        this.elem = Graph.edgeForTarget(target);
-        if (this.elem) return 'populateForEdge';
-
-        return (target.id === 'svg_bg' || target.closest('#svg_bg'))
-             ? 'populateForBackground' : 'populateForGeneric';
-    }
-
     option(text, onClick, closing = true){
         const handler = (!closing) ? onClick
                     : async ()=>{ await onClick(); this.hide() } ;
@@ -86,7 +74,7 @@ class ContextMenu {
     }
     populateForEdge(edge, x, y){
         const onDirection = edge.toggleDirection.bind(edge);
-        const onDelete = edge.removeEdgeInstance.bind(edge);
+        const onDelete = edge.removeInstance.bind(edge);
         this.menu.append(
             this.createMenuItem('updateDirection', 'update-direction', onDirection),
             this.createMenuItem('delete', 'delete-edge', onDelete, true)
@@ -103,7 +91,7 @@ class ContextMenu {
             this.option("Paste", this.onPasteOption.bind(null, target))
         )
     }
-    populateForGeneric(target, x, y){ // non-SVG targets
+    populateForGeneric(target){ // non-SVG targets
         const onClick = Logger.info.bind(Logger, "Generic action for:");
         this.menu.append(this.option("Generic Action", onClick, false));
     }

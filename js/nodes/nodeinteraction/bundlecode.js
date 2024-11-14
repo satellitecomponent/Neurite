@@ -171,11 +171,10 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
     // Explicitly sync the content before using it
     syncContent(node);
     const textNodeSyntaxWrapper = node.textNodeSyntaxWrapper;
-    const windowDiv = node.windowDiv;
 
     if (currentState === 'edit') {
         // Extract initial dimensions for later restoration
-        const computedStyle = window.getComputedStyle(windowDiv);
+        const computedStyle = window.getComputedStyle(node.view.div);
         const initialWindowWidth = computedStyle.width;
         const initialWindowHeight = computedStyle.height;
 
@@ -258,7 +257,7 @@ function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initial
 }
 
 function resetViewsAndContentEditable(node, htmlView, pythonView) {
-    const windowDiv = node.windowDiv;
+    const windowDiv = node.view.div;
     htmlView.classList.add('hidden');
     pythonView.classList.add('hidden');
 

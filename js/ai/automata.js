@@ -16,13 +16,13 @@
     findNearbyNodes() {
         const sensor = this.agent.sensor;
         sensor.callUpdate();
-        return sensor.nearbyNodes.map(ProcessedNodes.getByNode);
+        return sensor.nearbyNodes.map(ProcessedNodes.getByNode, ProcessedNodes);
     }
 
     findNodesWithinExtendedRadius() {
         const sensor = this.agent.sensor;
         sensor.callUpdate();
-        return sensor.nodesWithinExtendedRadius.map(ProcessedNodes.getByNode);
+        return sensor.nodesWithinExtendedRadius.map(ProcessedNodes.getByNode, ProcessedNodes);
     }
 
     switchState(newState) {

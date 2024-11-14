@@ -114,37 +114,27 @@ async function pullOllamaModelWithProgress(name, onProgress) {
 }
 
 Ollama.deleteModel = async function(name){
-    return await Request.send(new Ollama.deleteModel.ct(name))
+    await Request.send(new Ollama.modelEraser(name))
 }
-Ollama.deleteModel.ct = class {
+Ollama.modelEraser = class {
+    url = Ollama.baseUrl + 'delete';
     constructor(name){
-        this.url = Ollama.baseUrl + 'delete';
-        this.options = {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        };
+        this.options = Request.makeJsonOptions('DELETE', { name });
         this.name = name;
     }
     onSuccess(){ return `Model ${this.name} deleted successfully` }
     onFailure(){ return `Failed to delete model ${this.name}:` }
 }
 
-async function generateOllamaEmbedding(model, prompt) {
-    const response = await Request.send(new generateOllamaEmbedding.ct(model, prompt));
-    if (!response) return;
-
-    const data = await response.json();
-    return data.embedding;
+Ollama.fetchEmbeddings = function(model, prompt){ // promise
+    return Request.send(new Ollama.embeddingsFetcher(model, prompt))
 }
-generateOllamaEmbedding.ct = class {
+Ollama.embeddingsFetcher = class {
+    url = Ollama.baseUrl + 'embeddings';
     constructor(model, prompt){
-        this.url = Ollama.baseUrl + 'delete';
-        this.options = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model, prompt })
-        };
+        this.options = Request.makeJsonOptions('POST', { model, prompt })
     }
+    onResponse(res){ return res.json().then(this.onData) }
+    onData(data){ return data.embedding }
     onFailure(){ return "Failed to generate embeddings:" }
 }

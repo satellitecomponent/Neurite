@@ -52,7 +52,7 @@ class ZettelkastenProcessor {
         this.nodes = {};
         this.nodeLines = {};
 
-        this.noteInput.on('change', () => this.processInput());
+        this.noteInput.on('change', this.processInput);
     }
 
     updatePlacementPath(pathObject) {
@@ -74,7 +74,7 @@ class ZettelkastenProcessor {
             if (typeof lines[i] === 'undefined') break;
 
             const match = lines[i].match(nodeTitleRegexGlobal);
-            if (match) return getNodeByTitle(match[1].trim());
+            if (match) return Node.byTitle(match[1].trim());
         }
     }
 
@@ -90,7 +90,7 @@ class ZettelkastenProcessor {
         }
     }
 
-    processInput() {
+    processInput = ()=>{
         if (bypassZettelkasten) {
             bypassZettelkasten = false;
             return;
@@ -183,7 +183,7 @@ class ZettelkastenProcessor {
         currentNodeTitle = line.substr(Tag.node.length).trim();
 
         if (restoreZettelkastenEvent) {
-            const savedNode = getNodeByTitle(currentNodeTitle);
+            const savedNode = Node.byTitle(currentNodeTitle);
             if (savedNode) {
                 const node = this.establishZettelkastenNode(savedNode, currentNodeTitle, nodeLines, nodes);
                 nodeLines[i] = node;
@@ -202,7 +202,7 @@ class ZettelkastenProcessor {
                 }
                 node.title = currentNodeTitle;
                 node.live = true;
-                node.nodeObject.titleInput.value = currentNodeTitle;
+                node.nodeObject.view.titleInput.value = currentNodeTitle;
             } else {
                 let nodeObject;
                 if (nodefromWindow) {
@@ -255,7 +255,7 @@ class ZettelkastenProcessor {
     }
 
     attachContentEventListenersToNode(node, nodes, nodeLines) {
-        const inputElement = node.nodeObject.titleInput;
+        const inputElement = node.nodeObject.view.titleInput;
         On.input(inputElement, this.createTitleInputEventHandler(node, nodes, nodeLines, inputElement));
 
         const textarea = node.nodeObject.textarea;

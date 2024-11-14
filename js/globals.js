@@ -244,10 +244,6 @@ ProcessedNodes = new ProcessedNodes();
 
 
 
-let htmlnodes_parent = Elem.byId('nodes');
-let htmlnodes = htmlnodes_parent.children;
-let htmledges = Elem.byId('edges');
-
 //Zettelkasten
 
 let processAll = false;//set to true until made more robust.
@@ -348,26 +344,26 @@ class Html {
         a(href, className){
             const a = Html.new.a();
             if (href !== undefined) a.href = href;
-            if (className !== undefined) a.className = className;
+            if (className !== undefined) a.setAttribute('class', className);
             return a;
         },
         button(className, textContent){
             const button = Html.new.button();
-            if (className !== undefined) button.className = className;
+            if (className !== undefined) button.setAttribute('class', className);
             if (textContent !== undefined) button.textContent = textContent;
             return button;
         },
         li(content, className, onClick){
             const li = Html.new.li();
             if (content !== undefined) li.append(content);
-            if (className !== undefined) li.className = className;
+            if (className !== undefined) li.setAttribute('class', className);
             if (onClick !== undefined) On.click(li, onClick);
             return li;
         }
     };
     static makeWithClass(tagName, className){
         const elem = Html.new[tagName]();
-        if (className !== undefined) elem.className = className;
+        if (className !== undefined) elem.setAttribute('class', className);
         return elem;
     }
     static new = {};
@@ -377,8 +373,8 @@ class Html {
     'pre', 'select', 'span', 'textarea'
 ].forEach( (name)=>{ Html.make[name] = Html.makeWithClass.bind(Elem, name) } );
 [
-    'a', 'button', 'code', 'canvas', 'div',
-    'iframe', 'img', 'input', 'label', 'li',
+    'a', 'audio', 'button', 'code', 'canvas',
+    'div', 'iframe', 'img', 'input', 'label', 'li',
     'p', 'pre', 'select', 'script', 'span',
     'table', 'td', 'textarea', 'tr', 'video'
 ].forEach( (name)=>{ Html.new[name] = Html.create.bind(Elem, name) } );
@@ -493,6 +489,7 @@ String.isIframe = function(str){
     } catch(err){}
     return false;
 }
+String.uuidOf = function(obj){ return obj.uuid }
 
 function getIframeUrl(iframeContent) {
     // Function to extract URL from the iframe content
