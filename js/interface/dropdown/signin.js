@@ -197,7 +197,6 @@ if (NEURITE_BASE_URL) {
 
 async function checkNeuriteSignIn() {
     try {
-        console.log(`test`);
         neuriteOriginCheck();
     } catch (error) {
         console.error("Origin check failed:", error);
