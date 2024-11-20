@@ -95,6 +95,9 @@ function openModal(contentId) {
         case 'controls-modal':
             modalTitle.textContent = 'Adjust Controls';
             break;
+        case 'neurite-modal':
+            modalTitle.textContent = 'Neurite';
+            break;
         default:
             modalTitle.textContent = ''; // Default, clears the title
     }
@@ -181,6 +184,7 @@ function closeModal() {
         default:
             break;
     }
+    closeModalOverlay();
     modal.style.display = 'none';
     currentOpenModalContentId = null; // Reset the current content ID
 }
@@ -231,12 +235,24 @@ function stopEventPropagation(event) {
     event.stopPropagation();
 }
 
+// Function to check if an element is an input element
+function isInputElement(element) {
+    const inputTypes = ['input', 'select', 'textarea', 'button'];
+    return inputTypes.includes(element.tagName.toLowerCase()) ||
+        element.classList.contains('custom-select') ||
+        element.closest('.vdb-search-result') ||
+        element.closest('#modal-file-tree-container'); // Added condition
+}
+
 // Variables to store the initial position and mouse offset
 let isDraggingModal = false;
 let initialModalMouseX;
 let initialModalMouseY;
 let initialModalX;
 let initialModalY;
+
+// Track modal height before changes
+let modalHeightBeforeChange = null;
 
 // Event listener for mousedown on the modal content
 modalContent.addEventListener('mousedown', startDragging);
@@ -249,20 +265,14 @@ function startDragging(event) {
         initialModalMouseY = event.clientY;
         initialModalX = modal.offsetLeft;
         initialModalY = modal.offsetTop;
+
+        // Capture the current modal height
+        modalHeightBeforeChange = modalContent.offsetHeight;
+
+        // Listen for mouse movement and update modal position
+        document.addEventListener('mousemove', dragModalContent);
     }
 }
-
-// Function to check if an element is an input element
-function isInputElement(element) {
-    const inputTypes = ['input', 'select', 'textarea', 'button'];
-    return inputTypes.includes(element.tagName.toLowerCase()) ||
-        element.classList.contains('custom-select') ||
-        element.closest('.vdb-search-result') ||
-        element.closest('#modal-file-tree-container'); // Added condition
-}
-
-// Event listener for mousemove on the document
-document.addEventListener('mousemove', dragModalContent);
 
 // Function to drag the modal content
 function dragModalContent(event) {
@@ -275,10 +285,23 @@ function dragModalContent(event) {
     }
 }
 
-// Event listener for mouseup on the document
+// Event listener to stop dragging and fix the modal position
 document.addEventListener('mouseup', stopDragging);
 
-// Function to stop dragging the modal content
 function stopDragging() {
     isDraggingModal = false;
+
+    // Remove the mousemove listener when drag stops
+    document.removeEventListener('mousemove', dragModalContent);
+}
+
+// Function to dynamically update the modal height without changing the top position
+function adjustModalHeight(newHeight) {
+    const modalTop = modal.offsetTop;
+
+    // Set the new height for the modal content
+    modalContent.style.height = `${newHeight}px`;
+
+    // Ensure the top position remains unchanged
+    modal.style.top = `${modalTop}px`;
 }

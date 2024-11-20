@@ -11,18 +11,18 @@ function togglePanel(panelContainer) {
         }
     });
 
+    // Check if the panel is open or hidden
     if (panelContainer.classList.contains('hidden')) {
         panelContainer.classList.add('panel-open');
-        // Expand the panel
         panelContainer.classList.remove('hidden');
         panelContainer.style.display = ''; // Make it visible for height calculation
 
         // Directly set the height to start the transition
         panelContainer.style.height = panelContainer.scrollHeight + 'px';
     } else {
-        panelContainer.classList.remove('panel-open');
 
-        // Collapse the panel
+        // Close the panel
+        panelContainer.classList.remove('panel-open');
         panelContainer.style.height = '0px'; // Trigger the collapse animation
 
         // Wait for the transition to finish before adding 'hidden'
@@ -35,6 +35,7 @@ function togglePanel(panelContainer) {
         panelContainer.addEventListener('transitionend', onTransitionEnd, { once: true });
     }
 }
+
 
 const apiContainer = document.querySelector('.api-panel'); // Adjust selector as needed
 const functionCallPanel = document.querySelector('.function-call-panel'); // Adjust selector as needed

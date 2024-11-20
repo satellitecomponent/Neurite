@@ -1,3 +1,4 @@
+// Determine the selected global model and provider based on user inputs
 function determineGlobalModel() {
     const inferenceSelect = document.getElementById('inference-select');
     const openAiSelect = document.getElementById('open-ai-select');
@@ -5,6 +6,7 @@ function determineGlobalModel() {
     const groqSelect = document.getElementById('groq-select');
     const localModelSelect = document.getElementById('local-model-select');
     const customModelSelect = document.getElementById('custom-model-select');
+    const neuriteSelect = document.getElementById('neurite-model-select'); // Add neurite select element
     const provider = inferenceSelect.value;
 
     let model = '';
@@ -20,12 +22,14 @@ function determineGlobalModel() {
     } else if (provider === 'custom') {
         const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
         model = selectedOption.text;
+    } else if (provider === 'neurite') {
+        model = neuriteSelect.value; // Handle Neurite-specific model selection
     }
 
     return { provider, model };
 }
 
-
+// Determine model from a specific AI node
 function determineAiNodeModel(node) {
     const inferenceSelect = node.inferenceSelect;
     const openAiSelect = node.openAiSelect;
@@ -33,6 +37,7 @@ function determineAiNodeModel(node) {
     const groqSelect = node.groqSelect;
     const localModelSelect = node.localModelSelect;
     const customModelSelect = node.customModelSelect;
+    const neuriteSelect = node.neuriteSelect; // Add neurite select in node
     const provider = inferenceSelect.value;
 
     let model = '';
@@ -48,6 +53,8 @@ function determineAiNodeModel(node) {
     } else if (provider === 'custom') {
         const selectedOption = customModelSelect.options[customModelSelect.selectedIndex];
         model = selectedOption.text;
+    } else if (provider === 'neurite') {
+        model = neuriteSelect.value; // Handle Neurite-specific model selection in node
     }
 
     return { provider, model };
@@ -201,20 +208,20 @@ function removeLastResponse() {
     }
 }
 
-function haltResponse() {
-    if (aiResponding) {
-        // AI is responding, so we want to stop it
-        if (currentController) {
-            currentController.abort(); // Ensure you use the correct controller instance
+function haltZettelkastenAi() {
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'zettelkasten') {
+            requestInfo.controller.abort();
+            activeRequests.delete(requestId);
         }
-        aiResponding = false;
-        shouldContinue = false;
-        isFirstAutoModeMessage = true;
-
-        // UI updates, ensure they are always executed
-        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-        document.getElementById("prompt").value = latestUserMessage; // Use the last user message as prompt
     }
+
+    aiResponding = false;
+    shouldContinue = false;
+    isFirstAutoModeMessage = true;
+
+    document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
+    document.getElementById("prompt").value = latestUserMessage;
 }
 
 function regenerateResponse() {
@@ -229,7 +236,7 @@ function regenerateResponse() {
 
 document.getElementById("regen-button").addEventListener("click", function () {
     if (aiResponding) {
-        haltResponse();
+        haltZettelkastenAi();
     } else {
         regenerateResponse();
     }

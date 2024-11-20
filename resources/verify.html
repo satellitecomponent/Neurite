@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification</title>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style>
+        /* Center the Turnstile container */
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        #turnstile-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Turnstile widget container -->
+    <div id="turnstile-container" class="cf-turnstile"></div>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const workerUrl = urlParams.get('workerUrl');
+        const siteKey = urlParams.get('siteKey');
+
+        // Configure Turnstile widget with the site key and callback functions
+        const turnstileContainer = document.getElementById("turnstile-container");
+        turnstileContainer.setAttribute('data-sitekey', siteKey);
+        turnstileContainer.setAttribute('data-callback', 'onTurnstileSuccess');
+        turnstileContainer.setAttribute('data-error-callback', 'onTurnstileError');
+
+        // Callback functions
+        function onTurnstileSuccess(token) {
+            // Redirect to OAuth flow with the Turnstile token
+            window.location.href = `${workerUrl}/auth?cf-turnstile-response=${encodeURIComponent(token)}`;
+        }
+
+        function onTurnstileError() {
+            alert("Verification failed. Please try again.");
+            window.close();
+        }
+    </script>
+</body>
+</html>

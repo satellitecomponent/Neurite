@@ -354,9 +354,8 @@ async function sendLLMNodeMessage(node, message = null) {
     node.aiResponding = true;
     node.userHasScrolled = false;
 
-    const clickQueues = {};  // Contains a click queue for each AI node
     // Initiates helper functions for aiNode Message loop.
-    const aiNodeMessageLoop = new AiNodeMessageLoop(node, clickQueues);
+    const aiNodeMessageLoop = new AiNodeMessageLoop(node);
 
     const haltCheckbox = node.haltCheckbox;
 
@@ -402,16 +401,17 @@ function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, ma
 }
 
 class AiNodeMessageLoop {
-    constructor(node, clickQueues) {
+    constructor(node) {
         this.node = node;
-        this.clickQueues = clickQueues || {}; // Initialize clickQueues if not passed
+        // Use a Map to associate nodes with their click queues
+        this.clickQueues = new Map();
     }
 
-    async processClickQueue(nodeId) {
-        const queue = this.clickQueues[nodeId] || [];
+    async processClickQueue(connectedNode) {
+        const queue = this.clickQueues.get(connectedNode) || [];
         while (true) {
             if (queue.length > 0) {
-                const { connectedNode, sendButton } = queue[0];
+                const { sendButton } = queue[0];
 
                 const connectedAiNodes = calculateAiNodeDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
@@ -420,15 +420,16 @@ class AiNodeMessageLoop {
                 }
 
                 if (!connectedNode.aiResponding) {
+                    await new Promise(resolve => setTimeout(resolve, 2500));  // Wait before the click.
                     queue.shift(); // Remove the processed message from the queue
                     sendButton.click();
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 2500));  // Wait before processing the next message
+            await new Promise(resolve => setTimeout(resolve, 500));  // Wait before processing the next message
         }
 
-        delete this.clickQueues[nodeId];
+        this.clickQueues.delete(connectedNode);
     }
 
     async questionConnectedAiNodes() {
@@ -466,7 +467,7 @@ class AiNodeMessageLoop {
                 const userResponse = await this.getUserResponse(message);
                 if (userResponse) {
                     const responseMessage = `@user says,\n${userResponse.trim()}`;
-                    this.processTargetNode(this.node, responseMessage, true);
+                    this.processTargetNode(this.node, responseMessage);
                 }
                 continue;
             } else if (recipient === 'self') {
@@ -509,51 +510,43 @@ class AiNodeMessageLoop {
     }
 
     processTargetNode(connectedNode, message, skipClickQueue = false) {
-        const uniqueNodeId = connectedNode.index;
-
         if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-            console.warn(`AI response for node ${uniqueNodeId} or its connected node is halted. Skipping this node.`);
+            console.warn(`AI response for node ${connectedNode.uuid} or its connected node is halted. Skipping this node.`);
             return;
         }
 
-        const promptElement = connectedNode.content.querySelector(`#nodeprompt-${uniqueNodeId}`);
-        const sendButton = connectedNode.content.querySelector(`#prompt-form-${uniqueNodeId}`);
+        const promptElement = connectedNode.promptTextArea;
+        const sendButton = connectedNode.sendButton;
 
         if (!promptElement || !sendButton) {
-            console.error(`Elements for ${uniqueNodeId} are not found`);
+            console.error(`Elements for ${connectedNode.uuid} are not found`);
             return;
         }
 
-        this.updatePromptElement(promptElement, message);
+        promptElement.value += `\n${message}`;
+        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
 
         if (!skipClickQueue) {
-            this.enqueueClick(uniqueNodeId, sendButton, connectedNode);
+            this.enqueueClick(connectedNode, sendButton);
         }
     }
 
-    updatePromptElement(promptElement, message) {
-        if (promptElement instanceof HTMLTextAreaElement) {
-            promptElement.value += `\n${message}`;
-        } else if (promptElement instanceof HTMLDivElement) {
-            promptElement.innerHTML += `<br>${message}`;
-        } else {
-            console.error(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`);
+    enqueueClick(connectedNode, sendButton) {
+        // Initialize the queue if it doesn't exist
+        if (!this.clickQueues.has(connectedNode)) {
+            this.clickQueues.set(connectedNode, []);
+            this.processClickQueue(connectedNode);  // Start processing this node's click queue
         }
 
-        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
-    }
-
-    enqueueClick(uniqueNodeId, sendButton, connectedNode) {
-        if (!this.clickQueues[uniqueNodeId]) {
-            this.clickQueues[uniqueNodeId] = [];
-            this.processClickQueue(uniqueNodeId);  // Start processing this node's click queue
-        }
-        this.clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
+        this.clickQueues.get(connectedNode).push({ sendButton });
     }
 
     fallbackParse(text) {
-        //console.log("Using fallback parsing method");
+        // console.log("Using fallback parsing method");
         const senderName = this.node.getTitle() || "no_name";
+        if (!text.trim()) {
+            return []; // No message if the text is empty
+        }
         return [{
             recipient: 'all',
             message: `${senderName} says,\n${text.trim()}`
@@ -637,10 +630,11 @@ class AiNodeMessageLoop {
 
     finalizeMessage(messages, recipient, message, senderName) {
         //console.log(`Finalizing message for recipient: ${recipient}`);
-        if (message.trim()) {  // Only add non-empty messages
+        const trimmedMessage = message.trim();
+        if (trimmedMessage) {  // Only add non-empty messages
             messages.push({
                 recipient: recipient,
-                message: `${senderName} says,\n${message.trim()}`
+                message: `${senderName} says,\n${trimmedMessage}`
             });
         } else {
             //console.log("Skipping empty message");

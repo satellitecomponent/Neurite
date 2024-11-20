@@ -285,16 +285,38 @@ async function provideAPIKeys() {
         console.log('Failed to provide API keys to the proxy server');
     }
 }
-
 function getAPIParams(messages, stream, customTemperature, inferenceOverride = null) {
     if (!inferenceOverride) {
         inferenceOverride = determineGlobalModel();
     }
     const { provider, model } = inferenceOverride;
-    console.log('Selected Ai:', model);
+    console.log('Selected AI:', model);
     let API_KEY;
     let API_URL;
     let apiEndpoint;
+
+    if (provider === 'neurite') {
+        // Neurite provider setup with specific endpoint and credentials
+        API_URL = null;
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+
+        // Build the request body
+        const body = JSON.stringify({
+            temperature: customTemperature !== null ? customTemperature
+                : parseFloat(document.getElementById('model-temperature').value),
+            messages,
+            model, // include the specific model selected for neurite
+            stream
+        });
+
+        return {
+            headers,
+            body,
+            API_URL,
+            provider
+        };
+    }
 
     if (useProxy) {
         // Use the AI proxy server
@@ -315,21 +337,16 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
                     console.error("Failed to fetch API details for the model:", model);
                     break;  // Exit if no API details are found
                 }
-                // Now use the API details as needed
                 API_URL = "http://localhost:7070/custom";
                 apiEndpoint = apiDetails.apiEndpoint;
                 API_KEY = apiDetails.apiKey;
-
-                // Additional logic using API_URL, apiEndpoint, API_KEY as needed
-                break;
                 break;
             default:
                 API_URL = "http://localhost:7070/openai";
         }
-        // Provide API keys to the proxy server
         provideAPIKeys();
     } else {
-        // Use the direct API endpoints
+        // Use direct API endpoints
         switch (provider) {
             case 'GROQ':
                 API_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -345,13 +362,14 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
                 const apiDetails = fetchCustomModelData(model);
                 API_URL = apiDetails.apiEndpoint;
                 API_KEY = apiDetails.apiKey;
+                break;
             default:
                 API_URL = "https://api.openai.com/v1/chat/completions";
                 API_KEY = document.getElementById("api-key-input").value;
         }
     }
 
-    if (!useProxy && !API_KEY && provider !== 'ollama' && provider !== 'custom') {
+    if (!useProxy && !API_KEY && provider !== 'ollama' && provider !== 'custom' && provider !== 'neurite') {
         alert("Please enter your API key");
         return null;
     }
@@ -373,7 +391,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
         stream
     };
 
-    // Only include requestId in the body if it is 'ollama' or 'custom' provider
+    // Include requestId if it's ollama or custom provider
     if (provider === 'ollama' || provider === 'custom') {
         const requestId = Date.now().toString();
         body.requestId = requestId;
@@ -387,6 +405,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride = n
     return {
         headers,
         body,
-        API_URL
+        API_URL,
+        provider
     };
 }

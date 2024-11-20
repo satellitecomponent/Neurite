@@ -307,20 +307,24 @@ class DropHandler {
 
         reader.onload = (event) => {
             const contentOrBlob = event.target.result;
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
+
+            if (mimeType.startsWith('text/')) {
+                // For text files, use content as string
                 this.processFile(fileName, contentOrBlob, mimeType);
             } else {
+                // For application and other non-text files, create Blob
                 const blob = new Blob([contentOrBlob], { type: mimeType });
                 this.processFile(fileName, null, mimeType, blob);
             }
         };
 
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
+        if (mimeType.startsWith('text/')) {
             reader.readAsText(file);  // Read as text
         } else {
             reader.readAsArrayBuffer(file);  // Read as binary
         }
     }
+
 
     // Handle folder drops
     async processFolderDrop(folderMetadata) {
@@ -413,33 +417,6 @@ class DropHandler {
 
         for (const file of files) {
             this.processOSFile(file); // Process each file
-        }
-    }
-
-    // Process each OS file
-    processOSFile(file) {
-        const mimeType = file.type || ''; // Get the file's MIME type
-        const fileName = file.name;
-
-        const reader = new FileReader();
-
-        reader.onload = (event) => {
-            const contentOrBlob = event.target.result;
-
-            // Determine if the file is text or binary and process accordingly
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-                this.processFile(fileName, contentOrBlob, mimeType);
-            } else {
-                const blob = new Blob([contentOrBlob], { type: mimeType });
-                this.processFile(fileName, null, mimeType, blob);
-            }
-        };
-
-        // For text-based files, read the content as text, otherwise read it as binary
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-            reader.readAsText(file);  // Read as text
-        } else {
-            reader.readAsArrayBuffer(file);  // Read as binary
         }
     }
 

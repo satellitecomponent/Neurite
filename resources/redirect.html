@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirect</title>
+    <script>
+        window.onload = function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const email = params.get('email');          // User's email from OAuth
+                const error = params.get('error');          // Authentication errors
+                const paymentStatus = params.get('status'); // Payment status updates
+
+                // Dynamically determine the target origin
+                const origin = window.location.hostname.includes('test.neurite.network')
+                    ? 'https://test.neurite.network'
+                    : 'https://neurite.network';
+
+                // Ensure window.opener exists and is not closed
+                if (window.opener && !window.opener.closed) {
+                    if (email) {
+                        // Send authentication message
+                        window.opener.postMessage(
+                            { type: 'auth', email },
+                            origin
+                        );
+                        console.log('Auth message sent:', email);
+                    }
+
+                    if (paymentStatus) {
+                        // Send Stripe payment status message
+                        window.opener.postMessage(
+                            { type: 'stripe', status: paymentStatus },
+                            origin
+                        );
+                        console.log('Stripe message sent:', paymentStatus);
+                    }
+
+                    if (error) {
+                        // Send authentication error message
+                        window.opener.postMessage(
+                            { type: 'auth_error', error },
+                            origin
+                        );
+                        console.error('Auth error message sent:', error);
+                    }
+
+                    // Close the popup after sending messages
+                    window.close();
+                } else {
+                    // window.opener is not available
+                    console.warn('No window.opener found. Cannot send messages.');
+                    document.body.innerHTML = "<p>Authentication complete. Please close this window.</p>";
+                }
+            } catch (e) {
+                console.error('Redirect error:', e);
+                document.body.innerHTML = "<p>An error occurred during authentication. Please close this window.</p>";
+            }
+        };
+    </script>
+</head>
+<body>
+    <p>Processing...</p>
+</body>
+</html>

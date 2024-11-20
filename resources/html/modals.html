@@ -18,7 +18,7 @@
 </div>
 
 <div id="fileTreeModal" style="display: none;">
-     <div id="modal-file-tree-container" class="fileTreeContainer custom-scrollbar"></div>
+    <div id="modal-file-tree-container" class="fileTreeContainer custom-scrollbar"></div>
 </div>
 
 <!-- Controls Modal Content -->
@@ -392,6 +392,62 @@
                 <button class="export-prompt-button set-instructions-button">Export Prompts</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="neurite-modal" style="display: none;">
+    <div class="balance-modal-content">
+
+        <!-- Profile Tab -->
+        <div class="label-bar-container">
+            <label for="profilePanel" class="button-label">Profile</label>
+            <div class="panel-content hidden" id="profilePanel">
+                <p><span id="email-display">user@example.com</span></p>
+                <button id="sign-out-btn" class="key-button">Sign Out</button>
+                <br />
+                <button id="delete-account-btn" class="key-button">Delete Account</button>
+            </div>
+        </div>
+        <br />
+        <!-- Usage Tab -->
+        <div class="label-bar-container">
+            <label for="usagePanel" class="button-label">Usage</label>
+            <div class="panel-content hidden" id="usagePanel">
+                <p>Current Balance: <span id="balance-display">$0</span></p>
+                <div id="balance-bar-container">
+                    <div id="balance-bar"></div>
+                </div>
+                <div id="add-funds-container">
+                    <label for="amount-input" style="font-size: 20px; color: RGB(200,200,255);">+ $</label>
+                    <input type="number" id="amount-input" min="5" step="1" value="5" />
+                    <button id="add-funds-button" class="purchase-btn">Add Funds</button>
+                </div>   
+            </div>
+        </div>
+        <br />
+        <!-- Models Tab -->
+        <div class="label-bar-container">
+            <label for="modelsPanel" class="button-label">Models</label>
+            <div class="panel-content hidden" id="modelsPanel">
+                <div class="model-item">
+                    <p>Rhizome</p>
+                    <ul class="model-info">
+                        <li>Powered by Groq</li>
+                        <li>Avg. Cost: $0.85 / million tokens</li>
+                        <li>Fastest response times + lowest cost</li>
+                    </ul>
+                </div>
+                <div class="model-item">
+                    <p>FractalGPT</p>
+                    <ul class="model-info">
+                        <li>Powered by OpenAi</li>
+                        <li>Avg. Cost: $5.55 / million tokens</li>
+                        <li>More capable models - highest cost</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
