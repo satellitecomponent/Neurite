@@ -358,6 +358,14 @@ function aiNodeHaltResponse(node) {
 
     // Reinitialize the controller for future use
     node.controller = new AbortController();
+
+    // Remove the node's request from activeRequests
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'node' && requestInfo.node === node) {
+            activeRequests.delete(requestId);
+            break;
+        }
+    }
 }
 
 function setupAiNodeResponseDivListeners(node) {
@@ -677,6 +685,7 @@ function initInferenceDropdown(node) {
     node.groqSelect = node.content.querySelector(`#groq-select-${nodeIndex}`);
     node.localModelSelect = node.content.querySelector(`#local-model-select-${nodeIndex}`);
     node.customModelSelect = node.content.querySelector(`#custom-model-select-${nodeIndex}`);
+    node.neuriteSelect = node.content.querySelector(`#neurite-model-select-${nodeIndex}`);
 }
 
 function setupAiNodeLocalLLMDropdownListeners(node) {
@@ -720,6 +729,7 @@ function createAndConfigureLocalLLMDropdown(nodeIndex) {
     const groqSelect = createDropdown(`groq-select-${nodeIndex}`);
     const ollamaSelect = createDropdown(`local-model-select-${nodeIndex}`);
     const customSelect = createDropdown(`custom-model-select-${nodeIndex}`);
+    const neuriteSelect = createDropdown(`neurite-model-select-${nodeIndex}`);
 
     // Append Inference
     inferenceTemplate.appendChild(createDropdownWrapper(inferenceSelect, 'wrapper-inference', nodeIndex));
@@ -730,6 +740,7 @@ function createAndConfigureLocalLLMDropdown(nodeIndex) {
     inferenceTemplate.appendChild(createDropdownWrapper(groqSelect, 'wrapper-groq', nodeIndex));
     inferenceTemplate.appendChild(createDropdownWrapper(ollamaSelect, 'wrapper-ollama', nodeIndex));
     inferenceTemplate.appendChild(createDropdownWrapper(customSelect, 'wrapper-custom', nodeIndex));
+    inferenceTemplate.appendChild(createDropdownWrapper(neuriteSelect, 'wrapper-neurite', nodeIndex));
 
     return inferenceTemplate;
 }
@@ -771,6 +782,7 @@ function refreshAiNodeOptions(node, setValues = false) {
     syncOptions('groq-select', node.groqSelect, 'groq-select-storage');
     syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage');
     syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage');
+    syncOptions('neurite-model-select', node.neuriteSelect, 'neurite-model-select-storage');
 
     if (setValues) {
         // Set the selected value of the target dropdowns based on the selected value of the source dropdowns
@@ -780,6 +792,7 @@ function refreshAiNodeOptions(node, setValues = false) {
         setSelectedValue('groq-select', node.groqSelect);
         setSelectedValue('local-model-select', node.localModelSelect);
         setSelectedValue('custom-model-select', node.customModelSelect);
+        setSelectedValue('neurite-model-select', node.neuriteSelect);
     }
 }
 

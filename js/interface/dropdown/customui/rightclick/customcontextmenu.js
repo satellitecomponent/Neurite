@@ -203,7 +203,7 @@ function handleFileSelection() {
                             }]
                         }
                     };
-                    dropHandler(customEvent); // Pass the custom event object to dropHandler
+                    dropHandlerInstance.handleDrop(customEvent); // Pass the custom event object to dropHandler
                 };
                 reader.readAsText(file);
             }
