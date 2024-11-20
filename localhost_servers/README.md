@@ -9,7 +9,7 @@ wiki-search, a Node.js for wiki searching located in the wikisearch directory
 
 wolfram-alpha, a Node.js server interfacing with Wolfram Alpha located in the wolfram-alpha directory
 
-ai-proxy, a Node.js server for handling api calls between Neurite's js interface and local or cloud hosted large langauge models.
+ai-proxy, a Node.js server for handling api calls between Neurite's js interface and local or cloud hosted large language models.
 
 automation, a Node.js server for running Neurite via Playwright, currently used for a headless browser option as well as for taking automated screenshots of Neurite.
 
@@ -29,7 +29,7 @@ npm
 
 To start all servers (besides automation.js), run the start_servers.js script with Node.js by...
 
-...navigating to the LocalHost servers folder in the command line and running...
+...navigating to the localhost_servers folder in the command line and running...
 
 ```bash
 npm run start

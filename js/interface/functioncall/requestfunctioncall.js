@@ -1,14 +1,15 @@
 function haltFunctionAi() {
-    if (currentController) {
-        currentController.abort();
-        currentController = null;
-
-        isAiProcessing = false;  // Ensure the state is updated
-
-        // Use global functionSendSvg if it's always the correct element
-        if (functionSendSvg) {
-            functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'function') {
+            requestInfo.controller.abort();
+            activeRequests.delete(requestId);
         }
+    }
+
+    isAiProcessing = false; // Ensure the state is updated
+
+    if (functionSendSvg) {
+        functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
     }
 }
 
@@ -112,27 +113,55 @@ function trimSystemMessages(systemMessages, maxTokens) {
     return systemMessages;
 }
 
+
 async function getFunctionResponse(requestMessages) {
-    return callAiApi({
-        messages: requestMessages,
-        stream: true,
-        customTemperature: null,
-        onBeforeCall: () => {
-            isAiProcessing = true;
-            updateUiForProcessing();
-        },
-        onAfterCall: () => {
-            isAiProcessing = false;
-            updateUiForIdleState();
-        },
-        onStreamingResponse: (content) => {
-            neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
-        },
-        onError: (error) => {
-            functionErrorIcon.style.display = 'block';
-            console.error("Error:", error);
-        }
-    });
+    const requestId = generateRequestId();
+    let streamedResponse = "";
+
+    function onBeforeCall() {
+        isAiProcessing = true;
+        updateUiForProcessing();
+    }
+
+    function onAfterCall() {
+        isAiProcessing = false;
+        updateUiForIdleState();
+    }
+
+    function onStreamingResponse(content) {
+        // Verify if the request is still active
+        if (!activeRequests.has(requestId)) return;
+
+        neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
+        streamedResponse += content;
+    }
+
+    function onError(error) {
+        functionErrorIcon.style.display = 'block';
+        console.error("Error:", error);
+    }
+
+    // Initialize AbortController for Function Request
+    const controller = new AbortController();
+    activeRequests.set(requestId, { type: 'function', controller });
+
+    try {
+        const responseData = await callAiApi({
+            messages: requestMessages,
+            stream: true,
+            customTemperature: null,
+            onBeforeCall,
+            onAfterCall,
+            onStreamingResponse,
+            onError,
+            controller, // Pass the controller
+            requestId // Pass the unique requestId
+        });
+        return streamedResponse || responseData;
+    } finally {
+        // Clean up after the request is done
+        activeRequests.delete(requestId);
+    }
 }
 
 function updateUiForProcessing() {
