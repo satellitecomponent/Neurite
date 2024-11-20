@@ -1,19 +1,30 @@
+
 ﻿const Ai = {
     isResponding: false,
     latestUserMessage: null,
     isFirstAutoModeMessage: true,
     originalUserMessage: null
 };
-let shouldContinue = true;
 
+let shouldContinue = true;
 
 let failCounter = 0;
 const MAX_FAILS = 2;
 
-let streamedResponse = '';
+// Active Requests Tracking
+const activeRequests = new Map(); // Maps requestId to { type: 'global' | 'node', controller }
 
+// Utility to Generate Unique Request IDs
+let globalRequestIdCounter = 0;
+function generateRequestId() {
+    return `req-${Date.now()}-${++globalRequestIdCounter}`;
+}
+
+// Call Chat API Function
 async function callchatAPI(messages, stream = false, customTemperature = null) {
     shouldContinue = true;
+    const requestId = generateRequestId();
+    let streamedResponse = ""; // Local streamedResponse for this request
 
     function onBeforeCall() {
         Ai.isResponding = true;
@@ -35,94 +46,89 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         if (failCounter >= MAX_FAILS) {
             Logger.err("Max attempts reached. Stopping further API calls.");
             shouldContinue = false;
-            if (currentController) {
-                currentController.abort();
-                currentController = null;
-            }
+            haltZettelkastenAi();
             resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
         }
     }
 
     function onStreamingResponse(content) {
+        // Verify if the request is still active
+        if (!activeRequests.has(requestId) || !shouldContinue || content.trim() === "[DONE]") return;
+
         const myCodeMirror = window.currentActiveZettelkastenMirror;
-        const scrollThreshold = 10; // Adjust this value as needed
+        const scrollThreshold = 10; // Adjust as needed
         const scrollInfo = myCodeMirror.getScrollInfo();
         const isScrolledToBottom = scrollInfo.height - scrollInfo.clientHeight - scrollInfo.top <= scrollThreshold;
 
-        if (shouldContinue && content.trim() !== "[DONE]") {
-            const currentDoc = myCodeMirror.getDoc();
-            const lastLine = currentDoc.lastLine();
-            const lastLineLength = currentDoc.getLine(lastLine).length;
-            myCodeMirror.replaceRange(content, CodeMirror.Pos(lastLine, lastLineLength));
-            streamedResponse += content;
+        const currentDoc = myCodeMirror.getDoc();
+        const lastLine = currentDoc.lastLine();
+        const lastLineLength = currentDoc.getLine(lastLine).length;
+        myCodeMirror.replaceRange(content, CodeMirror.Pos(lastLine, lastLineLength));
+        streamedResponse += content;
 
-            if (isScrolledToBottom) {
-                myCodeMirror.scrollTo(null, scrollInfo.height);
-            }
-
-            myCodeMirror.focus();
+        if (isScrolledToBottom) {
+            myCodeMirror.scrollTo(null, scrollInfo.height);
         }
+
+        myCodeMirror.focus();
     }
 
-    return callAiApi({
-        messages,
-        stream,
-        customTemperature,
-        onBeforeCall,
-        onAfterCall,
-        onStreamingResponse,
-        onError
-    });
-}
+    // Initialize AbortController for Zettelkasten Request
+    const controller = new AbortController();
+    activeRequests.set(requestId, { type: 'zettelkasten', controller });
 
-async function handleStreamingForLLMnode(response, node) {
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = '';
-    const fullResponse = [];
-
-    while (true) {
-        const read = await reader.read();
-        if (read.done || !node.shouldContinue) break;
-
-        buffer += decoder.decode(read.value, { stream: true });
-
-        let contentMatch;
-        while ((contentMatch = buffer.match(/"content":"((?:[^\\"]|\\.)*)"/)) !== null) {
-            const content = JSON.parse('"' + contentMatch[1] + '"');
-            if (!node.shouldContinue) break;
-
-            if (content.trim() !== "[DONE]") {
-                const func = TextArea.append.bind(node.aiResponseTextArea, content);
-                await callWithDelay(func, 30);
-            }
-            fullResponse.push(content);
-            buffer = buffer.slice(contentMatch.index + contentMatch[0].length);
-        }
+    try {
+        const responseData = await callAiApi({
+            messages,
+            stream,
+            customTemperature,
+            onBeforeCall,
+            onAfterCall,
+            onStreamingResponse,
+            onError,
+            inferenceOverride: null, // Assuming no override for global calls
+            controller, // Pass the controller
+            requestId // Pass the unique requestId
+        });
+        return streamedResponse || responseData;
+    } finally {
+        // Clean up after the request is done
+        activeRequests.delete(requestId);
     }
-    return fullResponse.join('');
 }
 
-function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
+// Call Chat LLM Node Function
+async function callchatLLMnode(messages, node, stream = false, inferenceOverride = null) {
+    const requestId = generateRequestId();
+    let streamedResponse = ""; // Local streamedResponse for this node's request
+
     function onBeforeCall() {
         node.aiResponding = true;
         node.regenerateButton.innerHTML = Svg.pause;
         node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'block';
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'none';
     }
+
     function onAfterCall() {
         node.aiResponding = false;
         node.regenerateButton.innerHTML = Svg.refresh;
         node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'none';
     }
+
     function onStreamingResponse(content) {
+        // Verify if the request is still active
+        if (!activeRequests.has(requestId) || !node.shouldContinue || content.trim() === "[DONE]") return;
         if (node.shouldContinue && content.trim() !== "[DONE]") TextArea.append.call(node.aiResponseTextArea, content)
     }
+
     function onError(errorMsg) {
         Logger.err("In calling Chat API:", errorMsg);
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
         if (node.haltCheckbox) node.haltCheckbox.checked = true;
     }
+
+    // Track the node-specific request
+    activeRequests.set(requestId, { type: 'node', node.controller, node });
 
     return callAiApi({
         messages,
@@ -133,13 +139,14 @@ function callchatLLMnode(messages, node, stream = false, inferenceOverride) {
         onStreamingResponse,
         onError,
         inferenceOverride: inferenceOverride || Ai.determineModel(node),
-        controller: node.controller // node-specific controller
+        controller: node.controller, // node-specific controller
+        requestId: requestId
     });
 }
 
-        // UI agnostic api call
+// AI.js
 
-let currentController = null;
+// UI Agnostic API Call
 
 async function callAiApi({
     messages,
@@ -150,8 +157,12 @@ async function callAiApi({
     onStreamingResponse,
     onError,
     inferenceOverride = null,
-    controller = null
+    controller = null,
+    requestId
 }) {
+    console.log("Message Array", messages);
+    console.log("Token count:", getTokenCount(messages));
+
     if (useDummyResponses) {
         onBeforeCall();
         const randomResponse = dummyResponses[Math.floor(Math.random() * dummyResponses.length)];
@@ -166,23 +177,22 @@ async function callAiApi({
         return;
     }
 
-    if (!controller) {
-        controller = new AbortController();
-        currentController = controller;
-    }
-
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
     Logger.info("Message Array", messages);
     Logger.info("Token count:", TokenCounter.forMessages(messages));
 
     if (!params) {
-        onError("API key is missing.");
+        onError("Parameters are missing.");
         return;
     }
 
-    // Generate a unique requestId only if using proxy
-    const requestId = useProxy ? Date.now().toString() : null;
-    if (requestId) params.body.requestId = requestId;
+    // Sign-in check for Neurite provider
+    if (params.providerId === 'neurite') {
+        const isSignedIn = await checkNeuriteSignIn();
+        if (!isSignedIn) {
+            return;
+        }
+    }
 
     const requestOptions = {
         method: 'POST',
@@ -191,24 +201,33 @@ async function callAiApi({
         signal: controller.signal,
     };
 
+    // Use NeuriteBackend for Neurite provider
+    let response;
     onBeforeCall();
 
     try {
-        const response = await fetch(params.API_URL, requestOptions);
+        if (params.providerId === 'neurite') {
+            // Use NeuriteBackend to make the API call
+            response = await window.NeuriteBackend.request('/ai/get-response', requestOptions);
+        } else {
+            response = await fetch(params.API_URL, requestOptions);
 
-        if (!response.ok) throw await response.json();
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'API request failed');
+            }
+        }
 
         let responseData = '';
         if (stream) {
-            responseData = await streamAiResponse(response, onStreamingResponse);
+            responseData = await streamAiResponse(response, (content) => {
+                onStreamingResponse(content);
+            }, 16); // Adjust delay as needed
         } else {
             const text = await response.text();
             try {
                 const data = JSON.parse(text);
-
-                // Extract content from the response, regardless of the exact structure
                 responseData = extractContentFromResponse(data);
-
                 if (!responseData) {
                     Logger.err("Unable to extract content from response:", data);
                     throw new Error("Unable to extract content from API response");
@@ -229,6 +248,14 @@ async function callAiApi({
         }
     } finally {
         onAfterCall();
+        // Check params.provider directly for Neurite
+        if (params.providerId === 'neurite') {
+            await neuritePanel.fetchUserBalanceThrottled(); // Use the throttled method
+        }
+        // Remove the request from activeRequests if it's still there
+        if (requestId && activeRequests.has(requestId)) {
+            activeRequests.delete(requestId);
+        }
     }
 }
 Ai.ctCancelRequest = class {
@@ -244,6 +271,7 @@ Ai.ctCancelRequest = class {
     onFailure(){ return `Failed to cancel request ${this.requestId} on server:` }
 }
 
+// Extract Content from Response
 function extractContentFromResponse(data) {
     // Try to extract content from various possible locations in the response
     const choice = data.choices && data.choices[0];
@@ -255,6 +283,7 @@ function extractContentFromResponse(data) {
     return (content ? content.trim() : null);
 }
 
+// Stream AI Response Function
 async function streamAiResponse(response, onStreamingResponse, delay = 10) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");

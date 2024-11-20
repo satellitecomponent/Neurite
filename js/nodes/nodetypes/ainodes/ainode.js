@@ -291,6 +291,14 @@ AiNode.HaltResponse = function(node){
 
     // Reinitialize the controller for future use
     node.controller = new AbortController();
+
+    // Remove the node's request from activeRequests
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'node' && requestInfo.node === node) {
+            activeRequests.delete(requestId);
+            break;
+        }
+    }
 }
 
 AiNode.setupResponseDivListeners = function(node){
@@ -543,6 +551,7 @@ AiNode.setSelects = function(node){
     node.groqSelect = getSelectByName(node, "groq");
     node.localModelSelect = getSelectByName(node, "local-model");
     node.customModelSelect = getSelectByName(node, "custom-model");
+    node.neuriteModelSelect = getSelectByName(node, "neurite-model");
 }
 
 AiNode.setupLocalLLMDropdownListeners = function(node){
@@ -579,7 +588,8 @@ function createAndConfigureLocalLlmSelects(nodeIndex) {
         createSelectWithWrapper('anthropic', 'anthropic', nodeIndex),
         createSelectWithWrapper('groq', 'groq', nodeIndex),
         createSelectWithWrapper('local-model', 'ollama', nodeIndex),
-        createSelectWithWrapper('custom-model', 'custom', nodeIndex)
+        createSelectWithWrapper('custom-model', 'custom', nodeIndex),
+        createSelectWithWrapper('neurite-model', 'neurite', nodeIndex)
     );
     return localLlmSelects;
 }

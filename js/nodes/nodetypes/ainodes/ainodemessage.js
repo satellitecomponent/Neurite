@@ -1,4 +1,4 @@
-AiNode.sendMessage = async function(node, message = null){
+AiNode.sendMessage = async function (node, message = null) {
     if (node.aiResponding) {
         Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
@@ -201,20 +201,14 @@ AiNode.sendMessage = async function(node, message = null){
 
     const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
 
-    allConnectedNodes.forEach(async (connectedNode) => {
+    allConnectedNodes.forEach(connectedNode => {
         if (connectedNode.isImageNode) {
-            const imageData = await getImageNodeData(connectedNode);
+            const imageData = getImageNodeData(connectedNode);
             if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
-                // Construct the message with base64 image formatted as a data URL
+                // Construct an individual message for each image
                 messages.push({
                     role: 'user',
-                    content: {
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:image/jpeg;base64,${imageData.image_data}` // Properly format the base64 image data as a data URL
-                        },
-                        //detail: 'high' // Set high detail for better quality
-                    }
+                    content: [imageData] // Contains only the image data
                 });
                 remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
             } else {
@@ -327,7 +321,7 @@ AiNode.sendMessage = async function(node, message = null){
 
     // AI call
     callchatLLMnode(messages, node, true, inferenceOverride)
-        .then( ()=>{
+        .then(() => {
             node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';
 
@@ -336,7 +330,7 @@ AiNode.sendMessage = async function(node, message = null){
                 return aiNodeMessageLoop.questionConnectedAiNodes();
             }
         })
-        .catch( (err)=>{
+        .catch((err) => {
             if (haltCheckbox) haltCheckbox.checked = true;
             Logger.err("While getting response:", err);
             aiErrorIcon.style.display = 'block';
@@ -528,7 +522,7 @@ AiNode.MessageLoop = class {
 
     isConnectedNode(nodeName) {
         const normalizedNodeName = this.normalizeRecipient(nodeName);
-        const func = (node)=>(this.normalizeRecipient(node.getTitle()) === normalizedNodeName);
+        const func = (node) => (this.normalizeRecipient(node.getTitle()) === normalizedNodeName);
         return AiNode.calculateDirectionalityLogic(this.node).some(func);
     }
 
@@ -623,7 +617,7 @@ AiNode.MessageLoop = class {
     }
 }
 
-AiNode.calculateDirectionalityLogic = function(node, visited = new Set()){
+AiNode.calculateDirectionalityLogic = function (node, visited = new Set()) {
     const connectedAiNodes = [];
     visited.add(node.uuid);
 

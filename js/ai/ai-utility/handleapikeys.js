@@ -264,9 +264,33 @@ Proxy.provideAPIKeys.ct = class {
 function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
     const { providerId, model } = inferenceOverride || Ai.determineModel();
     Logger.info("Selected Ai:", model);
+
     let API_KEY;
     let API_URL;
     let apiEndpoint;
+
+    if (providerId === 'neurite') {
+        // Neurite provider setup with specific endpoint and credentials
+        API_URL = null;
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+
+        // Build the request body
+        const body = JSON.stringify({
+            temperature: customTemperature !== null ? customTemperature
+                : parseFloat(document.getElementById('model-temperature').value),
+            messages,
+            model, // include the specific model selected for neurite
+            stream
+        });
+
+        return {
+            headers,
+            body,
+            API_URL,
+            providerId
+        };
+    }
 
     if (useProxy) {
         // Use the AI proxy server
@@ -287,13 +311,9 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
                     Logger.err("Failed to fetch API details for the model:", model);
                     break;
                 }
-
-                // Now use the API details as needed
-                API_URL = 'http://localhost:7070/custom';
+                API_URL = "http://localhost:7070/custom";
                 apiEndpoint = apiDetails.apiEndpoint;
                 API_KEY = apiDetails.apiKey;
-
-                // Additional logic using API_URL, apiEndpoint, API_KEY as needed
                 break;
             default:
                 API_URL = 'http://localhost:7070/openai';
@@ -316,13 +336,14 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
                 const apiDetails = fetchCustomModelData(model);
                 API_URL = apiDetails.apiEndpoint;
                 API_KEY = apiDetails.apiKey;
+                break;
             default:
                 API_URL = 'https://api.openai.com/v1/chat/completions';
                 API_KEY = Elem.byId('api-key-input').value;
         }
     }
 
-    if (!useProxy && !API_KEY && providerId !== 'ollama' && providerId !== 'custom') {
+    if (!useProxy && !API_KEY && providerId !== 'ollama' && providerId !== 'custom' && providerId !== 'neurite') {
         alert("Please enter your API key");
         return null;
     }

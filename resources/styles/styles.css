@@ -466,6 +466,10 @@ input[type="text"i].title-input {
 }
 
 .modal-content {
+    position: absolute; /* Change to absolute for more precise control */
+    top: 50px; /* Set an initial top value */
+    left: 50%; /* Center the modal horizontally */
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     background-color: #1a1921bf;
@@ -478,9 +482,12 @@ input[type="text"i].title-input {
     overflow: visible;
     border-radius: 5px 5px 0px 0px;
     pointer-events: auto;
-    position: relative; /* Change to relative positioning */
-    cursor: move; /* Add cursor style to indicate draggable */
+    cursor: move;
 }
+
+    .modal-content.expanding {
+        transition: height 0.3s ease; /* Smooth height transitions */
+    }
 
 .modal-header {
     display: flex;
@@ -513,6 +520,7 @@ input[type="text"i].title-input {
 
 .modal-body {
     padding: 20px;
+    padding-top: 6px;
 }
 
 /* Generic Overlay Inside Modal */
@@ -2661,7 +2669,7 @@ input[type=range] {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     position: relative;
     margin: 10px;
 }
@@ -3131,8 +3139,9 @@ code.language-markdown {
     border: inset;
     border-color: #8882;
     width: 100%;
-    height: 70px;
-    overflow-y: hidden;
+    height: 100%;
+    min-height: 100px;
+    overflow-x: hidden;
     padding: 10px;
     box-sizing: border-box;
     resize: none;
@@ -3369,6 +3378,23 @@ code.language-markdown {
 .toggle-panel:hover .bar {
     background-color: #555; /* Change color on hover */
 }
+
+.panel-content {
+    overflow: hidden;
+    height: 0;
+    transition: height 0.3s ease, opacity 0.3s ease; /* Add opacity for smoother effect */
+    opacity: 0; /* Initially hidden */
+}
+
+    .panel-content.panel-open {
+        height: auto; /* Height based on content when open */
+        opacity: 1; /* Fully visible when open */
+    }
+
+    .panel-content.hidden {
+        height: 0; /* Collapsed height */
+        opacity: 0; /* Hidden content */
+    }
 
 /* Styles for .button-label */
 .button-label {
@@ -3830,3 +3856,131 @@ code.language-markdown {
     border-color: #747474 #747474 transparent transparent;
 }
 
+.balance-modal-content {
+    width: 250px;
+    text-align: center;
+    font-size: 20px;
+}
+
+/* Balance bar container */
+#balance-bar-container {
+    background-color: #222226;
+    border: 1px solid #555;
+    height: 20px;
+    width: 99%;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+/* The actual balance bar */
+#balance-bar {
+    height: 100%;
+    background-color: rgb(30, 55, 81);
+    width: 0%; /* This will be dynamically updated */
+    border-radius: 2px;
+    border-right: 1px solid #bbb;
+    transition: width 0.5s ease;
+}
+
+#package-count, #total-price, #balance-display, #amount-input {
+    font-size: 20px;
+    color: RGB(200,200,255);
+}
+
+.purchase-btn {
+    background-color: rgb(30, 55, 81);
+    border: none;
+    padding: 8px 8px;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+    .purchase-btn:hover {
+        background-color: #305030;
+        color: RGB(200,200,255);
+    }
+
+#amount-input {
+    background-color: #222226;
+    font-size: 16px;
+}
+
+#add-funds-container {
+    padding-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    #add-funds-container label {
+        font-size: 20px;
+        color: rgb(200, 200, 255);
+    }
+
+    #add-funds-container input[type="number"] {
+        width: 60px;
+        padding: 5px;
+        font-size: 16px;
+        text-align: center;
+    }
+
+.model-item {
+    margin-top: 10px;
+    text-align: center;
+}
+
+    .model-item p {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 5px 0;
+        color: #aaa;
+        background-color: #222226;
+        border-radius: 5px;
+        padding: 2px 4px; /* Padding only slightly around the text */
+        display: inline-block; /* Ensures background only covers the text */
+    }
+
+.model-info {
+    padding: 5px;
+    margin: 0;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-top: 2px solid #8882;
+    border-bottom: 2px solid #8882;
+}
+
+    .model-info li {
+        font-size: 14px;
+        margin-bottom: 4px;
+        color: #888;
+    }
+
+.model-panel-info {
+    padding: 5px;
+    margin: 0;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-bottom: 2px solid #8882;
+}
+
+    .model-panel-info li {
+        font-size: 14px;
+        margin-bottom: 4px;
+        color: #888;
+    }
+
+#profilePanel {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+#delete-account-btn:hover {
+    background-color: #950e0e;
+    color: white;
+}

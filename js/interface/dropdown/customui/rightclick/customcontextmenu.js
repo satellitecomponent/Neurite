@@ -118,7 +118,7 @@ Menu.Context = class {
                     }]
                 }
             };
-            dropHandler(customEvent);
+            dropHandlerInstance.handleDrop(customEvent);
         });
         reader.readAsText(file);
     }

@@ -13,6 +13,7 @@
                                 <option value="anthropic">Anthropic</option>
                                 <option value="GROQ">Groq</option>
                                 <option value="ollama">Ollama</option>
+                                <option value="neurite">Neurite</option>
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
@@ -64,6 +65,17 @@
                         <div class="dropdown-container">
                             <select id="local-model-select" class="model-selector custom-select">
                                 <option value="llama3">none</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dropdown-wrapper" id="wrapper-neurite">
+                        <label for="neurite-model-select">
+                            <button id="openNeuriteModalButton" class="linkbuttons">Neurite</button>
+                        </label>
+                        <div class="dropdown-container">
+                            <select id="neurite-model-select" class="model-selector custom-select">
+                                <option value="rhizome">Rhizome</option>
+                                <option value="fractalgpt">FractalGPT</option>
                             </select>
                         </div>
                     </div>

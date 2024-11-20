@@ -1,14 +1,15 @@
 function haltFunctionAi() {
-    if (!currentController) return;
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'function') {
+            requestInfo.controller.abort();
+            activeRequests.delete(requestId);
+        }
+    }
 
-    currentController.abort();
-    currentController = null;
+    isAiProcessing = false; // Ensure the state is updated
 
-    isAiProcessing = false;  // Ensure the state is updated
-
-    // Use global functionSendSvg if it's always the correct element
     if (functionSendSvg) {
-        functionSendSvg.innerHTML = Svg.use.play;
+        functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
     }
 }
 
@@ -105,6 +106,8 @@ function getFunctionResponse(requestMessages) {
             updateUiForIdleState();
         },
         onStreamingResponse: (content) => {
+            if (!activeRequests.has(requestId)) return;
+
             neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
         },
         onError: (err) => {

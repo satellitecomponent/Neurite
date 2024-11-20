@@ -11,7 +11,8 @@ const Modals = {
     vectorDbImportConfirmModal: new Modal('vectorDbImportConfirmModal', "Confirm Vector DB Import"), // , setupVectorDbImportConfirmModal
     vectorDbModal: new Modal('vectorDbModal', "Vector Database"),
     vectorDbSearchModal: new Modal('vectorDbSearchModal', "Search Vector-DB"),
-    zetSearchModal: new Modal('zetSearchModal', "Search Notes")
+    zetSearchModal: new Modal('zetSearchModal', "Search Notes"),
+    neuriteModal: new Modal('neurite-modal', "Neurite")
 }
 
 Modal.btnClose = Modal.div.querySelector('.close');
@@ -28,7 +29,7 @@ Modal.storeInputValue = debounce(function (input, contentId) {
     if (contentId === 'noteModal') updatePathOptions();
 }, 100);
 
-Modal.open = function(contentId){
+Modal.open = function (contentId) {
     App.menuContext.hide();
     Logger.debug("Opened Modal:", contentId);
 
@@ -75,18 +76,18 @@ Modal.open = function(contentId){
     const modalInputs = modalBody.querySelectorAll('input:not([type=range]), textarea');
     modalInputs.forEach(Modal.setupInput, modal);
 }
-Modal.setupSlider = function(slider){
+Modal.setupSlider = function (slider) {
     const stored = Modal.inputValues[slider.id];
     if (stored !== undefined) slider.value = stored;
 
     setSliderBackground(slider);
     On.input(slider, Modal.onSliderInput.bind(this, slider));
 }
-Modal.onSliderInput = function(slider, e){
+Modal.onSliderInput = function (slider, e) {
     setSliderBackground(slider);
     Modal.storeInputValue(slider, this.id);
 }
-Modal.setupInput = function(input){
+Modal.setupInput = function (input) {
     if (input.type === 'file') return;
 
     const stored = Modal.inputValues[input.id];
@@ -98,12 +99,12 @@ Modal.setupInput = function(input){
     On.input(input, Modal.storeInputValue.bind(null, input, this.id));
 }
 
-Modal.getInputValue = function(modalId, itemId, defaultValue = true) {
+Modal.getInputValue = function (modalId, itemId, defaultValue = true) {
     return Modal.inputValues[itemId] ?? defaultValue;
 }
 Modal.getAiInputValue = Modal.getInputValue.bind(Modal, 'aiModal');
 
-Modal.close = function(){
+Modal.close = function () {
     switch (Modal.current.id) {
         case 'zetSearchModal':
         case 'nodeConnectionModal':
@@ -119,12 +120,13 @@ Modal.close = function(){
             break;
     }
     Modal.div.style.display = 'none';
+    Modal.closeOverlay;
     Modal.current = null;
 }
 
 On.click(Modal.btnClose, Modal.close);
 
-Modal.openOverlay = function(explanationId){
+Modal.openOverlay = function (explanationId) {
     const explanationContent = Elem.byId(explanationId);
     if (!explanationContent) {
         Logger.err("No explanation found for ID:", explanationId);
@@ -135,7 +137,7 @@ Modal.openOverlay = function(explanationId){
     Modal.overlay.style.display = 'block';
 }
 
-Modal.closeOverlay = function(){
+Modal.closeOverlay = function () {
     Modal.overlay.style.display = 'none';
     Modal.overlayBody.innerHTML = '';
 }
@@ -148,7 +150,7 @@ On.click(Modal.overlayCloseBtn, Modal.closeOverlay);
     'touchend', 'wheel', 'dragstart', 'drag', 'drop'
 ].forEach(Event.stopPropagationByNameForThis, Modal.content);
 
-Modal.startDragging = function(e){
+Modal.startDragging = function (e) {
     if (isInputElement(e.target)) return;
 
     Modal.isDragging = true;
@@ -163,14 +165,14 @@ function isInputElement(element) {
         element.closest('#modal-file-tree-container'); // Added condition
 }
 
-Modal.dragContent = function(e){
+Modal.dragContent = function (e) {
     if (!Modal.isDragging) return;
 
     e.preventDefault();
     Modal.div.style.left = (e.clientX - Modal.mouseOffsetX) + 'px';
     Modal.div.style.top = (e.clientY - Modal.mouseOffsetY) + 'px';
 }
-Modal.stopDragging = function(){
+Modal.stopDragging = function () {
     Modal.isDragging = false;
 }
 

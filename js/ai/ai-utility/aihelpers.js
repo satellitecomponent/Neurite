@@ -6,7 +6,8 @@ const Providers = {
     ollama: {domSelectId: 'local-model-select', nodeSelectId: 'localModelSelect'},
     OpenAi: {domSelectId: 'open-ai-select', inputId: 'api-key-input', nodeSelectId: 'openAiSelect', storageId: 'openaiApiKey'},
     wolframApi: {inputId: 'wolframApiKey'},
-    custom: {domSelectId: 'custom-model-select', nodeSelectId: 'customModelSelect'}
+    custom: { domSelectId: 'custom-model-select', nodeSelectId: 'customModelSelect' },
+    neurite: { domSelectId: 'neurite-model-select', nodeSelectId: 'neuriteModelSelect' }
 }
 
 Ai.determineModel = function(node){
@@ -140,15 +141,35 @@ function removeLastResponse() {
     }
 }
 
-Ai.haltResponse = function(){
-    if (currentController) currentController.abort();
-    Ai.isResponding = false;
+function haltZettelkastenAi() {
+    for (const [requestId, requestInfo] of activeRequests.entries()) {
+        if (requestInfo.type === 'zettelkasten') {
+            requestInfo.controller.abort();
+            activeRequests.delete(requestId);
+        }
+    }
+
+    aiResponding = false;
     shouldContinue = false;
-    Ai.isFirstAutoModeMessage = true;
+    isFirstAutoModeMessage = true;
+
+    document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
+    document.getElementById("prompt").value = latestUserMessage;
 }
-On.click(Elem.byId('regen-button'), (e)=>{
-    if (Ai.isResponding) {
-        Ai.haltResponse();
+
+function regenerateResponse() {
+    if (!aiResponding) {
+        // AI is not responding, so we want to regenerate
+        removeLastResponse(); // Remove the last AI response
+        document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
+        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
+
+    }
+}
+
+document.getElementById("regen-button").addEventListener("click", function () {
+    if (aiResponding) {
+        haltZettelkastenAi();
     } else {
         removeLastResponse();
     }
