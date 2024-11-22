@@ -1950,7 +1950,7 @@ td {
         }
 
 .scrollable-list {
-    height: 190px; /* Adjust this value based on how tall you want your list to be */
+    height: 190px;
     width: 95%;
     overflow-y: auto;
     overflow-x: hidden;
