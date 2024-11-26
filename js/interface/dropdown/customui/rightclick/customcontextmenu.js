@@ -1,5 +1,8 @@
+const MenuItem = {}; // View.Item
+
 class ContextMenu {
     menu = Elem.byId('customContextMenu');
+    targetModel = null;
     constructor(){
         this.fileInput = this.makeFileInput();
 
@@ -41,18 +44,15 @@ class ContextMenu {
         }
         this.menu.innerHTML = ''; // clear options
         const view = Graph.viewForElem(target);
-        if (!view) this.populateForGeneric(target);
-        else this[view.funcPopulate](view.model, x, y);
+        if (!view) return this.populateForGeneric(target);
+
+        this.targetModel = view.model;
+        this[view.funcPopulate](x, y);
     }
     option(text, onClick, closing = true){
         const handler = (!closing) ? onClick
                     : async ()=>{ await onClick(); this.hide() } ;
         return Html.make.li(text, 'dynamic-option', handler);
-    }
-    createMenuItem(displayText, identifier, action, closing = false){
-        const li = this.option(displayText, action, closing);
-        li.dataset.identifier = identifier;
-        return li;
     }
     removeMenuItem(text){
         const item = Elem.findChild(this.menu, Elem.hasTextContentThis, text);
@@ -62,25 +62,25 @@ class ContextMenu {
     makeInputField(){
         const input = Html.make.input('dynamic-input custom-node-method-input');
         input.type = 'text';
-        input.placeholder = 'Enter method';
-        this.menu.append(Html.make.li(input, 'input-item'));
+        input.placeholder = "Enter method";
         return input;
     }
-    populateForNode(node, x, y){
-        const menu = this.menu;
-        const inputField = menu.querySelector('.custom-node-method-input') || this.makeInputField();
-        setupSuggestionsForInput(menu, inputField, node, getNodeMethodSuggestions, x, y);
-        loadPinnedItemsToContextMenu(menu, node);
+    populateForNode(x, y){
+        this.inputField = this.makeInputField();
+        this.menu.append(Html.make.li(this.inputField, 'input-item'));
+        this.setupSuggestions(x, y);
+        this.loadPinnedItems();
     }
-    populateForEdge(edge, x, y){
+    populateForEdge(x, y){
+        const edge = this.targetModel;
         const onDirection = edge.toggleDirection.bind(edge);
         const onDelete = edge.removeInstance.bind(edge);
         this.menu.append(
-            this.createMenuItem('updateDirection', 'update-direction', onDirection),
-            this.createMenuItem('delete', 'delete-edge', onDelete, true)
+            this.option("toggle direction", onDirection),
+            this.option("delete", onDelete, true)
         );
     }
-    populateForBackground(target, x, y){
+    populateForBackground(x, y){
         this.menu.append(
             // Option to create a Text Node (without calling draw)
             this.option("+ Note", createNodeFromWindow),
@@ -88,7 +88,7 @@ class ContextMenu {
             // Option to create a Link Node or Search Google
             this.option("+ Link", returnLinkNodes),
             this.option("+ File", this.fileInput.click.bind(this.fileInput)),
-            this.option("Paste", this.onPasteOption.bind(null, target))
+            this.option("Paste", this.onPasteOption.bind(null, this.targetModel))
         )
     }
     populateForGeneric(target){ // non-SVG targets
@@ -128,6 +128,7 @@ class ContextMenu {
     hide(){
         Elem.hide(this.menu);
         Elem.hideById('suggestions-container');
+        this.targetModel = null;
     }
 
     onMousedown = (e)=>{
@@ -162,4 +163,3 @@ class ContextMenu {
         Logger.info("No text selected");
     }
 }
-ContextMenu = new ContextMenu();

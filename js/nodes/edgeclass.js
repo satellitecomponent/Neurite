@@ -58,20 +58,12 @@ class Edge {
     toggleDirection() {
         const pts = this.pts;
         const direction = this.directionality;
-        // Initialize direction if it's null
-        if (!direction.start || !direction.end) {
-            direction.start = pts[0];
-            direction.end = pts[1];
-        } else {
-            // Switch direction or reset
-            if (direction.start === pts[0]) {
-                direction.start = pts[1];
-                direction.end = pts[0];
-            } else if (direction.start === pts[1]) {
-                direction.start = null;
-                direction.end = null;
-            }
-        }
+        const status = (direction.start === pts[0]) ? '0-1'
+                     : (direction.start === pts[1]) ? '1-0' : 'dflt';
+        direction.start = (status === '0-1') ? pts[1]
+                        : (status === '1-0') ? null : pts[0];
+        direction.end = (status === '0-1') ? pts[0]
+                      : (status === '1-0') ? null : pts[1];
 
         // Update all instances of CodeMirror that include these nodes
         if (pts[0].isTextNode && pts[1].isTextNode) {

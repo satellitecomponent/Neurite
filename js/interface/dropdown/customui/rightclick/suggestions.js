@@ -28,7 +28,7 @@ Suggestions.Component = class {
         this.container.innerHTML = '';
     }
     addSuggestion(text, inputField, onSelect, onPin, isPinned){
-        const item = new Suggestions.Item(text, onSelect, onPin, isPinned);
+        const item = new MenuItem.Suggestion(text, onSelect, onPin, isPinned);
         item.init();
         this.container.appendChild(item.divItem);
     }
@@ -40,7 +40,7 @@ Suggestions.Component = class {
         this.container.style.display = 'none';
     }
 }
-Suggestions.Item = class {
+MenuItem.Suggestion = class {
     constructor(text, onSelect, onPin, isPinned){
         this.isPinned = isPinned;
         this.onSelect = onSelect;
@@ -54,8 +54,7 @@ Suggestions.Item = class {
     }
     init(){
         this.updateSvgs();
-        On.click(this.btnPin, this.togglePin);
-        On.click(this.spanText, this.togglePin);
+        On.click(this.divItem, this.togglePin);
     }
 
     makeBtnPin(){
@@ -91,11 +90,11 @@ Suggestions.Item = class {
         e.preventDefault();
         e.stopPropagation();
 
-        const isPinned = this.isPinned = !this.isPinned;
-        this.btnPin.classList.toggle('pinned', isPinned);
+        this.isPinned = !this.isPinned;
+        this.btnPin.classList.toggle('pinned', this.isPinned);
         this.updateSvgs();
 
-        this.onPin(this.text, isPinned);
+        this.onPin(this.text, this.isPinned);
         this.onSelect();
     }
     updateSvgs(){
@@ -145,69 +144,46 @@ const nodeMethodManager = new RecentSuggestionsManager('nodeMethodCalls');
 class PinnedItemsManager {
     constructor(storageId) {
         this.storageId = storageId;
-        this.pinnedItems = this.loadFromLocalStorage();
+        this.items = this.loadFromLocalStorage();
     }
 
     loadFromLocalStorage() {
         const storedItems = localStorage.getItem(this.storageId);
-        return storedItems ? JSON.parse(storedItems) : [];
+        return (storedItems ? JSON.parse(storedItems) : []);
     }
-
     saveToLocalStorage() {
-        localStorage.setItem(this.storageId, JSON.stringify(this.pinnedItems));
+        localStorage.setItem(this.storageId, JSON.stringify(this.items));
     }
 
-    addPinnedItem(item) {
-        if (this.pinnedItems.includes(item)) return;
+    addItem(item) {
+        if (this.isItemPinned(item)) return;
 
-        this.pinnedItems.push(item);
+        this.items.push(item);
+        this.saveToLocalStorage();
+    }
+    removeItem(item) {
+        this.items = this.items.filter(pinnedItem => pinnedItem !== item);
         this.saveToLocalStorage();
     }
 
-    getPinnedItems() {
-        return this.pinnedItems;
-    }
-
-    removePinnedItem(item) {
-        this.pinnedItems = this.pinnedItems.filter(pinnedItem => pinnedItem !== item);
-        this.saveToLocalStorage();
-    }
-
-    isItemPinned(item) {
-        return this.pinnedItems.includes(item);
-    }
+    forEach(cb, ct){ return this.items.forEach(cb, ct) }
+    isItemPinned(item){ return this.items.includes(item) }
 }
 
 const pinnedItemsManager = new PinnedItemsManager('pinnedContextMenuItems');
 
-function pinSuggestionToContextMenu(uniqueIdentifier, menu, node, isAlreadyPinned = false) {
-    const { displayText, executeAction } = getDynamicActionDetails(uniqueIdentifier, node);
-    const menuItem = Array.from(menu.children).find(item => item.dataset.identifier === uniqueIdentifier);
+ContextMenu.prototype.pinSuggestion = function(id){
+    if (this.itemById(id)) return;
 
-    if (!menuItem) {
-        const menuItem = ContextMenu.createMenuItem(displayText, uniqueIdentifier, executeAction);
-        On.click(menuItem, (e)=>{
-            Suggestions.global.hide();
-            addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        });
-        // Insert new menu item at the end, but before the input field if it exists.
-        const inputFieldLi = menu.querySelector('.input-item');
-        if (inputFieldLi) {
-            menu.appendChild(menuItem, inputFieldLi);
-        } else {
-            menu.appendChild(menuItem);
-        }
-        if (!isAlreadyPinned) {
-            pinnedItemsManager.addPinnedItem(uniqueIdentifier);
-        }
-    } else {
-        menuItem.textContent = displayText;
-        menuItem.dataset.identifier = uniqueIdentifier;
-        On.click(menuItem, (e)=>{
-            executeAction;
-            addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        });
-    }
+    const { displayText, executeAction } = getDynamicActionDetails(id, this.targetModel);
+    const menuItem = ContextMenu.option(displayText, executeAction);
+    On.click(menuItem, (e)=>{
+        Suggestions.global.hide();
+        addToRecentSuggestions(id); // Update recent calls without executing again
+    });
+
+    this.menu.appendChild(menuItem);
+    pinnedItemsManager.addItem(id);
 }
 
 function getDynamicActionDetails(uniqueIdentifier, node) {
@@ -218,20 +194,17 @@ function getDynamicActionDetails(uniqueIdentifier, node) {
     };
 }
 
-function loadPinnedItemsToContextMenu(menu, node) {
-    const nodeActions = NodeActions.forNode(node);
-    const pinnedItems = pinnedItemsManager.getPinnedItems();
-
-    // Filter pinned items to include only those that have corresponding actions in the current node's action set
-    const relevantPinnedItems = pinnedItems.filter(uniqueIdentifier => uniqueIdentifier in nodeActions);
-
-    relevantPinnedItems.forEach(uniqueIdentifier => {
-        const currentDetails = getDynamicActionDetails(uniqueIdentifier, node); // Fetch current details
-        pinSuggestionToContextMenu(uniqueIdentifier, menu, node, true, currentDetails.displayText); // Pass current display text
-    });
+ContextMenu.prototype.loadPinnedItems = function(){
+    const nodeActions = NodeActions.forNode(this.targetModel);
+    pinnedItemsManager.forEach(
+        (id)=>{ if (id in nodeActions) this.pinSuggestion(id) }
+    );
 }
 
-function setupSuggestionsForInput(menu, inputField, node, fetchSuggestions, pageX, pageY) {
+ContextMenu.prototype.setupSuggestions = function(pageX, pageY){
+    const inputField = this.inputField;
+    const node = this.targetModel;
+
     On.input(inputField, (e)=>displaySuggestions(e.target.value) );
 
     On.focus(inputField, (e)=>{
@@ -253,20 +226,14 @@ function setupSuggestionsForInput(menu, inputField, node, fetchSuggestions, page
         component.position(pageX, pageY);
 
         const nodeActions = NodeActions.forNode(node);
-        const suggestions = fetchSuggestions(value, node);
-        suggestions.forEach(suggestion => {
+        getNodeMethodSuggestions(value, node).forEach( (suggestion)=>{
             component.addSuggestion(
                 getDynamicActionDetails(suggestion, node).displayText,
                 inputField,
-                () => { return; },
+                Function.nop,
                 (executeAction, pinState) => {
-                    if (pinState) {
-                        // Pinning the item
-                        pinSuggestionToContextMenu(executeAction, menu, node);
-                    } else {
-                        // Unpinning the item
-                        unpinSuggestionFromContextMenu(executeAction, menu);
-                    }
+                    const funcName = (pinState ? 'pinSuggestion' : 'unpinSuggestion');
+                    ContextMenu[funcName](executeAction);
                 },
                 pinnedItemsManager.isItemPinned(suggestion)
             );
@@ -276,10 +243,12 @@ function setupSuggestionsForInput(menu, inputField, node, fetchSuggestions, page
     }
 }
 
-function unpinSuggestionFromContextMenu(identifier, menu) {
-    const action = Array.from(menu.children).find(
-        (item)=>(item.dataset.identifier === identifier)
-    );
-    if (action) menu.removeChild(action);
-    pinnedItemsManager.removePinnedItem(identifier);
+ContextMenu.prototype.unpinSuggestion = function(id){
+    const action = this.itemById(id);
+    if (action) this.menu.removeChild(action);
+    pinnedItemsManager.removeItem(id);
+}
+
+ContextMenu.prototype.itemById = function(id){
+    return Elem.findChild(this.menu, Elem.hasDatasetIdThis, id)
 }
