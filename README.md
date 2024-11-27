@@ -5,7 +5,7 @@
 
 # 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
 
-⚠️ `Warning:` Demonstrations contain zooming, strobing lights, and colors which may affect those with photosensitive epilepsy.
+⚠️ `Warning:` Contains zooming, strobing lights, and colors which may affect those with photosensitive epilepsy.
 
 🌱 This is an open-source project in active development.
 <table>
