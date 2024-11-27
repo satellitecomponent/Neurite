@@ -70,7 +70,7 @@ For over two years we've been iterating out a virtually limitless workspace that
     <td valign="top" width="50%">
       <h3><code>Why Nodes?</code></h3>
       <p>Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭.</p>
-      <p>[neurite.network](https://satellitecomponent.github.io/Neurite/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
+      <p><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a> connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
     </td>
   </tr>
 </table>
