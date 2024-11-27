@@ -5,7 +5,7 @@
 
 # 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
 
-⚠️ `Warning:` Contains zooming, flashing lights, and colors which may not currently be suitable for people with photosensitive epilepsy.
+⚠️ `Warning:` Demonstrations contain zooming, strobing lights, and colors which may affect those with photosensitive epilepsy.
 
 🌱 This is an open-source project in active development.
 <table>
@@ -13,8 +13,8 @@
     <td>
       <h2>Table of Contents</h2>
       <ol>
-        <li><a href="#overview">Overview</a></li>
         <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#key-features">Key Features</a></li>
         <li><a href="#how-to-use-neurite">How to Use Neurite</a></li>
         <li><a href="#synchronized-knowledge-management">Synchronized Knowledge Management</a></li>
         <li><a href="#fractalgpt">FractalGPT</a></li>
@@ -22,21 +22,67 @@
         <li><a href="#user-guide">User Guide</a></li>
         <li><a href="#local-server-setup">Local Server Setup</a></li>
         <li><a href="#neural-api">Neural API</a></li>
-        <li><a href="#future-of-neurite">Future of Neurite</a></li>
+        <li><a href="#join-the-conversation">Join the Conversation</a></li>
         <li><a href="#gallery">Gallery</a></li>
       </ol>
     </td>
     <td style="width: 35%;">
-      <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/b5143c8e-dae6-4740-b4b1-53da94bc9470" alt="Neurite Image" style="width: 100%;">
+      <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="100%">
     </td>
   </tr>
 </table>
 
-# Overview
+## `Introduction`
+
+## Bridging Fractals and Thought
 
 ### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 ### ***...the fractal dimension.***
+
+🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
+
+For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping techniques.
+
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      <h3><code>Why Fractals?</code></h3>
+      <p>The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.</p>
+      <p>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.</p>
+      <p>The goal of this project is to grow agentic graphs of fractal creativity & collaboration.</p>
+    </td>
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
+      </p>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      <p align="center">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
+      </p>
+    </td>
+    <td valign="top" width="50%">
+      <h3><code>Why Nodes?</code></h3>
+      <p>Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭.</p>
+      <p>[neurite.network](https://satellitecomponent.github.io/Neurite/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
+    </td>
+  </tr>
+</table>
+
+## `Complexity Inspires Creativity / Basins Attract`
+### Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape tracing your ever-branching pathways of thought.
+
+Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
+
+## [neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
+
+# Key Features
 
 <table>
   <thead>
@@ -50,7 +96,7 @@
     <tr>
       <td rowspan="2"><strong>Fractal Navigation</strong></td>
       <td>Real-time Fractal Zoom</td>
-      <td>Navigate and explore iterative equations in real-time. Evolve and organize an <code>infinite digital garden</code> with the help of <code>fractal mathematics</code>.</td>
+      <td>Navigate and explore iterative equations in real time. Evolve and organize an <code>infinite digital garden</code> with the help of <code>fractal mathematics</code>.</td>
     </tr>
     <tr>
       <td>Fractal Customization</td>
@@ -112,49 +158,6 @@
     </tr>
   </tbody>
 </table>
-
-
-## `Introduction`
-
-## Bridging Fractals and Thought
-
-🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
-
-For over a year, we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind mapping technique.
-
-<table>
-  <tr>
-    <td valign="top" width="50%">
-      <h3><code>Why Fractals?</code></h3>
-      <p>The Mandelbrot Set is not just an aesthetic choice - fractal logic is ingrained into a countless number of natural and constructed phenomena - from <a href="https://www.youtube.com/watch?v=-RdOwhmqP5s">polynomial equations</a>, to <a href="https://www.nature.com/articles/20833">art</a> and <a href="https://www.mpg.de/9379548/fractals-set-the-tone">music</a> - even the <a href="https://cosmicweb.kimalbrecht.com/">cosmic web</a>.</p>
-      <p>🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought - where conventional notions of 4D spacetime are put into question.</p>
-      <p>The goal of this project is to grow agentic graphs of fractal creativity & collaboration.</p>
-    </td>
-    <td valign="top" width="50%">
-      <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
-      </p>
-    </td>
-  </tr>
-</table>
-
-### `First of its Kind Fractal Zoom`
-
-## [neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
-
-Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
-
-### `Why Nodes?`
-### Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭
-
-[neurite.network](https://satellitecomponent.github.io/Neurite/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.
-<p align="center">
-   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
-   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
-</p>
-
-## `Complexity Inspires Creativity / Basins Attract`
-### Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape tracing your ever-branching pathways of thought.
 
 ## `How to Use Neurite`
 
@@ -308,9 +311,10 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
 
 Build your Zettelkasten through UI interactions in the Mind Map, and reciprocally shape the Mind Map through text-based note-taking in the Zettelkasten. This navigational fluidity offers unprecedented control over both the granular and macroscopic perspectives of your information.
 
-## `FractalGPT`
+## `FractalGPT` 
 
 ### ***Not your typical chat interface***
+
 <table>
   <tr>
     <!-- Left: Description of the Modular Conversation -->
@@ -319,7 +323,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
       <p>In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:</p>
       <ul>
         <li><strong>Structured Memory Mapping:</strong> Anchor the AI's thought process as notes within an evolving fractal mind map.</li>
-        <li><strong>Graph your AI Conversations:</strong> Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for the history of your chain of thought to dynamically construct the Ai's memory.</li>
+        <li><strong>Graph your AI Conversations:</strong> Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for the history of your chain of thought to dynamically construct the AI's memory.</li>
         <li><strong>Interactive Fractal Network:</strong> Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.</li>
         <li><strong>Intuitive Note Navigation:</strong> Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.</li>
       </ul>
@@ -342,8 +346,8 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
     <td valign="top" width="50%">
       <h3>🤖 Build Multi-Agent Chat Networks 🤖💬🗨️🤖🗨️🤖</h3>
       <ul>
-        <li>Connected Ai nodes send messages to one another. This idea contains endless possibilities. (<em>Hold Shift + Click</em> two node windows to connect. <em>Click</em> connections to change their direction. <em>Shift + Double Click</em> to delete.)</li>
-        <li>Supports Local and Cloud based models concurrently.</li>
+        <li>Connected AI nodes send messages to one another. This idea contains endless possibilities. (<em>Hold Shift + Click</em> two node windows to connect. <em>Click</em> connections to change their direction. <em>Shift + Double Click</em> to delete.)</li>
+        <li>Supports Local and Cloud-based models concurrently.</li>
       </ul>
       <h3><a href="https://en.wikipedia.org/wiki/Flow-based_programming">flow-based</a> Ai-Agents ⛓️💭</h3>
       <p>🔄 <strong>Message Looping:</strong> Initiate conversational threads across connected AI nodes.</p>
@@ -351,18 +355,18 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
         <li><strong>Prompt Generation:</strong>Connected nodes send messages to one another. They can begin messages with @ for references to other Ai or @self, and / for a growing range of commands such as /exit to exit a loop.</li>
         <li><strong>Ai Logic Circuits:</strong>
           <ul>
-            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of conversation across connected Ai Nodes between two-way, or sending/receiving.</li>
+            <li><strong>Determine Conversation Hierarchy:</strong> Take control of Ai conversation flows via Neurite's modular user interface. Adjust the direction of conversation across connected AI nodes between two-way, or sending/receiving.</li>
           </ul>
         </li>
         <li><strong>Graph Context:</strong>
           <ul>
             <li><strong>Networked Instructions:</strong> Ai nodes read all connected graphs.</li>
-            <li><strong>Shared Instructions:</strong> Compare Various Ai Models from the same set of prompts.</li>
+            <li><strong>Shared Instructions:</strong> Compare Various AI models from the same set of prompts.</li>
           </ul>
         </li>
         <li><strong>Connect Data:</strong>
           <ul>
-            <li><strong>Read Connected Web-Link Nodes:</strong> Connect webpages and Ai nodes to utilize RAG search for that document. Create specialized autonomous agent swarms via mind-mapping.</li>
+            <li><strong>Read Connected Web-Link Nodes:</strong> Connect webpages and Ai nodes to utilize RAG search for that document. Create specialized autonomous agent swarms via mind mapping.</li>
           </ul>
         </li>
         <li><strong>Related Research:</strong> <a href="https://arxiv.org/abs/2309.03220">Conversational Swarm Intelligence Paper</a></li>
@@ -381,7 +385,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
 ### `Unbounded AI Collaboration`
 
-### An open world generative landscape for thought integrated with artificial intelligence.
+### An open-world generative landscape for thought integrated with artificial intelligence.
 
 <h3 align="center">AI Inference Providers</h3>
 
@@ -426,18 +430,18 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
     <td><strong>Experimental Code Editor</strong></td>
     <td>
       <ul>
-        <li><strong>HTML/JS:</strong> Render GPT's code output directly. Connected nodes bundle together any HTML/CSS/JS codeblocks or editors.</li>
+        <li><strong>HTML/JS:</strong> Render GPT's code output directly. Connected nodes bundle any HTML/CSS/JS code blocks or editors.</li>
         <li><strong>Python (<a href="https://github.com/pyodide/pyodide">Pyodide</a>):</strong> Execute Python code directly within the browser.</li>
       </ul>
     </td>
   </tr>
   <tr>
     <td><strong>Web Search</strong></td>
-    <td>Search the web from directly within Neurite. Ai assisted search automation.</td>
+    <td>Search the web from directly within Neurite. Ai-assisted search automation.</td>
   </tr>
   <tr>
     <td><strong>Understands Webpages and PDFs</strong></td>
-    <td>Leverage a local vector database that allows Ai to retrieve context from webpages and pdfs.</td>
+    <td>Leverage a local vector database that allows Ai to retrieve context from webpages and PDFs.</td>
   </tr>
   <tr>
     <td><strong>Wikipedia Results</strong></td>
@@ -470,7 +474,7 @@ npm start
 
 ## `Local Server Setup`
 
-The Localhost Servers are an important component of Neurite that serve as an optional backend and enable complete functionality.
+The Localhost Servers are an important component of Neurite that serves as an optional backend and enables complete functionality.
 
 ### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers). 
 
@@ -478,26 +482,20 @@ The Localhost Servers are an important component of Neurite that serve as an opt
 
 ### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha Results, and Wikipedia Results.
 - The localhost servers require npm and Node.js
-- Without any servers running, Wolfram, Wiki, the Vector Database and Webpage extractions will not function.
+- Without any servers running, Wolfram, Wiki, the Vector Database, and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
   node start_servers.js
 ```
-This will install and run all of the servers at once. They'll work on our Github pages host of Neurite, or any other way you locally access the interface.
+This will install and run all of the servers at once. They'll work on our GitHub pages host of Neurite, or any other way you locally access the interface.
 
-As of our recent update, the servers now support an Ai proxy that connects Neurite to any inference backend.
+As of our recent update, the servers now support an AI proxy that connects Neurite to any inference backend.
 
 <p align="center">
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
 
-### `Final Notes`
-- `Search`: Our distinctive search mechanism transports you through your intricate web of thoughts, directly zooming to the node you are looking for. The navigational experience isn't just a gimmick; it also helps to reinforce the spatial memory of where that piece of information resides within the larger framework.
-- `Saving`: Your networks can be saved within the browser cache, or downloaded as a .txt file. To re-load a downloaded save, in the save tab, drag the save (which should be a .txt file) into the save box at the top. Then click load on the imported file. 💾 Saving has been significantly enhanced! Now, node interactivity, fractal settings, neuralAPI tasks, and the Zettelkasten sync all fully restore when loading networks from the save tab...
-- `Zettelkasten and Mind Mapping`: Create nodes through custom-defined syntax, or create nodes through UI interaction within our fractal workspace, who's contents are bi-directionally linked to the main Zettelkasten document.
-- `Fractals`: We achieve real-time navigation of the Mandelbrot set by capturing a sparse set of points from the fractal and connecting them through SVGs. From there, we dynamically adapt the level of detail based on your viewport and cursor position.  This evolving method is what ensures seamless fractal generation, interaction, as well as an expanding array of customizability options.
-
-Neurite realizes tapestry of thought reasoning for Ai, all within our innovative real-time Mandelbrot visualization.
+Neurite realizes a tapestry of thought reasoning for AI, all within our innovative real-time Mandelbrot visualization.
 - Talk to the custom GPT, [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. (This is not the ai that interacts with Neurite itself)
 
 <table>
@@ -508,7 +506,7 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
       <ul>
         <li>Neurite incorporates note-taking to retain a non-linear conversation history.</li>
         <li>We feed both the recent conversation as well as any matched notes that are not already in the recent conversation as part of the context message to the Ai.</li>
-        <li>This means retaining relevant information from any part of the conversation regardless of the Ai's context window size.</li>
+        <li>This means retaining relevant information from any part of the conversation regardless of the AI's context window size.</li>
         <li>Still, advancements in context window size only further enable Neurite's performance.</li>
       </ul>
     </td>
@@ -549,24 +547,17 @@ Neurite realizes tapestry of thought reasoning for Ai, all within our innovative
       <pre><code>const neuralAPI = neuralApiPrompt();
 console.log(neuralAPI);</code></pre>
       <p>The current Neural API documentation will display in your call history for the function calling panel as well as in your browser console.</p>
-      <p>There will be more information on this soon. This is a new feature in initial release.</p>
+      <p>There will be more information on this soon. This is a new feature in the initial release.</p>
     </td>
   </tr>
 </table>
 
-## `Future of Neurite`
-
-### [Neurite](https://satellitecomponent.github.io/Neurite/) is a recursive environment for thought. The project combines fractals, mind-mapping, and ai to enable an experimental, yet powerful playground for research, code generation, writing, learning, and visualizing connections.
-🚧 `Neurite is in active development.` 🚧 
-
+## Join the Conversation
 See our contributing guidelines [here](https://github.com/satellitecomponent/Neurite/tree/local-ai).
 
-Special thanks to [Flowbite](https://flowbite.com/) for the svg icons.
-🚧
+If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/6fdmDF8SmT) 🔗
 
 ## `Gallery`
-
-If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/6fdmDF8SmT) 🔗
 
 <p align="center">
     <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="70%">
@@ -577,6 +568,7 @@ If you are a developer who is interested in contributing to this project, contac
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
              <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac" alt="SKM3" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
 </p>
 <a href="https://star-history.com/#satellitecomponent/Neurite&Date">
 
@@ -587,3 +579,5 @@ If you are a developer who is interested in contributing to this project, contac
  </picture>
 
 </a>
+
+Special thanks to [Flowbite](https://flowbite.com/) for the svg icons.
