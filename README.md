@@ -5,7 +5,7 @@
 
 # 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
 
-⚠️ `Warning:` Contains zooming, strobing lights, and colors which may affect those with photosensitive epilepsy.
+⚠️ `Warning:` Contains flashing lights and colors which may affect those with photosensitive epilepsy.
 
 🌱 This is an open-source project in active development.
 <table>
@@ -58,9 +58,6 @@ For over two years we've been iterating out a virtually limitless workspace that
       </p>
     </td>
   </tr>
-</table>
-
-<table>
   <tr>
     <td valign="top" width="50%">
       <p align="center">
