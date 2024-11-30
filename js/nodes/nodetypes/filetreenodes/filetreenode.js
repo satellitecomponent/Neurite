@@ -1,16 +1,16 @@
 class FileTreeNode {
     static create(filePath = currentPath, sx, sy, x, y){
         const container = Html.make.div('custom-scrollbar nodeFileTreeContainer');
-        const node = NodeView.addAtNaturalScale(filePath, []);
+        const node = new Node();
 
-        const windowDiv = node.view.div;
-        const style = windowDiv.style;
+        const divView = NodeView.addAtNaturalScale(node, filePath, []).div;
+        const style = divView.style;
         style.resize = 'both';
         style.minWidth = '250px';
         style.minHeight = '250px';
         style.width = '350px';
         style.height = '350px';
-        windowDiv.appendChild(container);
+        divView.appendChild(container);
 
         node.filePath = filePath;
         node.isFileTree = true;

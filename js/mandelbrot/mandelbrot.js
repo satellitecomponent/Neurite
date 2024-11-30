@@ -581,11 +581,9 @@ function gaussianRandom2() {
     return new vec2( m * Math.cos( 2.0 * Math.PI * v ) , m * Math.sin( 2.0 * Math.PI * v ));
 }
 
-function sample_random_point() {
-    const mandDist = Fractal.mandDist;
+Fractal.sample_random_point = function(){
     const mand_i = Fractal.mand_i;
     const iters = settings.iterations;
-    const maxLines = settings.maxLines;
     let tries = 1;
     let pt;
     if (Math.random() > flashlight_fraction){
@@ -598,7 +596,7 @@ function sample_random_point() {
                 //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
                 //}
             }
-            tries--;
+            tries -= 1;
         } while (tries > 0 && mand_i(pt, iters) > iters)
         /*if (mand_i(pt,iters) > iters || pt.mag2()>8){
           return;
@@ -608,11 +606,10 @@ function sample_random_point() {
     }
     return pt;
 }
-
-function * path_to_basin(pt){
+Fractal.path_to_basin = function * (pt){
     const mand_iter_n = Fractal.mand_iter_n;
     const gradzr = Fractal.gradzr; //gradzr(f,z,epsilon) = ∂|f(z)|/∂z
-    let p = findInfimum(iters, pt);
+    let p = findInfimum(settings.iters, pt);
     while (true){
         const func = (z)=>mand_iter_n(p.i, z, z).mag2();
         let delta = gradzr(func, pt, 1e-5);
@@ -621,16 +618,17 @@ function * path_to_basin(pt){
         yield pt;
     }
 }
-
-function hair_svg_path(pt,num_pts_max){
+Fractal.hair_svg_path = function(pt,num_pts_max){
     const result = ["M", toSVG(pt), settings.renderDChar];
     let length = 0;
     let opt = pt;
     let opacity;
 
     let num_pts = 0;
+    const mand_i = Fractal.mand_i;
+    const iters = settings.iterations;
     if (mand_i(pt, iters) > iters) { //inside the set
-        for (let next_pt of path_to_basin(pt)){
+        for (const next_pt of Fractal.path_to_basin(pt)) {
             const svg_pt = toSVG(next_pt);
             if (!svg_pt.isFinite()) break;
             result.push(svg_pt);
@@ -655,6 +653,7 @@ function hair_svg_path(pt,num_pts_max){
         opacity = settings.innerOpacity / 10;
         length /= 4;
     } else { //outside the set
+        const mandDist = Fractal.mandDist;
         if (mandDist(iters, pt) < settings.maxDist) return; //skip if too far
 
         for (let next_pt of trace_circle(iters, pt, Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
@@ -682,35 +681,24 @@ function hair_svg_path(pt,num_pts_max){
     path.setAttribute('d', result.join(' '));
     return path;
 }
-function cull_extra_lines(){
-   if (maxLines === 0) {
-        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved)
-    } else {
-        let activeCount = Array.from(svg_bg.children).filter(child => !child.classList.contains('preserve')).length;
-
-        while (activeCount > maxLines) {
-            let child = svg_bg.children[0]; // Start checking from the first child
-            if (!child.classList.contains('preserve')) {
-                svg_bg.removeChild(child);
-                activeCount--; // Decrement active count since an active element was removed
-            } else {
-                // Move the preserved child to the end of the list to avoid repeated checks
-                svg_bg.appendChild(child);
-            }
-        }
-
-        if (activeCount > maxLines) {
-            Logger.info("Still more active elements than max allowed, but all are preserved.")
-        }
+Fractal.cull_extra_lines = function(){
+    const maxLines = settings.maxLines;
+    if (maxLines === 0) {
+        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved);
+        return;
     }
-}
 
-function render_hair(num_pts_max) {
-    const path = hair_svg_path(sample_random_point(),num_pts_max);
+    const isNotPreserved = (elem)=>!elem.classList.contains('preserve') ;
+    const unpreserved = Array.prototype.filter.call(svg_bg.children, isNotPreserved).reverse();
+    while (unpreserved.length > maxLines) (unpreserved.pop()).remove();
+}
+Fractal.render_hair = function(num_pts_max){
+    const random_point = Fractal.sample_random_point();
+    const path = Fractal.hair_svg_path(random_point, num_pts_max);
     if (!path) return;
 
     svg_bg.appendChild(path);
-    cull_extra_lines();
+    Fractal.cull_extra_lines();
 }
 
 Fractal.addPreservation = function(child){

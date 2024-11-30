@@ -483,8 +483,8 @@ function setupNodeForPlacement(node, mouseAnchor) {
 function createHtmlNode(title, pastedData) {
     const content = Html.new.div();
     content.innerHTML = pastedData;
-    const scale = zoom.mag2() ** settings.zoomContentExp;
-    const node = NodeView.windowify(title, [content], toZ(mousePos), scale, 1).node;
+    const node = new Node();
+    NodeView.windowify(title, [content], node);
     Graph.appendNode(node);
     Graph.addNode(node);
     setupNodeForPlacement(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));

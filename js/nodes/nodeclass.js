@@ -8,9 +8,11 @@ class Node {
     init = Function.nop;
     mouseAnchor = new vec2(0, 0);
     save_extras = [];
+    view = null;
 
-    constructor(p, thing, scale = 1, intrinsicScale = 1, createEdges = true) {
-        if (p === undefined) {
+    constructor(thing, createEdges = true){
+        if (thing) {
+            this.content = thing;
             const dataset = thing.dataset;
 
             const nodeData = JSON.parse(dataset.node_json)
@@ -34,10 +36,9 @@ class Node {
                 };
             }
         } else {
+            this.content = Html.new.div();
             this.uuid = String(Graph.nextUuid);
-            this.pos = p;
-            this.scale = scale;
-            this.intrinsicScale = intrinsicScale;
+            this.pos = toZ(mousePos);
 
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
@@ -50,10 +51,9 @@ class Node {
             this.sensor = new NodeSensor(this, 3);
         }
 
-        this.content = thing;
-        this.attach();
+        this.addListeners();
     }
-    attach() {
+    addListeners() {
         const div = this.content;
         On.click(div, this.onClick);
         On.dblclick(div, this.onDblClick);
@@ -413,7 +413,20 @@ class Node {
 }
 
 Node.Extensions = {
-    "window": (node, a)=>{ node.view.rewindowify() },
+    "window": (node, a)=>{
+        const odiv = node.content;
+        odiv.dataset.viewType = 'nodeViews';
+        odiv.dataset.viewId = node.uuid;
+
+        const view = node.view = new NodeView(node);
+        view.buttons = odiv.querySelector('.button-container');
+        view.headerContainer = odiv.querySelector('.header-container');
+        view.innerContent = odiv.querySelector('.content');
+        view.resizeHandle = odiv.querySelector('.resize-handle');
+        view.titleInput = odiv.querySelector('.title-input');
+        view.div = odiv.querySelector('.window');
+        view.rewindowify();
+    },
     "textarea": (node, o) => {
         let e = node.content;
         for (const w of o.p) {

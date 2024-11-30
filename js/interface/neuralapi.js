@@ -1,11 +1,22 @@
-class Transition {
-    constructor(startValue, endValue, duration, funcEasy, funcUpdate){
-        // this.startValue = startValue;
-        // this.endValue = endValue;
+// If funcUpdate depends on requestAnimationFrame, duration should be positive.
+Promise.forAnimation = function(name, duration, funcUpdate, funcIsComplete){
+    return (new Animation(duration, funcUpdate, funcIsComplete))
+    .executeProm(name)
+}
+
+class Animation {
+    static activeCount = 0;
+    funcEase = easeInOutCubic;
+    name = "unnamed";
+    reject = Function.nop;
+    resolve = Function.nop;
+    startTime = Date.now();
+    // startValue = 0;
+    // endValue = 1;
+    constructor(duration, funcUpdate, funcIsComplete){
         this.duration = duration;
         this.funcUpdate = funcUpdate;
-        this.funcEasy = funcEasy;
-        this.onStep = null;
+        this.funcIsComplete = funcIsComplete || Animation.onDurationCompleted;
 
         this.setParams();
     }
@@ -25,21 +36,48 @@ class Transition {
         }
         Svg.updateViewbox(pan, zoom);
     }
-    static onStep(startTime, onComplete, funcIsComplete, timestamp){
-        const progress = Math.min((Date.now() - startTime) / this.duration, 1);
-        this.funcUpdate.call(this, this.funcEasy(progress));
+    static onDurationCompleted(progress){ return progress >= 1 }
+    onStep = ()=>{
+        let res;
+        const progress = Math.min((Date.now() - this.startTime) / this.duration, 1);
+        try {
+            res = this.funcUpdate.call(this, this.funcEase(progress));
+        } catch (err) {
+            if (!this.reject) throw(err);
 
-        if (funcIsComplete) { // continue animation until it returns true
-            if (!funcIsComplete()) return requestAnimationFrame(this.onStep);
-        } else { // use duration-based completion
-            if (progress < 1) return requestAnimationFrame(this.onStep);
+            return this.onError(err);
         }
+        if (!this.funcIsComplete(progress)) {
+            requestAnimationFrame(this.onStep);
+            return;
+        }
+        if (!this.resolve) return;
 
-        onComplete && onComplete();
+        this.onComplete(res);
     }
-    animate(onComplete, funcIsComplete){
-        this.onStep = Transition.onStep.bind(this, Date.now(), onComplete, funcIsComplete);
-        requestAnimationFrame(this.onStep);
+    onComplete(res){
+        Animation.activeCount -= 1;
+        Logger.info(this.name, "completed, left:", Animation.activeCount);
+        this.resolve(res);
+    }
+    onError(err){
+        Animation.activeCount -= 1;
+        Logger.err("In", this.name, "animation:", err);
+        this.reject(err);
+    }
+    execute(){ requestAnimationFrame(this.onStep) }
+    executeProm(name = "unnamed"){
+        this.name = name;
+        return new Promise( (resolve, reject)=>{
+            this.resolve = resolve;
+            this.reject = reject;
+            Animation.activeCount += 1;
+            if (this.duration > 0) return this.execute();
+
+            const onError = this.onError.bind(this);
+            const onComplete = this.onComplete.bind(this);
+            this.funcUpdate().then(onComplete).catch(onError);
+        });
     }
     setParams(startPan, endPan, startZoom = null, endZoom = null, rotateParams){
         this.startPan = startPan;
@@ -84,16 +122,16 @@ function neuriteZoom(zoomFactor, targetX = window.innerWidth / 2, targetY = wind
     const endPan = dest.scale(1 - inverseFactor).plus(pan.scale(inverseFactor));
     const endZoom = zoom.scale(inverseFactor);
 
-    (new Transition(0, 1, duration, easeInOutCubic, Transition.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom).animate();
+    (new Animation(duration, Animation.interpolateZoomAndPan))
+    .setParams(pan, endPan, zoom, endZoom).execute();
 }
 
 function neuritePan(deltaX, deltaY, duration = 1000) {
     const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
     const endPan = pan.plus(dp);
 
-    (new Transition(0, 1, duration, easeInOutCubic, Transition.interpolateZoomAndPan))
-    .setParams(pan, endPan).animate();
+    (new Animation(duration, Animation.interpolateZoomAndPan))
+    .setParams(pan, endPan).execute();
 }
 
 function neuriteRotate(rotationAngle, pivotX, pivotY, duration = 1000) {
@@ -103,11 +141,9 @@ function neuriteRotate(rotationAngle, pivotX, pivotY, duration = 1000) {
     const endPan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
     const endZoom = zoom.cmult(r);
 
-    (new Transition(0, 1, duration, easeInOutCubic, Transition.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom).animate();
+    (new Animation(duration, Animation.interpolateZoomAndPan))
+    .setParams(pan, endPan, zoom, endZoom).execute();
 }
-
-let activeAnimationsCount = 0;
 
 const defaultMovements = {
     panLeft: { panParams: { deltaX: -200, deltaY: 0 } },
@@ -123,56 +159,41 @@ const defaultMovements = {
 };
 
 function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanParams = {}, customRotateParams = {}, customDuration = 1000) {
-    return new Promise((resolve, reject) => {
-        activeAnimationsCount += 1;
+    // Ensure movementTypes is always treated as an array
+    if (!Array.isArray(movementTypes)) {
+        movementTypes = [movementTypes]; // Convert to array if it's not already
+    }
 
-        // Ensure movementTypes is always treated as an array
-        if (!Array.isArray(movementTypes)) {
-            movementTypes = [movementTypes]; // Convert to array if it's not already
-        }
+    let combinedZoomParams = {};
+    let combinedPanParams = {};
+    let combinedRotateParams = {};
+    let duration = customDuration;
 
-        let combinedZoomParams = {};
-        let combinedPanParams = {};
-        let combinedRotateParams = {};
-        let duration = customDuration;
-
-        // Combine defaults from each movement type
-        movementTypes.forEach(movementType => {
-            if (defaultMovements[movementType]) {
-                combinedZoomParams = { ...defaultMovements[movementType].zoomParams, ...combinedZoomParams };
-                combinedPanParams = { ...defaultMovements[movementType].panParams, ...combinedPanParams };
-                combinedRotateParams = { ...defaultMovements[movementType].rotateParams, ...combinedRotateParams };
-                duration = defaultMovements[movementType].duration || duration;
-            }
-        });
-
-        // Override with custom parameters
-        combinedZoomParams = { ...combinedZoomParams, ...customZoomParams };
-        combinedPanParams = { ...combinedPanParams, ...customPanParams };
-        combinedRotateParams = { ...combinedRotateParams, ...customRotateParams };
-
-        const { zoomFactor = 0, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
-        const { deltaX = 0, deltaY = 0 } = combinedPanParams;
-        const destZoom = toZ(new vec2(zoomX, zoomY));
-        const endZoom = zoom.scale(zoomFactor + 1);
-        const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-        const endPan = pan.plus(dp);
-
-        function onComplete(){
-            activeAnimationsCount -= 1;
-            Logger.info("Animation completed, count:", activeAnimationsCount);
-            resolve();
-        }
-
-        try {
-            (new Transition(0, 1, duration, easeInOutCubic, Transition.interpolateZoomAndPan))
-            .setParams(pan, endPan, zoom, endZoom, combinedRotateParams).animate(onComplete)
-        } catch (err) {
-            Logger.err("In animation:", err);
-            activeAnimationsCount -= 1;
-            reject(err);
+    // Combine defaults from each movement type
+    movementTypes.forEach(movementType => {
+        if (defaultMovements[movementType]) {
+            combinedZoomParams = { ...defaultMovements[movementType].zoomParams, ...combinedZoomParams };
+            combinedPanParams = { ...defaultMovements[movementType].panParams, ...combinedPanParams };
+            combinedRotateParams = { ...defaultMovements[movementType].rotateParams, ...combinedRotateParams };
+            duration = defaultMovements[movementType].duration || duration;
         }
     });
+
+    // Override with custom parameters
+    combinedZoomParams = { ...combinedZoomParams, ...customZoomParams };
+    combinedPanParams = { ...combinedPanParams, ...customPanParams };
+    combinedRotateParams = { ...combinedRotateParams, ...customRotateParams };
+
+    const { zoomFactor = 0, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
+    const { deltaX = 0, deltaY = 0 } = combinedPanParams;
+    const destZoom = toZ(new vec2(zoomX, zoomY));
+    const endZoom = zoom.scale(zoomFactor + 1);
+    const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
+    const endPan = pan.plus(dp);
+
+    return (new Animation(duration, Animation.interpolateZoomAndPan))
+    .setParams(pan, endPan, zoom, endZoom, combinedRotateParams)
+    .executeProm("Movement");
 }
 
 /*
@@ -183,81 +204,70 @@ autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
 function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1) {
-    return new Promise((resolve) => {
-        let animate = true;
-        let userBailedOut = false;
+    let animate = true;
 
-        const newZoomMagnitude = parseFloat(zoomMagnitude);
-        const newPanReal = parseFloat(panReal);
-        const newPanImaginary = parseFloat(panImaginary);
+    const newZoomMagnitude = parseFloat(zoomMagnitude);
+    const newPanReal = parseFloat(panReal);
+    const newPanImaginary = parseFloat(panImaginary);
 
-        if (!animate) {
-            // Directly set the new zoom and pan values
-            if (newZoomMagnitude !== 0) {
-                zoom = zoom.scale(newZoomMagnitude / zoom.mag());
-            }
-            pan = new vec2(newPanReal, newPanImaginary);
-            return resolve(); // Resolve immediately for non-animated change
+    if (!animate) { // Resolve immediately
+        // Directly set the new zoom and pan values
+        if (newZoomMagnitude !== 0) {
+            zoom = zoom.scale(newZoomMagnitude / zoom.mag());
         }
+        pan = new vec2(newPanReal, newPanImaginary);
+        return Promise.resolve();
+    }
 
-        activeAnimationsCount++;
-        autopilotReferenceFrame = undefined;
-        const targetZoom = zoom.scale(newZoomMagnitude / zoom.mag());
-        const targetPan = new vec2(newPanReal, newPanImaginary);
-
+    const targetZoom = zoom.scale(newZoomMagnitude / zoom.mag());
+    const targetPan = new vec2(newPanReal, newPanImaginary);
+    return (new Animation.SetCoords(targetPan, targetZoom, speed)).promise();
+}
+Animation.SetCoords = class {
+    constructor(targetPan, targetZoom, speed){
+        this.targetPan = targetPan;
+        this.targetZoom = targetZoom;
+        this.speed = speed;
+    }
+    promise(){
+        const speed = this.speed;
         autopilotSpeed = (speed > 1 ? settings.autopilotSpeed : speed);
+        autopilotReferenceFrame = undefined;
 
-        // duration does not matter here
-        const duration = 1;
+        return Promise.forAnimation("Set Coords", 1, this.update, this.isComplete) // positive duration
+        .finally(resetAutopilot);
+    }
+    update = (t)=>{
+        // Regular animation steps
+        const targetZoom = this.targetZoom;
+        const currentZoom = zoom.mag();
+        const stepZoom = currentZoom + (targetZoom.mag() - currentZoom) * t;
 
-        function update(t){
-            // Regular animation steps
-            const currentZoom = zoom.mag();
-            const stepZoom = currentZoom + (targetZoom.mag() - currentZoom) * t;
-
-            // Ensure zoom does not undershoot or overshoot
-            if (Math.abs(stepZoom - targetZoom.mag()) < autopilotThreshold) {
-                zoomTo = targetZoom;
-            } else {
-                zoomTo = zoom.scale(stepZoom / currentZoom);
-            }
-
-            const currentPan = pan;
-            const stepPanX = currentPan.x + (targetPan.x - currentPan.x) * t;
-            const stepPanY = currentPan.y + (targetPan.y - currentPan.y) * t;
-            panTo = new vec2(stepPanX, stepPanY);
+        // Ensure zoom does not undershoot or overshoot
+        if (Math.abs(stepZoom - targetZoom.mag()) < autopilotThreshold) {
+            zoomTo = targetZoom;
+        } else {
+            zoomTo = zoom.scale(stepZoom / currentZoom);
         }
 
-        function onComplete(){
-            if (!userBailedOut) {
-                // Ensure the final zoom and pan values are set to the target values
-                zoom = targetZoom;
-                pan = targetPan;
-            }
-            activeAnimationsCount -= 1;
-            autopilotSpeed = 0;
-            autopilotReferenceFrame = undefined;
-            Logger.info("Animation completed, count:", activeAnimationsCount);
-            resolve();
-        }
-        function isComplete(){
-            if (autopilotSpeed === 0) {
-                userBailedOut = true;
-                Logger.info("Animation interrupted by user interaction.");
-                return true;
-            }
-            return zoom.closeEnough(targetZoom, autopilotThreshold) && pan.closeEnough(targetPan, autopilotThreshold);
+        const stepPanX = pan.x + (this.targetPan.x - pan.x) * t;
+        const stepPanY = pan.y + (this.targetPan.y - pan.y) * t;
+        panTo = new vec2(stepPanX, stepPanY);
+    }
+    isComplete = ()=>{
+        if (autopilotSpeed === 0) {
+            Logger.info("Animation interrupted by user interaction.");
+            return true;
         }
 
-        try {
-            (new Transition(0, 1, duration, easeInOutCubic, update)).animate(onComplete, isComplete)
-        } catch (err) {
-            Logger.err("In animation:", err);
-            activeAnimationsCount -= 1;
-            autopilotSpeed = 0;
-            autopilotReferenceFrame = undefined;
+        const res = zoom.closeEnough(this.targetZoom, autopilotThreshold)
+                 && pan.closeEnough(this.targetPan, autopilotThreshold);
+        if (res) { // If close-enough, equate them
+            pan = this.targetPan;
+            zoom = this.targetZoom;
         }
-    });
+        return res;
+    }
 }
 
 const autopilotThreshold = 0.000001; // Define a suitable threshold
@@ -269,58 +279,58 @@ vec2.prototype.closeEnough = function (target, autopilotThreshold) {
 
 
 function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
-    return new Promise((resolve) => {
-        activeAnimationsCount++;
-        autopilotReferenceFrame = undefined;
-        let node;
+    let node;
+    if (typeof nodeOrTitle === 'object' && nodeOrTitle !== null) {
+        node = nodeOrTitle
+    } else if (typeof nodeOrTitle === 'string') {
+        ui = getZetNodeCMInstance(nodeOrTitle).ui;
+        node = ui.scrollToTitle(nodeOrTitle);
+    }
+    if (!node) {
+        Logger.err("Invalid argument. Must be a node title or a node object.");
+        return Promise.resolve();
+    }
 
-        // First check if the argument is a node object
-        if (typeof nodeOrTitle === 'object' && nodeOrTitle !== null) {
-            node = nodeOrTitle; // Use the node object directly
-        } else if (typeof nodeOrTitle === 'string') {
-            ui = getZetNodeCMInstance(nodeOrTitle).ui;
-            node = ui.scrollToTitle(nodeOrTitle); // Find the node by title
+    return (new Animation.ZoomToNode(node)).promise();
+}
+Animation.ZoomToNode = class {
+    constructor(node){ this.node = node }
+    launch(){
+        const bb = this.node.content.getBoundingClientRect();
+        if (bb && bb.width > 0 && bb.height > 0) {
+            this.node.zoom_to_fit();
+            zoomTo = zoomTo.scale(1.5);
         } else {
-            Logger.err("Invalid argument. Must be a node title or a node object.");
-            resolve();
-            return;
+            this.node.zoom_to(0.5);
         }
+        autopilotSpeed = settings.autopilotSpeed;
+    }
+    finish(){
+        clearInterval(this.#idInterval);
+        resetAutopilot();
+        this.#resolve(this.node);
+    }
+    promise(){ return Promise.forAnimation("Zoom to Node", 0, this.run) }
+    run = ()=>(new Promise(this.#runExec))
 
-        if (node) {
-            let bb = node.content.getBoundingClientRect();
-            if (bb && bb.width > 0 && bb.height > 0) {
-                node.zoom_to_fit();
-                zoomTo = zoomTo.scale(1.5);
-            } else {
-                node.zoom_to(0.5);
-            }
-            autopilotSpeed = settings.autopilotSpeed;
-        }
+    #idInterval = 0;
+    #resolve = Function.nop;
+    #onCheck = ()=>{
+        if (autopilotSpeed !== 0) return;
 
-        let intervalCheck;
-        const checkForInterruption = () => {
-            if (autopilotSpeed === 0) {
-                Logger.info("Animation interrupted by user interaction.");
-                clearInterval(intervalCheck);
-                autopilotSpeed = 0;
-                autopilotReferenceFrame = undefined;
-                activeAnimationsCount -= 1;
-                resolve(node);
-            }
-        };
-
-        intervalCheck = setInterval(checkForInterruption, 100); // Check every 100 milliseconds
-
-        // Use a 3-second timeout to end animation
-        setTimeout(() => {
-            clearInterval(intervalCheck); // Clear interval check regardless of the state
-            if (autopilotSpeed !== 0) Logger.debug("Animation completed normally.");
-            activeAnimationsCount -= 1;
-            autopilotSpeed = 0;
-            autopilotReferenceFrame = undefined;
-            resolve(node);
-        }, 3000); // 3 seconds
-    });
+        Logger.info("Animation interrupted by user interaction.");
+        this.finish();
+    }
+    #onTimeout = ()=>{
+        if (autopilotSpeed !== 0) Logger.debug("Animation completed normally.");
+        this.finish();
+    }
+    #runExec = (resolve)=>{
+        this.#resolve = resolve;
+        this.launch();
+        this.#idInterval = setInterval(this.#onCheck, 100); // every 100 msecs
+        setTimeout(this.#onTimeout, 3000); // after 3 secs
+    }
 }
 
 async function neuriteSearchNotes(searchTerm, maxNodesOverride) {
@@ -340,71 +350,37 @@ async function neuriteSearchNotes(searchTerm, maxNodesOverride) {
     return fullMatchedNodes;
 }
 
+function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {
+    return Promise.forAnimation("Search and Zoom", 0, async ()=>{
+        // Search for nodes based on the searchTerm
+        const matchedNodes = await neuriteSearchNotes(searchTerm, maxNodesOverride);
 
-async function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            activeAnimationsCount += 1;
-
-            // Search for nodes based on the searchTerm
-            const matchedNodes = await neuriteSearchNotes(searchTerm, maxNodesOverride);
-
-            // Loop through each matched node and zoom to it
-            for (const node of matchedNodes) {
-                await neuriteZoomToNodeTitle(node, zoomLevel);
-
-                // Wait for the specified delay before moving to the next node
-                await new Promise(r => setTimeout(r, delayBetweenNodes));
-            }
-
-            activeAnimationsCount -= 1;
-            Logger.info("Search and Zoom sequence completed!", activeAnimationsCount);
-            resolve(matchedNodes);
-        } catch (err) {
-            Logger.err("During the Search and Zoom sequence:", err);
-            activeAnimationsCount -= 1;
-            reject(err);
+        // Loop through each matched node and zoom to it
+        for (const node of matchedNodes) {
+            await neuriteZoomToNodeTitle(node, zoomLevel);
+            await Promise.delay(delayBetweenNodes);
         }
-    });
+    })
 }
-
-
 // Example usage
 // neuriteSearchAndZoom("desired search term", null, 1.0, 3000);
 
 function neuriteResetView(animate = true, duration = 2000) {
-    return new Promise((resolve, reject) => {
-        const defaultZoomMagnitude = 1.3;
-        const defaultPanReal = -0.3;
-        const defaultPanImaginary = 0;
-        const defaultZoom = zoom.scale(defaultZoomMagnitude / zoom.mag());
-        const defaultPan = new vec2(defaultPanReal, defaultPanImaginary);
+    const defaultZoomMagnitude = 1.3;
+    const defaultPanReal = -0.3;
+    const defaultPanImaginary = 0;
+    const defaultZoom = zoom.scale(defaultZoomMagnitude / zoom.mag());
+    const defaultPan = new vec2(defaultPanReal, defaultPanImaginary);
 
-        if (!animate) { // Resolve immediately
-            zoom = defaultZoom;
-            pan = defaultPan;
-            return resolve();
-        }
+    if (!animate) { // Resolve immediately
+        zoom = defaultZoom;
+        pan = defaultPan;
+        return Promise.resolve();
+    }
 
-        function update(t){
-            zoom = interpolateVec2(zoom, defaultZoom, t);
-            pan = interpolateVec2(pan, defaultPan, t);
-        }
-
-        function onComplete(){
-            activeAnimationsCount -= 1;
-            Logger.info("Animation completed, count:", activeAnimationsCount);
-            resolve();
-        }
-
-        activeAnimationsCount += 1;
-        try {
-            (new Transition(0, 1, duration, easeInOutCubic, update)).animate(onComplete)
-        } catch (err) {
-            Logger.err("In animation:", err);
-            activeAnimationsCount -= 1;
-            reject(err);
-        }
+    return Promise.forAnimation("Reset View", duration, (t)=>{
+        zoom = interpolateVec2(zoom, defaultZoom, t);
+        pan = interpolateVec2(pan, defaultPan, t);
     });
 }
 function neuriteGetMandelbrotCoords(forFunctionCall = false) {
@@ -473,12 +449,8 @@ async function neuriteAnimationQueue(animations) {
 }
 
 // Enchanced to reduce size of request format.
-async function neuriteQueueAnimations(animations) {
-    // Artificially increment the animation count
-    activeAnimationsCount += 1;
-
+function neuriteQueueAnimations(animations) {
     const transformedAnimations = animations.map(animation => {
-        // Handle case where only a single array is passed as parameters
         if (!Array.isArray(animation[1])) {
             animation[1] = [animation[1]]; // Wrap single argument into an array
         }
@@ -486,30 +458,36 @@ async function neuriteQueueAnimations(animations) {
         return {
             action: animation[0], // Direct reference to the function
             params: animation[1],
-            delayAfter: animation[2] !== undefined ? animation[2] : 0
+            delayAfter: animation[2] ?? 0
         };
     });
 
-    await neuriteAnimationQueue(transformedAnimations);
-
-    // Artificially decrement the animation count
-    activeAnimationsCount -= 1;
+    const processQueue = neuriteAnimationQueue.bind(null, transformedAnimations);
+    return Promise.forAnimation("Queue Animations", 0, processQueue);
 }
-async function waitForAllAnimations(additionalDelay = 0) {
-    return new Promise(resolve => {
+Animation.waitForAllActive = class {
+    constructor(additionalDelay = 0){ this.additionalDelay = additionalDelay }
+    promise(){ return new Promise(this.#exec) }
+
+    #idInterval = 0;
+    #resolve = Function.nop;
+    #exec = (resolve)=>{
+        this.#resolve = resolve;
         Logger.info("Waiting for animations to complete...");
-        const checkInterval = setInterval(() => {
-            Logger.info("Active animations count:", activeAnimationsCount);
-            if (activeAnimationsCount === 0) {
-                clearInterval(checkInterval);
-                Logger.info("All animations completed. Waiting additional delay...");
-                setTimeout(() => {
-                    Logger.info("Additional delay completed.");
-                    resolve();
-                }, additionalDelay); // Wait for the additional delay after animations complete
-            }
-        }, 100); // Check every 100 milliseconds
-    });
+        this.#idInterval = setInterval(this.#onCheck, 100); // every 100 msecs
+    }
+    #onCheck = ()=>{
+        Logger.info("Active animations count:", Animation.activeCount);
+        if (Animation.activeCount > 0) return;
+
+        clearInterval(this.#idInterval);
+        Logger.info("All animations completed. Waiting additional delay...");
+        setTimeout(this.#onTimeout, this.additionalDelay);
+    }
+    #onTimeout = ()=>{
+        Logger.info("Additional delay completed.");
+        this.#resolve();
+    }
 }
 
 function neuriteCaptureScreenshot() {
@@ -596,7 +574,7 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
         await callVisionModel(messages, async () => {
             runNeuriteCode(true); // Run code with increment and decrement of activeAnimations.
 
-            await waitForAllAnimations();
+            await (new Animation.waitForAllActive).promise();
             Logger.info("awaited");
             // Recursive call for the next iteration
             await neuriteCallMovementAi(movementIntention, totalIterations, currentIteration + 1);
@@ -619,37 +597,35 @@ function resolveAiMessageIfAppropriate(response, isError = false) {
     }
 }
 
-async function neuritePromptZettelkasten(message) {
-    activeAnimationsCount += 1;
-    isPromiseResolved = false;
-
-    // Initialize the promise when a new message is sent
-    aiMessagePromise = new Promise(resolve => {
-        resolveAiMessage = resolve;
-    });
-
+function neuritePromptZettelkasten(message) {
     const promptTextArea = Elem.byId('prompt');
     if (!promptTextArea) {
         Logger.err("Prompt textarea not found.");
-        return;
+        return Promise.resolve();
     }
 
     const form = Elem.byId('prompt-form');
     if (!form) {
         Logger.err("Prompt form not found.");
-        return;
+        return Promise.resolve();
     }
 
-    promptTextArea.value = message;
-    const event = new Event('submit', { cancelable: true });
-    form.dispatchEvent(event);
+    return Promise.forAnimation("Prompt Zettelkasten", 0, async ()=>{
+        isPromiseResolved = false;
 
-    await aiMessagePromise;
+        // Initialize the promise when a new message is sent
+        aiMessagePromise = new Promise(
+            (resolve)=>{ resolveAiMessage = resolve }
+        );
 
-    activeAnimationsCount -= 1;
-    Logger.info("AI message processing completed, count:", activeAnimationsCount);
+        promptTextArea.value = message;
+        const event = new Event('submit', { cancelable: true });
+        form.dispatchEvent(event);
 
-    return streamedResponse;
+        await aiMessagePromise;
+
+        return streamedResponse;
+    });
 }
 
 function neuriteGetUserResponse(message) {
@@ -658,37 +634,32 @@ function neuriteGetUserResponse(message) {
 }
 
 function neuriteAddNote(nodeTitle, nodeText) {
-    return new Promise((resolve) => {
-        activeAnimationsCount += 1;
-        let formattedNodeTitle = nodeTitle.replace(/\n/g, ' ');
-        formattedNodeTitle = neuriteGetUniqueNodeTitle(formattedNodeTitle);
+    const formattedTitle = neuriteGetUniqueNodeTitle(nodeTitle.replace(/\n/g, ' '));
 
-        const contentToAdd = Tag.node + ' ' + formattedNodeTitle + '\n' + (nodeText ?? '');
-        const codeMirror = window.currentActiveZettelkastenMirror;
+    const contentToAdd = Tag.node + ' ' + formattedTitle + '\n' + (nodeText ?? '');
+    const codeMirror = window.currentActiveZettelkastenMirror;
 
-        const lastLine = codeMirror.lastLine();
-        const lastLineText = codeMirror.getLine(lastLine);
+    const lastLine = codeMirror.lastLine();
+    const lastLineText = codeMirror.getLine(lastLine);
 
-        let newLinesToAdd = '';
-        if (lastLineText !== '') {
-            newLinesToAdd = '\n\n';
-        } else if (codeMirror.getLine(lastLine - 1) !== '') {
-            newLinesToAdd = '\n';
-        }
+    let newLinesToAdd = '';
+    if (lastLineText !== '') {
+        newLinesToAdd = '\n\n';
+    } else if (codeMirror.getLine(lastLine - 1) !== '') {
+        newLinesToAdd = '\n';
+    }
 
-        const position = { line: lastLine, ch: lastLineText.length };
-        processAll = true;
-        codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
-        processAll = false;
+    const position = { line: lastLine, ch: lastLineText.length };
+    processAll = true;
+    codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
+    processAll = false;
 
-        ui = getZetNodeCMInstance(nodeTitle).ui;
-        const node = ui.scrollToTitle(formattedNodeTitle); // returns the node
+    ui = getZetNodeCMInstance(nodeTitle).ui;
+    const node = ui.scrollToTitle(formattedTitle);
 
-        setTimeout(() => {
-            resolve(node);
-            activeAnimationsCount -= 1;
-        }, 300);
-    });
+    return Promise.forAnimation("Add Note", 0,
+        ()=>(new Promise( (resolve)=>setTimeout( ()=>resolve(node) , 300) ))
+    );
 }
 
 function neuriteGetUniqueNodeTitle(baseTitle) {

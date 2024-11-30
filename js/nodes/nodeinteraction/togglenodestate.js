@@ -1,12 +1,12 @@
 NodeView.prototype.toggleCollapse = function(e){
-    if (!this.node.content) return;
+    if (!this.model.content) return;
 
     const isCollapsed = this.div.classList.contains('collapsed');
     this[isCollapsed ? 'expand' : 'collapse']();
 
     // Check if the alt key is being held
     if (e && e.getModifierState(controls.altKey.value)) {
-        getAllConnectedNodes(this.node).forEach(Node.toggleCollapse);
+        getAllConnectedNodes(this.model).forEach(Node.toggleCollapse);
     }
 }
 Node.toggleCollapse = function(node){ node.view.toggleCollapse() }

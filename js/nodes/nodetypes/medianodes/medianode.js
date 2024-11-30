@@ -16,5 +16,7 @@ function createMediaNode(type, metadataOrFile, url) {
     });
 
     const name = (typeof metadataOrFile === 'string' ? metadataOrFile : metadataOrFile.name || 'Untitled Media');
-    return NodeView.addAtNaturalScale(name, [elem]);
+    const node = new Node();
+    NodeView.addAtNaturalScale(node, name, [elem]);
+    return node;
 }

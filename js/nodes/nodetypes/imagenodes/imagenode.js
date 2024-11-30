@@ -13,7 +13,8 @@ function createImageNode(imageElement, title) {
     imageElement.style.height = `${targetHeight}px`;
 
     // Add the node with the resized image
-    let node = NodeView.addAtNaturalScale(title, imageElement);
+    const node = new Node();
+    NodeView.addAtNaturalScale(node, title, imageElement);
 
     node.push_extra_cb((node) => {
         return {

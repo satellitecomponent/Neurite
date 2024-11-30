@@ -234,6 +234,8 @@ class PageLoad {
         for (const src of PageLoad.scripts) await this.loadScript(src); // sequentially
         Body.addEventListeners(document.body);
         ContextMenu = new ContextMenu();
+        updateSavedNetworks();
+        initializeSaveNetworks();
     }
 
     async loadTab(tabId, fileName){

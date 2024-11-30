@@ -13,11 +13,11 @@ class TextNode {
         const pythonView = Html.make.div('python-frame hidden');
         pythonView.id = 'python-frame';
 
-        const node = NodeView.addAtNaturalScale(name, [textarea]);
-        const divWindow = node.view.div;
-        divWindow.append(htmlView, pythonView, editorWrapper);
-        divWindow.style.minWidth = '100px';
-        divWindow.style.minHeight = '100px';
+        const node = new Node();
+        const divView = NodeView.addAtNaturalScale(node, name, [textarea]).div;
+        divView.append(htmlView, pythonView, editorWrapper);
+        divView.style.minWidth = '100px';
+        divView.style.minHeight = '100px';
 
         // Handle position and scale if necessary
         if (sx !== undefined) {
