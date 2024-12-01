@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import servers from './servers.json' assert { type: 'json' };
+const servers = JSON.parse(fs.readFileSync("./servers.json", "utf8"));
 
 const startNeurite = process.argv.includes('neurite');
 
