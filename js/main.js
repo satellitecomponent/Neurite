@@ -7,6 +7,9 @@ class Elem {
     static forEachChild(elem, cb, ct){
         return Array.prototype.forEach.call(elem.children, cb, ct)
     }
+    static hasDatasetIdThis(elem){
+        return elem.dataset.id === this.valueOf()
+    }
     static hasTextContentThis(elem){
         return elem.textContent === this.valueOf()
     }
@@ -230,6 +233,9 @@ class PageLoad {
         await this.loadTabs(PageLoad.tabs); // in parallel
         for (const src of PageLoad.scripts) await this.loadScript(src); // sequentially
         Body.addEventListeners(document.body);
+        ContextMenu = new ContextMenu();
+        updateSavedNetworks();
+        initializeSaveNetworks();
     }
 
     async loadTab(tabId, fileName){

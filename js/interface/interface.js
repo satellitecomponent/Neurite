@@ -3,6 +3,10 @@ var panTo = new vec2(0, 0);
 var autopilotReferenceFrame = undefined;
 var autopilotSpeed = 0;
 
+function resetAutopilot() {
+    autopilotSpeed = 0;
+    autopilotReferenceFrame = undefined;
+}
 function skipAutopilot() {
     zoom = zoomTo
     pan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo;

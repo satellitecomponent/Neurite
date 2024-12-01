@@ -132,7 +132,7 @@ class NodeSimulation {
         const random = Math.random;
         regenDebt = Math.min(16, regenDebt + lerp(settings.regenDebtAdjustmentFactor, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
         for (; regenDebt > 0; regenDebt--) {
-            render_hair(random() * settings.renderSteps);
+            Fractal.render_hair(random() * settings.renderSteps);
         }
         regenAmount = 0;
         nodeMode_v = lerp(nodeMode_v, NodeMode.val, 0.125);

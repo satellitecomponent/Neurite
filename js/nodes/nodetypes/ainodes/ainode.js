@@ -80,13 +80,13 @@ function createLlmNode(name = '', sx, sy, x, y) {
     ainodewrapperDiv.appendChild(AiNode.makeSettingsContainer(llmNodeCount, containerDiv));
 
     // Pass this div to addNodeAtNaturalScale
-    const node = NodeView.addAtNaturalScale(name, []);
+    const node = new Node();
 
-    const windowDiv = node.view.div;
-    windowDiv.style.resize = 'both';
-    windowDiv.style.minWidth = `450px`;
-    windowDiv.style.minHeight = `535px`;
-    windowDiv.appendChild(ainodewrapperDiv);
+    const divView = NodeView.addAtNaturalScale(node, name, []).div;
+    divView.style.resize = 'both';
+    divView.style.minWidth = `450px`;
+    divView.style.minHeight = `535px`;
+    divView.appendChild(ainodewrapperDiv);
 
     // Additional configurations
     node.id = aiResponseTextArea.id;

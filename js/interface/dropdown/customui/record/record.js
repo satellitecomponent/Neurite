@@ -141,8 +141,8 @@ function handleBlob(blob) {
 
     // Update the content array to include both the video and download link
     const content = [video, link];
-    const scale = zoom.mag2() ** settings.zoomContentExp;
-    const node = NodeView.windowify("Recorded Video", content, toZ(mousePos), scale, 1).node;
+    const node = new Node();
+    NodeView.windowify("Recorded Video", content, node);
     Graph.appendNode(node);
     Graph.addNode(node);
     node.followingMouse = 1;

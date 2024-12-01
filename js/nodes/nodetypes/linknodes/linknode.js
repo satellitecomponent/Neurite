@@ -4,12 +4,12 @@ class LinkNode {
         this.name = name;
 
         const nodeName = link.startsWith('blob:') ? name : link;
-        const node = NodeView.addAtNaturalScale(nodeName, []);
+        const node = new Node();
 
-        const windowDiv = node.view.div;
-        windowDiv.appendChild(this.makeContentWrapper());
-        windowDiv.style.minWidth = '150px';
-        windowDiv.style.minHeight = '200px';
+        const divView = NodeView.addAtNaturalScale(node, nodeName, []).div;
+        divView.appendChild(this.makeContentWrapper());
+        divView.style.minWidth = '150px';
+        divView.style.minHeight = '200px';
 
         node.push_extra_cb( (node)=>({
                 f: "textarea",

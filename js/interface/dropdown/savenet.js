@@ -112,8 +112,6 @@ function updateSavedNetworks() {
     }
 }
 
-updateSavedNetworks();
-
 let container = Elem.byId('saved-networks-container');
 
 // Prevent default drag behaviors
@@ -381,7 +379,7 @@ function neuriteSaveEvent(existingTitle = null) {
 }
 
 for (const htmlnode of Graph.htmlNodes.children) {
-    const node = new Node(undefined, htmlnode, true); // createEdges
+    const node = new Node(htmlnode);
     Graph.addNode(node);
     node.init();
 }
@@ -393,7 +391,7 @@ function clearNet() {
     zetPanes.resetAllPanes();
 }
 
-function loadNet(text, clobber, createEdges = true) {
+function loadNet(text, clobber) {
     if (clobber) clearNet();
 
     const div = Html.new.div();
@@ -411,7 +409,7 @@ function loadNet(text, clobber, createEdges = true) {
 
     const newNodes = [];
     for (const child of div.children) {
-        const node = new Node(undefined, child, true, undefined, createEdges);
+        const node = new Node(child);
         newNodes.push(node);
         Graph.addNode(node);
     }
@@ -511,5 +509,3 @@ function initializeSaveNetworks() {
         setInterval(autosave, 8000);
     }
 }
-
-initializeSaveNetworks();

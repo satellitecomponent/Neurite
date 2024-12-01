@@ -7,8 +7,8 @@ class NodeView {
     }
     static byId(id){ return Graph.nodeViews[id] }
 
-    static windowify(title, content, pos, scale, iscale, link){
-        const odiv = Html.new.div();
+    static windowify(title, content, node, nscale_mult = 1, intrinsicScale = 1){
+        const odiv = node.content;
         const div = Html.make.div('window');
         const svg = Elem.byId('elements').children[0].cloneNode(true);
         svg.setAttribute('class', 'button-container');
@@ -36,10 +36,11 @@ class NodeView {
         const resizeHandle = Html.make.div('resize-handle');
         resizeContainer.appendChild(resizeHandle);
 
-        const node = new Node(pos, odiv, scale, iscale || new vec2(1, 1));
         odiv.dataset.viewType = 'nodeViews';
         odiv.dataset.viewId = node.uuid;
 
+        node.scale = nscale_mult * (zoom.mag2() ** settings.zoomContentExp);
+        node.intrinsicScale = intrinsicScale;
         const view = node.view = new NodeView(node);
         view.buttons = svg;
         view.headerContainer = headerContainer;
@@ -141,7 +142,7 @@ class NodeView {
         this.init();
 
         node.push_extra("window");
-        const buttons = this.buttons;
+        const buttons = this.buttons || this.headerContainer;
 
         const btnDel = buttons.querySelector('#button-delete');
         btnDel.classList.add('windowbutton');
@@ -191,7 +192,7 @@ class NodeView {
             }
             node.remove();
             if (node.isTextNode) {
-                nodeInfo = getZetNodeCMInstance(node)
+                const nodeInfo = getZetNodeCMInstance(node)
                 const parser = nodeInfo.parser;
                 parser.deleteNodeByTitle(title);
             }
@@ -202,7 +203,7 @@ class NodeView {
             zoomTo = zoomTo.scale(1.2);
             autopilotSpeed = settings.autopilotSpeed;
             if (node.isTextNode) {
-                nodeInfo = getZetNodeCMInstance(node);
+                const nodeInfo = getZetNodeCMInstance(node);
                 nodeInfo.ui.scrollToTitle(node.getTitle());
                 zetPanes.switchPane(nodeInfo.paneId);
             }
@@ -229,21 +230,16 @@ class NodeView {
         }
     }
 
-    static addAtNaturalScale(title, content, iscale = 1, nscale_mult = 0.5, window_it = true) {
-        const scale = nscale_mult * (zoom.mag2() ** settings.zoomContentExp);
-        let node;
+    static addAtNaturalScale(node, title, content, window_it = true){
         if (window_it) {
-            const pos = toZ(mousePos);
             if (!Array.isArray(content)) content = [content];
-            node = NodeView.windowify(title, content, pos, scale, iscale).model;
+            NodeView.windowify(title, content, node, 0.5);
         } else {
-            const div = Html.new.div();
-            node = new Node(toZ(mousePos), div, scale, iscale);
-            div.appendChild(content);
+            node.content.appendChild(content);
         }
         Graph.appendNode(node);
         Graph.addNode(node);
-        return node;
+        return node.view || node.content;
     }
 
     // impact on responsiveness?
