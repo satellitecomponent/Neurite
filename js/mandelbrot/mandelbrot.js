@@ -711,7 +711,7 @@ Fractal.clearPreservation = function(child){
     child.classList.remove('preserve')
 }
 Fractal.removeNonPreserved = function(child){
-    if (child.classList.contains('preserve')) svg_bg.removeChild(child)
+    if (!child.classList.contains('preserve')) svg_bg.removeChild(child)
 }
 
 On.keydown(document, (e)=>{

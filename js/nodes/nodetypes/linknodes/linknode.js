@@ -95,7 +95,7 @@ class LinkNode {
 
         On.mouseover(link, Elem.setBothColors.bind(link, '#888', '#1a1a1d'));
         On.mouseout(link, Elem.setBothColors.bind(link, '#bbb', '#222226'));
-        On.click(link, onClick);
+        On.click(link, this.onClick);
         On.keypress(node.view.titleInput, this.onSearchBarKeyPress);
     }
     onClick = (e)=>{
