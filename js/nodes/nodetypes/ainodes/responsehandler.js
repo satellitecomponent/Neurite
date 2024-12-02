@@ -287,8 +287,8 @@ class ResponseHandler {
         makeDivDraggable(divWrapper, 'AI Response', divHandle);
 
         const classList = divWrapper.classList;
-        On.mouseover(divHandle, classList.add.bind(classList, 'hovered'));
-        On.mouseout(divHandle, classList.remove.bind(classList, 'hovered'));
+        On.mouseover(divHandle, (e)=>{ classList.add('hovered') });
+        On.mouseout(divHandle, (e)=>{ classList.remove('hovered') });
     }
 
     handleUserPrompt(promptContent) {

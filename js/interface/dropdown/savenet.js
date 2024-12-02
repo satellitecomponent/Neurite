@@ -437,7 +437,9 @@ function loadNet(text, clobber) {
 
 function populateDirectionalityMap(nodeElement) {
     const edges = nodeElement.getAttribute('data-edges');
-    if (edges) JSON.parse(edges).forEach(Graph.setEdgeDirectionalityFromData);
+    if (!edges) return;
+
+    JSON.parse(edges).forEach(Graph.setEdgeDirectionalityFromData, Graph);
 }
 
 function reconstructSavedNode(node) {

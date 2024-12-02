@@ -177,6 +177,7 @@ ContextMenu.prototype.pinSuggestion = function(id){
 
     const { displayText, executeAction } = getDynamicActionDetails(id, this.targetModel);
     const menuItem = ContextMenu.option(displayText, executeAction);
+    menuItem.dataset.id = id;
     On.click(menuItem, (e)=>{
         Suggestions.global.hide();
         addToRecentSuggestions(id); // Update recent calls without executing again

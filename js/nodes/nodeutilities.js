@@ -97,10 +97,8 @@ class Graph {
         return this.#nextUuid;
     }
     setEdgeDirectionalityFromData(edgeData){
-        this.edgeDirectionalities[edgeData.edgeKey] ||= {
-            start: Node.byUuid(edgeData.directionality.start),
-            end: Node.byUuid(edgeData.directionality.end)
-        }
+        this.edgeDirectionalities[edgeData.edgeKey] ||=
+            Edge.directionalityFromData(edgeData.directionality)
     }
     viewForElem(target){
         const viewType = target.dataset.viewType;

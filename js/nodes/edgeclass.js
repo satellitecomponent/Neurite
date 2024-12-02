@@ -22,6 +22,10 @@ class Edge {
         Logger.debug("Creating edge with pts:", pts);
         Logger.debug("Directionality after assignment:", this.directionality);
     }
+    static directionalityFromData = (direction)=>({
+        start: Node.byUuid(direction.start),
+        end: Node.byUuid(direction.end)
+    })
     dataObj() {
         return {
             l: this.length,
