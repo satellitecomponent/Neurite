@@ -26,6 +26,7 @@ class Edge {
         start: Node.byUuid(direction.start),
         end: Node.byUuid(direction.end)
     })
+    static dataForEdge(edge){ return edge.dataObj() }
     dataObj() {
         return {
             l: this.length,

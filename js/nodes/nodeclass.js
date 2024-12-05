@@ -277,7 +277,7 @@ class Node {
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
-        Logger.debug(getAllConnectedNodesData(this));
+        Logger.debug(this.getAllConnectedNodesData());
         e.stopPropagation();
     }
     onMouseDown = (e)=>{
@@ -381,7 +381,7 @@ class Node {
     static addEdgeThis(node){ node.addEdge(this) }
 
     updateEdgeData() {
-        const es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+        const es = JSON.stringify(this.edges.map(Edge.dataForEdge));
         Logger.debug("Saving edge data:", es);
         this.content.setAttribute('data-edges', es);
     }

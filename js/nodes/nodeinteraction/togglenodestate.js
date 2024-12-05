@@ -6,7 +6,7 @@ NodeView.prototype.toggleCollapse = function(e){
 
     // Check if the alt key is being held
     if (e && e.getModifierState(controls.altKey.value)) {
-        getAllConnectedNodes(this.model).forEach(Node.toggleCollapse);
+        this.model.getAllConnectedNodes().forEach(Node.toggleCollapse);
     }
 }
 Node.toggleCollapse = function(node){ node.view.toggleCollapse() }

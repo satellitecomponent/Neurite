@@ -12,7 +12,7 @@ AiNode.sendMessage = async function(node, message = null){
 
     // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connected nodes (default)
     const useAllConnectedNodes = Elem.byId('use-all-connected-ai-nodes').checked;
-    const allConnectedNodes = getAllConnectedNodes(node, (useAllConnectedNodes ? undefined : true));
+    const allConnectedNodes = node.getAllConnectedNodes(useAllConnectedNodes ? undefined : true);
 
     node.latestUserMessage = message || node.promptTextArea.value;
 
@@ -190,7 +190,7 @@ AiNode.sendMessage = async function(node, message = null){
         messages.push(embedMessage);
     }
 
-    let allConnectedNodesData = getAllConnectedNodesData(node, true);
+    let allConnectedNodesData = node.getAllConnectedNodesData(true);
     let totalTokenCount = TokenCounter.forMessages(messages);
     let remainingTokens = Math.max(0, maxTokens - totalTokenCount);
     const maxContextSize = Elem.byId('node-max-context-' + nodeIndex).value;
