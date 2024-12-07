@@ -59,6 +59,9 @@ class Edge {
         });
         if (pts[0]) pts[0].updateEdgeData();
     }
+    static scaleLengthByThisAmount(edge){
+        return edge.scaleLength(this.valueOf())
+    }
 
     toggleDirection() {
         const pts = this.pts;
@@ -376,25 +379,27 @@ class EdgeView {
     }
 
     onClick = (e)=>{
-        if (NodeMode.val) return;
+        if (App.nodeMode) return;
 
         this.model.toggleDirection();
         this.draw();
     }
     onDblClick = (e)=>{
-        if (!NodeMode.val) return;
+        if (!App.nodeMode) return;
 
         this.model.removeInstance();
         e.stopPropagation();
     }
     onWheel = (e)=>{
-        if (!NodeMode.val) return;
+        if (!App.nodeMode) return;
 
         const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
         // Determine if this edge should be scaled based on both nodes being selected
-        if (SelectedNodes.uuids.size > 0 && this.pts.every(pt => SelectedNodes.uuids.has(pt))) {
-            SelectedNodes.collectEdges().forEach(edge => edge.scaleLength(amount));
+        const selectedNodes = App.selectedNodes;
+        if (selectedNodes.uuids.size > 0 && this.model.pts.every(selectedNodes.hasNode, selectedNodes)) {
+            selectedNodes.getUniqueEdges()
+            .forEach(Edge.scaleLengthByThisAmount, amount)
         } else {
             this.model.scaleLength(amount);
         }

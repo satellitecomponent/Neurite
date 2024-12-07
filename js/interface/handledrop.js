@@ -465,7 +465,7 @@ function handlePasteData(pastedData, target) {
     } else { // plain text
         createNodeFromWindow(null, pastedData, true);
     }
-    ContextMenu.hide();
+    App.menuContext.hide();
 }
 
 function isHtmlContent(data) {

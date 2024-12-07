@@ -20,7 +20,9 @@ class NodeSimulation {
         processScalingKeys();
 
         const movementAngle = getDirectionAngleFromKeyState();
-        if (movementAngle !== null) SelectedNodes.move(movementAngle);
+        if (movementAngle === null) return;
+
+        App.selectedNodes.forEach(Node.moveAtThisAngle, movementAngle);
     }
 
     updateAutopilot(time) {
@@ -80,7 +82,7 @@ class NodeSimulation {
         const svg_mousePath = this.svg_mousePath;
         let width = zoom.mag() * 0.0005 * Svg.zoom;
 
-        if (NodeMode.val && Node.prev) {
+        if (App.nodeMode && Node.prev) {
             const m = toSVG(Node.prev.pos);
             const l = toSVG(toZ(mousePos));
             svg_mousePath.setAttribute('d', "M " + m + " L " + l);
@@ -89,7 +91,7 @@ class NodeSimulation {
             svg_mousePath.setAttribute('d', this.mousePath.join(''));
         }
 
-        if (!NodeMode.val && !Node.prev) {
+        if (!App.nodeMode && !Node.prev) {
             Node.prev = null;
             this.mousePath = [];
             svg_mousePath.setAttribute('d', '');
@@ -135,11 +137,11 @@ class NodeSimulation {
             Fractal.render_hair(random() * settings.renderSteps);
         }
         regenAmount = 0;
-        nodeMode_v = lerp(nodeMode_v, NodeMode.val, 0.125);
+        nodeMode_v = lerp(nodeMode_v, App.nodeMode, 0.125);
     }
 
     nodeStep = (time)=>{
-        if (SelectedNodes.uuids.size > 0) this.processSelectedNodes();
+        if (App.selectedNodes.uuids.size > 0) this.processSelectedNodes();
 
         this.updateAutopilot(time);
         Svg.updateViewbox();
@@ -155,6 +157,3 @@ class NodeSimulation {
         window.requestAnimationFrame(this.nodeStep);
     }
 }
-
-const nodeSimulation = new NodeSimulation();
-nodeSimulation.start();

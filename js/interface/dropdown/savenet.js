@@ -336,13 +336,14 @@ function neuriteSaveEvent(existingTitle = null) {
     });
 
     // Clone the currently selected UUIDs before clearing
-    const savedSelectedNodeUUIDs = new Set(SelectedNodes.uuids);
-    SelectedNodes.clear();
+    const selectedNodes = App.selectedNodes;
+    const selectedNodesUuids = new Set(selectedNodes.uuids);
+    selectedNodes.clear();
 
     // Save the node data
     let nodeData = Elem.byId('nodes').innerHTML;
 
-    savedSelectedNodeUUIDs.forEach(SelectedNodes.restoreNodeById);
+    selectedNodesUuids.forEach(selectedNodes.restoreNodeById, selectedNodes);
 
     nodeData = replaceNewLinesInLLMSaveData(nodeData);
 
@@ -378,10 +379,12 @@ function neuriteSaveEvent(existingTitle = null) {
     }
 }
 
-for (const htmlnode of Graph.htmlNodes.children) {
-    const node = new Node(htmlnode);
-    Graph.addNode(node);
-    node.init();
+function initViewGraphs(){
+    for (const htmlnode of Graph.htmlNodes.children) {
+        const node = new Node(htmlnode);
+        Graph.addNode(node);
+        node.init();
+    }
 }
 
 function clearNet() {

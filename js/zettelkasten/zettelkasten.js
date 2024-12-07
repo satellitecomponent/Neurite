@@ -60,8 +60,8 @@ class ZettelkastenProcessor {
     }
 
     spawnNodeFromZettelkasten(currentNodeTitle) {
-        ProcessedNodes.update();
-        this.placementStrategy.nodeObjects = ProcessedNodes.map;
+        App.processedNodes.update();
+        this.placementStrategy.nodeObjects = App.processedNodes.map;
         return this.placementStrategy.calculatePositionAndScale(currentNodeTitle);
     }
 

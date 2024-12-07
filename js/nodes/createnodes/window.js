@@ -90,10 +90,10 @@ class NodeView {
                 const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
                 // Check if the mouse has moved more than a certain threshold
                 const dragThreshold = 10; // pixels
-                if (distanceMoved < dragThreshold) SelectedNodes.toggleNode(node);
+                if (distanceMoved < dragThreshold) App.selectedNodes.toggleNode(node);
             }
 
-            if (e.button !== 2) ContextMenu.hide(); // not right mouse button
+            if (e.button !== 2) App.menuContext.hide(); // not right mouse button
         });
 
         On.mousedown(windowDiv, (e)=>{
@@ -187,8 +187,8 @@ class NodeView {
             const title = node.getTitle();
             if (Node.prev === node) {
                 Node.prev = null;
-                nodeSimulation.mousePath = [];
-                nodeSimulation.svg_mousePath.setAttribute('d', '');
+                App.nodeSimulation.mousePath = [];
+                App.nodeSimulation.svg_mousePath.setAttribute('d', '');
             }
             node.remove();
             if (node.isTextNode) {

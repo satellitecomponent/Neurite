@@ -87,7 +87,7 @@ NodeView.prototype.collapse = function(){
     }
 
     const handleCircleDoubleClick = (e)=>{
-        if (NodeMode.val !== 1) {
+        if (App.nodeMode !== 1) {
             circle.classList.toggle('collapsed-anchor')
         } else {
             this.toggleCollapse(e);
@@ -206,11 +206,11 @@ On.mouseup(document, (e)=>{
                                     rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top);
             if (!isNodeSelected) return;
 
-            SelectedNodes.toggleNode(node);
+            App.selectedNodes.toggleNode(node);
             isAnyNodeSelected = true;
         });
 
-        if (!isAnyNodeSelected) SelectedNodes.clear();
+        if (!isAnyNodeSelected) App.selectedNodes.clear();
 
         dragBox.remove();
         dragBox = null;

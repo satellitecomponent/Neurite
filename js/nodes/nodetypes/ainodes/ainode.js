@@ -307,7 +307,7 @@ AiNode.setupResponseDivListeners = function(node){
     });
     On.wheel(aiResponseDiv, (e)=>{
         // If the Shift key is not being held down, stop the event propagation
-        if (!NodeMode.val) e.stopPropagation();
+        if (!App.nodeMode) e.stopPropagation();
     }, { passive: false });
 
     let userHasScrolled = false;
