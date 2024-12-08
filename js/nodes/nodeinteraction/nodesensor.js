@@ -38,19 +38,17 @@ class NodeSensor {
         return Math.sqrt(dx * dx + dy * dy + (ds * ds * scaleInfluenceFactor));
     }
 
-    isWithinRange(node, radius) {
-        return this.getDistance(node) <= radius
+    static isNodeWithinThis(node){
+        return node.uuid !== this.sensor.originNode.uuid
+            && this.sensor.getDistance(node) <= this.radius
     }
-
-    findNearbyNodes(radius) {
-        const originUuid = this.originNode.uuid;
-        return ProcessedNodes.filter( (node)=>{
-            return node.uuid !== originUuid && this.isWithinRange(node, radius)
-        });
+    findNearbyNodes(radius){
+        const ct = {radius, sensor: this};
+        return App.processedNodes.filter(NodeSensor.isNodeWithinThis, ct);
     }
 
     update() {
-        ProcessedNodes.update();
+        App.processedNodes.update();
         this.nearbyNodes = [];
 
         // Determine if total nodes are fewer than maxNodeCount
@@ -154,7 +152,6 @@ class NodeSensor {
 
 
 
-// SearchArea class
 class SearchArea {
     constructor(originNode, farthestPoint, farthestScale, style = {
         stroke: 'red',

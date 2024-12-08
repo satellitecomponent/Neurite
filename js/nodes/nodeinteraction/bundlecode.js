@@ -233,7 +233,7 @@ function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initial
         Logger.warn("syntax-display-div not found.")
     }
 
-    let allConnectedNodesInfo = getAllConnectedNodesData(node);
+    let allConnectedNodesInfo = node.getAllConnectedNodesData();
     allConnectedNodesInfo.push(...allWebCode);
     Logger.info("allconnectednodesinfo", allConnectedNodesInfo);
     let bundledContent = bundleWebContent(allConnectedNodesInfo);

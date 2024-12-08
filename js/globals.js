@@ -146,8 +146,9 @@ var flashlight_fraction = 0.73; // this is what fraction of samples are diverted
 
 
 class Interface {
-    overlays = [];
     altHeld = false;
+    nodeMode = new NodeMode(this.autoToggleAllOverlays.bind(this));
+    overlays = [];
     constructor(){
         On.keydown(document, this.altKeyDown);
         On.keyup(document, this.altKeyUp);
@@ -155,7 +156,7 @@ class Interface {
     }
 
     autoToggleAllOverlays(){
-        const condition = (this.altHeld || NodeMode.val === 1);
+        const condition = (this.altHeld || this.nodeMode.val === 1);
         for (const overlay of this.overlays) {
             overlay.style.display = (condition ? 'block' : 'none');
         }
@@ -179,10 +180,9 @@ class Interface {
             this.altHeld = data.altHeld;
             this.autoToggleAllOverlays();
         }
-        NodeMode.val = data.nodeMode ?? 0;
+        this.nodeMode.val = data.nodeMode ?? 0;
     }
 }
-Interface = new Interface();
 
 
 
@@ -190,17 +190,19 @@ class ProcessedNodes {
     map = {};
 
     addNodeToMap(node, processedMap){
-        const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
+        const neighborsUuids = [];
+        node.forEachConnectedNode( (node)=>neighborsUuids.push(node.uuid) );
 
         processedMap[node.uuid] = {
             uuid: node.uuid,
             type: Node.getType(node),
+            isMoving: false,
             pos: node.pos,
             scale: node.scale,
             sensor: node.sensor,
             state: node.state,
             actions: NodeActions.forNode(node),
-            edges: edgesUUIDs
+            neighborsUuids
         };
     }
     filter(cb, ct){
@@ -212,16 +214,13 @@ class ProcessedNodes {
         const map = this.map;
         for (const uuid in map) cb.call(ct, map[uuid]);
     }
-
-    getById(nodeUuid){ return this.map[nodeUuid] }
-    getByNode(node){ return this.getById(node.uuid) }
     getUuids(){ return Object.keys(this.map) }
 
+    static removeThisUuidFromEdgesOfNode(node){
+        node.neighborsUuids = node.neighborsUuids.filter(Object.isntThis, this.valueOf())
+    }
     removeById(nodeUuid){
-        // remove the node's UUID from the edges of all other nodes
-        this.forEach( (node)=>{
-            node.edges = node.edges.filter(Object.isntThis, nodeUuid)
-        });
+        this.forEach(ProcessedNodes.removeThisUuidFromEdgesOfNode, nodeUuid);
         delete this.map[nodeUuid];
     }
     update(){
@@ -240,7 +239,6 @@ class ProcessedNodes {
         this.map = tempProcessedNodeMap;
     }
 }
-ProcessedNodes = new ProcessedNodes();
 
 
 

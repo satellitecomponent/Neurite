@@ -29,7 +29,7 @@ Modal.storeInputValue = debounce(function (input, contentId) {
 }, 100);
 
 Modal.open = function(contentId){
-    ContextMenu.hide();
+    App.menuContext.hide();
     Logger.debug("Opened Modal:", contentId);
 
     // Clear filepath input from header.

@@ -50,14 +50,10 @@ function processScalingKeys() {
         const action = directionMap[key];
         if (action === 'scaleUp' || action === 'scaleDown') {
             const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
-            const centroid = SelectedNodes.getCentroid();
-            if (centroid) SelectedNodes.scale(scaleFactor, centroid);
+            const centroid = App.selectedNodes.getCentroid();
+            if (centroid) App.selectedNodes.scale(scaleFactor, centroid);
         }
     });
 }
 
-SelectedNodes.move = function(movementAngle){
-    SelectedNodes.forEach(
-        (node)=>node.moveNode(movementAngle)
-    )
-}
+Node.moveAtThisAngle = function(node){ node.moveNode(this.valueOf()) }

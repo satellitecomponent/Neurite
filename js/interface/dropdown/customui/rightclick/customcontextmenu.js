@@ -1,6 +1,7 @@
-const MenuItem = {}; // View.Item
+const Menu = View.List = {};
+const MenuItem = View.Item = {};
 
-class ContextMenu {
+Menu.Context = class {
     menu = Elem.byId('customContextMenu');
     targetModel = null;
     constructor(){
@@ -38,10 +39,7 @@ class ContextMenu {
     }
     open(x, y, target){
         this.position(x, y);
-        // Reposition the suggestion box if it's already displayed
-        if (Suggestions.global.container.style.display === 'block') {
-            Suggestions.global.position(x, y);
-        }
+        App.menuSuggestions.repositionIfDisplayed(x, y);
         this.menu.innerHTML = ''; // clear options
         const view = Graph.viewForElem(target);
         if (!view) return this.populateForGeneric(target);
@@ -76,8 +74,8 @@ class ContextMenu {
         const onDirection = edge.toggleDirection.bind(edge);
         const onDelete = edge.removeInstance.bind(edge);
         this.menu.append(
-            this.option("toggle direction", onDirection),
-            this.option("delete", onDelete, true)
+            this.option("toggle direction", onDirection, false),
+            this.option("delete", onDelete)
         );
     }
     populateForBackground(x, y){

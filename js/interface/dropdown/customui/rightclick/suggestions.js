@@ -1,7 +1,4 @@
-﻿const Suggestions = {
-    global: null
-};
-Suggestions.Component = class {
+﻿Menu.Suggestions = class {
     constructor() {
         this.container = this.makeDivContainer();
         this.init();
@@ -27,10 +24,13 @@ Suggestions.Component = class {
     clear() {
         this.container.innerHTML = '';
     }
-    addSuggestion(text, inputField, onSelect, onPin, isPinned){
+    addSuggestion(text, onSelect, onPin, isPinned){
         const item = new MenuItem.Suggestion(text, onSelect, onPin, isPinned);
         item.init();
         this.container.appendChild(item.divItem);
+    }
+    repositionIfDisplayed(x, y){
+        if (this.container.style.display === 'block') this.position(x, y)
     }
     scrollToBottom() {
         // Scroll the container to its maximum scrollable height
@@ -102,12 +102,12 @@ MenuItem.Suggestion = class {
         this.svgMinus.style.display = (this.isPinned ? 'inline' : 'none');
     }
 }
-Suggestions.global = new Suggestions.Component();
 
-class RecentSuggestionsManager {
-    constructor(storageId) {
+Manager.RecentSuggestions = class {
+    constructor(storageId, max = 6) { // Keep only the 6 most recent suggestions
         this.storageId = storageId;
-        this.recentCalls = this.loadFromLocalStorage();
+        this.max = max;
+        this.items = this.loadFromLocalStorage();
     }
 
     loadFromLocalStorage() {
@@ -116,32 +116,22 @@ class RecentSuggestionsManager {
     }
 
     saveToLocalStorage() {
-        localStorage.setItem(this.storageId, JSON.stringify(this.recentCalls))
+        localStorage.setItem(this.storageId, JSON.stringify(this.items))
     }
 
-    addSuggestion(suggestion) {
-        // Remove the suggestion if it already exists to prevent duplicates
-        this.recentCalls = this.recentCalls.filter(call => call !== suggestion);
-
-        // Add the suggestion to the top of the list
-        this.recentCalls.unshift(suggestion);
-
-        // Keep only the 6 most recent suggestions
-        this.recentCalls = this.recentCalls.slice(0, 6);
-
-        // Save the updated list to local storage
+    add(suggestion){
+        this.items = this.items.reduce( (newItems, item)=>{
+            if (newItems.length < this.max
+                && item !== suggestion) newItems.push(item);
+            return newItems;
+        }, [suggestion]);
         this.saveToLocalStorage();
     }
 
-    getRecentSuggestions() {
-        // Return a reversed copy of the recent calls array
-        return [...this.recentCalls].reverse();
-    }
+    get(){ return this.items.toReversed() }
 }
 
-const nodeMethodManager = new RecentSuggestionsManager('nodeMethodCalls');
-
-class PinnedItemsManager {
+Manager.PinnedItems = class {
     constructor(storageId) {
         this.storageId = storageId;
         this.items = this.loadFromLocalStorage();
@@ -170,21 +160,19 @@ class PinnedItemsManager {
     isItemPinned(item){ return this.items.includes(item) }
 }
 
-const pinnedItemsManager = new PinnedItemsManager('pinnedContextMenuItems');
-
-ContextMenu.prototype.pinSuggestion = function(id){
+Menu.Context.prototype.pinSuggestion = function(id){
     if (this.itemById(id)) return;
 
     const { displayText, executeAction } = getDynamicActionDetails(id, this.targetModel);
-    const menuItem = ContextMenu.option(displayText, executeAction);
+    const menuItem = App.menuContext.option(displayText, executeAction, false);
     menuItem.dataset.id = id;
     On.click(menuItem, (e)=>{
-        Suggestions.global.hide();
-        addToRecentSuggestions(id); // Update recent calls without executing again
+        App.menuSuggestions.hide();
+        App.recentSuggestions.add(id);
     });
 
     this.menu.appendChild(menuItem);
-    pinnedItemsManager.addItem(id);
+    App.pinnedItems.addItem(id);
 }
 
 function getDynamicActionDetails(uniqueIdentifier, node) {
@@ -195,14 +183,14 @@ function getDynamicActionDetails(uniqueIdentifier, node) {
     };
 }
 
-ContextMenu.prototype.loadPinnedItems = function(){
+Menu.Context.prototype.loadPinnedItems = function(){
     const nodeActions = NodeActions.forNode(this.targetModel);
-    pinnedItemsManager.forEach(
+    App.pinnedItems.forEach(
         (id)=>{ if (id in nodeActions) this.pinSuggestion(id) }
     );
 }
 
-ContextMenu.prototype.setupSuggestions = function(pageX, pageY){
+Menu.Context.prototype.setupSuggestions = function(pageX, pageY){
     const inputField = this.inputField;
     const node = this.targetModel;
 
@@ -214,42 +202,41 @@ ContextMenu.prototype.setupSuggestions = function(pageX, pageY){
 
     On.keypress(inputField, (e)=>{
         if (e.key === 'Enter') {
-            Suggestions.global.hide();
+            App.menuSuggestions.hide();
             executeNodeMethod(NodeActions.forNode(node), e.target.value);
             e.target.value = '';
-            Suggestions.global.hide();
+            App.menuSuggestions.hide();
         }
     });
 
     function displaySuggestions(value) {
-        const component = Suggestions.global;
-        component.clear();
-        component.position(pageX, pageY);
+        const menu = App.menuSuggestions;
+        menu.clear();
+        menu.position(pageX, pageY);
 
         const nodeActions = NodeActions.forNode(node);
         getNodeMethodSuggestions(value, node).forEach( (suggestion)=>{
-            component.addSuggestion(
+            menu.addSuggestion(
                 getDynamicActionDetails(suggestion, node).displayText,
-                inputField,
                 Function.nop,
                 (executeAction, pinState) => {
                     const funcName = (pinState ? 'pinSuggestion' : 'unpinSuggestion');
-                    ContextMenu[funcName](executeAction);
+                    App.menuContext[funcName](executeAction);
                 },
-                pinnedItemsManager.isItemPinned(suggestion)
+                App.pinnedItems.isItemPinned(suggestion)
             );
         });
 
-        component.scrollToBottom();
+        menu.scrollToBottom();
     }
 }
 
-ContextMenu.prototype.unpinSuggestion = function(id){
+Menu.Context.prototype.unpinSuggestion = function(id){
     const action = this.itemById(id);
     if (action) this.menu.removeChild(action);
-    pinnedItemsManager.removeItem(id);
+    App.pinnedItems.removeItem(id);
 }
 
-ContextMenu.prototype.itemById = function(id){
+Menu.Context.prototype.itemById = function(id){
     return Elem.findChild(this.menu, Elem.hasDatasetIdThis, id)
 }

@@ -71,6 +71,8 @@ Logger = new Logger()
     .addLevel("DEBUG:", 'log', 'debug');
 Logger.levelId = 'info';
 
+const Manager = {};
+
 class Off {
     static thisEvent(target, cb, options){
         target.removeEventListener(this, cb, options)
@@ -114,6 +116,29 @@ Request.send = async function(ct){
     } catch (err) {
         if (ct.onFailure) Logger.err(ct.onFailure(), err);
     }
+}
+
+const View = {};
+
+class App {
+    cellularAutomata = new Manager.CellularAutomata();
+    interface = new Interface();
+    menuContext = new Menu.Context();
+    menuSuggestions = new Menu.Suggestions();
+    nodeSimulation = new NodeSimulation();
+    pinnedItems = new Manager.PinnedItems('pinnedContextMenuItems');
+    processedNodes = new ProcessedNodes();
+    recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
+    selectedNodes = new SelectedNodes();
+
+    init(){
+        Body.addEventListeners(document.body);
+        this.nodeSimulation.start();
+        initViewGraphs();
+        updateSavedNetworks();
+        initializeSaveNetworks();
+    }
+    get nodeMode(){ return this.interface.nodeMode.val }
 }
 
 class PageLoad {
@@ -232,10 +257,9 @@ class PageLoad {
         for (const resource of PageLoad.resources) await this.loadResource(resource); // sequentially
         await this.loadTabs(PageLoad.tabs); // in parallel
         for (const src of PageLoad.scripts) await this.loadScript(src); // sequentially
-        Body.addEventListeners(document.body);
-        ContextMenu = new ContextMenu();
-        updateSavedNetworks();
-        initializeSaveNetworks();
+        Graph = new Graph();
+        App = new App();
+        App.init();
     }
 
     async loadTab(tabId, fileName){

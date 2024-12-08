@@ -34,7 +34,7 @@ class Graph {
     appendNode(node){ this.htmlNodes.append(node.content) }
 
     clear(){
-        SelectedNodes.clear();
+        App.selectedNodes.clear();
         this.forEachEdge(this.deleteEdge, this);
         this.edgeDirectionalities = {};
         this.forEachNode(this.deleteNode, this);
@@ -67,7 +67,7 @@ class Graph {
         this.forEachNode(Node.filterEdgesToThis, target);
 
         const uuid = target.uuid;
-        SelectedNodes.uuids.delete(uuid);
+        App.selectedNodes.uuids.delete(uuid);
         delete this.nodeViews[uuid];
         delete this.nodes[uuid];
 
@@ -108,7 +108,6 @@ class Graph {
         if (elem) return this[elem.dataset.viewType][elem.dataset.viewId];
     }
 }
-Graph = new Graph();
 svg.dataset.viewType = 'own';
 svg.dataset.viewId = 'self';
 
@@ -130,6 +129,12 @@ class SelectedNodes {
         })
     }
     hasNode(node){ return this.uuids.has(node.uuid) }
+    reduce(cb, init){
+        return this.uuids.values().reduce( (acc, uuid)=>{
+            const node = Node.byUuid(uuid);
+            return (node ? cb(acc, node) : acc);
+        }, init)
+    }
 
     toggleNode(node){
         node.view.toggleSelected();
@@ -137,6 +142,7 @@ class SelectedNodes {
         this.uuids[isSelected ? 'delete' : 'add'](node.uuid);
         Logger.debug(isSelected ? 'deselected' : 'selected');
     }
+    static toggleNode(node){ App.selectedNodes.toggleNode(node) }
 
     restoreNodeById(id){
         const nodeView = NodeView.byId(id);
@@ -154,21 +160,17 @@ class SelectedNodes {
     getCentroid(){
         if (this.uuids.size === 0) return null;
 
-        let sumPos = new vec2(0, 0);
-        this.forEach(
-            (node)=>{ sumPos = sumPos.plus(node.pos) }
-        );
-        return sumPos.scale(1 / this.uuids.size);
+        const cb = (sumPos, node)=>sumPos.plus(node.pos) ;
+        return this.reduce(cb, new vec2(0, 0)).scale(1 / this.uuids.size);
     }
 
-    collectEdges(){
-        const uniqueEdges = new Set();
-        this.forEach(node => {
-            node.edges.forEach(edge => {
-                if (edge.pts.every(this.hasNode, this)) uniqueEdges.add(edge);
+    getUniqueEdges(){
+        return this.reduce( (set, node)=>{
+            node.edges.forEach( (edge)=>{
+                if (edge.pts.every(this.hasNode, this)) set.add(edge)
             });
-        });
-        return uniqueEdges;
+            return set;
+        }, new Set())
     }
 
     scale(scaleFactor, centralPoint){
@@ -189,7 +191,6 @@ class SelectedNodes {
         //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
     }
 }
-SelectedNodes = new SelectedNodes();
 
 
 

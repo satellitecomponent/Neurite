@@ -60,8 +60,8 @@ class ZettelkastenProcessor {
     }
 
     spawnNodeFromZettelkasten(currentNodeTitle) {
-        ProcessedNodes.update();
-        this.placementStrategy.nodeObjects = ProcessedNodes.map;
+        App.processedNodes.update();
+        this.placementStrategy.nodeObjects = App.processedNodes.map;
         return this.placementStrategy.calculatePositionAndScale(currentNodeTitle);
     }
 
@@ -435,8 +435,7 @@ class ZettelkastenProcessor {
         const allReferenceUUIDs = new Set(references.map(ref => allNodes[ref]?.nodeObject?.uuid).filter(uuid => uuid));
 
         // Check if connected nodes contain a reference to the current node in any CodeMirror instance
-        const connectedNodes = getConnectedNodes(thisNode);
-        connectedNodes.forEach(node => {
+        thisNode.forEachConnectedNode( (node)=>{
             const nodeInfo = getZetNodeCMInstance(node.getTitle());
             if (!nodeInfo) return;
 

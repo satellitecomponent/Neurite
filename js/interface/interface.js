@@ -174,7 +174,7 @@ On.mouseup(window, (e)=>{
 
     // Handle context menu opening
     if (e.button === parseInt(settings.contextKey)) {
-        if (!controlDragOccurred) ContextMenu.open(e.pageX, e.pageY, e.target);
+        if (!controlDragOccurred) App.menuContext.open(e.pageX, e.pageY, e.target);
         // Do not reset 'controlDragOccurred' here; let 'contextmenu' handler manage it
         e.preventDefault();
     }
@@ -206,7 +206,7 @@ On.contextmenu(document, (e)=>{
 
     // If the default context menu should be used, do nothing
     if (e.ctrlKey || shouldUseDefaultContextMenu(e.target)) {
-        ContextMenu.hide();
+        App.menuContext.hide();
         return; // allow browser context menu
     }
 
@@ -217,7 +217,7 @@ On.wheel(svg, (e)=>{
     isAnimating = false;
 
     // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
-    if (settings.zoomClick === "scroll" && NodeMode.val !== 1 && e.getModifierState(settings.rotateModifier)) {
+    if (settings.zoomClick === "scroll" && App.nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
         autopilotSpeed = 0;
         coordsLive = true;
 
@@ -240,7 +240,7 @@ On.wheel(svg, (e)=>{
         // Zooming via scroll wheel
         autopilotSpeed = 0;
         Coordinate.deselect();
-        ContextMenu.hide();
+        App.menuContext.hide();
         coordsLive = true;
         const dest = toZ(mousePos);
         regenAmount += Math.abs(e.deltaY);

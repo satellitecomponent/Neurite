@@ -6,7 +6,8 @@ class NodeMode {
     key = settings.nodeModeKey;
     trigger = settings.nodeModeTrigger;
     val = 0;
-    constructor(){
+    constructor(autoToggleAllOverlays){
+        this.autoToggleAllOverlays = autoToggleAllOverlays;
         On.keydown(window, this.onKeyDown);
         On.keyup(window, this.onKeyUp);
     }
@@ -26,7 +27,7 @@ class NodeMode {
 
             if (this.trigger === "down") {
                 this.switch(1);
-                Interface.autoToggleAllOverlays();
+                this.autoToggleAllOverlays();
             } else if (this.trigger === "toggle") {
                 this.switch(1 - this.val); // Toggle between 0 and 1
             }
@@ -40,8 +41,7 @@ class NodeMode {
         if (this.locked) return;
 
         this.switch(0);
-        Interface.autoToggleAllOverlays();
+        this.autoToggleAllOverlays();
         e.stopPropagation();
     }
 }
-NodeMode = new NodeMode();

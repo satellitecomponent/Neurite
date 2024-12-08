@@ -4,10 +4,6 @@ NodeActions.forNode = function(node){
     return new NodeActions[Node.getType(node)](node)
 }
 
-function addToRecentSuggestions(methodName) {
-    nodeMethodManager.addSuggestion(methodName); // Update recent calls
-}
-
 // Define action parameter types
 const actionParameterTypes = {
     'moveNode': ['float', 'float'] // Assumes moveNode expects two floats: angle, forceMagnitude
@@ -38,7 +34,7 @@ function executeNodeMethod(nodeActions, methodName) {
 
     if (typeof nodeActions[actionName] === 'function') {
         nodeActions[actionName](...params);
-        addToRecentSuggestions(methodName); // Update recent calls
+        App.recentSuggestions.add(methodName);
     } else {
         Logger.err("Invalid method for node:", actionName)
     }
@@ -73,7 +69,7 @@ function getNodeMethodSuggestions(value, node) {
     }
 
     // show recent suggestions and all valid actions
-    const recentSuggestions = nodeMethodManager.getRecentSuggestions();
+    const recentSuggestions = App.recentSuggestions.get();
     const allValidActions = Object.keys(validActionsWithKeywords);
     const allValidActionsExcludingRecent = allValidActions.filter(action => !recentSuggestions.includes(action));
     return [...recentSuggestions, ...allValidActionsExcludingRecent];
@@ -81,13 +77,11 @@ function getNodeMethodSuggestions(value, node) {
 
 NodeActions.base = class BaseNodeActions {
     applyActionToSelectedNodes(action){
-        if (!SelectedNodes.hasNode(this.node)) action(this.node)
-        else SelectedNodes.forEach(action)
+        if (!App.selectedNodes.hasNode(this.node)) action(this.node)
+        else App.selectedNodes.forEach(action)
     }
 
-    constructor(node) {
-        this.node = node;
-    }
+    constructor(node){ this.node = node }
 
     getActions() {
         return {
@@ -106,7 +100,7 @@ NodeActions.base = class BaseNodeActions {
     }
 
     getSelectActionName() {
-        return (SelectedNodes.hasNode(this.node) ? 'deselect' : 'select')
+        return (App.selectedNodes.hasNode(this.node) ? 'deselect' : 'select')
     }
 
     getCollapseActionName() {
@@ -119,11 +113,11 @@ NodeActions.base = class BaseNodeActions {
     follow() {
         autopilotSpeed = settings.autopilotSpeed;
         autopilotReferenceFrame = this.node;
-        ContextMenu.hide();
+        App.menuContext.hide();
     }
     connect() {
         new Modal.Connect(this.node);
-        ContextMenu.hide();
+        App.menuContext.hide();
     }
     toggleSelect() {
         this.applyActionToSelectedNodes(SelectedNodes.toggleNode)
@@ -132,16 +126,12 @@ NodeActions.base = class BaseNodeActions {
     toggleCollapse() {
         this.applyActionToSelectedNodes(Node.toggleCollapse)
     }
-    toggleAutomata() {
-        updateNodeStartAutomataAction(); // This will now handle the automata start logic
-    }
+    toggleAutomata(){ App.cellularAutomata.toggle() }
     delete() {
         this.applyActionToSelectedNodes(Node.remove);
-        ContextMenu.hide();
+        App.menuContext.hide();
     }
-    spawnNode() {
-        spawnZettelkastenNode(this.node);
-    }
+    spawnNode(){ spawnZettelkastenNode(this.node) }
     moveNode(directionOrAngle, forceMagnitude = 0.01) {
         // Ensure this.node is the node class instance with the updated moveNode method
         this.node.moveNode(directionOrAngle, forceMagnitude);
@@ -174,7 +164,7 @@ NodeActions.text = class TextNodeActions extends NodeActions.base {
             if (parser) parser.deleteNodeByTitle(nodeTitle);
         });
 
-        ContextMenu.hide();
+        App.menuContext.hide();
     }
 }
 
@@ -249,6 +239,6 @@ NodeActions.link = class LinkNodeActions extends NodeActions.base {
     }
     importText() {
         importLinkNodeTextToZettelkasten(this.node.linkUrl);
-        ContextMenu.hide();
+        App.menuContext.hide();
     }
 }

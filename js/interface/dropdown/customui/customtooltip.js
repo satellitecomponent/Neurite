@@ -71,7 +71,7 @@ class Tooltip {
         On.click(div, Event.stopPropagation);
 
         On.mousedown(div, (e)=>{
-            ContextMenu.hide();
+            App.menuContext.hide();
             e.stopPropagation();
         });
 

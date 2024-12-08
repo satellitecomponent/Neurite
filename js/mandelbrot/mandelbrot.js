@@ -307,7 +307,7 @@ Body.startPanning = function(e){
 Body.onMousemove = function(e){
     mousePos.x = e.pageX;
     mousePos.y = e.pageY;
-    nodeSimulation.mousePath = [];
+    App.nodeSimulation.mousePath = [];
 }
 Body.stopPanning = function(e){
     if (!Body.isPanning) return;
@@ -482,7 +482,7 @@ Color.rgbLerp = function(i, r = rSlider.value, c = cSlider.value, s = sSlider.va
     const blue = normalized("b", 3) * (c - s * cos(i / 5 ** .9));
 
     const lerp = Math.lerp;
-    if (NodeMode.val) r = nodeMode_v;
+    if (App.nodeMode) r = nodeMode_v;
     const y = 0.17697 * red + 0.81240 * green + 0.01063 * blue;
     return [lerp(red, y, r), lerp(green, y, r), lerp(blue, y, r)];
 }

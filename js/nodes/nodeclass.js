@@ -174,21 +174,21 @@ class Node {
         if (!this.followingMouse) return;
 
         const p = toZ(mousePos).minus(this.mouseAnchor);
-        const velocity = p.minus(this.pos).unscale(NodeMode.val ? 1 : dt);
+        const velocity = p.minus(this.pos).unscale(App.nodeMode ? 1 : dt);
 
         this.vel = velocity;
         this.pos = p;
         this.anchor = this.pos;
 
-        if (NodeMode.val === 1) updateNodeEdgesLength(this);
+        if (App.nodeMode === 1) updateNodeEdgesLength(this);
 
-        if (!SelectedNodes.uuids.has(this.uuid)) return;
+        if (!App.selectedNodes.uuids.has(this.uuid)) return;
 
-        SelectedNodes.forEach(node => {
+        App.selectedNodes.forEach(node => {
             if (node.uuid === this.uuid || node.anchorForce === 1) return;
 
             node.vel = velocity;
-            if (NodeMode.val === 1) updateNodeEdgesLength(node);
+            if (App.nodeMode === 1) updateNodeEdgesLength(node);
         });
     }
 
@@ -277,7 +277,7 @@ class Node {
         this.anchor = this.pos;
         this.anchorForce = 1 - this.anchorForce;
         this.toggleWindowAnchored(this.anchorForce === 1);
-        Logger.debug(getAllConnectedNodesData(this));
+        Logger.debug(this.getAllConnectedNodesData());
         e.stopPropagation();
     }
     onMouseDown = (e)=>{
@@ -285,7 +285,7 @@ class Node {
         this.followingMouse = 1;
         Graph.draggedNode = this;
         Graph.movingNode = this;
-        if (NodeMode.val) {
+        if (App.nodeMode) {
             if (!Node.prev) {
                 Node.prev = this;
             } else {
@@ -331,7 +331,7 @@ class Node {
         }*/
     }
     onWheel = (e)=>{
-        if (!NodeMode.val) return;
+        if (!App.nodeMode) return;
 
         const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
@@ -341,7 +341,7 @@ class Node {
             // Scale selected nodes or individual node
             const targetWindow = e.target.closest('.window');
             if (targetWindow && targetWindow.classList.contains('selected')) {
-                SelectedNodes.forEach((node) => {
+                App.selectedNodes.forEach((node) => {
                     node.scale *= amount;
 
                     // Only update position if the node is not anchored
@@ -381,7 +381,7 @@ class Node {
     static addEdgeThis(node){ node.addEdge(this) }
 
     updateEdgeData() {
-        const es = JSON.stringify(this.edges.map((e) => e.dataObj()));
+        const es = JSON.stringify(this.edges.map(Edge.dataForEdge));
         Logger.debug("Saving edge data:", es);
         this.content.setAttribute('data-edges', es);
     }
