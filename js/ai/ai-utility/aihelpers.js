@@ -30,8 +30,10 @@ async function isEmbedEnabled(aiNode) {
 
     const allKeys = await Keys.getAll();
     const visibleKeys = Keys.getVisible(allKeys);
-    if (visibleKeys.length > 0 && visibleKeys.length < allKeys.length) {
+    if (visibleKeys.length > 0) {
         return visibleKeys;
+    } else {
+        return false;
     }
 }
 

@@ -684,7 +684,9 @@ Fractal.hair_svg_path = function(pt,num_pts_max){
 Fractal.cull_extra_lines = function(){
     const maxLines = settings.maxLines;
     if (maxLines === 0) {
-        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved);
+        while (svg_bg.firstChild) {
+            Fractal.removeNonPreserved(svg_bg.firstChild);
+        }
         return;
     }
 

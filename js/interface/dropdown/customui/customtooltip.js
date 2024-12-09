@@ -20,11 +20,11 @@ class Tooltip {
         const snippetDataList = JSON.parse(e.target.dataset.snippetData);
         this.showTooltip(snippetDataList, e);
     }
-    onMouseLeave = (e)=>{
-        if (!e.relatedTarget || !this.tooltipElement.contains(e.relatedTarget)) {
+    onMouseLeave = (e) => {
+        if (!e.relatedTarget || !this.tooltipElement || !this.tooltipElement.contains(e.relatedTarget)) {
             this.hideTooltip();
         }
-    }
+    };
 
     showTooltip(data, event) {
         if (!this.tooltipElement) {
@@ -62,7 +62,7 @@ class Tooltip {
         div.style.width = this.options.width;
         div.style.pointerEvents = 'auto';
 
-        On.mouseleave(div, (e)=>{
+        On.mouseleave(div, (e) => {
             if (!e.relatedTarget || !e.relatedTarget.hasAttribute('data-snippet-data')) {
                 this.hideTooltip();
             }
@@ -70,13 +70,17 @@ class Tooltip {
 
         On.click(div, Event.stopPropagation);
 
-        On.mousedown(div, (e)=>{
+        On.mousedown(div, (e) => {
             App.menuContext.hide();
             e.stopPropagation();
         });
 
         document.body.appendChild(div);
+
+        // Assign the created tooltip element to this.tooltipElement
+        this.tooltipElement = div;
     }
+
 
     updateTooltipContent(data) {
         // Placeholder method to be overridden by subclasses

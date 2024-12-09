@@ -18,13 +18,13 @@ let browserEmbeddingsInitialized = {};
 Embeddings.initializeWorker = function(){
     Embeddings.selectModel = Elem.byId('embeddingsModelSelect');
 
-    const worker = Embeddings.worker = new Worker('embeddings.js');
+    const worker = Embeddings.worker = new Worker('/embeddings.js', { type: 'module' });
 
     function onMessage(e){
         const data = e.data;
         if (data.type === 'ready') {
             browserEmbeddingsInitialized[data.model] = true;
-        } else { // data.type === 'error'
+        } else if (data.type === 'error') {
             Logger.err("From embeddings worker:", data.error);
         }
     }
@@ -69,7 +69,7 @@ Embeddings.fetchLocal = function(model, text){
             }
         }
         On.message(worker, onMessage);
-        worker.postMessage({ text, model });
+        worker.postMessage({ type: 'generate', text: text, model: model });
     })
 }
 

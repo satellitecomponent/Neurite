@@ -357,7 +357,8 @@ function neuriteSaveEvent(existingTitle = null) {
 
     const saveData = nodeData + zettelkastenPanesSaveElements.join('') + collectAdditionalSaveObjects();
 
-    const title = existingTitle || prompt("Enter a title for this save:");
+    const title = (typeof existingTitle === 'string' ? existingTitle.trim() : '')
+        || prompt("Enter a title for this save:");
 
     const saves = JSON.parse(localStorage.getItem("saves") || "[]");
     if (title) {
