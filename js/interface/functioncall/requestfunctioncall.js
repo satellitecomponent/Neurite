@@ -93,6 +93,11 @@ function trimSystemMessages(systemMessages, maxTokens) {
 }
 
 function getFunctionResponse(requestMessages) {
+    const requestId = generateRequestId();
+    const controller = new AbortController();
+
+    activeRequests.set(requestId, { type: 'function', controller });
+
     return callAiApi({
         messages: requestMessages,
         stream: true,
@@ -113,7 +118,9 @@ function getFunctionResponse(requestMessages) {
         onError: (err) => {
             functionErrorIcon.style.display = 'block';
             Logger.err(err);
-        }
+        },
+        controller: controller,
+        requestId: requestId
     });
 }
 

@@ -126,9 +126,10 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
         if (node.haltCheckbox) node.haltCheckbox.checked = true;
     }
+    const controller = node.controller;
 
     // Track the node-specific request
-    activeRequests.set(requestId, { type: 'node', node.controller, node });
+    activeRequests.set(requestId, { type: 'node', controller, node });
 
     return callAiApi({
         messages,
@@ -139,7 +140,7 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
         onStreamingResponse,
         onError,
         inferenceOverride: inferenceOverride || Ai.determineModel(node),
-        controller: node.controller, // node-specific controller
+        controller: controller, // node-specific controller
         requestId: requestId
     });
 }
@@ -160,8 +161,7 @@ async function callAiApi({
     controller = null,
     requestId
 }) {
-    console.log("Message Array", messages);
-    console.log("Token count:", getTokenCount(messages));
+    Logger.info("Message Array", messages);
 
     if (useDummyResponses) {
         onBeforeCall();
@@ -194,8 +194,13 @@ async function callAiApi({
         }
     }
 
-    const requestOptions = {
-        method: 'POST',
+    if (useProxy && requestId) {
+        params.body.requestId = requestId;
+    }
+
+    // Prepare request options
+    let requestOptions = {
+        method: "POST",
         headers: params.headers,
         body: JSON.stringify(params.body),
         signal: controller.signal,
@@ -258,6 +263,7 @@ async function callAiApi({
         }
     }
 }
+
 Ai.ctCancelRequest = class {
     constructor(requestId){
         this.url = 'http://localhost:7070/cancel';

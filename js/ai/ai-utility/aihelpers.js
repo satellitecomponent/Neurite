@@ -149,29 +149,29 @@ function haltZettelkastenAi() {
         }
     }
 
-    aiResponding = false;
+    Ai.isResponding = false;
     shouldContinue = false;
-    isFirstAutoModeMessage = true;
+    Ai.isFirstAutoModeMessage = true;
 
     document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-    document.getElementById("prompt").value = latestUserMessage;
+    document.getElementById("prompt").value = Ai.latestUserMessage;
 }
 
 function regenerateResponse() {
-    if (!aiResponding) {
+    if (!Ai.isResponding) {
         // AI is not responding, so we want to regenerate
         removeLastResponse(); // Remove the last AI response
-        document.getElementById("prompt").value = latestUserMessage; // Restore the last user message into the input prompt
+        document.getElementById("prompt").value = Ai.latestUserMessage; // Restore the last user message into the input prompt
         document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
 
     }
 }
 
 document.getElementById("regen-button").addEventListener("click", function () {
-    if (aiResponding) {
+    if (Ai.isResponding) {
         haltZettelkastenAi();
     } else {
-        removeLastResponse();
+        regenerateResponse();
     }
     Elem.byId('prompt').value = Ai.latestUserMessage;
     document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');

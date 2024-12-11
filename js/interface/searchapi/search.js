@@ -178,6 +178,8 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         const node = nodes[i];
         if (!node.isTextNode) continue;
 
+        // Possible fix: const title = node.view.titleInput.value;
+
         // Updated to use new property names
         const titleMatchScore = node.view.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
 

@@ -154,7 +154,7 @@ class NeuritePanel {
     }
 
     open(refresh = false) {
-        openModal(this.modalId);
+        Modal.open(this.modalId);
         this.initializeElements();
         togglePanel(this.usagePanel);
         this.fetchUserBalance(refresh);
@@ -264,7 +264,7 @@ class NeuritePanel {
     }
 
     close() {
-        closeModal(this.modalId);
+        Modal.close();
     }
 }
 
