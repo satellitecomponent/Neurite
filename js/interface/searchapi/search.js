@@ -145,8 +145,9 @@ const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
 
 async function embeddedSearch(searchTerm, maxNodesOverride) {
+    const searchTermLowered = searchTerm.toLowerCase();
     const maxNodes = maxNodesOverride ?? Elem.byId('node-count-slider').value;
-    const keywords = searchTerm.toLowerCase().split(/,\s*/);
+    const keywords = searchTermLowered.split(/,\s*/);
 
     const nodes = getNodeText();
     if (nodes.length < 1) return [];
@@ -178,10 +179,9 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         const node = nodes[i];
         if (!node.isTextNode) continue;
 
-        // Possible fix: const title = node.view.titleInput.value;
-
         // Updated to use new property names
-        const titleMatchScore = node.view.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
+        const titleLowered = node.view.titleInput.value.toLowerCase();
+        const titleMatchScore = titleLowered.includes(searchTermLowered) ? 1 : 0;
 
         // Updated to use new property names
         const contentMatchScore = keywords.filter(keyword => {
@@ -214,14 +214,15 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
                 node,
                 title: node.title,
                 content: node.content.innerText.trim(),
-                weightedTitleScore: weightedTitleScore,
-                weightedContentScore: weightedContentScore,
+                weightedTitleScore,
+                weightedContentScore,
                 similarity: cosineSimilarity,
+                scoreSum: weightedTitleScore + weightedContentScore + cosineSimilarity
             });
             Logger.debug("embeddings", node.content.innerText.trim());
         }
     }
 
-    matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
+    matched.sort( (a, b)=>(b.scoreSum - a.scoreSum) );
     return matched.slice(0, maxNodes).map(m => m.node);
 }

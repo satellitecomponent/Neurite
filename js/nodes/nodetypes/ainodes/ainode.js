@@ -412,8 +412,6 @@ AiNode.setupRegenerateButtonListeners = function(node){
     On.mouseup(button, setBackColor.bind(button, '#222226'));
 
     node.regenerateResponse = function () {
-        if (this.aiResponding) return;
-
         this.removeLastResponse();
         this.promptTextArea.value = this.latestUserMessage;
         this.regenerateButton.innerHTML = Svg.refresh;

@@ -105,7 +105,7 @@ Modal.getInputValue = function (modalId, itemId, defaultValue = true) {
 Modal.getAiInputValue = Modal.getInputValue.bind(Modal, 'aiModal');
 
 Modal.close = function () {
-    switch (Modal.current.id) {
+    switch (Modal.current?.id) {
         case 'zetSearchModal':
         case 'nodeConnectionModal':
             Graph.forEachNode(clearSearchHighlight);

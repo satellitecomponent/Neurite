@@ -130,52 +130,52 @@ function removeLastResponse() {
     while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(PROMPT_IDENTIFIER)) {
         lastPromptIndex -= 1;
     }
+    if (lastPromptIndex < 0) return;
 
-    // Remove all lines from the last "Prompt:" to the end
-    if (lastPromptIndex >= 0) {
-        lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
-        noteInput.value = lines.join('\n');
-
-        // Update the CodeMirror instance with the new value
-        window.currentActiveZettelkastenMirror.setValue(noteInput.value);
-    }
+    lines.splice(lastPromptIndex, lines.length - lastPromptIndex);
+    noteInput.value = lines.join('\n');
+    window.currentActiveZettelkastenMirror.setValue(noteInput.value);
 }
 
-function haltZettelkastenAi() {
+class MainPrompt {
+    btnRegen = Elem.byId('regen-button');
+    textArea = Elem.byId('prompt');
+    use = this.btnRegen.querySelector('use');
+
+    setLatestUserMessage(){
+        this.textArea.value = Ai.latestUserMessage;
+        this.setRefresh();
+    }
+    setPause(){ this.use.setAttribute('xlink:href', '#pause-icon') }
+    setRefresh(){ this.use.setAttribute('xlink:href', '#refresh-icon') }
+}
+
+Ai.haltZettelkasten = function(){
     for (const [requestId, requestInfo] of activeRequests.entries()) {
-        if (requestInfo.type === 'zettelkasten') {
-            requestInfo.controller.abort();
-            activeRequests.delete(requestId);
-        }
+        if (requestInfo.type !== 'zettelkasten') continue;
+
+        requestInfo.controller.abort();
+        activeRequests.delete(requestId);
     }
 
     Ai.isResponding = false;
-    shouldContinue = false;
+    Ai.shouldContinue = false;
     Ai.isFirstAutoModeMessage = true;
 
-    document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-    document.getElementById("prompt").value = Ai.latestUserMessage;
+    Ai.mainPrompt.setLatestUserMessage();
 }
-
-function regenerateResponse() {
-    if (!Ai.isResponding) {
-        // AI is not responding, so we want to regenerate
-        removeLastResponse(); // Remove the last AI response
-        document.getElementById("prompt").value = Ai.latestUserMessage; // Restore the last user message into the input prompt
-        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-
-    }
+Ai.regenerateResponse = function(){
+    removeLastResponse();
+    Ai.mainPrompt.setLatestUserMessage();
 }
-
-document.getElementById("regen-button").addEventListener("click", function () {
-    if (Ai.isResponding) {
-        haltZettelkastenAi();
-    } else {
-        regenerateResponse();
-    }
-    Elem.byId('prompt').value = Ai.latestUserMessage;
-    document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
-});
+Ai.init = function(){
+    Ai.mainPrompt = new MainPrompt();
+    Ai.mainPrompt.btnRegen.addEventListener("click", Ai.onRegenClicked);
+}
+Ai.onRegenClicked = function(){
+    Ai[Ai.isResponding ? 'haltZettelkasten' : 'regenerateResponse']();
+    Ai.mainPrompt.setLatestUserMessage();
+}
 
 // Extract the prompt from the last message
 function extractLastPrompt() {
@@ -190,29 +190,29 @@ function extractLastPrompt() {
 
 function trimToTokenCount(inputText, maxTokens) {
     const tokens = inputText.match(/[\w]+|[^\s\w]/g);
+    if (tokens === null) return '';
+
     let trimmedText = '';
     let currentTokenCount = 0;
 
-    if (tokens !== null) {
-        for (const token of tokens) {
-            currentTokenCount += 1;
-            if (currentTokenCount > maxTokens) break;
+    for (const token of tokens) {
+        currentTokenCount += 1;
+        if (currentTokenCount > maxTokens) break;
 
-            trimmedText += token + ' ';
-        }
+        trimmedText += token + ' ';
     }
 
     return trimmedText;
 }
 
-async function getLastLineFromTextArea(textArea) {
+function getLastLineFromTextArea(textArea) {
     const text = textArea.value;
     const lines = text.split('\n');
     return lines[lines.length - 1];
 }
 
 // Function to extract text within quotations
-async function getQuotedText(text) {
+function getQuotedText(text) {
     const regex = /"([^"]*)"/g;
     const matches = [];
     let match;

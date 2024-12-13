@@ -238,10 +238,8 @@ Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDE
     // Main AI call
     await callchatAPI(messages, stream = true);
 
-    // Only continue if shouldContinue flag is true and auto mode checkbox is checked
-    if (shouldContinue && Elem.byId('auto-mode-checkbox').checked) {
-        const extractedPrompt = extractLastPrompt();
-        sendMessage(null, extractedPrompt);
+    if (Ai.shouldContinue && Elem.byId('auto-mode-checkbox').checked) {
+        sendMessage(null, extractLastPrompt())
     }
 
     return false;

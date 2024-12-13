@@ -134,6 +134,7 @@ class App {
     init(){
         Body.addEventListeners(document.body);
         this.nodeSimulation.start();
+        Ai.init();
         initViewGraphs();
         updateSavedNetworks();
         initializeSaveNetworks();
