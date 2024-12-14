@@ -1,12 +1,10 @@
-
-﻿const Ai = {
+const Ai = {
     isResponding: false,
     latestUserMessage: null,
     isFirstAutoModeMessage: true,
-    originalUserMessage: null
+    originalUserMessage: null,
+    shouldContinue: true
 };
-
-let shouldContinue = true;
 
 let failCounter = 0;
 const MAX_FAILS = 2;
@@ -22,20 +20,20 @@ function generateRequestId() {
 
 // Call Chat API Function
 async function callchatAPI(messages, stream = false, customTemperature = null) {
-    shouldContinue = true;
+    Ai.shouldContinue = true;
     const requestId = generateRequestId();
     let streamedResponse = ""; // Local streamedResponse for this request
 
     function onBeforeCall() {
         Ai.isResponding = true;
-        document.querySelector('#regen-button use').setAttribute('xlink:href', '#pause-icon');
+        Ai.mainPrompt.setPause();
         Elem.byId('aiLoadingIcon').style.display = 'block';
         Elem.hideById('aiErrorIcon');
     }
 
     function onAfterCall() {
         Ai.isResponding = false;
-        document.querySelector('#regen-button use').setAttribute('xlink:href', '#refresh-icon');
+        Ai.mainPrompt.setRefresh();
         Elem.hideById('aiLoadingIcon');
     }
 
@@ -45,15 +43,14 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
         failCounter += 1;
         if (failCounter >= MAX_FAILS) {
             Logger.err("Max attempts reached. Stopping further API calls.");
-            shouldContinue = false;
-            haltZettelkastenAi();
+            Ai.haltZettelkasten();
             resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
         }
     }
 
     function onStreamingResponse(content) {
         // Verify if the request is still active
-        if (!activeRequests.has(requestId) || !shouldContinue || content.trim() === "[DONE]") return;
+        if (!activeRequests.has(requestId) || !Ai.shouldContinue || content.trim() === "[DONE]") return;
 
         const myCodeMirror = window.currentActiveZettelkastenMirror;
         const scrollThreshold = 10; // Adjust as needed
@@ -140,8 +137,8 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
         onStreamingResponse,
         onError,
         inferenceOverride: inferenceOverride || Ai.determineModel(node),
-        controller: controller, // node-specific controller
-        requestId: requestId
+        controller, // node-specific controller
+        requestId
     });
 }
 
@@ -189,17 +186,12 @@ async function callAiApi({
     // Sign-in check for Neurite provider
     if (params.providerId === 'neurite') {
         const isSignedIn = await checkNeuriteSignIn();
-        if (!isSignedIn) {
-            return;
-        }
+        if (!isSignedIn) return;
     }
 
-    if (useProxy && requestId) {
-        params.body.requestId = requestId;
-    }
+    if (useProxy && requestId) params.body.requestId = requestId;
 
-    // Prepare request options
-    let requestOptions = {
+    const requestOptions = {
         method: "POST",
         headers: params.headers,
         body: JSON.stringify(params.body),
@@ -277,7 +269,6 @@ Ai.ctCancelRequest = class {
     onFailure(){ return `Failed to cancel request ${this.requestId} on server:` }
 }
 
-// Extract Content from Response
 function extractContentFromResponse(data) {
     // Try to extract content from various possible locations in the response
     const choice = data.choices && data.choices[0];
@@ -289,7 +280,6 @@ function extractContentFromResponse(data) {
     return (content ? content.trim() : null);
 }
 
-// Stream AI Response Function
 async function streamAiResponse(response, onStreamingResponse, delay = 10) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");

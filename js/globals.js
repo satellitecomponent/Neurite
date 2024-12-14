@@ -235,7 +235,7 @@ class ProcessedNodes {
         }
 
         // Remove any nodes that weren't in the updated nodes (stale nodes)
-        existingUUIDs.forEach(this.removeById);
+        existingUUIDs.forEach(this.removeById, this);
         this.map = tempProcessedNodeMap;
     }
 }

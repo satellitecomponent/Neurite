@@ -130,33 +130,23 @@ async function signOut() {
     }
 }
 
-function updateSignInState(userEmail = null) {
-    if (userEmail) {
-        // User is signed in
+function updateSignInState(userEmail) {
+    if (userEmail) { // User is signed in
         localStorage.setItem('userEmail', userEmail);
         localStorage.setItem('lastMeCheck', Date.now()); // Update timestamp
-        updateSignInStateUI(true);
-    } else {
-        // User is signed out
+    } else { // User is signed out
         localStorage.removeItem('userEmail');
         localStorage.removeItem('lastMeCheck'); // Remove timestamp
-        updateSignInStateUI(false);
-        neuritePanel.close(); // Close any open panels
     }
+    updateSignInStateUI(Boolean(userEmail));
 }
 
 
-// Update UI based on sign-in state
 function updateSignInStateUI(isSignedIn) {
-    const signInButton = document.getElementById('sign-in-btn');
-
-    if (isSignedIn) {
-        signInButton.textContent = 'Sign Out';
-        signInButton.onclick = signOut;
-    } else {
-        signInButton.textContent = 'Sign In';
-        signInButton.onclick = signIn;
-    }
+    if (!isSignedIn) neuritePanel.close(); // Close any open panels
+    const signInButton = Elem.byId('sign-in-btn');
+    signInButton.textContent = (isSignedIn ? "Sign Out" : "Sign In");
+    signInButton.onclick = (isSignedIn ? signOut : signIn);
 }
 
 async function fetchCurrentUser() {
