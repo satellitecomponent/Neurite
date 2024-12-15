@@ -632,6 +632,7 @@ AiNode.refreshOptions = function(node, setValues){
     syncOptions('groq-select', node.groqSelect, 'groq-select-storage', setValues);
     syncOptions('local-model-select', node.localModelSelect, 'local-model-select-storage', setValues);
     syncOptions('custom-model-select', node.customModelSelect, 'custom-model-select-storage', setValues);
+    syncOptions('neurite-model-select', node.neuriteModelSelect, 'neurite-model-select-storage', setValues);
 }
 
 const allOptions = [

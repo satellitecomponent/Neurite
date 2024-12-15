@@ -12,7 +12,7 @@ const Modals = {
     vectorDbModal: new Modal('vectorDbModal', "Vector Database"),
     vectorDbSearchModal: new Modal('vectorDbSearchModal', "Search Vector-DB"),
     zetSearchModal: new Modal('zetSearchModal', "Search Notes"),
-    neuriteModal: new Modal('neurite-modal', "Neurite")
+    'neurite-modal': new Modal('neurite-modal', "Neurite")
 }
 
 Modal.btnClose = Modal.div.querySelector('.close');
