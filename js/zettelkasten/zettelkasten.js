@@ -167,7 +167,7 @@ class ZettelkastenProcessor {
         }
         if (lines.length && startLineNo < endLineNo) {
             const textArea = (changedNode.isLLM ? changedNode.promptTextArea : changedNode.textarea);
-            callWithDelay(TextArea.update.bind(textArea, nodes[changedNodeTitle].plainText), 20);
+            TextArea.update.call(textArea, nodes[changedNodeTitle].plainText);
         }
 
         // Clear references if no references are found and they haven't been cleared already
