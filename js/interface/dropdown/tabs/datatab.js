@@ -1,144 +1,105 @@
+const VectorDb = {};
 
-class DataTab {
-    constructor() {
-        this.initButtons();
-    }
-
-    initButtons() {
-        document.getElementById('chunkAndStoreButton').addEventListener('click', handleFileUploadVDBSelection);
-        document.querySelector('.linkbuttons[title="Delete Document from Embeddings Database"]').addEventListener('click', deleteSelectedKeys);
-    }
-
-    async displayDocuments() {
-        await fetchAndDisplayAllKeys();
-    }
-
-    async initialize() {
-        await this.displayDocuments();
-    }
+VectorDb.openModal = async function(){
+    Modal.open('vectorDbModal');
+    On.click(Elem.byId('chunkAndStoreButton'), handleFileUploadVDBSelection);
+    const buttonSelector = '.linkbuttons[title="Delete Document from Embeddings Database"]';
+    On.click(document.querySelector(buttonSelector), Keys.deleteSelected);
+    await Keys.fetchAndDisplayAll();
 }
-
-document.getElementById('openVectorDbButton').onclick = async function () {
-    await openVectorDbModal();
-};
-
-async function openVectorDbModal() {
-    openModal('vectorDbModal');
-    const dataTab = new DataTab();
-    await dataTab.initialize();
-}
+On.click(Elem.byId('openVectorDbButton'), VectorDb.openModal);
 
 // Global constants using getters
 Object.defineProperty(window, 'MAX_CHUNK_SIZE', {
     get() {
-        return parseInt(modalInputValues['maxChunkSizeSlider'] || 1024, 10);
+        return parseInt(Modal.inputValues.maxChunkSizeSlider || 1024, 10)
     }
 });
-
 Object.defineProperty(window, 'topN', {
     get() {
-        return parseInt(modalInputValues['topNSlider'] || 5, 10);
+        return parseInt(Modal.inputValues.topNSlider || 5, 10)
     }
 });
-
 Object.defineProperty(window, 'overlapSize', {
     get() {
-        return parseInt(modalInputValues['overlapSizeSlider'] || 10, 10);
+        return parseInt(Modal.inputValues.overlapSizeSlider || 10, 10)
     }
 });
-
-
-
 
 
 
 // Interacts with embeddingsdb.js
 
-function addLoadingIndicator(key) {
-    const keyList = document.getElementById("key-list");
-    const loadingItem = document.createElement("div");
-    loadingItem.id = `loading-${key}`;
-    loadingItem.className = 'vdb-loading-item';
-    loadingItem.innerHTML = `
-        <div class="vdb-progress-bar-inner"></div>
+VectorDb.loadingIndicatorForKey = function(key){
+    const id = 'loading-' + key;
+    let indicator = Elem.byId(id);
+    if (indicator) return indicator;
+
+    indicator = Html.make.div('vdb-loading-item');
+    indicator.id = id;
+    indicator.innerHTML = `
         <div class="vdb-loading-content">
             <div class="loader" style="margin-right: 10px; flex-shrink: 0;"></div>
             <span class="vdb-loader-text">${key}</span>
         </div>
     `;
-
-    // Get existing items to find correct insertion point based on alphabetical order
-    const existingItems = Array.from(keyList.children);
-    const insertionIndex = existingItems.findIndex(item => key.localeCompare(item.textContent) < 0);
-
-    if (insertionIndex === -1) {
-        // If no suitable spot is found, append to the end
-        keyList.appendChild(loadingItem);
+    const bar = Html.make.div('vdb-progress-bar-inner');
+    indicator.insertBefore(bar, indicator.firstChild);
+    return VectorDb.insertLoadingIndicatorByKey(indicator, key);
+}
+VectorDb.insertLoadingIndicatorByKey = function(indicator, key){
+    // find correct insertion point based on alphabetical order
+    const compare = (item)=>(key.localeCompare(item.textContent) < 0);
+    const keyList = Elem.byId('key-list');
+    const insertionItem = Array.from(keyList.children).find(compare);
+    if (insertionItem) {
+        keyList.insertBefore(indicator, insertionItem);
     } else {
-        // Insert before the first item that is greater than the key
-        keyList.insertBefore(loadingItem, existingItems[insertionIndex]);
+        keyList.appendChild(indicator);
     }
-
-    return loadingItem;
+    return indicator;
 }
-// Function to remove the loading indicator
-function removeVectorDbLoadingIndicator(key) {
-    const loadingItem = document.getElementById(`loading-${key}`);
-    if (loadingItem) {
-        loadingItem.remove();
-    }
+VectorDb.removeLoadingIndicator = function(key){
+    const indicator = Elem.byId('loading-' + key);
+    if (indicator) indicator.remove();
 }
-
-function updateVectorDbProgressBar(key, progress) {
-    let loadingItem = document.getElementById(`loading-${key}`);
-    if (!loadingItem) {
-        loadingItem = addLoadingIndicator(key);
-    }
-
-    let progressBar = loadingItem.querySelector('.vdb-progress-bar-inner');
-    if (!progressBar) {
-        progressBar = document.createElement('div');
-        progressBar.className = 'vdb-progress-bar-inner';
-        loadingItem.insertBefore(progressBar, loadingItem.firstChild);
-    }
-
-    progressBar.style.width = `${progress}%`;
+VectorDb.funcUpdateProgressBarForKey = function(key){
+    const indicator = VectorDb.loadingIndicatorForKey(key);
+    const style = indicator.querySelector('.vdb-progress-bar-inner').style;
+    return (progress)=>{ style.width = progress + '%' }
 }
 
 function testProgressBar(key) {
+    const updateProgressBar = VectorDb.funcUpdateProgressBarForKey(key);
     let progress = 0;
     const interval = setInterval(() => {
         progress += 1;
-        updateVectorDbProgressBar(key, progress);
-        console.log(`Progress for ${key}: ${progress}%`);
+        updateProgressBar(progress);
+        Logger.info(`Progress for ${key}: ${progress}%`);
 
         if (progress >= 100) {
             clearInterval(interval);
-            console.log(`Progress complete for ${key}`);
-            setTimeout(() => {
-                removeVectorDbLoadingIndicator(key);
-            }, 1000);
+            Logger.info("Progress complete for", key);
+            setTimeout(VectorDb.removeLoadingIndicator.bind(VectorDb, key), 1000);
         }
     }, 1000);
 }
-
-// Test multiple progress bars
 function testMultipleProgressBars() {
     testProgressBar('File1.pdf');
     setTimeout(() => testProgressBar('File2.docx'), 1000);
     setTimeout(() => testProgressBar('File3.txt'), 2000);
 }
 
-function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialOverlapSize, storageKey) {
+function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialOverlapSize, storageId) {
     return new Promise((resolve, reject) => {
         window.currentVectorDbImportReject = reject;
 
-        const rawTextArea = document.getElementById('rawTextArea');
-        const chunkedTextDisplay = document.getElementById('chunkedTextDisplay');
-        const maxChunkSizeSlider = document.getElementById('maxChunkSizeSlider');
-        const overlapSizeSlider = document.getElementById('overlapSizeSlider');
-        const maxChunkSizeValue = document.getElementById('maxChunkSizeValue');
-        const overlapSizeDisplay = document.getElementById('overlapSizeDisplay');
+        const rawTextArea = Elem.byId('rawTextArea');
+        const chunkedTextDisplay = Elem.byId('chunkedTextDisplay');
+        const maxChunkSizeSlider = Elem.byId('maxChunkSizeSlider');
+        const overlapSizeSlider = Elem.byId('overlapSizeSlider');
+        const maxChunkSizeValue = Elem.byId('maxChunkSizeValue');
+        const overlapSizeDisplay = Elem.byId('overlapSizeDisplay');
 
         // Set initial values
         rawTextArea.value = initialText;
@@ -167,31 +128,30 @@ function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialO
                         <div class="vdb-result-text custom-scrollbar">${chunk}</div>
                     </div>
                 `).join('');
-            } catch (error) {
-                chunkedTextDisplay.innerHTML = `<div class="error">${error.message}</div>`;
+            } catch (err) {
+                chunkedTextDisplay.innerHTML = `<div class="error">${err.message}</div>`;
                 currentChunks = [];
             }
         }
 
-        rawTextArea.addEventListener('input', updateChunkedText);
-        maxChunkSizeSlider.addEventListener('input', () => {
+        On.input(rawTextArea, updateChunkedText);
+        On.input(maxChunkSizeSlider, (e)=>{
             maxChunkSizeValue.textContent = maxChunkSizeSlider.value;
             updateChunkedText();
         });
-        overlapSizeSlider.addEventListener('input', () => {
+        On.input(overlapSizeSlider, (e)=>{
             overlapSizeDisplay.textContent = overlapSizeSlider.value;
             updateChunkedText();
         });
 
-        document.getElementById('confirmChunkAndStoreButton').addEventListener('click', () => {
+        On.click(Elem.byId('confirmChunkAndStoreButton'), (e)=>{
             window.currentVectorDbImportReject = null;
             resolve(currentChunks);
         });
 
-        document.getElementById('cancelChunkAndStoreButton').addEventListener('click', () => {
-            closeModal();
-        });
+        On.click(Elem.byId('cancelChunkAndStoreButton'), Modal.close);
 
         updateChunkedText();
     });
 }
+Modals.vectorDbImportConfirmModal.init = setupVectorDbImportConfirmModal;

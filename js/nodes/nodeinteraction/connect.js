@@ -1,4 +1,3 @@
-
 /*
 
 function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
@@ -17,7 +16,7 @@ function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    edges.push(edge);
+    Graph.addEdge(edge);
     return edge;
 }
 
@@ -52,8 +51,7 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     fill: "lightcyan",
     opacity: "0.5"
 }) {
-    // Log UUIDs for debugging
-    //console.log(`Connecting: ${na.uuid} to ${nb.uuid}`);
+    Logger.debug("Connecting:", na.uuid, "to", nb.uuid);
 
     const existingEdge = na.edges.find(edge =>
         edge.pts.some(pt => pt.uuid === nb.uuid) &&
@@ -61,12 +59,12 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     );
 
     if (existingEdge) {
-        //console.log(`Existing edge found between ${na.uuid} and ${nb.uuid}`);
+        Logger.debug("Existing edge found between", na.uuid, "and", nb.uuid);
         return existingEdge;
     }
     // Log positions for debugging
-    //console.log(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
-    //console.log(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
+    Logger.debug(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
+    Logger.debug(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
 
     // Calculate the distance between the two nodes
     const dx = nb.pos.x - na.pos.x;
@@ -76,122 +74,112 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     // Half distance to account for radial edge connection.
     const adjustedDistance = distance * 0.5;
 
-    let edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
+    const edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
 
     na.edges.push(edge);
     nb.edges.push(edge);
 
-    edges.push(edge);
+    Graph.addEdge(edge);
     return edge;
 }
 
+Edge.prototype.getPointBarUuid = function(uuid){
+    const pts = this.pts;
+    if (pts?.length !== 2) return;
 
-function getConnectedNodes(node) {
-    // Get the connected nodes
-    let connectedNodes = node.edges ? node.edges
-        .filter(edge => edge.pts && edge.pts.length === 2)
-        .map(edge => edge.pts[0].uuid === node.uuid ? edge.pts[1] : edge.pts[0]) : [];
-
-    // Check if connectedNodes have valid values and exclude the originating node itself
-    connectedNodes = connectedNodes.filter(connectedNode =>
-        connectedNode !== undefined &&
-        connectedNode.uuid !== undefined &&
-        connectedNode.uuid !== node.uuid);
-
-    // console.log(`Identified ${connectedNodes.length} connected node(s)`);
-    return connectedNodes;
+    return Node.getBarUuid(pts[0], uuid)
+        || Node.getBarUuid(pts[1], uuid);
+}
+Node.getBarUuid = function(node, uuid){
+    const id = node?.uuid;
+    return id && id !== uuid && node;
+}
+Node.callNodeOnEdgePerThis = function(edge){
+    const pt = edge.getPointBarUuid(this.uuid);
+    if (pt) this.cb.call(this.ct, pt);
+}
+Node.prototype.forEachConnectedNode = function(cb, ct){
+    this.edges.forEach(Node.callNodeOnEdgePerThis, {cb, ct, uuid: this.uuid})
 }
 
-function getNodeData(node) {
-    if (node.isImageNode) {
-        //console.log(`Skipping image node ${node.uuid}`);
+Node.prototype.getData = function(){
+    if (this.isImageNode) {
+        Logger.debug("Skipping image node", this.uuid);
         return null;
     }
-    const titleElement = node.titleInput;
-    const title = titleElement ? titleElement.value : "No title found";
-    const createdAt = node.createdAt;
-    const isLLM = node.isLLM;  // Assuming you have this flag set on the node object.
 
-    if (!createdAt) {
-        console.warn(`getNodeData: Creation time for node ${node.uuid} is not defined.`);
+    const titleInput = this.view.titleInput;
+    const title = titleInput ? titleInput.value : "No title found";
+
+    if (!this.createdAt) {
+        Logger.warn("Node.getData: Creation time for node", this.uuid, "is not defined.")
     }
 
-    if (isLLM) {
-        // Handle AI nodes
-        const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, node.aiResponseTextArea);
+    if (this.isLLM) {
+        const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, this.aiResponseTextArea);
         const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nConversation History:${lastPromptsAndResponses}`;
         return nodeInfo;
-    } else {
-        // Handle regular text content
-        let contentText = getTextareaContentForNode(node);
-        if (!contentText) {
-            console.warn('No content found for node');
-            return null;
-        }
-        const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
-        return nodeInfo;
     }
+
+    const contentText = Node.getTextareaContent(this);
+    if (!contentText) {
+        Logger.warn("No content found for node");
+        return null;
+    }
+
+    const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
+    return nodeInfo;
 }
 
-function topologicalSort(node, visited, stack, filterAfterLLM = false, branchUUID = undefined) {
-    visited.add(node.uuid);
+Node.prototype.topologicalSort = function(visited, stack, filterAfterLLM = false, branchUUID = undefined){
+    visited.add(this.uuid);
 
     // Push the node to the stack before checking the conditions.
-    stack.push(node);
+    stack.push(this);
 
-    if (node.isLLM) {
+    if (this.isLLM) {
         if (branchUUID === null) {
-            branchUUID = node.uuid;  // Assign new branch
-        } else if (branchUUID !== node.uuid && branchUUID !== undefined) {
+            branchUUID = this.uuid;  // Assign new branch
+        } else if (branchUUID !== this.uuid && branchUUID !== undefined) {
             // Different AI branch, so return after pushing the boundary node.
             return;
         }
     }
 
-    let connectedNodes = getConnectedNodes(node);
+    this.forEachConnectedNode( (node)=>{
+        if (visited.has(node.uuid)) return;
 
-    for (let connectedNode of connectedNodes) {
-        if (visited.has(connectedNode.uuid)) continue;
-
-        let nextFilterAfterLLM = connectedNode.isLLM ? true : filterAfterLLM;
-
-        topologicalSort(connectedNode, visited, stack, nextFilterAfterLLM, branchUUID);
-    }
+        const nextFilterAfterLLM = node.isLLM || filterAfterLLM;
+        node.topologicalSort(visited, stack, nextFilterAfterLLM, branchUUID);
+    })
 }
 
-function traverseConnectedNodes(node, callback, filterAfterLLM = false) {
-    let visited = new Set();
-    let stack = [];
-    topologicalSort(node, visited, stack, filterAfterLLM, filterAfterLLM ? null : undefined);
+Node.prototype.traverseConnectedNodes = function(cb, ct, filterAfterLLM = false){
+    const visited = new Set();
+    const stack = [];
+    this.topologicalSort(visited, stack, filterAfterLLM, filterAfterLLM ? null : undefined);
 
     while (stack.length > 0) {
-        let currentNode = stack.pop();
-
-        if (currentNode.uuid === node.uuid) {
-            continue;
-        }
-
-        callback(currentNode);
+        const currentNode = stack.pop();
+        if (currentNode.uuid !== this.uuid) cb.call(ct, currentNode);
     }
 }
 
-function getAllConnectedNodesData(node, filterAfterLLM = false) {
-    let allConnectedNodesData = [];
-
-    traverseConnectedNodes(node, currentNode => {
-        let currentNodeData = getNodeData(currentNode);
-        allConnectedNodesData.push({ node: currentNode, data: currentNodeData, isLLM: currentNode.isLLM });
-    }, filterAfterLLM);
-
-    return allConnectedNodesData;
+Node.prototype.getAllConnectedNodesData = function(filterAfterLLM){
+    const arr = [];
+    const cb = (node)=>{
+        arr.push({
+            node: node,
+            data: node.getData(),
+            isLLM: node.isLLM
+        })
+    }
+    this.traverseConnectedNodes(cb, arr, filterAfterLLM);
+    return arr;
 }
 
-function getAllConnectedNodes(node, filterAfterLLM = false) {
-    let allConnectedNodes = [];
-
-    traverseConnectedNodes(node, currentNode => {
-        allConnectedNodes.push(currentNode);
-    }, filterAfterLLM);
-
-    return allConnectedNodes;
+Node.prototype.getAllConnectedNodes = function(filterAfterLLM){
+    const arr = [];
+    this.traverseConnectedNodes(arr.push, arr, filterAfterLLM);
+    return arr;
 }

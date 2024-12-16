@@ -1,13 +1,7 @@
 // Global object to track the state of movement keys
 const keyState = {};
-
-window.addEventListener('keydown', (event) => {
-    keyState[event.key] = true;
-});
-
-window.addEventListener('keyup', (event) => {
-    keyState[event.key] = false;
-});
+On.keydown(window, (e)=>{ keyState[e.key] = true } );
+On.keyup(window, (e)=>{ keyState[e.key] = false } );
 
 const directionMap = {
     'ArrowUp': 'up',
@@ -33,40 +27,33 @@ function directionToAngle(direction) {
         'down-right': Math.PI / 4,    // 45 degrees
     };
 
-    return map[direction] ?? null; // Return null if direction is not recognized
+    return map[direction] ?? null;
 }
 
-// New function to calculate the combined direction
+// calculate the combined direction
 function getDirectionAngleFromKeyState() {
-    let direction = [];
+    const direction = [];
     if (keyState['ArrowUp']) direction.push('up');
     if (keyState['ArrowDown']) direction.push('down');
     if (keyState['ArrowLeft']) direction.push('left');
     if (keyState['ArrowRight']) direction.push('right');
 
-    // Convert named direction(s) to an angle
     const combinedDirection = direction.join('-'); // e.g., 'up-left'
-    return directionToAngle(combinedDirection); // Use the updated directionToAngle function
+    return directionToAngle(combinedDirection);
 }
 
 
-function processScalingKeys(selectedNodes) {
+function processScalingKeys() {
     Object.keys(keyState).forEach(key => {
-        if (keyState[key]) {
-            const action = directionMap[key];
-            if (action === 'scaleUp' || action === 'scaleDown') {
-                const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
-                const centroid = getCentroidOfSelectedNodes();
-                if (centroid) {
-                    scaleSelectedNodes(scaleFactor, centroid);
-                }
-            }
+        if (!keyState[key]) return;
+
+        const action = directionMap[key];
+        if (action === 'scaleUp' || action === 'scaleDown') {
+            const scaleFactor = action === 'scaleUp' ? SCALE_UP_FACTOR : SCALE_DOWN_FACTOR;
+            const centroid = App.selectedNodes.getCentroid();
+            if (centroid) App.selectedNodes.scale(scaleFactor, centroid);
         }
     });
 }
 
-function moveSelectedNodes(selectedNodes, movementAngle) {
-    selectedNodes.forEach(node => {
-        node.moveNode(movementAngle); // Apply movement based on the angle
-    });
-}
+Node.moveAtThisAngle = function(node){ node.moveNode(this.valueOf()) }

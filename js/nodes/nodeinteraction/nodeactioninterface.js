@@ -1,29 +1,7 @@
-function getNodeType(node) {
-    if (node.isTextNode) {
-        return 'text';
-    } else if (node.isLLM) {
-        return 'llm';
-    } else if (node.isLink) {
-        return 'link';
-    }
-    return 'other'; // Default case for undefined node types
-}
+const NodeActions = {};
 
-function getNodeActions(node) {
-    if (node.isTextNode) {
-        return new TextNodeActions(node);
-    } else if (node.isLLM) {
-        return new LLMNodeActions(node);
-    } else if (node.isLink) {
-        return new LinkNodeActions(node);
-    }
-    // Add additional conditions for other node types
-
-    return new BaseNodeActions(node); // Default case
-}
-
-function addToRecentSuggestions(methodName) {
-    nodeMethodManager.addSuggestion(methodName); // Update recent calls
+NodeActions.forNode = function(node){
+    return new NodeActions[Node.getType(node)](node)
 }
 
 // Define action parameter types
@@ -32,48 +10,39 @@ const actionParameterTypes = {
 };
 
 function executeNodeMethod(nodeActions, methodName) {
-    console.log("Executing node method:", methodName);
+    Logger.info("Executing node method:", methodName);
     const methodPattern = /(\w+)(\(.*\))?/;
     const match = methodName.match(methodPattern);
     if (!match) {
-        console.error('Invalid method format:', methodName);
+        Logger.err("Invalid method format:", methodName);
         return;
     }
 
     const actionName = match[1];
-    let rawParams = match[2] ? match[2].slice(1, -1).split(',') : [];
-    let params = [];
+    const rawParams = match[2] ? match[2].slice(1, -1).split(',') : [];
+    let params = rawParams;
 
     // Convert parameters based on their expected types
     if (actionParameterTypes[actionName]) {
         params = rawParams.map((param, index) => {
             const type = actionParameterTypes[actionName][index];
-            switch (type) {
-                case 'float':
-                    return parseFloat(param);
-                case 'int':
-                    return parseInt(param, 10);
-                // Add more cases as needed for different types
-                default:
-                    return param; // Return as string if type not recognized
-            }
+            if (type === 'float') return parseFloat(param);
+            if (type === 'int') return parseInt(param, 10);
+            return param; // string
         });
-    } else {
-        // For actions without specific type requirements, pass raw parameters
-        params = rawParams;
     }
 
     if (typeof nodeActions[actionName] === 'function') {
         nodeActions[actionName](...params);
-        addToRecentSuggestions(methodName); // Update recent calls
+        App.recentSuggestions.add(methodName);
     } else {
-        console.error('Invalid method for node:', actionName);
+        Logger.err("Invalid method for node:", actionName)
     }
 }
 
 function getSuggestionsFromMethods(input, methodsWithKeywords) {
     const lowerCaseInput = input.toLowerCase();
-    let matches = [];
+    const matches = [];
 
     // Iterate over each action and its keywords
     for (const [method, keywords] of Object.entries(methodsWithKeywords)) {
@@ -93,41 +62,26 @@ function getSuggestionsFromMethods(input, methodsWithKeywords) {
 }
 
 function getNodeMethodSuggestions(value, node) {
-    const validActionsWithKeywords = getNodeActions(node).getActions();
-    let suggestions = [];
+    const validActionsWithKeywords = NodeActions.forNode(node).getActions();
 
-    // Handling for non-empty input
     if (value.trim() !== '') {
-        suggestions = getSuggestionsFromMethods(value, validActionsWithKeywords);
-    } else {
-        // Handling for empty input - show recent suggestions and all valid actions
-        const recentSuggestions = nodeMethodManager.getRecentSuggestions();
-        const allValidActions = Object.keys(validActionsWithKeywords);
-        const allValidActionsExcludingRecent = allValidActions.filter(action => !recentSuggestions.includes(action));
-        suggestions = [...recentSuggestions, ...allValidActionsExcludingRecent];
+        return getSuggestionsFromMethods(value, validActionsWithKeywords);
     }
 
-    return suggestions;
+    // show recent suggestions and all valid actions
+    const recentSuggestions = App.recentSuggestions.get();
+    const allValidActions = Object.keys(validActionsWithKeywords);
+    const allValidActionsExcludingRecent = allValidActions.filter(action => !recentSuggestions.includes(action));
+    return [...recentSuggestions, ...allValidActionsExcludingRecent];
 }
 
-// Utility function
-function applyActionToSelectedNodes(action, node) {
-    if (selectedNodeUUIDs.has(node.uuid) && selectedNodeUUIDs.size > 1) {
-        selectedNodeUUIDs.forEach(uuid => {
-            const selectedNode = findNodeByUUID(uuid);
-            if (selectedNode) {
-                action(selectedNode);
-            }
-        });
-    } else {
-        action(node);
+NodeActions.base = class BaseNodeActions {
+    applyActionToSelectedNodes(action){
+        if (!App.selectedNodes.hasNode(this.node)) action(this.node)
+        else App.selectedNodes.forEach(action)
     }
-}
 
-class BaseNodeActions {
-    constructor(node) {
-        this.node = node;
-    }
+    constructor(node){ this.node = node }
 
     getActions() {
         return {
@@ -146,11 +100,11 @@ class BaseNodeActions {
     }
 
     getSelectActionName() {
-        return selectedNodeUUIDs.has(this.node.uuid) ? 'deselect' : 'select';
+        return (App.selectedNodes.hasNode(this.node) ? 'deselect' : 'select')
     }
 
     getCollapseActionName() {
-        return this.node.windowDiv.collapsed ? 'expand' : 'collapse';
+        return (this.node.view.div.collapsed ? 'expand' : 'collapse')
     }
 
     // Common methods for all nodes
@@ -159,48 +113,35 @@ class BaseNodeActions {
     follow() {
         autopilotSpeed = settings.autopilotSpeed;
         autopilotReferenceFrame = this.node;
-        hideContextMenu();
+        App.menuContext.hide();
     }
     connect() {
-        setupConnectModal(this.node);
-        hideContextMenu();
+        new Modal.Connect(this.node);
+        App.menuContext.hide();
     }
     toggleSelect() {
-        applyActionToSelectedNodes((node) => {
-            toggleNodeSelection(node);
-        }, this.node);
+        this.applyActionToSelectedNodes(SelectedNodes.toggleNode)
     }
 
     toggleCollapse() {
-        applyActionToSelectedNodes((node) => {
-            toggleNodeState(node, '');
-        }, this.node);
+        this.applyActionToSelectedNodes(Node.toggleCollapse)
     }
-    toggleAutomata() {
-        updateNodeStartAutomataAction(); // This will now handle the automata start logic
-    }
+    toggleAutomata(){ App.cellularAutomata.toggle() }
     delete() {
-        applyActionToSelectedNodes((node) => {
-            node.remove();
-        }, this.node);
-        hideContextMenu();
+        this.applyActionToSelectedNodes(Node.remove);
+        App.menuContext.hide();
     }
-    spawnNode() {
-        // Call spawnTextNode with the current node
-        spawnZettelkastenNode(this.node);
-    }
+    spawnNode(){ spawnZettelkastenNode(this.node) }
     moveNode(directionOrAngle, forceMagnitude = 0.01) {
-        // Proxy the call to the node's moveNode method
         // Ensure this.node is the node class instance with the updated moveNode method
         this.node.moveNode(directionOrAngle, forceMagnitude);
     }
     moveTo(x, y, tolerance = null, onComplete = () => { }) {
-        // Proxy the call to the node's moveTo method
         this.node.moveTo(x, y, tolerance, onComplete);
     }
 }
 
-class TextNodeActions extends BaseNodeActions {
+NodeActions.text = class TextNodeActions extends NodeActions.base {
     getActions() {
         return {
             ...super.getActions(),
@@ -210,93 +151,69 @@ class TextNodeActions extends BaseNodeActions {
     }
 
     toggleCode() {
-        handleCodeExecution(this.node.textarea, this.node.htmlView, this.node.pythonView, this.node)
+        const node = this.node;
+        handleCodeExecution(node.textarea, node.htmlView, node.pythonView, node);
     }
     testNodeText() {
         testNodeText(this.node.getTitle());
     }
     delete() {
-        applyActionToSelectedNodes((node) => {
+        this.applyActionToSelectedNodes( (node)=>{
             const nodeTitle = node.getTitle();
+            const parser = getZetNodeCMInstance(nodeTitle)?.parser;
+            if (parser) parser.deleteNodeByTitle(nodeTitle);
+        });
 
-            const zetNodeCMInstance = getZetNodeCMInstance(nodeTitle);
-            if (zetNodeCMInstance) {
-                zetNodeCMInstance.parser.deleteNodeByTitle(nodeTitle);
-            }
-        }, this.node);
-
-        hideContextMenu();
+        App.menuContext.hide();
     }
 }
 
-class LLMNodeActions extends BaseNodeActions {
+NodeActions.llm = class LLMNodeActions extends NodeActions.base {
     getActions() {
-        let actions = {
+        return {
             ...super.getActions(),
             'sendMessage': ["send", "transmit", "dispatch", "send message"],
             'settings': ["preferences", "options", "configuration", "setup"],
             'halt': ["stop", "pause", "interrupt", "cease"],
             'refreshResponse': ["update response", "reload", "refresh"]
-        };
-
-        return actions;
+        }
     }
 
     sendMessage() {
         const promptTextarea = this.node.promptTextArea;
-        const sendButton = this.node.sendButton;
-
         // Check if the prompt textarea is empty
         if (!promptTextarea.value.trim()) {
-            // Prompt the user for a new prompt
             const userInput = window.prompt("Please enter your prompt:");
-            if (userInput !== null && userInput.trim() !== "") {
-                // Update the prompt textarea with the user's input
-                promptTextarea.value = userInput;
-            } else {
-                // User canceled or entered an empty prompt
-                console.log('No prompt entered');
-                return; // Exit the function
+            if (userInput === null || userInput.trim() === '') {
+                Logger.info("No prompt entered");
+                return;
             }
+
+            promptTextarea.value = userInput;
         }
 
-        // Check if the send button is a valid element and click it
-        if (sendButton && sendButton instanceof HTMLElement) {
-            sendButton.click();
-        } else {
-            console.error('Send button not found or is not a valid element');
-        }
+        this.simulateClick(this.node.sendButton, "Send");
     }
-    halt() {
-        const regenButton = this.node.regenerateButton;
-
-        if (regenButton && regenButton instanceof HTMLElement) {
-            regenButton.click(); // Simulate the click
-        } else {
-            console.error('Halt button not found or is not a valid element');
-        }
+    halt(){
+        this.simulateClick(this.node.regenerateButton, "Halt")
     }
-    refreshResponse() {
-        const regenButton = this.node.regenerateButton;
-
-        if (regenButton && regenButton instanceof HTMLElement) {
-            regenButton.click(); // Simulate the click
-        } else {
-            console.error('Regenerate button not found or is not a valid element');
-        }
+    refreshResponse(){
+        this.simulateClick(this.node.regenerateButton, "Regenerate")
     }
-    settings() {
+    settings(){
         const settingsButton = this.node.content.querySelector('#aiNodeSettingsButton');
-
-        if (settingsButton && settingsButton instanceof HTMLElement) {
-            settingsButton.click(); // Simulate the click
+        this.simulateClick(settingsButton, "Settings");
+    }
+    simulateClick(button, name){
+        if (button instanceof HTMLElement) {
+            button.click()
         } else {
-            console.error('Settings button not found or is not a valid element');
+            Logger.err(name, "button not found or is not a valid element")
         }
     }
 }
 
-class LinkNodeActions extends BaseNodeActions {
+NodeActions.link = class LinkNodeActions extends NodeActions.base {
     getActions() {
         return {
             ...super.getActions(),
@@ -309,21 +226,19 @@ class LinkNodeActions extends BaseNodeActions {
     }
 
     displayIframe() {
-        handleLinkNodeIframe(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
+        this.node.typeNode.handleIframe()
     }
     displayWebpage() {
         this.toggleProxy();
     }
     toggleProxy() {
-        handleLinkNodeProxyDisplay(this.node.iframeWrapper, this.node.linkWrapper, this.node.linkUrl);
+        this.node.typeNode.handleProxyDisplay()
     }
     extractText() {
-        extractAndStoreLinkContent(this.node.linkUrl, this.node.titleInput.value);
+        extractAndStoreLinkContent(this.node.linkUrl, this.node.view.titleInput.value);
     }
     importText() {
         importLinkNodeTextToZettelkasten(this.node.linkUrl);
-        hideContextMenu();
+        App.menuContext.hide();
     }
 }
-
-// Add additional specific node action classes as needed

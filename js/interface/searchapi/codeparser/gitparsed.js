@@ -1,10 +1,8 @@
-
-
 // Abstract Base Class (ABC)
 class BaseParser {
     constructor(text, MAX_CHUNK_SIZE, overlapSize) {
         if (this.constructor === BaseParser) {
-            throw new Error('Abstract classes cannot be instantiated.');
+            throw new Error("Abstract classes cannot be instantiated.");
         }
         this.text = text;
         this.maxChunkSize = MAX_CHUNK_SIZE;
@@ -13,7 +11,7 @@ class BaseParser {
 
     // Abstract Method
     findChunks() {
-        throw new Error('You have to implement the method findChunks!');
+        throw new Error("You have to implement the method findChunks!");
     }
 
     parse() {
@@ -21,7 +19,7 @@ class BaseParser {
 
         // If no specific chunks were found, treat the whole text as one chunk
         if (chunks.length === 0) {
-            console.warn('No matches found, returning full text.');
+            Logger.warn("No matches found, returning full text.");
             chunks = [this.text]; // Wrap the full text in an array
         }
 
@@ -97,7 +95,7 @@ class BaseParser {
 
     // Each language parser must define its own mode
     getMode() {
-        throw new Error('getMode must be implemented by the subclass');
+        throw new Error("getMode must be implemented by the subclass");
     }
 }
 // Define a DefaultParser for general text
@@ -228,7 +226,7 @@ class YAMLParser extends BaseParser {
 class XMLParser extends BaseParser {
     findChunks() {
         return this.findChunksFromTokens((token) =>
-            token.type === 'tag bracket' && token.string === "<"
+            token.type === 'tag bracket' && token.string === '<'
         );
     }
 
@@ -269,7 +267,6 @@ function getGitHubParser(fileExtension, text, MAX_CHUNK_SIZE, overlapSize) {
     return new ParserClass(text, MAX_CHUNK_SIZE, overlapSize);
 }
 
-
 function isGitHubUrl(url) {
     return url.includes('github.com');
 }
@@ -285,11 +282,11 @@ function extractGitHubRepoDetails(url) {
 async function fetchGitHubRepoContent(owner, repo, path = '') {
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
     const response = await fetch(url);
-    console.log(response);
+    Logger.info(response);
     let allText = '';
 
     if (!response.ok) {
-        console.error(`Failed to fetch GitHub content for ${url}:`, response.statusText);
+        Logger.err(`Failed to fetch GitHub content for ${url}:`, response.statusText);
         return null;
     }
 
@@ -298,12 +295,12 @@ async function fetchGitHubRepoContent(owner, repo, path = '') {
         if (item.type === 'file') {
             const fileResponse = await fetch(item.download_url);
             if (!fileResponse.ok) {
-                console.error(`Failed to fetch file from ${item.download_url}:`, fileResponse.statusText);
+                Logger.err(`Failed to fetch file from ${item.download_url}:`, fileResponse.statusText);
                 continue; // Skip this file but continue with others
             }
             const contentType = fileResponse.headers.get('Content-Type');
             if (!contentType.includes('text')) {
-                console.log(`Skipping non-textual content from ${item.download_url}`);
+                Logger.info("Skipping non-textual content from", item.download_url);
                 continue; // Skip non-text files but continue with others
             }
             const text = await fileResponse.text();
@@ -332,7 +329,7 @@ async function storeGitHubContent(text, owner, repo, path) {
 
     // Fetch embeddings for each chunk
     const key = `https://github.com/${owner}/${repo}/${path}`;
-    const chunkedEmbeddings = await fetchChunkedEmbeddings(parsedText, key);
+    const chunkedEmbeddings = await Embeddings.fetchChunked(parsedText, key);
     // Store embeddings and chunks in the database
     await storeEmbeddingsAndChunksInDatabase(key, parsedText, chunkedEmbeddings);
 }
@@ -343,8 +340,8 @@ async function handleGitHubRepo(owner, repo) {
         if (fetchedText) {
             await storeGitHubContent(fetchedText, owner, repo, '');
         }
-    } catch (error) {
-        console.error("Error processing GitHub repository:", error);
+    } catch (err) {
+        Logger.err("In processing GitHub repository:", err)
     }
 }
 
@@ -352,9 +349,8 @@ function sanitizeGitHubText(text) {
     return text.replace(/[^\x20-\x7E]/g, '');
 }
 
-
 function githubChunkText(text, maxLength, overlapSize) {
-    // Splits text into chunks with respect to the maximum length, 
+    // Splits text into chunks with respect to the maximum length,
     // ensuring that the end of each chunk coincides with the end of a complete line of code.
     const chunks = [];
     let currentChunk = '';

@@ -1,114 +1,94 @@
-function clearSearchHighlights(nodesArray) {
-    for (const node of nodesArray) {
-        node.content.classList.remove("search_matched");
-        node.content.classList.remove("search_nomatch");
-    }
+function setSearchHighlight(match, nomatch, node) {
+    const classList = node.content.classList;
+    classList[match]("search_matched");
+    classList[nomatch]("search_nomatch");
 }
+const clearSearchHighlight = setSearchHighlight.bind(null, 'remove', 'remove');
+const matchSearchHighlight = setSearchHighlight.bind(null, 'add', 'remove');
+const nomatchSearchHighlight = setSearchHighlight.bind(null, 'remove', 'add');
 
-function searchNodesBy(searchTerm, maxResults = null) {
-    let keywords = searchTerm.toLowerCase().split(' ');
-    let matched = [];
-    for (let n of nodes) {
+function nodesForSearchTerm(searchTerm, maxResults) {
+    if (!searchTerm) return Object.values(Graph.nodes);
+
+    const matched = [];
+    const keywords = searchTerm.toLowerCase().split(' ');
+    Graph.forEachNode( (node)=>{
         let numMatches = 0;
-        for (let keyword of keywords) {
-            if ([...n.searchStrings()].join().toLowerCase().includes(keyword)) {
-                numMatches++;
+        for (const keyword of keywords) {
+            if ([...node.searchStrings()].join().toLowerCase().includes(keyword)) {
+                numMatches += 1;
             }
         }
         if (numMatches > 0) {
             matched.push({
-                node: n,
+                node,
                 numMatches: numMatches
             });
         } else {
-            n.content.classList.remove("search_matched");
-            n.content.classList.add("search_nomatch");
+            nomatchSearchHighlight(node);
         }
-    }
+    });
     // Sort by the number of matches in descending order
     matched.sort((a, b) => b.numMatches - a.numMatches);
 
     // Apply classes only to the top 'maxResults' (or all if maxResults is null)
     matched.forEach((match, index) => {
-        if (!maxResults || index < maxResults) {
-            match.node.content.classList.add("search_matched");
-            match.node.content.classList.remove("search_nomatch");
-        } else {
-            match.node.content.classList.remove("search_matched");
-            match.node.content.classList.add("search_nomatch");
-        }
+        const matched = (!maxResults || index < maxResults);
+        (matched ? matchSearchHighlight : nomatchSearchHighlight)(match.node);
     });
 
     // Return all matched nodes if needed or just the top results
     return (maxResults ? matched.slice(0, maxResults) : matched).map(m => m.node);
 }
 
-function clearSearch() {
-    for (let n of nodes) {
-        n.content.classList.remove("search_matched");
-        n.content.classList.remove("search_nomatch");
-    }
-}
-
 function performZettelkastenSearch(searchTerm) {
-    let res = document.querySelector("#search-results .results-display-div");
-    let ns;
+    const res = document.querySelector("#search-results .results-display-div");
+    res.innerHTML = '';
+    for (const node of nodesForSearchTerm(searchTerm)) {
+        const div = Html.make.div('search-result-item');
+        const title = Html.make.div('search-result-title');
+        title.appendChild(document.createTextNode(node.getTitle()));
+        div.appendChild(title);
 
-    if (searchTerm) {
-        ns = searchNodesBy(searchTerm);
-    } else {
-        ns = Object.values(nodeMap);
-    }
-
-    res.innerHTML = "";
-
-    for (let n of ns) {
-        let c = document.createElement("div");
-        c.classList.add("search-result-item");
-        let title = document.createElement("div");
-        title.classList.add("search-result-title");
-        title.appendChild(document.createTextNode(n.getTitle()));
-        c.appendChild(title);
-        c.addEventListener("click", (function (event) {
+        function onClick(e){
             this.zoom_to();
             autopilotSpeed = settings.autopilotSpeed;
-        }).bind(n));
-        c.addEventListener("dblclick", (function (event) {
+        }
+        function onDblClick(e){
             this.zoom_to();
             skipAutopilot();
             autopilotSpeed = settings.autopilotSpeed;
-        }).bind(n));
-        res.appendChild(c);
+        }
+        On.click(div, onClick.bind(node));
+        On.dblclick(div, onDblClick.bind(node));
+
+        res.appendChild(div);
     }
 }
 
 function setupZettelkastenSearchBar() {
-    let inp = document.getElementById("Searchbar");
-    inp.addEventListener("input", function () {
-        performZettelkastenSearch(inp.value);
-    });
+    const inp = Elem.byId('Searchbar');
+    On.input(inp, performZettelkastenSearch.bind(null, inp.value));
 }
 
 
 
-
-document.getElementById("vectorDbSearchButton").addEventListener("click", () => {
-    openModal("vectorDbSearchModal");
+On.click(Elem.byId('vectorDbSearchButton'), (e)=>{
+    Modal.open('vectorDbSearchModal');
     performVectorDbDisplaySearch();
     // Create a debounced version of performVectorDbDisplaySearch
     const debouncedPerformVectorDbDisplaySearch = debounce(performVectorDbDisplaySearch, 300);
 
+    On.input(Elem.byId('vectorDbSearchInput'), debouncedPerformVectorDbDisplaySearch);
 
-    document.getElementById("vectorDbSearchInput").addEventListener("input", debouncedPerformVectorDbDisplaySearch);
-
-    const topNSlider = document.getElementById('topNSlider');
-    const topNValue = document.getElementById('topNValue');
+    const topNSlider = Elem.byId('topNSlider');
+    const topNValue = Elem.byId('topNValue');
 
     // Display the initial slider value
     topNValue.textContent = topNSlider.value;
 
     // Update display value on slider input
-    topNSlider.addEventListener('input', () => {
+    On.input(topNSlider, (e)=>{
         topNValue.textContent = topNSlider.value;
         debouncedPerformVectorDbDisplaySearch(); // Use the debounced function here
     });
@@ -118,16 +98,14 @@ document.getElementById("vectorDbSearchButton").addEventListener("click", () => 
 
 // Function to perform the search and display the results
 async function performVectorDbDisplaySearch() {
-    const searchQuery = document.getElementById("vectorDbSearchInput").value;
-    const relevantKeys = getVisibleKeys(await getAllKeys()); // Get filtered keys if any filters are applied
+    const searchQuery = Elem.byId('vectorDbSearchInput').value;
+    const relevantKeys = Keys.getVisible(await Keys.getAll()); // Get filtered keys if any filters are applied
 
-    const searchResultsContainer = document.getElementById("vectorDbSearchDisplay");
-    searchResultsContainer.innerHTML = ""; // Clear previous search results
+    const searchResultsContainer = Elem.byId('vectorDbSearchDisplay');
+    searchResultsContainer.innerHTML = ''; // Clear previous search results
 
     // Create and display the loading icon
-    const loaderElement = document.createElement("div");
-    loaderElement.classList.add("loader");
-    loaderElement.classList.add("loader-centered");
+    const loaderElement = Html.make.div('loader loader-centered');
     searchResultsContainer.appendChild(loaderElement);
 
     try {
@@ -142,8 +120,7 @@ async function performVectorDbDisplaySearch() {
         relevantChunks.forEach(chunk => {
             const [source, chunkNumber] = chunk.key.split('_chunk_');
 
-            const resultElement = document.createElement("div");
-            resultElement.classList.add("vdb-search-result");
+            const resultElement = Html.make.div('vdb-search-result');
             resultElement.innerHTML = `
                 <div class="vdb-result-header">
                     <div class="vdb-result-source">${source}</div>
@@ -153,11 +130,9 @@ async function performVectorDbDisplaySearch() {
             `;
             searchResultsContainer.appendChild(resultElement);
         });
-    } catch (error) {
-        console.error("Error fetching search results:", error);
-        // Remove the loading icon in case of an error
+    } catch (err) {
+        Logger.err("In fetching search results:", err);
         searchResultsContainer.removeChild(loaderElement);
-        // Display an error message or handle the error as needed
     }
 }
 
@@ -169,61 +144,49 @@ const MAX_CACHE_SIZE = 300;
 const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
 
-async function embeddedSearch(searchTerm, maxNodesOverride = null) {
-    // Use maxNodesOverride if provided, otherwise use the slider value
-    const maxNodes = maxNodesOverride !== null ? maxNodesOverride : document.getElementById('node-count-slider').value;
-    let keywords = searchTerm.toLowerCase().split(/,\s*/);
+async function embeddedSearch(searchTerm, maxNodesOverride) {
+    const searchTermLowered = searchTerm.toLowerCase();
+    const maxNodes = maxNodesOverride ?? Elem.byId('node-count-slider').value;
+    const keywords = searchTermLowered.split(/,\s*/);
 
     const nodes = getNodeText();
+    if (nodes.length < 1) return [];
 
-    if (nodes.length === 0) {
-        return [];
-    }
+    const matched = [];
 
-    let matched = [];
-
-    const fetchNodeEmbedding = async (node) => {
-        const titleText = node.titleInput;
-        const contentText = node.contentText;
-
-        // console.log('Extracted title text:', titleText);  // DEBUG
-        // console.log('Extracted content text:', contentText);  // DEBUG
-
-        const fullText = titleText + ' ' + contentText;
-
-        const selectedModel = document.getElementById("embeddingsModelSelect").value;
-        const compoundKey = `${node.uuid}-${selectedModel}`;
-
+    const fetchEmbeddings = Embeddings.fetch;
+    async function fetchNodeEmbedding(node){
+        const compoundKey = node.uuid + '-' + Embeddings.selectModel.value;
         const cachedEmbedding = nodeCache.get(compoundKey);
-        if (cachedEmbedding) {
-            return cachedEmbedding;
-        } else {
-            const embedding = await fetchEmbeddings(fullText);
-            nodeCache.set(compoundKey, embedding);
-            return embedding;
-        }
-    };
+        if (cachedEmbedding) return cachedEmbedding;
+
+        const titleText = node.view.titleInput;
+        const contentText = node.contentText;
+        Logger.debug("Extracted title text:", titleText);
+        Logger.debug("Extracted content text:", contentText);
+
+        const embedding = await fetchEmbeddings(titleText + ' ' + contentText);
+        nodeCache.set(compoundKey, embedding);
+        return embedding;
+    }
 
     const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
     const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
     const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
 
-    //   console.log('Keyword Embedding:', keywordEmbedding);  // DEBUG
+    Logger.debug("Keyword Embedding:", keywordEmbedding);
     for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-
-        // Skip if the node does not have the flag `isTextNode = true`
-        if (!n.isTextNode) {
-            continue;
-        }
+        const node = nodes[i];
+        if (!node.isTextNode) continue;
 
         // Updated to use new property names
-        const titleMatchScore = n.titleInput.toLowerCase().includes(searchTerm.toLowerCase()) ? 1 : 0;
+        const titleLowered = node.view.titleInput.value.toLowerCase();
+        const titleMatchScore = titleLowered.includes(searchTermLowered) ? 1 : 0;
 
         // Updated to use new property names
         const contentMatchScore = keywords.filter(keyword => {
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            return n.contentText.match(regex);
+            return node.contentText.match(regex);
         }).length;
 
         const weightedTitleScore = titleMatchScore * 10;
@@ -232,32 +195,34 @@ async function embeddedSearch(searchTerm, maxNodesOverride = null) {
         const nodeEmbedding = nodeEmbeddings[i];
 
         const dotProduct = keywordEmbedding.reduce((sum, value, index) => sum + (value * nodeEmbedding[index]), 0);
-        const keywordMagnitude = Math.sqrt(keywordEmbedding.reduce((sum, value) => sum + (value * value), 0));
-        const nodeMagnitude = Math.sqrt(nodeEmbedding.reduce((sum, value) => sum + (value * value), 0));
+        Math.magnitude = (arr)=>Math.sqrt(arr.reduce( (sum, value)=>(sum + (value * value)) , 0));
+        const keywordMagnitude = Math.magnitude(keywordEmbedding);
+        const nodeMagnitude = Math.magnitude(nodeEmbedding);
 
-        //   console.log('Dot Product:', dotProduct);  // DEBUG
-        //   console.log('Keyword Magnitude:', keywordMagnitude);  // DEBUG
-        //   console.log('Node Magnitude:', nodeMagnitude);  // DEBUG
+        Logger.debug("Dot Product:", dotProduct);
+        Logger.debug("Keyword Magnitude:", keywordMagnitude);
+        Logger.debug("Node Magnitude:", nodeMagnitude);
 
         const cosineSimilarity = dotProduct / (keywordMagnitude * nodeMagnitude);
-        //console.log('Cosine Similarity:', cosineSimilarity);
+        Logger.debug("Cosine Similarity:", cosineSimilarity);
 
         const similarityThreshold = -1;
         const keywordMatchPercentage = 0.5;
 
         if (weightedTitleScore + weightedContentScore > 0 || cosineSimilarity > similarityThreshold) {
             matched.push({
-                node: n,
-                title: n.title,
-                content: n.content.innerText.trim(),
-                weightedTitleScore: weightedTitleScore,
-                weightedContentScore: weightedContentScore,
+                node,
+                title: node.title,
+                content: node.content.innerText.trim(),
+                weightedTitleScore,
+                weightedContentScore,
                 similarity: cosineSimilarity,
+                scoreSum: weightedTitleScore + weightedContentScore + cosineSimilarity
             });
-            //console.log(`embeddings`, n.content.innerText.trim())
+            Logger.debug("embeddings", node.content.innerText.trim());
         }
     }
 
-    matched.sort((a, b) => (b.weightedTitleScore + b.weightedContentScore + b.similarity) - (a.weightedTitleScore + a.weightedContentScore + a.similarity));
+    matched.sort( (a, b)=>(b.scoreSum - a.scoreSum) );
     return matched.slice(0, maxNodes).map(m => m.node);
 }

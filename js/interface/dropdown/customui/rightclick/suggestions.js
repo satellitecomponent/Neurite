@@ -1,285 +1,242 @@
-﻿// Suggestions component
-class SuggestionsComponent {
+﻿Menu.Suggestions = class {
     constructor() {
-        this.container = document.createElement('div');
-        this.container.id = 'suggestions-container'; // Set the ID for the container
-        this.container.classList.add('suggestions-container');
-        document.body.appendChild(this.container); // Append to the body
-
-        // Prevent click and scroll events from propagating
-        ['wheel'].forEach(eventType => {
-            this.container.addEventListener(eventType, event => event.stopPropagation(), true);
+        this.container = this.makeDivContainer();
+        this.init();
+    }
+    makeDivContainer() {
+        const div = Html.make.div('suggestions-container');
+        div.id = 'suggestions-container';
+        return div;
+    }
+    init() {
+        // Prevent [click (?) and] scroll events from propagating
+        ['wheel'].forEach( (eName)=>{
+            On[eName](this.container, Event.stopPropagation, true)
         });
+        document.body.appendChild(this.container);
     }
-
     position(x, y) {
-        // Use CSS transforms for positioning to keep the bottom-right corner aligned.
-        this.container.style.transform = `translate(calc(${x}px - 100%  + 5px), calc(${y}px - 100% + 6px))`;
-        this.container.style.display = 'block';
+        const style = this.container.style;
+        // keeps the bottom-right corner aligned
+        style.transform = `translate(calc(${x}px - 100%  + 5px), calc(${y}px - 100% + 6px))`;
+        style.display = 'block';
     }
-
     clear() {
         this.container.innerHTML = '';
     }
-
-    addSuggestion(text, inputField, onSelect, onPin, isPinned) {
-        const suggestionItem = document.createElement('div');
-        suggestionItem.classList.add('suggestion-item');
-
-        const suggestionText = document.createElement('span');
-        suggestionText.textContent = text;
-        suggestionItem.appendChild(suggestionText);
-
-        const pinButton = document.createElement('button');
-        pinButton.classList.add('pin-button');
-        if (isPinned) {
-            pinButton.classList.add('pinned');
-        }
-
-        const svgPlus = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svgPlus.setAttribute('class', 'icon icon-plus');
-        svgPlus.setAttribute('viewBox', '0 0 24 24');
-        svgPlus.setAttribute('width', '1em');
-        svgPlus.setAttribute('height', '1em');
-        const usePlus = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        usePlus.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#icon-plus');
-        svgPlus.appendChild(usePlus);
-
-        const svgMinus = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svgMinus.setAttribute('class', 'icon icon-minus');
-        svgMinus.setAttribute('viewBox', '0 0 24 24');
-        svgMinus.setAttribute('width', '1em');
-        svgMinus.setAttribute('height', '1em');
-        const useMinus = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        useMinus.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#icon-minus');
-        svgMinus.appendChild(useMinus);
-
-        // Show or hide the appropriate SVG based on the pin state
-        svgPlus.style.display = isPinned ? 'none' : 'inline';
-        svgMinus.style.display = isPinned ? 'inline' : 'none';
-
-        pinButton.appendChild(svgPlus);
-        pinButton.appendChild(svgMinus);
-
-        const togglePin = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            isPinned = !isPinned;
-            pinButton.classList.toggle('pinned', isPinned);
-            svgPlus.style.display = isPinned ? 'none' : 'inline';
-            svgMinus.style.display = isPinned ? 'inline' : 'none';
-
-            onPin(text, isPinned);
-            onSelect(); // Call onSelect as well
-        };
-
-        suggestionText.addEventListener('click', togglePin);
-        pinButton.addEventListener('click', togglePin);
-
-        suggestionItem.appendChild(pinButton);
-        this.container.appendChild(suggestionItem);
+    addSuggestion(text, onSelect, onPin, isPinned){
+        const item = new MenuItem.Suggestion(text, onSelect, onPin, isPinned);
+        item.init();
+        this.container.appendChild(item.divItem);
     }
-
-
+    repositionIfDisplayed(x, y){
+        if (this.container.style.display === 'block') this.position(x, y)
+    }
     scrollToBottom() {
         // Scroll the container to its maximum scrollable height
         this.container.scrollTop = this.container.scrollHeight;
     }
-
     hide() {
         this.container.style.display = 'none';
     }
 }
+MenuItem.Suggestion = class {
+    constructor(text, onSelect, onPin, isPinned){
+        this.isPinned = isPinned;
+        this.onSelect = onSelect;
+        this.onPin = onPin;
+        this.text = text;
+        this.svgMinus = this.makeSvgIcon('minus');
+        this.svgPlus = this.makeSvgIcon('plus');
+        this.btnPin = this.makeBtnPin();
+        this.spanText = this.makeSpanText();
+        this.divItem = this.makeDivItem();
+    }
+    init(){
+        this.updateSvgs();
+        On.click(this.divItem, this.togglePin);
+    }
 
-// Create a global instance of the suggestions component
-let globalSuggestions = new SuggestionsComponent();
+    makeBtnPin(){
+        const button = Html.make.button('pin-button');
+        if (this.isPinned) button.classList.add('pinned');
 
-class RecentSuggestionsManager {
-    constructor(storageKey) {
-        this.storageKey = storageKey;
-        this.recentCalls = this.loadFromLocalStorage();
+        button.append(this.svgPlus, this.svgMinus);
+        return button;
+    }
+    makeDivItem(){
+        const div = Html.make.div('suggestion-item');
+        div.append(this.spanText, this.btnPin);
+        return div;
+    }
+    makeSpanText(){
+        const span = Html.new.span();
+        span.textContent = this.text;
+        return span;
+    }
+    makeSvgIcon(key){
+        const svg = Svg.new.svg();
+        svg.setAttribute('class', 'icon icon-' + key);
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '1em');
+        svg.setAttribute('height', '1em');
+        const use = Svg.new.use();
+        use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#icon-' + key);
+        svg.appendChild(use);
+        return svg;
+    }
+
+    togglePin = (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+
+        this.isPinned = !this.isPinned;
+        this.btnPin.classList.toggle('pinned', this.isPinned);
+        this.updateSvgs();
+
+        this.onPin(this.text, this.isPinned);
+        this.onSelect();
+    }
+    updateSvgs(){
+        this.svgPlus.style.display = (this.isPinned ? 'none' : 'inline');
+        this.svgMinus.style.display = (this.isPinned ? 'inline' : 'none');
+    }
+}
+
+Manager.RecentSuggestions = class {
+    constructor(storageId, max = 6) { // Keep only the 6 most recent suggestions
+        this.storageId = storageId;
+        this.max = max;
+        this.items = this.loadFromLocalStorage();
     }
 
     loadFromLocalStorage() {
-        const storedCalls = localStorage.getItem(this.storageKey);
+        const storedCalls = localStorage.getItem(this.storageId);
         return storedCalls ? JSON.parse(storedCalls) : [];
     }
 
     saveToLocalStorage() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.recentCalls));
+        localStorage.setItem(this.storageId, JSON.stringify(this.items))
     }
 
-    addSuggestion(suggestion) {
-        // Remove the suggestion if it already exists to prevent duplicates
-        this.recentCalls = this.recentCalls.filter(call => call !== suggestion);
-
-        // Add the suggestion to the top of the list
-        this.recentCalls.unshift(suggestion);
-
-        // Keep only the 6 most recent suggestions
-        this.recentCalls = this.recentCalls.slice(0, 6);
-
-        // Save the updated list to local storage
+    add(suggestion){
+        this.items = this.items.reduce( (newItems, item)=>{
+            if (newItems.length < this.max
+                && item !== suggestion) newItems.push(item);
+            return newItems;
+        }, [suggestion]);
         this.saveToLocalStorage();
     }
 
-    getRecentSuggestions() {
-        // Return a reversed copy of the recent calls array
-        return [...this.recentCalls].reverse();
-    }
+    get(){ return this.items.toReversed() }
 }
 
-const nodeMethodManager = new RecentSuggestionsManager('nodeMethodCalls');
-
-class PinnedItemsManager {
-    constructor(storageKey) {
-        this.storageKey = storageKey;
-        this.pinnedItems = this.loadFromLocalStorage();
+Manager.PinnedItems = class {
+    constructor(storageId) {
+        this.storageId = storageId;
+        this.items = this.loadFromLocalStorage();
     }
 
     loadFromLocalStorage() {
-        const storedItems = localStorage.getItem(this.storageKey);
-        return storedItems ? JSON.parse(storedItems) : [];
+        const storedItems = localStorage.getItem(this.storageId);
+        return (storedItems ? JSON.parse(storedItems) : []);
     }
-
     saveToLocalStorage() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.pinnedItems));
+        localStorage.setItem(this.storageId, JSON.stringify(this.items));
     }
 
-    addPinnedItem(item) {
-        if (!this.pinnedItems.includes(item)) {
-            this.pinnedItems.push(item);
-            this.saveToLocalStorage();
-        }
-    }
+    addItem(item) {
+        if (this.isItemPinned(item)) return;
 
-    getPinnedItems() {
-        return this.pinnedItems;
+        this.items.push(item);
+        this.saveToLocalStorage();
     }
-
-    removePinnedItem(item) {
-        this.pinnedItems = this.pinnedItems.filter(pinnedItem => pinnedItem !== item);
+    removeItem(item) {
+        this.items = this.items.filter(pinnedItem => pinnedItem !== item);
         this.saveToLocalStorage();
     }
 
-    isItemPinned(item) {
-        return this.pinnedItems.includes(item);
-    }
+    forEach(cb, ct){ return this.items.forEach(cb, ct) }
+    isItemPinned(item){ return this.items.includes(item) }
 }
 
-const pinnedItemsManager = new PinnedItemsManager('pinnedContextMenuItems');
+Menu.Context.prototype.pinSuggestion = function(id){
+    if (this.itemById(id)) return;
 
-function pinSuggestionToContextMenu(uniqueIdentifier, menu, node, isAlreadyPinned = false) {
-    const { displayText, executeAction } = getDynamicActionDetails(uniqueIdentifier, node);
-    let menuItem = Array.from(menu.children).find(item => item.dataset.identifier === uniqueIdentifier);
+    const { displayText, executeAction } = getDynamicActionDetails(id, this.targetModel);
+    const menuItem = App.menuContext.option(displayText, executeAction, false);
+    menuItem.dataset.id = id;
+    On.click(menuItem, (e)=>{
+        App.menuSuggestions.hide();
+        App.recentSuggestions.add(id);
+    });
 
-    if (!menuItem) {
-        menuItem = createMenuItem(displayText, uniqueIdentifier, executeAction);
-        menuItem.onclick = () => {
-            globalSuggestions.hide();
-            addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        };
-        // Insert new menu item at the end, but before the input field if it exists.
-        const inputFieldLi = menu.querySelector('.input-item');
-        if (inputFieldLi) {
-            menu.appendChild(menuItem, inputFieldLi);
-        } else {
-            menu.appendChild(menuItem);
-        }
-        if (!isAlreadyPinned) {
-            pinnedItemsManager.addPinnedItem(uniqueIdentifier);
-        }
-    } else {
-        menuItem.textContent = displayText;
-        menuItem.dataset.identifier = uniqueIdentifier;
-        menuItem.onclick = () => {
-            executeAction;
-            addToRecentSuggestions(uniqueIdentifier); // Update recent calls without executing again
-        };
-    }
+    this.menu.appendChild(menuItem);
+    App.pinnedItems.addItem(id);
 }
 
 function getDynamicActionDetails(uniqueIdentifier, node) {
-    const nodeActions = getNodeActions(node);
-        return {
-            displayText: uniqueIdentifier,
-            executeAction: () => nodeActions[uniqueIdentifier] ? nodeActions[uniqueIdentifier]() : console.error('Invalid action')
-        };
+    const nodeActions = NodeActions.forNode(node);
+    return {
+        displayText: uniqueIdentifier,
+        executeAction: () => nodeActions[uniqueIdentifier] ? nodeActions[uniqueIdentifier]() : Logger.err("Invalid action")
+    };
 }
 
-function loadPinnedItemsToContextMenu(menu, node) {
-    const nodeActions = getNodeActions(node); // Get actions directly based on node
-    const pinnedItems = pinnedItemsManager.getPinnedItems();
-
-    // Filter pinned items to include only those that have corresponding actions in the current node's action set
-    const relevantPinnedItems = pinnedItems.filter(uniqueIdentifier => uniqueIdentifier in nodeActions);
-
-    relevantPinnedItems.forEach(uniqueIdentifier => {
-        const currentDetails = getDynamicActionDetails(uniqueIdentifier, node); // Fetch current details
-        pinSuggestionToContextMenu(uniqueIdentifier, menu, node, true, currentDetails.displayText); // Pass current display text
-    });
+Menu.Context.prototype.loadPinnedItems = function(){
+    const nodeActions = NodeActions.forNode(this.targetModel);
+    App.pinnedItems.forEach(
+        (id)=>{ if (id in nodeActions) this.pinSuggestion(id) }
+    );
 }
 
-function setupSuggestionsForInput(menu, inputField, node, fetchSuggestions, pageX, pageY) {
-    inputField.addEventListener('input', function (e) {
-        const value = e.target.value;
-        displaySuggestions(value);
+Menu.Context.prototype.setupSuggestions = function(pageX, pageY){
+    const inputField = this.inputField;
+    const node = this.targetModel;
+
+    On.input(inputField, (e)=>displaySuggestions(e.target.value) );
+
+    On.focus(inputField, (e)=>{
+        if (inputField.value === '') displaySuggestions('');
     });
 
-    inputField.addEventListener('focus', function () {
-        if (inputField.value === '') {
-            displaySuggestions('');
-        }
-    });
-
-    inputField.addEventListener('keypress', function (e) {
+    On.keypress(inputField, (e)=>{
         if (e.key === 'Enter') {
-            globalSuggestions.hide();
-            const nodeActions = getNodeActions(node);
-            executeNodeMethod(nodeActions, e.target.value);
+            App.menuSuggestions.hide();
+            executeNodeMethod(NodeActions.forNode(node), e.target.value);
             e.target.value = '';
-            globalSuggestions.hide();
+            App.menuSuggestions.hide();
         }
     });
 
     function displaySuggestions(value) {
-        globalSuggestions.clear();
-        globalSuggestions.position(pageX, pageY);
+        const menu = App.menuSuggestions;
+        menu.clear();
+        menu.position(pageX, pageY);
 
-        const nodeActions = getNodeActions(node);
-        const suggestions = fetchSuggestions(value, node);
-        suggestions.forEach(suggestion => {
-            const isPinned = pinnedItemsManager.isItemPinned(suggestion);
-            const { displayText } = getDynamicActionDetails(suggestion, node);
-
-            globalSuggestions.addSuggestion(
-                displayText,
-                inputField,
-                () => { return; },
+        const nodeActions = NodeActions.forNode(node);
+        getNodeMethodSuggestions(value, node).forEach( (suggestion)=>{
+            menu.addSuggestion(
+                getDynamicActionDetails(suggestion, node).displayText,
+                Function.nop,
                 (executeAction, pinState) => {
-                    if (pinState) {
-                        // Pinning the item
-                        pinSuggestionToContextMenu(executeAction, menu, node);
-                    } else {
-                        // Unpinning the item
-                        unpinSuggestionFromContextMenu(executeAction, menu);
-                    }
+                    const funcName = (pinState ? 'pinSuggestion' : 'unpinSuggestion');
+                    App.menuContext[funcName](executeAction);
                 },
-                isPinned
+                App.pinnedItems.isItemPinned(suggestion)
             );
         });
 
-        globalSuggestions.scrollToBottom();
+        menu.scrollToBottom();
     }
 }
 
-function unpinSuggestionFromContextMenu(uniqueIdentifier, menu) {
-    // Remove the menu item for the suggestion
-    Array.from(menu.children).forEach(item => {
-        if (item.dataset.identifier === uniqueIdentifier) {
-            menu.removeChild(item);
-        }
-    });
-    pinnedItemsManager.removePinnedItem(uniqueIdentifier);
+Menu.Context.prototype.unpinSuggestion = function(id){
+    const action = this.itemById(id);
+    if (action) this.menu.removeChild(action);
+    App.pinnedItems.removeItem(id);
+}
+
+Menu.Context.prototype.itemById = function(id){
+    return Elem.findChild(this.menu, Elem.hasDatasetIdThis, id)
 }

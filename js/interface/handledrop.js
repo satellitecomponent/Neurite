@@ -1,81 +1,84 @@
-let isDraggingIcon = false;
-let initialMousePosition = null;
-let clickThreshold = 1; // Adjust this value as needed
-let mouseDownIcon = false;
+const Mouse = {
+    buttonNameFromValue: {
+        "0": "Left Click",
+        "1": "Middle Click",
+        "2": "Right Click",
+        "scroll": "Scroll Wheel"
+    },
+    downIcon: false,
+    dragThreshold: 1, // Adjust this value as needed
+    initialX: 0,
+    initialY: 0,
+    isDragging: false
+};
+Mouse.onDraggingInit = function (e) {
+    Mouse.initialX = e.clientX;
+    Mouse.initialY = e.clientY;
+    Mouse.downIcon = true;
+}
+Mouse.onDraggingSuspected = function (e) {
+    if (!Mouse.downIcon || Mouse.isDragging) return;
+
+    const dx2 = Math.pow(e.clientX - Mouse.initialX, 2);
+    const dy2 = Math.pow(e.clientY - Mouse.initialY, 2);
+    const distance = Math.sqrt(dx2 + dy2);
+    if (distance > Mouse.dragThreshold) Mouse.isDragging = true;
+}
+Mouse.onDraggingFinish = function (e) {
+    Mouse.downIcon = false;
+    Mouse.isDragging = false;
+}
 
 function makeIconDraggable(iconDiv) {
-    iconDiv.setAttribute('draggable', 'true'); // Set draggable to true by default
+    iconDiv.setAttribute('draggable', 'true');
 
-    iconDiv.addEventListener('mousedown', function (event) {
-        initialMousePosition = { x: event.clientX, y: event.clientY };
-        mouseDownIcon = true;
-    });
+    On.mousedown(iconDiv, Mouse.onDraggingInit);
+    On.mousemove(iconDiv, Mouse.onDraggingSuspected);
+    On.mouseup(iconDiv, Mouse.onDraggingFinish);
 
-    iconDiv.addEventListener('mousemove', function (event) {
-        if (mouseDownIcon && !isDraggingIcon) {
-            const currentMousePosition = { x: event.clientX, y: event.clientY };
-            const distance = Math.sqrt(
-                Math.pow(currentMousePosition.x - initialMousePosition.x, 2) +
-                Math.pow(currentMousePosition.y - initialMousePosition.y, 2)
-            );
-            if (distance > clickThreshold) {
-                isDraggingIcon = true;
-            }
-        }
-    });
-
-    iconDiv.addEventListener('mouseup', function () {
-        mouseDownIcon = false;
-        isDraggingIcon = false;
-    });
-
-    iconDiv.addEventListener('dragstart', function (event) {
-        if (!isDraggingIcon) {
-            event.preventDefault(); // Prevent default behavior when not dragging
+    On.dragstart(iconDiv, (e) => {
+        if (!Mouse.isDragging) {
+            e.preventDefault();
             return;
         }
 
         const rect = iconDiv.getBoundingClientRect();
-        const offsetX = event.clientX - rect.left;
-        const offsetY = event.clientY - rect.top;
-        event.dataTransfer.setDragImage(iconDiv, offsetX, offsetY);
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+        e.dataTransfer.setDragImage(iconDiv, offsetX, offsetY);
         const draggableData = {
             type: 'icon',
             iconName: iconDiv.classList[1]
         };
-        event.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
+        e.dataTransfer.setData('text/plain', JSON.stringify(draggableData));
     });
 
-    iconDiv.addEventListener('click', function (event) {
-        if (!isDraggingIcon) {
+    On.click(iconDiv, (e) => {
+        if (!Mouse.isDragging) {
             if (iconDiv.classList.contains('note-icon')) {
-                openModal('noteModal');
+                Modal.open('noteModal');
             }
             if (iconDiv.classList.contains('ai-icon')) {
-                openModal('aiModal');
+                Modal.open('aiModal');
             }
             if (iconDiv.classList.contains('link-icon')) {
-                openModal('importLinkModalContent');
+                Modal.open('importLinkModalContent');
             }
             if (iconDiv.classList.contains('edges-icon')) {
-                openFileTreeModal();
+                FileTree.openModal();
             }
         }
     });
 }
 
-const icons = document.querySelectorAll('.panel-icon');
-icons.forEach(icon => {
-    makeIconDraggable(icon);
-});
+document.querySelectorAll('.panel-icon').forEach(makeIconDraggable);
 
 
 class DropHandler {
     constructor(dropAreaId) {
-        this.dropArea = document.getElementById(dropAreaId);
+        this.dropArea = Elem.byId(dropAreaId);
         this.initialize();
 
-        // Define handlers for different base types
         this.typeHandlers = {
             image: this.createImageNode.bind(this),
             video: this.createMediaNode.bind(this, 'video'),
@@ -87,16 +90,14 @@ class DropHandler {
         };
     }
 
-    // Handle drag over event
-    dragOverHandler(ev) {
+    dragOverHandler = (ev) => {
         ev.preventDefault(); // Allow drop
         ev.dataTransfer.dropEffect = 'copy'; // Show a copy icon when dragging
     }
 
-    // Initialize event listeners
     initialize() {
-        this.dropArea.addEventListener('dragover', this.dragOverHandler.bind(this));
-        this.dropArea.addEventListener('drop', this.handleDrop.bind(this));
+        On.dragover(this.dropArea, this.dragOverHandler);
+        On.drop(this.dropArea, this.handleDrop);
     }
 
     determineBaseType(mimeType) {
@@ -136,10 +137,9 @@ class DropHandler {
         if (videoRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'video';
         if (audioRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'audio';
 
-        return 'unknown'; // Handle any other types not defined
+        return 'unknown';
     }
 
-    // Map MIME types to code languages
     getCodeLanguageFromMimeType(mimeType) {
         const mimeTypeToLanguageMap = {
             'application/javascript': 'javascript',
@@ -170,39 +170,41 @@ class DropHandler {
         const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
         const baseType = this.determineBaseType(mimeTypeWithoutParams);
 
-        //console.log(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
+        Logger.debug(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
 
         // Route to code file handler
         if (baseType === 'code') {
             const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
             if (!content) {
-                //console.error(`Content is undefined for code file: ${fileName}`);
-                // Attempt to read blob as text if content is undefined
-                if (blob) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const textContent = reader.result;
-                        this.createCodeNode({ name: fileName }, textContent, codeLanguage);
-                    };
-                    reader.onerror = (error) => {
-                        console.error(`Error reading blob for code file: ${fileName}`, error);
-                    };
-                    reader.readAsText(blob);
-                }
+                Logger.debug("Content is undefined for code file:", fileName);
+                // Attempt to read blob as text
+                if (!blob) return;
+
+                const reader = new FileReader();
+
+                On.load(reader, (e) => {
+                    const textContent = reader.result;
+                    this.createCodeNode({ name: fileName }, textContent, codeLanguage);
+                });
+
+                const msgError = "In reading blob for code file:";
+                On.error(reader, Logger.err.bind(Logger, msgError, fileName));
+
+                reader.readAsText(blob);
                 return;
             }
-            //console.log(`Creating code node for: ${fileName}, Language: ${codeLanguage}`);
+
+            Logger.debug("Creating code node for:", fileName, ", Language:", codeLanguage);
             this.createCodeNode({ name: fileName }, content, codeLanguage);
             return;
         }
 
-        // Route to text handler
         if (baseType === 'text') {
-            if (!content) {
-                console.error(`Content is undefined for text file: ${fileName}`);
-                return;
+            if (content) {
+                this.typeHandlers[baseType]({ name: fileName }, null, content, mimeTypeWithoutParams);
+            } else {
+                Logger.err("Content is undefined for text file:", fileName)
             }
-            this.typeHandlers[baseType]({ name: fileName }, null, content, mimeTypeWithoutParams);
             return;
         }
 
@@ -210,14 +212,14 @@ class DropHandler {
         if (baseType === 'application') {
             if (mimeTypeWithoutParams === 'application/pdf') {
                 if (!blob) {
-                    console.error(`Blob is undefined for PDF file: ${fileName}`);
+                    Logger.err("Blob is undefined for PDF file:", fileName);
                     return;
                 }
                 const objectURL = URL.createObjectURL(blob);
                 this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
             } else {
                 if (!content) {
-                    console.error(`Content is undefined for application file: ${fileName}`);
+                    Logger.err("Content is undefined for application file:", fileName);
                     return;
                 }
                 // Treat other application types as text
@@ -229,7 +231,7 @@ class DropHandler {
         // Handle binary files (image, video, audio)
         if (['image', 'video', 'audio'].includes(baseType)) {
             if (!blob) {
-                console.error(`Blob is undefined for binary file: ${fileName}`);
+                Logger.err("Blob is undefined for binary file:", fileName);
                 return;
             }
             const objectURL = URL.createObjectURL(blob);
@@ -237,17 +239,15 @@ class DropHandler {
             return;
         }
 
-        // If we get here, it's unhandled
-        console.warn(`Unhandled file type: ${mimeTypeWithoutParams} for file: ${fileName}`);
+        Logger.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
     }
 
-    // Handle the drop event
-    async handleDrop(ev) {
+    handleDrop = async (ev) => {
         ev.preventDefault();
 
         // **Handle Folder Drops First**
         const folderMetadataJSON = ev.dataTransfer.getData('application/my-app-folder');
-        if (folderMetadataJSON && isJSON(folderMetadataJSON)) {
+        if (folderMetadataJSON && String.isJson(folderMetadataJSON)) {
             const folderMetadata = JSON.parse(folderMetadataJSON);
             await this.processFolderDrop(folderMetadata);
             return;
@@ -255,7 +255,7 @@ class DropHandler {
 
         // **Handle File Drops**
         const fileMetadataJSON = ev.dataTransfer.getData('application/my-app-file');
-        if (fileMetadataJSON && isJSON(fileMetadataJSON)) {
+        if (fileMetadataJSON && String.isJson(fileMetadataJSON)) {
             const fileMetadata = JSON.parse(fileMetadataJSON);
             await this.processCustomDrop(fileMetadata);
             return;
@@ -263,7 +263,7 @@ class DropHandler {
 
         // Attempt to retrieve JSON data
         const data = ev.dataTransfer.getData('text');
-        if (data && isJSON(data)) {
+        if (data && String.isJson(data)) {
             const parsedData = JSON.parse(data);
             if (parsedData.type === 'icon') {
                 // Handle the icon drop
@@ -276,70 +276,56 @@ class DropHandler {
             return;
         }
 
-        // Handle standard OS file drops
         this.handleOSFileDrop(ev);
     }
 
-    // Handle the custom drop
     async processCustomDrop(metadata) {
         try {
-            const fileResponse = await fetchFileContent(metadata.path);
-            if (!fileResponse) throw new Error(`Failed to fetch file content for: ${metadata.path}`);
-
-            const { content, blob, mimeType } = fileResponse;
-
+            const fetcher = new Path.fileFetcher(metadata.path);
+            await Request.send(fetcher);
+            const { blob, content, mimeType } = fetcher;
             if (content === null && blob === null) {
-                throw new Error('No content received');
+                throw new Error("Failed to fetch file content for: " + metadata.path);
             }
 
             this.processFile(metadata.name, content, mimeType, blob);
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            Logger.err(err)
         }
     }
 
-    // Handle OS file drops
     processOSFile(file) {
         const mimeType = file.type || '';
         const fileName = file.name;
 
         const reader = new FileReader();
 
-        reader.onload = (event) => {
-            const contentOrBlob = event.target.result;
-
-            if (mimeType.startsWith('text/')) {
-                // For text files, use content as string
+        On.load(reader, (e) => {
+            const contentOrBlob = e.target.result;
+            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
                 this.processFile(fileName, contentOrBlob, mimeType);
             } else {
-                // For application and other non-text files, create Blob
                 const blob = new Blob([contentOrBlob], { type: mimeType });
                 this.processFile(fileName, null, mimeType, blob);
             }
-        };
+        });
 
-        if (mimeType.startsWith('text/')) {
-            reader.readAsText(file);  // Read as text
+        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
+            reader.readAsText(file);
         } else {
-            reader.readAsArrayBuffer(file);  // Read as binary
+            reader.readAsArrayBuffer(file); // Read as binary
         }
     }
 
-
-    // Handle folder drops
     async processFolderDrop(folderMetadata) {
         try {
-            const { name, path } = folderMetadata;
-
-            // **Create a File Tree Node Starting from the Dropped Folder's Path**
-            const node = await createFileTreeNode(path);
+            const node = await FileTreeNode.create(folderMetadata.path);
             this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
-        } catch (error) {
-            console.error('Error processing folder drop:', error);
+        } catch (err) {
+            Logger.err("In processing folder drop:", err)
         }
     }
 
-    // Create a text node
     createTextNode(metadata, url, content, mimeType) {
         const text = typeof content === 'string' ? content : undefined;
         const name = metadata.name || metadata;
@@ -350,7 +336,7 @@ class DropHandler {
     createCodeNode(metadata, content, codeLanguage) {
         const name = metadata.name || 'Code';
         if (!codeLanguage) {
-            console.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`);
+            Logger.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`)
         }
         const language = codeLanguage || 'plaintext';
         const codeBlock = `\`\`\`${language}\n${content}\n\`\`\``;
@@ -359,8 +345,8 @@ class DropHandler {
 
     // Centralized handler for 'application' base type (e.g., PDFs)
     createPDFNode(name, url) {
-        const node = createLinkNode(name, name, url);
-        node.fileName = name; // Store file name in node
+        const node = new LinkNode(name, name, url);
+        node.fileName = name;
         this.afterNodeCreation(node);
     }
 
@@ -368,17 +354,16 @@ class DropHandler {
         if (mimeType && mimeType.endsWith('pdf')) {
             this.createPDFNode(metadataOrFile.name, url);
         } else {
-            console.log("Unsupported application type:", mimeType);
+            Logger.info("Unsupported application type:", mimeType)
         }
     }
 
     handleUnknown(metadataOrFile, url, content, mimeType) {
-        console.log("Unsupported file type:", mimeType || metadataOrFile.type);
+        Logger.info("Unsupported file type:", mimeType || metadataOrFile.type)
     }
 
-    // Create an image node
     createImageNode(metadataOrFile, url) {
-        const imageElement = document.createElement('img');
+        const imageElement = Html.new.img();
         imageElement.src = url;
         imageElement.onload = () => {
             const node = createImageNode(imageElement, metadataOrFile.name || metadataOrFile);
@@ -386,61 +371,48 @@ class DropHandler {
         };
     }
 
-    // Create a media node (video/audio)
     createMediaNode(type, metadataOrFile, url) {
         const node = createMediaNode(type, metadataOrFile, url);
-        let offset;
-
-        // Check if the media type is audio to apply different offset
-        if (type === 'audio') {
-            offset = new vec2(0, -node.content.offsetHeight / 4); // Adjust for audio
-        } else {
-            offset = new vec2(0, -node.content.offsetHeight / 1.2); // Default offset for video or other media
-        }
-
+        const divisor = (type === 'audio' ? 4 : 1.2);
+        const offset = new vec2(0, -node.content.offsetHeight / divisor);
         this.afterNodeCreation(node, toDZ(offset));
     }
 
-    afterNodeCreation(node, mouseAnchor = toDZ(new vec2(0, 0))) {
+    afterNodeCreation(node, mouseAnchor) {
         setupNodeForPlacement(node, mouseAnchor);
     }
 
-
-    // Handle standard OS file drops
     handleOSFileDrop(ev) {
-        const files = ev.dataTransfer.files; // Get the files from the drop event
-
+        const files = ev.dataTransfer.files;
         if (!files || files.length === 0) {
-            console.warn('No files detected in OS drop');
+            Logger.warn("No files detected in OS drop");
             return;
         }
 
         for (const file of files) {
-            this.processOSFile(file); // Process each file
+            this.processOSFile(file);
         }
     }
 
-    // Handle icon drops
     handleIconDrop(event, iconName) {
-        //console.log(`Dropped icon: ${iconName}`);
+        Logger.debug("Dropped icon:", iconName);
 
         switch (iconName) {
             case 'note-icon':
-                const textNode = createNodeFromWindow(``, ``, true); // The last parameter sets followMouse to true
+                const textNode = createNodeFromWindow('', '', true); // The last parameter sets followMouse to true
                 break;
             case 'ai-icon':
-                const llmNode = createLLMNode('', undefined, undefined, undefined, undefined);
-                this.afterNodeCreation(llmNode);
+                this.afterNodeCreation(createLlmNode(''));
                 break;
             case 'link-icon':
                 returnLinkNodes();
                 break;
             case 'edges-icon':
-                const fileTreeNode = createFileTreeNode();
+                const fileTreeNode = FileTreeNode.create();
                 this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -fileTreeNode.content.offsetHeight / 4)));
                 break;
             default:
-                console.warn(`No handler defined for icon: ${iconName}`);
+                Logger.warn("No handler defined for icon:", iconName);
                 break;
         }
 
@@ -448,26 +420,21 @@ class DropHandler {
         event.preventDefault();
     }
 
-    // Handle specific div drops
     handleDivDrop(parsedData) {
         let [title, content] = parsedData;
 
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
             if (title === 'Code Block') {
-                // Split the content into lines
-                let lines = content.split('\n');
+                const lines = content.split('\n');
 
                 // Remove the second line (index 1 in a 0-indexed array)
-                if (lines.length > 1) {
-                    lines.splice(1, 1);
-                }
+                if (lines.length > 1) lines.splice(1, 1);
 
                 // Add the triple backticks at the start of the first line and at the end of the content
-                content = (lines[0] ? "```" + lines[0] : "```") + "\n" + lines.slice(1).join('\n') + "\n```";
+                content = (lines[0] ? "```" + lines[0] : "```") + '\n' + lines.slice(1).join('\n') + "\n```";
             }
 
-            const defaultTitle = getDefaultTitle();
-            const fullTitle = title + ' ' + defaultTitle;
+            const fullTitle = title + ' ' + getDefaultTitle();
             const node = createNodeFromWindow(fullTitle, content, true);
 
             // Stop the drop event from being handled further
@@ -478,31 +445,25 @@ class DropHandler {
 
 const dropHandlerInstance = new DropHandler('neurite-workspace');
 
-//Paste event listener...
 function handlePasteData(pastedData, target) {
     // Allow default handling for textareas and content-editable elements
     if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable) {
-        return; // Exit the function and allow the browser to handle the paste
+        return; // allow the browser to handle the paste
     }
 
-    // Handle special cases
-    if (isUrl(pastedData)) {
-        // Handle URL paste
-        let node = createLinkNode(pastedData, pastedData, pastedData);
+    if (String.isUrl(pastedData)) {
+        const node = new LinkNode(pastedData, pastedData);
         setupNodeForPlacement(node);
-    } else if (isIframe(pastedData)) {
-        // Handle iframe paste
-        let iframeUrl = getIframeUrl(pastedData);
-        let node = createLinkNode(iframeUrl, iframeUrl, iframeUrl);
+    } else if (String.isIframe(pastedData)) {
+        const iframeUrl = getIframeUrl(pastedData);
+        const node = new LinkNode(iframeUrl, iframeUrl);
         setupNodeForPlacement(node);
     } else if (isHtmlContent(pastedData)) {
-        // Handle HTML content
         createHtmlNode(pastedData);
-    } else {
-        // Handle plain text
+    } else { // plain text
         createNodeFromWindow(null, pastedData, true);
     }
-    hideContextMenu();
+    App.menuContext.hide();
 }
 
 function isHtmlContent(data) {
@@ -512,53 +473,54 @@ function isHtmlContent(data) {
 }
 
 
-function setupNodeForPlacement(node, mouseAnchor = toDZ(new vec2(0, 0))) {
+function setupNodeForPlacement(node, mouseAnchor) {
     node.followingMouse = 1;
-    node.mouseAnchor = mouseAnchor;
+    node.mouseAnchor = mouseAnchor || toDZ(new vec2(0, 0));
 }
 
 function createHtmlNode(title, pastedData) {
-    let content = document.createElement("div");
+    const content = Html.new.div();
     content.innerHTML = pastedData;
-    let node = windowify(title, [content], toZ(mousePos), (zoom.mag2() ** settings.zoomContentExp), 1);
-    htmlnodes_parent.appendChild(node.content);
-    registernode(node);
+    const node = new Node();
+    NodeView.windowify(title, [content], node);
+    Graph.appendNode(node);
+    Graph.addNode(node);
     setupNodeForPlacement(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
 }
 
 // Existing paste event listener
-addEventListener('paste', (event) => {
-    let cd = (event.clipboardData || window.clipboardData);
-    let pastedData = cd.getData("text");
-    handlePasteData(pastedData, event.target);
+On.paste(window, (e) => {
+    const cd = (e.clipboardData || window.clipboardData);
+    const pastedData = cd.getData("text");
+    handlePasteData(pastedData, e.target);
 });
 
-addEventListener("paste", (event) => {
+On.paste(window, (e) => {
     let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
-    if (codeMirrorWrapper.contains(event.target)) {
-        //console.log('Paste detected in CodeMirror');
+    if (codeMirrorWrapper.contains(e.target)) {
+        Logger.debug("Paste detected in CodeMirror");
 
         // Use setTimeout to defer the execution until after the paste event
         setTimeout(() => {
             processAll = true;
-            //console.log('processAll set to true after paste in CodeMirror');
+            Logger.debug("processAll set to true after paste in CodeMirror");
 
             // Simulate a minor change in content to trigger an input event
             const cursorPos = window.currentActiveZettelkastenMirror.getCursor();
             window.currentActiveZettelkastenMirror.replaceRange(' ', cursorPos); // Insert a temporary space
             window.currentActiveZettelkastenMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
 
-            //console.log('Triggered input event in CodeMirror');
+            Logger.debug("Triggered input event in CodeMirror");
 
             // Additional logic as required
         }, 0);
-        event.stopPropagation();
+        e.stopPropagation();
     } else {
         // Check for other textarea or input elements
-        let targetTag = event.target.tagName.toLowerCase();
+        let targetTag = e.target.tagName.toLowerCase();
         if (targetTag === "textarea" || targetTag === "input") {
-            event.stopPropagation();
-            //console.log("Paste disabled for textarea and input");
+            e.stopPropagation();
+            Logger.debug("Paste disabled for textarea and input");
         }
     }
 }, true);

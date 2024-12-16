@@ -1,99 +1,77 @@
-function createTextNode(name = '', text = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    let n = document.createElement("textarea");
-    n.classList.add('custom-scrollbar', 'node-textarea');
-    n.onmousedown = cancel;
+class TextNode {
+    static create(name = '', text = '', sx, sy, x, y){
+        const textarea = Html.make.textarea('custom-scrollbar node-textarea');
+        On.mousedown(textarea, Event.stopPropagation);
+        textarea.value = text;
 
-    n.value = text;
+        const editorWrapper = createSyntaxTextarea();  // Now this includes both the input and display div
+        editorWrapper.id = 'text-syntax-wrapper';
 
-    let node = addNodeAtNaturalScale(name, [n]); // Just add the textarea for now
+        const htmlView = Html.make.iframe('html-iframe hidden');
+        htmlView.id = 'html-iframe';
 
-    let windowDiv = node.windowDiv;  // Find the window div
-    let editorWrapper = createSyntaxTextarea();  // Now this includes both the input and display div
-    editorWrapper.id = 'text-syntax-wrapper';
+        const pythonView = Html.make.div('python-frame hidden');
+        pythonView.id = 'python-frame';
 
-    let htmlView = document.createElement("iframe");
-    htmlView.id = 'html-iframe';
-    htmlView.classList.add('html-iframe', 'hidden');
+        const node = new Node();
+        const divView = NodeView.addAtNaturalScale(node, name, [textarea]).div;
+        divView.append(htmlView, pythonView, editorWrapper);
+        divView.style.minWidth = '100px';
+        divView.style.minHeight = '100px';
 
-    let pythonView = document.createElement("div");
-    pythonView.id = 'python-frame';
-    pythonView.classList.add('python-frame', 'hidden');
+        // Handle position and scale if necessary
+        if (sx !== undefined) {
+            const pos = (new vec2(sx, sy)).cmult(zoom).plus(pan);
+            y = pos.y;
+            x = pos.x;
+        }
 
-    windowDiv.appendChild(htmlView);
-    windowDiv.appendChild(pythonView);
-    windowDiv.appendChild(editorWrapper);  // Append the editor wrapper to window div
+        if (x !== undefined) node.pos.x = x;
+        if (y !== undefined) node.pos.y = y;
 
-    windowDiv.style.minWidth = `100px`;
-    windowDiv.style.minHeight = `100px`;
+        node.push_extra_cb( (node)=>({
+                f: 'textarea',
+                a: {
+                    p: [0, 0, 1],
+                    v: node.view.titleInput.value
+                }
+            })
+        );
 
+        node.push_extra_cb( (node)=>({
+                f: 'textarea',
+                a: {
+                    p: [0, 1, 0],
+                    v: textarea.value
+                }
+            })
+        );
 
-    // Handle position and scale if necessary
-    if (sx !== undefined) {
-        x = (new vec2(sx, sy)).cmult(zoom).plus(pan);
-        y = x.y;
-        x = x.x;
+        node.isTextNode = true;
+        node.codeEditingState = 'edit';
+
+        TextNode.init(node);
+
+        return node;
     }
+    static init(node){
+        const content = node.content;
 
-    if (x !== undefined) {
-        node.pos.x = x;
+        //No longer a contentEditableDiv, returned to textarea
+        const divContentEditable = content.querySelector('.editable-div');
+        node.contentEditableDiv = divContentEditable;
+
+        const divDisplay = content.querySelector('.syntax-display-div');
+        node.displayDiv = divDisplay;
+
+        const textarea = content.querySelector('textarea');
+        node.textarea = textarea;
+
+        node.htmlView = content.querySelector('#html-iframe');
+        node.pythonView = content.querySelector('#python-frame');
+        node.textNodeSyntaxWrapper = content.querySelector('#text-syntax-wrapper');
+
+        // Attach events for contentEditable and textarea
+        addEventsToUserInputTextarea(divContentEditable, textarea, node, divDisplay);
     }
-
-    if (y !== undefined) {
-        node.pos.y = y;
-    }
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
-            a: {
-                p: [0, 0, 1],
-                v: node.titleInput.value
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
-            a: {
-                p: [0, 1, 0],
-                v: n.value
-            }
-        };
-    });
-
-    node.isTextNode = true;
-    node.codeEditingState = 'edit';
-
-    initTextNode(node);
-
-    return node;
-}
-
-function initTextNode(node) {
-    let textNodeSyntaxWrapper = node.content.querySelector('#text-syntax-wrapper');
-    node.textNodeSyntaxWrapper = textNodeSyntaxWrapper;
-
-    //No longer a contentEditableDiv, returned to textarea
-    let contentEditableDiv = node.content.querySelector('.editable-div');
-    node.contentEditableDiv = contentEditableDiv;
-
-    let displayDiv = node.content.querySelector('.syntax-display-div');;
-    node.displayDiv = displayDiv;
-
-    let textarea = node.content.querySelector('textarea');
-    node.textarea = textarea;
-   
-    let htmlView = node.content.querySelector('#html-iframe');
-    node.htmlView = htmlView;
-
-    let pythonView = node.content.querySelector('#python-frame');
-    node.pythonView = pythonView
-
-    addEventListenersToTextNode(node)
-}
-
-function addEventListenersToTextNode(node) {
-    // Attach events for contentEditable and textarea
-    addEventsToUserInputTextarea(node.contentEditableDiv, node.textarea, node, node.displayDiv);
 }

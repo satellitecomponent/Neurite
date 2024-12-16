@@ -1,16 +1,16 @@
 // Event listener to open the modal
-document.getElementById("controls-button").addEventListener("click", openControlsModal);
+On.click(Elem.byId('controls-button'), openControlsModal);
 
 // Load controls from local storage or set to default values
 function loadControls() {
     const storedControls = localStorage.getItem('controls');
-    if (storedControls) {
-        const parsedControls = JSON.parse(storedControls);
-        // Merge stored controls with defaults
-        for (let key in controls) {
-            if (parsedControls[key]) {
-                controls[key].value = parsedControls[key].value;
-            }
+    if (!storedControls) return;
+
+    const parsedControls = JSON.parse(storedControls);
+    // Merge stored controls with defaults
+    for (const key in controls) {
+        if (parsedControls[key]) {
+            controls[key].value = parsedControls[key].value;
         }
     }
 }
@@ -19,81 +19,74 @@ function saveControls() {
     localStorage.setItem('controls', JSON.stringify(controls));
 }
 
-// Function to update mouse button settings
 function updateMouseButtons() {
     mousePanButton = settings.panClick;
     mouseZoomButton = settings.zoomClick;
 }
 
-// Function to open the controls modal
 function openControlsModal() {
-    // Ensure the modal is opened, then initialize the key inputs to reflect current controls
-    openModal("controls-modal");
+    Modal.open('controls-modal');
+    const modal = initializeKeyInputs();
 
-    // Initialize key inputs
-    initializeKeyInputs();
+    const altKeyChange = prepareForKeyChange.bind(null, 'altKey');
+    On.click(Elem.byId('altKeyInput'), altKeyChange);
 
-    // Set up event listeners for key inputs
-    document.getElementById('altKeyInput').addEventListener('click', function () {
-        prepareForKeyChange('altKey');
-    });
+    const shiftKeyChange = prepareForKeyChange.bind(null, 'shiftKey');
+    On.click(Elem.byId('shiftKeyInput'), shiftKeyChange);
 
-    document.getElementById('shiftKeyInput').addEventListener('click', function () {
-        prepareForKeyChange('shiftKey');
-    });
+    CustomDropdown.setup(modal.zoomClickSelect);
+    CustomDropdown.setup(modal.panClickSelect);
+    CustomDropdown.setup(modal.contextMenuButtonSelect);
 
-    // Set up custom dropdowns for zoom and pan controls
-    setupCustomDropdown(document.getElementById('zoomClickSelect'));
-    setupCustomDropdown(document.getElementById('panClickSelect'));
-    setupCustomDropdown(document.getElementById('contextMenuButtonSelect'));
-
-    // Set up change listeners for dropdown changes
-    document.getElementById('zoomClickSelect').addEventListener('change', function () {
-        controls.zoomClick.value = this.value === "scroll" ? "scroll" : parseInt(this.value);
+    On.change(modal.zoomClickSelect, (e)=>{
+        const value = modal.zoomClickSelect.value;
+        controls.zoomClick.value = (value === "scroll" ? "scroll" : parseInt(value));
         updateSettingsFromControls();
     });
 
-    document.getElementById('panClickSelect').addEventListener('change', function () {
-        controls.panClick.value = parseInt(this.value);
+    On.change(modal.panClickSelect, (e)=>{
+        controls.panClick.value = parseInt(modal.panClickSelect.value);
         updateSettingsFromControls();
     });
 
-    document.getElementById('contextMenuButtonSelect').addEventListener('change', function () {
-        controls.contextMenuButton.value = parseInt(this.value);
+    On.change(modal.contextMenuButtonSelect, (e)=>{
+        controls.contextMenuButton.value = parseInt(modal.contextMenuButtonSelect.value);
         updateSettingsFromControls();
     });
 
-    // Set up event listeners for explanation buttons
     setupExplanationButtons();
 }
-
-// Function to set up explanation buttons within the modal
-function setupExplanationButtons() {
-    const explanationButtons = modal.querySelectorAll('.question-button');
-    explanationButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const explanationId = this.getAttribute('data-explanation-id');
-            openModalOverlay(explanationId);
-            // Update the placeholders with current settings
-            populateControlsExplanationPlaceholders(explanationId);
-        });
-    });
+function setupExplanationButtons() { // within the modal
+    Modal.div.querySelectorAll('.question-button').forEach(
+        (button)=>On.click(button, onExplanationButtonClicked)
+    );
+}
+function onExplanationButtonClicked(e){
+    const explanationId = this.getAttribute('data-explanation-id');
+    Modal.openOverlay(explanationId);
+    // Update the placeholders with current settings
+    populateControlsExplanationPlaceholders(explanationId);
 }
 
-// Function to initialize key inputs
 function initializeKeyInputs() {
-    // Set the text of the buttons to the current key values from the controls object
-    document.getElementById('altKeyInput').innerText = controls.altKey.value || controls.altKey.default;
-    document.getElementById('shiftKeyInput').innerText = controls.shiftKey.value || controls.shiftKey.default;
+    const modal = {
+        altKeyInput: Elem.byId('altKeyInput'),
+        shiftKeyInput: Elem.byId('shiftKeyInput'),
+        zoomClickSelect: Elem.byId('zoomClickSelect'),
+        panClickSelect: Elem.byId('panClickSelect'),
+        contextMenuButtonSelect: Elem.byId('contextMenuButtonSelect')
+    }
 
-    // Set the selected value of the custom dropdowns for zoom and pan click settings
-    document.getElementById('zoomClickSelect').value = controls.zoomClick.value;
-    document.getElementById('panClickSelect').value = controls.panClick.value;
-    document.getElementById('contextMenuButtonSelect').value = controls.contextMenuButton.value;
+    modal.altKeyInput.innerText = controls.altKey.value || controls.altKey.default;
+    modal.shiftKeyInput.innerText = controls.shiftKey.value || controls.shiftKey.default;
+
+    modal.zoomClickSelect.value = controls.zoomClick.value;
+    modal.panClickSelect.value = controls.panClick.value;
+    modal.contextMenuButtonSelect.value = controls.contextMenuButton.value;
+
+    return modal;
 }
 
-
-// Function to update settings from controls
 function updateSettingsFromControls() {
     settings.nodeModeKey = controls.shiftKey.value;
     settings.rotateModifier = controls.altKey.value;
@@ -101,44 +94,34 @@ function updateSettingsFromControls() {
     settings.panClick = controls.panClick.value;
     settings.contextKey = controls.contextMenuButton.value; // Add this line
     updateMouseButtons(); // Update event listener variables
-    saveControls(); // Save updated controls to local storage
+    saveControls();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Load controls from local storage
+On.DOMContentLoaded(document, (e)=>{
     loadControls();
     updateSettingsFromControls();
 });
 
-// Function to handle key changes
 function prepareForKeyChange(key) {
     // Clear the current key display when the user clicks to change the key
-    document.getElementById(`${key}Input`).innerText = "Press a key...";
+    Elem.byId(key + 'Input').innerText = "Press a key...";
 
     // Listen for the next key press
     setNewKey(key);
 }
-
 function setNewKey(key) {
-    function handler(e) {
-        // Update the controls object with the new key
+    function handler(e){
         controls[key].value = e.key;
+        Elem.byId(key + 'Input').innerText = e.key;
 
-        // Update the UI to show the new key value
-        document.getElementById(`${key}Input`).innerText = e.key;
-
-        // Update the settings object based on the new controls value
         updateSettingsFromControls();
-
-        // Remove the keydown listener after setting the new key
-        document.removeEventListener('keydown', handler);
+        Off.keydown(document, handler);
     }
-
-    document.addEventListener('keydown', handler);
+    On.keydown(document, handler);
 }
 
 function populateControlsExplanationPlaceholders() {
-    const explanationContent = modalOverlayBody.innerHTML;
+    const explanationContent = Modal.overlayBody.innerHTML;
 
     // Replace any placeholders like {{shiftKey}}, {{altKey}}, etc. with current control values
     const updatedContent = explanationContent.replace(/{{(.*?)}}/g, (match, controlKey) => {
@@ -152,38 +135,17 @@ function populateControlsExplanationPlaceholders() {
             return getZoomSettingName(control.value || control.default);
         }
 
-        // Return the control value or default for other keys
         return control.value || control.default;
     });
 
-    // Set the updated content back into the modal body
-    modalOverlayBody.innerHTML = updatedContent;
+    Modal.overlayBody.innerHTML = updatedContent;
 }
 
 function getMouseButtonName(value) {
-    if (value === undefined || value === null) {
-        return 'Unknown'; // Handle missing or undefined values
-    }
-
-    switch (value.toString()) { // Convert to string to handle numeric and string cases
-        case '0':
-            return 'Left Click';
-        case '1':
-            return 'Middle Click';
-        case '2':
-            return 'Right Click';
-        case 'scroll':
-            return 'Scroll Wheel';
-        default:
-            return 'Unknown'; // Catch-all case for unrecognized values
-    }
+    if (value === undefined || value === null) return 'Unknown';
+    return Mouse.buttonNameFromValue[value.toString()] ?? 'Unknown';
 }
 
-// Helper function to get zoom setting name based on value
 function getZoomSettingName(value) {
-    if (value === 'scroll') {
-        return 'Scroll Wheel';
-    } else {
-        return getMouseButtonName(value);
-    }
+    return (value === 'scroll' ? 'Scroll Wheel' : getMouseButtonName(value))
 }

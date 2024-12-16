@@ -12,3 +12,4 @@ function updateLoadingIcon(element, percentage) {
         loaderFill.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
 }
+

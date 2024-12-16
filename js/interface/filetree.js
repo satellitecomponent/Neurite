@@ -1,60 +1,57 @@
-// Function to fetch directory contents from the Node.js server
-async function fetchDirectoryContents(path) {
-    try {
-        const response = await fetch(`http://localhost:9099/api/navigate?path=${encodeURIComponent(path)}`);
-        const data = await response.json();
-        //console.log('Directory data:', data);
-        return data;
-    } catch (error) {
-        console.error('Error fetching directory contents:', error);
-        return null;
+class Path {
+    static directoryFetcher = class DirectoryFetcher { // from the Node.js server
+        static baseUrl = 'http://localhost:9099/api/navigate?path=';
+        constructor(path) {
+            this.url = DirectoryFetcher.baseUrl + encodeURIComponent(path);
+            this.path = path;
+        }
+        onResponse(res) { return res.json().then(this.onData) }
+        onData(data) {
+            Logger.debug("Directory data:", data);
+            return data;
+        }
+        onFailure() { return `Failed to fetch contents of directory ${this.path}:` }
     }
-}
-
-async function fetchFileContent(path) {
-    try {
-        const response = await fetch(`http://localhost:9099/api/read-file?path=${encodeURIComponent(path)}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    static fileFetcher = class FileFetcher {
+        blob = null;
+        content = null;
+        static baseUrl = 'http://localhost:9099/api/read-file?path=';
+        constructor(path) {
+            this.url = FileFetcher.baseUrl + encodeURIComponent(path);
+            this.path = path;
         }
-
-        const mimeType = response.headers.get('Content-Type') || '';
-
-        // Handle text content
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/json') || mimeType.startsWith('application/xml')) {
-            const textContent = await response.text();
-            return { content: textContent, blob: null, mimeType };
-        } else {
-            // Handle binary content (e.g., PDFs)
-            const blob = await response.blob();
-            return { content: null, blob, mimeType };
+        isTextMime(mimeType) {
+            return mimeType.startsWith('text/')
+                || mimeType.startsWith('application/json')
+                || mimeType.startsWith('application/xml')
         }
-
-    } catch (error) {
-        console.error('Error fetching file content:', error);
-        return null;
+        onResponse(res) {
+            this.mimeType = res.headers.get('Content-Type') || '';
+            const isText = this.isTextMime(this.mimeType);
+            if (isText) res.text().then(this.onText);
+            else res.blob().then(this.onBlob);
+        }
+        onText = (text) => { this.content = text }
+        onBlob = (blob) => { this.blob = blob }
+        onFailure() { return `Failed to fetch content of file ${this.path}:` }
     }
 }
 
 class FileTree {
     constructor(containerElement, filePathInput, filePath = '/', shouldSavePath = false, onPathChangeCallback = null) {
-        if (!(containerElement instanceof HTMLElement) || !(filePathInput instanceof HTMLInputElement)) {
-            throw new Error('Container must be a valid HTMLElement and file path input must be an input element');
-        }
+        if (!(containerElement instanceof HTMLElement)) throw new Error("Container must be a valid HTMLElement");
+        if (!(filePathInput instanceof HTMLInputElement)) throw new Error("File path input must be an input element");
 
         this.container = containerElement;
         this.filePathInput = filePathInput;
-        this.currentPath = filePath; // Set the file path during construction
-        this.selectedElement = null; // Keep track of the selected item
-        this.shouldSavePath = shouldSavePath; // New parameter to control saving path
-        this.onPathChangeCallback = onPathChangeCallback; // Callback to handle path changes
+        this.currentPath = filePath;
+        this.selectedElement = null;
+        this.shouldSavePath = shouldSavePath;
+        this.onPathChangeCallback = onPathChangeCallback;
 
-        // Set the input value to the current path and bind the event handler
         this.filePathInput.value = this.currentPath;
-        this.filePathInput.addEventListener('keypress', this.handlePathInput.bind(this));
+        On.keypress(this.filePathInput, this.handlePathInput.bind(this));
 
-        // Initialize the file tree with the current path
         this.init(this.currentPath);
     }
 
@@ -78,18 +75,17 @@ class FileTree {
     handlePathInput(event) {
         if (event.key === 'Enter') {
             const newPath = this.filePathInput.value.trim();
+            if (!newPath) {
+                Logger.info("Invalid path");
+                return;
+            }
 
-            if (newPath) {
-                // Clear the container and load the new directory
-                this.container.innerHTML = '';
-                this.init(newPath);
+            this.container.innerHTML = '';
+            this.init(newPath); // load the new directory
 
-                // Trigger the callback to update the node's filePath
-                if (this.onPathChangeCallback) {
-                    this.onPathChangeCallback(newPath);
-                }
-            } else {
-                console.log('Invalid path');
+            // Trigger the callback to update the node's filePath
+            if (this.onPathChangeCallback) {
+                this.onPathChangeCallback(newPath);
             }
         }
     }
@@ -97,11 +93,11 @@ class FileTree {
     // Load the directory contents and display them
     async loadDirectory(path, parentElement) {
         if (!useProxy) {  // Strict inequality check
-            const errorElement = document.createElement('p');
-            errorElement.textContent = 'Localhost servers for Neurite are not enabled. \n Download the servers ';
+            const errorElement = Html.new.p();
+            errorElement.textContent = "Localhost servers for Neurite are not enabled. \n Download the servers ";
 
-            const linkElement = document.createElement('a');
-            linkElement.href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';
+            const href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';
+            const linkElement = Html.make.a(href);
             linkElement.textContent = 'here';
 
             // Open the link in a new tab
@@ -113,10 +109,9 @@ class FileTree {
             return;
         }
 
-        const contents = await fetchDirectoryContents(path);
-
+        const contents = await Request.send(new Path.directoryFetcher(path));
         if (!contents) {
-            const errorElement = document.createElement('p');
+            const errorElement = Html.new.p();
             errorElement.textContent = 'Error loading directory contents.';
             parentElement.appendChild(errorElement);
             return;
@@ -126,13 +121,12 @@ class FileTree {
             const itemElement = this.createFileItem(item.name, item.type);
             parentElement.appendChild(itemElement);
 
-            const childContainer = document.createElement('div');
-            childContainer.classList.add('folder-content');
-            childContainer.style.display = 'none'; // Initially hide the child container
+            const childContainer = Html.make.div('folder-content');
+            Elem.hide(childContainer);
 
+            On.click(itemElement, this.selectItem.bind(this, itemElement));
             if (item.type === 'directory') {
-                itemElement.addEventListener('click', () => this.selectItem(itemElement));
-                itemElement.addEventListener('click', async () => {
+                On.click(itemElement, async (e) => {
                     const newPath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
                     if (itemElement.classList.contains('expanded')) {
                         this.collapseDirectory(childContainer, itemElement);
@@ -142,170 +136,121 @@ class FileTree {
                         await this.loadDirectory(newPath, childContainer);
                     }
                 });
-                this.addDragEventsToFolder(itemElement, item, path);
+                this.addDragEvents("Folder", 'application/my-app-folder', itemElement, item, path);
                 parentElement.appendChild(childContainer);
             } else {
-                itemElement.addEventListener('click', () => this.selectItem(itemElement));
-                this.addDragEvents(itemElement, item, path);
+                this.addDragEvents("File", 'application/my-app-file', itemElement, item, path);
             }
         });
     }
 
     selectItem(itemElement) {
-        // Clear previously selected item
         if (this.selectedElement) {
             this.selectedElement.classList.remove('selected');
         }
 
-        // Mark the clicked element as selected
         this.selectedElement = itemElement;
         itemElement.classList.add('selected');
     }
-  
 
-    addDragEvents(itemElement, item, path) {
-        itemElement.setAttribute('draggable', 'true'); // Make the file item draggable
-        itemElement.addEventListener('dragstart', (event) => {
-            event.stopPropagation();
-            const filePath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
-            const metadata = JSON.stringify({ name: item.name, path: filePath, type: item.type });
-            event.dataTransfer.setData('application/my-app-file', metadata);
-            const icon = itemElement.querySelector('svg');
-            if (icon) {
-                event.dataTransfer.setDragImage(icon, 10, 10);
-            }
-            //console.log('Drag started with metadata:', filePath);
-        });
-
-        itemElement.addEventListener('dragend', (event) => {
-            event.stopPropagation();
-            //console.log('Drag ended:', item.name);
-        });
-    }
-
-    addDragEventsToFolder(itemElement, item, path) {
+    addDragEvents(type, mime, itemElement, item, itemPath) {
         itemElement.setAttribute('draggable', 'true');
-        itemElement.addEventListener('dragstart', (event) => {
-            event.stopPropagation();
-            const folderPath = path === '/' ? `/${item.name}` : `${path}/${item.name}`;
-            const metadata = JSON.stringify({ name: item.name, path: folderPath, type: item.type });
-            event.dataTransfer.setData('application/my-app-folder', metadata);
+        On.dragstart(itemElement, (e) => {
+            e.stopPropagation();
+            const path = (itemPath === '/' ? `/${item.name}` : `${itemPath}/${item.name}`);
+            const metadata = JSON.stringify({ name: item.name, path, type: item.type });
+            e.dataTransfer.setData(mime, metadata);
             const icon = itemElement.querySelector('svg');
-            if (icon) {
-                event.dataTransfer.setDragImage(icon, 10, 10);
-            }
-            //console.log('Folder Drag started with metadata:', folderPath);
+            if (icon) e.dataTransfer.setDragImage(icon, 10, 10);
+            Logger.debug(type, "drag started with metadata:", path);
         });
-
-        itemElement.addEventListener('dragend', (event) => {
-            event.stopPropagation();
-            //console.log('Folder Drag ended:', item.name);
+        On.dragend(itemElement, (e) => {
+            e.stopPropagation();
+            Logger.debug(type, "drag ended:", item.name);
         });
     }
 
     collapseDirectory(childContainer, itemElement) {
         childContainer.style.display = 'none';
         const iconUse = itemElement.querySelector('.file-icon use');
-        if (iconUse) {
-            iconUse.setAttribute('href', '#folder-icon');
-        }
+        if (iconUse) iconUse.setAttribute('href', '#folder-icon');
         itemElement.classList.remove('expanded');
     }
 
     expandDirectory(childContainer, itemElement) {
         childContainer.style.display = 'block';
         const iconUse = itemElement.querySelector('.file-icon use');
-        if (iconUse) {
-            iconUse.setAttribute('href', '#folder-open-icon');
-        }
+        if (iconUse) iconUse.setAttribute('href', '#folder-open-icon');
     }
 
     createFileItem(name, type) {
-        const itemElement = document.createElement('div');
-        itemElement.classList.add('file-item');
+        const itemElement = Html.make.div('file-item');
 
-        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        const icon = Svg.new.svg();
+        const use = Svg.new.use();
         icon.classList.add('file-icon');
-        use.setAttribute('href', type === 'directory' ? '#folder-icon' : this.getFileIcon(name.split('.').pop().toLowerCase()));
+        use.setAttribute('href', this.getIconId(type, name));
         icon.appendChild(use);
         itemElement.appendChild(icon);
 
-        const nameElement = document.createElement('span');
-        nameElement.classList.add('file-name');
+        const nameElement = Html.make.span('file-name');
         nameElement.textContent = name;
         itemElement.appendChild(nameElement);
 
         return itemElement;
     }
 
-    // Get the appropriate SVG icon based on file extension
-    getFileIcon(extension) {
-        switch (extension) {
-            case 'txt':
-            case 'md':
-                return '#file-text-icon';
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-                return '#file-image-icon';
-            case 'js':
-            case 'html':
-            case 'css':
-            case 'json':
-                return '#file-code-icon';
-            case 'csv':
-                return '#file-csv-icon';
-            case 'pdf':
-                return '#file-pdf-icon';
-            case 'mp3':
-            case 'wav':
-                return '#file-audio-icon';
-            case 'mp4':
-            case 'avi':
-            case 'mov':
-                return '#file-video-icon';
-            case 'zip':
-            case 'rar':
-            case '7z':
-                return '#file-zip-icon';
-            case 'exe':
-            case 'bat':
-            case 'sh':
-                return '#file-exe-icon';
-            default:
-                return '#file-text-icon'; // Default icon
+    getIconId(type, name) {
+        if (type === 'directory') return '#folder-icon';
+
+        const extension = name.split('.').pop().toLowerCase();
+        return FileTree.iconIdFromExtension[extension] || '#file-text-icon'; // default
+    }
+    static iconIdFromExtension = {
+        'txt': '#file-text-icon',
+        'md': '#file-text-icon',
+        'jpg': '#file-image-icon',
+        'jpeg': '#file-image-icon',
+        'png': '#file-image-icon',
+        'gif': '#file-image-icon',
+        'js': '#file-code-icon',
+        'html': '#file-code-icon',
+        'css': '#file-code-icon',
+        'json': '#file-code-icon',
+        'csv': '#file-csv-icon',
+        'pdf': '#file-pdf-icon',
+        'mp3': '#file-audio-icon',
+        'wav': '#file-audio-icon',
+        'mp4': '#file-video-icon',
+        'avi': '#file-video-icon',
+        'mov': '#file-video-icon',
+        'zip': '#file-zip-icon',
+        'rar': '#file-zip-icon',
+        '7z': '#file-zip-icon',
+        'exe': '#file-exe-icon',
+        'bat': '#file-exe-icon',
+        'sh': '#file-exe-icon'
+    }
+
+    static openModal() {
+        Modal.open('fileTreeModal');
+
+        const fileTreeContainer = Elem.byId('modal-file-tree-container');
+        const modalHeader = document.querySelector('.modal-header');
+        if (!fileTreeContainer || !modalHeader) {
+            Logger.err("File tree container or modal header not found!");
+            return;
         }
+
+        const modalHeaderInput = Html.make.input('modal-filepath-input');
+        modalHeaderInput.type = 'text';
+        modalHeaderInput.placeholder = 'Enter file path...'; // Placeholder text
+        modalHeaderInput.value = currentPath; // Set default value from localStorage
+
+        const closeButton = modalHeader.querySelector('.close');
+        modalHeader.insertBefore(modalHeaderInput, closeButton);
+
+        // Pass true to ensure it updates localStorage when the user navigates
+        const fileTree = new FileTree(fileTreeContainer, modalHeaderInput, currentPath, true);
     }
-}
-
-// Function to open the file tree modal and initialize the file tree
-function openFileTreeModal() {
-    // Open the modal first
-    openModal('fileTreeModal');
-
-    // Get the modal container element (use querySelector or getElementById)
-    const fileTreeContainer = document.getElementById('modal-file-tree-container');
-    const modalHeader = document.querySelector('.modal-header');
-
-    if (!fileTreeContainer || !modalHeader) {
-        console.error('File tree container or modal header not found!');
-        return;
-    }
-
-    // Create the input element to be placed in the modal header
-    const modalHeaderInput = document.createElement('input');
-    modalHeaderInput.type = 'text';
-    modalHeaderInput.classList.add('modal-filepath-input'); // Custom class for styling
-    modalHeaderInput.placeholder = 'Enter file path...'; // Placeholder text
-    modalHeaderInput.value = currentPath; // Set default value from localStorage
-
-    // Insert the input before the close button in the modal header
-    const closeButton = modalHeader.querySelector('.close');
-    modalHeader.insertBefore(modalHeaderInput, closeButton);
-
-    // Initialize the FileTree class with the container element and the input
-    // Pass true to ensure it updates localStorage when the user navigates
-    const fileTree = new FileTree(fileTreeContainer, modalHeaderInput, currentPath, true);
 }

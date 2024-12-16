@@ -1,27 +1,28 @@
 //frame();
-var mousePathPos;
-var current_time = undefined;
+let nodeMode_v = 0;
+let mousePathPos;
+let current_time;
 let regenAmount = 0;
 let regenDebt = 0;
 let avgfps = 0;
 let panToI = new vec2(0, 0);
-let panToI_prev = undefined;
+let panToI_prev;
 
 //let manualConnectionOverride = false;
 
 class NodeSimulation {
-    constructor() {
-        this.prevNodeScale = 1;
-        this.current_time = undefined;
-    }
+    mousePath = [];
+    prevNodeScale = 1;
+    svg_mousePath = svg.getElementById('mousePath');
+    current_time = undefined;
 
-    processSelectedNodes(selectedNodes) {
-        processScalingKeys(selectedNodes);
+    processSelectedNodes() {
+        processScalingKeys();
 
         const movementAngle = getDirectionAngleFromKeyState();
-        if (movementAngle !== null) {
-            moveSelectedNodes(selectedNodes, movementAngle);
-        }
+        if (movementAngle === null) return;
+
+        App.selectedNodes.forEach(Node.moveAtThisAngle, movementAngle);
     }
 
     updateAutopilot(time) {
@@ -58,44 +59,45 @@ class NodeSimulation {
             zoom = zoom.scale(1 - autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
         }
         pan = newPan;
-    }
-
-    updateCoordinates() {
         if (coordsLive) {
             panInput.value = pan.ctostring();
-            zoomInput.value = zoom.mag() + "";
+            zoomInput.value = String(zoom.mag());
         }
     }
 
     updateMousePath() {
-        if (mousePath == "") {
+        if (this.mousePath.length < 1) {
             mousePathPos = toZ(mousePos);
-            mousePath = "M " + toSVG(mousePathPos).str() + " L ";
+            this.mousePath = ["M ", toSVG(mousePathPos), " L "];
         }
         for (let i = 0; i < settings.orbitStepRate; i++) {
             mousePathPos = mand_step(mousePathPos, toZ(mousePos));
-            if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60)
-                mousePath += toSVG(mousePathPos).str() + " ";
+            if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60) {
+                this.mousePath.push(toSVG(mousePathPos), " ")
+            }
         }
     }
 
     updateMousePathWidth() {
-        let width = zoom.mag() * 0.0005 * SVGzoom;
+        const svg_mousePath = this.svg_mousePath;
+        let width = zoom.mag() * 0.0005 * Svg.zoom;
 
-        if (nodeMode && prevNode !== undefined) {
-            svg_mousePath.setAttribute("d", "M " + toSVG(prevNode.pos).str() + " L " + toSVG(toZ(mousePos)).str());
+        if (App.nodeMode && Node.prev) {
+            const m = toSVG(Node.prev.pos);
+            const l = toSVG(toZ(mousePos));
+            svg_mousePath.setAttribute('d', "M " + m + " L " + l);
             width *= 50;
         } else {
-            svg_mousePath.setAttribute("d", mousePath);
+            svg_mousePath.setAttribute('d', this.mousePath.join(''));
         }
 
-        if (!nodeMode && prevNode !== undefined) {
-            prevNode = undefined;
-            mousePath = "";
-            svg_mousePath.setAttribute("d", "");
+        if (!App.nodeMode && !Node.prev) {
+            Node.prev = null;
+            this.mousePath = [];
+            svg_mousePath.setAttribute('d', '');
         }
 
-        svg_mousePath.setAttribute("stroke-width", width + "");
+        svg_mousePath.setAttribute('stroke-width', String(width));
     }
 
     updateFPS(time) {
@@ -108,58 +110,50 @@ class NodeSimulation {
             const alpha = Math.exp(-1 * dt / 1000);
             avgfps = avgfps * alpha + (1 - alpha) * 1000 / dt;
         }
-        document.getElementById("debug_layer").children[1].textContent = "fps:" + avgfps;
-        document.getElementById("fps").textContent = Math.round(avgfps).toString() + " fps";
+        Elem.byId('debug_layer').children[1].textContent = "fps:" + avgfps;
+        Elem.byId('fps').textContent = Math.round(avgfps).toString() + " fps";
         return dt;
     }
 
     updateNodes(dt) {
         dt *= (1 - nodeMode_v) ** 5;
-        for (let n of nodes) {
-            n.step(dt);
-            //let d = toZ(mousePos).minus(n.pos);
-        }
+        Graph.forEachNode(this.updateForThisDt, dt);
+        return this;
     }
-
+    updateForThisDt(item){
+        item.step(this);
+        //let d = toZ(mousePos).minus(n.pos);
+    }
     updateEdges(dt) {
-        for (let e of edges) {
-            e.step(dt);
-        }
+        Graph.forEachEdge(this.updateForThisDt, dt);
+        return this;
     }
 
     updateRegen() {
+        const lerp = Math.lerp;
+        const random = Math.random;
         regenDebt = Math.min(16, regenDebt + lerp(settings.regenDebtAdjustmentFactor, regenAmount, Math.min(1, (nodeMode_v ** 5) * 1.01)));
         for (; regenDebt > 0; regenDebt--) {
-            render_hair(Math.random() * settings.renderSteps);
+            Fractal.render_hair(random() * settings.renderSteps);
         }
         regenAmount = 0;
-        nodeMode_v = lerp(nodeMode_v, nodeMode, 0.125);
+        nodeMode_v = lerp(nodeMode_v, App.nodeMode, 0.125);
     }
 
-    nodeStep(time) {
-        const selectedNodes = getSelectedNodes();
-
-        if (selectedNodes.length > 0) {
-            this.processSelectedNodes(selectedNodes);
-        }
+    nodeStep = (time)=>{
+        if (App.selectedNodes.uuids.size > 0) this.processSelectedNodes();
 
         this.updateAutopilot(time);
-        this.updateCoordinates();
-        updateViewbox();
+        Svg.updateViewbox();
         this.updateMousePath();
         this.updateMousePathWidth();
         const dt = this.updateFPS(time);
-        this.updateNodes(dt);
-        this.updateEdges(dt);
-        this.updateRegen();
+        this.updateNodes(dt).updateEdges(dt).updateRegen();
 
-        window.requestAnimationFrame(this.nodeStep.bind(this));
+        window.requestAnimationFrame(this.nodeStep);
     }
 
     start() {
-        window.requestAnimationFrame(this.nodeStep.bind(this));
+        window.requestAnimationFrame(this.nodeStep);
     }
 }
-
-const nodeSimulation = new NodeSimulation();
-nodeSimulation.start();

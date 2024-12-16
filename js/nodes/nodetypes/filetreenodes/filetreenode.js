@@ -1,64 +1,44 @@
-function createFileTreeNode(filePath = currentPath, sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    const name = filePath;
-    const fileTreeContainer = document.createElement("div");
-    fileTreeContainer.classList.add('custom-scrollbar', 'nodeFileTreeContainer'); // Use class instead of ID
-    let node = addNodeAtNaturalScale(name, []);
+class FileTreeNode {
+    static create(filePath = currentPath, sx, sy, x, y){
+        const container = Html.make.div('custom-scrollbar nodeFileTreeContainer');
+        const node = new Node();
 
-    let windowDiv = node.windowDiv;
-    windowDiv.style.resize = 'both';
-    windowDiv.style.minWidth = `250px`;
-    windowDiv.style.minHeight = `250px`;
-    windowDiv.style.width = `350px`;
-    windowDiv.style.height = `350px`;
+        const divView = NodeView.addAtNaturalScale(node, filePath, []).div;
+        const style = divView.style;
+        style.resize = 'both';
+        style.minWidth = '250px';
+        style.minHeight = '250px';
+        style.width = '350px';
+        style.height = '350px';
+        divView.appendChild(container);
 
-    // Append the file tree to the node.
-    windowDiv.appendChild(fileTreeContainer);
+        node.filePath = filePath;
+        node.isFileTree = true;
+        FileTreeNode.init(node);
+        return node;
+    }
+    static init(node){
+        const container = node.content.querySelector('.nodeFileTreeContainer');
+        node.fileTreeContainer = container;
 
-    // Set the correct file path when the node is created or restored
-    node.filePath = filePath;  // Ensure filePath is the provided one, not global
+        container.innerHTML = '';
 
-    node.isFileTree = true;
+        node.fileTree = new FileTree(container, node.view.titleInput, node.filePath, false, (newPath) => {
+            node.filePath = newPath; // Update node.filePath when it changes
+        });
 
-    initFileTreeNode(node);
+        FileTreeNode.addContainerListeners(node);
+    }
+    static addContainerListeners(node){
+        function stopFollowingMouse(e){
+            node.followingMouse = 0;
+            e.stopPropagation();
+        }
 
-    return node;
-}
-
-function initFileTreeNode(node) {
-    let fileTreeContainer = node.content.querySelector('.nodeFileTreeContainer');
-    node.fileTreeContainer = fileTreeContainer;
-
-    // Clear the file tree container before re-initialization
-    node.fileTreeContainer.innerHTML = '';
-
-    node.fileTree = new FileTree(node.fileTreeContainer, node.titleInput, node.filePath, false, (newPath) => {
-        node.filePath = newPath; // Update node.filePath when it changes
-    });
-
-    addFileTreeContainerListeners(node);
-}
-
-function addFileTreeContainerListeners(node) { 
-
-    // Stop mouse-following when interacting with the file tree container
-    node.fileTreeContainer.addEventListener('mousedown', (event) => {
-        node.followingMouse = 0;
-        event.stopPropagation(); // Prevent the event from bubbling up
-    });
-
-    // Also stop mouse-following on dragstart (for dragging from the file tree)
-    node.fileTreeContainer.addEventListener('dragstart', (event) => {
-        node.followingMouse = 0;
-        event.stopPropagation(); // Prevent further propagation
-    });
-
-    // Ensure dragend doesn't restart following the mouse
-    node.fileTreeContainer.addEventListener('dragend', (event) => {
-        event.stopPropagation(); // Prevent the dragend from affecting the parent
-    });
-
-    // Ensure dragend doesn't restart following the mouse
-    node.fileTreeContainer.addEventListener('dblclick', (event) => {
-        event.stopPropagation(); // Prevent the dragend from affecting the parent
-    });
+        const container = node.fileTreeContainer;
+        On.mousedown(container, stopFollowingMouse);
+        On.dragstart(container, stopFollowingMouse);
+        On.dragend(container, Event.stopPropagation);
+        On.dblclick(container, Event.stopPropagation);
+    }
 }
