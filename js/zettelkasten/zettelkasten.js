@@ -136,14 +136,14 @@ class ZettelkastenProcessor {
         return currentNodeTitle;
     }
 
-    handlePlainTextAndReferences(line, currentNodeTitle, nodes, startLine = null, endLine = null, lines = null) {
+    handlePlainTextAndReferences(line, currentNodeTitle, nodes, startLine = null, endLine = null, lines = null, partial) {
         //this.removeStaleReferences(currentNodeTitle, nodes);
 
         if (line.includes(Tag.ref)) {
             // If startLine and endLine are null, handleReferenceLine will use its default behavior
             this.handleReferenceLine(line, currentNodeTitle, nodes, lines, true, startLine, endLine);
         } else if (nodes[currentNodeTitle]) {
-            this.handleTextWithoutTags(line, currentNodeTitle, nodes);
+            this.handleLineWithoutTags(nodes[currentNodeTitle], line, partial);
         }
     }
 
@@ -159,11 +159,15 @@ class ZettelkastenProcessor {
         let nodeReferencesCleared = false;
         for (let i = startLineNo + 1; i <= endLineNo && i < lines.length; i++) {
             // Process each line and update the nodeContainsReferences flag
-            this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes, startLineNo, endLineNo, lines);
+            this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes, startLineNo, endLineNo, lines, true);
             if (lines[i].includes(Tag.ref)) {
                 nodeContainsReferences = true;
                 nodeReferencesCleared = false;
             }
+        }
+        if (lines.length && startLineNo < endLineNo) {
+            const textArea = (changedNode.isLLM ? changedNode.promptTextArea : changedNode.textarea);
+            callWithDelay(TextArea.update.bind(textArea, nodes[changedNodeTitle].plainText), 20);
         }
 
         // Clear references if no references are found and they haven't been cleared already
@@ -516,11 +520,11 @@ class ZettelkastenProcessor {
         return { references, residualLine };
     }
 
-    handleTextWithoutTags(line, currentNodeTitle, nodes) {
-        const node = nodes[currentNodeTitle];
-        const textArea = (node.isLLM ? node.nodeObject.promptTextArea : node.nodeObject.textarea);
+    handleLineWithoutTags(node, line, partial) {
+        node.plainText += (node.plainText ? '\n' : '') + line;
+        if (partial) return;
 
-        node.plainText = (node.plainText ? node.plainText + '\n' + line : line);
+        const textArea = (node.isLLM ? node.nodeObject.promptTextArea : node.nodeObject.textarea);
 
         // getDebouncedTextareaUpdate(textArea)(node.plainText);
         callWithDelay(TextArea.update.bind(textArea, node.plainText), 20);
