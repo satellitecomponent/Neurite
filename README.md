@@ -7,8 +7,30 @@
 
 ⚠️ `Warning:` Contains flashing lights and colors which may affect those with photosensitive epilepsy.
 
-🚧 This branch is dedicated to refactoring Neurite's codebase.
-
+🌱 This is an open-source project in active development.
+<table>
+  <tr>
+    <td>
+      <h2>Table of Contents</h2>
+      <ol>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#key-features">Key Features</a></li>
+        <li><a href="#how-to-use-neurite">How to Use Neurite</a></li>
+        <li><a href="#synchronized-knowledge-management">Synchronized Knowledge Management</a></li>
+        <li><a href="#fractalgpt">FractalGPT</a></li>
+        <li><a href="#multi-agent-ui">Multi-Agent UI</a></li>
+        <li><a href="#user-guide">User Guide</a></li>
+        <li><a href="#local-server-setup">Local Server Setup</a></li>
+        <li><a href="#neural-api">Neural API</a></li>
+        <li><a href="#join-the-conversation">Join the Conversation</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+      </ol>
+    </td>
+    <td style="width: 35%;">
+      <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="100%">
+    </td>
+  </tr>
+</table>
 
 ## `Introduction`
 
