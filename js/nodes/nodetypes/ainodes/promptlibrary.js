@@ -25,7 +25,7 @@ neurite.network connects physics simulation of graphs with an underlying fractal
 };
 
 function openPromptLibrary(node) {
-    openModal('promptLibraryModalContent');
+    Modal.open('promptLibraryModalContent');
     renderPromptList();
     setupPromptLibraryListeners(node);
 
@@ -42,12 +42,12 @@ function renderPromptList() {
     const promptList = document.querySelector('.prompt-list');
     promptList.innerHTML = '';
     promptLibrary.prompts.forEach((prompt, index) => {
-        const listItem = document.createElement('div');
-        const input = document.createElement('input');
+        const listItem = Html.new.div();
+        const className = (index === promptLibrary.currentPromptIndex ? 'selected' : '');
+        const input = Html.make.input(className);
         input.value = prompt.title;
-        input.className = index === promptLibrary.currentPromptIndex ? 'selected' : '';
-        input.onclick = () => selectPrompt(index);
-        input.onchange = (e) => updatePromptTitle(index, e.target.value);
+        On.click(input, selectPrompt.bind(null, index));
+        On.change(input, (e)=>updatePromptTitle(index, e.target.value) );
         listItem.appendChild(input);
         promptList.appendChild(listItem);
     });
@@ -70,7 +70,7 @@ function selectPrompt(index) {
         if (textarea) {
             textarea.value = promptLibrary.prompts[index].content;
         } else {
-            console.error('Prompt content textarea not found');
+            Logger.err("Prompt content textarea not found")
         }
     } else {
         promptLibrary.currentPromptIndex = -1;
@@ -127,23 +127,23 @@ function deleteCurrentPrompt() {
 
 function setInstructions(node) {
     if (!node.customInstructionsTextarea) {
-        console.error('Custom instructions textarea not found');
+        Logger.err("Custom instructions textarea not found");
         return;
     }
 
     const promptContentTextarea = document.querySelector('.prompt-content-textarea');
     if (!promptContentTextarea) {
-        console.error('Prompt content textarea not found');
+        Logger.err("Prompt content textarea not found");
         return;
     }
 
     node.customInstructionsTextarea.value = promptContentTextarea.value;
 
     // Set the node's title input to the selected prompt's title
-    if (promptLibrary.currentPromptIndex !== -1 && node.titleInput) {
+    if (promptLibrary.currentPromptIndex !== -1 && node.view.titleInput) {
         const selectedPromptTitle = document.querySelector('.prompt-list input.selected');
         if (selectedPromptTitle) {
-            node.titleInput.value = selectedPromptTitle.value;
+            node.view.titleInput.value = selectedPromptTitle.value;
         }
     }
 }
@@ -159,53 +159,54 @@ function setupPromptLibraryListeners(node) {
 
     // Set up Set Instructions button
     if (setInstructionsButton) {
-        setInstructionsButton.onclick = () => setInstructions(node);
+        On.click(setInstructionsButton, setInstructions.bind(null, node));
     } else {
-        console.error('Set Instructions button not found');
+        Logger.err("Set Instructions button not found")
     }
 
     // Set up Add Prompt button
     if (addPromptButton) {
-        addPromptButton.onclick = addNewPrompt;
+        On.click(addPromptButton, addNewPrompt);
     } else {
-        console.error('Add Prompt button not found');
+        Logger.err("Add Prompt button not found")
     }
 
     // Set up Delete Prompt button
     if (deletePromptButton) {
-        deletePromptButton.onclick = deleteCurrentPrompt;
+        On.click(deletePromptButton, deleteCurrentPrompt);
     } else {
-        console.error('Delete Prompt button not found');
+        Logger.err("Delete Prompt button not found")
     }
 
-    // Set up input listener for prompt content textarea
     if (promptContentTextarea) {
-        promptContentTextarea.oninput = function () {
-            if (promptLibrary.currentPromptIndex !== -1) {
-                promptLibrary.prompts[promptLibrary.currentPromptIndex].content = this.value;
-                savePromptLibrary();
-            }
-        };
+        On.input(promptContentTextarea, (e)=>{
+            if (promptLibrary.currentPromptIndex === -1) return;
+
+            const prompt = promptLibrary.prompts[promptLibrary.currentPromptIndex];
+            prompt.content = promptContentTextarea.value;
+            savePromptLibrary();
+        });
     } else {
-        console.error('Prompt Content textarea not found');
+        Logger.err("Prompt Content textarea not found")
     }
 
     // Set up Import Prompts functionality
     if (importPromptButton && importButtonLabel) {
-        importButtonLabel.onclick = () => {
+        On.click(importButtonLabel, (e)=>{
             importPromptButton.value = ''; // Reset the file input
             importPromptButton.click(); // Trigger file input when clicked
-        };
-        importPromptButton.onchange = importPromptLibrary;
+        });
+        On.change(importPromptButton, importPromptLibrary);
     } else {
-        console.error('Import button or label not found');
+        Logger.err("Import button or label not found")
     }
 
     // Set up Export Prompts functionality
     if (exportPromptButton) {
-        exportPromptButton.onclick = () => exportPromptLibraryAsJSON(promptLibrary);
+        const onClick = exportPromptLibraryAsJSON.bind(null, promptLibrary);
+        On.click(exportPromptButton, onClick);
     } else {
-        console.error('Export button not found');
+        Logger.err("Export button not found")
     }
 }
 
@@ -215,12 +216,10 @@ function importPromptLibrary(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    On.load(reader, (e)=>{
         try {
             const importedData = JSON.parse(e.target.result);
-
-            // Log the imported data for debugging
-            //console.log('Imported Data:', importedData);
+            Logger.debug('Imported Data:', importedData);
 
             // Check for validity of the imported data
             if (Array.isArray(importedData) && importedData.every(prompt =>
@@ -248,14 +247,14 @@ function importPromptLibrary(event) {
             } else {
                 alert('Invalid file format. Please make sure you are importing a valid prompt library JSON.');
             }
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
+        } catch (err) {
+            Logger.err("In parsing JSON:", err);
             alert('Failed to import. Please make sure you are using a valid prompt library JSON file.');
         }
 
         // Reset the file input to ensure onchange event fires even if the same file is selected again
         event.target.value = '';
-    };
+    });
     reader.readAsText(file);
 }
 
@@ -270,8 +269,7 @@ function exportPromptLibraryAsJSON(promptLibrary) {
 
     // Create a Blob and download the JSON file
     const blob = new Blob([jsonString], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const link = Html.make.a(URL.createObjectURL(blob));
     link.download = "promptLibrary.json";
     document.body.appendChild(link);
     link.click();

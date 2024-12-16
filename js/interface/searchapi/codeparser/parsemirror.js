@@ -6,7 +6,7 @@ var CodemMirrorTokenizer = (function () {
     // Private method to initialize CodeMirror instance
     function initializeCodeMirror() {
         if (!codeMirrorInstance) {
-            codeMirrorInstance = CodeMirror(document.createElement('div'), {
+            codeMirrorInstance = CodeMirror(Html.new.div(), {
                 value: '',
                 mode: 'text/plain'
             });

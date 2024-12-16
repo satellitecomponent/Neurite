@@ -1,4 +1,3 @@
-
 class NeuralTelemetry {
     constructor() {
         // The constructor can be used to initialize any necessary state,
@@ -16,8 +15,7 @@ class NeuralTelemetry {
     }
 
     getCurrentEquation() {
-        const equationElement = document.getElementById("equation");
-        return equationElement.innerHTML;
+        return Elem.byId('equation').innerHTML
     }
 
     // Method to get a range of node titles
@@ -67,7 +65,7 @@ const neuralTelemetry = new NeuralTelemetry();
 
 function testGetLastFunctionCalls(n) {
     const lastCalls = neuralTelemetry.getLastFunctionCalls(n);
-    console.log(`Last ${n} function calls:`, lastCalls);
+    Logger.info(`Last ${n} function calls:`, lastCalls);
 }
 
 function createTelemetryPrompt(neuralTelemetry, vision = false) {
@@ -279,7 +277,6 @@ Returns the user response as a string*/`,
     },
     // ... add more function objects as needed
 };
-
 
 function constructPromptWithFunctions(functions, forVision = false) {
     let prompt = "";

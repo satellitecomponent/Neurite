@@ -1,36 +1,26 @@
-
-
 // Update handleUserPrompt, handleMarkdown, and renderCodeBlock to make the created divs draggable
 function makeDivDraggable(div, customTitle, handle) {
     handle = handle || div; // Default to the div itself if no handle is provided
 
-    handle.addEventListener('mousedown', function () {
-        // When the mouse button is pressed down, make the div draggable
-        div.setAttribute('draggable', 'true');
-    });
+    const resetDraggable = div.setAttribute.bind(div, 'draggable', 'false');
+    const setDraggable = div.setAttribute.bind(div, 'draggable', 'true');
 
-    handle.addEventListener('mouseup', function () {
-        // When the mouse button is released, make the div non-draggable
-        div.setAttribute('draggable', 'false');
-    });
+    On.mousedown(handle, setDraggable);
+    On.mouseup(handle, resetDraggable);
 
-    div.addEventListener('dragstart', function (event) {
-        event.dataTransfer.setData('text/plain', JSON.stringify([customTitle, div.innerText]));
+    On.dragstart(div, (e)=>{
+        const json = JSON.stringify([customTitle, div.innerText]);
+        e.dataTransfer.setData('text/plain', json);
     });
-
-    // When dragging ends, make sure the div is non-draggable
-    div.addEventListener('dragend', function () {
-        div.setAttribute('draggable', 'false');
-    });
+    On.dragend(div, resetDraggable);
 }
-
 
 //Handles Ai node conversation parsing for Prismjs and a div css.
 //Creates div class, user-prompt, ai-response, code-block
 class ResponseHandler {
     constructor(node) {
         this.node = node;
-        this.previousContent = "";
+        this.previousContent = '';
         this.inCodeBlock = false;
         this.codeBlockContent = '';
         this.codeBlockStartIndex = -1;
@@ -43,39 +33,27 @@ class ResponseHandler {
 
         this.tooltip = new TopNChunksTooltip();
 
-            // Attach the input event listener for new input
-            this.node.aiResponseTextArea.addEventListener('input', () => {
-                this.processingQueue = this.processingQueue.then(() => this.handleInput());
-            });
+        // Attach the input event listener for new input
+        On.input(this.node.aiResponseTextArea, (e)=>{
+            this.processingQueue = this.processingQueue.then(this.handleInput);
+        });
     }
 
-    initUserPromptDiv(promptDiv) {
-        this.setupUserPrompt(promptDiv);
-    }
-
-    initAiResponseDiv(responseDiv) {
-        this.setupAiResponse(responseDiv);
-    }
-
-    initCodeBlockDiv(codeBlockDiv) {
-        this.setupCodeBlock(codeBlockDiv);
-    }
-
-    async handleInput() {
+    handleInput = async ()=>{
         try {
-            let content = this.node.aiResponseTextArea.value;
+            const content = this.node.aiResponseTextArea.value;
             let newContent = content.substring(this.previousContentLength);
             let trimmedNewContent = newContent.trim();
             if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
                 trimmedNewContent = trimmedNewContent.trimStart();
             }
             // Find the last occurrence of the prompt identifier in the trimmed content
-            let lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
+            const lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
             if (lastPromptIndex !== -1) {
-                let promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
-                let segments = promptContent.split('```');
+                const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
+                const segments = promptContent.split('```');
                 for (let i = 0; i < segments.length; i++) {
-                    let segment = segments[i].trim();
+                    const segment = segments[i].trim();
                     if (segment) {
                         if (i % 2 === 0) {
                             this.handleUserPrompt(segment); // Even segments are regular text
@@ -88,9 +66,9 @@ class ResponseHandler {
             } else {
                 if (this.inCodeBlock) {
                     this.codeBlockContent += newContent;
-                    let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                    const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                     if (endOfCodeBlockIndex !== -1) {
-                        let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                        const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
                         this.renderCodeBlock(codeContent, true);
                         this.codeBlockContent = '';
                         this.codeBlockStartIndex = -1;
@@ -103,7 +81,7 @@ class ResponseHandler {
                 }
 
                 while (newContent.length > 0) {
-                    let startOfCodeBlockIndex = newContent.indexOf('```');
+                    const startOfCodeBlockIndex = newContent.indexOf('```');
                     if (startOfCodeBlockIndex !== -1) {
                         if (startOfCodeBlockIndex > 0) {
                             this.handleMarkdown(newContent.substring(0, startOfCodeBlockIndex));
@@ -111,9 +89,9 @@ class ResponseHandler {
                         this.inCodeBlock = true;
                         this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
                         this.codeBlockContent = newContent.substring(startOfCodeBlockIndex + 3);
-                        let endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
+                        const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
                         if (endOfCodeBlockIndex !== -1) {
-                            let codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
+                            const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
                             this.renderCodeBlock(codeContent, true);
                             this.codeBlockContent = '';
                             this.codeBlockStartIndex = -1;
@@ -131,39 +109,34 @@ class ResponseHandler {
             }
             this.previousContent = content;
             this.previousContentLength = this.previousContent.length;
-        } catch (error) {
-            console.error('Error while processing markdown:', error);
+        } catch (err) {
+            Logger.err("While processing markdown:", err)
         }
     }
 
-    restoreAiResponseDiv() {
-        const children = this.node.aiResponseDiv.children;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            const userPromptDiv = child.querySelector('.user-prompt');
-            if (userPromptDiv) {
-                this.initUserPromptDiv(userPromptDiv);
-            } else if (child.classList.contains('response-wrapper')) {
-                const responseDiv = child.querySelector('.ai-response');
-                if (responseDiv) {
-                    this.initAiResponseDiv(child);
-                    this.reattachTooltips(responseDiv);
-                }
-            } else if (child.classList.contains('code-block-container')) {
-                this.initCodeBlockDiv(child);
-            }
+    restoreResponse(child){
+        const divUserPrompt = child.querySelector('.user-prompt');
+        if (divUserPrompt) {
+            this.setupUserPrompt(divUserPrompt)
+        } else if (child.classList.contains('response-wrapper')) {
+            const divResponse = child.querySelector('.ai-response');
+            if (!divResponse) return;
+
+            this.setupAiResponse(child);
+            this.reattachTooltips(divResponse);
+        } else if (child.classList.contains('code-block-container')) {
+            this.setupCodeBlock(child)
         }
     }
 
-    reattachTooltips(responseDiv) {
-        responseDiv.querySelectorAll('a.snippet-ref').forEach(link => {
-            if (link.dataset.snippetData) {
-                this.tooltip.detachTooltipEvents(link);  // First, detach any existing events
-                this.tooltip.attachTooltipEvents(link);
-            }
+    reattachTooltips(divResponse) {
+        divResponse.querySelectorAll('a.snippet-ref').forEach(link => {
+            if (!link.dataset.snippetData) return;
+
+            this.tooltip.detachTooltipEvents(link);
+            this.tooltip.attachTooltipEvents(link);
         });
     }
-
 
     findSnippetData(snippetNumber, source) {
         // First, check in the current top N chunks
@@ -174,7 +147,7 @@ class ResponseHandler {
             });
             if (snippet) {
                 return {
-                    source: source,
+                    source,
                     relevanceScore: snippet.relevanceScore,
                     text: snippet.text
                 };
@@ -191,18 +164,15 @@ class ResponseHandler {
         const recentResponseDivs = aiResponseDivs.slice(-10);
 
         for (let i = recentResponseDivs.length - 1; i >= 0; i--) {
-            const responseDiv = recentResponseDivs[i];
-            const links = responseDiv.querySelectorAll('a.snippet-ref');
-            for (let link of links) {
-                if (link.dataset.snippetData) {
-                    const snippetDataList = JSON.parse(link.dataset.snippetData);
-                    const matchingSnippet = snippetDataList.find(snippet =>
-                        snippet.source === source && snippet.snippetNumber === snippetNumber
-                    );
-                    if (matchingSnippet) {
-                        return matchingSnippet;
-                    }
-                }
+            const links = recentResponseDivs[i].querySelectorAll('a.snippet-ref');
+            for (const link of links) {
+                if (!link.dataset.snippetData) continue;
+
+                const snippetDataList = JSON.parse(link.dataset.snippetData);
+                const matchingSnippet = snippetDataList.find(snippet =>
+                    snippet.source === source && snippet.snippetNumber === snippetNumber
+                );
+                if (matchingSnippet) return matchingSnippet;
             }
         }
         return null;
@@ -213,158 +183,137 @@ class ResponseHandler {
             const href = link.getAttribute('href');
             const text = link.textContent;
             const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
-            if (snippetMatch) {
-                const snippetNumbers = snippetMatch[1].split(',').map(Number);
-                const source = href;
-                const snippetDataList = snippetNumbers.map(snippetNumber => this.findSnippetData(snippetNumber, source)).filter(Boolean);
-                this.addTooltipEventListeners(link, snippetDataList);
-            }
+            if (!snippetMatch) return;
+
+            const snippetNumbers = snippetMatch[1].split(',').map(Number);
+            const cb = (snippetNumber)=>this.findSnippetData(snippetNumber, href) ;
+            const snippetDataList = snippetNumbers.map(cb).filter(Boolean);
+            this.addTooltipEventListeners(link, snippetDataList);
         });
     }
 
     addTooltipEventListeners(link, snippetDataList) {
-        if (snippetDataList.length > 0) {
-            link.classList.add('snippet-ref');
-            link.dataset.snippetData = JSON.stringify(snippetDataList);
-            this.tooltip.attachTooltipEvents(link);
-        }
+        if (snippetDataList.length < 1) return;
+
+        link.classList.add('snippet-ref');
+        link.dataset.snippetData = JSON.stringify(snippetDataList);
+        this.tooltip.attachTooltipEvents(link);
     }
 
     handleMarkdown(markdown) {
-        if (this.node.aiResponding || this.node.localAiResponding) {
-            let segments = markdown.split('\n\n\n');
-            let linkFound = false;  // Flag to determine if any links exist
+        if (!this.node.aiResponding && !this.node.localAiResponding) return;
 
-            segments.forEach((segment, index) => {
-                let responseDiv = this.getOrCreateResponseDiv(index);
-                this.appendMarkdownSegment(responseDiv, segment);
-                // Check for links as segments are processed to avoid re-querying later
-                if (!linkFound && responseDiv.querySelector('a')) {
-                    linkFound = true;
-                }
-            });
+        const segments = markdown.split('\n\n\n');
+        let linkFound = false;
 
-            // Only attach tooltips if a link was found
-            if (linkFound) {
-                this.attachSnippetTooltips(this.node.aiResponseDiv);
-            }
+        segments.forEach((segment, index) => {
+            const divResponse = this.getOrCreateResponseDiv(index);
+            this.appendMarkdownSegment(divResponse, segment);
+            // Check for links as segments are processed to avoid re-querying later
+            if (!linkFound && divResponse.querySelector('a')) linkFound = true;
+        });
+
+        if (linkFound) {
+            this.attachSnippetTooltips(this.node.aiResponseDiv);
         }
     }
 
-    appendMarkdownSegment(responseDiv, segment) {
+    appendMarkdownSegment(divResponse, segment) {
         // Update the dataset with the new segment
-        responseDiv.dataset.markdown = (responseDiv.dataset.markdown || '') + segment;
+        divResponse.dataset.markdown = (divResponse.dataset.markdown || '') + segment;
 
         // Updated regex to handle mentions more flexibly
         // Matches mentions starting with @, and including any subsequent @ symbols until a space or end of string
         const mentionPattern = /(?<=^|\s)@[a-zA-Z0-9._@-]+/g;
 
         // Replace mentions with a span for highlighting
-        const highlightedSegment = responseDiv.dataset.markdown.replace(mentionPattern, (match) => {
-            return `<span class="mention">${match}</span>`;
+        const highlightedSegment = divResponse.dataset.markdown.replace(mentionPattern, (match) => {
+            return `<span class="mention">${match}</span>`
         });
 
         // Properly parse and render the updated content using the marked library
-        let parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
-        responseDiv.innerHTML = parsedHtml;
+        const parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
+        divResponse.innerHTML = parsedHtml;
     }
-
 
     getOrCreateResponseDiv(index) {
-        let lastWrapperDiv = this.node.aiResponseDiv.lastElementChild;
-
-        if (index === 0 && lastWrapperDiv && lastWrapperDiv.classList.contains('response-wrapper')) {
-            return lastWrapperDiv.querySelector('.ai-response');
-        } else {
-            let handleDiv = this.createHandleDiv();
-            let responseDiv = document.createElement('div');
-            responseDiv.className = 'ai-response';
-
-            let wrapperDiv = document.createElement('div');
-            wrapperDiv.className = 'response-wrapper';
-            wrapperDiv.appendChild(handleDiv);
-            wrapperDiv.appendChild(responseDiv);
-
-            this.node.aiResponseDiv.appendChild(wrapperDiv);
-            this.initAiResponseDiv(responseDiv);
-
-            return responseDiv;
+        const divLastWrapper = this.node.aiResponseDiv.lastElementChild;
+        if (index === 0 && divLastWrapper && divLastWrapper.classList.contains('response-wrapper')) {
+            return divLastWrapper.querySelector('.ai-response');
         }
+
+        const divResponse = Html.make.div('ai-response');
+
+        const divWrapper = Html.make.div('response-wrapper');
+        divWrapper.append(this.makeDivHandle(), divResponse);
+
+        this.node.aiResponseDiv.appendChild(divWrapper);
+        this.setupAiResponse(divResponse);
+
+        return divResponse;
     }
 
-    createHandleDiv() {
-        let handleDiv = document.createElement('div');
-        handleDiv.className = 'drag-handle';
-        handleDiv.innerHTML = `
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-    `;
-        return handleDiv;
+    makeDivHandle() {
+        const div = Html.make.div('drag-handle');
+        div.innerHTML = `
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        `;
+        return div;
     }
 
     getMarkedRenderer() {
-        let renderer = new marked.Renderer();
+        const renderer = new marked.Renderer();
         renderer.image = function (href, title, text) {
             // Check if the image URL is a valid URL
-            if (isUrl(href)) {
+            if (String.isUrl(href)) {
                 return `<img src="${href}" alt="${text}" title="${title || ''}" />`;
             } else {
                 // If the image URL is not a valid URL, treat it as a relative path
-                let basePath = 'path/to/your/images/directory/';
-                let imagePath = basePath + href;
+                const imagePath = 'path/to/your/images/directory/' + href;
                 return `<img src="${imagePath}" alt="${text}" title="${title || ''}" />`;
             }
         };
         return renderer;
     }
 
-    setupAiResponse(responseDiv) {
-        // Find the wrapper and handle divs relative to the responseDiv
-        const wrapperDiv = responseDiv.closest('.response-wrapper');
-        const handleDiv = wrapperDiv.querySelector('.drag-handle');
+    setupAiResponse(divResponse) {
+        // Find the wrapper and handle divs relative to the divResponse
+        const divWrapper = divResponse.closest('.response-wrapper');
+        const divHandle = divWrapper.querySelector('.drag-handle');
 
         // Apply logic specific to AI response div
-        makeDivDraggable(wrapperDiv, 'AI Response', handleDiv);
+        makeDivDraggable(divWrapper, 'AI Response', divHandle);
 
-        handleDiv.addEventListener('mouseover', () => {
-            wrapperDiv.classList.add('hovered');
-        });
-
-        handleDiv.addEventListener('mouseout', () => {
-            wrapperDiv.classList.remove('hovered');
-        });
+        const classList = divWrapper.classList;
+        On.mouseover(divHandle, (e)=>{ classList.add('hovered') });
+        On.mouseout(divHandle, (e)=>{ classList.remove('hovered') });
     }
 
     handleUserPrompt(promptContent) {
         if (!promptContent) return;
 
-        // Replace newline characters with <br> tags
-        let formattedContent = promptContent.replace(/\n/g, '<br>');
+        const formattedContent = promptContent.replace(/\n/g, '<br>');
 
-        // Create a new div for the outer container
-        let outerDiv = document.createElement('div');
-        outerDiv.style.width = '100%';
-        outerDiv.style.textAlign = 'right';
+        const divOuter = Html.new.div();
+        divOuter.style.width = '100%';
+        divOuter.style.textAlign = 'right';
 
-        // Create a new div for the user prompt
-        let promptDiv = document.createElement('div');
-        promptDiv.className = 'user-prompt';
-        promptDiv.id = `prompt-${this.responseCount}`;  // Assign a unique ID to each prompt
-        promptDiv.contentEditable = false; // Set contentEditable to false when the promptDiv is created
+        const divPrompt = Html.make.div('user-prompt');
+        divPrompt.id = 'prompt-' + this.responseCount;
+        divPrompt.contentEditable = false;
 
         // Set the innerHTML to display new lines correctly
-        promptDiv.innerHTML = formattedContent;
+        divPrompt.innerHTML = formattedContent;
 
-        // Append the prompt div to the outer div
-        outerDiv.appendChild(promptDiv);
+        divOuter.appendChild(divPrompt);
 
-        // Append the outer div to the response area
-        this.node.aiResponseDiv.appendChild(outerDiv);
+        this.node.aiResponseDiv.appendChild(divOuter);
 
-        this.initUserPromptDiv(promptDiv);
+        this.setupUserPrompt(divPrompt);
 
-        this.responseCount++;  // Increment the response count after each prompt
+        this.responseCount += 1;
     }
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
@@ -372,202 +321,153 @@ class ResponseHandler {
         let codeContent = content;
 
         // Check if the content starts with a language string
-        let languageStringEndIndex = content.indexOf('\n');
+        const languageStringEndIndex = content.indexOf('\n');
         if (languageStringEndIndex !== -1) {
             languageString = content.substring(0, languageStringEndIndex).trim();
             codeContent = content.substring(languageStringEndIndex + 1);
         }
 
-        let encodedContent = encodeHTML(codeContent);
-        let decodedContent = decodeHTML(encodedContent);
-
         if (!isFinal && this.node.lastBlockId) {
-            let oldBlock = document.getElementById(this.node.lastBlockId);
-            if (oldBlock) {
-                oldBlock.parentNode.removeChild(oldBlock);
-            }
+            const oldBlock = Elem.byId(this.node.lastBlockId);
+            if (oldBlock) oldBlock.parentNode.removeChild(oldBlock);
         }
 
-        let codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
-        let existingContainerDiv = document.getElementById(codeBlockDivId);
+        const codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
+        let divExistingContainer = Elem.byId(codeBlockDivId);
 
-        if (!existingContainerDiv) {
-            existingContainerDiv = document.createElement('div');
-            existingContainerDiv.id = codeBlockDivId;
-            existingContainerDiv.className = "code-block-container";
-            this.node.aiResponseDiv.appendChild(existingContainerDiv);
+        if (!divExistingContainer) {
+            divExistingContainer = Html.make.div('code-block-container');
+            divExistingContainer.id = codeBlockDivId;
+            this.node.aiResponseDiv.appendChild(divExistingContainer);
 
             // Add a specific identifier or class for user-prompt code blocks
             if (isUserPromptCodeBlock) {
-                existingContainerDiv.classList.add('user-prompt-codeblock');
+                divExistingContainer.classList.add('user-prompt-codeblock');
             }
 
-            let languageLabelDiv = document.createElement('div');
-            languageLabelDiv.className = "language-label";
-            existingContainerDiv.appendChild(languageLabelDiv);
+            const divLanguageLabel = Html.make.div('language-label');
+            const divExistingWrapper = Html.make.div('code-block-wrapper custom-scrollbar');
+            divExistingContainer.append(divLanguageLabel, divExistingWrapper);
 
-            let existingWrapperDiv = document.createElement('div');
-            existingWrapperDiv.className = "code-block-wrapper custom-scrollbar";
-            existingContainerDiv.appendChild(existingWrapperDiv);
-
-            let preDiv = document.createElement('pre');
-            preDiv.className = "code-block";
-            existingWrapperDiv.appendChild(preDiv);
+            divExistingWrapper.append(Html.make.pre('code-block'));
         }
 
-        let existingWrapperDiv = existingContainerDiv.getElementsByClassName('code-block-wrapper')[0];
-        let preDiv = existingWrapperDiv.getElementsByClassName('code-block')[0];
+        const divExistingWrapper = divExistingContainer.getElementsByClassName('code-block-wrapper')[0];
+        const divPre = divExistingWrapper.getElementsByClassName('code-block')[0];
 
-        let codeElement = document.createElement("code");
-        codeElement.className = `language-${languageString || this.currentLanguage}`;
-        codeElement.textContent = decodedContent;
+        const className = 'language-' + (languageString || this.currentLanguage);
+        const codeElement = Html.make.code(className);
+        codeElement.textContent = decodeHTML(encodeHTML(codeContent));
 
         Prism.highlightElement(codeElement);
 
-        preDiv.innerHTML = '';
-        preDiv.appendChild(codeElement);
+        divPre.innerHTML = '';
+        divPre.appendChild(codeElement);
 
-        let languageLabelDiv = existingContainerDiv.getElementsByClassName('language-label')[0];
-        languageLabelDiv.innerText = languageString || this.currentLanguage;
-        languageLabelDiv.style.display = 'flex';
-        languageLabelDiv.style.justifyContent = 'space-between';
-        languageLabelDiv.style.alignItems = 'center';
+        const divLanguageLabel = divExistingContainer.getElementsByClassName('language-label')[0];
+        divLanguageLabel.innerText = languageString || this.currentLanguage;
+        divLanguageLabel.style.display = 'flex';
+        divLanguageLabel.style.justifyContent = 'space-between';
+        divLanguageLabel.style.alignItems = 'center';
 
-        let copyButton = document.createElement('button');
-        copyButton.innerText = 'Copy';
-        copyButton.className = 'copy-btn';
+        const copyButton = Html.make.button('copy-btn', "Copy");
+        divLanguageLabel.appendChild(copyButton);
 
-        languageLabelDiv.appendChild(copyButton);
+        this.setupCodeBlock(divExistingContainer);
 
-        this.initCodeBlockDiv(existingContainerDiv);
-
-        if (isFinal) {
-            this.node.codeBlockCount++;
-            this.node.lastBlockId = null;
-        } else {
-            this.node.lastBlockId = codeBlockDivId;
-        }
+        if (isFinal) this.node.codeBlockCount += 1;
+        this.node.lastBlockId = (isFinal ? null : codeBlockDivId);
     }
 
-    setupUserPrompt(promptDiv) {
-        // Make the prompt div draggable
-        makeDivDraggable(promptDiv, 'Prompt');
+    setupUserPrompt(divPrompt) {
+        makeDivDraggable(divPrompt, 'Prompt');
 
-        let isEditing = false; // Flag to check if user is editing the content
+        let isEditing = false;
 
-        let handleKeyDown = function (event) {
+        const handleKeyDown = (event)=>{
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                this.removeResponsesUntil(promptDiv.id);
+                this.removeResponsesUntil(divPrompt.id);
 
-                // Get the HTML content of the promptDiv and replace <br> with newline
-                let message = promptDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
-                //console.log(`Sending message: "${message}"`);
-                sendLLMNodeMessage(this.node, message);
+                const message = divPrompt.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                Logger.debug(`Sending message: "${message}"`);
+                AiNode.sendMessage(this.node, message);
             }
-        }.bind(this);
+        }
 
-        // Set an onBlur event handler to handle when the div loses focus
-        promptDiv.addEventListener('blur', function () {
-            // If the div is in editing mode
-            if (isEditing) {
-                // Remove the .editing class
-                promptDiv.classList.remove('editing');
-                // Set contentEditable to false when div loses focus
-                promptDiv.contentEditable = false;
+        function onBlur(){
+            if (isEditing) { // div loses focus
+                divPrompt.classList.remove('editing');
+                divPrompt.contentEditable = false;
 
-                // Reset isEditing
                 isEditing = false;
 
                 // Reset styles to non-editing state
-                promptDiv.style.backgroundColor = '';
-                promptDiv.style.color = '';
+                divPrompt.style.backgroundColor = '';
+                divPrompt.style.color = '';
 
-                // Reset the cursor style to move
-                promptDiv.style.cursor = "move";
+                divPrompt.style.cursor = "move";
 
                 // Make the div draggable
-                makeDivDraggable(promptDiv, 'Prompt');
-                promptDiv.ondragstart = function () { return isEditing ? false : null; };
-
-                // Remove the keydown event listener
-                promptDiv.removeEventListener('keydown', handleKeyDown);
+                makeDivDraggable(divPrompt, 'Prompt');
+                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
+                Off.keydown(divPrompt, handleKeyDown);
             }
-        }.bind(this));
+        }
 
-        // Add a double click listener to the prompt div
-        promptDiv.addEventListener('dblclick', function (event) {
-            // Prevent the default action of double click
-            event.preventDefault();
+        function onDblClick(e){
+            e.preventDefault();
+            e.stopPropagation();
 
-            // Stop the event from propagating
-            event.stopPropagation();
-
-            // Toggle isEditing
             isEditing = !isEditing;
-
-            if (isEditing) {
-                // Add the .editing class
-                promptDiv.classList.add('editing');
-                // Set contentEditable to true when entering edit mode
-                promptDiv.contentEditable = true;
-
-                // Remove draggable attribute
-                promptDiv.removeAttribute('draggable');
-
-                // Set the cursor style to text
-                promptDiv.style.cursor = "text";
+            if (isEditing) { // entering edit mode
+                divPrompt.classList.add('editing');
+                divPrompt.contentEditable = true;
+                divPrompt.removeAttribute('draggable');
 
                 // Set the background and text color to match original, remove inherited text decoration
-                promptDiv.style.backgroundColor = "inherit";
-                promptDiv.style.color = "#bbb";
-                promptDiv.style.textDecoration = "none";
-                promptDiv.style.outline = "none";
-                promptDiv.style.border = "none";
+                const style = divPrompt.style;
+                style.cursor = 'text';
+                style.backgroundColor = 'inherit';
+                style.color = '#bbb';
+                style.textDecoration = 'none';
+                style.outline = 'none';
+                style.border = 'none';
 
-                // Focus the div
-                promptDiv.focus();
+                divPrompt.focus();
+                On.keydown(divPrompt, handleKeyDown);
 
-                // Add the keydown event listener when the promptDiv enters edit mode
-                promptDiv.addEventListener('keydown', handleKeyDown);
+                On.dragstart(divPrompt, (e)=>false ); // Make non-draggable
+            } else { // leaving edit mode
+                divPrompt.classList.remove('editing');
+                divPrompt.contentEditable = false;
 
-                // Set promptDiv non-draggable
-                promptDiv.ondragstart = function () { return false; };
-            } else {
-                // Remove the .editing class
-                promptDiv.classList.remove('editing');
-                // Set contentEditable to false when leaving edit mode
-                promptDiv.contentEditable = false;
+                const style = divPrompt.style;
+                style.backgroundColor = '';
+                style.color = '';
+                style.cursor = "move";
 
-
-                // Handle leaving edit mode
-                promptDiv.style.backgroundColor = '';
-                promptDiv.style.color = '';
-
-                // Set the cursor style to move
-                promptDiv.style.cursor = "move";
-
-                makeDivDraggable(promptDiv, 'Prompt');
-                promptDiv.ondragstart = function () { return isEditing ? false : null; };
-                promptDiv.removeEventListener('keydown', handleKeyDown);
+                makeDivDraggable(divPrompt, 'Prompt');
+                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
+                Off.keydown(divPrompt, handleKeyDown);
             }
+        }
 
-        }.bind(this));
+        On.blur(divPrompt, onBlur);
+        On.dblclick(divPrompt, onDblClick);
     }
 
-    setupCodeBlock(codeBlockDiv) {
-        // Query necessary child elements within the codeBlockDiv
-        const languageLabelDiv = codeBlockDiv.querySelector('.language-label');
-        const copyButton = codeBlockDiv.querySelector('.copy-btn');
-        const preDiv = codeBlockDiv.querySelector('.code-block');
-        const decodedContent = preDiv.textContent; // Assuming the content is within the <pre> tag
+    setupCodeBlock(divCodeBlock) {
+        // Query necessary child elements within divCodeBlock
+        const divLanguageLabel = divCodeBlock.querySelector('.language-label');
+        const copyButton = divCodeBlock.querySelector('.copy-btn');
+        const decodedContent = divCodeBlock.querySelector('.code-block');
 
         // Apply logic specific to code block div
-        makeDivDraggable(codeBlockDiv, 'Code Block', languageLabelDiv);
+        makeDivDraggable(divCodeBlock, 'Code Block', divLanguageLabel);
 
-        copyButton.onclick = () => {
-            const textarea = document.createElement('textarea');
+        On.click(copyButton, (e)=>{
+            const textarea = Html.new.textarea();
             textarea.value = decodedContent;
             document.body.appendChild(textarea);
             textarea.select();
@@ -578,26 +478,25 @@ class ResponseHandler {
             }
 
             document.body.removeChild(textarea);
-        };
-
-        codeBlockDiv.addEventListener('mouseover', (event) => {
-            if (event.target === languageLabelDiv || event.target === copyButton) {
-                codeBlockDiv.classList.add('hovered');
-            }
         });
 
-        codeBlockDiv.addEventListener('mouseout', (event) => {
-            if (event.target === languageLabelDiv || event.target === copyButton) {
-                codeBlockDiv.classList.remove('hovered');
+        On.mouseover(divCodeBlock, (e)=>{
+            if (e.target === divLanguageLabel || e.target === copyButton) {
+                divCodeBlock.classList.add('hovered');
+            }
+        });
+        On.mouseout(divCodeBlock, (e)=>{
+            if (e.target === divLanguageLabel || e.target === copyButton) {
+                divCodeBlock.classList.remove('hovered');
             }
         });
     }
 
     removeLastResponse() {
         // Handling the div as per the new version
-        let prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
-        let lastPrompt = prompts[prompts.length - 1];
-        let lastPromptId = lastPrompt ? lastPrompt.id : null;
+        const prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
+        const lastPrompt = prompts[prompts.length - 1];
+        const lastPromptId = lastPrompt ? lastPrompt.id : null;
 
         if (lastPrompt) {
             // Remove everything after the last 'user-prompt' div
@@ -609,18 +508,18 @@ class ResponseHandler {
         }
 
         // Handling the textarea as per the old version
-        const lines = this.node.aiResponseTextArea.value.split("\n");
+        const lines = this.node.aiResponseTextArea.value.split('\n');
 
         // Find the index of the last "Prompt:"
         let lastPromptIndex = lines.length - 1;
         while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(`${PROMPT_IDENTIFIER}`)) {
-            lastPromptIndex--;
+            lastPromptIndex -= 1;
         }
 
         // Remove all lines from the last "Prompt:" to the end
         if (lastPromptIndex >= 0) {
             lines.length = lastPromptIndex;
-            this.node.aiResponseTextArea.value = lines.join("\n");
+            this.node.aiResponseTextArea.value = lines.join('\n');
             this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength here
         }
 
@@ -633,13 +532,11 @@ class ResponseHandler {
             this.currentLanguage = "javascript";
 
             // Remove the partial code block from the div if present
-            let codeBlockDiv = document.getElementById(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
-            if (codeBlockDiv) {
-                codeBlockDiv.parentNode.removeChild(codeBlockDiv);
-            }
+            const divCodeBlock = Elem.byId(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
+            if (divCodeBlock) divCodeBlock.parentNode.removeChild(divCodeBlock);
 
             // Remove the partial code block from the textarea
-            let codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
+            const codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
             if (codeBlockStartLine >= 0) {
                 this.node.aiResponseTextArea.value = this.node.aiResponseTextArea.value.substring(0, codeBlockStartLine);
                 this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength again
@@ -660,17 +557,16 @@ class ResponseHandler {
 
 const nodeResponseHandlers = new Map();
 
-
 /*
-document.getElementById("localLLM").addEventListener("change", function () {
+Elem.byId('localLLM).addEventListener('change', function () {
     let llmNodes = document.querySelectorAll("[id^=dynamicLocalLLMselect-]");
     for (let i = 0; i < llmNodes.length; i++) {
         let selectContainer = llmNodes[i].closest('.select-container');  // Find the closest parent .select-container
 
         if (this.checked) {
-            selectContainer.style.display = "block";
+            selectContainer.style.display = 'block';
         } else {
-            selectContainer.style.display = "none";
+            selectContainer.style.display = 'none';
         }
     }
 });

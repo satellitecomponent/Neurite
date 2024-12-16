@@ -17,7 +17,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
         // Increment the Wolfram call counter
         wolframCallCounter++;
 
-        // Insert the tag and unique title to the note-input 
+        // Insert the tag and unique title to the note-input
         window.currentActiveZettelkastenMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(window.currentActiveZettelkastenMirror.lastLine()));
     }
 
@@ -66,18 +66,18 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     if (matches.length > 0) {
         reformulatedQuery = matches[matches.length - 1];
     }
-    console.log("reformulated query", reformulatedQuery);
-    console.log("matches", matches);
+    Logger.info("reformulated query", reformulatedQuery);
+    Logger.info("matches", matches);
     let preface = fullResponse.replace(`"${reformulatedQuery}"`, "").trim();
 
     // Append an additional new line
     window.currentActiveZettelkastenMirror.replaceRange(`\n\n`, CodeMirror.Pos(window.currentActiveZettelkastenMirror.lastLine()));
 
-    console.log("Preface:", preface);
-    console.log("Reformulated query:", reformulatedQuery);
+    Logger.info("Preface:", preface);
+    Logger.info("Reformulated query:", reformulatedQuery);
 
     // Call Wolfram Alpha API with the reformulated query
-    const apiKey = document.getElementById("wolframApiKey").value;
+    const apiKey = Elem.byId('wolframApiKey').value;
 
     const response = await fetch("http://localhost:3000", {
         method: "POST",
@@ -92,30 +92,27 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error with Wolfram Alpha API call:", errorData.error);
-        console.error("Full error object:", errorData);
+        Logger.err("With Wolfram Alpha API call:", errorData.error);
+        Logger.err("Full error object:", errorData);
         alert("An error occurred when making a request the Wolfram Alpha. Ensure the Wolfram server is running on your localhost with a valid Wolfram API key. The API input is in the Ai tab. Localhosts can be found at the Github link in the ? tab.");
         return;
     }
 
     const data = await response.json();
-    console.log("Wolfram Alpha data:", data); // Debugging data object
+    Logger.info("Wolfram Alpha data:", data); // Debugging data object
+    if (!data.pods) return;
 
-    if (!data.pods) {
-        return;
-    }
-
-    const table = document.createElement("table");
+    const table = Html.new.table();
     table.style = "width: 100%; border-collapse: collapse;";
 
     for (const pod of data.pods) {
-        const row = document.createElement("tr");
+        const row = Html.new.tr();
 
-        const titleCell = document.createElement("td");
+        const titleCell = Html.new.td();
         titleCell.textContent = pod.title;
         titleCell.style = "padding: 10px; background-color: #222226;";
 
-        const imageCell = document.createElement("td");
+        const imageCell = Html.new.td();
         imageCell.style = "padding: 10px; text-align: center; background-color: white";
 
         for (let i = 0; i < pod.images.length; i++) {
@@ -125,7 +122,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
             // Adding plaintext to wolframAlphaTextResult
             wolframAlphaTextResult += `${pod.title}: ${plaintext}\n`;
 
-            const img = document.createElement("img");
+            const img = Html.new.img();
             img.alt = `${reformulatedQuery} - ${pod.title}`;
             img.style = "display: block; margin: auto; border: none;";
             img.src = imageUrl;
@@ -137,7 +134,6 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
         row.appendChild(imageCell);
         table.appendChild(row);
     }
-
 
     return { table, wolframAlphaTextResult, reformulatedQuery };
 }

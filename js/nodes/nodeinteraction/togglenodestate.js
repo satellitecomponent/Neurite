@@ -1,215 +1,149 @@
-function toggleNodeState(nodeOrTitle, event) {
-    let node;
-    let title;
+NodeView.prototype.toggleCollapse = function(e){
+    if (!this.model.content) return;
 
-    if (typeof nodeOrTitle === 'string') {
-        title = nodeOrTitle;
-        node = getNodeByTitle(title);
-    } else {
-        node = nodeOrTitle;
-        title = node.getTitle();
-    }
-
-    if (!node || !node.content) return;
-    let div = node.windowDiv;
-    let circle = div.querySelector('.collapsed-circle'); // Find the circle here
-
-    // Collapse or expand based on current state
-    if (div && div.collapsed) {
-        expandNode(node, div, circle);
-        if (node.isTextNode) {
-            ui = getZetNodeCMInstance(node).ui;
-            if (title) ui.showNodeText(title); // Show node text in CodeMirror
-        }
-        
-    } else {
-        collapseNode(node)(null);
-        if (node.isTextNode) {
-            ui = getZetNodeCMInstance(node).ui;
-            if (title) ui.hideNodeText(title); // Hide node text in CodeMirror
-        }
-    }
+    const isCollapsed = this.div.classList.contains('collapsed');
+    this[isCollapsed ? 'expand' : 'collapse']();
 
     // Check if the alt key is being held
-    if (event && event.getModifierState(controls.altKey.value)) {
-        let allConnectedNodes = getAllConnectedNodes(node);
-        allConnectedNodes.forEach(connectedNode => {
-            toggleNodeState(connectedNode); // Pass the connected node
-        });
+    if (e && e.getModifierState(controls.altKey.value)) {
+        this.model.getAllConnectedNodes().forEach(Node.toggleCollapse);
     }
 }
+Node.toggleCollapse = function(node){ node.view.toggleCollapse() }
 
-let originalSizes = new Map();  // A map to store original sizes keyed by node
+NodeView.prototype.centerTitleInput = function(){
+    const style = this.titleInput.style;
+    style.position = 'absolute';
+    style.top = '50%';
+    style.left = '50%';
+    style.transform = 'translate(-47.5%, -59%)';
+    style.border = 'none';
+    style.textAlign = 'center';
+    style.pointerEvents = 'none';
+    style.fontSize = '25px';
+    style.width = 'fit-content';
+}
+NodeView.prototype.resetTitleInput = function(){
+    const style = this.titleInput.style;
+    style.position = '';
+    style.top = '';
+    style.left = '';
+    style.transform = '';
+    style.border = '';
+    style.textAlign = '';
+    style.pointerEvents = '';
+    style.fontSize = '';
+}
 
-function collapseNode(node) {
-    return function (event) {
-        let div = node.content.querySelector('.window');
+NodeView.prototype.hideButHeaderAndTitle = function(child){
+    if (child !== this.headerContainer && child !== this.titleInput) {
+        child.style.display = 'none'
+    }
+}
+NodeView.prototype.collapse = function(){
+    const div = this.div;
 
-        if (!originalSizes.has(node)) {
-            originalSizes.set(node, {
-                width: getComputedStyle(div).width,
-                height: getComputedStyle(div).height,
-                minWidth: getComputedStyle(div).minWidth,
-                minHeight: getComputedStyle(div).minHeight,
-                maxWidth: getComputedStyle(div).maxWidth,
-                maxHeight: getComputedStyle(div).maxHeight
-            });
-        }
-        let titleInput = div.querySelector('.title-input');
-        let headerContainer = div.querySelector('.header-container');
+    if (!this.originalSizes) {
+        const style = getComputedStyle(div);
+        this.originalSizes = {
+            width: style.width,
+            height: style.height,
+            minWidth: style.minWidth,
+            minHeight: style.minHeight,
+            maxWidth: style.maxWidth,
+            maxHeight: style.maxHeight
+        };
+    }
 
-        if (!div.collapsed) {
-            div.originalSize = {
-                width: div.offsetWidth,
-                height: div.offsetHeight
-            };
+    Elem.forEachChild(div, this.hideButHeaderAndTitle, this);
+    Elem.forEachChild(this.headerContainer, this.hideButHeaderAndTitle, this);
 
-            // Hide all children of the window div except headerContainer and titleInput
-            Array.from(div.children).forEach(child => {
-                if (child !== headerContainer && child !== titleInput) {
-                    child.style.display = 'none';
-                }
-            });
+    const style = div.style;
+    style.display = 'inline-block';
+    style.minWidth = '60px';
+    style.minHeight = '60px';
+    style.width = '60px';
+    style.height = '60px';
+    style.maxWidth = '60px';
+    style.maxHeight = '60px';
+    style.borderRadius = '50%';
+    style.boxShadow = 'none';
+    style.backdropFilter = 'none';
+    div.classList.add('collapsed');
 
-            // Hide all children of headerContainer except titleInput
-            Array.from(headerContainer.children).forEach(child => {
-                if (child !== titleInput) {
-                    child.style.display = 'none';
-                }
-            });
+    this.centerTitleInput();
 
-            div.style.display = 'inline-block';
-            div.style.minWidth = '60px';  // Override min-width
-            div.style.minHeight = '60px'; // Override min-height
-            div.style.width = '60px';     // Set width
-            div.style.height = '60px';    // Set height
-            div.style.maxWidth = '60px';  // Override max-width
-            div.style.maxHeight = '60px'; // Override max-height
-            div.style.borderRadius = '50%';
-            div.style.boxShadow = 'none'; // Remove box-shadow from div
-            div.style.backdropFilter = 'none';
-            div.classList.add('collapsed');
+    // Create the circle
+    const circle = Html.make.div('collapsed-circle');
+    circle.style.borderRadius = '50%';
+    circle.style.boxShadow = getComputedStyle(div).boxShadow;
 
-            // Position title input in the center
-            titleInput.style.position = 'absolute';
-            titleInput.style.top = '50%';
-            titleInput.style.left = '50%';
-            titleInput.style.transform = 'translate(-47.5%, -59%)';
-            titleInput.style.border = 'none';
-            titleInput.style.textAlign = 'center';
-            titleInput.style.pointerEvents = 'none';
-            titleInput.style.fontSize = '25px';
-            titleInput.style.width = 'fit-content';
+    div.appendChild(circle);
 
-            // Create the circle
-            let circle = document.createElement('div');
-            circle.className = 'collapsed-circle';
-            circle.style.borderRadius = '50%';
-            circle.style.boxShadow = getComputedStyle(div).boxShadow;
+    // If window is anchored, switch out for the collapsed node anchor class
+    if (div.classList.contains('window-anchored')) {
+        div.classList.remove('window-anchored');
+        circle.classList.add('collapsed-anchor');
+    }
 
-            div.appendChild(circle);
-
-            // Prevent the browser's default drag behavior for the circle
-            circle.ondragstart = function (event) {
-                event.preventDefault();
-            };
-
-            // If window is anchored, switch out for the collapsed node anchor class
-            if (div.classList.contains('window-anchored')) {
-                div.classList.remove('window-anchored');
-                circle.classList.add('collapsed-anchor');
-            }
-
-            function handleCircleDoubleClick(event) {
-                if (nodeMode !== 1) {
-                    if (circle.classList.contains('collapsed-anchor')) {
-                        circle.classList.remove('collapsed-anchor');
-                    } else {
-                        circle.classList.add('collapsed-anchor');
-                    }
-                } else {
-                    // Call the toggleNodeState function instead of expanding the node directly
-                    toggleNodeState(node, event);
-                    event.stopPropagation(); // Prevent the event from propagating up the DOM tree only in node mode
-                }
-            }
-
-            circle.addEventListener('dblclick', handleCircleDoubleClick);
-
-            div.collapsed = true;
+    const handleCircleDoubleClick = (e)=>{
+        if (App.nodeMode !== 1) {
+            circle.classList.toggle('collapsed-anchor')
         } else {
-            expandNode(node, div);
+            this.toggleCollapse(e);
+            e.stopPropagation();
         }
     }
+    On.dblclick(circle, handleCircleDoubleClick);
+    On.dragstart(circle, Event.preventDefault);
 }
 
-function expandNode(node, div, circle) {
-    if (originalSizes.has(node)) {
-        const originalSize = originalSizes.get(node);
-        div.style.width = originalSize.width;
-        div.style.height = originalSize.height;
-        div.style.minWidth = originalSize.minWidth;
-        div.style.minHeight = originalSize.minHeight;
-        div.style.maxWidth = originalSize.maxWidth;
-        div.style.maxHeight = originalSize.maxHeight;
-    }
+NodeView.prototype.expand = function(){
+    const div = this.div;
+    const style = div.style;
+    const originalSize = this.originalSizes;
+    style.width = originalSize.width;
+    style.height = originalSize.height;
+    style.minWidth = originalSize.minWidth;
+    style.minHeight = originalSize.minHeight;
+    style.maxWidth = originalSize.maxWidth;
+    style.maxHeight = originalSize.maxHeight;
+
     // Reset the window properties
-    div.style.display = '';
-    div.style.borderRadius = '';
-    div.style.backgroundColor = '';
-    div.style.borderColor = '';
-    div.style.boxShadow = '';
-    div.style.backdropFilter = '';
+    style.display = '';
+    style.borderRadius = '';
+    style.backgroundColor = '';
+    style.borderColor = '';
+    style.boxShadow = '';
+    style.backdropFilter = '';
     div.classList.remove('collapsed');
 
-    // Show all the children of the window div
-    let children = Array.from(div.children);
-    for (let child of children) {
-        child.style.display = '';
-    }
+    const show = (child)=>{ child.style.display = '' } ;
+    Elem.forEachChild(div, show);
+    Elem.forEachChild(this.headerContainer, show);
 
-    // Show the children of the header container
-    let headerChildren = Array.from(div.querySelector('.header-container').children);
-    for (let child of headerChildren) {
-        child.style.display = '';
-    }
+    this.resetTitleInput();
 
-    // Reset the title input's position and transformation
-    let titleInput = div.querySelector('.title-input');
-    titleInput.style.position = '';
-    titleInput.style.top = '';
-    titleInput.style.left = '';
-    titleInput.style.transform = '';
-    titleInput.style.textAlign = '';
-    titleInput.style.pointerEvents = '';
-    titleInput.style.border = '';
-    titleInput.style.fontSize = '';
+    const circle = div.querySelector('.collapsed-circle');
+    if (!circle) return;
 
-    // Transfer the .window-anchored class from circle to node.content if present
-    if (circle && circle.classList.contains('collapsed-anchor')) {
+    if (circle.classList.contains('collapsed-anchor')) {
         div.classList.add('window-anchored');
         circle.classList.remove('collapsed-anchor');
     }
 
-    // Remove the circle from the window div
-    if (circle) {
-        div.removeChild(circle);
-    }
-
-    div.collapsed = false;
+    div.removeChild(circle);
 }
-
-
 
 
 
 //Drag Box Selection
 
 /*
-document.addEventListener('contextmenu', function (event) {
-    if (event.ctrlKey) {
-        event.preventDefault();
-        event.stopPropagation();
+On.contextmenu(document, (e)=>{
+    if (e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
         // Additional logic for when right-click is combined with Ctrl key
         // ...
     }
@@ -218,73 +152,66 @@ document.addEventListener('contextmenu', function (event) {
 let dragBox = null;
 let startX, startY;
 
-document.addEventListener('mousedown', function (event) {
-    if (event.button === 0 && event.getModifierState(controls.altKey.value)) {
-        event.preventDefault();
-        event.stopPropagation();
+On.mousedown(document, (e)=>{
+    if (e.button === 0 && e.getModifierState(controls.altKey.value)) {
+        e.preventDefault();
+        e.stopPropagation();
         isDraggingDragBox = true;
-        startX = event.pageX;
-        startY = event.pageY;
+        startX = e.pageX;
+        startY = e.pageY;
 
-        dragBox = document.createElement('div');
-        dragBox.className = 'drag-box';
-        dragBox.style.left = `${startX}px`;
-        dragBox.style.top = `${startY}px`;
+        dragBox = Html.make.div('drag-box');
+        dragBox.style.left = startX + 'px';
+        dragBox.style.top = startY + 'px';
         document.body.appendChild(dragBox);
     }
 });
 
-document.addEventListener('mousemove', function (event) {
+On.mousemove(document, (e)=>{
     if (isDraggingDragBox) {
-        event.preventDefault();
-        event.stopPropagation();
-        const currentX = event.pageX;
-        const currentY = event.pageY;
+        e.preventDefault();
+        e.stopPropagation();
 
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
+        const currentX = e.pageX;
+        const currentY = e.pageY;
 
-        dragBox.style.width = `${width}px`;
-        dragBox.style.height = `${height}px`;
-
-        dragBox.style.left = `${Math.min(startX, currentX)}px`;
-        dragBox.style.top = `${Math.min(startY, currentY)}px`;
+        const style = dragBox.style;
+        style.width = Math.abs(currentX - startX) + 'px';
+        style.height = Math.abs(currentY - startY) + 'px';
+        style.left = Math.min(startX, currentX) + 'px';
+        style.top = Math.min(startY, currentY) + 'px';
     }
 });
 
-document.addEventListener('mouseup', function (event) {
+On.mouseup(document, (e)=>{
     if (isDraggingDragBox) {
         isDraggingDragBox = false;
 
-        // Flag to check if any node is selected
         let isAnyNodeSelected = false;
 
         // Finalize the drag box bounds
+        const style = dragBox.style;
+        const left = parseInt(style.left, 10);
+        const top = parseInt(style.top, 10);
         dragBoxBounds = {
-            left: parseInt(dragBox.style.left, 10),
-            top: parseInt(dragBox.style.top, 10),
-            right: parseInt(dragBox.style.left, 10) + parseInt(dragBox.style.width, 10),
-            bottom: parseInt(dragBox.style.top, 10) + parseInt(dragBox.style.height, 10)
+            left, top,
+            right: left + parseInt(style.width, 10),
+            bottom: top + parseInt(style.height, 10)
         };
 
         // Check for intersection with node windows and select them
-        Object.values(nodeMap).forEach(node => {
-            const nodeDiv = node.windowDiv; // Assuming this is how you access the windowDiv of a node
-            const rect = nodeDiv.getBoundingClientRect();
+        Graph.forEachNode( (node)=>{
+            const rect = node.view.div.getBoundingClientRect();
+            const isNodeSelected = (rect.left < dragBoxBounds.right && rect.right > dragBoxBounds.left &&
+                                    rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top);
+            if (!isNodeSelected) return;
 
-            if (rect.left < dragBoxBounds.right && rect.right > dragBoxBounds.left &&
-                rect.top < dragBoxBounds.bottom && rect.bottom > dragBoxBounds.top) {
-                toggleNodeSelection(node); // Assuming this function handles the selection logic
-                isAnyNodeSelected = true; // Update flag as a node is selected
-            }
+            App.selectedNodes.toggleNode(node);
+            isAnyNodeSelected = true;
         });
 
-        // If no nodes were selected, clear the current selection
-        if (!isAnyNodeSelected) {
-            clearNodeSelection(); // Assuming this function clears the selection
-        }
+        if (!isAnyNodeSelected) App.selectedNodes.clear();
 
-        // Clean up
         dragBox.remove();
         dragBox = null;
         dragBoxBounds = null;

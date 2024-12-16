@@ -1,86 +1,69 @@
-﻿document.addEventListener('dblclick', function (e) {
-    // Cancel the default behavior of the event
-    cancel(e);
+﻿On.dblclick(document, (e)=>{
+    e.stopPropagation();
 
     if (e.getModifierState(controls.altKey.value)) {
         // Alt + double click behavior
         e.preventDefault();
-        // Assuming that the createLLMNode function takes x, y coordinates
-        let node = createLLMNode('', undefined, undefined, e.clientX, e.clientY);
-        node.draw();
-    } else if (nodeMode && !prevNode) {
-        // Node mode (Shift) + double click behavior *text nodes
+        createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
+    } else if (App.nodeMode && !Node.prev) { // Node mode (Shift) + double click behavior *text nodes
         createNodeFromWindow();
     }
 });
 
-function getDefaultTitle() {
-    const date = new Date();
-    const year = String(date.getFullYear()).slice(-2); // Extracting last two digits of the year
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(date.getDate()).padStart(2, '0');
-    const hour = String(date.getHours()).padStart(2, '0');
-    const minute = String(date.getMinutes()).padStart(2, '0');
-    const second = String(date.getSeconds()).padStart(2, '0');
-    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+function getDefaultTitle(){
+    return String.titleFromDate(new Date())
+}
+
+String.titleFromDate = function(date){
+    const zeroPadded = String.zeroPadded;
+
+    const YY = String(date.getFullYear()).slice(-2); // Extracting last two digits of the year
+    const MM = zeroPadded(date.getMonth() + 1, 2); // Months are zero-based
+    const DD = zeroPadded(date.getDate(), 2);
+    const HH = zeroPadded(date.getHours(), 2);
+    const mm = zeroPadded(date.getMinutes(), 2);
+    const SS = zeroPadded(date.getSeconds(), 2);
+    const sss = zeroPadded(date.getMilliseconds(), 3);
     //const amPm = hour >= 12 ? 'PM' : 'AM';
 
-    // Create a string in the format "YY-MM-DD HH:MM:SS.sss"
-    const dateString = `${year}/${month}/${day} ~ ${hour}:${minute}:${second}.${milliseconds}`;
-    return dateString;
+    return `${YY}-${MM}-${DD} ~ ${HH}:${mm}:${SS}.${sss}`;
+}
+String.zeroPadded = function(num, len){
+    return String(num).padStart(len, '0')
 }
 
 // Function to handle node creation from a window (double-click behavior)
 function createNodeFromWindow(title = null, content = null, followMouse = false) {
-    const defaultTitle = title || getDefaultTitle();
     nodefromWindow = true;
-    // Set the followMouseFromWindow global flag if followMouse is true
-    if (followMouse) {
-        followMouseFromWindow = true;
-    }
-    addNodeTagToZettelkasten(defaultTitle, content);
+    if (followMouse) followMouseFromWindow = true;
+    addNodeTagToZettelkasten(title || getDefaultTitle(), content);
 }
 
 function addNodeTagToZettelkasten(title, content = null) {
-    const zettelkasten = window.currentActiveZettelkastenMirror;
-    const nodeTagLine = nodeTag + ' ' + title;
-    let currentZettelkastenValue = zettelkasten.getValue();
-    // Check if the content ends with a newline and add one or two newlines accordingly
-    if (currentZettelkastenValue.endsWith('\n')) {
-        currentZettelkastenValue += '\n' + nodeTagLine;
-    } else {
-        currentZettelkastenValue += '\n\n' + nodeTagLine;
-    }
+    const curMirror = window.currentActiveZettelkastenMirror;
 
-    zettelkasten.setValue(currentZettelkastenValue);
-    zettelkasten.refresh();
+    const curValue = curMirror.getValue();
+    const newlines = (curValue.endsWith('\n') ? '\n' : '\n\n');
+    curMirror.setValue(curValue + newlines + Tag.node + ' ' + title);
+    curMirror.refresh();
 
     // Find the UI associated with the current active Zettelkasten mirror
-    const ui = window.zettelkastenUIs.find(ui => ui.cm === zettelkasten);
-    if (ui) {
-        // Scroll to the title using ui.scrollToTitle
-        node = ui.scrollToTitle(title);
+    const ui = window.zettelkastenUIs.find(ui => ui.cm === curMirror);
+    if (!ui) return;
 
-        node.contentEditableDiv.value = content;
-        node.contentEditableDiv.dispatchEvent(new Event('input'));
-    }
+    const node = ui.scrollToTitle(title);
+    node.contentEditableDiv.value = content;
+    node.contentEditableDiv.dispatchEvent(new Event('input'));
 }
 
 function createTextNodeWithPosAndScale(title, text, scale, x, y) {
-    const defaultTitle = title || getDefaultTitle();
-
     // Create the node without scale and position
-    const node = createTextNode(defaultTitle, text, undefined, undefined, undefined, undefined);
+    const node = TextNode.create(title || getDefaultTitle(), text);
 
-    // Set position if specified
+    if (scale !== undefined) node.scale = scale;
     if (x !== undefined && y !== undefined) {
         node.pos.x = x;
         node.pos.y = y;
-    }
-
-    // Set scale if specified
-    if (scale !== undefined) {
-        node.scale = scale;
     }
 
     return node;

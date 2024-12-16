@@ -25,99 +25,92 @@ class EditTab {
     }
 
     initSliders() {
-        let renderWidthMultSlider = document.getElementById("renderWidthMultSlider");
+        const renderWidthMultSlider = Elem.byId('renderWidthMultSlider');
         renderWidthMultSlider.value = settings.renderWidthMult;
         renderWidthMultSlider.dispatchEvent(new Event('input'));
 
-        let maxLinesSlider = document.getElementById("maxLinesSlider");
+        const maxLinesSlider = Elem.byId('maxLinesSlider');
         maxLinesSlider.value = settings.maxLines;
         maxLinesSlider.dispatchEvent(new Event('input'));
 
-        let regenDebtSlider = document.getElementById("regenDebtSlider");
+        const regenDebtSlider = Elem.byId('regenDebtSlider');
         regenDebtSlider.value = settings.regenDebtAdjustmentFactor;
         regenDebtSlider.dispatchEvent(new Event('input'));
 
-        document.getElementById('flashlightStrength').value = flashlight_fraction;
-        document.getElementById('flashlightRadius').value = flashlight_stdev;
+        Elem.byId('flashlightStrength').value = flashlight_fraction;
+        Elem.byId('flashlightRadius').value = flashlight_stdev;
         triggerInputEvent('flashlightStrength');
         triggerInputEvent('flashlightRadius');
     }
 
     initEventListeners() {
-        let innerOpacitySlider = document.getElementById('inner_opacity');
-        innerOpacitySlider.addEventListener('input', () => {
+        const innerOpacitySlider = Elem.byId('inner_opacity');
+        On.input(innerOpacitySlider, (e)=>{
             settings.innerOpacity = innerOpacitySlider.value / 100;
         });
 
-        let outerOpacitySlider = document.getElementById('outer_opacity');
-        outerOpacitySlider.addEventListener('input', () => {
+        const outerOpacitySlider = Elem.byId('outer_opacity');
+        On.input(outerOpacitySlider, (e)=>{
             settings.outerOpacity = outerOpacitySlider.value / 100;
         });
 
-        document.getElementById("length").addEventListener("input", () => {
-            let v = this.getLength();
+        On.input(Elem.byId('length'), (e)=>{
+            const v = this.getLength();
             this.setRenderLength(v);
-            document.getElementById("length_value").textContent = (Math.round(v * 100) / 100);
+            Elem.byId('length_value').textContent = (Math.round(v * 100) / 100);
         });
 
-        document.getElementById("regenDebtSlider").addEventListener("input", () => {
-            let v = this.getRegenDebtAdjustmentFactor();
+        On.input(Elem.byId('regenDebtSlider'), (e)=>{
+            const v = this.getRegenDebtAdjustmentFactor();
             settings.regenDebtAdjustmentFactor = v;
-            document.getElementById("regenDebtValue").textContent = v;
+            Elem.byId('regenDebtValue').textContent = v;
         });
 
-        document.getElementById("renderWidthMultSlider").addEventListener("input", () => {
-            let adjustedValue = this.getRenderWidthMult();
+        On.input(Elem.byId('renderWidthMultSlider'), (e)=>{
+            const adjustedValue = this.getRenderWidthMult();
             this.setRenderWidthMult(adjustedValue);
-            document.getElementById("renderWidthMultValue").textContent = adjustedValue.toFixed(2);
+            Elem.byId('renderWidthMultValue').textContent = adjustedValue.toFixed(2);
         });
 
-        document.getElementById("maxLinesSlider").addEventListener("input", () => {
-            let v = this.getMaxLines();
+        On.input(Elem.byId('maxLinesSlider'), (e)=>{
+            const v = this.getMaxLines();
             settings.maxLines = v;
-            document.getElementById("maxLinesValue").textContent = v;
+            Elem.byId('maxLinesValue').textContent = v;
         });
 
-        document.getElementById("quality").addEventListener("input", () => {
-            let v = this.getQuality();
+        On.input(Elem.byId('quality'), (e)=>{
+            const v = this.getQuality();
             this.setRenderQuality(v);
-            document.getElementById("quality_value").textContent = "Quality:" + (Math.round(v * 100) / 100);
+            Elem.byId('quality_value').textContent = "Quality:" + (Math.round(v * 100) / 100);
         });
 
-        document.getElementById("exponent").addEventListener("input", (e) => {
-            updateMandStep();
+        On.input(Elem.byId('exponent'), (e)=>updateMandStep() );
+
+        On.input(Elem.byId('flashlightStrength'), this.updateFlashlightStrength);
+        On.input(Elem.byId('flashlightRadius'), this.updateFlashlightRadius);
+
+        const colorPicker = Elem.byId('colorPicker');
+        On.input(colorPicker, (e)=>{
+            document.body.style.backgroundColor = colorPicker.value;
         });
+        colorPicker.dispatchEvent(new Event('input'));
 
-        document.getElementById('flashlightStrength').addEventListener('input', this.updateFlashlightStrength);
-        document.getElementById('flashlightRadius').addEventListener('input', this.updateFlashlightRadius);
-
-        let colorPicker = document.getElementById("colorPicker");
-        colorPicker.addEventListener("input", function () {
-            document.body.style.backgroundColor = this.value;
-        }, false);
-        colorPicker.dispatchEvent(new Event("input"));
-
-        var inversionSlider = document.getElementById('inversion-slider');
-        var hueRotationSlider = document.getElementById('hue-rotation-slider');
-
-        inversionSlider.addEventListener('input', () => {
+        On.input(Elem.byId('inversion-slider'), (e)=>{
             this.skipMidRangeInversion();
             this.updateFilters();
         });
 
-        hueRotationSlider.addEventListener('input', () => {
-            this.updateFilters();
-        });
+        const hueRotationSlider = Elem.byId('hue-rotation-slider');
+        On.input(hueRotationSlider, this.updateFilters.bind(this));
     }
 
     getLength() {
-        let v = document.getElementById("length").value / 100;
+        const v = Elem.byId('length').value / 100;
         return 2 ** (v * 8);
     }
 
     getRegenDebtAdjustmentFactor() {
-        let v = document.getElementById("regenDebtSlider").value;
-        return v;
+        return Elem.byId('regenDebtSlider').value
     }
 
     setRenderWidthMult(v) {
@@ -125,7 +118,7 @@ class EditTab {
     }
 
     getRenderWidthMult() {
-        const sliderValue = parseFloat(document.getElementById("renderWidthMultSlider").value);
+        const sliderValue = parseFloat(Elem.byId('renderWidthMultSlider').value);
         let transformedValue;
         if (sliderValue <= 50) {
             transformedValue = sliderValue / 5;
@@ -136,65 +129,54 @@ class EditTab {
     }
 
     setRenderLength(l) {
-        let f = settings.renderStepSize * settings.renderSteps / l;
+        const f = settings.renderStepSize * settings.renderSteps / l;
         settings.renderSteps /= f;
     }
 
     getMaxLines() {
-        let v = parseInt(document.getElementById("maxLinesSlider").value);
-        return v;
+        return parseInt(Elem.byId('maxLinesSlider').value)
     }
 
     setRenderQuality(n) {
-        let q = 1 / n;
-        let f = settings.renderStepSize / q;
+        const q = 1 / n;
+        const f = settings.renderStepSize / q;
         settings.renderStepSize = q;
         settings.renderWidthMult *= f;
         settings.renderSteps *= f;
     }
 
     getQuality() {
-        let v = document.getElementById("quality").value / 100;
+        const v = Elem.byId('quality').value / 100;
         return 2 ** (v * 4);
     }
 
     updateFilters() {
-        var inversionSlider = document.getElementById('inversion-slider');
-        var hueRotationSlider = document.getElementById('hue-rotation-slider');
-        var invertFilterDiv = document.getElementById('invert-filter');
+        const inversionValue = Elem.byId('inversion-slider').value;
+        const hueRotationValue = Elem.byId('hue-rotation-slider').value;
+        const filterValue = `invert(${inversionValue}%) hue-rotate(${hueRotationValue}deg)`;
 
-        var inversionValue = inversionSlider.value;
-        var hueRotationValue = hueRotationSlider.value;
-        var filterValue = `invert(${inversionValue}%) hue-rotate(${hueRotationValue}deg)`;
+        const bothZero = (inversionValue === "0" && hueRotationValue === "0");
+        Elem.byId('invert-filter').style.backdropFilter = (bothZero ? '' : filterValue);
 
-        if (inversionValue === "0" && hueRotationValue === "0") {
-            invertFilterDiv.style.backdropFilter = "";
-        } else {
-            invertFilterDiv.style.backdropFilter = filterValue;
-        }
-
-        document.querySelectorAll('.image-video-wrapper').forEach(wrapper => {
-            wrapper.style.backdropFilter = filterValue;
-        });
+        document.querySelectorAll('.image-video-wrapper').forEach(
+            (wrapper)=>{ wrapper.style.backdropFilter = filterValue }
+        );
     }
 
     skipMidRangeInversion() {
-        var inversionSlider = document.getElementById('inversion-slider');
-        var value = parseInt(inversionSlider.value, 10);
-        if (value === 50) {
+        const inversionSlider = Elem.byId('inversion-slider');
+        if (parseInt(inversionSlider.value, 10) === 50) {
             inversionSlider.value = inversionSlider.value > 49 ? 51 : 49;
         }
     }
 
     updateFlashlightStrength() {
-        var strengthSlider = document.getElementById('flashlightStrength');
-        flashlight_fraction = parseFloat(strengthSlider.value);
-        document.getElementById('flashlightStrength_value').textContent = flashlight_fraction.toFixed(3);
+        flashlight_fraction = parseFloat(Elem.byId('flashlightStrength').value);
+        Elem.byId('flashlightStrength_value').textContent = flashlight_fraction.toFixed(3);
     }
 
     updateFlashlightRadius() {
-        var radiusSlider = document.getElementById('flashlightRadius');
-        flashlight_stdev = parseFloat(radiusSlider.value);
-        document.getElementById('flashlightRadius_value').textContent = flashlight_stdev.toFixed(3);
+        flashlight_stdev = parseFloat(Elem.byId('flashlightRadius').value);
+        Elem.byId('flashlightRadius_value').textContent = flashlight_stdev.toFixed(3);
     }
 }

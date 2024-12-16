@@ -1,66 +1,48 @@
-const edgesIcon = document.querySelector('.edges-icon');
 
-let lockedNodeMode = false;
+Node.stopFollowingMouse = function(node){ node.followingMouse = 0 }
 
-function toggleNodeModeState() {
-    if (nodeMode) {
-        edgesIcon.classList.add('edges-active');
-    } else {
-        edgesIcon.classList.remove('edges-active');
-    }
-}
-
-function toggleNodeMode() {
-    nodeMode = 1 - nodeMode;  // Toggle nodeMode between 0 and 1
-    toggleNodeModeState();
-}
-
-function enforceCapsLockState(event) {
-    const isCapsLockOn = event.getModifierState("CapsLock");
-
-    if (isCapsLockOn) {
-        nodeMode = 1;  // Ensure nodeMode is on when CapsLock is on
-    } else {
-        nodeMode = 0;  // Ensure nodeMode is off when CapsLock is off
+class NodeMode {
+    edgesIcon = document.querySelector('.edges-icon');
+    locked = false;
+    key = settings.nodeModeKey;
+    trigger = settings.nodeModeTrigger;
+    val = 0;
+    constructor(autoToggleAllOverlays){
+        this.autoToggleAllOverlays = autoToggleAllOverlays;
+        On.keydown(window, this.onKeyDown);
+        On.keyup(window, this.onKeyUp);
     }
 
-    toggleNodeModeState();  // Update the visual state
-}
+    switch(newState){
+        this.val = newState;
+        this.edgesIcon.classList[newState ? 'add' : 'remove']('edges-active');
+    }
+    skipCapsLockState(e){
+        if (this.key !== "CapsLock") return true;
 
-addEventListener("keydown", (event) => {
-    if (event.key === settings.nodeModeKey) {
-        const isCapsLockMode = settings.nodeModeKey === "CapsLock";
+        this.switch(e.getModifierState("CapsLock") ? 1 : 0); // on : off
+    }
+    onKeyDown = (e)=>{
+        if (e.key === this.key) {
+            if (!this.skipCapsLockState(e)) return;
 
-        if (isCapsLockMode) {
-            // Handle CapsLock-specific behavior
-            enforceCapsLockState(event);
-        } else if (settings.nodeModeTrigger === "down") {
-            nodeMode = 1;
-            toggleNodeModeState();
-            autoToggleAllOverlays();
-        } else if (settings.nodeModeTrigger === "toggle") {
-            toggleNodeMode();
-        }
-    } else if (event.key === "Escape") {
-        for (let n of nodes) {
-            n.followingMouse = 0;
+            if (this.trigger === "down") {
+                this.switch(1);
+                this.autoToggleAllOverlays();
+            } else if (this.trigger === "toggle") {
+                this.switch(1 - this.val); // Toggle between 0 and 1
+            }
+        } else if (e.key === 'Escape') {
+            Graph.forEachNode(Node.stopFollowingMouse)
         }
     }
-});
+    onKeyUp = (e)=>{
+        if (!this.skipCapsLockState(e)) return;
+        if (e.key !== this.key || this.trigger !== "down") return;
+        if (this.locked) return;
 
-addEventListener("keyup", (event) => {
-    const isCapsLockMode = settings.nodeModeKey === "CapsLock";
-
-    if (isCapsLockMode) {
-        // Handle CapsLock-specific behavior during keyup
-        enforceCapsLockState(event);
-    } else if (event.key === settings.nodeModeKey && settings.nodeModeTrigger === "down") {
-        if (lockedNodeMode) {
-            return;  // Don't allow deactivation of nodeMode if it's locked
-        }
-        nodeMode = 0;
-        toggleNodeModeState();
-        autoToggleAllOverlays();
-        cancel(event);
+        this.switch(0);
+        this.autoToggleAllOverlays();
+        e.stopPropagation();
     }
-});
+}

@@ -1,4 +1,3 @@
-
 const codeMessage = () => ({
     role: "system",
     content: `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
@@ -94,12 +93,12 @@ const aiNodesMessage = () => ({
     1. New AI Node: "${LLM_TAG} Title"
     2. Add Prompt: Follow with a user-defined prompt.
     3. Link Nodes: Use ${isBracketLinks ? `${tagValues.refTag}Titles to Link${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Titles to Link`}
-    4. Define text 
+    4. Define text
     Example:
     ${LLM_TAG} (Your Topic 1)
     (Your Prompt 1)
     ${isBracketLinks ? `${tagValues.refTag}Related Nodes 1${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 1`}
-    
+
     ${LLM_TAG} (Your Topic 2)
     (Your Prompt 2)
     ${isBracketLinks ? `${tagValues.refTag}Related Nodes 2${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 2`}`,
@@ -119,12 +118,12 @@ ${nodeTag} KEY POINTS:
 - Each title must be unique.
 - Create connections between notes.
 
-${nodeTag} Concept A 
+${nodeTag} Concept A
 Description of A.
 ${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Element D${closeBracket}` : `${refTag} Principle B, Element D`}
 
 ${nodeTag} Principle B
-Text of B. 
+Text of B.
 ${isBracketLinks ? `${refTag}Concept A${closeBracket} ${refTag}Idea C${closeBracket}` : `${refTag} Concept A, Idea C`}
 
 ${nodeTag} Idea C

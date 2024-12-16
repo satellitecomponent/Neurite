@@ -1,67 +1,49 @@
-
-async function sendLLMNodeMessage(node, message = null) {
+AiNode.sendMessage = async function (node, message = null) {
     if (node.aiResponding) {
-        console.log('AI is currently responding. Wait for the current response to complete before sending a new message.');
+        Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
     }
 
     const nodeIndex = node.index;
 
-    const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
+    const maxTokens = node.content.querySelector('#node-max-tokens-' + node.index).value;
     //Initalize count for message trimming
     let contextSize = 0;
 
     // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connected nodes (default)
-    const useAllConnectedNodes = document.getElementById('use-all-connected-ai-nodes').checked;
+    const useAllConnectedNodes = Elem.byId('use-all-connected-ai-nodes').checked;
+    const allConnectedNodes = node.getAllConnectedNodes(useAllConnectedNodes ? undefined : true);
 
-    // Choose the function based on checkbox state
-    let allConnectedNodes = useAllConnectedNodes ? getAllConnectedNodes(node) : getAllConnectedNodes(node, true);
-
-
-    //Use Prompt area if message is not passed.
-    node.latestUserMessage = message ? message : node.promptTextArea.value;
+    node.latestUserMessage = message || node.promptTextArea.value;
 
     // Clear the prompt textarea
     node.promptTextArea.value = '';
     node.promptTextArea.dispatchEvent(new Event('input'));
 
-    //Initialize messages array.
-    let nodeTitle = node.getTitle();
-    let aiIdentity = nodeTitle ? `${nodeTitle}` : "an Ai Assistant";
+    const aiIdentity = node.getTitle() || "an Ai Assistant";
 
-
-    let messages = [
+    const messages = [
         {
             role: "system",
             content: `You are ${aiIdentity}. Conversation renders via markdown.`
         },
     ];
 
-    const selectedModel = determineAiNodeModel(node);
+    const selectedModel = Ai.determineModel(node);
     let inferenceOverride = selectedModel;
 
-    // Fetch the content from the custom instructions textarea using the nodeIndex
-    const customInstructionsTextarea = node.customInstructionsTextarea || document.getElementById(`custom-instructions-textarea-${nodeIndex}`); // Include deprecated fallback for previous Ai Node html.
-    const customInstructions = customInstructionsTextarea ? customInstructionsTextarea.value.trim() : "";
-
-    // Append custom instructions if they exist.
+    const textarea = node.customInstructionsTextarea || Elem.byId('custom-instructions-textarea-' + nodeIndex); // Include deprecated fallback for previous Ai Node html.
+    const customInstructions = (textarea ? textarea.value.trim() : '');
     if (customInstructions.length > 0) {
         messages.push({
             role: "system",
-            content: `${customInstructions}`
+            content: customInstructions
         });
     }
 
-    // Determine if there are any connected AI nodes
-    let connectedAiNodes = calculateAiNodeDirectionalityLogic(node);
-    let hasConnectedAiNode = connectedAiNodes.length > 0;
+    let connectedAiNodes = AiNode.calculateDirectionalityLogic(node);
 
-    if (hasConnectedAiNode) {
-        node.shouldAppendQuestion = true;
-    } else {
-        node.shouldAppendQuestion = false;
-    }
-
+    node.shouldAppendQuestion = (connectedAiNodes.length > 0);
     if (node.shouldAppendQuestion) {
         // List the available recipients with spaces replaced by underscores, add '@' symbol, and use '@no_name' if the node title is empty
         const recipientList = connectedAiNodes.map(node => {
@@ -69,75 +51,69 @@ async function sendLLMNodeMessage(node, message = null) {
             return title ? `@${title.replace(/\s+/g, '_')}` : '@no_name';
         }).join(', ');
 
-        let promptContent = `You represent the singular personality of ${aiIdentity}. Your response exclusively portrays ${aiIdentity}. Attempt to reflect the thoughts, decisions, and voice of this identity alone. Communicate with others using @mention. The available recipients are: ${recipientList}. *underscores required. All text after an @mention is sent to that specific recipient. Multiple mentions on the same line send to each mention. `;
+        const promptContent = [
+            "You represent the singular personality of ", aiIdentity, ". ",
+            "Your response exclusively portrays ", aiIdentity, ". ",
+            "Attempt to reflect the thoughts, decisions, and voice of this identity alone. ",
+            "Communicate with others using @mention. The available recipients are: ", recipientList, ". ",
+            "*underscores required. ",
+            "All text after an @mention is sent to that specific recipient. ",
+            "Multiple mentions on the same line send to each mention. "
+        ];
+        const getInputValue = Modal.getAiInputValue;
 
-        if (getModalState('aiModal', 'enable-self')) {
-            promptContent += `Use @self for internal thoughts. `;
+        if (getInputValue('enable-self')) {
+            promptContent.push("Use @self for internal thoughts. ");
         }
 
-        if (getModalState('aiModal', 'enable-all')) {
-            promptContent += `Use @all to broadcast to all connected recipients. `;
+        if (getInputValue('enable-all')) {
+            promptContent.push("Use @all to broadcast to all connected recipients. ");
         }
 
-        if (getModalState('aiModal', 'enable-exit')) {
-            promptContent += `/exit disconnects you from the conversation. `;
+        if (getInputValue('enable-exit')) {
+            promptContent.push("/exit disconnects you from the conversation. ");
         }
 
-        if (getModalState('aiModal', 'enable-user')) {
-            promptContent += `@user prompts the user. `;
+        if (getInputValue('enable-user')) {
+            promptContent.push("@user prompts the user. ");
         }
 
-        promptContent += `Remember, each response is expected to exclusively represent the voice of ${aiIdentity}. @ symbols start a mention if not preceded by text.`;
+        promptContent.push(
+            "Remember, each response is expected to exclusively represent the voice of ", aiIdentity, ". ",
+            "@ symbols start a mention if not preceded by text."
+        );
 
         messages.push({
             role: "system",
-            content: promptContent
+            content: promptContent.join('')
         });
     }
 
-    if (document.getElementById(`code-checkbox-${nodeIndex}`).checked) {
-        messages.push(aiNodeCodeMessage());
-    }
-
-    if (document.getElementById("instructions-checkbox").checked) {
-        messages.push(instructionsMessage());
-    }
+    if (Elem.byId('code-checkbox-' + nodeIndex).checked) messages.push(aiNodeCodeMessage());
+    if (Elem.byId('instructions-checkbox').checked) messages.push(instructionsMessage());
 
     const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.aiResponseTextArea);
 
-    let wikipediaSummaries;
-
-    if (isWikipediaEnabled(nodeIndex)) {
-
-        // Call generateKeywords function to get keywords
-        const count = 3; // Set the number of desired keywords
-        const keywordsArray = await generateKeywords(node.latestUserMessage, count, node);
-
-        // Join the keywords array into a single string when needed for operations that require a string
+    if (Wikipedia.isEnabled(nodeIndex)) {
+        const keywordsArray = await generateKeywords(node.latestUserMessage, 3, node);
         const keywordsString = keywordsArray.join(' ');
 
         // Use the first keyword from the array for specific lookups
         const firstKeyword = keywordsArray[0];
 
-        wikipediaSummaries = await getWikipediaSummaries([firstKeyword]);
-        console.log("wikipediasummaries", wikipediaSummaries);
+        const wikipediaSummaries = await Wikipedia.getSummaries([firstKeyword]);
+        Logger.info("wikipediasummaries", wikipediaSummaries);
 
-        const wikipediaMessage = {
+        const summary = (!Array.isArray(wikipediaSummaries) ? "Wiki Disabled" : wikipediaSummaries
+            .filter(s => s?.title !== undefined && s?.summary !== undefined)
+            .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
+            .join("\n\n"));
+
+        messages.push({
             role: "system",
-            content: `Wikipedia Summaries (Keywords: ${keywordsString}): \n ${Array.isArray(wikipediaSummaries)
-                ? wikipediaSummaries
-                    .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
-                    .map(s => s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary)
-                    .join("\n\n")
-                : "Wiki Disabled"
-                } END OF SUMMARIES`
-        };
-
-        if (isWikipediaEnabled(nodeIndex)) {
-            messages.push(wikipediaMessage);
-        }
+            content: `Wikipedia Summaries (Keywords: ${keywordsString}): \n ${summary} END OF SUMMARIES`
+        });
     }
-
 
     let searchQuery = null;
     let filteredKeys = null;
@@ -145,35 +121,28 @@ async function sendLLMNodeMessage(node, message = null) {
     if (isGoogleSearchEnabled(nodeIndex) || (filteredKeys = await isEmbedEnabled(node))) {
         try {
             searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
-        } catch (error) {
-            console.error('Error constructing search query:', error);
+        } catch (err) {
+            Logger.err("In constructing search query:", err);
             searchQuery = null;
         }
     }
 
-    let searchResultsData = null;
-    let searchResults = [];
-
     if (isGoogleSearchEnabled(nodeIndex)) {
-
-        searchResultsData = await performSearch(searchQuery);
+        let searchResults = [];
+        const searchResultsData = await performSearch(searchQuery);
         if (searchResultsData) {
             searchResults = processSearchResults(searchResultsData);
-            searchResults = await getRelevantSearchResults(node.latestUserMessage, searchResults);
-
-            displaySearchResults(searchResults);
+            await displayResultsRelevantToMessage(searchResults, node.latestUserMessage);
         }
 
         const searchResultsContent = searchResults.map((result, index) => {
             return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
-        }).join('\n');
+        });
 
-        const googleSearchMessage = {
+        messages.push({
             role: "system",
-            content: "Google SEARCH RESULTS displayed to user:" + searchResultsContent
-        };
-
-        messages.push(googleSearchMessage);
+            content: "Google SEARCH RESULTS displayed to user:" + searchResultsContent.join('\n')
+        });
     }
 
     let relevantKeys = [];
@@ -184,10 +153,10 @@ async function sendLLMNodeMessage(node, message = null) {
         const linkNodes = allConnectedNodes.filter(node => node.isLink);
         const linkInfo = linkNodes.map(node => ({
             url: node.linkUrl,
-            key: node.linkUrl.startsWith('blob:') ? node.titleInput.value : node.linkUrl
+            key: node.linkUrl.startsWith('blob:') ? node.view.titleInput.value : node.linkUrl
         }));
 
-        const allKeysFromServer = await getAllKeys();
+        const allKeysFromServer = await Keys.getAll();
 
         relevantKeys = linkInfo
             .filter(info => allKeysFromServer.includes(info.key))
@@ -200,16 +169,15 @@ async function sendLLMNodeMessage(node, message = null) {
         }
 
         // Refresh the relevant keys after handling not extracted links
-        const updatedKeysFromServer = await getAllKeys();
+        const updatedKeysFromServer = await Keys.getAll();
         relevantKeys = linkInfo
             .filter(info => updatedKeysFromServer.includes(info.key))
             .map(info => info.key);
     } else if (searchQuery !== null && filteredKeys) {
         // Obtain relevant keys based on the user message
-        relevantKeys = await getRelevantKeys(node.latestUserMessage, truncatedRecentContext, searchQuery, filteredKeys);
+        relevantKeys = await Keys.getRelevant(node.latestUserMessage, truncatedRecentContext, searchQuery, filteredKeys);
     }
 
-    // Only proceed if we have relevant keys
     if (relevantKeys.length > 0) {
         // Get relevant chunks based on the relevant keys
         node.currentTopNChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
@@ -222,10 +190,10 @@ async function sendLLMNodeMessage(node, message = null) {
         messages.push(embedMessage);
     }
 
-    let allConnectedNodesData = getAllConnectedNodesData(node, true);
-    let totalTokenCount = getTokenCount(messages);
-    let remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
-    const maxContextSize = document.getElementById(`node-max-context-${nodeIndex}`).value;
+    let allConnectedNodesData = node.getAllConnectedNodesData(true);
+    let totalTokenCount = TokenCounter.forMessages(messages);
+    let remainingTokens = Math.max(0, maxTokens - totalTokenCount);
+    const maxContextSize = Elem.byId('node-max-context-' + nodeIndex).value;
 
     let textNodeInfo = [];
     let llmNodeInfo = [];
@@ -250,29 +218,28 @@ async function sendLLMNodeMessage(node, message = null) {
                 });
                 remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
             } else {
-                console.warn('Not enough tokens to include the image:', connectedNode);
+                Logger.warn("Not enough tokens to include the image:", connectedNode)
             }
         }
     });
-
 
     let messageTrimmed = false;
 
     allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
     allConnectedNodesData.forEach(info => {
-        if (info.data && info.data.replace) {
-            if (info.isLLM) {
-                /* Check if the AI node is present in the connectedAiNodes array
-                if (connectedAiNodes.some(aiNode => aiNode.uuid === info.node.uuid)) {
-                    [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
-                        info, llmNodeInfo, remainingTokens, totalTokenCount, maxContextSize
-                    );
-                }*/
-            } else {
+        if (!info.data?.replace) return;
+
+        if (info.isLLM) {
+            /* Check if the AI node is present in the connectedAiNodes array
+            if (connectedAiNodes.some(aiNode => aiNode.uuid === info.node.uuid)) {
                 [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
-                    info, textNodeInfo, remainingTokens, totalTokenCount, maxContextSize
+                    info, llmNodeInfo, remainingTokens, totalTokenCount, maxContextSize
                 );
-            }
+            }*/
+        } else {
+            [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
+                info, textNodeInfo, remainingTokens, totalTokenCount, maxContextSize
+            );
         }
     });
 
@@ -301,8 +268,8 @@ async function sendLLMNodeMessage(node, message = null) {
         });
     }
 
-    totalTokenCount = getTokenCount(messages);
-    remainingTokens = Math.max(0, maxTokensSlider.value - totalTokenCount);
+    totalTokenCount = TokenCounter.forMessages(messages);
+    remainingTokens = Math.max(0, maxTokens - totalTokenCount);
 
     // calculate contextSize again
     contextSize = Math.min(remainingTokens, maxContextSize);
@@ -315,7 +282,7 @@ async function sendLLMNodeMessage(node, message = null) {
     handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage, PROMPT_IDENTIFIER);
 
     let wolframData;
-    if (document.getElementById(`enable-wolfram-alpha-checkbox-${nodeIndex}`).checked) {
+    if (Elem.byId('enable-wolfram-alpha-checkbox-' + nodeIndex).checked) {
         const wolframContext = getLastPromptsAndResponses(2, 300, node.aiResponseTextArea);
         wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
     }
@@ -329,7 +296,7 @@ async function sendLLMNodeMessage(node, message = null) {
             content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
         };
 
-        console.log("wolframAlphaTextResult:", wolframAlphaTextResult);
+        Logger.info("wolframAlphaTextResult:", wolframAlphaTextResult);
         messages.push(wolframAlphaMessage);
 
         // Redefine lastPromptsAndResponses after Wolfram's response.
@@ -343,68 +310,60 @@ async function sendLLMNodeMessage(node, message = null) {
         });
     }
 
-
     //Finally, send the user message last.
     messages.push({
         role: "user",
         content: node.latestUserMessage
     });
 
-
     node.aiResponding = true;
     node.userHasScrolled = false;
 
     // Initiates helper functions for aiNode Message loop.
-    const aiNodeMessageLoop = new AiNodeMessageLoop(node);
+    const aiNodeMessageLoop = new AiNode.MessageLoop(node, clickQueues);
 
     const haltCheckbox = node.haltCheckbox;
 
     // AI call
     callchatLLMnode(messages, node, true, inferenceOverride)
-        .then(async () => {
+        .then(() => {
             node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';
 
-            connectedAiNodes = calculateAiNodeDirectionalityLogic(node);
-            hasConnectedAiNode = connectedAiNodes.length > 0;
-
+            const hasConnectedAiNode = AiNode.calculateDirectionalityLogic(node).length > 0;
             if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
-                await aiNodeMessageLoop.questionConnectedAiNodes();
+                return aiNodeMessageLoop.questionConnectedAiNodes();
             }
         })
-        .catch((error) => {
-            if (haltCheckbox) {
-                haltCheckbox.checked = true;
-            }
-            console.error(`An error occurred while getting response: ${error}`);
+        .catch((err) => {
+            if (haltCheckbox) haltCheckbox.checked = true;
+            Logger.err("While getting response:", err);
             aiErrorIcon.style.display = 'block';
         });
 }
 
 function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize) {
-    let cleanedData = info.data.replace("Text Content:", "");
-
+    let flag = false;
+    const cleanedData = info.data.replace("Text Content:", '');
     if (cleanedData.trim()) {
-        let tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
-        let tempTokenCount = getTokenCount([{ content: tempString }]);
+        const tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
+        let tempTokenCount = TokenCounter.forString(tempString);
 
         if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
             tempInfoList.push(cleanedData);
             remainingTokens -= tempTokenCount;
             totalTokenCount += tempTokenCount;
-            return [remainingTokens, totalTokenCount, false];
         } else {
-            return [remainingTokens, totalTokenCount, true];
+            flag = true;
         }
     }
-    return [remainingTokens, totalTokenCount, false];
+    return [remainingTokens, totalTokenCount, flag];
 }
 
-class AiNodeMessageLoop {
-    constructor(node) {
+AiNode.MessageLoop = class {
+    constructor(node, clickQueues = {}) {
         this.node = node;
-        // Use a Map to associate nodes with their click queues
-        this.clickQueues = new Map();
+        this.clickQueues = clickQueues;
     }
 
     async processClickQueue(connectedNode) {
@@ -413,49 +372,48 @@ class AiNodeMessageLoop {
             if (queue.length > 0) {
                 const { sendButton } = queue[0];
 
-                const connectedAiNodes = calculateAiNodeDirectionalityLogic(connectedNode);
+                const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
-                    console.warn(`Node ${connectedNode.index} has no more connections or its AI response is halted. Exiting queue.`);
+                    Logger.warn("Node", connectedNode.index, "has no more connections or its AI response is halted. Exiting queue.");
                     break;
                 }
 
                 if (!connectedNode.aiResponding) {
-                    await new Promise(resolve => setTimeout(resolve, 2500));  // Wait before the click.
-                    queue.shift(); // Remove the processed message from the queue
+                    queue.shift(); // Remove the processed message
                     sendButton.click();
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 500));  // Wait before processing the next message
+            await Promise.delay(2500);
         }
 
         this.clickQueues.delete(connectedNode);
     }
 
     async questionConnectedAiNodes() {
-        //console.log("Questioning connected AI nodes...");
+        Logger.debug("Questioning connected AI nodes...");
         const lastResponse = this.getLastAiResponse();
-        const connectedAiNodes = calculateAiNodeDirectionalityLogic(this.node);
+        const connectedAiNodes = AiNode.calculateDirectionalityLogic(this.node);
 
         let parsedMessages = this.parseMessages(lastResponse);
         if (parsedMessages.length === 0) {
-            console.warn("Standard parsing failed. Using fallback method.");
+            Logger.warn("Standard parsing failed. Using fallback method.");
             parsedMessages = this.fallbackParse(lastResponse);
         }
 
         for (const { recipient, message } of parsedMessages) {
             if (!message.trim()) {
-                //console.log(`Skipping empty message for recipient: ${recipient}`);
+                Logger.debug("Skipping empty message for recipient:", recipient);
                 continue;
             }
 
-            //console.log(`Processing message for ${recipient}: ${message}`);
+            Logger.debug(`Processing message for ${recipient}: ${message}`);
 
             // Handle /exit command
             if (message.includes('/exit')) {
                 this.node.haltResponse();
                 this.removeEdgesToConnectedNodes(connectedAiNodes);
-                //console.log("AI has exited the conversation.");
+                Logger.debug("AI has exited the conversation.");
                 break;
             }
 
@@ -471,7 +429,7 @@ class AiNodeMessageLoop {
                 }
                 continue;
             } else if (recipient === 'self') {
-                //console.log("Skipping self-directed message.");
+                Logger.debug("Skipping self-directed message.");
                 continue;
             } else {
                 // Handle specific recipient
@@ -481,7 +439,7 @@ class AiNodeMessageLoop {
                 if (targetNode) {
                     targetNodes.push(targetNode);
                 } else {
-                    console.warn(`No connected node found for recipient ${recipient}`);
+                    Logger.warn("No connected node found for recipient", recipient);
                     continue;
                 }
             }
@@ -493,7 +451,7 @@ class AiNodeMessageLoop {
     }
 
     removeEdgesToConnectedNodes(connectedAiNodes) {
-        const connectedAiNodeSet = new Set(connectedAiNodes.map(node => node.uuid));
+        const connectedAiNodeSet = new Set(connectedAiNodes.map(String.uuidOf));
         for (let i = this.node.edges.length - 1; i >= 0; i--) {
             const edge = this.node.edges[i];
             if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {
@@ -502,24 +460,24 @@ class AiNodeMessageLoop {
         }
     }
 
-    async getUserResponse(message) {
-        return await new Promise(resolve => {
-            const response = prompt(`${message}`);
+    getUserResponse(message) {
+        return new Promise(resolve => {
+            const response = prompt(message);
             resolve(response);
         });
     }
 
     processTargetNode(connectedNode, message, skipClickQueue = false) {
         if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-            console.warn(`AI response for node ${connectedNode.uuid} or its connected node is halted. Skipping this node.`);
+            Logger.warn("AI response for node", uniqueNodeId, "or its connected node is halted. Skipping this node.");
             return;
         }
 
-        const promptElement = connectedNode.promptTextArea;
-        const sendButton = connectedNode.sendButton;
+        const promptElement = connectedNode.content.querySelector('#nodeprompt-' + uniqueNodeId);
+        const sendButton = connectedNode.content.querySelector('#prompt-form-' + uniqueNodeId);
 
         if (!promptElement || !sendButton) {
-            console.error(`Elements for ${connectedNode.uuid} are not found`);
+            Logger.err("Elements for", uniqueNodeId, "are not found");
             return;
         }
 
@@ -531,18 +489,29 @@ class AiNodeMessageLoop {
         }
     }
 
-    enqueueClick(connectedNode, sendButton) {
-        // Initialize the queue if it doesn't exist
-        if (!this.clickQueues.has(connectedNode)) {
-            this.clickQueues.set(connectedNode, []);
-            this.processClickQueue(connectedNode);  // Start processing this node's click queue
+    updatePromptElement(promptElement, message) {
+        if (promptElement instanceof HTMLTextAreaElement) {
+            promptElement.value += '\n' + message;
+        } else if (promptElement instanceof HTMLDivElement) {
+            promptElement.innerHTML += "<br>" + message;
+        } else {
+            Logger.err(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`)
         }
 
-        this.clickQueues.get(connectedNode).push({ sendButton });
+        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+    }
+
+    enqueueClick(uniqueNodeId, sendButton, connectedNode) {
+        const clickQueues = this.clickQueues;
+        if (!clickQueues[uniqueNodeId]) {
+            clickQueues[uniqueNodeId] = [];
+            this.processClickQueue(uniqueNodeId);
+        }
+        clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
     }
 
     fallbackParse(text) {
-        // console.log("Using fallback parsing method");
+        Logger.debug("Using fallback parsing method");
         const senderName = this.node.getTitle() || "no_name";
         if (!text.trim()) {
             return []; // No message if the text is empty
@@ -559,8 +528,9 @@ class AiNodeMessageLoop {
     }
 
     isConnectedNode(nodeName) {
-        const connectedNodes = calculateAiNodeDirectionalityLogic(this.node);
-        return connectedNodes.some(node => this.normalizeRecipient(node.getTitle()) === this.normalizeRecipient(nodeName));
+        const normalizedNodeName = this.normalizeRecipient(nodeName);
+        const func = (node) => (this.normalizeRecipient(node.getTitle()) === normalizedNodeName);
+        return AiNode.calculateDirectionalityLogic(this.node).some(func);
     }
 
     extractMentionType(mention) {
@@ -575,8 +545,8 @@ class AiNodeMessageLoop {
     }
 
     parseMessages(text) {
-        //console.log("Parsing messages...");
-        //console.log("Input text:", text);  // Log the input text
+        Logger.debug("Parsing messages...");
+        Logger.debug("Input text:", text);
         const messages = [];
         const mentionPattern = /@([a-zA-Z0-9._-]+)(?:[\s,:]|$)/g;
         const senderName = this.node.getTitle() || "no_name";
@@ -605,7 +575,7 @@ class AiNodeMessageLoop {
                         currentRecipient = this.extractMentionType(mention);
                         currentMessage = '';
                     } else {
-                        currentMessage += `@${parts[i]}`;
+                        currentMessage += "@" + parts[i];
                     }
                 }
             }
@@ -617,11 +587,11 @@ class AiNodeMessageLoop {
             }
         }
 
-        //console.log(`Parsed ${messages.length} messages`);
-        //console.log(`Parsed messages: ${JSON.stringify(messages)}`);
+        Logger.debug("Parsed", messages.length, "messages");
+        Logger.debug("Parsed messages:", JSON.stringify(messages));
 
         if (messages.length === 0) {
-            console.warn("No messages parsed. Using fallback method.");
+            Logger.warn("No messages parsed. Using fallback method.");
             return this.fallbackParse(text);
         }
 
@@ -629,16 +599,16 @@ class AiNodeMessageLoop {
     }
 
     finalizeMessage(messages, recipient, message, senderName) {
-        //console.log(`Finalizing message for recipient: ${recipient}`);
-        const trimmedMessage = message.trim();
-        if (trimmedMessage) {  // Only add non-empty messages
-            messages.push({
-                recipient: recipient,
-                message: `${senderName} says,\n${trimmedMessage}`
-            });
-        } else {
-            //console.log("Skipping empty message");
+        Logger.debug("Finalizing message for recipient:", recipient);
+        if (!message.trim()) {
+            Logger.debug("Skipping empty message");
+            return;
         }
+
+        messages.push({
+            recipient: recipient,
+            message: `${senderName} says,\n${message.trim()}`
+        });
     }
 
     getLastAiResponse() {
@@ -646,34 +616,28 @@ class AiNodeMessageLoop {
         if (responseWrappers.length > 0) {
             const lastWrapper = responseWrappers[responseWrappers.length - 1];
             const aiResponseDiv = lastWrapper.querySelector('.ai-response');
-            if (aiResponseDiv) {
-                return aiResponseDiv.textContent.trim();
-            }
+            if (aiResponseDiv) return aiResponseDiv.textContent.trim();
         }
-        console.warn("No AI response found.");
+
+        Logger.warn("No AI response found.");
         return '';
     }
 }
 
-function calculateAiNodeDirectionalityLogic(node, visited = new Set()) {
+AiNode.calculateDirectionalityLogic = function (node, visited = new Set()) {
     const connectedAiNodes = [];
     visited.add(node.uuid);
 
-    const edgeDirectionalities = node.getEdgeDirectionalities();
+    for (const { edge, directionality } of node.getEdgeDirectionalities()) {
+        if (directionality !== 'outgoing' && directionality !== 'none') continue;
 
-    for (const { edge, directionality } of edgeDirectionalities) {
-        const isOutgoing = directionality === "outgoing";
-        const isBidirectional = directionality === "none";
+        for (const pt of edge.pts) {
+            if (pt.uuid === node.uuid || visited.has(pt.uuid)) continue;
 
-        if (isOutgoing || isBidirectional) {
-            for (const pt of edge.pts) {
-                if (pt.uuid !== node.uuid && !visited.has(pt.uuid)) {
-                    if (pt.isLLMNode) {
-                        connectedAiNodes.push(pt);
-                    } else {
-                        connectedAiNodes.push(...calculateAiNodeDirectionalityLogic(pt, visited));
-                    }
-                }
+            if (pt.isLLMNode) {
+                connectedAiNodes.push(pt);
+            } else {
+                connectedAiNodes.push(...AiNode.calculateDirectionalityLogic(pt, visited));
             }
         }
     }

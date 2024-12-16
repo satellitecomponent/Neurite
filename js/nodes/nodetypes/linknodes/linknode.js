@@ -1,197 +1,172 @@
+class LinkNode {
+    constructor(link = '', name = '', text = '', sx, sy, x, y) {
+        this.link = link;
+        this.name = name;
 
-function createLinkNode(name = '', text = '', link = '', sx = undefined, sy = undefined, x = undefined, y = undefined) {
-    let a = document.createElement("a");
-    a.id = 'link-element';
-    a.setAttribute("href", link);
-    a.setAttribute("target", "_blank");
-    a.textContent = name;
-    a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
+        const nodeName = link.startsWith('blob:') ? name : link;
+        const node = new Node();
 
-    let linkWrapper = document.createElement("div");
-    linkWrapper.id = 'link-wrapper';
-    linkWrapper.style.width = "300px";
-    linkWrapper.style.padding = "20px 0"; // Add vertical padding
-    linkWrapper.appendChild(a);
+        const divView = NodeView.addAtNaturalScale(node, nodeName, []).div;
+        divView.appendChild(this.makeContentWrapper());
+        divView.style.minWidth = '150px';
+        divView.style.minHeight = '200px';
 
-    let iframeWrapper = document.createElement("div");
-    iframeWrapper.id = 'iframe-wrapper';
-    iframeWrapper.style.padding = "10px";
-    iframeWrapper.style.width = "100%";
-    iframeWrapper.style.height = "100%";
-    iframeWrapper.style.flexGrow = "1";
-    iframeWrapper.style.flexShrink = "1";
-    iframeWrapper.style.display = "none";
-    iframeWrapper.style.boxSizing = "border-box";
+        node.push_extra_cb( (node)=>({
+                f: "textarea",
+                a: {
+                    p: [0, 0, 1],
+                    v: node.view.titleInput.value
+                }
+            })
+        );
 
-    let contentWrapper = document.createElement("div");
-    contentWrapper.style.display = "flex";
-    contentWrapper.style.flexDirection = "column";
-    contentWrapper.style.alignItems = "center";
-    contentWrapper.style.height = "100%";
-    contentWrapper.style.width = "100%";
-
-    contentWrapper.appendChild(linkWrapper);
-    contentWrapper.appendChild(iframeWrapper);
-
-    // Determine the parameter for addNodeAtNaturalScale
-    let nodeName = link.startsWith('blob:') ? name : link;
-    let node = addNodeAtNaturalScale(nodeName, []);
-
-    let windowDiv = node.windowDiv;
-
-    windowDiv.appendChild(contentWrapper);
-    windowDiv.style.minWidth = `150px`;
-    windowDiv.style.minHeight = `200px`;
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
-            a: {
-                p: [0, 0, 1],
-                v: node.titleInput.value
-            }
-        };
-    });
-
-
-    node.isLink = true;
-
-    initLinkNode(node);
-
-    return node;
-}
-
-// To-Do: Find method to refresh saves of link nodes before the save update.
-
-function initLinkNode(node) {
-    let iframeWrapper = node.content.querySelector("#iframe-wrapper");
-    node.iframeWrapper = iframeWrapper;
-
-    let iframe = iframeWrapper.querySelector("iframe");
-    if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.setAttribute("style", "width: 100%; height: 100%; border: none; overflow: auto;");
-        iframeWrapper.appendChild(iframe); // Append once and reuse
+        node.isLink = true;
+        node.typeNode = this;
+        this.node = node;
+        this.init();
+        return node;
     }
-    node.iframe = iframe;
 
-    let link = node.content.querySelector("#link-element");
-    node.link = link;
+    makeAnchor(){
+        const a = Html.make.a(this.link);
+        a.id = 'link-element';
+        a.setAttribute('target', "_blank");
+        a.textContent = this.name;
+        a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
+        return a;
+    }
+    makeLinkWrapper(){
+        const div = Html.new.div();
+        div.id = 'link-wrapper';
+        div.style.width = '300px';
+        div.style.padding = '20px 0';
+        div.appendChild(this.makeAnchor());
+        return div;
+    }
+    makeIframeWrapper(){
+        const div = Html.new.div();
+        div.id = 'iframe-wrapper';
+        const style = div.style;
+        style.padding = '10px';
+        style.width = '100%';
+        style.height = '100%';
+        style.flexGrow = '1';
+        style.flexShrink = '1';
+        style.display = 'none';
+        style.boxSizing = 'border-box';
+        return div;
+    }
+    makeContentWrapper(){
+        const div = Html.new.div();
+        const style = div.style;
+        style.display = 'flex';
+        style.flexDirection = 'column';
+        style.alignItems = 'center';
+        style.height = '100%';
+        style.width = '100%';
+        div.append(this.makeLinkWrapper(), this.makeIframeWrapper());
+        return div;
+    }
 
-    let linkUrl = link ? link.getAttribute("href") : "";
+    // To-Do: Find method to refresh saves of link nodes before the save update.
 
-    node.linkUrl = linkUrl;
+    makeIframe(wrapper){
+        const iframe = Html.new.iframe();
+        const style = iframe.style;
+        style.width = '100%';
+        style.height = '100%';
+        style.border = 'none';
+        style.overflow = 'auto';
+        if (wrapper) wrapper.appendChild(iframe); // Append once and reuse
+        return iframe;
+    }
 
-    let linkWrapper = node.content.querySelector("#link-wrapper");
-    node.linkWrapper = linkWrapper;
+    init(){
+        const node = this.node;
+        const iframeWrapper = node.content.querySelector("#iframe-wrapper");
+        this.iframeWrapper = iframeWrapper;
+        node.iframe = iframeWrapper.querySelector("iframe")
+                    || this.makeIframe(iframeWrapper);
 
-    addEventListenersToLinkNode(node)
-}
+        const link = node.content.querySelector("#link-element");
+        node.link = link;
+        node.linkUrl = (link ? link.getAttribute('href') : '');
+        this.linkWrapper = node.content.querySelector("#link-wrapper");
 
-function addEventListenersToLinkNode(node) {
-    setupLinkNodeLinkListeners(node);
-    setupLinkNodeSearchBarListener(node)
-}
+        On.mouseover(link, Elem.setBothColors.bind(link, '#888', '#1a1a1d'));
+        On.mouseout(link, Elem.setBothColors.bind(link, '#bbb', '#222226'));
+        On.click(link, this.onClick);
+        On.keypress(node.view.titleInput, this.onSearchBarKeyPress);
+    }
+    onClick = (e)=>{
+        e.preventDefault();
+        this.handleIframe();
+    }
+    onSearchBarKeyPress = (e)=>{
+        if (e.key === 'Enter') {
+            e.preventDefault();
 
-function setupLinkNodeLinkListeners(node) {
-    let a = node.link;
-
-    a.addEventListener('mouseover', function () {
-        this.style.color = '#888';
-        this.style.backgroundColor = '#1a1a1d'; // Change background color on hover
-    }, false);
-
-    a.addEventListener('mouseout', function () {
-        this.style.color = '#bbb';
-        this.style.backgroundColor = '#222226'; // Reset background color when mouse leaves
-    }, false);
-
-    // Overwrite click event to display the iframe
-    a.addEventListener('click', function (event) {
-        event.preventDefault(); // Prevent default link behavior
-        handleLinkNodeIframe(node.iframeWrapper, node.linkWrapper, node.linkUrl);
-    }, false);
-}
-
-function setupLinkNodeSearchBarListener(node) {
-    let titleInput = node.titleInput;
-    titleInput.addEventListener('keypress', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent default behavior
-            let inputValue = titleInput.value;
-
-            if (isUrl(inputValue)) {
-                updateIframeSrc(node.iframeWrapper, node.linkWrapper, inputValue);
+            const node = this.node;
+            const inputValue = node.view.titleInput.value;
+            if (String.isUrl(inputValue)) {
+                this.updateIframeSrc(inputValue);
                 node.linkUrl = inputValue;
-                node.link.href = inputValue; // Update the href attribute of the <a> element
-                node.link.textContent = inputValue; // Update the text content of the <a> element
+                node.link.href = inputValue;
+                node.link.textContent = inputValue;
             } else {
                 handleNaturalLanguageSearch(inputValue);
             }
         }
-    });
-}
-
-function updateIframeSrc(iframeWrapper, linkWrapper, url) {
-    // Remove existing iframe if it exists
-    while (iframeWrapper.firstChild) {
-        iframeWrapper.removeChild(iframeWrapper.firstChild);
     }
 
-    // Create a new iframe and set the src attribute
-    const iframe = document.createElement("iframe");
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.overflow = "auto";
-    iframe.setAttribute("src", url);
+    updateIframeSrc(url){
+        this.removeIframe();
+        this.makeIframe(this.iframeWrapper).setAttribute('src', url || this.node.linkUrl);
 
-    iframeWrapper.appendChild(iframe);
-
-    linkWrapper.style.display = "none";
-    iframeWrapper.style.display = "block";
-}
-
-function handleLinkNodeIframe(iframeWrapper, linkWrapper, link) {
-    if (iframeWrapper.style.display === "none") {
-        updateIframeSrc(iframeWrapper, linkWrapper, link)
-    } else {
-        linkWrapper.style.display = "block";
-        iframeWrapper.style.display = "none";
-    }
-}
-
-async function handleLinkNodeProxyDisplay(iframeWrapper, linkWrapper, link) {
-    // Remove existing iframe if it exists
-    while (iframeWrapper.firstChild) {
-        iframeWrapper.removeChild(iframeWrapper.firstChild);
+        this.linkWrapper.style.display = 'none';
+        this.iframeWrapper.style.display = 'block';
     }
 
-    if (iframeWrapper.style.display === "none" || !iframeWrapper.style.display) {
-        linkWrapper.style.display = "none";
-        iframeWrapper.style.display = "block";
-
-        try {
-            const response = await fetch('http://localhost:4000/raw-proxy?url=' + encodeURIComponent(link));
-            if (response.ok) {
-                const webpageContent = await response.text();
-                // Create a new iframe and set the srcdoc attribute
-                const iframe = document.createElement("iframe");
-                iframe.style.width = "100%";
-                iframe.style.height = "100%";
-                iframe.style.overflow = "auto";
-                iframe.setAttribute("srcdoc", webpageContent);
-
-                iframeWrapper.appendChild(iframe);
-            } else {
-                console.error('Failed to fetch webpage content:', response.statusText);
-                alert("An error occurred displaying the webpage through a proxy server. Please ensure that the extract server is running on your localhost.");
-            }
-        } catch (error) {
-            console.error('Error fetching webpage content:', error);
-            alert("An error occurred displaying the webpage. Please check your network and try again.");
+    handleIframe(){
+        if (this.iframeWrapper.style.display === 'none') {
+            this.updateIframeSrc()
+        } else {
+            this.linkWrapper.style.display = 'block';
+            this.iframeWrapper.style.display = 'none';
         }
-    } else {
-        linkWrapper.style.display = "block";
-        iframeWrapper.style.display = "none";
+    }
+
+    removeIframe(){
+        const wrapper = this.iframeWrapper;
+        while (wrapper.firstChild) {
+            wrapper.removeChild(wrapper.firstChild);
+        }
+    }
+
+    async handleProxyDisplay(){
+        const iframeWrapper = this.iframeWrapper;
+        this.removeIframe();
+
+        const isHidden = (iframeWrapper.style.display === 'none' || !iframeWrapper.style.display);
+        this.linkWrapper.style.display = (isHidden ? 'none' : 'block');
+        iframeWrapper.style.display = (isHidden ? 'block' : 'none');
+        if (!isHidden) return;
+
+        const proxy = new LinkNode.proxy(this.node.linkUrl);
+        const webpageContent = await Request.send(proxy);
+        if (!webpageContent) return;
+
+        this.makeIframe(iframeWrapper).setAttribute('srcdoc', webpageContent);
+    }
+    static proxy = class Proxy {
+        static baseUrl = 'http://localhost:4000/raw-proxy?url=';
+        constructor(linkUrl){
+            this.url = Proxy.baseUrl + encodeURIComponent(linkUrl);
+        }
+        onResponse(res){ return res.text() }
+        onFailure(){
+            alert("An error occurred displaying the webpage through a proxy server. Please ensure that the extract server is running on your localhost.");
+            return "Failed to display the webpage through a proxy server:";
+        }
     }
 }

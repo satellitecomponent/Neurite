@@ -9,9 +9,9 @@ class AiTab {
     }
 
     initNodeCountSlider() {
-        const slider = document.getElementById('node-count-slider');
-        slider.addEventListener('input', () => {
-            document.getElementById('node-slider-label').innerText = 'Top ' + slider.value + '\nnodes';
+        const slider = Elem.byId('node-count-slider');
+        On.input(slider, (e)=>{
+            Elem.byId('node-slider-label').innerText = 'Top ' + slider.value + '\nnodes';
         });
     }
 
@@ -19,7 +19,7 @@ class AiTab {
         let lastUserSetRatio = parseInt(contextSlider.value, 10) / parseInt(contextSlider.max, 10);
         let isProgrammaticChange = false;
 
-        tokenSlider.addEventListener('input', () => {
+        On.input(tokenSlider, (e)=>{
             const newMaxTokens = parseInt(tokenSlider.value, 10);
             contextSlider.max = newMaxTokens;
             const newContextValue = Math.round(lastUserSetRatio * newMaxTokens);
@@ -31,7 +31,7 @@ class AiTab {
             contextSlider.dispatchEvent(new Event('input'));
         });
 
-        contextSlider.addEventListener('input', () => {
+        On.input(contextSlider, (e)=>{
             if (!isProgrammaticChange) {
                 lastUserSetRatio = parseInt(contextSlider.value, 10) / parseInt(contextSlider.max, 10);
             }
@@ -39,29 +39,27 @@ class AiTab {
     }
 
     initAutoContextTokenSync() {
-        const maxTokensSlider = document.getElementById('max-tokens-slider');
-        const maxContextSizeSlider = document.getElementById('max-context-size-slider');
+        const maxTokensSlider = Elem.byId('max-tokens-slider');
+        const maxContextSizeSlider = Elem.byId('max-context-size-slider');
         this.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
 
-        // Initialize UI updates for max tokens and max context size
-        maxTokensSlider.addEventListener('input', () => {
-            document.getElementById('max-tokens-display').innerText = maxTokensSlider.value;
+        On.input(maxTokensSlider, (e)=>{
+            Elem.byId('max-tokens-display').innerText = maxTokensSlider.value;
         });
-
-        maxContextSizeSlider.addEventListener('input', () => {
+        On.input(maxContextSizeSlider, (e)=>{
             const maxContextValue = parseInt(maxContextSizeSlider.value, 10);
             const maxContextMax = parseInt(maxContextSizeSlider.max, 10);
             const ratio = Math.round((maxContextValue / maxContextMax) * 100);
-            document.getElementById('max-context-size-display').innerText = `Context: ${ratio}% \n(${maxContextValue} tokens)`;
+            Elem.byId('max-context-size-display').innerText = `Context: ${ratio}% \n(${maxContextValue} tokens)`;
         });
 
         maxContextSizeSlider.dispatchEvent(new Event('input'));
     }
 
     initModelTemperatureSlider() {
-        const modelTemperatureSlider = document.getElementById('model-temperature');
-        modelTemperatureSlider.addEventListener('input', () => {
-            document.getElementById('model-temperature-label').innerText = 'Temperature:\n ' + modelTemperatureSlider.value;
+        const modelTemperatureSlider = Elem.byId('model-temperature');
+        On.input(modelTemperatureSlider, (e)=>{
+            Elem.byId('model-temperature-label').innerText = 'Temperature:\n ' + modelTemperatureSlider.value;
         });
     }
 }

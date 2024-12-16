@@ -7,40 +7,24 @@ class Tooltip {
             width: '360px',
             ...options
         };
-        this.eventListeners = {
-            mouseenter: this.handleMouseEnter.bind(this),
-            mouseleave: this.handleMouseLeave.bind(this),
-            click: this.handleClick.bind(this)
-        };
     }
 
-    attachTooltipEvents(element) {
-        element.addEventListener('mouseenter', this.eventListeners.mouseenter);
-        element.addEventListener('mouseleave', this.eventListeners.mouseleave);
-        element.addEventListener('click', this.eventListeners.click);
+    attachTooltipEvents(element){ this.switchTooltipEvents(On, element) }
+    detachTooltipEvents(element){ this.switchTooltipEvents(Off, element) }
+    switchTooltipEvents(status, element) {
+        status.mouseenter(element, this.onMouseEnter);
+        status.mouseleave(element, this.onMouseLeave);
+        status.click(element, Event.preventDefault);
     }
-
-    detachTooltipEvents(element) {
-        element.removeEventListener('mouseenter', this.eventListeners.mouseenter);
-        element.removeEventListener('mouseleave', this.eventListeners.mouseleave);
-        element.removeEventListener('click', this.eventListeners.click);
+    onMouseEnter = (e)=>{
+        const snippetDataList = JSON.parse(e.target.dataset.snippetData);
+        this.showTooltip(snippetDataList, e);
     }
-
-    handleMouseEnter(event) {
-        const snippetDataList = JSON.parse(event.target.dataset.snippetData);
-        this.showTooltip(snippetDataList, event);
-    }
-
-    handleMouseLeave(event) {
-        if (!event.relatedTarget || !this.tooltipElement.contains(event.relatedTarget)) {
+    onMouseLeave = (e) => {
+        if (!e.relatedTarget || !this.tooltipElement || !this.tooltipElement.contains(e.relatedTarget)) {
             this.hideTooltip();
         }
-    }
-
-    handleClick(event) {
-        event.preventDefault();
-        // Default click behavior can be implemented here if needed
-    }
+    };
 
     showTooltip(data, event) {
         if (!this.tooltipElement) {
@@ -72,30 +56,31 @@ class Tooltip {
     }
 
     createTooltipElement() {
-        this.tooltipElement = document.createElement('div');
-        this.tooltipElement.classList.add('tooltip');
-        this.tooltipElement.style.position = 'fixed';
-        this.tooltipElement.style.zIndex = this.options.zIndex;
-        this.tooltipElement.style.width = this.options.width;
-        this.tooltipElement.style.pointerEvents = 'auto';
+        const div = Html.make.div('tooltip');
+        div.style.position = 'fixed';
+        div.style.zIndex = this.options.zIndex;
+        div.style.width = this.options.width;
+        div.style.pointerEvents = 'auto';
 
-        this.tooltipElement.addEventListener('mouseleave', (event) => {
-            if (!event.relatedTarget || !event.relatedTarget.hasAttribute('data-snippet-data')) {
+        On.mouseleave(div, (e) => {
+            if (!e.relatedTarget || !e.relatedTarget.hasAttribute('data-snippet-data')) {
                 this.hideTooltip();
             }
         });
 
-        this.tooltipElement.addEventListener('click', (event) => {
-            event.stopPropagation();
+        On.click(div, Event.stopPropagation);
+
+        On.mousedown(div, (e) => {
+            App.menuContext.hide();
+            e.stopPropagation();
         });
 
-        this.tooltipElement.addEventListener('mousedown', (event) => {
-            hideContextMenu();
-            event.stopPropagation();
-        });
+        document.body.appendChild(div);
 
-        document.body.appendChild(this.tooltipElement);
+        // Assign the created tooltip element to this.tooltipElement
+        this.tooltipElement = div;
     }
+
 
     updateTooltipContent(data) {
         // Placeholder method to be overridden by subclasses
@@ -219,23 +204,23 @@ function testToolTipRegex(text1, text2, minMatchLength = 5, maxMatchLength = 20)
     const processedText1 = processText(text1);
     const processedText2 = processText(text2);
 
-    console.log("Processed Text 1:", processedText1);
-    console.log("Processed Text 2:", processedText2);
+    Logger.info("Processed Text 1:", processedText1);
+    Logger.info("Processed Text 2:", processedText2);
 
     // Split into words
     const words1 = processedText1.split(/\s+/);
     const words2 = processedText2.split(/\s+/);
 
-    console.log("Words 1:", words1);
-    console.log("Words 2:", words2);
+    Logger.info("Words 1:", words1);
+    Logger.info("Words 2:", words2);
 
     // Find matches
     for (let i = 0; i <= words1.length - minMatchLength; i++) {
         for (let length = minMatchLength; length <= Math.min(maxMatchLength, words1.length - i); length++) {
             const phrase = words1.slice(i, i + length).join(' ');
-            console.log("Checking phrase:", phrase);
+            Logger.info("Checking phrase:", phrase);
             if (processedText2.includes(phrase)) {
-                console.log("Match found:", phrase);
+                Logger.info("Match found:", phrase);
                 matches.add(phrase);
             }
         }
@@ -279,12 +264,12 @@ function runToolTipTests() {
     ];
 
     testCases.forEach(testCase => {
-        console.log(`Running test: ${testCase.name}`);
+        Logger.info("Running test:", testCase.name);
         const result = testToolTipRegex(testCase.text1, testCase.text2);
-        console.log("Result:", result);
-        console.log("Expected:", testCase.expected);
-        console.log("Pass:", JSON.stringify(result.sort()) === JSON.stringify(testCase.expected.sort()));
-        console.log("--------------------");
+        Logger.info("Result:", result);
+        Logger.info("Expected:", testCase.expected);
+        Logger.info("Pass:", JSON.stringify(result.sort()) === JSON.stringify(testCase.expected.sort()));
+        Logger.info("--------------------");
     });
 }
 

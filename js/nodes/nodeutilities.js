@@ -1,212 +1,280 @@
+class Graph {
+    draggedNode = null;
+    edges = {};
+    edgeDirectionalities = {};
+    edgeViews = {};
+    funcPopulate = 'populateForBackground';
+    htmlEdges = Elem.byId('edges');
+    htmlNodes = Elem.byId('nodes');
+    nodes = {};
+    nodeViews = {};
+    model = svg;
+    movingNode;
+    #nextUuid = 0;
+    own = {self: this};
 
-function nextUUID() {
-    while (nodeMap[NodeUUID] !== undefined) {
-        NodeUUID++;
+    addEdge(edge){
+        this.addEdgeView(edge.view);
+        this.edges[edge.edgeKey] = edge;
     }
-    return NodeUUID;
-}
-
-// Global array for selected UUIDs
-let selectedNodeUUIDs = new Set();
-
-// Function to clone the current set of selected UUIDs
-function cloneSelectedUUIDs() {
-    return new Set(selectedNodeUUIDs);
-}
-
-// Function to toggle node selection
-function toggleNodeSelection(node) {
-    if (selectedNodeUUIDs.has(node.uuid)) {
-        node.windowDiv.classList.toggle('selected');
-        selectedNodeUUIDs.delete(node.uuid); // Deselect
-        //console.log(`deselected`);
-    } else {
-        node.windowDiv.classList.toggle('selected');
-        selectedNodeUUIDs.add(node.uuid); // Select
-        //console.log(`selected`);
+    addEdgeView(edgeView){
+        this.edgeViews[edgeView.id] = edgeView;
+        this.htmlEdges.append(edgeView.svgArrow, edgeView.svgBorder, edgeView.svgLink);
     }
-}
+    addNode(node){
+        let id = this.nodes.length;
+        let div = node.content;
+        /*div.setAttribute("onclick","(e)=>nodes["+id+"].onclick(e)");
+        div.setAttribute("onmousedown","(e)=>nodes["+id+"].onmousedown(e)");
+        div.setAttribute("onmouseup","(e)=>nodes["+id+"].onmouseup(e)");
+        div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
+        if (node.view) this.nodeViews[node.view.id] = node.view;
+        this.nodes[node.uuid] = node;
+    }
+    appendNode(node){ this.htmlNodes.append(node.content) }
 
-// Restores selections from a saved state
-function restoreNodeSelections(savedUUIDs) {
-    savedUUIDs.forEach(uuid => {
-        const node = findNodeByUUID(uuid);
-        if (node) {
-            node.windowDiv.classList.add('selected');
-            selectedNodeUUIDs.add(uuid);
-        }
-    });
-}
+    clear(){
+        App.selectedNodes.clear();
+        this.forEachEdge(this.deleteEdge, this);
+        this.edgeDirectionalities = {};
+        this.forEachNode(this.deleteNode, this);
+    }
+    deleteEdge(edge){
+        this.edgeDirectionalities[edge.edgeKey] = edge.directionality;
 
-function clearNodeSelection() {
-    selectedNodeUUIDs.forEach(uuid => {
-        const node = findNodeByUUID(uuid); // Implement this function based on how your nodes are stored
-        if (node) {
-            node.windowDiv.classList.remove('selected');
-        }
-    });
-    selectedNodeUUIDs.clear(); // Clear the set of selected UUIDs
-}
+        // Remove this edge from both connected nodes' edges arrays
+        edge.pts.forEach(Node.removeThisEdge, edge);
 
-function getCentroidOfSelectedNodes() {
-    const selectedNodes = getSelectedNodes();
-    if (selectedNodes.length === 0) return null;
-
-    let sumPos = new vec2(0, 0);
-    selectedNodes.forEach(node => {
-        sumPos = sumPos.plus(node.pos);
-    });
-    return sumPos.scale(1 / selectedNodes.length);
-}
-
-function collectEdgesFromSelectedNodes(selectedNodes) {
-    let uniqueEdges = new Set();
-    selectedNodes.forEach(node => {
-        node.edges.forEach(edge => {
-            if (edge.pts.every(pt => selectedNodes.includes(pt))) {
-                uniqueEdges.add(edge);
+        this.deleteEdgeView(edge.view);
+        delete this.edges[edge.edgeKey];
+    }
+    deleteEdgeView(edgeView){
+        edgeView.svgArrow.remove();
+        edgeView.svgBorder.remove();
+        edgeView.svgLink.remove();
+        delete this.edgeViews[edgeView.id];
+    }
+    deleteNode(target){
+        const dels = [];
+        this.forEachNode( (node)=>{
+            for (const edge of node.edges) {
+                if (edge.pts.includes(target)) dels.push(edge);
             }
         });
-    });
-    return uniqueEdges;
-}
+        for (const edge of dels) edge.remove();
 
-function edgeFromJSON(o, nodeMap) {
-    let pts = o.p.map((k) => nodeMap[k]);
+        // Remove target node from the edges array of any nodes it was connected to
+        this.forEachNode(Node.filterEdgesToThis, target);
 
-    if (pts.includes(undefined)) {
-        console.warn("missing keys", o, nodeMap);
+        const uuid = target.uuid;
+        App.selectedNodes.uuids.delete(uuid);
+        delete this.nodeViews[uuid];
+        delete this.nodes[uuid];
+
+        target.removed = true;
+        target.content.remove();
     }
 
-    // Check if edge already exists
-    for (let e of edges) {
-        let e_pts = e.pts.map(n => n.uuid).sort();
-        let o_pts = o.p.sort();
-        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) {
-            // Edge already exists, return without creating new edge
-            return;
+    filterNodes(cb, ct){
+        const arr = [];
+        const nodes = this.nodes;
+        for (const uuid in nodes) {
+            const node = nodes[uuid];
+            if (cb.call(ct, node)) arr.push(node);
         }
+        return arr;
     }
+    forEachEdge(cb, ct){ Object.forEach(this.edges, cb, ct) }
+    forEachEdgeView(cb, ct){ Object.forEach(this.edgeViews, cb, ct) }
+    forEachNode(cb, ct){ Object.forEach(this.nodes, cb, ct) }
+    forEachNodeView(cb, ct){ Object.forEach(this.nodeViews, cb, ct) }
 
-    let e = new Edge(pts, o.l, o.s, o.g);
-
-    for (let pt of pts) {
-        pt.addEdge(e); // add edge to all points
+    get nextUuid(){
+        const nodes = this.nodes;
+        while (nodes[this.#nextUuid]) {
+            this.#nextUuid += 1;
+        }
+        return this.#nextUuid;
     }
+    setEdgeDirectionalityFromData(edgeData){
+        this.edgeDirectionalities[edgeData.edgeKey] ||=
+            Edge.directionalityFromData(edgeData.directionality)
+    }
+    viewForElem(target){
+        const viewType = target.dataset.viewType;
+        if (viewType) return this[viewType][target.dataset.viewId];
 
-    edges.push(e);
-    return e;
+        const elem = target.closest('[data-view-type]');
+        if (elem) return this[elem.dataset.viewType][elem.dataset.viewId];
+    }
 }
+svg.dataset.viewType = 'own';
+svg.dataset.viewId = 'self';
+
+
+
+class SelectedNodes {
+    uuids = new Set();
+
+    forEach(cb, ct){
+        this.uuids.forEach( (uuid)=>{
+            const node = Node.byUuid(uuid);
+            if (node) cb.call(ct, node);
+        })
+    }
+    forEachView(cb, ct){
+        this.uuids.forEach( (id)=>{
+            const nodeView = NodeView.byId(id);
+            if (nodeView) cb.call(ct, nodeView);
+        })
+    }
+    hasNode(node){ return this.uuids.has(node.uuid) }
+    reduce(cb, init){
+        return this.uuids.values().reduce( (acc, uuid)=>{
+            const node = Node.byUuid(uuid);
+            return (node ? cb(acc, node) : acc);
+        }, init)
+    }
+
+    toggleNode(node){
+        node.view.toggleSelected();
+        const isSelected = this.uuids.has(node.uuid);
+        this.uuids[isSelected ? 'delete' : 'add'](node.uuid);
+        Logger.debug(isSelected ? 'deselected' : 'selected');
+    }
+    static toggleNode(node){ App.selectedNodes.toggleNode(node) }
+
+    restoreNodeById(id){
+        const nodeView = NodeView.byId(id);
+        if (!nodeView) return;
+
+        nodeView.toggleSelected(true);
+        this.uuids.add(id);
+    }
+
+    clear(){
+        this.forEachView(NodeView.toggleSelectedToThis, false);
+        this.uuids.clear();
+    }
+
+    getCentroid(){
+        if (this.uuids.size === 0) return null;
+
+        const cb = (sumPos, node)=>sumPos.plus(node.pos) ;
+        return this.reduce(cb, new vec2(0, 0)).scale(1 / this.uuids.size);
+    }
+
+    getUniqueEdges(){
+        return this.reduce( (set, node)=>{
+            node.edges.forEach( (edge)=>{
+                if (edge.pts.every(this.hasNode, this)) set.add(edge)
+            });
+            return set;
+        }, new Set())
+    }
+
+    scale(scaleFactor, centralPoint){
+        this.forEach(node => {
+            node.scale *= scaleFactor;
+
+            // Adjust position to maintain relative spacing only if the node is not anchored
+            if (node.anchorForce !== 1) {
+                const directionToCentroid = node.pos.minus(centralPoint);
+                node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
+            }
+
+            updateNodeEdgesLength(node);
+        });
+
+        // If needed, scale the user screen (global zoom)
+        //zoom = zoom.scale(scaleFactor);
+        //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
+    }
+}
+
+
 
 function updateNodeEdgesLength(node) {
     node.edges.forEach(edge => {
         const currentLength = edge.currentLength;
-        if (currentLength) {
-            edge.length = currentLength;
-        }
-    });
+        if (currentLength) edge.length = currentLength;
+    })
 }
 
-function scaleSelectedNodes(scaleFactor, centralPoint) {
-    const selectedNodes = getSelectedNodes();
+function edgeFromJSON(edgeData) {
+    const nodes = Graph.nodes;
+    const pts = edgeData.p.map((k) => nodes[k]);
+    if (pts.includes(undefined)) Logger.warn("missing keys", edgeData, nodes);
 
-    selectedNodes.forEach(node => {
-        // Scale the node
-        node.scale *= scaleFactor;
-
-
-        // Adjust position to maintain relative spacing only if the node is not anchored
-        if (node.anchorForce !== 1) {
-            let directionToCentroid = node.pos.minus(centralPoint);
-            node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
-        }
-
-        updateNodeEdgesLength(node);
+    // Check if edge already exists
+    Graph.forEachEdge( (edge)=>{
+        const e_pts = edge.pts.map(n => n.uuid).sort();
+        const o_pts = edgeData.p.sort();
+        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) return; // Edge already exists
     });
 
-    // If needed, scale the user screen (global zoom)
-    //zoom = zoom.scale(scaleFactor);
-    //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
+    const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
+    pts.forEach(Node.addEdgeThis, edge);
+    Graph.addEdge(edge);
+    return edge;
 }
 
-function findNodeByUUID(uuid) {
-    return nodes.find(node => node.uuid === uuid);
+Node.byTitle = function(title){
+    const lCaseTitle = title.toLowerCase();
+    const matchingNodes = Graph.filterNodes(
+        (node)=>(node.getTitle()?.toLowerCase() === lCaseTitle)
+    );
+
+    Logger.debug(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
+    Logger.debug("Matching nodes:", matchingNodes);
+
+    return (matchingNodes.length > 0 ? matchingNodes[0] : null);
 }
-
-function getSelectedNodes() {
-    // Return an array of node objects based on the selected UUIDs
-    return Array.from(selectedNodeUUIDs).map(uuid => nodeMap[uuid]);
-}
-
-function getNodeByTitle(title) {
-    const lowerCaseTitle = title.toLowerCase();
-    let matchingNodes = [];
-
-    for (let n of nodes) {
-        let nodeTitle = n.getTitle();
-
-        if (nodeTitle !== null && nodeTitle.toLowerCase() === lowerCaseTitle) {
-            matchingNodes.push(n);
-        }
-    }
-
-    // Debugging: Show all matching nodes and their count
-    //console.log(`Found ${matchingNodes.length} matching nodes for title ${title}.`);
-    //console.log("Matching nodes:", matchingNodes);
-
-    return matchingNodes.length > 0 ? matchingNodes[0] : null;
-}
-function getTextareaContentForNode(node) {
-    if (!node || !node.content) {
-        console.warn('Node or node.content is not available');
+Node.getTextareaContent = function(node){
+    if (!node?.content) {
+        Logger.warn("Node or node.content is not available");
         return null;
     }
 
     if (!node.isTextNode) {
-        //console.warn('Node is not a text node. Skipping getText.');
+        Logger.debug("Node is not a text node. Skipping getText.");
         return null;
     }
 
     const editableTextarea = node.contentEditableDiv;
-
     if (!editableTextarea) {
-        console.warn('editableTextarea not found.');
+        Logger.warn("editableTextarea not found.");
         return null;
     }
 
-    // Return the textarea content
     return editableTextarea.value;
 }
-
 function testNodeText(title) {
-    nodes.forEach(node => {
-        let textarea = node.content.querySelector('textarea');
-        console.log(`From nodes array`);
+    Graph.forEachNode( (node)=>{
+        const textarea = node.content.querySelector('textarea');
+        Logger.info("From nodes array");
         if (textarea) {
-            console.log(`Node UUID: ${node.uuid} - Textarea value from DOM:`, textarea.value);
+            Logger.info("Node UUID:", node.uuid, "- Textarea value from DOM:", textarea.value)
         } else {
-            console.log(`Node UUID: ${node.uuid} - No textarea found in DOM`);
+            Logger.info("Node UUID:", node.uuid, "- No textarea found in DOM")
         }
     });
 
-    const node = getNodeByTitle(title);
-    if (node) {
-        console.log(`Fetching text for node with title: ${title}`);
-        const text = getTextareaContentForNode(node);
-        console.log(`Text fetched: ${text}`);
-        return text;
-    } else {
-        console.warn(`Node with title ${title} not found`);
+    const node = Node.byTitle(title);
+    if (!node) {
+        Logger.warn("Node with title", title, "not found");
         return null;
     }
+
+    const text = Node.getTextareaContent(node);
+    Logger.info("Node with title:", title, "has text:", text);
+    return text;
 }
 
 function getNodeText() {
     const nodes = [];
-    for (const nodeKey in nodeMap) {
-        const node = nodeMap[nodeKey];
-
-        const titleInput = node.titleInput;
+    Graph.forEachNode( (node)=>{
+        const titleInput = node.view.titleInput;
         const contentText = node.hiddenTextarea;
 
         nodes.push({
@@ -214,6 +282,6 @@ function getNodeText() {
             titleInput: titleInput ? titleInput.value : '',
             contentText: contentText ? contentText.value : ''
         });
-    }
+    });
     return nodes;
 }

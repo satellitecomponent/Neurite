@@ -3,7 +3,7 @@ function modulateAiNodeModel(aiNodeInference, hasImageNodes) {
 
     // Check if the local or global model is set to ollama.
     const isOllamaSelected = provider === 'ollama' ||
-        (provider === 'GLOBAL' && document.getElementById('model-select').value === 'ollama');
+        (provider === 'GLOBAL' && Elem.byId('model-select').value === 'ollama');
 
     // If image nodes are present, and ollama is not selected, use the vision model.
     if (hasImageNodes && !isOllamaSelected) {
@@ -12,7 +12,7 @@ function modulateAiNodeModel(aiNodeInference, hasImageNodes) {
         // If ollama is selected and there are image nodes, either as local or global model, use LLaVA 7B
         return { provider: 'ollama', model: 'LLaVA' };
     } else if (provider === 'GLOBAL') {
-        return determineGlobalModel();
+        return Ai.determineModel();
     } else {
         // Use the local model selection
         return { provider, model };
@@ -42,25 +42,19 @@ function calculateImageTokenCost(width, height, detailLevel) {
     return (totalTiles * 170) + 85;
 }
 
-// Convert a blob URL to base64 data
-function convertImageToBase64(blobUrl) {
-    return new Promise((resolve, reject) => {
-        // Fetch the blob data from the blob URL
-        fetch(blobUrl)
-            .then(response => response.blob())
-            .then(blob => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    resolve(reader.result.split(',')[1]); // Return the base64 string without the prefix
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob); // Read the blob as data URL
-            })
-            .catch(error => {
-                console.error('Error fetching or converting the blob URL:', error);
-                reject(error);
-            });
-    });
+
+// Asynchronously convert an image to a base64 string
+// The convertImageToBase64 function should take a blob URL, create an Image object,
+// load the blob URL, and then perform the canvas draw and toDataURL conversion.
+function convertImageToBase64(imageElement, callback) {
+    const canvas = Html.new.canvas();
+    canvas.width = imageElement.naturalWidth;
+    canvas.height = imageElement.naturalHeight;
+
+    canvas.getContext('2d')
+    .drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+
+    callback(canvas.toDataURL('image/png')); // base64 string
 }
 
 
@@ -113,9 +107,9 @@ async function callVisionModel(messages, onStreamComplete) {
             updateUiForIdleState();
             if (onStreamComplete) onStreamComplete(); // Call the callback after streaming is complete
         },
-        onError: (error) => {
+        onError: (err) => {
             functionErrorIcon.style.display = 'block';
-            console.error("Error:", error);
+            Logger.err(err);
         },
         inferenceOverride: inferenceOverride,
     });

@@ -1,4 +1,3 @@
-
 window.startedViaPlaywright = window.startedViaPlaywright || false;
 
 //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
@@ -24,18 +23,34 @@ if (!RegExp.escape) {
             cuList.push(c);
         }
         //6. Let L be a String whose elements are, in order, the elements of cuList.
-        let L = cuList.join("");
+        let L = cuList.join('');
         // 7. Return L.
         return L;
     };
 }
-// Store the values of the input elements
-let modalInputValues = {};
 
-const storedInputValues = localStorage.getItem('modalInputValues');
-    if (storedInputValues) {
-        modalInputValues = JSON.parse(storedInputValues);
+
+
+class Modal {
+    static current = null;
+    static div = Elem.byId('customModal');
+    static inputValues = {};
+    static isDragging = false;
+    static mouseOffsetX = 0;
+    static mouseOffsetY = 0;
+
+    constructor(id, title, funcInit){
+        this.id = id;
+        this.title = title;
+        this.init = funcInit;
     }
+    static loadInputValues(){
+        const storedValues = localStorage.getItem('modalInputValues');
+        if (storedValues) Modal.inputValues = JSON.parse(storedValues);
+    }
+}
+Modal.loadInputValues();
+
 
 
 var controls = {
@@ -99,8 +114,6 @@ var settings = {
     renderDChar: "L",
     opacity: 1,
 
-
-
     iterations: 256,
 
     //autopilotRF_Pscale:1,
@@ -117,7 +130,7 @@ var settings = {
         hover: ["RGB(100,100,100)", "RGB(200,200,255)"],
         click: ["RGB(70,70,70)", "RGB(100,100,100)"],
         initial: ["none", "RGB(170,170,170)"],
-        focus: ["none", "RGB(200,200,255)"] // Assuming this is your focus state
+        focus: ["none", "RGB(200,200,255)"]
     },
 
     maxDist: 4,
@@ -132,126 +145,102 @@ var flashlight_fraction = 0.73; // this is what fraction of samples are diverted
 
 
 
+class Interface {
+    altHeld = false;
+    nodeMode = new NodeMode(this.autoToggleAllOverlays.bind(this));
+    overlays = [];
+    constructor(){
+        On.keydown(document, this.altKeyDown);
+        On.keyup(document, this.altKeyUp);
+        On.message(window, this.onMessage);
+    }
 
-//interface
-
-const overlays = [];
-
-const autoToggleAllOverlays = () => {
-    for (const overlay of overlays) {
-        if (altHeld || nodeMode === 1) {
-            overlay.style.display = 'block';
-        } else {
-            overlay.style.display = 'none';
+    autoToggleAllOverlays(){
+        const condition = (this.altHeld || this.nodeMode.val === 1);
+        for (const overlay of this.overlays) {
+            overlay.style.display = (condition ? 'block' : 'none');
         }
     }
-};
-
-let altHeld = false;
-
-// Global event listeners to set the altHeld flag
-document.addEventListener('keydown', function (event) {
-    if (event.altKey) {
-        altHeld = true;
-        autoToggleAllOverlays();
-        event.preventDefault();  // Prevent default behavior like focusing on the iframe
+    altKeyDown = (e)=>{
+        if (e.altKey) {
+            this.altHeld = true;
+            this.autoToggleAllOverlays();
+            e.preventDefault(); // e.g. focusing on the iframe
+        }
     }
-});
-
-document.addEventListener('keyup', function (event) {
-    if (!event.altKey) {
-        altHeld = false;
-        autoToggleAllOverlays();
+    altKeyUp = (e)=>{
+        if (!e.altKey) {
+            this.altHeld = false;
+            this.autoToggleAllOverlays();
+        }
     }
-});
-
-window.addEventListener('message', function (event) {
-    if (typeof event.data.altHeld !== 'undefined') {
-        altHeld = event.data.altHeld;
-        autoToggleAllOverlays();
+    onMessage = (e)=>{
+        const data = e.data;
+        if (data.altHeld !== undefined) {
+            this.altHeld = data.altHeld;
+            this.autoToggleAllOverlays();
+        }
+        this.nodeMode.val = data.nodeMode ?? 0;
     }
-    if (typeof event.data.nodeMode !== 'undefined') {
-        nodeMode = event.data.nodeMode;
-    } else {
-        nodeMode = 0;
-    }
-});
-
-var nodes = [];
-var edges = [];
-var nodeMode_v = 0;
-var nodeMode = 0;
-
-var movingNode = undefined;
-var NodeUUID = 0;
-
-
-
-var nodeMap = {};
-
-// Global Processed Node Map
-let globalProcessedNodeMap = {};
-
-function updateGlobalProcessedNodeMap(nodeMap) {
-    // Collect current UUIDs in globalProcessedNodeMap
-    const existingUUIDs = new Set(Object.keys(globalProcessedNodeMap));
-
-    // Reset globalProcessedNodeMap
-    let tempProcessedNodeMap = {};
-
-    // Use addNodeToGlobalProcessedMap function for each node, updating or adding new
-    for (let key in nodeMap) {
-        const node = nodeMap[key];
-        addNodeToGlobalProcessedMap(node, tempProcessedNodeMap);
-        existingUUIDs.delete(node.uuid); // Remove from set to track as 'still exists'
-    }
-
-    // Remove any nodes that weren't in the updated nodeMap (stale nodes)
-    existingUUIDs.forEach(uuid => {
-        removeNodeFromGlobalProcessedMap(uuid);
-    });
-
-    // Update globalProcessedNodeMap after all operations to minimize state inconsistencies
-    globalProcessedNodeMap = tempProcessedNodeMap;
-
-    // Log or perform additional operations as needed
-    //console.log("Global Processed Node Map has been updated with removal of stale nodes.");
-}
-
-function addNodeToGlobalProcessedMap(node, processedMap) {
-    const edgesUUIDs = (node.edges || []).map(edge => edge.pts.map(pt => pt.uuid)).flat();
-
-    processedMap[node.uuid] = {
-        uuid: node.uuid,
-        type: getNodeType(node),
-        pos: node.pos,
-        scale: node.scale,
-        sensor: node.sensor,
-        state: node.state,
-        actions: getNodeActions(node),
-        edges: edgesUUIDs
-    };
-}
-
-function removeNodeFromGlobalProcessedMap(nodeUuid) {
-    // First, remove the node's UUID from the edges of all other nodes
-    Object.values(globalProcessedNodeMap).forEach(node => {
-        node.edges = node.edges.filter(edgeUuid => edgeUuid !== nodeUuid);
-    });
-
-    // Then, remove the node itself from the map
-    delete globalProcessedNodeMap[nodeUuid];
-
-    // Log or additional operations can be performed here
 }
 
 
-var draggedNode = null;
-var mousedownNode = undefined;
 
-let htmlnodes_parent = document.getElementById("nodes");
-let htmlnodes = htmlnodes_parent.children;
-let htmledges = document.getElementById("edges");
+class ProcessedNodes {
+    map = {};
+
+    addNodeToMap(node, processedMap){
+        const neighborsUuids = [];
+        node.forEachConnectedNode( (node)=>neighborsUuids.push(node.uuid) );
+
+        processedMap[node.uuid] = {
+            uuid: node.uuid,
+            type: Node.getType(node),
+            isMoving: false,
+            pos: node.pos,
+            scale: node.scale,
+            sensor: node.sensor,
+            state: node.state,
+            actions: NodeActions.forNode(node),
+            neighborsUuids
+        };
+    }
+    filter(cb, ct){
+        const found = [];
+        this.forEach( (node)=>{ if (cb.call(ct, node)) found.push(node) });
+        return found;
+    }
+    forEach(cb, ct){
+        const map = this.map;
+        for (const uuid in map) cb.call(ct, map[uuid]);
+    }
+    getUuids(){ return Object.keys(this.map) }
+
+    static removeThisUuidFromEdgesOfNode(node){
+        node.neighborsUuids = node.neighborsUuids.filter(Object.isntThis, this.valueOf())
+    }
+    removeById(nodeUuid){
+        this.forEach(ProcessedNodes.removeThisUuidFromEdgesOfNode, nodeUuid);
+        delete this.map[nodeUuid];
+    }
+    update(){
+        const existingUUIDs = new Set(this.getUuids());
+        const tempProcessedNodeMap = {};
+
+        const nodes = Graph.nodes;
+        for (const uuid in nodes) {
+            const node = nodes[uuid];
+            this.addNodeToMap(node, tempProcessedNodeMap);
+            existingUUIDs.delete(uuid); // Remove from set to track as 'still exists'
+        }
+
+        // Remove any nodes that weren't in the updated nodes (stale nodes)
+        existingUUIDs.forEach(this.removeById, this);
+        this.map = tempProcessedNodeMap;
+    }
+}
+
+
 
 //Zettelkasten
 
@@ -261,46 +250,39 @@ let restoreZettelkastenEvent = false;
 
 let bypassZettelkasten = false;
 
-var nodeTagInput;
-var refTagInput;
+const Tag = {
+    node: Modal.inputValues['node-tag'] || "##",
+    ref: Modal.inputValues['ref-tag'] || "[["
+}
+Tag.initializeInputs = function(){
+    const nodeTagInput = Elem.byId('node-tag');
+    const refTagInput = Elem.byId('ref-tag');
+    if (!nodeTagInput || !refTagInput) return;
 
-// Globally available variables for the tags
-var nodeTag = modalInputValues['node-tag'] || "##";
-var refTag = modalInputValues['ref-tag'] || "[[";
+    nodeTagInput.value = Tag.node;
+    refTagInput.value = Tag.ref;
+    On.input(nodeTagInput, (e)=>{
+        const nodeTag = nodeTagInput.value.trim();
+        Tag.node = (nodeTag === '' ? ' ' : nodeTag);
 
-function initializeTagInputs() {
-    var nodeTagInput = document.getElementById('node-tag');
-    var refTagInput = document.getElementById('ref-tag');
-    if (nodeTagInput && refTagInput) {
-        nodeTagInput.value = nodeTag; // Set the current value
-        refTagInput.value = refTag; // Set the current value
-        nodeTagInput.addEventListener('input', function () {
-            nodeTag = nodeTagInput.value.trim();
-            if (nodeTag === '') {
-                nodeTag = ' ';
-            }
-            updateNodeTitleRegex();  // Update the regex with the new nodeTag
-            updateAllZetMirrorModes();
-            updateAllZettelkastenProcessors();
-        });
-        refTagInput.addEventListener('input', function () {
-            refTag = refTagInput.value.trim();
-            if (refTag === '') {
-                refTag = ' ';
-            }
-            updateAllZetMirrorModes();
-            updateAllZettelkastenProcessors();
-        });
-    }
+        updateNodeTitleRegex();  // Update the regex with the new nodeTag
+        updateAllZetMirrorModes();
+        updateAllZettelkastenProcessors();
+    });
+    On.input(refTagInput, (e)=>{
+        const refTag = refTagInput.value.trim();
+        Tag.ref = (refTag === '' ? ' ' : refTag);
+
+        updateAllZetMirrorModes();
+        updateAllZettelkastenProcessors();
+    });
 }
 
-let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
 
 function updateNodeTitleRegex() {
-    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(nodeTag)}\\s*(.*)$`);
+    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
 }
-
-const LLM_TAG = "AI:";
 
 const bracketsMap = {
     '(': ')',
@@ -311,7 +293,7 @@ const bracketsMap = {
     '[[': ']]',
     '{{': '}}',
     '<<': '>>',
-    '«': '»',      // Guillemet
+    'ï¿½': 'ï¿½',      // Guillemet
     '/*': '*/',
     '<!--': '-->',
     '#[': ']#',
@@ -332,27 +314,106 @@ const getClosingBracket = (openingBracket) => {
 let isBracketLinks = false;
 
 const checkBracketsMap = () => {
-    return Object.keys(bracketsMap).includes(`${tagValues.refTag}`);
+    return Object.keys(bracketsMap).includes(tagValues.refTag);
 }
 
 const tagValues = {
     get nodeTag() {
-        return nodeTag;
+        return Tag.node;
     },
     get refTag() {
-        const refValue = refTag;
+        const refValue = Tag.ref;
         isBracketLinks = Object.keys(bracketsMap).includes(refValue);
         return refValue;
     }
 };
 
+const Keys = {};
+
+const LLM_TAG = "AI:";
+
+Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) );
+
 const PROMPT_IDENTIFIER = "Prompt:";
+
+class Html {
+    static create = document.createElement.bind(document);
+    static make = {
+        a(href, className){
+            const a = Html.new.a();
+            if (href !== undefined) a.href = href;
+            if (className !== undefined) a.setAttribute('class', className);
+            return a;
+        },
+        button(className, textContent){
+            const button = Html.new.button();
+            if (className !== undefined) button.setAttribute('class', className);
+            if (textContent !== undefined) button.textContent = textContent;
+            return button;
+        },
+        li(content, className, onClick){
+            const li = Html.new.li();
+            if (content !== undefined) li.append(content);
+            if (className !== undefined) li.setAttribute('class', className);
+            if (onClick !== undefined) On.click(li, onClick);
+            return li;
+        }
+    };
+    static makeWithClass(tagName, className){
+        const elem = Html.new[tagName]();
+        if (className !== undefined) elem.setAttribute('class', className);
+        return elem;
+    }
+    static new = {};
+}
+[
+    'code', 'div', 'iframe', 'input',
+    'pre', 'select', 'span', 'textarea'
+].forEach( (name)=>{ Html.make[name] = Html.makeWithClass.bind(Elem, name) } );
+[
+    'a', 'audio', 'button', 'code', 'canvas',
+    'div', 'iframe', 'img', 'input', 'label', 'li',
+    'p', 'pre', 'select', 'script', 'span',
+    'table', 'td', 'textarea', 'tr', 'video'
+].forEach( (name)=>{ Html.new[name] = Html.create.bind(Elem, name) } );
+
+class Svg {
+    static needsRecalc = false;
+    static oldRotation = 0;
+    static oldZoom = 8192;
+    static recenterThreshold = 0.01;
+    static rezoomFactor = 8192;
+    static rezoomThreshold = 0.1;
+    static zoom = 8192;
+    static refresh = '<svg width="24" height="24"><use xlink:href="#refresh-icon"></use></svg>';
+    static use = {
+        pause: '<use xlink:href="#pause-icon"></use>',
+        play: '<use xlink:href="#play-icon"></use>'
+    };
+    static pause = `<svg width="24" height="24">${Svg.use.pause}</svg>`;
+    static play = `<svg width="24" height="24">${Svg.use.play}</use></svg>`;
+    static updatePan(newPan){
+        this.oldPan = this.pan;
+        this.pan = newPan;
+        this.needsRecalc = true;
+    }
+    static updateZoom(newZoom){
+        this.oldZoom = this.zoom;
+        this.zoom = newZoom;
+        this.needsRecalc = true;
+    }
+    static create = document.createElementNS.bind(document, 'http://www.w3.org/2000/svg');
+    static new = {};
+}
+['circle', 'path', 'svg', 'use']
+.forEach( (name)=>{ Svg.new[name] = Svg.create.bind(Elem, name) } );
 
 //ai.js
 
-
 // nodedef.js ainodemessage.js
-let llmNodeCount = 0;
+const AiNode = {
+    count: 0
+};
 
 //ai.js and interface.js
 class LRUCache {
@@ -384,7 +445,7 @@ function encodeHTML(str) {
 }
 
 function decodeHTML(html) {
-    let txt = document.createElement('textarea');
+    const txt = Html.new.textarea();
     txt.innerHTML = html;
     return txt.value;
 }
@@ -406,35 +467,27 @@ let isDraggingDragBox = false;
 
 //interface.js
 
-// Check if a string is valid JSON
-function isJSON(str) {
+String.isJson = function(str){
     try {
         JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
+        return true;
+    } catch(err){}
+    return false;
 }
+String.isUrl = function(str){
+    if (!URL.canParse(str)) return false;
 
-
-// Check if the user's message is a URL
-const isUrl = (text) => {
-    try {
-        const url = new URL(text);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-        return false;
-    }
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
 }
-
-const isIframe = (text) => {
+String.isIframe = function(str){
     try {
-        const doc = new DOMParser().parseFromString(text, "text/html");
+        const doc = new DOMParser().parseFromString(str, "text/html");
         return doc.body.childNodes[0] && doc.body.childNodes[0].nodeName.toLowerCase() === 'iframe';
-    } catch (_) {
-        return false;
-    }
+    } catch(err){}
+    return false;
 }
+String.uuidOf = function(obj){ return obj.uuid }
 
 function getIframeUrl(iframeContent) {
     // Function to extract URL from the iframe content
@@ -443,16 +496,14 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
-function cancel(event) {
-    if (event.stopPropagation) {
-        event.stopPropagation(); // W3C model
-    } else {
-        event.cancelBubble = true; // IE model
-    }
+Event.preventDefault = function(e){ e.preventDefault() }
+Event.stopPropagation = function(e){ e.stopPropagation() }
+Event.stopPropagationByNameForThis = function(eName){
+    On[eName](this, Event.stopPropagation)
 }
 
 function triggerInputEvent(elementId) {
-    document.getElementById(elementId).dispatchEvent(new Event('input'));
+    Elem.byId(elementId).dispatchEvent(new Event('input'))
 }
 
 function clearTextSelections() {
@@ -470,32 +521,45 @@ function clearTextSelections() {
     }
 }
 
-//debounce
-
+function callWithDelay(func, delay){
+    return new Promise( (resolve)=>{
+        setTimeout( ()=>{
+            func();
+            resolve();
+        }, delay)
+    })
+}
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
-        const later = () => {
+        function later(){
             clearTimeout(timeout);
             func(...args);
-        };
+        }
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
 }
 
-const debouncedTextareaUpdates = new Map();
+const TextArea = {
+    debouncedUpdates: new Map()
+};
+TextArea.append = function(text){
+    this.value += text;
+    this.dispatchEvent(new Event('input'));
+}
+TextArea.update = function(text) {
+    if (this.value === text) return;
 
-function updateTextareaAndDispatchEvent(targetTextarea, text) {
-    targetTextarea.value = text;
-    targetTextarea.dispatchEvent(new Event('change'));
-    //console.log(`Event triggered`);
+    this.value = text;
+    this.dispatchEvent(new Event('change'));
+    Logger.debug("Event triggered");
 }
 
-function getDebouncedTextareaUpdate(targetTextarea) {
-    if (!debouncedTextareaUpdates.has(targetTextarea)) {
-        const debouncedUpdate = debounce(updateTextareaAndDispatchEvent, 20);
-        debouncedTextareaUpdates.set(targetTextarea, debouncedUpdate);
+function getDebouncedTextareaUpdate(textarea) {
+    const debouncedUpdates = TextArea.debouncedUpdates;
+    if (!debouncedUpdates.has(textarea)) {
+        debouncedUpdates.set(textarea, debounce(TextArea.update.bind(textarea), 20));
     }
-    return debouncedTextareaUpdates.get(targetTextarea);
+    return debouncedUpdates.get(textarea);
 }
