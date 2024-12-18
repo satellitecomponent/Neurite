@@ -606,19 +606,19 @@ Fractal.sample_random_point = function(){
     }
     return pt;
 }
-Fractal.path_to_basin = function * (pt){
+Fractal.path_to_basin = function* (pt) {
     const mand_iter_n = Fractal.mand_iter_n;
     const gradzr = Fractal.gradzr; //gradzr(f,z,epsilon) = ∂|f(z)|/∂z
-    let p = findInfimum(settings.iters, pt);
-    while (true){
-        const func = (z)=>mand_iter_n(p.i, z, z).mag2();
+    let p = findInfimum(settings.iterations, pt);
+    while (true) {
+        const func = (z) => mand_iter_n(p.i, z, z).mag2();
         let delta = gradzr(func, pt, 1e-5);
-        delta = delta.unscale(delta.mag() + 1e-300).scale(zoom.mag() * .1);//normalize and scale delta
+        delta = delta.unscale(delta.mag() + 1e-300).scale(zoom.mag() * .1); //normalize and scale delta
         pt = pt.plus(delta.scale(-settings.renderStepSize));
         yield pt;
     }
 }
-Fractal.hair_svg_path = function(pt,num_pts_max){
+Fractal.hair_svg_path = function (pt, num_pts_max) {
     const result = ["M", toSVG(pt), settings.renderDChar];
     let length = 0;
     let opt = pt;
@@ -630,26 +630,14 @@ Fractal.hair_svg_path = function(pt,num_pts_max){
     if (mand_i(pt, iters) > iters) { //inside the set
         for (const next_pt of Fractal.path_to_basin(pt)) {
             const svg_pt = toSVG(next_pt);
+            if (mand_i(next_pt, iters) <= iters) break;
             if (!svg_pt.isFinite()) break;
             result.push(svg_pt);
-            length += next_pt.minus(pt);
+            length += next_pt.minus(pt).mag();
             pt = next_pt;
             num_pts++;
             if (num_pts >= num_pts_max) break;
         }
-        /*let p = findPeriod(pt,pt,1e-12,iters);
-        for (; n > 0; n--){
-            let npt = mand_iter_n(p,pt,pt);
-            let delta = npt.minus(pt);
-            delta = delta.cpow(new vec2(0.5,0));
-            npt = pt.plus(delta.scale(0.1));
-            if (mand_i(npt,iters)<=iters){
-                break;
-            }
-            .push(toSVG(npt), ' ');
-            length += npt.minus(pt).mag();
-            pt = npt;
-        }*/
         opacity = settings.innerOpacity / 10;
         length /= 4;
     } else { //outside the set
