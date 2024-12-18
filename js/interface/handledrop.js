@@ -67,9 +67,6 @@ function makeIconDraggable(iconDiv) {
             if (iconDiv.classList.contains('edges-icon')) {
                 FileTree.openModal();
             }
-            if (iconDiv.classList.contains('edges-icon')) {
-                openFileTreeModal();
-            }
         }
     });
 }

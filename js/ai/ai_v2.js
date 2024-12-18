@@ -280,7 +280,6 @@ function extractContentFromResponse(data) {
     return (content ? content.trim() : null);
 }
 
-// Stream AI Response Function
 async function streamAiResponse(response, onStreamingResponse, delay = 10) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");

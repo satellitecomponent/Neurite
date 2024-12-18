@@ -201,20 +201,14 @@ AiNode.sendMessage = async function (node, message = null) {
 
     const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
 
-    allConnectedNodes.forEach(async (connectedNode) => {
+    allConnectedNodes.forEach(connectedNode => {
         if (connectedNode.isImageNode) {
-            const imageData = await getImageNodeData(connectedNode);
+            const imageData = getImageNodeData(connectedNode);
             if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
-                // Construct the message with base64 image formatted as a data URL
+                // Construct an individual message for each image
                 messages.push({
                     role: 'user',
-                    content: {
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:image/jpeg;base64,${imageData.image_data}` // Properly format the base64 image data as a data URL
-                        },
-                        //detail: 'high' // Set high detail for better quality
-                    }
+                    content: [imageData] // Contains only the image data
                 });
                 remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
             } else {
@@ -319,6 +313,7 @@ AiNode.sendMessage = async function (node, message = null) {
     node.aiResponding = true;
     node.userHasScrolled = false;
 
+    const clickQueues = {};  // Contains a click queue for each AI node
     // Initiates helper functions for aiNode Message loop.
     const aiNodeMessageLoop = new AiNode.MessageLoop(node, clickQueues);
 
@@ -366,11 +361,11 @@ AiNode.MessageLoop = class {
         this.clickQueues = clickQueues;
     }
 
-    async processClickQueue(connectedNode) {
-        const queue = this.clickQueues.get(connectedNode) || [];
+    async processClickQueue(nodeId) {
+        const queue = this.clickQueues[nodeId] || [];
         while (true) {
             if (queue.length > 0) {
-                const { sendButton } = queue[0];
+                const { connectedNode, sendButton } = queue[0];
 
                 const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
@@ -387,7 +382,7 @@ AiNode.MessageLoop = class {
             await Promise.delay(2500);
         }
 
-        this.clickQueues.delete(connectedNode);
+        delete this.clickQueues[nodeId];
     }
 
     async questionConnectedAiNodes() {
@@ -425,7 +420,7 @@ AiNode.MessageLoop = class {
                 const userResponse = await this.getUserResponse(message);
                 if (userResponse) {
                     const responseMessage = `@user says,\n${userResponse.trim()}`;
-                    this.processTargetNode(this.node, responseMessage);
+                    this.processTargetNode(this.node, responseMessage, true);
                 }
                 continue;
             } else if (recipient === 'self') {
@@ -468,6 +463,8 @@ AiNode.MessageLoop = class {
     }
 
     processTargetNode(connectedNode, message, skipClickQueue = false) {
+        const uniqueNodeId = connectedNode.index;
+
         if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
             Logger.warn("AI response for node", uniqueNodeId, "or its connected node is halted. Skipping this node.");
             return;
@@ -481,11 +478,10 @@ AiNode.MessageLoop = class {
             return;
         }
 
-        promptElement.value += `\n${message}`;
-        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+        this.updatePromptElement(promptElement, message);
 
         if (!skipClickQueue) {
-            this.enqueueClick(connectedNode, sendButton);
+            this.enqueueClick(uniqueNodeId, sendButton, connectedNode);
         }
     }
 
@@ -513,9 +509,6 @@ AiNode.MessageLoop = class {
     fallbackParse(text) {
         Logger.debug("Using fallback parsing method");
         const senderName = this.node.getTitle() || "no_name";
-        if (!text.trim()) {
-            return []; // No message if the text is empty
-        }
         return [{
             recipient: 'all',
             message: `${senderName} says,\n${text.trim()}`

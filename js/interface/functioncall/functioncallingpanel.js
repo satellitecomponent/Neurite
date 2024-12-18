@@ -324,9 +324,6 @@ On.click(functionRunButton, runNeuriteCode);
 
 // Function Call List
 
-// Function Call List
-
-const clearButton = document.getElementById('clear-function-calls-button');
 const functionCallList = document.querySelector('.function-call-list');
 On.click(functionCallList, (e)=>{
     if (e.target.tagName === 'DIV') {
