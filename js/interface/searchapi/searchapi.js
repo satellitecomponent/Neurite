@@ -8,7 +8,7 @@ async function generateKeywords(message, count, specificContext = null, node = n
             .filter(word => word.trim().length > 0)
             .sort((a, b) => b.length - a.length)
             .slice(0, count)
-            .map(word => word.trim());
+            .map(String.trim);
     }
 
     const messages = [

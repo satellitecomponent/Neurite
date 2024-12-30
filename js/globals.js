@@ -487,6 +487,7 @@ String.isIframe = function(str){
     } catch(err){}
     return false;
 }
+String.trim = function(str){ return str.trim() }
 String.uuidOf = function(obj){ return obj.uuid }
 
 function getIframeUrl(iframeContent) {
