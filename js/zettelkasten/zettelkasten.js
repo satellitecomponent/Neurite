@@ -416,10 +416,10 @@ class ZettelkastenProcessor {
         const thisNode = wrap.node;
 
         // Get all nodes from all CodeMirror instances
-        const allNodes = getAllInternalZettelkastenNodes();
+        const wrapPerTitle = getAllInternalZetNodeWraps();
 
         // Initialize set with UUIDs from current node references
-        const uuidOfRef = (ref)=>allNodes[ref]?.node?.uuid ;
+        const uuidOfRef = (ref)=>wrapPerTitle[ref]?.node?.uuid ;
         const allReferenceUUIDs = new Set(references.map(uuidOfRef).filter(uuid => uuid));
 
         // Check if connected nodes contain a reference to the current node in any CodeMirror instance
@@ -466,10 +466,10 @@ class ZettelkastenProcessor {
 
         // Add new edges for references
         references.forEach(reference => {
-            const refUUID = allNodes[reference]?.node?.uuid;
+            const refUUID = wrapPerTitle[reference]?.node?.uuid;
             if (!refUUID || currentEdges.has(refUUID)) return;
 
-            const otherNode = allNodes[reference].node;
+            const otherNode = wrapPerTitle[reference].node;
             const newEdge = connectDistance(thisNode, otherNode);
             thisNode.edges.push(newEdge);
             currentEdges.set(refUUID, newEdge);
