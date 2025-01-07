@@ -33,6 +33,7 @@ Object.forEach = function(obj, cb, ct){
     for (const k in obj) cb.call(ct, obj[k])
 }
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Object.hasTitleThis = function(obj){ return obj.title === this.valueOf() }
 Object.isntThis = function(obj){ return obj !== this.valueOf() }
 Object.isThis = function(obj){ return obj === this.valueOf() }
 Logger = class {
@@ -130,14 +131,13 @@ class App {
     processedNodes = new ProcessedNodes();
     recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
     selectedNodes = new SelectedNodes();
+    viewGraphs = new View.Graphs();
 
     init(){
         Body.addEventListeners(document.body);
         this.nodeSimulation.start();
         Ai.init();
-        initViewGraphs();
-        updateSavedNetworks();
-        initializeSaveNetworks();
+        this.viewGraphs.init();
     }
     get nodeMode(){ return this.interface.nodeMode.val }
 }
