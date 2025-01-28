@@ -1,138 +1,124 @@
-function haltFunctionAi() {
+View.Code.prototype.haltFunctionAi = function(){
     for (const [requestId, requestInfo] of activeRequests.entries()) {
-        if (requestInfo.type === 'function') {
-            requestInfo.controller.abort();
-            activeRequests.delete(requestId);
-        }
+        if (requestInfo.type !== 'function') continue;
+
+        requestInfo.controller.abort();
+        activeRequests.delete(requestId);
     }
 
-    isAiProcessing = false; // Ensure the state is updated
+    this.isAiProcessing = false; // Ensure the state is updated
 
-    if (functionSendSvg) {
-        functionSendSvg.innerHTML = `<use xlink:href="#play-icon"></use>`;
-    }
+    this.svgSend.innerHTML = `<use xlink:href="#play-icon"></use>`;
 }
 
-let isAiProcessing = false;
+View.Code.prototype.initForRequestfunctioncall = function(){
+    On.click(this.btnSend, this.onBtnSendClicked.bind(this));
+    On.keydown(this.inputPrompt, this.onInputPromptKeyDown.bind(this));
+    On.click(this.btnRegen, this.onBtnRegenClicked.bind(this));
+}
 
-const functionSendSvg = functionSendButton.querySelector('svg');
-const functionPrompt = Elem.byId('function-prompt');
+View.Code.prototype.onBtnSendClicked = function(e){
+    if (this.isAiProcessing) this.haltFunctionAi()
+    else this.requestFunctionCall()
+}
 
-On.click(functionSendButton, (e)=>{
-    if (isAiProcessing) {
-        haltFunctionAi();
-    } else {
-        requestFunctionCall();
-    }
-});
-
-On.keydown(functionPrompt, (e)=>{
+View.Code.prototype.onInputPromptKeyDown = function(e){
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault(); // avoid form submission
-        requestFunctionCall(); // handle sending the message
+        this.requestFunctionCall();
     }
-});
-
-let mostRecentFunctionMessage = '';
-
-On.click(functionRegenButton, (e)=>{
-    functionPrompt.value = mostRecentFunctionMessage
-});
-
-function updateMostRecentMessage(newMessage) {
-    mostRecentFunctionMessage = newMessage
 }
 
-// Function to handle new message requests
-function requestFunctionCall() {
-    let userMessage = functionPrompt.value.trim();
-    updateMostRecentMessage(userMessage);
-    if (userMessage === '') {
-        userMessage = prompt("Enter message:");
+View.Code.prototype.onBtnRegenClicked = function(e){
+    this.inputPrompt.value = this.mostRecentMsg
+}
 
-        // Check if the user provided input or cancelled the prompt
-        if (userMessage === null || userMessage.trim() === '') {
-            Logger.info("No input provided. Request cancelled.");
-            return;
-        }
+View.Code.prototype.getPromptMessage = function(){
+    const inputMessage = this.inputPrompt.value.trim();
+    this.mostRecentMsg = inputMessage;
+    if (inputMessage !== '') return inputMessage;
 
-        functionPrompt.value = userMessage; // optional
-    }
+    const dialogueMessage = prompt("Enter message:");
+    const trimmedMessage = dialogueMessage && dialogueMessage.trim();
+    if (trimmedMessage !== '') return trimmedMessage;
 
-    functionPrompt.value = '';
+    Logger.info("No input provided. Request cancelled.");
+}
+
+View.Code.prototype.requestFunctionCall = function(){
+    const content = this.getPromptMessage();
+    if (!content) return;
+
+    this.inputPrompt.value = '';
 
     const event = new Event('input', { bubbles: true, cancelable: true });
-    functionPrompt.dispatchEvent(event);
+    this.inputPrompt.dispatchEvent(event);
 
     const neuralTelemetryPrompt = createTelemetryPrompt(neuralTelemetry, false);
-    let systemMessages = [
+    const messages = [
         { role: "system", content: neuriteNeuralApiPrompt },
         { role: "system", content: neuralTelemetryPrompt }
     ];
 
     const maxContextSize = Elem.byId('max-context-size-slider').value;
-    // Apply trimming to system messages, excluding the user message from the trimming process
-    systemMessages = trimSystemMessages(systemMessages, maxContextSize);
+    // Apply trimming before adding the user message
+    View.Code.trimMessages(messages, maxContextSize);
+    messages.push({ role: "user", content });
 
-    const requestMessages = systemMessages.concat({ role: "user", content: userMessage });
-
-    // Call the new function to handle the API call
-    return getFunctionResponse(requestMessages);
+    return this.getFunctionResponse(messages);
 }
 
-function trimSystemMessages(systemMessages, maxTokens) {
-    let totalTokenCount = TokenCounter.forMessages(systemMessages);
-    if (totalTokenCount > maxTokens) {
-        for (let i = systemMessages.length - 1; i >= 0; i--) {
-            systemMessages[i].content = trimToTokenCount(systemMessages[i].content, maxTokens);
-            totalTokenCount = TokenCounter.forMessages(systemMessages);
-            if (totalTokenCount <= maxTokens) break;
-        }
+View.Code.trimMessages = function(messages, maxTokens){
+    for (let i = messages.length - 1; i >= 0; i--) {
+        if (TokenCounter.forMessages(messages) <= maxTokens) break;
+
+        const msg = messages[i];
+        msg.content = trimToTokenCount(msg.content, maxTokens);
     }
-    return systemMessages;
 }
 
-function getFunctionResponse(requestMessages) {
+View.Code.prototype.getFunctionResponse = function(messages){
     const requestId = generateRequestId();
     const controller = new AbortController();
 
     activeRequests.set(requestId, { type: 'function', controller });
 
     return callAiApi({
-        messages: requestMessages,
+        messages,
         stream: true,
         customTemperature: null,
-        onBeforeCall: () => {
-            isAiProcessing = true;
-            updateUiForProcessing();
+        onBeforeCall: ()=>{
+            this.isAiProcessing = true;
+            this.updateUiForProcessing();
         },
-        onAfterCall: () => {
-            isAiProcessing = false;
-            updateUiForIdleState();
+        onAfterCall: ()=>{
+            this.isAiProcessing = false;
+            this.updateUiForIdleState();
         },
-        onStreamingResponse: (content) => {
+        onStreamingResponse: (content)=>{
             if (!activeRequests.has(requestId)) return;
 
-            neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
+            const cm = this.cm;
+            cm.getDoc().replaceRange(content, CodeMirror.Pos(cm.lastLine()));
         },
-        onError: (err) => {
-            functionErrorIcon.style.display = 'block';
+        onError: (err)=>{
+            this.iconError.style.display = 'block';
             Logger.err(err);
         },
-        controller: controller,
-        requestId: requestId
+        controller,
+        requestId
     });
 }
 
-function updateUiForProcessing() {
-    functionSendSvg.innerHTML = Svg.use.pause;
-    functionLoadingIcon.style.display = 'block';
-    functionErrorIcon.style.display = 'none';
+View.Code.prototype.updateUiForProcessing = function() {
+    this.svgSend.innerHTML = Svg.use.pause;
+    this.iconLoading.style.display = 'block';
+    Elem.hide(this.iconError);
 
-    neuriteFunctionCM.setValue('');
+    this.cm.setValue('');
 }
 
-function updateUiForIdleState() {
-    functionSendSvg.innerHTML = Svg.use.play;
-    functionLoadingIcon.style.display = 'none';
+View.Code.prototype.updateUiForIdleState = function() {
+    this.svgSend.innerHTML = Svg.use.play;
+    Elem.hide(this.iconLoading);
 }

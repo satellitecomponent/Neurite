@@ -131,12 +131,14 @@ class App {
     processedNodes = new ProcessedNodes();
     recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
     selectedNodes = new SelectedNodes();
+    viewCode = new View.Code();
     viewGraphs = new View.Graphs();
 
     init(){
         Body.addEventListeners(document.body);
         this.nodeSimulation.start();
         Ai.init();
+        this.viewCode.init();
         this.viewGraphs.init();
     }
     get nodeMode(){ return this.interface.nodeMode.val }
@@ -212,7 +214,6 @@ class PageLoad {
         'js/ai/ai_v2.js',
         'js/ai/aimessage.js',
         'js/ai/ai-utility/aihelpers.js',
-        'js/ai/vision.js',
         'js/ai/ollama/ollama.js',
         'js/ai/ollama/ollama-api.js',
         'js/ai/ai-utility/handleapikeys.js',
@@ -230,6 +231,7 @@ class PageLoad {
         'js/interface/functioncall/functioncallingpanel.js',
         'js/interface/functioncall/neuraltelemetryprompt.js',
         'js/interface/functioncall/requestfunctioncall.js',
+        'js/ai/vision.js',
         'js/interface/dropdown/savenet.js'
     ];
 

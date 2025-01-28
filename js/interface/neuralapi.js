@@ -571,8 +571,8 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
     ];
 
     try {
-        await callVisionModel(messages, async () => {
-            runNeuriteCode(true); // Run code with increment and decrement of activeAnimations.
+        await App.viewCode.callVisionModel(messages, async ()=>{
+            App.viewCode.runCode(true); // Run code with increment and decrement of activeAnimations.
 
             await (new Animation.waitForAllActive).promise();
             Logger.info("awaited");
