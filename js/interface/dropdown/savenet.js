@@ -1,6 +1,4 @@
 ﻿View.Graphs = class {
-    static NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
-
     #btnClear = Elem.byId('clear-button');
     #btnClearSure = Elem.byId('clear-sure-button');
     #btnClearUnsure = Elem.byId('clear-unsure-button');
@@ -267,7 +265,7 @@
                 const nodeJson = JSON.parse(node.getAttribute('data-node_json'));
                 if (nodeJson.isLLM) {
                     node.querySelectorAll('pre').forEach(pre => {
-                        pre.innerHTML = pre.innerHTML.replace(/\n/g, View.Graphs.NEWLINE_PLACEHOLDER);
+                        pre.innerHTML = pre.innerHTML.replace(/\n/g, App.NEWLINE_PLACEHOLDER);
                     });
                 }
             } catch (err) {

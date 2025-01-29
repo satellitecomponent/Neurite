@@ -86,6 +86,11 @@ async function getImageNodeData(node) {
 }
 
 View.Code.prototype.callVisionModel = async function(messages, onStreamComplete){
+    const requestId = generateRequestId();
+    const controller = new AbortController();
+
+    activeRequests.set(requestId, { type: 'function', controller });
+
     callAiApi({
         messages,
         stream: true, // Assuming streaming is not required for vision model
@@ -95,7 +100,7 @@ View.Code.prototype.callVisionModel = async function(messages, onStreamComplete)
             this.updateUiForProcessing();
         },
         onStreamingResponse: (content)=>{
-            const cm = this.cm;
+            const cm = this.cm.cm;
             cm.getDoc().replaceRange(content, CodeMirror.Pos(cm.lastLine()));
         },
         onAfterCall: ()=>{
@@ -110,6 +115,8 @@ View.Code.prototype.callVisionModel = async function(messages, onStreamComplete)
         inferenceOverride: {
             provider: 'OpenAi',
             model: 'gpt-4o'
-        }
-    })
+        },
+        controller,
+        requestId
+    });
 }

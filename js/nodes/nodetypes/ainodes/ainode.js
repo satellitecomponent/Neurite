@@ -247,7 +247,7 @@ AiNode.init = function(node, restoreNewLines){
 
     if (restoreNewLines) {
         node.aiResponseDiv.querySelectorAll('pre').forEach( (pre)=>{
-            pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
+            pre.innerHTML = pre.innerHTML.split(App.NEWLINE_PLACEHOLDER).join('\n');
         })
     }
 }

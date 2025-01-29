@@ -98,7 +98,7 @@ View.Code.prototype.getFunctionResponse = function(messages){
         onStreamingResponse: (content)=>{
             if (!activeRequests.has(requestId)) return;
 
-            const cm = this.cm;
+            const cm = this.cm.cm;
             cm.getDoc().replaceRange(content, CodeMirror.Pos(cm.lastLine()));
         },
         onError: (err)=>{
@@ -115,7 +115,7 @@ View.Code.prototype.updateUiForProcessing = function() {
     this.iconLoading.style.display = 'block';
     Elem.hide(this.iconError);
 
-    this.cm.setValue('');
+    this.cm.empty();
 }
 
 View.Code.prototype.updateUiForIdleState = function() {

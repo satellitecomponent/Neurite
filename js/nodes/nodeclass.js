@@ -363,9 +363,8 @@ class Node {
         e.stopPropagation();
     }
 
-    getTitle() {
-        return this.content.querySelector('.title-input').value
-    }
+    getTitle(){ return this.view.titleInput.value }
+    toJSON(){ return this.getTitle() }
 
     getEdgeDirectionalities() {
         return this.edges.map( (edge)=>({
