@@ -1,21 +1,51 @@
 {
-  "name": "neurite",
+  "name": "neurite-electron",
   "version": "1.0.0",
-  "type": "module",
-  "description": "fractal mind map",
+  "main": "main.js",
   "scripts": {
-    "start": "vite",
-    "start:host": "vite --host",
-    "build": "vite build",
-    "postbuild": "shx cp -r js dist/js"
-  },
-  "keywords": [],
-  "author": "satellitecomponent",
-  "license": "ISC",
-  "devDependencies": {
-    "shx": "^0.3.3",
-    "vite": "^5.4.8"
+    "start": "electron .",
+    "build": "electron-builder"
   },
   "dependencies": {
+    "axios": "^1.7.9",
+    "electron-log": "^5.2.4",
+    "electron-updater": "^6.3.9",
+    "tree-kill": "^1.2.2"
+  },
+  "devDependencies": {
+    "electron": "^34.0.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.satellitecomponent.neurite",
+    "productName": "Neurite",
+    "files": [
+      "main.js",
+      "localhost_servers/**/*",
+      "build/icons/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "satellitecomponent",
+        "repo": "neurite"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg",
+      "icon": "build/icons/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icons/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icons/icon.png"
+    }
   }
 }
