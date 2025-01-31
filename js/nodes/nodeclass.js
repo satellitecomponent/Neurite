@@ -62,8 +62,8 @@ class Node {
         On.mouseup(document, this.onMouseUp);
         On.wheel(div, this.onWheel);
     }
-    json() {
-        return JSON.stringify(this, (k, v) => {
+    toJSON() {
+        return JSON.stringify({...this}, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
                 k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
                 k === "view" || k === "agent") {
@@ -78,7 +78,7 @@ class Node {
             saveExtras.push(typeof extra === "function" ? extra(this) : extra);
         }
         this.content.setAttribute('data-node_extras', JSON.stringify(saveExtras));
-        this.content.setAttribute('data-node_json', this.json());
+        this.content.setAttribute('data-node_json', this.toJSON());
     }
     push_extra_cb(f) {
         this.save_extras.push(f);
@@ -364,7 +364,6 @@ class Node {
     }
 
     getTitle(){ return this.view.titleInput.value }
-    toJSON(){ return this.getTitle() }
 
     getEdgeDirectionalities() {
         return this.edges.map( (edge)=>({
