@@ -33,6 +33,7 @@ NodeView.prototype.resetTitleInput = function(){
     style.textAlign = '';
     style.pointerEvents = '';
     style.fontSize = '';
+    style.width = '';
 }
 
 NodeView.prototype.hideButHeaderAndTitle = function(child){

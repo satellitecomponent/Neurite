@@ -1,18 +1,21 @@
 const Modals = {
     aiModal: new Modal('aiModal', "Experimental Ai Controls"),
     apiConfigModalContent: new Modal('apiConfigModalContent', "Custom Endpoint"),
-    "controls-modal": new Modal('controls-modal'),
+    "controls-modal": new Modal('controls-modal', "Adjust Controls"),
     fileTreeModal: new Modal('fileTreeModal'),
     importLinkModalContent: new Modal('importLinkModalContent', "Import"),
     nodeConnectionModal: new Modal('nodeConnectionModal', "Connect Notes"),
     noteModal: new Modal('noteModal', "Zettelkasten Settings", Tag.initializeInputs),
     ollamaManagerModal: new Modal('ollamaManagerModal', "Ollama Library"),
     promptLibraryModalContent: new Modal('promptLibraryModalContent', "Prompt Library"),
-    vectorDbImportConfirmModal: new Modal('vectorDbImportConfirmModal', "Confirm Vector DB Import"), // , setupVectorDbImportConfirmModal
+    vectorDbImportConfirmModal: new Modal('vectorDbImportConfirmModal', "Confirm Vector DB Import"),
     vectorDbModal: new Modal('vectorDbModal', "Vector Database"),
     vectorDbSearchModal: new Modal('vectorDbSearchModal', "Search Vector-DB"),
     zetSearchModal: new Modal('zetSearchModal', "Search Notes"),
-    'neurite-modal': new Modal('neurite-modal', "Neurite")
+    'neurite-modal': new Modal('neurite-modal', "Neurite"),
+    alertModal: Object.assign(new Modal('alertModal', 'Alert'), { customClass: 'alert-modal' }),
+    confirmModal: new Modal('confirmModal', 'Confirm'),
+    promptModal: new Modal('promptModal', 'Prompt')
 }
 
 Modal.btnClose = Modal.div.querySelector('.close');
@@ -28,6 +31,8 @@ Modal.storeInputValue = debounce(function (input, contentId) {
     // modal-specific actions
     if (contentId === 'noteModal') updatePathOptions();
 }, 100);
+
+Modal.currentCustomClass = null;
 
 Modal.open = function (contentId) {
     App.menuContext.hide();
@@ -58,6 +63,17 @@ Modal.open = function (contentId) {
 
     Modal.current = modal;
     Modal.div.style.display = 'flex';
+
+    // Remove any previously applied custom class automatically.
+    if (Modal.currentCustomClass) {
+        Modal.div.classList.remove(Modal.currentCustomClass);
+        Modal.currentCustomClass = null;
+    }
+    // Add the new custom class if it exists.
+    if (modal?.customClass) {
+        Modal.div.classList.add(modal.customClass);
+        Modal.currentCustomClass = modal.customClass;
+    }
 
     const storeInputValue = Modal.storeInputValue;
 

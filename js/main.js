@@ -100,6 +100,18 @@ class On {
     Off[eName] = Off.thisEvent.bind(eName);
 });
 
+On.DOMContentLoaded = function (target, cb, options) {
+    if (document.readyState === 'loading') {
+        target.addEventListener('DOMContentLoaded', cb, options);
+    } else {
+        cb();
+    }
+};
+
+Off.DOMContentLoaded = function (target, cb, options) {
+    target.removeEventListener('DOMContentLoaded', cb, options);
+};
+
 Request.makeJsonOptions = function(method, body){
     return {
         method,
@@ -170,6 +182,7 @@ class PageLoad {
         'js/interface/dropdown/customui/displaysavedcoords.js',
         'js/interface/dropdown/customui/customsliders.js',
         'js/interface/dropdown/customui/customtooltip.js',
+        'js/interface/dropdown/customui/customdialog.js',
         'js/interface/dropdown/customui/loadingicon.js',
         'js/interface/dropdown/tabs/notestab.js',
         'js/interface/dropdown/tabs/aitab.js',

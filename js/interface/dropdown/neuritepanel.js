@@ -217,7 +217,7 @@ class NeuritePanel {
     }
 
     async handleDeleteAccount() {
-        const confirmation = confirm(
+        const confirmation = await window.confirm(
             "Are you sure you want to delete your account? This action is final and any remaining balance will be deleted."
         );
 

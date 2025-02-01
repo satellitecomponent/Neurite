@@ -33,20 +33,31 @@ View.Code.prototype.onBtnRegenClicked = function(e){
     this.inputPrompt.value = this.mostRecentMsg
 }
 
-View.Code.prototype.getPromptMessage = function(){
+View.Code.prototype.getPromptMessage = function () {
     const inputMessage = this.inputPrompt.value.trim();
     this.mostRecentMsg = inputMessage;
-    if (inputMessage !== '') return inputMessage;
+    if (inputMessage !== '') return Promise.resolve(inputMessage);
 
-    const dialogueMessage = prompt("Enter message:");
-    const trimmedMessage = dialogueMessage && dialogueMessage.trim();
-    if (trimmedMessage !== '') return trimmedMessage;
+    return new Promise((resolve) => {
+        window.prompt("Enter message:")
+            .then((dialogueMessage) => {
+                const trimmedMessage = dialogueMessage && dialogueMessage.trim();
+                if (trimmedMessage !== '') {
+                    resolve(trimmedMessage);
+                } else {
+                    Logger.info("No input provided. Request cancelled.");
+                    resolve(null);
+                }
+            })
+            .catch((error) => {
+                Logger.error("Prompt failed:", error);
+                resolve(null);
+            });
+    });
+};
 
-    Logger.info("No input provided. Request cancelled.");
-}
-
-View.Code.prototype.requestFunctionCall = function(){
-    const content = this.getPromptMessage();
+View.Code.prototype.requestFunctionCall = async function () {
+    const content = await this.getPromptMessage();
     if (!content) return;
 
     this.inputPrompt.value = '';
@@ -61,8 +72,8 @@ View.Code.prototype.requestFunctionCall = function(){
     ];
 
     const maxContextSize = Elem.byId('max-context-size-slider').value;
-    // Apply trimming before adding the user message
     View.Code.trimMessages(messages, maxContextSize);
+
     messages.push({ role: "user", content });
 
     return this.getFunctionResponse(messages);

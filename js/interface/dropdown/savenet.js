@@ -89,29 +89,40 @@
         this.#saves[Event.dataIndex(e)].title = e.target.value;
         this.#setLocalSaves();
     }
-    #onBtnSaveClicked = (e)=>{
+    #onBtnSaveClicked = (e) => {
         const index = Event.dataIndex(e);
         const title = this.#saves[index].title;
-        if (index !== this.#selectedSaveIndex) {
-            const msg = "This will overwrite " +
-                title + " with the currently selected save, " +
-                this.#selectedSaveTitle + " Continue?"
-            if (!window.confirm(msg)) return;
-        }
 
-        this.#save(title);
+        if (index !== this.#selectedSaveIndex) {
+            const msg = `This will overwrite ${title} with the currently selected save, ${this.#selectedSaveTitle}. Continue?`;
+
+            window.confirm(msg).then(confirmed => {
+                if (!confirmed) return;
+                this.#save(title);
+            });
+        } else {
+            this.#save(title);
+        }
     }
-    #onBtnLoadClicked = (e)=>{
+    #onBtnLoadClicked = (e) => {
         const index = Event.dataIndex(e);
         const save = this.#saves[index];
-        if (save.data === '') {
-            const msg = "Are you sure you want an empty save?";
-            if (!window.confirm(msg)) {
-                this.#updateSavedGraphs();
-                return;
-            }
-        }
 
+        if (save.data === '') {
+            window.confirm("Are you sure you want an empty save?").then(confirmed => {
+                if (!confirmed) {
+                    this.#updateSavedGraphs();
+                    return;
+                }
+                this.#proceedWithLoad(index, save);
+            });
+        } else {
+            this.#proceedWithLoad(index, save);
+        }
+    }
+
+    // Helper method
+    #proceedWithLoad(index, save) {
         this.#autosave();
         this.#setSelectedSave(index, save.title)
             .#setLocalLatestSelected()
@@ -178,23 +189,21 @@
         On.load(reader, this.#onFileLoaded.bind(this, file));
         reader.readAsText(file);
     }
-    #onFileLoaded(file, e){
+    async #onFileLoaded(file, e) {
         const content = e.target.result;
         const title = file.name.replace('.txt', '');
 
-        try { // saving the data to localStorage
+        try {
             this.#saves.push({ title, data: content });
             this.#setLocalSaves().#updateSavedGraphs();
         } catch (err) {
-            // Before loading, confirm with the user due to size limitations
-            const msg = "The file is too large to store. "
-                      + "Would you like to load it anyway?";
-            if (!window.confirm(msg)) return;
-
+            const loadAnyway = await window.confirm(
+                "The file is too large to store. Would you like to load it anyway?"
+            );
+            if (!loadAnyway) return;
             this.#setSelectedSave(null, null).#loadNet(content, true);
         }
     }
-
     #onBtnClearClicked = (e)=>{
         this.#divClearSure.setAttribute('style', "display:block");
         this.#btnClear.text = "Are you sure?";
@@ -203,35 +212,41 @@
         Elem.hide(this.#divClearSure);
         this.#btnClear.text = "Clear";
     }
-    #onBtnClearSureClicked = (e)=>{
-        const createNewSave = confirm("Create a new save?");
+    #onBtnClearSureClicked = (e) => {
+        window.confirm("Create a new save?").then(createNewSave => {
+            this.#setSelectedSave(null, null).#clearNet();
+            zetPanes.addPane();
 
-        this.#setSelectedSave(null, null).#clearNet();
-        zetPanes.addPane();
+            if (createNewSave) this.#save();
 
-        if (createNewSave) this.#save();
-
-        this.#updateSavedGraphs();
-        Elem.hide(this.#divClearSure);
-        this.#btnClear.text = "Clear";
+            this.#updateSavedGraphs();
+            Elem.hide(this.#divClearSure);
+            this.#btnClear.text = "Clear";
+        });
     }
     #onBtnClearLocalClicked(e){
         localStorage.clear();
         alert("Local storage has been cleared.");
     }
 
-    #handleSaveConfirmation(title, saveData, force = false){
-        const existingSaves = this.#saves.filter(Object.hasTitleThis, title);
+    async #handleSaveConfirmation(title, saveData, force = false) {
+        const existingSaves = this.#saves.filter(save => save.title === title);
         const len = existingSaves.length;
-        if (len > 0) {
-            if (!force) force = confirm(this.#getConfirmMessage(title, len));
 
-            if (force) { // Overwrite logic
-                this.#saves.forEach(
-                    (save)=>{ if (save.title === title) save.data = saveData }
-                );
+        if (len > 0) {
+            if (!force) {
+                // Use custom async confirm dialog
+                force = await window.confirm(this.#getConfirmMessage(title, len));
+            }
+
+            if (force) {
+                // Overwrite logic
+                this.#saves.forEach(save => {
+                    if (save.title === title) save.data = saveData;
+                });
                 Logger.info("Updated all saves of title:", title);
             } else {
+                // Create duplicate save
                 this.#saves.push({ title, data: saveData });
                 Logger.info("Created duplicate save:", title);
             }
@@ -242,9 +257,13 @@
         }
 
         try {
-            this.#setLocalSaves().#updateSavedGraphs()
+            this.#setLocalSaves().#updateSavedGraphs();
         } catch (e) {
-            if (confirm("Local storage is full, download the data as a .txt file?")) {
+            // Use custom async confirm dialog
+            const shouldDownload = await window.confirm(
+                "Local storage is full. Download the data as a .txt file?"
+            );
+            if (shouldDownload) {
                 this.#downloadData(title, JSON.stringify({ data: saveData }));
             }
         }
@@ -371,18 +390,26 @@
 
         const saveData = nodeData + zettelkastenPanesSaveElements.join('') + this.#collectAdditionalSaveObjects();
 
-        const title = existingTitle
-                    ?? (prompt("Enter a title for this save:") ?? '').trim();
-        if (!title) return;
+        const handleSave = (title) => {
+            if (!title) return;  // Exit if no title
+            const saves = this.#saves;
+            const indexToUpdate = saves.findIndex(Object.hasTitleThis, title);
+            const index = (indexToUpdate > -1 ? indexToUpdate : saves.length);
+            this.#setSelectedSave(index, title);
+            this.#handleSaveConfirmation(title, saveData, title === existingTitle);
+            this.#setLocalLatestSelected();
+        };
 
-        const saves = this.#saves;
-        const indexToUpdate = saves.findIndex(Object.hasTitleThis, title);
-        // found ? update : new save
-        const index = (indexToUpdate > -1 ? indexToUpdate : saves.length);
-        this.#setSelectedSave(index, title);
-
-        this.#handleSaveConfirmation(title, saveData, title === existingTitle);
-        this.#setLocalLatestSelected();
+        if (existingTitle) {
+            handleSave(existingTitle);  // Sync path
+        } else {
+            // Async prompt handling without making #save async
+            prompt("Enter a title for this save:").then((result) => {
+                const title = (result ?? "").trim();
+                if (!title) return;
+                handleSave(title);
+            }).catch(console.error);
+        }
     }
 
     #clearNet(){

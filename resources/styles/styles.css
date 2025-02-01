@@ -319,7 +319,7 @@ input[type="text"i].title-input {
     border-color: #aaa;
     margin-top: 2px;
     margin-right: 2px;
-    margin-left: -7px;
+    margin-left: -2px;
     z-index: 150;
 }
 
@@ -3983,4 +3983,60 @@ code.language-markdown {
 #delete-account-btn:hover {
     background-color: #950e0e;
     color: white;
+}
+
+
+.prompt-modal-content, .alert-modal-content, .confirm-modal-content {
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-ok:hover {
+    background-color: #293e34;
+}
+
+    .modal-cancel:hover {
+        background-color: #603030;
+    }
+    
+.modal-prompt-textarea {
+    flex-grow: 1;
+    background-color: #222226;
+    color: #bbb;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+    margin-bottom: 10px;
+}
+
+.modal-prompt-message {
+    font-size: 18px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+/* Styling for the alert modal header and body */
+.alert-modal .modal-header {
+    background-color: #44000069; /* Example: light red background */
+}
+
+.alert-modal .modal-body {
+    background-color: #421313b8; /* Example: slightly different red */
+}
+
+.alert-modal p {
+    color: #8c7474; /* Example: slightly different red */
+}
+
+.alert-modal .modal-title {
+    color: #8c7474; /* Example: slightly different red */
 }

@@ -41,6 +41,9 @@ class NodeMode {
         if (e.key !== this.key || this.trigger !== "down") return;
         if (this.locked) return;
 
+        // Clear the previous node to prevent sticky connect behavior.
+        Node.prev = null;
+
         this.switch(0);
         this.autoToggleAllOverlays();
         e.stopPropagation();

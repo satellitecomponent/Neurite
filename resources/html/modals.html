@@ -421,7 +421,7 @@
                     <label for="amount-input" style="font-size: 20px; color: RGB(200,200,255);">+ $</label>
                     <input type="number" id="amount-input" min="5" step="1" value="5" />
                     <button id="add-funds-button" class="purchase-btn">Add Funds</button>
-                </div>   
+                </div>
             </div>
         </div>
         <br />
@@ -450,9 +450,29 @@
 
     </div>
 </div>
-
+<!-- Alert Modal -->
 <div id="alertModal" style="display: none;">
-    <!-- Content for the alert modal -->
-    <p>This is an alert message.</p>
-    <button>OK</button>
+    <div class="alert-modal-content">
+        <p class="alert-message"></p>
+        <button class="modal-ok linkbuttons">OK</button>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" style="display: none;">
+    <div class="confirm-modal-content">
+        <p class="confirm-message"></p>
+        <button class="modal-ok linkbuttons">Yes</button>
+        <button class="modal-cancel linkbuttons">No</button>
+    </div>
+</div>
+
+<!-- Prompt Modal -->
+<div id="promptModal" style="display: none;">
+    <div class="prompt-modal-content">
+        <div class="modal-prompt-message custom-scrollbar"></div>
+        <textarea class="modal-prompt-textarea custom-scrollbar"></textarea> <!-- Updated to textarea -->
+        <button class="modal-ok linkbuttons">OK</button>
+        <button class="modal-cancel linkbuttons">Cancel</button>
+    </div>
 </div>

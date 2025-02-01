@@ -235,9 +235,15 @@ class ZetPanes {
             if (this.paneDropdown.options.length === 1) {
                 return;
             } else {
-                const confirmDelete = confirm(`Delete the slip-box "${selectedPaneName}"?`); if (confirmDelete) {
-                    this.removePane(selectedPaneId);
-                }
+                window.confirm(`Delete the slip-box "${selectedPaneName}"?`)
+                    .then((confirmDelete) => {
+                        if (confirmDelete) {
+                            this.removePane(selectedPaneId);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Confirmation failed:", error);
+                    });
             }
         }
     }

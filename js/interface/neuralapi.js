@@ -629,8 +629,12 @@ function neuritePromptZettelkasten(message) {
 }
 
 function neuriteGetUserResponse(message) {
-    const response = prompt(message);
-    return response;
+    return window.prompt(message)
+        .then((response) => response)
+        .catch((error) => {
+            Logger.err("Failed to get user response:", error);
+            return null; // or handle the error as needed
+        });
 }
 
 function neuriteAddNote(nodeTitle, nodeText) {

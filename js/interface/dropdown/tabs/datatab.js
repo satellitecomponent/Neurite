@@ -111,6 +111,15 @@ function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialO
         setSliderBackground(maxChunkSizeSlider);
         setSliderBackground(overlapSizeSlider);
 
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         let currentChunks = [];
 
         function updateChunkedText() {
@@ -125,7 +134,7 @@ function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialO
                         <div class="vdb-result-header">
                             <div class="vdb-result-source">Snippet ${index + 1}</div>
                         </div>
-                        <div class="vdb-result-text custom-scrollbar">${chunk}</div>
+                        <div class="vdb-result-text custom-scrollbar">${escapeHtml(chunk)}</div>
                     </div>
                 `).join('');
             } catch (err) {
