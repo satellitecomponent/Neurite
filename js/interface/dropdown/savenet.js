@@ -474,7 +474,7 @@
     #reconstructSavedNode(node){
         if (node.isTextNode) TextNode.init(node);
         if (node.isLLM) AiNode.init(node, true); // restoreNewLines
-        if (node.isLink) node.typeNode.init();
+        if (node.isLink) (new LinkNode).init(node);
         if (node.isFileTree) FileTreeNode.init(node);
     }
 

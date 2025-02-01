@@ -66,7 +66,7 @@ class Node {
         return JSON.stringify({...this}, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
                 k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
-                k === "view" || k === "agent") {
+                k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
             }
             return v;

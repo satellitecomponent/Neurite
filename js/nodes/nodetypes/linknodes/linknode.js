@@ -1,12 +1,14 @@
 class LinkNode {
-    constructor(link = '', name = '', text = '', sx, sy, x, y) {
-        this.link = link;
-        this.name = name;
+    constructor(link = '', title = '', text = '', sx, sy, x, y) {
+        if (!link) return this;
 
-        const nodeName = link.startsWith('blob:') ? name : link;
+        this.link = link;
+        this.title = title;
+
+        const nodeTitle = link.startsWith('blob:') ? title : link;
         const node = new Node();
 
-        const divView = NodeView.addAtNaturalScale(node, nodeName, []).div;
+        const divView = NodeView.addAtNaturalScale(node, nodeTitle, []).div;
         divView.appendChild(this.makeContentWrapper());
         divView.style.minWidth = '150px';
         divView.style.minHeight = '200px';
@@ -21,9 +23,7 @@ class LinkNode {
         );
 
         node.isLink = true;
-        node.typeNode = this;
-        this.node = node;
-        this.init();
+        this.init(node);
         return node;
     }
 
@@ -31,7 +31,7 @@ class LinkNode {
         const a = Html.make.a(this.link);
         a.id = 'link-element';
         a.setAttribute('target', "_blank");
-        a.textContent = this.name;
+        a.textContent = this.title;
         a.style.cssText = "display: block; padding: 10px; word-wrap: break-word; white-space: pre-wrap; color: #bbb; transition: color 0.2s ease, background-color 0.2s ease; background-color: #222226; border-radius: 5px";
         return a;
     }
@@ -81,8 +81,10 @@ class LinkNode {
         return iframe;
     }
 
-    init(){
-        const node = this.node;
+    init(node){
+        node.typeNode = this;
+        this.node = node;
+
         const iframeWrapper = node.content.querySelector("#iframe-wrapper");
         this.iframeWrapper = iframeWrapper;
         node.iframe = iframeWrapper.querySelector("iframe")
