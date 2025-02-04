@@ -41,7 +41,7 @@ NodeView.prototype.hideButHeaderAndTitle = function(child){
         child.style.display = 'none'
     }
 }
-NodeView.prototype.collapse = function(){
+NodeView.prototype.collapse = function () {
     const div = this.div;
 
     if (!this.originalSizes) {
@@ -74,20 +74,17 @@ NodeView.prototype.collapse = function(){
 
     this.centerTitleInput();
 
-    // Create the circle
     const circle = Html.make.div('collapsed-circle');
     circle.style.borderRadius = '50%';
     circle.style.boxShadow = getComputedStyle(div).boxShadow;
-
     div.appendChild(circle);
 
-    // If window is anchored, switch out for the collapsed node anchor class
     if (div.classList.contains('window-anchored')) {
         div.classList.remove('window-anchored');
         circle.classList.add('collapsed-anchor');
     }
 
-    const handleCircleDoubleClick = (e)=>{
+    const handleCircleDoubleClick = (e) => {
         if (App.nodeMode !== 1) {
             circle.classList.toggle('collapsed-anchor')
         } else {
@@ -97,9 +94,25 @@ NodeView.prototype.collapse = function(){
     }
     On.dblclick(circle, handleCircleDoubleClick);
     On.dragstart(circle, Event.preventDefault);
-}
 
-NodeView.prototype.expand = function(){
+    this.expandButton = Svg.new.svg();
+    this.expandButton.setAttribute("class", "expand-button");
+
+    const useElem = Svg.new.use();
+    useElem.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#expand-icon");
+
+    this.expandButton.appendChild(useElem);
+
+    this.expandButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleCollapse(e);
+    });
+
+    div.appendChild(this.expandButton);
+};
+
+
+NodeView.prototype.expand = function () {
     const div = this.div;
     const style = div.style;
     const originalSize = this.originalSizes;
@@ -110,7 +123,6 @@ NodeView.prototype.expand = function(){
     style.maxWidth = originalSize.maxWidth;
     style.maxHeight = originalSize.maxHeight;
 
-    // Reset the window properties
     style.display = '';
     style.borderRadius = '';
     style.backgroundColor = '';
@@ -119,22 +131,27 @@ NodeView.prototype.expand = function(){
     style.backdropFilter = '';
     div.classList.remove('collapsed');
 
-    const show = (child)=>{ child.style.display = '' } ;
+    const show = (child) => { child.style.display = '' };
     Elem.forEachChild(div, show);
     Elem.forEachChild(this.headerContainer, show);
 
     this.resetTitleInput();
 
     const circle = div.querySelector('.collapsed-circle');
-    if (!circle) return;
-
-    if (circle.classList.contains('collapsed-anchor')) {
-        div.classList.add('window-anchored');
-        circle.classList.remove('collapsed-anchor');
+    if (circle) {
+        if (circle.classList.contains('collapsed-anchor')) {
+            div.classList.add('window-anchored');
+            circle.classList.remove('collapsed-anchor');
+        }
+        div.removeChild(circle);
     }
 
-    div.removeChild(circle);
-}
+    if (this.expandButton) {
+        this.expandButton.remove();
+        this.expandButton = null;
+    }
+};
+
 
 
 

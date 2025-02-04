@@ -222,6 +222,14 @@ class NodeView {
             btnDel.children[1].setAttribute('fill', fillColor);
             btnFs.children[1].setAttribute('fill', fillColor);
             btnCol.children[1].setAttribute('stroke', strokeColor);
+
+                if (focused) {
+                    node.displayDiv.classList.add('focused');
+                    node.view.resizeHandle.classList.add('focused');
+                } else {
+                    node.displayDiv.classList.remove('focused');
+                    node.view.resizeHandle.classList.remove('focused');
+                }
         }
 
         if (titleInput) {

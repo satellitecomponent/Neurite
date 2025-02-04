@@ -178,7 +178,7 @@ function isInputElement(element) {
     return inputTypes.includes(element.tagName.toLowerCase()) ||
         element.classList.contains('custom-select') ||
         element.closest('.vdb-search-result') ||
-        element.closest('#modal-file-tree-container'); // Added condition
+        element.closest('#modal-file-tree-container') || element.classList.contains('modal-prompt-message');
 }
 
 Modal.dragContent = function (e) {

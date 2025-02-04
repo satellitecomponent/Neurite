@@ -146,7 +146,7 @@ class ZettelkastenProcessor {
             return this.handleLlmPromptLine(line, currentNodeTitle)
         }
 
-        if (processAll && restoreZettelkastenEvent) {
+        if (processAll) { // Removed check for restoreZettelkastenEvent to ensure node body text updates for all nodes when processAll is true.
             // Call without the start and end lines
             this.handlePlainTextAndReferences(line, currentNodeTitle)
         }

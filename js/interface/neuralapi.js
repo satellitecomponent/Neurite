@@ -628,13 +628,14 @@ function neuritePromptZettelkasten(message) {
     });
 }
 
-function neuriteGetUserResponse(message) {
-    return window.prompt(message)
-        .then((response) => response)
-        .catch((error) => {
-            Logger.err("Failed to get user response:", error);
-            return null; // or handle the error as needed
-        });
+async function neuriteGetUserResponse(message) {
+    try {
+        const response = await window.prompt(message); // Assuming window.prompt() is now async
+        return response;
+    } catch (error) {
+        Logger.err("Failed to get user response:", error);
+        return null; // Handle error gracefully
+    }
 }
 
 function neuriteAddNote(nodeTitle, nodeText) {

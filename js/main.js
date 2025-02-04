@@ -134,7 +134,7 @@ Request.send = async function(ct){
 const View = {};
 
 class App {
-    static NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
+    NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
 
     cellularAutomata = new Manager.CellularAutomata();
     interface = new Interface();

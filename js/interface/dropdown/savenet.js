@@ -471,7 +471,7 @@
         JSON.parse(edges).forEach(Graph.setEdgeDirectionalityFromData, Graph);
     }
 
-    #reconstructSavedNode(node){
+    #reconstructSavedNode(node) {
         if (node.isTextNode) TextNode.init(node);
         if (node.isLLM) AiNode.init(node, true); // restoreNewLines
         if (node.isLink) (new LinkNode).init(node);
