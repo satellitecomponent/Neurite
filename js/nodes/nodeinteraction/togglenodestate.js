@@ -1,4 +1,5 @@
 NodeView.prototype.toggleCollapse = function(e){
+    if (e) e.stopPropagation();
     if (!this.model.content) return;
 
     const isCollapsed = this.div.classList.contains('collapsed');
@@ -44,17 +45,15 @@ NodeView.prototype.hideButHeaderAndTitle = function(child){
 NodeView.prototype.collapse = function () {
     const div = this.div;
 
-    if (!this.originalSizes) {
-        const style = getComputedStyle(div);
-        this.originalSizes = {
-            width: style.width,
-            height: style.height,
-            minWidth: style.minWidth,
-            minHeight: style.minHeight,
-            maxWidth: style.maxWidth,
-            maxHeight: style.maxHeight
-        };
-    }
+    const compStyle = getComputedStyle(div);
+    this.model.content.dataset.originalSizes = JSON.stringify({
+        width: compStyle.width,
+        height: compStyle.height,
+        minWidth: compStyle.minWidth,
+        minHeight: compStyle.minHeight,
+        maxWidth: compStyle.maxWidth,
+        maxHeight: compStyle.maxHeight
+    });
 
     Elem.forEachChild(div, this.hideButHeaderAndTitle, this);
     Elem.forEachChild(this.headerContainer, this.hideButHeaderAndTitle, this);
@@ -74,48 +73,68 @@ NodeView.prototype.collapse = function () {
 
     this.centerTitleInput();
 
-    const circle = Html.make.div('collapsed-circle');
-    circle.style.borderRadius = '50%';
-    circle.style.boxShadow = getComputedStyle(div).boxShadow;
-    div.appendChild(circle);
+    this.initCollapsed();
 
     if (div.classList.contains('window-anchored')) {
         div.classList.remove('window-anchored');
-        circle.classList.add('collapsed-anchor');
+        this.circleCollapsed.classList.add('collapsed-anchor');
     }
+}
+NodeView.prototype.makeCircleCollapsed = function(){
+    const circle = Html.make.div('collapsed-circle');
+    circle.style.borderRadius = '50%';
+    circle.style.boxShadow = getComputedStyle(this.div).boxShadow;
+    return circle;
+}
+NodeView.prototype.onCircleDoubleClicked = function(e){
+    if (App.nodeMode === 1) this.toggleCollapse(e)
+    else e.currentTarget.classList.toggle('collapsed-anchor')
+}
+NodeView.prototype.initCollapsed = function(){
+    if (!this.div.classList.contains('collapsed')) return;
 
-    const handleCircleDoubleClick = (e) => {
-        if (App.nodeMode !== 1) {
-            circle.classList.toggle('collapsed-anchor')
-        } else {
-            this.toggleCollapse(e);
-            e.stopPropagation();
-        }
+    if (!this.btnExpand) {
+        this.btnExpand = this.getBtnExpand();
+        On.click(this.btnExpand, this.toggleCollapse.bind(this));
+
+        const circle = this.circleCollapsed = this.getCircleCollapsed();
+        On.dblclick(circle, this.onCircleDoubleClicked.bind(this));
+        On.dragstart(circle, Event.preventDefault);
     }
-    On.dblclick(circle, handleCircleDoubleClick);
-    On.dragstart(circle, Event.preventDefault);
-
-    this.expandButton = Svg.new.svg();
-    this.expandButton.setAttribute("class", "expand-button");
+    this.btnExpand.style.display = '';
+    this.circleCollapsed.style.display = '';
+}
+NodeView.prototype.makeBtnExpand = function(){
+    const btn = Svg.new.svg();
+    btn.setAttribute('class', 'expand-button');
+    btn.style.zIndex = 'inherit';
 
     const useElem = Svg.new.use();
     useElem.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#expand-icon");
+    btn.appendChild(useElem);
+    return btn;
+}
+NodeView.prototype.getBtnExpand = function(){
+    const existing = this.div.querySelector('.expand-button');
+    if (existing) return existing;
 
-    this.expandButton.appendChild(useElem);
+    const made = this.makeBtnExpand();
+    this.div.appendChild(made);
+    return made;
+}
+NodeView.prototype.getCircleCollapsed = function(){
+    const existing = this.div.querySelector('.collapsed-circle');
+    if (existing) return existing;
 
-    this.expandButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleCollapse(e);
-    });
-
-    div.appendChild(this.expandButton);
-};
-
+    const made = this.makeCircleCollapsed();
+    this.div.appendChild(made);
+    return made;
+}
 
 NodeView.prototype.expand = function () {
     const div = this.div;
     const style = div.style;
-    const originalSize = this.originalSizes;
+    const originalSize = JSON.parse(this.model.content.dataset.originalSizes);
     style.width = originalSize.width;
     style.height = originalSize.height;
     style.minWidth = originalSize.minWidth;
@@ -137,21 +156,16 @@ NodeView.prototype.expand = function () {
 
     this.resetTitleInput();
 
-    const circle = div.querySelector('.collapsed-circle');
-    if (circle) {
-        if (circle.classList.contains('collapsed-anchor')) {
-            div.classList.add('window-anchored');
-            circle.classList.remove('collapsed-anchor');
-        }
-        div.removeChild(circle);
-    }
+    const circle = this.circleCollapsed;
+    if (!circle) return;
 
-    if (this.expandButton) {
-        this.expandButton.remove();
-        this.expandButton = null;
+    if (circle.classList.contains('collapsed-anchor')) {
+        div.classList.add('window-anchored');
+        circle.classList.remove('collapsed-anchor');
     }
-};
-
+    Elem.hide(this.circleCollapsed);
+    Elem.hide(this.btnExpand);
+}
 
 
 

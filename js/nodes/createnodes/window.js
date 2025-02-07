@@ -1,6 +1,7 @@
 class NodeView {
+    btnExpand = null;
+    circleCollapsed = null;
     funcPopulate = 'populateForNode';
-    originalSizes = null;
     constructor(node){
         this.id = node.uuid;
         this.model = node;
@@ -53,6 +54,7 @@ class NodeView {
     }
 
     init(){
+        this.initCollapsed();
         this.model.dropdown = document.querySelector('.dropdown');
         this.model.wrapperDivs = document.getElementsByClassName('wrapperDiv');
 
@@ -223,13 +225,8 @@ class NodeView {
             btnFs.children[1].setAttribute('fill', fillColor);
             btnCol.children[1].setAttribute('stroke', strokeColor);
 
-                if (focused) {
-                    node.displayDiv.classList.add('focused');
-                    node.view.resizeHandle.classList.add('focused');
-                } else {
-                    node.displayDiv.classList.remove('focused');
-                    node.view.resizeHandle.classList.remove('focused');
-                }
+            node.displayDiv.classList.toggle('focused', focused);
+            node.view.resizeHandle.classList.toggle('focused', focused);
         }
 
         if (titleInput) {

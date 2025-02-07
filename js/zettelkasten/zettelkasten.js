@@ -419,7 +419,7 @@ class ZettelkastenProcessor {
         const wrapPerTitle = getAllInternalZetNodeWraps();
 
         // Initialize set with UUIDs from current node references
-        const uuidOfRef = (ref)=>wrapPerTitle[ref]?.node?.uuid ;
+        const uuidOfRef = (ref)=>Node.byTitle(ref)?.uuid ;
         const allReferenceUUIDs = new Set(references.map(uuidOfRef).filter(uuid => uuid));
 
         // Check if connected nodes contain a reference to the current node in any CodeMirror instance

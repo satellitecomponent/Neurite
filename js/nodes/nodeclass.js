@@ -269,7 +269,7 @@ class Node {
     }
     toggleWindowAnchored(anchored) {
         const windowDiv = this.view.div;
-        if (!windowDiv || windowDiv.collapsed) return;
+        if (windowDiv.classList.contains('collapsed')) return;
 
         windowDiv.classList.toggle('window-anchored', anchored);
     }

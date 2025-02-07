@@ -89,6 +89,7 @@ CodeMirror.defineMode("ignoreCodeBlocks", function (config) {
     };
 });
 
+const AsyncFunction = async function(){}.constructor;
 View.Code = class CodeView {
     btnRegen = Elem.byId('function-regen-button');
     btnRun = Elem.byId('function-run-button');
@@ -111,10 +112,6 @@ View.Code = class CodeView {
         this.initForRequestfunctioncall();
 
         (this.#stored.load() || []).forEach(this.#addItemFromData, this);
-    }
-    #updateCmContent(content){
-        this.cm.setValue(content);
-        this.cm.refresh();
     }
 
     #CM = class {
@@ -146,6 +143,10 @@ View.Code = class CodeView {
 
             // Scroll to the bottom
             this.cm.scrollTo(null, this.cm.getScrollInfo().height);
+        }
+        updateContent(content){
+            this.cm.setValue(content);
+            this.cm.refresh();
         }
     }
     cm = new this.#CM(Elem.byId('neurite-function-cm'));
@@ -194,7 +195,7 @@ View.Code = class CodeView {
     #customConsole = new this.#CustomConsole(()=>this.#updateTitleOfItem);
 
     #itemId = null;
-    #runCode(code, codeToRun, defaultTitle){
+    async #runCode(code, codeToRun, defaultTitle){
         const originalOnError = window.onerror;
         window.onerror = (message, source, lineno, colno, error)=>{
             this.#customConsole.customLog(message, error);
@@ -202,10 +203,10 @@ View.Code = class CodeView {
         };
 
         try {
-            const customFuncToRun = Function('originalConsole', 'customConsole',
+            const customFuncToRun = AsyncFunction('originalConsole', 'customConsole',
                 `const console = customConsole;
                 ${codeToRun}`);
-            const result = customFuncToRun(console, this.#customConsole);
+            const result = await customFuncToRun(console, this.#customConsole);
             this.#addItem(defaultTitle, code);
             if (result !== undefined) {
                 this.#customConsole.logs.push(JSON.stringify(result));
@@ -339,7 +340,7 @@ View.Code = class CodeView {
         if (!e.target.classList.contains('active-state')) return;
 
         const originalText = e.target.originalText;
-        if (originalText) this.#updateCmContent(originalText);
+        if (originalText) this.cm.updateContent(originalText);
     }
     #onItemListEntered = (e)=>{
         if (e.currentTarget.children.length > 0) this.#btnClear.show()
