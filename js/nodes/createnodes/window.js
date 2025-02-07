@@ -24,7 +24,7 @@ class NodeView {
         innerContent.append(...content);
         div.appendChild(innerContent);
 
-        odiv.setAttribute('data-init', 'window');
+        odiv.dataset.init = 'window';
 
         const titleInput = Html.make.input('title-input');
         titleInput.setAttribute('type', 'text');

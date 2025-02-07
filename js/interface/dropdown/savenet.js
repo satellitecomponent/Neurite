@@ -279,17 +279,16 @@
         const tempDiv = Html.new.div();
         tempDiv.innerHTML = nodeData;
 
-        tempDiv.querySelectorAll('[data-node_json]').forEach(node => {
+        tempDiv.querySelectorAll('[data-node_json]').forEach( (node)=>{
             try {
-                const nodeJson = JSON.parse(node.getAttribute('data-node_json'));
-                if (nodeJson.isLLM) {
-                    node.querySelectorAll('pre').forEach(pre => {
-                        pre.innerHTML = pre.innerHTML.replace(/\n/g, App.NEWLINE_PLACEHOLDER);
-                    });
-                }
+                if (!JSON.parse(node.dataset.node_json).isLLM) return
             } catch (err) {
                 Logger.warn("Error parsing node JSON:", err);
+                return;
             }
+            node.querySelectorAll('pre').forEach( (pre)=>{
+                pre.innerHTML = pre.innerHTML.replace(/\n/g, App.NEWLINE_PLACEHOLDER)
+            });
         });
 
         return tempDiv.innerHTML;
@@ -457,7 +456,7 @@
 
         zettelkastenPaneSaveElements.forEach((elem) => {
             const paneContent = decodeURIComponent(elem.innerHTML);
-            const paneName = decodeURIComponent(elem.getAttribute('data-pane-name'));
+            const paneName = decodeURIComponent(elem.dataset.paneName);
             zetPanes.restorePane(paneName, paneContent);
         });
 
@@ -465,7 +464,7 @@
     }
 
     #populateDirectionalityMap(nodeElement){
-        const edges = nodeElement.getAttribute('data-edges');
+        const edges = nodeElement.dataset.edges;
         if (!edges) return;
 
         JSON.parse(edges).forEach(Graph.setEdgeDirectionalityFromData, Graph);

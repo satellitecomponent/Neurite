@@ -618,7 +618,7 @@ const ctSyncOptions = class {
         const optionValue = option.value;
         if (this.existingValues.has(optionValue)) return;
 
-        const key = option.getAttribute('data-key');
+        const key = option.dataset.key;
         CustomDropdown.addOption(this.targetSelect, option.text, optionValue, key);
         this.existingValues.add(optionValue);
     }

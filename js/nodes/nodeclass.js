@@ -77,8 +77,8 @@ class Node {
         for (const extra of this.save_extras) {
             saveExtras.push(typeof extra === "function" ? extra(this) : extra);
         }
-        this.content.setAttribute('data-node_extras', JSON.stringify(saveExtras));
-        this.content.setAttribute('data-node_json', this.toJSON());
+        this.content.dataset.node_extras = JSON.stringify(saveExtras);
+        this.content.dataset.node_json = this.toJSON();
     }
     push_extra_cb(f) {
         this.save_extras.push(f);
@@ -381,7 +381,7 @@ class Node {
     updateEdgeData() {
         const es = JSON.stringify(this.edges.map(Edge.dataForEdge));
         Logger.debug("Saving edge data:", es);
-        this.content.setAttribute('data-edges', es);
+        this.content.dataset.edges = es;
     }
 
     removeEdgeByIndex(index){

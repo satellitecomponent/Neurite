@@ -230,9 +230,9 @@ View.Code = class CodeView {
         item.innerHTML = title.replace(/\n/g, '<br>');
 
         // Update callData with the new title
-        const callData = JSON.parse(item.getAttribute('data-call-data'));
+        const callData = JSON.parse(item.dataset.callData);
         callData.functionName = title.replace(/<br>/g, '\n'); // Convert <br> back to \n for the data structure
-        item.setAttribute('data-call-data', JSON.stringify(callData));
+        item.dataset.callData = JSON.stringify(callData);
         item.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
@@ -242,8 +242,7 @@ View.Code = class CodeView {
         const item = Html.make.div('function-call-item');
         if (isError) item.dataset.isError = isError;
 
-        const itemId = this.#itemId = generateUUID();
-        item.setAttribute('data-item-id', itemId);
+        item.dataset.itemId = this.#itemId = generateUUID();
 
         // Replace newline characters with <br> tags for HTML rendering
         const formattedFunctionName = functionName.replace(/\n/g, '<br>');
@@ -258,7 +257,7 @@ View.Code = class CodeView {
             functionName,
             isError
         };
-        item.setAttribute('data-call-data', JSON.stringify(callData));
+        item.dataset.callData = JSON.stringify(callData);
 
         if (isError) {
             item.classList.add('error-item');

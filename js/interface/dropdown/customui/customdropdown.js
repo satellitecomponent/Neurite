@@ -65,7 +65,7 @@ CustomDropdown.populateOptions = function(select, optionsReplacer, selectedDiv){
 }
 CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, option){
     const optionDiv = Html.make.div('dropdown-option');
-    optionDiv.setAttribute('data-value', option.value);
+    optionDiv.dataset.value = option.value;
     optionDiv.innerText = option.innerText;
 
     if (option.selected) optionDiv.classList.add('selected');
@@ -89,7 +89,7 @@ CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, 
 
 CustomDropdown.addOption = function(select, text, value, key){
     const option = new Option(text, value);
-    option.setAttribute('data-key', key);
+    option.dataset.key = key;
     select.appendChild(option);
 
     const optionsReplacer = select.parentNode.querySelector('.options-replacer');
@@ -145,11 +145,11 @@ CustomDropdown.addEventListeners = function(select){
     // Close dropdown when clicking outside
     On.mousedown(document, (e)=>{
         if (!container.contains(e.target)) {
-            container.setAttribute('data-outside-click', 'true');
+            container.dataset.outsideClick = 'true'
         }
     });
     On.mouseup(document, (e)=>{
-        if (container.getAttribute('data-outside-click') === 'true' && !container.contains(e.target)) {
+        if (container.dataset.outsideClick === 'true' && !container.contains(e.target)) {
             optionsReplacer.classList.remove('show');
             selectReplacer.classList.add('closed');
             container.style.zIndex = "20"; // Reset the z-index of the parent container
@@ -193,12 +193,9 @@ Select.updateSelectedOptionHighlighting = function(selectElement){
     const optionsReplacer = selectElement.parentNode.querySelector('.options-replacer');
     if (!optionsReplacer) return;
 
-    optionsReplacer.querySelectorAll('div').forEach(div => {
-        if (div.getAttribute('data-value') === selectElement.value) {
-            div.classList.add('selected');
-        } else {
-            div.classList.remove('selected');
-        }
+    const selectedValue = selectElement.value;
+    optionsReplacer.querySelectorAll('div').forEach( (div)=>{
+        div.classList.toggle('selected', div.dataset.value === selectedValue)
     });
 }
 
@@ -237,8 +234,8 @@ CustomDropdown.addModel = function(dropdown, selectData){
 
     const uniqueId = Date.now().toString(); // Simple unique ID generation
     const option = new Option(selectData.modelName, uniqueId);
-    option.setAttribute('data-endpoint', selectData.endpoint);
-    option.setAttribute('data-key', selectData.key);
+    option.dataset.endpoint = selectData.endpoint;
+    option.dataset.key = selectData.key;
     select.appendChild(option);
 
     CustomDropdown.updateLocalStorage(select, dropdown.storageId);
@@ -256,8 +253,8 @@ CustomDropdown.plainOption = function(option){
     return {
         value: option.value,
         text: option.textContent,
-        key: option.getAttribute('data-key'),
-        endpoint: option.getAttribute('data-endpoint')
+        key: option.dataset.key,
+        endpoint: option.dataset.endpoint
     }
 }
 
@@ -272,8 +269,8 @@ CustomDropdown.loadFromLocalStorage = function(select, storageId){
 
     storedOptions.forEach(optionData => {
         const option = new Option(optionData.text, optionData.value);
-        option.setAttribute('data-key', optionData.key);
-        option.setAttribute('data-endpoint', optionData.endpoint);
+        option.dataset.key = optionData.key;
+        option.dataset.endpoint = optionData.endpoint;
         select.appendChild(option);
     });
 
@@ -330,7 +327,7 @@ function updateOptionTitle(selectElement, optionValue, newTitle) {
 
 CustomDropdown.addHtmlOption = function(select, optionData, createOptionContent){
     const option = new Option(optionData.text, optionData.value);
-    option.setAttribute('data-key', optionData.key);
+    option.dataset.key = optionData.key;
     select.appendChild(option);
 
     const optionsReplacer = select.parentNode.querySelector('.options-replacer');
@@ -377,7 +374,7 @@ CustomDropdown.populateHtmlOptions = function(select, optionsReplacer, selectedD
 }
 CustomDropdown.createHtmlOptionDiv = function(select, optionsReplacer, selectedDiv, createOptionContent, option){
     const optionDiv = Html.make.div('dropdown-option');
-    optionDiv.setAttribute('data-value', option.value);
+    optionDiv.dataset.value = option.value;
 
     const optionContent = createOptionContent(option);
     optionDiv.appendChild(optionContent);
@@ -406,7 +403,7 @@ function createZetContainerDropdown(option) {
 
         const paneId = option.value;
         const pane = document.querySelector('#' + paneId);
-        if (pane) pane.setAttribute('data-pane-name', option.text);
+        if (pane) pane.dataset.paneName = option.text;
 
         if (option.selected) Select.updateSelectedOption(option.parentNode);
     });

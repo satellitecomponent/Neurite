@@ -169,7 +169,7 @@ class ZetPanes {
     createPane(paneId, paneName) {
         const pane = Html.make.div('zet-pane');
         pane.id = paneId;
-        pane.setAttribute('data-pane-name', paneName);
+        pane.dataset.paneName = paneName;
 
         const textarea = Html.make.textarea('zet-zettelkasten');
         textarea.id = 'zet-note-input-' + this.paneCounter;
@@ -250,7 +250,7 @@ class ZetPanes {
 
     getPaneName(paneId) {
         const pane = this.paneContent.querySelector('#' + paneId);
-        return (pane) ? pane.getAttribute('data-pane-name') : '';
+        return (pane) ? pane.dataset.paneName : '';
     }
 
     removePane(paneId) {

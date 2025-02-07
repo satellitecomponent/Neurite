@@ -62,7 +62,7 @@ function setupExplanationButtons() { // within the modal
     );
 }
 function onExplanationButtonClicked(e){
-    const explanationId = this.getAttribute('data-explanation-id');
+    const explanationId = this.dataset.explanationId;
     Modal.openOverlay(explanationId);
     // Update the placeholders with current settings
     populateControlsExplanationPlaceholders(explanationId);
