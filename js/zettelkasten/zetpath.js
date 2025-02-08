@@ -219,15 +219,12 @@ function updatePathOptions(targetProcessor = null) {
     }
     ['Branching', 'Radial', 'Spiral'].forEach(updateStyle);
 
-    let pathObject = createZetPath(styleName, options);
-    pathObject.zetPath.generatePath(); // Generate the path
-    // Pass the complete pathObject, which now includes the path and the override flag
-    if (targetProcessor) {
-        targetProcessor.updatePlacementPath(pathObject);
-    } else {
-        window.zettelkastenProcessors.forEach(processor => {
-            processor.updatePlacementPath(pathObject);
-        });
+    const pathObject = createZetPath(styleName, options);
+    pathObject.zetPath.generatePath();
+    const updateForThisPath = ZettelkastenProcessor.updateForThisPath;
+    if (targetProcessor) updateForThisPath.call(pathObject, targetProcessor)
+    else if (window.zettelkastenProcessors && window.zettelkastenProcessors.forEach) {
+        window.zettelkastenProcessors.forEach(updateForThisPath, pathObject);
     }
 
     Logger.debug("Updated path options:", pathObject.zetPath.options);

@@ -210,14 +210,21 @@ function getSavedViews() {
 function receiveCurrentView() {
     const standardCoords = neuriteGetMandelbrotCoords();
     const functionCallFormat = neuriteGetMandelbrotCoords(true);
-    const title = prompt("Enter a title for the saved view:");
-    if (title === null) return null;
 
-    return {
-        title,
-        standardCoords,
-        functionCall: functionCallFormat
-    };
+    return window.prompt("Enter a title for the saved view:")
+        .then((title) => {
+            if (title === null) return null;
+
+            return {
+                title,
+                standardCoords,
+                functionCall: functionCallFormat
+            };
+        })
+        .catch((error) => {
+            Logger.err("Failed to get prompt input:", error);
+            return null;
+        });
 }
 
 function generateCopyPasteSavedViews() {
@@ -250,8 +257,8 @@ function initializeSavedViews() {
 
 initializeSavedViews();
 
-function saveCurrentView() {
-    const view = receiveCurrentView();
+async function saveCurrentView() {
+    const view = await receiveCurrentView();
     if (view === null) {
         Logger.info("View save cancelled by user.");
         return;
@@ -286,13 +293,16 @@ On.click(Elem.byId('deleteCoordinatesBtn'), (e) => {
 });
 
 function deleteSavedView(index) {
-    if (index === null || !savedViews[index]) {
+    const currentFractalType = Elem.byId('fractal-select').value;
+    const fractalViews = savedViews[currentFractalType];
+
+    if (index === null || !fractalViews || index >= fractalViews.length) {
         Logger.err("No coordinate at index for deletion:", index);
         return;
     }
 
     // Remove the selected view from the array
-    savedViews.splice(index, 1);
+    fractalViews.splice(index, 1);
 
     updateSavedViewsCache();
     displaySavedCoordinates();

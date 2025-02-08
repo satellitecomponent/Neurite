@@ -287,9 +287,10 @@ Keys.deleteSelected = async function(){
 
     const confirmMessage = "Are you sure you want to delete the following keys?\n\n"
                          + keysToDelete.join('\n') + "\n\nThis action cannot be undone.";
-    if (confirm(confirmMessage)) {
-        await Promise.all(keysToDelete.map(Keys.deleteKey))
-        .then(Keys.fetchAndDisplayAll)
+    const userConfirmed = await window.confirm(confirmMessage);
+    if (userConfirmed) {
+        await Promise.all(keysToDelete.map(Keys.deleteKey));
+        await Keys.fetchAndDisplayAll();
     }
 }
 Keys.deleteKey = async function(key){
@@ -464,7 +465,7 @@ async function handleNotExtractedLinks(notExtractedLinks, linkNodes) {
         const node = linkNodes.find(node => node.linkUrl === linkInfo.url);
         const title = linkInfo.key;  // This is already the correct title or URL
 
-        const userConfirmed = confirm(`"${title}" is not in the vector store. Extract the content?`);
+        const userConfirmed = await window.confirm(`"${title}" is not in the vector store. Extract the content?`);
         if (!userConfirmed) continue;
 
         const success = await extractAndStoreLinkContent(linkInfo.url, title);

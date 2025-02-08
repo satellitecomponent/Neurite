@@ -62,11 +62,11 @@ class Node {
         On.mouseup(document, this.onMouseUp);
         On.wheel(div, this.onWheel);
     }
-    json() {
-        return JSON.stringify(this, (k, v) => {
+    toJSON() {
+        return JSON.stringify({...this}, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
                 k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
-                k === "view" || k === "agent") {
+                k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
             }
             return v;
@@ -77,8 +77,8 @@ class Node {
         for (const extra of this.save_extras) {
             saveExtras.push(typeof extra === "function" ? extra(this) : extra);
         }
-        this.content.setAttribute('data-node_extras', JSON.stringify(saveExtras));
-        this.content.setAttribute('data-node_json', this.json());
+        this.content.dataset.node_extras = JSON.stringify(saveExtras);
+        this.content.dataset.node_json = this.toJSON();
     }
     push_extra_cb(f) {
         this.save_extras.push(f);
@@ -269,7 +269,7 @@ class Node {
     }
     toggleWindowAnchored(anchored) {
         const windowDiv = this.view.div;
-        if (!windowDiv || windowDiv.collapsed) return;
+        if (windowDiv.classList.contains('collapsed')) return;
 
         windowDiv.classList.toggle('window-anchored', anchored);
     }
@@ -363,9 +363,7 @@ class Node {
         e.stopPropagation();
     }
 
-    getTitle() {
-        return this.content.querySelector('.title-input').value
-    }
+    getTitle(){ return this.view.titleInput.value }
 
     getEdgeDirectionalities() {
         return this.edges.map( (edge)=>({
@@ -383,7 +381,7 @@ class Node {
     updateEdgeData() {
         const es = JSON.stringify(this.edges.map(Edge.dataForEdge));
         Logger.debug("Saving edge data:", es);
-        this.content.setAttribute('data-edges', es);
+        this.content.dataset.edges = es;
     }
 
     removeEdgeByIndex(index){

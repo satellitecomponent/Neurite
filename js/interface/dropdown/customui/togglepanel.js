@@ -36,8 +36,7 @@ function togglePanel(panelContainer) {
 }
 
 
-const apiContainer = document.querySelector('.api-panel'); // Adjust selector as needed
-const functionCallPanel = document.querySelector('.function-call-panel'); // Adjust selector as needed
+const apiContainer = document.querySelector('.api-panel');
 const contextSettingsPanel = document.querySelector('.context-settings-panel');
 const modelSelectPanel = document.querySelector('.model-select-panel');
 const fractalSettingsPanel = document.querySelector('.fractal-settings-panel');
@@ -49,7 +48,7 @@ function toggleAPIPanel() {
 }
 
 function toggleFunctionCallPanel() {
-    togglePanel(functionCallPanel);
+    togglePanel(App.viewCode.div);
 }
 
 function toggleContextSettingsPanel() {

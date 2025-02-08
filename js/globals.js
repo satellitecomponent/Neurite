@@ -487,6 +487,7 @@ String.isIframe = function(str){
     } catch(err){}
     return false;
 }
+String.trim = function(str){ return str.trim() }
 String.uuidOf = function(obj){ return obj.uuid }
 
 function getIframeUrl(iframeContent) {
@@ -496,6 +497,7 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
+Event.dataIndex = function(e){ return Number(e.currentTarget.dataset.index) }
 Event.preventDefault = function(e){ e.preventDefault() }
 Event.stopPropagation = function(e){ e.stopPropagation() }
 Event.stopPropagationByNameForThis = function(eName){

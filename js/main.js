@@ -33,6 +33,7 @@ Object.forEach = function(obj, cb, ct){
     for (const k in obj) cb.call(ct, obj[k])
 }
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Object.hasTitleThis = function(obj){ return obj.title === this.valueOf() }
 Object.isntThis = function(obj){ return obj !== this.valueOf() }
 Object.isThis = function(obj){ return obj === this.valueOf() }
 Logger = class {
@@ -99,6 +100,18 @@ class On {
     Off[eName] = Off.thisEvent.bind(eName);
 });
 
+On.DOMContentLoaded = function (target, cb, options) {
+    if (document.readyState === 'loading') {
+        target.addEventListener('DOMContentLoaded', cb, options);
+    } else {
+        cb();
+    }
+};
+
+Off.DOMContentLoaded = function (target, cb, options) {
+    target.removeEventListener('DOMContentLoaded', cb, options);
+};
+
 Request.makeJsonOptions = function(method, body){
     return {
         method,
@@ -121,6 +134,8 @@ Request.send = async function(ct){
 const View = {};
 
 class App {
+    NEWLINE_PLACEHOLDER = "__NEWLINEplh__";
+
     cellularAutomata = new Manager.CellularAutomata();
     interface = new Interface();
     menuContext = new Menu.Context();
@@ -130,14 +145,15 @@ class App {
     processedNodes = new ProcessedNodes();
     recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
     selectedNodes = new SelectedNodes();
+    viewCode = new View.Code();
+    viewGraphs = new View.Graphs();
 
     init(){
         Body.addEventListeners(document.body);
         this.nodeSimulation.start();
         Ai.init();
-        initViewGraphs();
-        updateSavedNetworks();
-        initializeSaveNetworks();
+        this.viewCode.init();
+        this.viewGraphs.init();
     }
     get nodeMode(){ return this.interface.nodeMode.val }
 }
@@ -166,6 +182,7 @@ class PageLoad {
         'js/interface/dropdown/customui/displaysavedcoords.js',
         'js/interface/dropdown/customui/customsliders.js',
         'js/interface/dropdown/customui/customtooltip.js',
+        'js/interface/dropdown/customui/customdialog.js',
         'js/interface/dropdown/customui/loadingicon.js',
         'js/interface/dropdown/tabs/notestab.js',
         'js/interface/dropdown/tabs/aitab.js',
@@ -212,7 +229,6 @@ class PageLoad {
         'js/ai/ai_v2.js',
         'js/ai/aimessage.js',
         'js/ai/ai-utility/aihelpers.js',
-        'js/ai/vision.js',
         'js/ai/ollama/ollama.js',
         'js/ai/ollama/ollama-api.js',
         'js/ai/ai-utility/handleapikeys.js',
@@ -230,6 +246,7 @@ class PageLoad {
         'js/interface/functioncall/functioncallingpanel.js',
         'js/interface/functioncall/neuraltelemetryprompt.js',
         'js/interface/functioncall/requestfunctioncall.js',
+        'js/ai/vision.js',
         'js/interface/dropdown/savenet.js'
     ];
 

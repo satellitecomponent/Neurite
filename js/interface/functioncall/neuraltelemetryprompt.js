@@ -45,7 +45,7 @@ class NeuralTelemetry {
         const functionCallItems = Array.from(document.querySelectorAll('.function-call-item'));
         const lastNItems = functionCallItems.slice(-n);
         return lastNItems.map(item => {
-            const callData = JSON.parse(item.getAttribute('data-call-data'));
+            const callData = JSON.parse(item.dataset.callData);
             return {
                 code: callData.code,
                 zoom: callData.zoom,

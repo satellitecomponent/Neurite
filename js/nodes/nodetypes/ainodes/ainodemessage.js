@@ -356,6 +356,10 @@ function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, ma
 }
 
 AiNode.MessageLoop = class {
+    static userPromptActive = false;
+    static userPromptQueue = [];
+    static isProcessingQueue = false;
+
     constructor(node, clickQueues = {}) {
         this.node = node;
         this.clickQueues = clickQueues;
@@ -364,6 +368,12 @@ AiNode.MessageLoop = class {
     async processClickQueue(nodeId) {
         const queue = this.clickQueues[nodeId] || [];
         while (true) {
+            if (AiNode.MessageLoop.userPromptActive) {
+                Logger.debug("Global pause - waiting for user response");
+                await Promise.delay(2500);
+                continue;
+            }
+
             if (queue.length > 0) {
                 const { connectedNode, sendButton } = queue[0];
 
@@ -420,7 +430,7 @@ AiNode.MessageLoop = class {
                 const userResponse = await this.getUserResponse(message);
                 if (userResponse) {
                     const responseMessage = `@user says,\n${userResponse.trim()}`;
-                    this.processTargetNode(this.node, responseMessage, true);
+                    this.processTargetNode(this.node, responseMessage, false);
                 }
                 continue;
             } else if (recipient === 'self') {
@@ -444,7 +454,6 @@ AiNode.MessageLoop = class {
             }
         }
     }
-
     removeEdgesToConnectedNodes(connectedAiNodes) {
         const connectedAiNodeSet = new Set(connectedAiNodes.map(String.uuidOf));
         for (let i = this.node.edges.length - 1; i >= 0; i--) {
@@ -454,14 +463,42 @@ AiNode.MessageLoop = class {
             }
         }
     }
-
     getUserResponse(message) {
-        return new Promise(resolve => {
-            const response = prompt(message);
-            resolve(response);
+        return new Promise((resolve) => {
+            // Add to queue instead of showing immediately
+            AiNode.MessageLoop.userPromptQueue.push({
+                message,
+                resolveFn: resolve
+            });
+
+            // Start processing if not already running
+            if (!AiNode.MessageLoop.isProcessingQueue) {
+                this.processUserPromptQueue();
+            }
         });
     }
+    async processUserPromptQueue() {
+        AiNode.MessageLoop.isProcessingQueue = true;
 
+        while (AiNode.MessageLoop.userPromptQueue.length > 0) {
+            AiNode.MessageLoop.userPromptActive = true;
+
+            const { message, resolveFn } = AiNode.MessageLoop.userPromptQueue.shift();
+            try {
+                const response = await window.prompt(message);
+                resolveFn(response || "");
+            } catch (err) {
+                console.error("Prompt error:", err);
+                resolveFn("");
+            }
+
+            // Add brief pause between prompts
+            await Promise.delay(500);
+        }
+
+        AiNode.MessageLoop.userPromptActive = false;
+        AiNode.MessageLoop.isProcessingQueue = false;
+    }
     processTargetNode(connectedNode, message, skipClickQueue = false) {
         const uniqueNodeId = connectedNode.index;
 

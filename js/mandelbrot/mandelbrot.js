@@ -669,20 +669,20 @@ Fractal.hair_svg_path = function (pt, num_pts_max) {
     path.setAttribute('d', result.join(' '));
     return path;
 }
-Fractal.cull_extra_lines = function(){
+Fractal.cull_extra_lines = function () {
     const maxLines = settings.maxLines;
     if (maxLines === 0) {
-        while (svg_bg.firstChild) {
-            Fractal.removeNonPreserved(svg_bg.firstChild);
-        }
+        Array.from(svg_bg.children).forEach(child => {
+            Fractal.removeNonPreserved(child);
+        });
         return;
     }
 
-    const isNotPreserved = (elem)=>!elem.classList.contains('preserve') ;
+    const isNotPreserved = (elem) => !elem.classList.contains('preserve');
     const unpreserved = Array.prototype.filter.call(svg_bg.children, isNotPreserved).reverse();
     while (unpreserved.length > maxLines) (unpreserved.pop()).remove();
 }
-Fractal.render_hair = function(num_pts_max){
+Fractal.render_hair = function (num_pts_max) {
     const random_point = Fractal.sample_random_point();
     const path = Fractal.hair_svg_path(random_point, num_pts_max);
     if (!path) return;
@@ -690,17 +690,16 @@ Fractal.render_hair = function(num_pts_max){
     svg_bg.appendChild(path);
     Fractal.cull_extra_lines();
 }
-
-Fractal.addPreservation = function(child){
+Fractal.addPreservation = function (child) {
     if (child.classList.contains('preserve')) return;
 
     child.classList.add('preserve');
     Logger.info("Preservation added to element with id:", child.id);
 }
-Fractal.clearPreservation = function(child){
-    child.classList.remove('preserve')
+Fractal.clearPreservation = function (child) {
+    child.classList.remove('preserve');
 }
-Fractal.removeNonPreserved = function(child){
+Fractal.removeNonPreserved = function (child) {
     if (!child.classList.contains('preserve')) svg_bg.removeChild(child)
 }
 

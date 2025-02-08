@@ -1,6 +1,7 @@
 class NodeView {
+    btnExpand = null;
+    circleCollapsed = null;
     funcPopulate = 'populateForNode';
-    originalSizes = null;
     constructor(node){
         this.id = node.uuid;
         this.model = node;
@@ -23,7 +24,7 @@ class NodeView {
         innerContent.append(...content);
         div.appendChild(innerContent);
 
-        odiv.setAttribute('data-init', 'window');
+        odiv.dataset.init = 'window';
 
         const titleInput = Html.make.input('title-input');
         titleInput.setAttribute('type', 'text');
@@ -53,6 +54,7 @@ class NodeView {
     }
 
     init(){
+        this.initCollapsed();
         this.model.dropdown = document.querySelector('.dropdown');
         this.model.wrapperDivs = document.getElementsByClassName('wrapperDiv');
 
@@ -222,6 +224,9 @@ class NodeView {
             btnDel.children[1].setAttribute('fill', fillColor);
             btnFs.children[1].setAttribute('fill', fillColor);
             btnCol.children[1].setAttribute('stroke', strokeColor);
+
+            node.displayDiv.classList.toggle('focused', focused);
+            node.view.resizeHandle.classList.toggle('focused', focused);
         }
 
         if (titleInput) {

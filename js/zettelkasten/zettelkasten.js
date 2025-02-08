@@ -19,8 +19,8 @@ function replaceInBrackets(s, from, to) {
     while (index !== -1) {
         const closeIndex = s.indexOf(close, index);
         if (closeIndex !== -1) {
-            const insideBrackets = s.substring(index + open.length, closeIndex).trim();
-            if (insideBrackets === from.trim()) {
+            const insideBrackets = s.substring(index + open.length, closeIndex);
+            if (insideBrackets.trim() === from.trim()) {
                 s = s.substring(0, index + open.length) + to + s.substring(closeIndex);
             }
         }
@@ -43,51 +43,69 @@ function renameNode(from, to) {
     return (s) => replaceInBrackets(s.replace(re, replacer), from, to);
 }
 
+class NodeWrap {
+    edges = new Map();
+    live = true;
+    plainText = '';
+    ref = '';
+    constructor(node, title, lineNum = null){
+        this.lineNum = lineNum;
+        this.node = node;
+        this.title = title;
+    }
+}
+TextArea.ofNode = function(node){
+    return (node.isLLM ? node.promptTextArea : node.textarea)
+}
+
 class ZettelkastenProcessor {
-    constructor(codeMirrorInstance, parser) {
+    noteInputLines = [];
+    placementStrategy = new NodePlacementStrategy([], {});
+    prevNoteInputLines = [];
+    wrapPerLine = {};
+    wrapPerTitle = {};
+    constructor(codeMirrorInstance, parser){
         this.noteInput = codeMirrorInstance;
         this.parser = parser;
-        this.prevNoteInputLines = [];
-        this.placementStrategy = new NodePlacementStrategy([], {});
-        this.nodes = {};
-        this.nodeLines = {};
 
         this.noteInput.on('change', this.processInput);
     }
 
-    updatePlacementPath(pathObject) {
-        if (this.placementStrategy) this.placementStrategy.updatePath(pathObject)
+    static updateForThisPath(processor){
+        const strategy = processor.placementStrategy;
+        if (strategy) strategy.updatePath(this.valueOf());
     }
 
-    spawnNodeFromZettelkasten(currentNodeTitle) {
+    spawnNodeFromZettelkasten(currentNodeTitle){
         App.processedNodes.update();
         this.placementStrategy.nodeObjects = App.processedNodes.map;
         return this.placementStrategy.calculatePositionAndScale(currentNodeTitle);
     }
 
-    findFirstChangedLine(lines) {
-        return lines.findIndex((line, i) => line !== this.prevNoteInputLines[i]) || Math.min(this.prevNoteInputLines.length, lines.length);
+    findFirstChangedLine(lines){
+        const prevLines = this.prevNoteInputLines;
+        return lines.findIndex( (line, i)=>(line !== prevLines[i]) )
+            || Math.min(prevLines.length, lines.length);
     }
-
-    findChangedNode(lines) {
+    findChangedNode(lines){
         for (let i = this.findFirstChangedLine(lines); i >= 0; i--) {
-            if (typeof lines[i] === 'undefined') break;
+            if (lines[i] === undefined) break;
 
             const match = lines[i].match(nodeTitleRegexGlobal);
             if (match) return Node.byTitle(match[1].trim());
         }
     }
 
-    initializeNodes() {
-        for (const key in this.nodes) {
-            if (this.nodes[key].nodeObject.removed) {
-                delete this.nodes[key];
-            } else {
-                this.nodes[key].plainText = '';
-                this.nodes[key].ref = '';
-                this.nodes[key].live = false;
-            }
-        }
+    forEachNodeWrap(cb, ct){
+        const wrapPerTitle = this.wrapPerTitle;
+        for (const title in wrapPerTitle) cb.call(ct, wrapPerTitle[title]);
+    }
+    initializeNodeWrap(wrap){
+        if (wrap.node.removed) return delete this.wrapPerTitle[wrap.title];
+
+        wrap.plainText = '';
+        wrap.ref = '';
+        wrap.live = false;
     }
 
     processInput = ()=>{
@@ -96,347 +114,313 @@ class ZettelkastenProcessor {
             return;
         }
 
-        this.initializeNodes(); // Use instance-specific initializeNodes method
-        const lines = this.noteInput.getValue().split('\n');
+        this.forEachNodeWrap(this.initializeNodeWrap, this);
+        this.noteInputLines = this.noteInput.getValue().split('\n');
         let currentNodeTitle = '';
 
-        lines.forEach((line, index) => {
-            currentNodeTitle = this.processLine(line, lines, index, this.nodes, currentNodeTitle);
+        this.noteInputLines.forEach((line, index) => {
+            currentNodeTitle = this.processLine(line, index, currentNodeTitle)
         });
 
-        if (!processAll) {
-            this.processChangedNode(lines, this.nodes);
-        }
+        if (!processAll) this.processChangedNode(this.noteInputLines);
 
-        this.cleanupNodes(this.nodes, this.nodeLines);
-        this.prevNoteInputLines = lines.slice(); // Update prevNoteInputLines with the current lines
+        this.deleteInactiveNodesFromDict(this.wrapPerTitle);
+        this.deleteInactiveNodesFromDict(this.wrapPerLine);
+
+        this.prevNoteInputLines = this.noteInputLines;
+        this.noteInputLines = [];
         processAll = false;
         restoreZettelkastenEvent = false;
     }
 
-    processLine(line, lines, index, nodes, currentNodeTitle) {
-        const currentNode = nodes[currentNodeTitle];
+    processLine(line, index, currentNodeTitle){
         if (line.startsWith(Tag.node)) {
-            return this.handleNode(line, index, this.nodeLines, nodes, currentNodeTitle);
+            return this.handleNode(line, index, currentNodeTitle)
         }
 
         if (line.startsWith(LLM_TAG)) {
-            return this.handleLLM(line, index, this.nodeLines, nodes, currentNodeTitle, this.addLLMNodeInputListener);
+            return this.handleLLM(line, index, currentNodeTitle)
         }
 
-        if (currentNode && currentNode.isLLM) {
-            return this.handleLlmPromptLine(line, Tag.node, Tag.ref, currentNodeTitle, nodes)
+        if (this.wrapPerTitle[currentNodeTitle]?.node.isLLM) {
+            return this.handleLlmPromptLine(line, currentNodeTitle)
         }
 
-        if (processAll && restoreZettelkastenEvent) {
+        if (processAll) { // Removed check for restoreZettelkastenEvent to ensure node body text updates for all nodes when processAll is true.
             // Call without the start and end lines
-            this.handlePlainTextAndReferences(line, currentNodeTitle, nodes, null, null, lines);
+            this.handlePlainTextAndReferences(line, currentNodeTitle)
         }
 
         return currentNodeTitle;
     }
 
-    handlePlainTextAndReferences(line, currentNodeTitle, nodes, startLine = null, endLine = null, lines = null, partial) {
-        //this.removeStaleReferences(currentNodeTitle, nodes);
+    handlePlainTextAndReferences(line, currentNodeTitle, startLine = null, endLine = null, partial){
+        //this.removeStaleReferences(currentNodeTitle, this.wrapPerTitle);
 
         if (line.includes(Tag.ref)) {
             // If startLine and endLine are null, handleReferenceLine will use its default behavior
-            this.handleReferenceLine(line, currentNodeTitle, nodes, lines, true, startLine, endLine);
-        } else if (nodes[currentNodeTitle]) {
-            this.handleLineWithoutTags(nodes[currentNodeTitle], line, partial);
+            this.handleReferenceLine(line, currentNodeTitle, this.noteInputLines, true, startLine, endLine);
+        } else {
+            const wrap = this.wrapPerTitle[currentNodeTitle];
+            if (wrap) this.handleLineWithoutTags(wrap, line, partial);
         }
     }
 
     // Updated to handle processChangedNode
-    processChangedNode(lines, nodes) {
+    processChangedNode(lines){
         const changedNode = this.findChangedNode(lines);
         if (!changedNode) return;
 
         const changedNodeTitle = changedNode.getTitle();
-        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(changedNodeTitle);
+        const range = this.parser.getNodeSectionRange(changedNodeTitle);
+        const { startLineNo, endLineNo } = range;
 
         let nodeContainsReferences = false;
         let nodeReferencesCleared = false;
         for (let i = startLineNo + 1; i <= endLineNo && i < lines.length; i++) {
             // Process each line and update the nodeContainsReferences flag
-            this.handlePlainTextAndReferences(lines[i], changedNodeTitle, nodes, startLineNo, endLineNo, lines, true);
+            this.handlePlainTextAndReferences(lines[i], changedNodeTitle, startLineNo, endLineNo, true);
             if (lines[i].includes(Tag.ref)) {
                 nodeContainsReferences = true;
                 nodeReferencesCleared = false;
             }
         }
         if (lines.length && startLineNo < endLineNo) {
-            const textArea = (changedNode.isLLM ? changedNode.promptTextArea : changedNode.textarea);
-            TextArea.update.call(textArea, nodes[changedNodeTitle].plainText);
+            const textArea = TextArea.ofNode(changedNode);
+            const text = this.wrapPerTitle[changedNodeTitle].plainText;
+            TextArea.update.call(textArea, text);
         }
 
         // Clear references if no references are found and they haven't been cleared already
         if (!nodeContainsReferences && !nodeReferencesCleared) {
-            this.handleRefTags([], changedNodeTitle, nodes, lines);
+            this.handleRefTags([], changedNodeTitle);
             nodeReferencesCleared = true;
             Logger.debug("References cleared for node:", changedNodeTitle);
         }
     }
 
-    cleanupNodes(nodes, nodeLines) {
-        this.deleteInactiveNodes(nodes);
-        this.deleteInactiveNodeLines(nodeLines);
-    }
-
-    handleNode(line, i, nodeLines, nodes, currentNodeTitle) {
+    handleNode(line, i, currentNodeTitle){
+        const wrapPerLine = this.wrapPerLine;
+        const wrapPerTitle = this.wrapPerTitle;
         currentNodeTitle = line.substr(Tag.node.length).trim();
 
         if (restoreZettelkastenEvent) {
             const savedNode = Node.byTitle(currentNodeTitle);
             if (savedNode) {
-                const node = this.establishZettelkastenNode(savedNode, currentNodeTitle, nodeLines, nodes);
-                nodeLines[i] = node;
-                nodes[currentNodeTitle] = node;
+                const wrap = this.makeZetWrap(savedNode, currentNodeTitle);
+                wrapPerLine[i] = wrapPerTitle[currentNodeTitle] = wrap;
                 return currentNodeTitle;
             }
 
             Logger.info("No existing node found for title:", currentNodeTitle);
         }
 
-        if (!nodes[currentNodeTitle] || nodes[currentNodeTitle].nodeObject.removed) {
-            if (nodeLines[i] && !nodeLines[i].nodeObject.removed) {
-                const node = nodes[currentNodeTitle] = nodeLines[i];
-                if (nodes[node.title] === node) {
-                    delete nodes[node.title];
-                }
-                node.title = currentNodeTitle;
-                node.live = true;
-                node.nodeObject.view.titleInput.value = currentNodeTitle;
+        const wrap = wrapPerTitle[currentNodeTitle];
+        if (!wrap || wrap.node.removed) {
+            if (wrapPerLine[i] && !wrapPerLine[i].node.removed) {
+                const wrap = wrapPerTitle[currentNodeTitle] = wrapPerLine[i];
+                const title = wrap.title;
+                if (wrapPerTitle[title] === wrap) delete wrapPerTitle[title];
+                wrap.title = currentNodeTitle;
+                wrap.live = true;
+                wrap.node.view.titleInput.value = currentNodeTitle;
             } else {
-                let nodeObject;
+                const node = (nodefromWindow) ? TextNode.create(currentNodeTitle)
+                           : this.spawnNodeFromZettelkasten(currentNodeTitle);
                 if (nodefromWindow) {
-                    nodeObject = TextNode.create(currentNodeTitle);
                     nodefromWindow = false;
                     if (followMouseFromWindow) {
-                        nodeObject.followingMouse = 1;
+                        node.followingMouse = 1;
                         followMouseFromWindow = false;
                     }
-                } else {
-                    nodeObject = this.spawnNodeFromZettelkasten(currentNodeTitle);
                 }
 
-                const node = this.establishZettelkastenNode(nodeObject, currentNodeTitle, nodeLines, nodes);
-                nodeLines[i] = node;
-                nodes[currentNodeTitle] = node;
+                const wrap = this.makeZetWrap(node, currentNodeTitle);
+                wrapPerLine[i] = wrap;
+                wrapPerTitle[currentNodeTitle] = wrap;
             }
         } else {
-            nodes[currentNodeTitle].plainText = '';
-            nodes[currentNodeTitle].nodeObject.textarea.value = nodes[currentNodeTitle].plainText;
-            if (nodeLines[nodes[currentNodeTitle].lineNum] === nodes[currentNodeTitle]) {
-                delete nodeLines[nodes[currentNodeTitle].lineNum];
-            }
-            nodes[currentNodeTitle].live = true;
-            nodes[currentNodeTitle].lineNum = i;
-            nodeLines[i] = nodes[currentNodeTitle];
+            wrap.plainText = '';
+            wrap.node.textarea.value = wrap.plainText;
+            const lineNum = wrap.lineNum;
+            if (wrapPerLine[lineNum] === wrap) delete wrapPerLine[lineNum];
+            wrap.live = true;
+            wrap.lineNum = i;
+            wrapPerLine[i] = wrap;
         }
         return currentNodeTitle;
     }
 
-    establishZettelkastenNode(domNode, currentNodeTitle, nodeLines, nodes) {
-        if (!domNode) {
-            Logger.warn("DOM node is undefined, cannot establish Zettelkasten node.");
-            return null;
-        }
-
-        const node = {
-            title: currentNodeTitle,
-            plainText: '',
-            ref: '',
-            live: true,
-            nodeObject: domNode,
-            edges: new Map(),
-            lineNum: null
-        };
-
-        this.attachContentEventListenersToNode(node, nodes, nodeLines);
-
-        return node;
+    makeZetWrap(node, title){
+        const wrap = new NodeWrap(node, title);
+        this.initZetWrap(wrap);
+        return wrap;
     }
 
-    attachContentEventListenersToNode(node, nodes, nodeLines) {
-        const inputElement = node.nodeObject.view.titleInput;
-        On.input(inputElement, this.createTitleInputEventHandler(node, nodes, nodeLines, inputElement));
-
-        const textarea = node.nodeObject.textarea;
-        On.input(textarea, this.getHandleNodeBodyInputEvent(node, textarea));
+    initZetWrap(wrap){
+        const node = wrap.node;
+        On.input(node.view.titleInput, this.onTitleInput.bind(this, wrap));
+        On.input(TextArea.ofNode(node), this.onNodeBodyInput.bind(this, wrap));
     }
 
     //Syncs node titles and Zettelkasten
-    createTitleInputEventHandler(node, nodes, nodeLines, inputElement) {
-        return (e) => {
-            if (e.target !== inputElement) return;
+    onTitleInput(wrap, e){
+        const titleInput = e.currentTarget;
+        if (e.target !== titleInput) return;
 
-            let newName = inputElement.value.trim().replace(',', '');
-            // If a count was previously added, attempt to remove it
-            if (node.countAdded) {
-                const updatedTitle = newName.replace(/\(\d+\)$/, '').trim();
-                if (updatedTitle !== newName) {
-                    newName = updatedTitle;
-                    inputElement.value = newName;
-                    node.countAdded = false;
-                }
+        let newName = titleInput.value.trim().replace(',', '');
+        // If a count was previously added, attempt to remove it
+        if (wrap.countAdded) {
+            const updatedTitle = newName.replace(/\(\d+\)$/, '').trim();
+            if (updatedTitle !== newName) {
+                newName = updatedTitle;
+                titleInput.value = newName;
+                wrap.countAdded = false;
             }
-            const name = node.title;
-            if (newName === node.title) return;
+        }
+        const name = wrap.title;
+        if (newName === name) return;
 
-            delete nodes[name];
-            let countAdded = false;
-            if (nodes[newName]) {
-                let count = 2;
-                while (nodes[newName + '(' + count + ')']) {
-                    count++;
-                }
-                newName += '(' + count + ')';
-                inputElement.value = newName;
-                countAdded = true;
+        const wrapPerTitle = this.wrapPerTitle;
+        delete wrapPerTitle[name];
+        const countAdded = wrap.countAdded = Boolean(wrapPerTitle[newName]);
+        if (countAdded) {
+            titleInput.value = newName = this.getUniqueNodeName(newName);
+        }
+        wrapPerTitle[newName] = wrap;
+        wrap.title = newName;
+        // Set cursor position to before the count if a count was added
+        if (countAdded) {
+            const cursorPosition = newName.indexOf('(');
+            titleInput.setSelectionRange(cursorPosition, cursorPosition);
+        }
+
+        // Collect the relevant CodeMirror instances to update
+        const cmInstancesToUpdate = new Set();
+
+        // Get the CodeMirror instance for the current node
+        const currentNodeInstance = getZetNodeCMInstance(name);
+        const currentCm = currentNodeInstance?.cm;
+        if (currentCm) cmInstancesToUpdate.add(currentCm);
+
+        // Process the nodes connected by edges
+        for (const edge of wrap.node.edges) {
+            // Find the connected node that is not the current node
+            const connectedNode = edge.pts.find(pt => pt !== wrap.node);
+
+            if (connectedNode?.isTextNode) {
+                const connectedTitle = connectedNode.getTitle();
+                const connectedCm = getZetNodeCMInstance(connectedTitle)?.cm;
+                if (connectedCm) cmInstancesToUpdate.add(connectedCm);
             }
-            nodes[newName] = node;
-            node.title = newName;
-            // Set cursor position to before the count if a count was added
-            if (countAdded) {
-                const cursorPosition = newName.indexOf('(');
-                inputElement.setSelectionRange(cursorPosition, cursorPosition);
-            }
-            node.countAdded = countAdded;
+        }
 
-            // Collect the relevant CodeMirror instances to update
-            const cmInstancesToUpdate = new Set();
+        // Update the collected CodeMirror instances
+        const renameNodeInInstance = renameNode(name, newName);
+        for (const cm of cmInstancesToUpdate) {
+            processAll = true;
+            const updatedValue = renameNodeInInstance(cm.getValue());
+            cm.setValue(updatedValue);
+            cm.refresh();
+        }
 
-            // Get the CodeMirror instance for the current node
-            const currentNodeInstance = getZetNodeCMInstance(name);
-            if (currentNodeInstance) {
-                cmInstancesToUpdate.add(currentNodeInstance.cm);
-            }
-
-            // Process the nodes connected by edges
-            for (const edge of node.nodeObject.edges) {
-                // Find the connected node that is not the current node
-                const connectedNode = edge.pts.find(pt => pt !== node.nodeObject);
-
-                if (connectedNode && connectedNode.isTextNode) {
-                    const connectedNodeInstance = getZetNodeCMInstance(connectedNode.getTitle());
-                    if (connectedNodeInstance?.cm !== currentNodeInstance.cm) {
-                        cmInstancesToUpdate.add(connectedNodeInstance.cm);
-                    }
-                }
-            }
-
-            // Update the collected CodeMirror instances
-            const renameNodeInInstance = renameNode(name, newName);
-            for (const cm of cmInstancesToUpdate) {
-                processAll = true;
-                const updatedValue = renameNodeInInstance(cm.getValue());
-                cm.setValue(updatedValue);
-                cm.refresh();
-            }
-
-            zetPanes.switchPane(currentNodeInstance.paneId);
-            currentNodeInstance.ui.scrollToTitle(node.title);
-        };
+        zetPanes.switchPane(currentNodeInstance.paneId);
+        currentNodeInstance.ui.scrollToTitle(wrap.title);
     }
 
     //Syncs node text and Zettelkasten
-    getHandleNodeBodyInputEvent(node, textarea) {
-        return (e) => {
-            if (e.target !== textarea) return;
+    onNodeBodyInput(node, e){
+        const textArea = e.currentTarget;
+        if (e.target !== textArea) return;
 
-            const body = textarea.value;
-            const name = node.title;
-            const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(name);
-            let originalValue = this.noteInput.getValue();
-            const lines = originalValue.split('\n');
+        const body = textArea.value;
+        const name = node.title;
+        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(name);
+        const lines = this.noteInput.getValue().split('\n');
 
-            // Create the updated content
-            let updatedContent = lines[startLineNo] + '\n'; // Node title line
-            updatedContent += body;
+        // Create the updated content
+        let updatedContent = lines[startLineNo] + '\n'; // Node title line
+        updatedContent += body;
 
-            // Replace the node's content using replaceRange
-            const from = { line: startLineNo, ch: 0 };
-            const to = { line: Math.max(startLineNo, endLineNo), ch: (lines[endLineNo] || '').length };
+        // Replace the node's content using replaceRange
+        const from = { ch: 0, line: startLineNo };
+        const ch = (lines[endLineNo] || '').length;
+        const to = { ch, line: Math.max(startLineNo, endLineNo) };
 
-            this.noteInput.operation(() => {
-                this.noteInput.replaceRange(updatedContent, from, to);
+        this.noteInput.operation(() => {
+            this.noteInput.replaceRange(updatedContent, from, to);
 
-                // Handle references
-                body.split('\n').forEach((line, index) => {
-                    if (line.startsWith(Tag.ref)) {
-                        this.handleReferenceLine(line, node.title, this.nodes, body.split('\n'), false, startLineNo + 1 + index, startLineNo + 1 + index);
-                    }
-                });
+            // Handle references
+            const bodyLines = body.split('\n');
+            bodyLines.forEach( (line, index)=>{
+                if (line.startsWith(Tag.ref)) {
+                    const lineIndex = startLineNo + 1 + index;
+                    this.handleReferenceLine(line, node.title, bodyLines, false, lineIndex, lineIndex);
+                }
             });
-        };
+        });
     }
 
-    extractAllReferencesFromRange(startLine, endLine, lines) {
-        const allReferences = [];
+    forEachReferenceInRange(startLine, endLine, lines, cb, ct){
         for (let i = startLine; i <= endLine; i++) {
-            const line = lines[i];
-            if (!line || !line.includes(Tag.ref)) continue;
-
-            const extractedRefs = this.extractReferencesFromLine(line);
-            allReferences.push(...extractedRefs);
+            const res = this.forEachReferenceInLine(lines[i], cb, ct);
+            if (res) return res;
         }
-        return allReferences;
     }
 
     // Modified handleReferenceLine to use optional given range or generate one if not provided
-    handleReferenceLine(line, currentNodeTitle, nodes, lines, shouldAppend = true, startLineIndex = null, endLineIndex = null) {
-        const currentNode = nodes[currentNodeTitle];
-        if (!currentNode) return;
+    handleReferenceLine(line, currentNodeTitle, lines, shouldAppend = true,
+                        startLineIndex = null, endLineIndex = null){
+        const wrap = this.wrapPerTitle[currentNodeTitle];
+        if (!wrap) return;
 
-        let allReferences;
-
-        // Check if the startLineIndex and endLineIndex are within the bounds of the lines array
-        if (startLineIndex !== null && endLineIndex !== null && startLineIndex >= 0 && endLineIndex < lines.length) {
-            allReferences = this.extractAllReferencesFromRange(startLineIndex, endLineIndex, lines);
-        } else {
-            // Get node section range dynamically if not provided
-            const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(currentNodeTitle);
-            allReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, lines); // +1 to skip the title
+        // Check if the startLineIndex and endLineIndex are provided and within the bounds of the lines array
+        if (startLineIndex === null || endLineIndex === null || startLineIndex < 0 || endLineIndex >= lines.length) {
+            const range = this.parser.getNodeSectionRange(currentNodeTitle);
+            startLineIndex = range.startLineNo + 1; // +1 to skip the title
+            endLineIndex = range.endLineNo;
         }
-
-        this.handleRefTags(allReferences, currentNodeTitle, nodes, lines);
+        const allReferences = [];
+        this.forEachReferenceInRange(startLineIndex, endLineIndex, lines, allReferences.push, allReferences);
+        this.handleRefTags(allReferences, currentNodeTitle);
 
         // Build plain text for node after tags
         if (shouldAppend) {
-            const linesToAdd = [currentNode.plainText, line].filter(Boolean);
-            currentNode.plainText = linesToAdd.join('\n');
+            const linesToAdd = [wrap.plainText, line].filter(Boolean);
+            wrap.plainText = linesToAdd.join('\n');
 
-            const targetTextarea = currentNode.nodeObject.content.children[0].children[1].children[0];
-            targetTextarea.value = currentNode.plainText;
+            const targetTextarea = wrap.node.content.children[0].children[1].children[0];
+            targetTextarea.value = wrap.plainText;
         }
     }
 
-    extractReferencesFromLine(line) {
+    forEachReferenceInLine(line, cb, ct){
         const refTag = Tag.ref;
-        if (!sortedBrackets.includes(refTag)) {
-            return line.substr(refTag.length).split(',').map(ref => ref.trim())
+        if (!line || !line.includes(refTag)) return;
+
+        if (sortedBrackets.includes(refTag)) {
+            return this.forEachBracketedReferenceInLine(refTag, line, cb, ct)
         }
 
-        const closingBracket = bracketsMap[refTag];
-        if (line.includes(closingBracket)) {
-            return this.extractBracketedReferences(line, refTag, closingBracket).references
+        for (const ref of line.substr(refTag.length).split(',')) {
+            const res = cb.call(ct, ref.trim());
+            if (res) return res;
         }
-
-        return [];
     }
 
-    handleRefTags(references, currentNodeTitle, nodes, lines) {
-        const thisNodeWrapper = nodes[currentNodeTitle];
-        if (!thisNodeWrapper || !thisNodeWrapper.nodeObject) return;
+    handleRefTags(references, currentNodeTitle){
+        const wrap = this.wrapPerTitle[currentNodeTitle];
+        if (!wrap?.node) return;
 
-        const thisNode = thisNodeWrapper.nodeObject;
+        const currentNodeIsRef = (ref)=>(ref === currentNodeTitle) ;
+        const thisNode = wrap.node;
 
         // Get all nodes from all CodeMirror instances
-        const allNodes = getAllInternalZettelkastenNodes();
+        const wrapPerTitle = getAllInternalZetNodeWraps();
 
         // Initialize set with UUIDs from current node references
-        const allReferenceUUIDs = new Set(references.map(ref => allNodes[ref]?.nodeObject?.uuid).filter(uuid => uuid));
+        const uuidOfRef = (ref)=>Node.byTitle(ref)?.uuid ;
+        const allReferenceUUIDs = new Set(references.map(uuidOfRef).filter(uuid => uuid));
 
         // Check if connected nodes contain a reference to the current node in any CodeMirror instance
         thisNode.forEachConnectedNode( (node)=>{
@@ -445,13 +429,15 @@ class ZettelkastenProcessor {
 
             const { startLineNo, endLineNo } = nodeInfo.parser.getNodeSectionRange(node.getTitle());
             const nodeLines = nodeInfo.cm.getValue().split('\n');
-            const nodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, nodeLines);
-            if (nodeReferences.includes(currentNodeTitle)) allReferenceUUIDs.add(node.uuid);
+            const isRef = this.forEachReferenceInRange(startLineNo + 1, endLineNo, nodeLines, currentNodeIsRef);
+            if (isRef) allReferenceUUIDs.add(node.uuid);
         });
 
         // Process edges
+        function hasUuidThis(pt){ return pt.uuid === this.valueOf() }
+        function hasUuidNotThis(pt){ return pt.uuid !== this.valueOf() }
         const currentEdges = new Map(thisNode.edges.map(edge => {
-            const otherNode = edge.pts.find(pt => pt.uuid !== thisNode.uuid);
+            const otherNode = edge.pts.find(hasUuidNotThis, thisNode.uuid);
             return otherNode ? [otherNode.uuid, edge] : [null, edge];
         }));
 
@@ -459,162 +445,142 @@ class ZettelkastenProcessor {
         currentEdges.forEach((edge, uuid) => {
             if (allReferenceUUIDs.has(uuid)) return;
 
-            const otherNode = edge.pts.find(pt => pt.uuid === uuid);
-            if (thisNode.isTextNode && otherNode?.isTextNode) {
-                // Check if there is a reference to the other node in any CodeMirror instance
-                const otherNodeInfo = getZetNodeCMInstance(otherNode.getTitle());
-                if (!otherNodeInfo) return;
+            const otherNode = edge.pts.find(hasUuidThis, uuid);
+            if (!thisNode.isTextNode || !otherNode?.isTextNode) return;
 
-                const { startLineNo, endLineNo } = otherNodeInfo.parser.getNodeSectionRange(otherNode.getTitle());
-                const otherNodeLines = otherNodeInfo.cm.getValue().split('\n');
-                const otherNodeReferences = this.extractAllReferencesFromRange(startLineNo + 1, endLineNo, otherNodeLines);
+            // Check if there is a reference to the other node in any CodeMirror instance
+            const otherTitle = otherNode.getTitle();
+            const otherNodeInfo = getZetNodeCMInstance(otherTitle);
+            if (!otherNodeInfo) return;
 
-                if (!otherNodeReferences.includes(currentNodeTitle)) {
-                    edge.remove();
-                    currentEdges.delete(uuid);
-                }
-            }
+            const { startLineNo, endLineNo } = otherNodeInfo.parser.getNodeSectionRange(otherTitle);
+            const otherNodeLines = otherNodeInfo.cm.getValue().split('\n');
+            const isRef = this.forEachReferenceInRange(startLineNo + 1, endLineNo, otherNodeLines, currentNodeIsRef);
+            if (isRef) return;
+
+            edge.remove();
+            currentEdges.delete(uuid);
         });
 
         thisNode.edges = Array.from(currentEdges.values());
 
         // Add new edges for references
         references.forEach(reference => {
-            const refUUID = allNodes[reference]?.nodeObject?.uuid;
+            const refUUID = wrapPerTitle[reference]?.node?.uuid;
             if (!refUUID || currentEdges.has(refUUID)) return;
 
-            const newEdge = connectDistance(thisNode, allNodes[reference].nodeObject);
+            const otherNode = wrapPerTitle[reference].node;
+            const newEdge = connectDistance(thisNode, otherNode);
             thisNode.edges.push(newEdge);
             currentEdges.set(refUUID, newEdge);
         });
     }
 
-    extractBracketedReferences(line, openingBracket, closingBracket) {
-        const references = [];
-        let buffer = '';
-        let insideBrackets = false;
-        let residualLine = '';
+    forEachBracketedReferenceInLine(openingBracket, line, cb, ct){
+        const closingBracket = bracketsMap[openingBracket];
+        if (!line.includes(closingBracket)) return;
 
+        const buffer = [];
+        let insideBrackets = false;
         for (let i = 0; i < line.length; i++) {
-            if (line.startsWith(openingBracket, i)) {
-                if (!insideBrackets) {
+            if (!insideBrackets) {
+                if (line.startsWith(openingBracket, i)) {
                     insideBrackets = true;
-                    buffer = '';
+                    buffer.length = 0;
                     i += openingBracket.length - 1;  // Skip the bracket characters
-                } else {
-                    buffer += line[i];
                 }
-            } else if (line.startsWith(closingBracket, i) && insideBrackets) {
+            } else if (line.startsWith(closingBracket, i)) {
                 insideBrackets = false;
                 if (buffer.length > 0) {
-                    references.push(buffer.trim());
+                    const res = cb.call(ct, buffer.join('').trim());
+                    if (res) return res;
                 }
                 i += closingBracket.length - 1;  // Skip the bracket characters
-            } else if (insideBrackets) {
-                buffer += line[i];
             } else {
-                residualLine += line[i];
+                buffer.push(line[i]);
             }
         }
-
-        return { references, residualLine };
     }
 
-    handleLineWithoutTags(node, line, partial) {
-        node.plainText += (node.plainText ? '\n' : '') + line;
+    handleLineWithoutTags(wrap, line, partial){
+        wrap.plainText += (wrap.plainText ? '\n' : '') + line;
         if (partial) return;
 
-        const textArea = (node.isLLM ? node.nodeObject.promptTextArea : node.nodeObject.textarea);
+        const textArea = TextArea.ofNode(wrap.node);
 
-        // getDebouncedTextareaUpdate(textArea)(node.plainText);
-        callWithDelay(TextArea.update.bind(textArea, node.plainText), 20);
+        // getDebouncedTextareaUpdate(textArea)(wrap.plainText);
+        callWithDelay(TextArea.update.bind(textArea, wrap.plainText), 20);
     }
 
-    deleteInactiveNodes(nodes) {
+    deleteInactiveNodesFromDict(dict){
         const dels = [];
-        for (const k in nodes) {
-            if (nodes[k].live) continue;
+        for (const k in dict) {
+            if (dict[k].live) continue;
 
-            nodes[k].nodeObject.remove();
+            dict[k].node.remove();
             dels.push(k);
         }
-        for (const k of dels) {
-            delete nodes[k];
-        }
+        for (const k of dels) delete dict[k];
     }
 
-    deleteInactiveNodeLines(nodeLines) {
-        const nodeLineDels = [];
-        for (const k in nodeLines) {
-            if (nodeLines[k].live) continue;
+    handleLlmPromptLine(line, currentNodeTitle){
+        if (line.startsWith(Tag.node) || line.startsWith(Tag.ref)) return '';
 
-            nodeLines[k].nodeObject.remove();
-            nodeLineDels.push(k);
-        }
-        for (const k of nodeLineDels) {
-            delete nodeLines[k];
-        }
-    }
-
-    handleLlmPromptLine(line, nodeTag, refTag, currentNodeTitle, nodes) {
-        if (line.startsWith(nodeTag) || line.startsWith(refTag)) return '';
-
-        // Check if the promptTextArea is empty. If not, prefix with newline
-        const prefix = nodes[currentNodeTitle].nodeObject.promptTextArea.value ? '\n' : '';
-        nodes[currentNodeTitle].nodeObject.promptTextArea.value += prefix + line.trim();
+        const wrap = this.wrapPerTitle[currentNodeTitle];
+        const textArea = TextArea.ofNode(wrap.node);
+        textArea.value += (textArea.value ? '\n' : '') + line.trim();
         return currentNodeTitle;
     }
 
-    handleLLM(line, i, nodeLines, nodes, currentNodeTitle, addLLMNodeInputListener) {
-        const llmNodeTitle = line.substr("LLM:".length).trim() || "Untitled";  // Default to "Untitled" if empty
-        currentNodeTitle = llmNodeTitle;
+    handleLLM(line, i, currentNodeTitle){
+        const wrapPerLine = this.wrapPerLine;
+        const wrapPerTitle = this.wrapPerTitle;
+        const nodeTitle = line.substr("LLM:".length).trim() || "Untitled";
+        currentNodeTitle = nodeTitle;
 
-        let llmNode = nodes[llmNodeTitle];
+        let wrap = wrapPerTitle[nodeTitle];
 
-        if (!llmNode || llmNode.nodeObject.removed) {
-            if (nodeLines[i] && !nodeLines[i].nodeObject.removed) {
-                llmNode = nodes[llmNodeTitle] = nodeLines[i];
-                delete nodes[llmNode.title];
-                llmNode.title = llmNodeTitle;
-                llmNode.live = true;
-                llmNode.nodeObject.content.children[0].children[0].children[1].value = llmNodeTitle;
+        if (!wrap || wrap.node.removed) {
+            if (wrapPerLine[i] && !wrapPerLine[i].node.removed) {
+                wrap = wrapPerTitle[nodeTitle] = wrapPerLine[i];
+                delete wrapPerTitle[wrap.title];
+                wrap.title = nodeTitle;
+                wrap.live = true;
+                wrap.node.content.children[0].children[0].children[1].value = nodeTitle;
             } else {
-                llmNode = nodeLines[i] = nodes[llmNodeTitle] = {
-                    title: llmNodeTitle,
-                    nodeObject: createLlmNode(llmNodeTitle, (Math.random() - 0.5) * 1.8, (Math.random() - 0.5) * 1.8),
-                    edges: new Map(),
-                    lineNum: i,
-                    live: true,
-                    plainText: '',
-                    isLLM: true,
-                };
-                addLLMNodeInputListener(llmNode, nodes);
+                const sx = (Math.random() - 0.5) * 1.8;
+                const sy = (Math.random() - 0.5) * 1.8;
+                const node = createLlmNode(nodeTitle, sx, sy);
+                wrap = new NodeWrap(node, nodeTitle, i);
+                wrapPerLine[i] = wrapPerTitle[nodeTitle] = wrap;
+                this.initLlmWrap(wrap);
             }
         } else {
-            llmNode.live = true;
-            llmNode.lineNum = i;
-            delete nodeLines[llmNode.lineNum];
-            nodeLines[i] = llmNode;
+            wrap.live = true;
+            wrap.lineNum = i;
+            // delete wrapPerLine[wrap.lineNum]; // compare to handleNode
+            wrapPerLine[i] = wrap;
         }
-        currentNodeTitle = llmNodeTitle;
-        llmNode.nodeObject.promptTextArea.value = '';
+        currentNodeTitle = nodeTitle;
+        TextArea.ofNode(wrap.node).value = '';
         return currentNodeTitle;
     }
 
-    addLLMNodeInputListener(node, nodes) {
-        On.input(node.nodeObject.content.children[0].children[0].children[1], (e)=>{
-            const oldName = node.title;
+    initLlmWrap(wrap){
+        On.input(wrap.node.content.children[0].children[0].children[1], (e)=>{
+            const oldName = wrap.title;
             let newName = e.target.value.trim().replace(',', '');
             if (newName === oldName) return;
 
-            delete nodes[oldName];
+            const wrapPerTitle = this.wrapPerTitle;
+            delete wrapPerTitle[oldName];
 
-            if (nodes[newName]) {
-                newName = e.target.value = getUniqueNodeTitle(newName, nodes);
+            if (wrapPerTitle[newName]) {
+                newName = e.target.value = this.getUniqueNodeTitle(newName);
             }
 
-            nodes[newName] = node;
-            node.title = newName;
+            wrapPerTitle[newName] = wrap;
+            wrap.title = newName;
 
             const noteInput = this.noteInput;
             const f = renameNode(oldName, newName);
@@ -622,20 +588,22 @@ class ZettelkastenProcessor {
             noteInput.refresh();
         });
     }
-}
 
-function getUniqueNodeTitle(baseTitle, nodes, removeExistingCount = false) {
-    let newName = baseTitle.trim().replace(',', '');
+    getUniqueNodeTitle(baseTitle, removeExistingCount = false){
+        let newName = baseTitle.trim().replace(',', '');
 
-    if (removeExistingCount) {
-        newName = newName.replace(/\(\d+\)$/, '').trim();
+        if (removeExistingCount) {
+            newName = newName.replace(/\(\d+\)$/, '').trim();
+        }
+
+        return (!this.wrapPerTitle[newName]) ? newName
+             : this.getUniqueNodeName(newName);
     }
 
-    if (!nodes[newName]) return newName;
-
-    let count = 2;
-    while (nodes[newName + '(' + count + ')']) {
-        count += 1;
+    getUniqueNodeName(name){
+        const arr = [name, '(', 2, ')'];
+        const wrapPerTitle = this.wrapPerTitle;
+        while (wrapPerTitle[arr.join('')]) arr[2] += 1;
+        return arr.join('');
     }
-    return newName + '(' + count + ')';
 }

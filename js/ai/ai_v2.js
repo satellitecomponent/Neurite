@@ -155,7 +155,7 @@ async function callAiApi({
     onStreamingResponse,
     onError,
     inferenceOverride = null,
-    controller = null,
+    controller,
     requestId
 }) {
     Logger.info("Message Array", messages);

@@ -8,7 +8,7 @@ async function generateKeywords(message, count, specificContext = null, node = n
             .filter(word => word.trim().length > 0)
             .sort((a, b) => b.length - a.length)
             .slice(0, count)
-            .map(word => word.trim());
+            .map(String.trim);
     }
 
     const messages = [
@@ -58,14 +58,19 @@ function isGoogleSearchEnabled(nodeIndex = null) {
 }
 
 // console.log("Sending context to AI:", messages);
-function performSearch(searchQuery) { // promise
+function performSearch(searchQuery) {
     Logger.info("Search Query in processLinkInput:", searchQuery);
 
     const apiKey = Elem.byId('googleApiKey').value;
     const searchEngineId = Elem.byId('googleSearchEngineId').value;
+
     if (!apiKey || !searchEngineId) {
-        alert('API Key or Search Engine ID is missing. Please enter them.');
-        return Promise.resolve();
+        return window.alert('API Key or Search Engine ID is missing. Please enter them.')
+            .then(() => Promise.resolve())
+            .catch((error) => {
+                Logger.err("Failed to display alert:", error);
+                return Promise.resolve();
+            });
     }
 
     const ct = new performSearch.ct(apiKey, searchEngineId, searchQuery);
@@ -82,8 +87,12 @@ performSearch.ct = class {
         return data;
     }
     onFailure(){
-        alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.");
-        return "Failed to fetch search results:";
+        return window.alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.")
+            .then(() => "Failed to fetch search results:")
+            .catch((error) => {
+                Logger.err("Failed to display alert:", error);
+                return "Failed to fetch search results:";
+            });
     }
 }
 
@@ -184,8 +193,11 @@ async function displayResultsRelevantToMessage(searchResults, message){
 }
 
 function returnLinkNodes() {
-    const linkUrl = prompt("Enter a Link or Search Query", '');
-    if (linkUrl) processLinkInput(linkUrl);
+    window.prompt("Enter a Link or Search Query", '').then((linkUrl) => {
+        if (linkUrl) processLinkInput(linkUrl);
+    }).catch((error) => {
+        Logger.err("Failed to get prompt input:", error);
+    });
 }
 
     //for interface.js link node drop handler
