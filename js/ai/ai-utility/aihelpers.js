@@ -67,7 +67,7 @@ class TokenCounter {
         if (typeof content === 'string') {
             this.tokenCount += TokenCounter.forString(content);
         } else if (Array.isArray(content)) {
-            content.forEach(addTokensOfItem);
+            content.forEach(this.addTokensOfItem, this);
         }
     }
 }

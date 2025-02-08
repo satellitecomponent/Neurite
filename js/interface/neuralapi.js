@@ -571,8 +571,8 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
     ];
 
     try {
-        await callVisionModel(messages, async () => {
-            runNeuriteCode(true); // Run code with increment and decrement of activeAnimations.
+        await App.viewCode.callVisionModel(messages, async ()=>{
+            App.viewCode.runCode(true); // Run code with increment and decrement of activeAnimations.
 
             await (new Animation.waitForAllActive).promise();
             Logger.info("awaited");
@@ -628,9 +628,14 @@ function neuritePromptZettelkasten(message) {
     });
 }
 
-function neuriteGetUserResponse(message) {
-    const response = prompt(message);
-    return response;
+async function neuriteGetUserResponse(message) {
+    try {
+        const response = await window.prompt(message); // Assuming window.prompt() is now async
+        return response;
+    } catch (error) {
+        Logger.err("Failed to get user response:", error);
+        return null; // Handle error gracefully
+    }
 }
 
 function neuriteAddNote(nodeTitle, nodeText) {

@@ -79,7 +79,7 @@ body {
 
 .collapsed-circle.collapsed-anchor {
     background-color: rgba(107, 98, 121, 40%) !important;
-    border: none;
+    border-color: transparent;
 }
 
 .window.selected.collapsed::before {
@@ -90,6 +90,22 @@ body {
 .window.collapsed {
     background-color: transparent;
     border-color: transparent;
+}
+
+
+.expand-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%); /* moves the button so it's a bit lower than center */
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: none;
+}
+
+.collapsed:hover .expand-button {
+    display: block;
 }
 
 
@@ -115,6 +131,7 @@ body {
 
 .window-anchored {
     background-color: #1a1921bf;
+    border: 2px solid #1a1a1a;
 }
 
     .window-anchored::before {
@@ -125,7 +142,6 @@ body {
         left: -1px;
         right: -1px;
         bottom: -1px;
-        border: 2px solid #1a1a1a;
         pointer-events: none;
         z-index: 1;
     }
@@ -213,6 +229,7 @@ body {
     overflow: hidden;
     padding: 15px 0px 1px 22px;
     margin: 0px;
+    padding-right: 2px;
     box-sizing: border-box;
     background-color: #222229;
     border-radius: 0;
@@ -301,7 +318,6 @@ body {
     display: flex;
     justify-content: flex-end; /* Align items to the end (right) of the container */
     width: 100%; /* Make sure this takes up the full width of the parent container */
-    margin-bottom: 2px;
     z-index: 1;
 }
 
@@ -319,7 +335,7 @@ input[type="text"i].title-input {
     border-color: #aaa;
     margin-top: 2px;
     margin-right: 2px;
-    margin-left: -7px;
+    margin-left: -2px;
     z-index: 150;
 }
 
@@ -393,6 +409,44 @@ input[type="text"i].title-input {
             /* Add this line */
         }
 
+            .resize-handle::before {
+                content: "";
+                position: absolute;
+                width: 2px;
+                height: 10px;
+                background-color: #bbb;
+                transform-origin: 0 0;
+            }
+
+            .resize-handle::after {
+                content: "";
+                position: absolute;
+                width: 2.8px;
+                height: 5px;
+                background-color: #bbb;
+                transform-origin: 0 0;
+            }
+
+            .resize-handle.focused::before {
+                background-color: RGB(200,200,255);
+            }
+
+            .resize-handle.focused::after {
+                background-color: RGB(200,200,255);
+            }
+
+            .resize-handle::before {
+                transform: rotate(45deg) translate(-1px, -4px) scale(.9);
+            }
+
+            .resize-handle::after {
+                transform: rotate(45deg) translate(3px, -1px) scale(.5);
+            }
+
+            .resize-handle.dragging {
+                background-color: none;
+            }
+
         iframe {
             width: 100%;
             height: 100%;
@@ -404,36 +458,6 @@ input[type="text"i].title-input {
             height: fit-content;
             box-sizing: border-box;
             /* Add this line */
-        }
-
-        .resize-handle::before {
-            content: "";
-            position: absolute;
-            width: 2px;
-            height: 10px;
-            background-color: #bbb;
-            transform-origin: 0 0;
-        }
-
-        .resize-handle::after {
-            content: "";
-            position: absolute;
-            width: 2.8px;
-            height: 5px;
-            background-color: #bbb;
-            transform-origin: 0 0;
-        }
-
-        .resize-handle::before {
-            transform: rotate(45deg) translate(-1px, -4px) scale(.9);
-        }
-
-        .resize-handle::after {
-            transform: rotate(45deg) translate(3px, -1px) scale(.5);
-        }
-
-        .resize-handle.dragging {
-            background-color: none;
         }
 
         .selectable {
@@ -980,22 +1004,6 @@ input[type="text"i]:hover {
     white-space: pre-wrap;
 }
 
-.custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #888 #444;
-}
-
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background-color: #444;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: #888;
-    }
 
 .search_matched {
     outline-style: double;
@@ -1813,37 +1821,48 @@ td {
     }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #888;
-        }
-
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #555;
-            }
-
-        .custom-scrollbar::-webkit-scrollbar-corner {
-            background: transparent;
-            border: none;
-        }
-
 .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #888 transparent;
+    overflow: auto;
 }
 
-    .custom-scrollbar:hover {
-        scrollbar-color: #555 transparent;
+    /* Make the scrollbar thinner */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px; /* Adjust this value to make it thinner */
+        height: 6px;
     }
 
-    .custom-scrollbar::-webkit-scrollbar-button {
-        color: transparent;
-        background-color: transparent;
+    /* Style the scrollbar track */
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #8882;
+        border-radius: 0px 0px 15px 15px;
+        margin-bottom: 16px;
+        margin-top: -16px;
     }
+
+    /* Default scrollbar thumb style */
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #aaa;
+        /* Only bottom two corners rounded */
+        border-radius: 0px 0px 15px 15px;
+    }
+
+    /* When the scrollbar container has the 'focused' class, change the thumb color */
+    .custom-scrollbar.focused::-webkit-scrollbar-thumb {
+        background: RGB(200,200,255); /* Change this to your desired color on focus */
+    }
+
+    /* Remove the scrollbar buttons */
+    .custom-scrollbar::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: none !important;
+        border: none !important;
+    }
+
+
+
+
 
         .key-button {
             z-index: 1;
@@ -2678,8 +2697,8 @@ input[type=range] {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    margin-bottom: 12px;
-    margin-top: 4px;
+    margin-bottom: 6px;
+    margin-top: 0px;
 }
 
 .ainode-settings-container {
@@ -3124,8 +3143,6 @@ code.language-markdown {
         border-radius: 50%;
         margin: 2px 0;
     }
-
-
 
 .response-wrapper.hovered {
     transform: scale(1.05);
@@ -3983,4 +4000,60 @@ code.language-markdown {
 #delete-account-btn:hover {
     background-color: #950e0e;
     color: white;
+}
+
+
+.prompt-modal-content, .alert-modal-content, .confirm-modal-content {
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-ok:hover {
+    background-color: #293e34;
+}
+
+    .modal-cancel:hover {
+        background-color: #603030;
+    }
+    
+.modal-prompt-textarea {
+    flex-grow: 1;
+    background-color: #222226;
+    color: #bbb;
+    border: inset;
+    border-color: #8882;
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: none;
+    margin-bottom: 10px;
+}
+
+.modal-prompt-message {
+    font-size: 18px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+/* Styling for the alert modal header and body */
+.alert-modal .modal-header {
+    background-color: #44000069; /* Example: light red background */
+}
+
+.alert-modal .modal-body {
+    background-color: #421313b8; /* Example: slightly different red */
+}
+
+.alert-modal p {
+    color: #8c7474; /* Example: slightly different red */
+}
+
+.alert-modal .modal-title {
+    color: #8c7474; /* Example: slightly different red */
 }

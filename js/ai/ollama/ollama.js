@@ -57,7 +57,7 @@ Ollama.refreshModal = async function(){
 }
 Ollama.forEachNameAndTitleInLibrary = function(library, cb, ct){
     library.forEach(model => {
-        const lines = model.name.split('\n').map(line => line.trim());
+        const lines = model.name.split('\n').map(String.trim);
         const name = lines[0];
         const description = lines.find(line => line.length > 0 && line !== name);
         const sizes = lines.filter(line => /^\d+[Bb]$/.test(line)).map(size => size.toLowerCase());

@@ -1,9 +1,9 @@
-function getAllInternalZettelkastenNodes() {
-    const allNodes = {};
+function getAllInternalZetNodeWraps() {
+    const wrapPerTitle = {};
     window.zettelkastenProcessors.forEach(processor => {
-        Object.assign(allNodes, processor.nodes);
+        Object.assign(wrapPerTitle, processor.wrapPerTitle);
     });
-    return allNodes;
+    return wrapPerTitle;
 }
 
 let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates

@@ -85,32 +85,38 @@ async function getImageNodeData(node) {
     return null;
 }
 
-async function callVisionModel(messages, onStreamComplete) {
-    const inferenceOverride = {
-        provider: 'OpenAi',
-        model: 'gpt-4o'
-    };
+View.Code.prototype.callVisionModel = async function(messages, onStreamComplete){
+    const requestId = generateRequestId();
+    const controller = new AbortController();
+
+    activeRequests.set(requestId, { type: 'function', controller });
 
     callAiApi({
-        messages: messages,
+        messages,
         stream: true, // Assuming streaming is not required for vision model
         customTemperature: null, // Or specify a custom temperature if needed
-        onBeforeCall: () => {
-            isAiProcessing = true;
-            updateUiForProcessing();
+        onBeforeCall: ()=>{
+            this.isAiProcessing = true;
+            this.updateUiForProcessing();
         },
-        onStreamingResponse: (content) => {
-            neuriteFunctionCM.getDoc().replaceRange(content, CodeMirror.Pos(neuriteFunctionCM.lastLine()));
+        onStreamingResponse: (content)=>{
+            const cm = this.cm.cm;
+            cm.getDoc().replaceRange(content, CodeMirror.Pos(cm.lastLine()));
         },
-        onAfterCall: () => {
-            isAiProcessing = false;
-            updateUiForIdleState();
+        onAfterCall: ()=>{
+            this.isAiProcessing = false;
+            this.updateUiForIdleState();
             if (onStreamComplete) onStreamComplete(); // Call the callback after streaming is complete
         },
-        onError: (err) => {
-            functionErrorIcon.style.display = 'block';
+        onError: (err)=>{
+            this.iconError.style.display = 'block';
             Logger.err(err);
         },
-        inferenceOverride: inferenceOverride,
+        inferenceOverride: {
+            provider: 'OpenAi',
+            model: 'gpt-4o'
+        },
+        controller,
+        requestId
     });
 }

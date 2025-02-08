@@ -183,13 +183,18 @@ NodeActions.llm = class LLMNodeActions extends NodeActions.base {
         const promptTextarea = this.node.promptTextArea;
         // Check if the prompt textarea is empty
         if (!promptTextarea.value.trim()) {
-            const userInput = window.prompt("Please enter your prompt:");
-            if (userInput === null || userInput.trim() === '') {
-                Logger.info("No prompt entered");
-                return;
-            }
+            window.prompt("Please enter your prompt:")
+                .then((userInput) => {
+                    if (userInput === null || userInput.trim() === '') {
+                        Logger.info("No prompt entered");
+                        return;
+                    }
 
-            promptTextarea.value = userInput;
+                    promptTextarea.value = userInput;
+                })
+                .catch((error) => {
+                    Logger.err("Failed to get prompt input:", error);
+                });
         }
 
         this.simulateClick(this.node.sendButton, "Send");

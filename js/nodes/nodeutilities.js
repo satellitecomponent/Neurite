@@ -84,6 +84,13 @@ class Graph {
         }
         return arr;
     }
+    findEdge(cb, ct){
+        const edges = this.edges;
+        for (const edgeKey in edges) {
+            const edge = edges[edgeKey];
+            if (cb.call(ct, edge)) return edge;
+        }
+    }
     forEachEdge(cb, ct){ Object.forEach(this.edges, cb, ct) }
     forEachEdgeView(cb, ct){ Object.forEach(this.edgeViews, cb, ct) }
     forEachNode(cb, ct){ Object.forEach(this.nodes, cb, ct) }
@@ -207,11 +214,8 @@ function edgeFromJSON(edgeData) {
     if (pts.includes(undefined)) Logger.warn("missing keys", edgeData, nodes);
 
     // Check if edge already exists
-    Graph.forEachEdge( (edge)=>{
-        const e_pts = edge.pts.map(n => n.uuid).sort();
-        const o_pts = edgeData.p.sort();
-        if (JSON.stringify(e_pts) === JSON.stringify(o_pts)) return; // Edge already exists
-    });
+    const edgeKey = edgeData.edgeKey;
+    if (Graph.findEdge( (edge)=>(edge.edgeKey === edgeKey) )) return;
 
     const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
     pts.forEach(Node.addEdgeThis, edge);

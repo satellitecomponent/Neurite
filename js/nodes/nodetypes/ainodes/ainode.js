@@ -247,7 +247,7 @@ AiNode.init = function(node, restoreNewLines){
 
     if (restoreNewLines) {
         node.aiResponseDiv.querySelectorAll('pre').forEach( (pre)=>{
-            pre.innerHTML = pre.innerHTML.split(NEWLINE_PLACEHOLDER).join('\n');
+            pre.innerHTML = pre.innerHTML.split(App.NEWLINE_PLACEHOLDER).join('\n');
         })
     }
 }
@@ -618,7 +618,7 @@ const ctSyncOptions = class {
         const optionValue = option.value;
         if (this.existingValues.has(optionValue)) return;
 
-        const key = option.getAttribute('data-key');
+        const key = option.dataset.key;
         CustomDropdown.addOption(this.targetSelect, option.text, optionValue, key);
         this.existingValues.add(optionValue);
     }

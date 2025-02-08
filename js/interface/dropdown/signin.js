@@ -217,7 +217,7 @@ async function checkNeuriteSignIn() {
     if (userEmail) {
         return true;
     } else {
-        const confirmSignIn = confirm("You are not signed in. Sign in?");
+        const confirmSignIn = await window.confirm("You are not signed in. Sign in?");
         if (confirmSignIn) {
             signIn();
         }
@@ -246,9 +246,15 @@ document.getElementById('openNeuriteModalButton').onclick = async function () {
 
 function handleNeuriteUnauthorized() {
     updateSignInState();
-    const shouldSignIn = confirm('Your session has expired. Sign in to continue.');
-    if (shouldSignIn) {
-        signIn();
-    }
-    throw new Error('Unauthorized'); // Ensure control flow exits after handling
+    return window.confirm('Your session has expired. Sign in?')
+        .then((shouldSignIn) => {
+            if (shouldSignIn) {
+                signIn();
+            }
+            throw new Error('Unauthorized'); // Ensure control flow exits after handling
+        })
+        .catch((error) => {
+            console.error("Failed to display confirm dialog:", error);
+            throw error; // Re-throw the error to maintain control flow
+        });
 }

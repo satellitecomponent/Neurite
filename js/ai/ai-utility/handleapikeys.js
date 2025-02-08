@@ -88,8 +88,8 @@ function fetchCustomModelData(modelName) {
         return null;
     }
 
-    const apiEndpoint = selectedOption.getAttribute('data-endpoint');
-    const apiKey = selectedOption.getAttribute('data-key');
+    const apiEndpoint = selectedOption.dataset.endpoint;
+    const apiKey = selectedOption.dataset.key;
 
     if (!apiEndpoint) {
         Logger.err("Missing Custom Endpoint:", modelName);

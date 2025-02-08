@@ -3,3 +3,4 @@ dist/
 package-lock.json
 .vs
 .vscode
+database.db
