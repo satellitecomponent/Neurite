@@ -1,6 +1,8 @@
 {
   "name": "neurite-electron",
   "version": "1.0.0",
+  "description": "Electron build for Neurite fractal mind map.",
+  "author": "satellitecomponent",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -19,8 +21,13 @@
   "build": {
     "appId": "com.satellitecomponent.neurite",
     "productName": "Neurite",
+    "asar": true,
+    "asarUnpack": [
+      "localhost_servers/**/*"
+    ],
     "files": [
       "main.js",
+      "modules/**/*",
       "localhost_servers/**/*",
       "build/icons/**/*"
     ],

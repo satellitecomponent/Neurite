@@ -1,10 +1,19 @@
-// modules/serverManager.js
 const { spawn } = require('child_process');
 const axios = require('axios');
 const path = require('path');
 const treeKill = require('tree-kill');
+const { app } = require('electron'); // Import Electron's `app` to get the correct path
 
 let childProcess = null;
+
+function getLocalServersPath() {
+    // Check if we are running in a packaged Electron app
+    if (app && app.isPackaged) {
+        return path.join(process.resourcesPath, 'app.asar.unpacked', 'localhost_servers');
+    } else {
+        return path.join(__dirname, '../localhost_servers');
+    }
+}
 
 async function isLocalServerRunning() {
     try {
@@ -17,8 +26,11 @@ async function isLocalServerRunning() {
 
 function startLocalServers() {
     return new Promise((resolve, reject) => {
-        const scriptFullPath = path.join(__dirname, '../localhost_servers', 'start_servers.js');
-        const serversFolder = path.join(__dirname, '../localhost_servers');
+        const serversFolder = getLocalServersPath();
+        const scriptFullPath = path.join(serversFolder, 'start_servers.js');
+
+        console.log(`[serverManager] Using server path: ${serversFolder}`);
+        console.log(`[serverManager] Attempting to start servers with: ${scriptFullPath}`);
 
         childProcess = spawn('node', [scriptFullPath], {
             cwd: serversFolder
@@ -39,7 +51,7 @@ function startLocalServers() {
 
         // Polling setup to check server status
         let attempts = 0;
-        const maxAttempts = 160; // 30 attempts * 500ms = 15 seconds total
+        const maxAttempts = 160;
         const checkInterval = 500;
 
         const checkServer = async () => {
