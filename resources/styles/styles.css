@@ -3804,6 +3804,7 @@ code.language-markdown {
 /* File tree styles */
 .fileTreeContainer {
     padding: 10px;
+    margin-top: 10px;
     overflow-y: auto;
     max-height: 400px;
     width: 40vw;
@@ -3862,6 +3863,7 @@ code.language-markdown {
     overflow-x: hidden;
     max-width: 100%;
     width: 280px;
+    margin: 1px;
 }
 
 #modal-header .modal-filepath-input {
