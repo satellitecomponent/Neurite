@@ -1,18 +1,15 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const axios = require('axios');
 const path = require('path');
 const treeKill = require('tree-kill');
-const { app } = require('electron'); // Import Electron's `app` to get the correct path
+const { app } = require('electron');
 
 let childProcess = null;
 
 function getLocalServersPath() {
-    // Check if we are running in a packaged Electron app
-    if (app && app.isPackaged) {
-        return path.join(process.resourcesPath, 'app.asar.unpacked', 'localhost_servers');
-    } else {
-        return path.join(__dirname, '../localhost_servers');
-    }
+    return app.isPackaged
+        ? path.join(process.resourcesPath, 'app.asar.unpacked', 'localhost_servers')
+        : path.join(__dirname, '../localhost_servers');
 }
 
 async function isLocalServerRunning() {
@@ -33,31 +30,20 @@ function startLocalServers() {
         console.log(`[serverManager] Attempting to start servers with: ${scriptFullPath}`);
 
         childProcess = spawn('node', [scriptFullPath], {
-            cwd: serversFolder
+            cwd: serversFolder,
+            detached: true,
+            stdio: 'ignore'
         });
 
-        childProcess.stdout.on('data', (data) => {
-            console.log(`[start_servers.js]: ${data.toString().trim()}`);
-        });
+        childProcess.unref(); // Allows process to run independently
 
-        childProcess.stderr.on('data', (data) => {
-            console.error(`[start_servers.js ERR]: ${data.toString().trim()}`);
-        });
-
-        childProcess.on('error', (error) => {
-            console.error('start_servers.js failed:', error);
-            reject(error);
-        });
-
-        // Polling setup to check server status
         let attempts = 0;
         const maxAttempts = 160;
         const checkInterval = 500;
 
         const checkServer = async () => {
             try {
-                const isRunning = await isLocalServerRunning();
-                if (isRunning) {
+                if (await isLocalServerRunning()) {
                     console.log('Servers are confirmed running.');
                     resolve();
                 } else {
@@ -73,17 +59,24 @@ function startLocalServers() {
             }
         };
 
-        // Start the initial check after a short delay
         setTimeout(checkServer, checkInterval);
     });
 }
 
 function stopLocalServers() {
-    if (childProcess) {
-        console.log('Stopping local servers...');
+    if (!childProcess) {
+        console.log('No local server process found.');
+        return;
+    }
+
+    console.log('Stopping local servers...');
+
+    try {
+        // First, try SIGTERM
         treeKill(childProcess.pid, 'SIGTERM', (err) => {
             if (err) {
                 console.error('SIGTERM failed, trying SIGKILL...');
+
                 treeKill(childProcess.pid, 'SIGKILL', (killErr) => {
                     if (killErr) {
                         console.error('SIGKILL also failed:', killErr);
@@ -94,9 +87,25 @@ function stopLocalServers() {
             } else {
                 console.log('Local servers stopped with SIGTERM.');
             }
-            childProcess = null;
         });
+
+        // Ensure all subprocesses are terminated on macOS
+        if (process.platform === 'darwin') {
+            try {
+                const pid = childProcess.pid;
+                console.log(`Ensuring process tree for PID ${pid} is terminated on macOS...`);
+                execSync(`pkill -P ${pid} || kill -9 ${pid}`);
+                console.log('Successfully killed child processes on macOS.');
+            } catch (killError) {
+                console.error('Failed to kill processes on macOS:', killError);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error stopping local servers:', error);
     }
+
+    childProcess = null;
 }
 
 module.exports = {
