@@ -126,7 +126,7 @@ async function performVectorDbDisplaySearch() {
                     <div class="vdb-result-source">${source}</div>
                     <div class="vdb-result-score">Relevance: <br />${chunk.relevanceScore.toFixed(3)}</div>
                 </div>
-                <div class="vdb-result-text">${chunk.text}</div>
+                <div class="vdb-result-text custom-scrollbar">${chunk.text}</div>
             `;
             searchResultsContainer.appendChild(resultElement);
         });
