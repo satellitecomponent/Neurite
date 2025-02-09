@@ -31,7 +31,7 @@ function createMainWindow() {
         menu.popup({ window: bw, x: params.x, y: params.y });
     });
 
-    mainWindow.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
     return mainWindow;
 }
 
