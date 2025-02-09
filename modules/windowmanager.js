@@ -25,7 +25,7 @@ function createMainWindow() {
 
         // macOS-specific settings
         titleBarStyle: isMac ? 'hiddenInset' : 'default', // Inset traffic lights on macOS
-        trafficLightPosition: isMac ? { x: 12, y: 10 } : undefined, // Adjust inset position
+        trafficLightPosition: isMac ? { x: 12, y: 6 } : undefined, // Adjust inset position
     });
 
     mainWindow.loadURL('https://neurite.network');
