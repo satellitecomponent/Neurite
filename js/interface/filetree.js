@@ -28,8 +28,8 @@ class Path {
         onResponse(res) {
             this.mimeType = res.headers.get('Content-Type') || '';
             const isText = this.isTextMime(this.mimeType);
-            if (isText) res.text().then(this.onText);
-            else res.blob().then(this.onBlob);
+            if (isText) return res.text().then(this.onText);
+            else return res.blob().then(this.onBlob);
         }
         onText = (text) => { this.content = text }
         onBlob = (blob) => { this.blob = blob }
