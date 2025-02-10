@@ -42,47 +42,45 @@ function calculateImageTokenCost(width, height, detailLevel) {
     return (totalTiles * 170) + 85;
 }
 
+// Converts a blob URL to a Base64 data URL using an Image and Canvas.
+function convertBlobUrlToBase64(blobUrl) {
+    return new Promise((resolve, reject) => {
+        const imageElement = new Image();
+        // Uncomment the following if cross-origin issues are a concern.
+        // imageElement.crossOrigin = "Anonymous";
 
-// Asynchronously convert an image to a base64 string
-// The convertImageToBase64 function should take a blob URL, create an Image object,
-// load the blob URL, and then perform the canvas draw and toDataURL conversion.
-function convertImageToBase64(imageElement, callback) {
-    const canvas = Html.new.canvas();
-    canvas.width = imageElement.naturalWidth;
-    canvas.height = imageElement.naturalHeight;
+        imageElement.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = imageElement.naturalWidth;
+            canvas.height = imageElement.naturalHeight;
+            const context = canvas.getContext('2d');
 
-    canvas.getContext('2d')
-    .drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+            try {
+                context.drawImage(imageElement, 0, 0);
+                // Get Base64 encoded image as a data URL
+                const dataURL = canvas.toDataURL('image/png');
+                resolve(dataURL);
+            } catch (error) {
+                reject(error);
+            }
+        };
 
-    callback(canvas.toDataURL('image/png')); // base64 string
+        imageElement.onerror = (error) => {
+            reject(error);
+        };
+
+        imageElement.src = blobUrl;
+    });
 }
 
-
 async function getImageNodeData(node) {
-    // If the image data is a blob URL, convert it to base64
-    if (node.imageData.startsWith('blob:')) {
-        try {
-            const base64Data = await convertImageToBase64(node.imageData);
-            return {
-                type: 'image_data',
-                image_data: base64Data // Return the base64-encoded image data
-            };
-        } catch (error) {
-            console.error('Error converting blob to base64:', error);
-            return null;
-        }
-    }
+    let imageUrl = node.imageData;
 
-    // If there's already base64-encoded imageData
-    if (node.imageData) {
-        return {
-            type: 'image_data',
-            image_data: node.imageData // Assuming this is already base64-encoded
-        };
-    }
+    if (imageUrl.startsWith('data:image/')) return { type: 'image_url', image_url: { url: imageUrl } };
+    if (imageUrl.startsWith('blob:')) imageUrl = await convertBlobUrlToBase64(imageUrl);
+    if (!imageUrl.startsWith('data:image')) imageUrl = `data:image/png;base64,${imageUrl}`;
 
-    // If there's no image data, return null
-    return null;
+    return { type: 'image_url', image_url: { url: imageUrl } };
 }
 
 View.Code.prototype.callVisionModel = async function(messages, onStreamComplete){
