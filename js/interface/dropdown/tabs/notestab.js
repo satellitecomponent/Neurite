@@ -191,7 +191,7 @@ class ZetPanes {
         const zettelkastenUI = new ZettelkastenUI(cm, textarea, zettelkastenParser);
 
         const zettelkastenProcessor = new ZettelkastenProcessor(cm, zettelkastenParser);
-        updatePathOptions(zettelkastenProcessor); // Update the placement path only for the new processor
+        ZetPath.updateOptions(zettelkastenProcessor); // Update the placement path only for the new processor
 
         window.codeMirrorInstances.push(cm);
         window.zettelkastenParsers.push(zettelkastenParser);

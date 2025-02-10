@@ -8,7 +8,12 @@ function getAllInternalZetNodeWraps() {
 
 let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates
 
+RegExp.forNodeTitle = function(tag){
+    return new RegExp(`^${RegExp.escape(tag)}\\s*(.*)$`);
+}
+
 class ZettelkastenParser {
+    static regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
     constructor(codeMirrorInstance) {
         this.cm = codeMirrorInstance;
         this.nodeTitleToLineMap = new Map();
@@ -26,12 +31,11 @@ class ZettelkastenParser {
     identifyNodeTitles() {
         const newTitles = new Set();
         this.cm.eachLine((line) => {
-            const match = line.text.match(nodeTitleRegexGlobal);
+            const match = line.text.match(ZettelkastenParser.regexpNodeTitle);
             if (!match) return;
 
-            let title = match[1].trim();
-            if (title.endsWith(',')) title = title.slice(0, -1);
-            newTitles.add(title);
+            const title = match[1].trim();
+            newTitles.add(title.endsWith(',') ? title.slice(0, -1) : title);
         });
 
         this.updateGlobalTitles(newTitles);

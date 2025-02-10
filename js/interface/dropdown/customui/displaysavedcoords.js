@@ -420,8 +420,3 @@ function displaySavedCoordinates() {
     appendViewsToContainer(topViews, 'savedCoordinatesContainerTop', mainViews.length);
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
 }
-
-On.DOMContentLoaded(document, (e) => {
-    updateSavedViewsCache();
-    displaySavedCoordinates();
-});

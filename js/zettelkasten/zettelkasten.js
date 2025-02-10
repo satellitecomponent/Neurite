@@ -91,7 +91,7 @@ class ZettelkastenProcessor {
         for (let i = this.findFirstChangedLine(lines); i >= 0; i--) {
             if (lines[i] === undefined) break;
 
-            const match = lines[i].match(nodeTitleRegexGlobal);
+            const match = lines[i].match(ZettelkastenParser.regexpNodeTitle);
             if (match) return Node.byTitle(match[1].trim());
         }
     }

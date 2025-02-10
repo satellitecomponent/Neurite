@@ -250,38 +250,31 @@ let restoreZettelkastenEvent = false;
 
 let bypassZettelkasten = false;
 
-const Tag = {
-    node: Modal.inputValues['node-tag'] || "##",
-    ref: Modal.inputValues['ref-tag'] || "[["
-}
-Tag.initializeInputs = function(){
-    const nodeTagInput = Elem.byId('node-tag');
-    const refTagInput = Elem.byId('ref-tag');
-    if (!nodeTagInput || !refTagInput) return;
+class Tag {
+    static init(){
+        Tag.node = Modal.inputValues['node-tag'] || "##";
+        Tag.ref = Modal.inputValues['ref-tag'] || "[[";
+        ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
+    }
+    static initializeInputs(){
+        const inputNodeTag = Elem.byId('node-tag');
+        const inputRefTag = Elem.byId('ref-tag');
+        if (!inputNodeTag || !inputRefTag) return;
 
-    nodeTagInput.value = Tag.node;
-    refTagInput.value = Tag.ref;
-    On.input(nodeTagInput, (e)=>{
-        const nodeTag = nodeTagInput.value.trim();
-        Tag.node = (nodeTag === '' ? ' ' : nodeTag);
+        inputNodeTag.value = Tag.node;
+        inputRefTag.value = Tag.ref;
+        On.input(inputNodeTag, Tag.#onTagInput);
+        On.input(inputRefTag, Tag.#onTagInput);
+    }
+    static #onTagInput(e){
+        const input = e.currentTarget;
+        const tag = input.value.trim();
+        Tag[input.dataset.key] = (tag === '' ? ' ' : tag);
 
-        updateNodeTitleRegex();  // Update the regex with the new nodeTag
+        ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();
-    });
-    On.input(refTagInput, (e)=>{
-        const refTag = refTagInput.value.trim();
-        Tag.ref = (refTag === '' ? ' ' : refTag);
-
-        updateAllZetMirrorModes();
-        updateAllZettelkastenProcessors();
-    });
-}
-
-let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
-
-function updateNodeTitleRegex() {
-    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
+    }
 }
 
 const bracketsMap = {
