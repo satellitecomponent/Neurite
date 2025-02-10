@@ -33,16 +33,19 @@ View.Code.prototype.onBtnRegenClicked = function(e){
     this.inputPrompt.value = this.mostRecentMsg
 }
 
-View.Code.prototype.getPromptMessage = function () {
+View.Code.prototype.getPromptMessage = function(){
     const inputMessage = this.inputPrompt.value.trim();
-    this.mostRecentMsg = inputMessage;
-    if (inputMessage !== '') return Promise.resolve(inputMessage);
+    if (inputMessage !== '') {
+        this.mostRecentMsg = inputMessage;
+        return Promise.resolve(inputMessage);
+    }
 
     return new Promise((resolve) => {
         window.prompt("Enter message:")
             .then((dialogueMessage) => {
                 const trimmedMessage = dialogueMessage && dialogueMessage.trim();
                 if (trimmedMessage !== '') {
+                    this.mostRecentMsg = trimmedMessage;
                     resolve(trimmedMessage);
                 } else {
                     Logger.info("No input provided. Request cancelled.");

@@ -201,21 +201,33 @@ AiNode.sendMessage = async function (node, message = null) {
 
     const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
 
-    allConnectedNodes.forEach(connectedNode => {
+    for (const connectedNode of allConnectedNodes) {
         if (connectedNode.isImageNode) {
-            const imageData = getImageNodeData(connectedNode);
-            if (imageData && remainingTokens >= TOKEN_COST_PER_IMAGE) {
-                // Construct an individual message for each image
+            // First, check if we have enough tokens
+            if (remainingTokens < TOKEN_COST_PER_IMAGE) {
+                Logger.warn("Not enough tokens to include the image:", connectedNode);
+                continue;
+            }
+
+            // Use an inline .catch to handle errors for this node without a try/catch block.
+            const imageData = await getImageNodeData(connectedNode).catch(error => {
+                Logger.warn("Error processing image node:", connectedNode, error);
+                return null;
+            });
+
+            if (imageData) {
+                // The returned imageData should be an object like:
+                // { type: 'image_url', image_url: { url: 'data:image/png;base64,...' } }
                 messages.push({
                     role: 'user',
-                    content: [imageData] // Contains only the image data
+                    content: [imageData]
                 });
-                remainingTokens -= TOKEN_COST_PER_IMAGE; // Deduct the token cost for this image
+                remainingTokens -= TOKEN_COST_PER_IMAGE;
             } else {
-                Logger.warn("Not enough tokens to include the image:", connectedNode)
+                Logger.warn("Failed to retrieve image data for:", connectedNode);
             }
         }
-    });
+    }
 
     let messageTrimmed = false;
 
