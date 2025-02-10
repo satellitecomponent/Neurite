@@ -102,7 +102,7 @@ View.Code = class CodeView {
     isAiProcessing = false;
     mostRecentMsg = '';
     #stored = new Stored('neuriteFunctionCalls');
-    svgSend = this.btnRegen.querySelector('svg');
+    svgSend = this.btnSend.querySelector('svg');
 
     init(){
         this.#btnClear.init();
