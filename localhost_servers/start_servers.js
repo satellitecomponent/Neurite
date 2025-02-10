@@ -21,7 +21,11 @@ function installDependencies(server) {
 function startServer(server) {
     const { name, dir, main } = server;
     console.log(`Starting ${name} server...`);
-    const serverProcess = spawn('node', [main], { cwd: dir, stdio: 'inherit' });
+    const serverProcess = spawn('node', [main], {
+        cwd: dir,
+        stdio: 'inherit',
+        windowsHide: true
+    });
 
     serverProcess.on('error', (error) => {
         console.error(`Failed to start ${name} server:`, error);
