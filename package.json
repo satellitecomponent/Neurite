@@ -27,6 +27,7 @@
     ],
     "files": [
       "main.js",
+      "loading.html",
       "modules/**/*",
       "localhost_servers/**/*",
       "build/icons/**/*"
