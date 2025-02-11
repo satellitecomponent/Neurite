@@ -30,19 +30,21 @@
             canvasSize: 300,         // Both width and height (perfect square)
 
             // Bouncing shape properties
-            shapeRadius: 32,         // Radius (or half-size for non-circular shapes)
+            shapeRadius: 36,         // Radius (or half-size for non-circular shapes)
             speed: 6,                // Base speed of the bouncing object
             shapes: ['circle', 'triangle', 'square'],
-            initialShapeIndex: 0,    // Start with this shape from the array
+            initialShapeIndex: 1,    // Start with this shape from the array
             randomize: true,         // Random starting position and direction
+            // New parameter to restrict the random starting area (fraction of canvas size)
+            initialAreaFraction: 0.5, // e.g. 0.5 means the ball will start within the central 50% of the canvas
 
             // Transition (on collision) parameters
             transitionDuration: 500, // Duration in milliseconds for the transition
             rotationAmount: Math.PI, // Half-rotation in radians (180°). Second half adds another Math.PI to complete 360°.
-            minScale: 0.4,           // Smallest scale factor at the midpoint of the transition
+            minScale: 0.1,           // Smallest scale factor at the midpoint of the transition
 
             // Color properties
-            colorCycleSpeed: 0.4,      // How fast the hue cycles per frame (in degrees)
+            colorCycleSpeed: 0.1,      // How fast the hue cycles per frame (in degrees)
 
             // Easing function for transitions (easeInOutQuad)
             easing: function (t) {
@@ -58,10 +60,14 @@
             this.canvasSize = config.canvasSize;
             this.radius = config.shapeRadius;
 
-            // Randomize starting position if enabled, otherwise center it.
+            // Randomize starting position within a limited central area if enabled.
             if (config.randomize) {
-                this.x = Math.random() * (this.canvasSize - 2 * this.radius) + this.radius;
-                this.y = Math.random() * (this.canvasSize - 2 * this.radius) + this.radius;
+                // Calculate margin so that the random area is centered.
+                const areaFraction = config.initialAreaFraction || 0.5;
+                const margin = (this.canvasSize * (1 - areaFraction)) / 2;
+                const areaSize = this.canvasSize * areaFraction;
+                this.x = Math.random() * areaSize + margin;
+                this.y = Math.random() * areaSize + margin;
             } else {
                 this.x = this.canvasSize / 2;
                 this.y = this.canvasSize / 2;
@@ -222,7 +228,7 @@
 
             bouncingShape.update(deltaTime);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            //ctx.clearRect(0, 0, canvas.width, canvas.height);
             bouncingShape.draw(ctx);
 
             requestAnimationFrame(animate);

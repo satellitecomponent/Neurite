@@ -28,15 +28,10 @@ app.whenReady().then(async () => {
     // Create the main application window
     mainWindow = createMainWindow();
 
-    // Once the main window is ready, show it immediately
-    mainWindow.once('ready-to-show', () => {
+    setTimeout(() => {
+        closeLoadingWindow();
         mainWindow.show();
-
-        // Wait 1 second before closing the loading window
-        setTimeout(() => {
-            closeLoadingWindow();
-        }, 1000);
-    });
+    }, 4000);
 
     // Initialize updater functionality
     initializeUpdater(mainWindow);
