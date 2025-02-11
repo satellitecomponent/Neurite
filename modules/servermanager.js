@@ -38,7 +38,7 @@ function startLocalServers() {
         childProcess.unref(); // Allows process to run independently
 
         let attempts = 0;
-        const maxAttempts = 160;
+        const maxAttempts = 1600;
         const checkInterval = 500;
 
         const checkServer = async () => {
