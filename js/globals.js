@@ -544,8 +544,6 @@ TextArea.append = function(text){
     this.dispatchEvent(new Event('input'));
 }
 TextArea.update = function(text) {
-    if (this.value === text) return;
-
     this.value = text;
     this.dispatchEvent(new Event('change'));
     Logger.debug("Event triggered");
