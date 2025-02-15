@@ -36,7 +36,9 @@ String.zeroPadded = function(num, len){
 function createNodeFromWindow(title = null, content = null, followMouse = false) {
     nodefromWindow = true;
     if (followMouse) followMouseFromWindow = true;
-    addNodeTagToZettelkasten(title || getDefaultTitle(), content);
+    const node = addNodeTagToZettelkasten(title || getDefaultTitle(), content);
+
+    return node;
 }
 
 function addNodeTagToZettelkasten(title, content = null) {
@@ -44,7 +46,13 @@ function addNodeTagToZettelkasten(title, content = null) {
 
     const curValue = curMirror.getValue();
     const newlines = (curValue.endsWith('\n') ? '\n' : '\n\n');
-    curMirror.setValue(curValue + newlines + Tag.node + ' ' + title);
+    let newContent = `${newlines}${Tag.node} ${title}`;
+
+    if (content) {
+        newContent += `\n${content}`;
+    }
+
+    curMirror.setValue(curValue + newContent);
     curMirror.refresh();
 
     // Find the UI associated with the current active Zettelkasten mirror
@@ -54,7 +62,9 @@ function addNodeTagToZettelkasten(title, content = null) {
     const node = ui.scrollToTitle(title);
     node.contentEditableDiv.value = content;
     node.contentEditableDiv.dispatchEvent(new Event('input'));
+    return node;
 }
+
 
 function createTextNodeWithPosAndScale(title, text, scale, x, y) {
     // Create the node without scale and position
@@ -69,7 +79,7 @@ function createTextNodeWithPosAndScale(title, text, scale, x, y) {
     return node;
 }
 
-function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null) {
+function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null, title = null, text = null) {
     const scaleFactor = 0.8; // Factor to scale the new node relative to the original
 
     // If theta is not provided, select a random angle between 0 and 2π
@@ -83,10 +93,10 @@ function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null)
     const newScale = spawningNode.scale * scaleFactor;
 
     // Create a new node at the calculated position and scale
-    const newNode = createTextNodeWithPosAndScale(null, null, newScale, newPositionX, newPositionY);
+    const newNode = createTextNodeWithPosAndScale(title, text, newScale, newPositionX, newPositionY);
     newNode.draw();
     restoreZettelkastenEvent = true;
-    addNodeTagToZettelkasten(newNode.getTitle());
+    addNodeTagToZettelkasten(newNode.getTitle(), text);
 
     return newNode;
 }

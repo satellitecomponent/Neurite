@@ -225,7 +225,9 @@ class NodeView {
             btnFs.children[1].setAttribute('fill', fillColor);
             btnCol.children[1].setAttribute('stroke', strokeColor);
 
-            node.displayDiv.classList.toggle('focused', focused);
+            if (node.displayDiv) {
+                node.displayDiv.classList.toggle('focused', focused);
+            }
             node.view.resizeHandle.classList.toggle('focused', focused);
         }
 

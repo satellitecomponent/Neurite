@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     stroke: "none",
@@ -133,7 +133,6 @@ Node.prototype.getData = function(){
 
 Node.prototype.topologicalSort = function(visited, stack, filterAfterLLM = false, branchUUID = undefined){
     visited.add(this.uuid);
-
     // Push the node to the stack before checking the conditions.
     stack.push(this);
 
@@ -183,3 +182,96 @@ Node.prototype.getAllConnectedNodes = function(filterAfterLLM){
     this.traverseConnectedNodes(arr.push, arr, filterAfterLLM);
     return arr;
 }
+
+Node.prototype.findAvailableParent = function (max = 3, filterAfterLLM = false) {
+    const queue = [this],
+        visited = new Set([this.uuid]);
+
+    while (queue.length) {
+        const node = queue.shift(),
+            childCount = node.edges.filter(e => e.pts.some(p => p !== node && p.isTextNode)).length;
+
+        if (((node.isTextNode || (filterAfterLLM && node.isLLM)) || node === this) && childCount < max) {
+            return node;
+        }
+
+        node.edges.forEach(e => {
+            const child = e.pts.find(p => p !== node);
+            if (child?.isTextNode && !visited.has(child.uuid)) {
+                visited.add(child.uuid);
+                queue.push(child);
+            }
+        });
+    }
+    return this;
+}
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const spawnFamilyTree = async (count = 48, delay = 400) => {
+    const root = createLlmNode('Root');
+    const allNodes = new Map();
+    allNodes.set(root.uuid, root);
+    for (let i = 0; i < count; i++) {
+        const parent = root.findAvailableParent();
+        let theta;
+        if (parent === root) {
+            theta = Math.random() * Math.PI * 2;
+        } else {
+            const vector = new vec2(parent.pos.x - root.pos.x, parent.pos.y - root.pos.y);
+            const baseTheta = vector.ang();
+            theta = baseTheta + (Math.random() * Math.PI - Math.PI / 2);
+        }
+        const node = spawnZettelkastenNode(parent, 1.5, theta);
+        connectNodes(parent, node);
+        allNodes.set(node.uuid, node);
+        console.log(`Created: N${i + 1} under ${parent.getTitle()}`);
+        await sleep(delay);
+    }
+    return { root, allNodes };
+};
+
+const testHierarchy = async (count = 9, delay = 400) => {
+    const { root, allNodes } = await spawnFamilyTree(count, delay);
+    const connectedNodes = new Map();
+    const traverse = (node) => {
+        if (connectedNodes.has(node.uuid)) return;
+        connectedNodes.set(node.uuid, node);
+        const kids = node.edges.flatMap(e => e.pts.filter(p => p !== node));
+        kids.forEach(traverse);
+    };
+    traverse(root);
+    const errors = [];
+    if (connectedNodes.size !== allNodes.size) {
+        const msg = "Connectivity check failed: Not every node is connected to the root.";
+        console.error(msg);
+        errors.push(msg);
+    } else {
+        console.log("Connectivity test passed.");
+    }
+    const activeInstance = getActiveZetCMInstanceInfo();
+    if (activeInstance && activeInstance.parser) {
+        if (activeInstance.parser.nodeTitleToLineMap.size !== connectedNodes.size) {
+            const msg = "Parser validation failed: The number of parser nodes does not match the number of connected nodes.";
+            console.error(msg);
+            errors.push(msg);
+        } else {
+            console.log("Parser test passed.");
+        }
+    } else {
+        console.warn("No active ZettelkastenParser found for validation.");
+    }
+    const print = (n, d = 0, visited = new Set()) => {
+        if (visited.has(n.uuid)) return;
+        visited.add(n.uuid);
+        const kids = n.edges.flatMap(e => e.pts.filter(p => p !== n));
+        console.log(`${'  '.repeat(d)}${n.getTitle()} (${kids.length})`);
+        kids.forEach(c => print(c, d + 1, visited));
+    };
+    print(root);
+    if (errors.length > 0) {
+        throw new Error("Hierarchy tests failed:\n" + errors.join("\n"));
+    } else {
+        console.log("All tests passed successfully.");
+    }
+};
