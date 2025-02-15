@@ -207,7 +207,7 @@ class NodeView {
             if (node.isTextNode) {
                 const nodeInfo = getZetNodeCMInstance(node);
                 nodeInfo.ui.scrollToTitle(node.getTitle());
-                zetPanes.switchPane(nodeInfo.paneId);
+                App.zetPanes.switchPane(nodeInfo.paneId);
             }
         });
 

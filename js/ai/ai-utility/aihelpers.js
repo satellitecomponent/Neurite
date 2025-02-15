@@ -171,7 +171,7 @@ function getAllPromptAndResponsePairs(textarea, count = null, maxTokens = null, 
     return lastItems; // Default: structured { user, ai } pairs
 }
 
-function getLastPromptsAndResponses(count, maxTokens = null, textarea = zetPanes.getActiveTextarea()) {
+function getLastPromptsAndResponses(count, maxTokens = null, textarea = App.zetPanes.getActiveTextarea()) {
     const lastItems = getAllPromptAndResponsePairs(textarea, count, maxTokens, "both");
     if (!lastItems.length) return '';
 
@@ -182,7 +182,7 @@ function getLastPromptsAndResponses(count, maxTokens = null, textarea = zetPanes
 
 
 function removeLastResponse() {
-    const noteInput = zetPanes.getActiveTextarea();
+    const noteInput = App.zetPanes.getActiveTextarea();
     const lines = noteInput.value.split('\n');
 
     // Find the index of the last "Prompt:"

@@ -324,7 +324,7 @@ class ZettelkastenProcessor {
             cm.refresh();
         }
 
-        zetPanes.switchPane(currentNodeInstance.paneId);
+        App.zetPanes.switchPane(currentNodeInstance.paneId);
         currentNodeInstance.ui.scrollToTitle(wrap.title);
     }
 

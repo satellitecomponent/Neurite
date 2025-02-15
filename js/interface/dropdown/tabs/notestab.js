@@ -59,7 +59,7 @@ On.mousedown(zetHorizDragHandle, (e)=>{
     updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsHorizResizing = true;
     initialX = e.clientX;
-    initialWidth = zetPanes.container.offsetWidth;
+    initialWidth = App.zetPanes.container.offsetWidth;
 
     // Prevent text selection while resizing
     document.body.style.userSelect = 'none';
@@ -73,18 +73,18 @@ On.mousedown(zetHorizDragHandle, (e)=>{
 });
 
 function zetHandleHorizMouseMove(event) {
-    if (zetIsHorizResizing) {
-        requestAnimationFrame(() => {
-            // Calculate the difference in the x position
-            const dx = event.clientX - initialX;
-            const newWidth = initialWidth - dx;
+    if (!zetIsHorizResizing) return;
 
-            // Update the width if within the boundaries
-            if (newWidth > 50 && newWidth <= maxWidth) {
-                zetPanes.container.style.width = newWidth + 'px';
-            }
-        });
-    }
+    requestAnimationFrame(() => {
+        // Calculate the difference in the x position
+        const dx = event.clientX - initialX;
+        const newWidth = initialWidth - dx;
+
+        // Update the width if within the boundaries
+        if (newWidth > 50 && newWidth <= maxWidth) {
+            App.zetPanes.container.style.width = newWidth + 'px';
+        }
+    });
 }
 
 // Vertical drag handle
@@ -97,7 +97,7 @@ On.mousedown(zetVertDragHandle, (e)=>{
     updateMaxDimensions(); // Update dimensions at the start of each drag
     zetIsVertResizing = true;
     initialY = e.clientY;
-    initialHeight = zetPanes.container.offsetHeight;
+    initialHeight = App.zetPanes.container.offsetHeight;
 
     // Prevent text selection while resizing
     document.body.style.userSelect = 'none';
@@ -111,18 +111,18 @@ On.mousedown(zetVertDragHandle, (e)=>{
 });
 
 function zetHandleVertMouseMove(event) {
-    if (zetIsVertResizing) {
-        requestAnimationFrame(() => {
-            // Calculate the difference in the y position
-            const dy = event.clientY - initialY;
-            const newHeight = initialHeight + dy;
+    if (!zetIsVertResizing) return;
 
-            // Update the height if within the boundaries
-            if (newHeight > 50 && newHeight <= maxHeight) {
-                zetPanes.container.style.height = newHeight + 'px';
-            }
-        });
-    }
+    requestAnimationFrame(() => {
+        // Calculate the difference in the y position
+        const dy = event.clientY - initialY;
+        const newHeight = initialHeight + dy;
+
+        // Update the height if within the boundaries
+        if (newHeight > 50 && newHeight <= maxHeight) {
+            App.zetPanes.container.style.height = newHeight + 'px';
+        }
+    });
 }
 
 window.codeMirrorInstances = window.codeMirrorInstances || [];
@@ -132,24 +132,24 @@ window.zettelkastenProcessors = window.zettelkastenProcessors || [];
 window.currentActiveZettelkastenMirror = null;
 
 class ZetPanes {
+    paneContent = document.querySelector('.zet-pane-content');
+    paneCounter = 1;
     constructor(container) {
         this.container = container;
         this.paneDropdown = container.querySelector('#zetPaneDropdown');
-        this.paneContent = document.querySelector('.zet-pane-content');
         this.addPaneButton = container.querySelector('.zet-add-pane-button');
         this.deletePaneButton = container.querySelector('.zet-delete-pane-button');
-        this.paneCounter = 1;
+        this.searchButton = container.querySelector('#notesSearchButton');
+    }
 
+    init(){
         CustomDropdown.setupHtmlOptions(this.paneDropdown, createZetContainerDropdown, false);
 
         // + and X buttons
         On.click(this.addPaneButton, this.addPane.bind(this));
-        On.click(this.deletePaneButton, this.removeSelectedPane.bind(this));
-
-        On.change(this.paneDropdown, () => this.switchPane(this.paneDropdown.value));
-
-        this.searchButton = container.querySelector('#notesSearchButton');
-        On.click(this.searchButton, this.openSearchModal.bind(this));
+        On.click(this.deletePaneButton, this.removeSelectedPane);
+        On.change(this.paneDropdown, ()=>{ this.switchPane(this.paneDropdown.value) } );
+        On.click(this.searchButton, ZetPanes.openSearchModal);
 
         this.addPane();
     }
@@ -228,24 +228,20 @@ class ZetPanes {
         });
     }
 
-    removeSelectedPane() {
+    removeSelectedPane = ()=>{
         const selectedPaneId = this.paneDropdown.value;
-        if (selectedPaneId) {
-            const selectedPaneName = this.getPaneName(selectedPaneId);
-            if (this.paneDropdown.options.length === 1) {
-                return;
-            } else {
-                window.confirm(`Delete the slip-box "${selectedPaneName}"?`)
-                    .then((confirmDelete) => {
-                        if (confirmDelete) {
-                            this.removePane(selectedPaneId);
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Confirmation failed:", error);
-                    });
-            }
-        }
+        if (!selectedPaneId) return;
+
+        const selectedPaneName = this.getPaneName(selectedPaneId);
+        if (this.paneDropdown.options.length === 1) return;
+
+        window.confirm(`Delete the slip-box "${selectedPaneName}"?`)
+            .then((confirmDelete) => {
+                if (confirmDelete) this.removePane(selectedPaneId);
+            })
+            .catch((error) => {
+                console.error("Confirmation failed:", error);
+            });
     }
 
     getPaneName(paneId) {
@@ -273,16 +269,16 @@ class ZetPanes {
 
         const paneDropdown = this.paneDropdown;
         const option = paneDropdown.querySelector(`option[value="${paneId}"]`);
-        if (option) {
-            const currentIndex = Array.from(paneDropdown.options).indexOf(option);
-            option.remove();
-            refreshHtmlDropdownDisplay(paneDropdown, createZetContainerDropdown);
+        if (!option) return;
 
-            if (paneDropdown.options.length > 0) {
-                const newIndex = (currentIndex >= paneDropdown.options.length ? currentIndex - 1 : currentIndex);
-                const newPaneId = paneDropdown.options[newIndex].value;
-                this.switchPane(newPaneId);
-            }
+        const currentIndex = Array.from(paneDropdown.options).indexOf(option);
+        option.remove();
+        refreshHtmlDropdownDisplay(paneDropdown, createZetContainerDropdown);
+
+        if (paneDropdown.options.length > 0) {
+            const newIndex = (currentIndex >= paneDropdown.options.length ? currentIndex - 1 : currentIndex);
+            const newPaneId = paneDropdown.options[newIndex].value;
+            this.switchPane(newPaneId);
         }
     }
 
@@ -320,11 +316,9 @@ class ZetPanes {
         }
     }
 
-    openSearchModal() {
+    static openSearchModal(){
         Modal.open('zetSearchModal');
         setupZettelkastenSearchBar();
         performZettelkastenSearch(Elem.byId('Searchbar').value);
     }
 }
-
-const zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));

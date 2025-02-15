@@ -134,6 +134,7 @@ class App {
     selectedNodes = new SelectedNodes();
     viewCode = new View.Code();
     viewGraphs = new View.Graphs();
+    zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
 
     init(){
         Tag.init();
@@ -142,6 +143,7 @@ class App {
         Ai.init();
         this.viewCode.init();
         this.viewGraphs.init();
+        this.zetPanes.init();
         ZetPath.init();
         loadControls();
         updateSettingsFromControls();

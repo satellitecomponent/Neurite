@@ -215,7 +215,7 @@
     #onBtnClearSureClicked = (e) => {
         window.confirm("Create a new save?").then(createNewSave => {
             this.#setSelectedSave(null, null).#clearNet();
-            zetPanes.addPane();
+            App.zetPanes.addPane();
 
             if (createNewSave) this.#save();
 
@@ -382,7 +382,7 @@
         const zettelkastenPanesSaveElements = [];
         window.codeMirrorInstances.forEach( (instance, index)=>{
             const content = instance.getValue();
-            const name = zetPanes.getPaneName('zet-pane-' + (index + 1));
+            const name = App.zetPanes.getPaneName('zet-pane-' + (index + 1));
             const paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(name)}" style="display:none;">${encodeURIComponent(content)}</div>`;
             zettelkastenPanesSaveElements.push(paneSaveElement);
         });
@@ -415,7 +415,7 @@
         Graph.clear();
 
         AiNode.count = 0;
-        zetPanes.resetAllPanes();
+        App.zetPanes.resetAllPanes();
     }
     #loadNet(text, clobber){
         if (clobber) this.#clearNet();
@@ -451,13 +451,13 @@
 
         if (zettelSaveElem) {
             const zettelContent = decodeURIComponent(zettelSaveElem.innerHTML);
-            zetPanes.restorePane("Zettelkasten Save", zettelContent);
+            App.zetPanes.restorePane("Zettelkasten Save", zettelContent);
         }
 
         zettelkastenPaneSaveElements.forEach((elem) => {
             const paneContent = decodeURIComponent(elem.innerHTML);
             const paneName = decodeURIComponent(elem.dataset.paneName);
-            zetPanes.restorePane(paneName, paneContent);
+            App.zetPanes.restorePane(paneName, paneContent);
         });
 
         return this;
