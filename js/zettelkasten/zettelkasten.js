@@ -137,6 +137,7 @@ class ZettelkastenProcessor {
         if (line.startsWith(Tag.node)) {
             return this.handleNode(line, index, currentNodeTitle)
         }
+        delete this.wrapPerLine[index];
 
         if (line.startsWith(LLM_TAG)) {
             return this.handleLLM(line, index, currentNodeTitle)

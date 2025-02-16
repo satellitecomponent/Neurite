@@ -36,23 +36,18 @@ String.zeroPadded = function(num, len){
 function createNodeFromWindow(title = null, content = null, followMouse = false) {
     nodefromWindow = true;
     if (followMouse) followMouseFromWindow = true;
-    const node = addNodeTagToZettelkasten(title || getDefaultTitle(), content);
-
-    return node;
+    return addNodeTagToZettelkasten(title || getDefaultTitle(), content);
 }
 
 function addNodeTagToZettelkasten(title, content = null) {
     const curMirror = window.currentActiveZettelkastenMirror;
 
     const curValue = curMirror.getValue();
-    const newlines = (curValue.endsWith('\n') ? '\n' : '\n\n');
-    let newContent = `${newlines}${Tag.node} ${title}`;
-
-    if (content) {
-        newContent += `\n${content}`;
-    }
-
-    curMirror.setValue(curValue + newContent);
+    const newVal = [curValue];
+    if (!curValue.endsWith('\n')) newVal.push('\n');
+    newVal.push('\n', Tag.node, ' ', title);
+    if (content) newVal.push('\n', content);
+    curMirror.setValue(newVal.join(''));
     curMirror.refresh();
 
     // Find the UI associated with the current active Zettelkasten mirror

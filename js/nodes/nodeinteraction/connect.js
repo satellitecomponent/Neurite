@@ -183,95 +183,107 @@ Node.prototype.getAllConnectedNodes = function(filterAfterLLM){
     return arr;
 }
 
-Node.prototype.findAvailableParent = function (max = 3, filterAfterLLM = false) {
-    const queue = [this],
-        visited = new Set([this.uuid]);
+Node.parentAvailableFromRoot = function(root, max = 3, filterAfterLLM = false){
+    const queue = [root];
+    const visited = new Set([root.uuid]);
 
     while (queue.length) {
-        const node = queue.shift(),
-            childCount = node.edges.filter(e => e.pts.some(p => p !== node && p.isTextNode)).length;
-
-        if (((node.isTextNode || (filterAfterLLM && node.isLLM)) || node === this) && childCount < max) {
-            return node;
+        const node = queue.shift();
+        const kids = [];
+        node.forEachConnectedNode( (kid)=>{
+            if (kid.isTextNode) kids.push(kid)
+        });
+        if (kids.length < max) {
+            if (node.isTextNode ||
+                (filterAfterLLM && node.isLLM) ||
+                node === root) return node;
         }
 
-        node.edges.forEach(e => {
-            const child = e.pts.find(p => p !== node);
-            if (child?.isTextNode && !visited.has(child.uuid)) {
-                visited.add(child.uuid);
-                queue.push(child);
-            }
+        kids.forEach( (kid)=>{
+            if (visited.has(kid.uuid)) return;
+
+            visited.add(kid.uuid);
+            queue.push(kid);
         });
     }
-    return this;
+    return root;
 }
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+function thetaForNodes(n1, n2){
+    if (n1 === n2) return Math.random() * Math.PI * 2;
 
-const spawnFamilyTree = async (count = 48, delay = 400) => {
+    const vector = new vec2(n1.pos.x - n2.pos.x, n1.pos.y - n2.pos.y);
+    const baseTheta = vector.ang();
+    return baseTheta + (Math.random() * Math.PI - Math.PI / 2);
+}
+async function spawnHierarchy(count, delay){
     const root = createLlmNode('Root');
     const allNodes = new Map();
     allNodes.set(root.uuid, root);
     for (let i = 0; i < count; i++) {
-        const parent = root.findAvailableParent();
-        let theta;
-        if (parent === root) {
-            theta = Math.random() * Math.PI * 2;
-        } else {
-            const vector = new vec2(parent.pos.x - root.pos.x, parent.pos.y - root.pos.y);
-            const baseTheta = vector.ang();
-            theta = baseTheta + (Math.random() * Math.PI - Math.PI / 2);
-        }
+        const parent = Node.parentAvailableFromRoot(root);
+
+        const theta = thetaForNodes(parent, root);
         const node = spawnZettelkastenNode(parent, 1.5, theta);
         connectNodes(parent, node);
         allNodes.set(node.uuid, node);
-        console.log(`Created: N${i + 1} under ${parent.getTitle()}`);
-        await sleep(delay);
+
+        Logger.info("Created", `N${i + 1}`, "under", parent.getTitle());
+        await Promise.delay(delay);
     }
     return { root, allNodes };
-};
+}
 
-const testHierarchy = async (count = 9, delay = 400) => {
-    const { root, allNodes } = await spawnFamilyTree(count, delay);
+function validateTestResult(res){
     const connectedNodes = new Map();
-    const traverse = (node) => {
+
+    function traverse(node){
         if (connectedNodes.has(node.uuid)) return;
+
         connectedNodes.set(node.uuid, node);
-        const kids = node.edges.flatMap(e => e.pts.filter(p => p !== node));
-        kids.forEach(traverse);
-    };
-    traverse(root);
+        node.forEachConnectedNode(traverse);
+    }
+    traverse(res.root);
+
     const errors = [];
-    if (connectedNodes.size !== allNodes.size) {
+    if (connectedNodes.size !== res.allNodes.size) {
         const msg = "Connectivity check failed: Not every node is connected to the root.";
-        console.error(msg);
+        Logger.err(msg);
         errors.push(msg);
     } else {
-        console.log("Connectivity test passed.");
+        Logger.info("Connectivity test passed.");
     }
     const activeInstance = getActiveZetCMInstanceInfo();
     if (activeInstance && activeInstance.parser) {
-        if (activeInstance.parser.nodeTitleToLineMap.size !== connectedNodes.size) {
+        if (activeInstance.parser.nodeTitleToLineMap.size !== connectedNodes.size - 1) { // for root being LLM
             const msg = "Parser validation failed: The number of parser nodes does not match the number of connected nodes.";
-            console.error(msg);
+            Logger.err(msg);
             errors.push(msg);
         } else {
-            console.log("Parser test passed.");
+            Logger.info("Parser test passed.");
         }
     } else {
-        console.warn("No active ZettelkastenParser found for validation.");
+        Logger.warn("No active ZettelkastenParser found for validation.");
     }
-    const print = (n, d = 0, visited = new Set()) => {
-        if (visited.has(n.uuid)) return;
-        visited.add(n.uuid);
-        const kids = n.edges.flatMap(e => e.pts.filter(p => p !== n));
-        console.log(`${'  '.repeat(d)}${n.getTitle()} (${kids.length})`);
-        kids.forEach(c => print(c, d + 1, visited));
-    };
-    print(root);
+
+    function print(node, depth = 0, visited = new Set()){
+        if (visited.has(node.uuid)) return;
+
+        visited.add(node.uuid);
+        const kids = [];
+        node.forEachConnectedNode(kids.push, kids);
+        console.log(`${'  '.repeat(depth)}${node.getTitle()} (${kids.length})`);
+        kids.forEach( (kid)=>{ print(kid, depth + 1, visited) } );
+    }
+    print(res.root);
+
     if (errors.length > 0) {
         throw new Error("Hierarchy tests failed:\n" + errors.join("\n"));
-    } else {
-        console.log("All tests passed successfully.");
     }
-};
+
+    Logger.info("All tests passed successfully.");
+}
+
+async function testHierarchy(count = 30, delay = 1000){
+    spawnHierarchy(count, delay).then(validateTestResult)
+}
