@@ -50,20 +50,32 @@ class ResponseHandler {
             // Find the last occurrence of the prompt identifier in the trimmed content
             const lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
             if (lastPromptIndex !== -1) {
-                const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
-                const segments = promptContent.split('```');
-                for (let i = 0; i < segments.length; i++) {
-                    const segment = segments[i].trim();
-                    if (segment) {
-                        if (i % 2 === 0) {
-                            this.handleUserPrompt(segment); // Even segments are regular text
-                        } else {
-                            this.renderCodeBlock(segment, true, true); // Odd segments are code blocks within user prompts
+                // Find the end of the prompt using PROMPT_END
+                const promptEndIndex = trimmedNewContent.indexOf(PROMPT_END, lastPromptIndex);
+                if (promptEndIndex !== -1) {
+                    // Extract the prompt content between PROMPT_IDENTIFIER and PROMPT_END
+                    const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length, promptEndIndex).trim();
+                    const segments = promptContent.split('```');
+                    for (let i = 0; i < segments.length; i++) {
+                        const segment = segments[i].trim();
+                        if (segment) {
+                            if (i % 2 === 0) {
+                                this.handleUserPrompt(segment); // Even segments are regular text
+                            } else {
+                                this.renderCodeBlock(segment, true, true); // Odd segments are code blocks within user prompts
+                            }
                         }
                     }
+                    // Clear newContent after processing the prompt
+                    newContent = trimmedNewContent.substring(promptEndIndex + PROMPT_END.length).trim();
+                } else {
+                    // If PROMPT_END is not found, treat the entire content as part of the prompt
+                    const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
+                    this.handleUserPrompt(promptContent);
+                    newContent = '';
                 }
-                newContent = '';
             } else {
+                // Handle non-prompt content (code blocks and markdown)
                 if (this.inCodeBlock) {
                     this.codeBlockContent += newContent;
                     const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');

@@ -2386,6 +2386,60 @@ input[type=range] {
         color: var(--cm-bracket-color) !important;
     }
 
+/* Codemirror Mode Styling*/
+
+.current-node-section {
+    color: #bbb;
+}
+
+.node-title {
+    color: paleturquoise;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+    .node-title.current-node-section {
+        color: #cbffff;
+    }
+
+.cm-node {
+    color: #D15050;
+    cursor: pointer;
+}
+
+    .cm-node.current-node-section {
+        color: #e16363;
+    }
+
+.cm-ref {
+    color: #4F8EB7;
+}
+
+    .cm-ref.current-node-section {
+        color: #6db1dd;
+    }
+
+.cm-hidden-delimiter {
+    display: none !important;
+}
+
+.cm-prompt-block {
+    background-color: rgb(22 20 22);
+    padding: 8px 12px; /* Adjust left padding */
+    border-radius: 20px 20px 0 20px;
+    margin-right: 15px;
+    width: fit-content; /* Make width match text */
+    max-width: 85%;
+    margin-left: auto; /* Move div to the right */
+    display: block; /* Ensure proper block alignment */
+    -webkit-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    -moz-box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    box-shadow: 0px 0px 20px 6.5px rgba(255, 255, 255, 0.05);
+    text-align: right; /* Align text to the right inside the div */
+}
+
+
+
 /* Custom Neurite Mappings from Codemirror Styles */
 
 .neurite-meta {
@@ -2487,34 +2541,6 @@ input[type=range] {
 
 .neurite-bracket {
     color: var(--cm-bracket-color);
-}
-
-
-
-.current-node-section {
-    color: #bbb;
-}
-
-.node-title {
-    color: paleturquoise;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-.cm-node {
-    color: #D15050;
-    cursor: pointer;
-}
-
-.cm-ref {
-    color: #4F8EB7;
-}
-
-.cm-Prompt {
-    color: #E0B0FF;
-    background-color: #464250;
-    border-radius: 5px;
-    padding: 2px;
 }
 
 .aiResponseEditor .CodeMirror-scroll {

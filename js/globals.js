@@ -328,6 +328,7 @@ const LLM_TAG = "AI:";
 Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) );
 
 const PROMPT_IDENTIFIER = "Prompt:";
+const PROMPT_END = ":End Prompt"
 
 class Html {
     static create = document.createElement.bind(document);
