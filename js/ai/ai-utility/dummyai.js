@@ -15,7 +15,7 @@ async function imitateTextStream(text, onStreamingResponse, delay = 10, minChunk
         onStreamingResponse(currentChunk);
 
         // Await delay between chunks
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await Promise.delay(delay);
     }
 }
 

@@ -29,9 +29,8 @@ function restoreInputValues() {
             if (input.id in inputValues) {
                 input.value = inputValues[input.id];
                 // Trigger the input event for both sliders and color pickers
-                setTimeout(() => {
-                    input.dispatchEvent(new Event('input'));
-                }, 100);
+                const cb = input.dispatchEvent.bind(input, new Event('input'));
+                Promise.delay(100).then(cb);
             }
         });
     }

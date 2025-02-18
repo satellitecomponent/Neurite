@@ -320,19 +320,15 @@ AiNode.setupResponseDivListeners = function(node){
 
     let userHasScrolled = false;
 
-    // Function to scroll to bottom
-    const scrollToBottom = () => {
-        if (!userHasScrolled) {
-            setTimeout(() => {
-                aiResponseDiv.scrollTo({
-                    top: aiResponseDiv.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }, 0);
-        }
-    };
-
-    On.input(node.aiResponseTextArea, scrollToBottom);
+    function scrollToBottom(){
+        aiResponseDiv.scrollTo({
+            top: aiResponseDiv.scrollHeight,
+            behavior: 'smooth'
+        })
+    }
+    On.input(node.aiResponseTextArea, ()=>{
+        if (!userHasScrolled) Promise.delay(1).then(scrollToBottom)
+    });
 
     const epsilon = 5; // Tolerance in pixels
 

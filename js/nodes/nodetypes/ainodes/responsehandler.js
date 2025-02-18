@@ -486,7 +486,8 @@ class ResponseHandler {
 
             if (document.execCommand('copy')) {
                 copyButton.innerText = "Copied!";
-                setTimeout(() => copyButton.innerText = "Copy", 1200);
+                function revert(){ copyButton.innerText = "Copy" }
+                Promise.delay(1200).then(revert);
             }
 
             document.body.removeChild(textarea);

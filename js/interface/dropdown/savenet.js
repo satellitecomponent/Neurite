@@ -39,7 +39,7 @@
         const tempAnchor = Html.make.a(window.URL.createObjectURL(blob));
         tempAnchor.download = title + '.txt';
         tempAnchor.click();
-        setTimeout( ()=>window.URL.revokeObjectURL(tempAnchor.href) , 1);
+        Promise.delay(1).then(URL.revokeObjectURL.bind(URL, tempAnchor.href));
     }
 
     #updateSavedGraphs(){
@@ -154,7 +154,7 @@
         tempAnchor.download = save.title + '.txt';
 
         tempAnchor.click();
-        setTimeout(URL.revokeObjectURL.bind(URL, tempAnchor.href), 1);
+        Promise.delay(1).then(URL.revokeObjectURL.bind(URL, tempAnchor.href));
     }
 
     #addDragEvents(){

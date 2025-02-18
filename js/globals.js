@@ -517,14 +517,6 @@ function clearTextSelections() {
     }
 }
 
-function callWithDelay(func, delay){
-    return new Promise( (resolve)=>{
-        setTimeout( ()=>{
-            func();
-            resolve();
-        }, delay)
-    })
-}
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {

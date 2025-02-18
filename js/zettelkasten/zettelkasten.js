@@ -510,7 +510,7 @@ class ZettelkastenProcessor {
         const textArea = TextArea.ofNode(wrap.node);
 
         // getDebouncedTextareaUpdate(textArea)(wrap.plainText);
-        callWithDelay(TextArea.update.bind(textArea, wrap.plainText), 20);
+        Promise.delay(20).then(TextArea.update.bind(textArea, wrap.plainText));
     }
 
     deleteInactiveNodesFromDict(dict){
