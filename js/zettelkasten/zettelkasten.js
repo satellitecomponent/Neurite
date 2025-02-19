@@ -242,7 +242,7 @@ class ZettelkastenProcessor {
             }
         } else {
             wrap.plainText = '';
-            wrap.node.textarea.value = wrap.plainText;
+            if (processAll) wrap.node.textarea.value = wrap.plainText;
             const lineNum = wrap.lineNum;
             if (wrapPerLine[lineNum] === wrap) delete wrapPerLine[lineNum];
             wrap.live = true;
@@ -330,18 +330,16 @@ class ZettelkastenProcessor {
     }
 
     //Syncs node text and Zettelkasten
-    onNodeBodyInput(node, e){
+    onNodeBodyInput(wrap, e){
         const textArea = e.currentTarget;
         if (e.target !== textArea) return;
 
         const body = textArea.value;
-        const name = node.title;
-        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(name);
+        const { startLineNo, endLineNo } = this.parser.getNodeSectionRange(wrap.title);
         const lines = this.noteInput.getValue().split('\n');
 
-        // Create the updated content
-        let updatedContent = lines[startLineNo] + '\n'; // Node title line
-        updatedContent += body;
+        const titleLine = lines[startLineNo] + '\n';
+        const updatedContent = titleLine + body;
 
         // Replace the node's content using replaceRange
         const from = { ch: 0, line: startLineNo };
@@ -350,14 +348,15 @@ class ZettelkastenProcessor {
 
         this.noteInput.operation(() => {
             this.noteInput.replaceRange(updatedContent, from, to);
+            this.parser.updateNodeTitleToLineMap();
 
             // Handle references
             const bodyLines = body.split('\n');
             bodyLines.forEach( (line, index)=>{
-                if (line.startsWith(Tag.ref)) {
-                    const lineIndex = startLineNo + 1 + index;
-                    this.handleReferenceLine(line, node.title, bodyLines, false, lineIndex, lineIndex);
-                }
+                if (!line.startsWith(Tag.ref)) return;
+
+                const lineIndex = startLineNo + 1 + index;
+                this.handleReferenceLine(line, wrap.title, bodyLines, false, lineIndex, lineIndex);
             });
         });
     }
@@ -455,8 +454,8 @@ class ZettelkastenProcessor {
             if (!otherNodeInfo) return;
 
             const { startLineNo, endLineNo } = otherNodeInfo.parser.getNodeSectionRange(otherTitle);
-            const otherNodeLines = otherNodeInfo.cm.getValue().split('\n');
-            const isRef = this.forEachReferenceInRange(startLineNo + 1, endLineNo, otherNodeLines, currentNodeIsRef);
+            const lines = otherNodeInfo.cm.getValue().split('\n');
+            const isRef = this.forEachReferenceInRange(startLineNo + 1, endLineNo, lines, currentNodeIsRef);
             if (isRef) return;
 
             edge.remove();
