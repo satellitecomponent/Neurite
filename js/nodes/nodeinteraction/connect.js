@@ -209,12 +209,15 @@ Node.parentAvailableFromRoot = function(root, max = 3, filterAfterLLM = false){
     return root;
 }
 
+Math.PHI = 5 ** .5 * .5 + .5;
 function thetaForNodes(n1, n2){
+    const lastEdge = n1.edges[n1.edges.length - 1];
+    n2 = (lastEdge ? lastEdge.getPointBarUuid(n1.uuid) : n2);
     if (n1 === n2) return Math.random() * Math.PI * 2;
 
-    const vector = new vec2(n1.pos.x - n2.pos.x, n1.pos.y - n2.pos.y);
+    const vector = new vec2(n2.pos.x - n1.pos.x, n2.pos.y - n1.pos.y);
     const baseTheta = vector.ang();
-    return baseTheta + (Math.random() * Math.PI - Math.PI / 2);
+    return (baseTheta + 2 * Math.PI / Math.PHI) % (2 * Math.PI);
 }
 async function spawnHierarchy(count, delay){
     const root = createLlmNode('Root');
