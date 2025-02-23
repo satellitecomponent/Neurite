@@ -222,12 +222,12 @@ body {
     font-family: monospace;
     border: none;
     border-bottom: 1px solid #8882;
-    width: 280px;
+    width: 284px;
     height: 100%;
     min-height: 180px;
     max-height: 320px;
     overflow: hidden;
-    padding: 15px 0px 1px 22px;
+    padding: 5px 0px 1px 22px;
     margin: 0px;
     padding-right: 2px;
     box-sizing: border-box;
@@ -1836,7 +1836,7 @@ td {
         background: #8882;
         border-radius: 0px 0px 15px 15px;
         margin-bottom: 16px;
-        margin-top: -16px;
+        margin-top: -5px;
     }
 
     /* Default scrollbar thumb style */

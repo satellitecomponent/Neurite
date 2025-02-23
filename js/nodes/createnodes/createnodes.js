@@ -95,3 +95,91 @@ function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null,
 
     return newNode;
 }
+
+Math.PHI = 5 ** .5 * .5 + .5;
+function thetaForNodes(n1, n2){
+    const lastEdge = n1.edges[n1.edges.length - 1];
+    n2 = (lastEdge ? lastEdge.getPointBarUuid(n1.uuid) : n2);
+    if (n1 === n2) return Math.random() * Math.PI * 2;
+
+    const vector = new vec2(n2.pos.x - n1.pos.x, n2.pos.y - n1.pos.y);
+    const baseTheta = vector.ang();
+    return (baseTheta + 2 * Math.PI / Math.PHI) % (2 * Math.PI);
+}
+function spawnMemoryNode(root, title, message) {
+    const parent = Node.parentAvailableFromRoot(root);
+    const theta = thetaForNodes(parent, root);
+    const node = spawnZettelkastenNode(parent, 1.5, theta, title, message);
+    connectNodes(parent, node);
+    return { node, parent };
+}
+
+// Testing for spawnMemoryNode
+
+async function spawnHierarchy(count, delay){
+    const root = createLlmNode('Root');
+    const allNodes = new Map();
+    allNodes.set(root.uuid, root);
+    for (let i = 0; i < count; i++) {
+        const { node, parent } = spawnMemoryNode(root);
+        allNodes.set(node.uuid, node);
+
+        Logger.info("Created", `N${i + 1}`, "under", parent.getTitle());
+        await Promise.delay(delay);
+    }
+    return { root, allNodes };
+}
+
+function validateTestResult(res){
+    const connectedNodes = new Map();
+
+    function traverse(node){
+        if (connectedNodes.has(node.uuid)) return;
+
+        connectedNodes.set(node.uuid, node);
+        node.forEachConnectedNode(traverse);
+    }
+    traverse(res.root);
+
+    const errors = [];
+    if (connectedNodes.size !== res.allNodes.size) {
+        const msg = "Connectivity check failed: Not every node is connected to the root.";
+        Logger.err(msg);
+        errors.push(msg);
+    } else {
+        Logger.info("Connectivity test passed.");
+    }
+    const activeInstance = getActiveZetCMInstanceInfo();
+    if (activeInstance && activeInstance.parser) {
+        if (activeInstance.parser.nodeTitleToLineMap.size !== connectedNodes.size - 1) { // for root being LLM
+            const msg = "Parser validation failed: The number of parser nodes does not match the number of connected nodes.";
+            Logger.err(msg);
+            errors.push(msg);
+        } else {
+            Logger.info("Parser test passed.");
+        }
+    } else {
+        Logger.warn("No active ZettelkastenParser found for validation.");
+    }
+
+    function print(node, depth = 0, visited = new Set()){
+        if (visited.has(node.uuid)) return;
+
+        visited.add(node.uuid);
+        const kids = [];
+        node.forEachConnectedNode(kids.push, kids);
+        console.log(`${'  '.repeat(depth)}${node.getTitle()} (${kids.length})`);
+        kids.forEach( (kid)=>{ print(kid, depth + 1, visited) } );
+    }
+    print(res.root);
+
+    if (errors.length > 0) {
+        throw new Error("Hierarchy tests failed:\n" + errors.join("\n"));
+    }
+
+    Logger.info("All tests passed successfully.");
+}
+
+async function testHierarchy(count = 30, delay = 1000){
+    spawnHierarchy(count, delay).then(validateTestResult)
+}
