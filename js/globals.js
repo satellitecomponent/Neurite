@@ -250,38 +250,31 @@ let restoreZettelkastenEvent = false;
 
 let bypassZettelkasten = false;
 
-const Tag = {
-    node: Modal.inputValues['node-tag'] || "##",
-    ref: Modal.inputValues['ref-tag'] || "[["
-}
-Tag.initializeInputs = function(){
-    const nodeTagInput = Elem.byId('node-tag');
-    const refTagInput = Elem.byId('ref-tag');
-    if (!nodeTagInput || !refTagInput) return;
+class Tag {
+    static init(){
+        Tag.node = Modal.inputValues['node-tag'] || "##";
+        Tag.ref = Modal.inputValues['ref-tag'] || "[[";
+        ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
+    }
+    static initializeInputs(){
+        const inputNodeTag = Elem.byId('node-tag');
+        const inputRefTag = Elem.byId('ref-tag');
+        if (!inputNodeTag || !inputRefTag) return;
 
-    nodeTagInput.value = Tag.node;
-    refTagInput.value = Tag.ref;
-    On.input(nodeTagInput, (e)=>{
-        const nodeTag = nodeTagInput.value.trim();
-        Tag.node = (nodeTag === '' ? ' ' : nodeTag);
+        inputNodeTag.value = Tag.node;
+        inputRefTag.value = Tag.ref;
+        On.input(inputNodeTag, Tag.#onTagInput);
+        On.input(inputRefTag, Tag.#onTagInput);
+    }
+    static #onTagInput(e){
+        const input = e.currentTarget;
+        const tag = input.value.trim();
+        Tag[input.dataset.key] = (tag === '' ? ' ' : tag);
 
-        updateNodeTitleRegex();  // Update the regex with the new nodeTag
+        ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();
-    });
-    On.input(refTagInput, (e)=>{
-        const refTag = refTagInput.value.trim();
-        Tag.ref = (refTag === '' ? ' ' : refTag);
-
-        updateAllZetMirrorModes();
-        updateAllZettelkastenProcessors();
-    });
-}
-
-let nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
-
-function updateNodeTitleRegex() {
-    nodeTitleRegexGlobal = new RegExp(`^${RegExp.escape(Tag.node)}\\s*(.*)$`);
+    }
 }
 
 const bracketsMap = {
@@ -335,6 +328,7 @@ const LLM_TAG = "AI:";
 Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) );
 
 const PROMPT_IDENTIFIER = "Prompt:";
+const PROMPT_END = ":End Prompt"
 
 class Html {
     static create = document.createElement.bind(document);
@@ -523,14 +517,6 @@ function clearTextSelections() {
     }
 }
 
-function callWithDelay(func, delay){
-    return new Promise( (resolve)=>{
-        setTimeout( ()=>{
-            func();
-            resolve();
-        }, delay)
-    })
-}
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -551,8 +537,6 @@ TextArea.append = function(text){
     this.dispatchEvent(new Event('input'));
 }
 TextArea.update = function(text) {
-    if (this.value === text) return;
-
     this.value = text;
     this.dispatchEvent(new Event('change'));
     Logger.debug("Event triggered");

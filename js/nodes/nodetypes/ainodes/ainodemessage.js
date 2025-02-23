@@ -1,4 +1,4 @@
-AiNode.sendMessage = async function (node, message = null) {
+﻿AiNode.sendMessage = async function (node, message = null) {
     if (node.aiResponding) {
         Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
@@ -10,9 +10,11 @@ AiNode.sendMessage = async function (node, message = null) {
     //Initalize count for message trimming
     let contextSize = 0;
 
-    // Checks if all connected nodes should be sent or just nodes up to the first found ai node in each branch. connected nodes (default)
-    const useAllConnectedNodes = Elem.byId('use-all-connected-ai-nodes').checked;
-    const allConnectedNodes = node.getAllConnectedNodes(useAllConnectedNodes ? undefined : true);
+    // Get all connected nodes (without filtering for LLM)
+    const allConnectedNodes = AiNode.calculateDirectionalityLogic(node, new Set(), true);
+
+    // Get only LLM nodes
+    const connectedAiNodes = allConnectedNodes.filter(n => n.isLLMNode);
 
     node.latestUserMessage = message || node.promptTextArea.value;
 
@@ -41,8 +43,6 @@ AiNode.sendMessage = async function (node, message = null) {
         });
     }
 
-    let connectedAiNodes = AiNode.calculateDirectionalityLogic(node);
-
     node.shouldAppendQuestion = (connectedAiNodes.length > 0);
     if (node.shouldAppendQuestion) {
         // List the available recipients with spaces replaced by underscores, add '@' symbol, and use '@no_name' if the node title is empty
@@ -55,32 +55,43 @@ AiNode.sendMessage = async function (node, message = null) {
             "You represent the singular personality of ", aiIdentity, ". ",
             "Your response exclusively portrays ", aiIdentity, ". ",
             "Attempt to reflect the thoughts, decisions, and voice of this identity alone. ",
+            "You are an Ai assistant with the ability to execute commands (/) and send messages (@) during the current conversation. ",
             "Communicate with others using @mention. The available recipients are: ", recipientList, ". ",
             "*underscores required. ",
-            "All text after an @mention is sent to that specific recipient. ",
-            "Multiple mentions on the same line send to each mention. "
+            "All text after an @recipient_name_here is sent to that specific recipient. ",
+            "Multiple mentions on the same line are sent to all relevant parties. "
         ];
         const getInputValue = Modal.getAiInputValue;
 
-        if (getInputValue('enable-self')) {
-            promptContent.push("Use @self for internal thoughts. ");
-        }
-
         if (getInputValue('enable-all')) {
-            promptContent.push("Use @all to broadcast to all connected recipients. ");
-        }
-
-        if (getInputValue('enable-exit')) {
-            promptContent.push("/exit disconnects you from the conversation. ");
+            promptContent.push("@all sends the text after @all to every connected recipient. ");
         }
 
         if (getInputValue('enable-user')) {
             promptContent.push("@user prompts the user. ");
         }
 
+        if (getInputValue('enable-memory')) {
+            promptContent.push("@memory sends any text after @memory to your memory. ");
+        }
+
+        if (getInputValue('enable-rewrite')) {
+            promptContent.push("/rewrite <nodeTitle> on a single line overwrites the text of the node named `<nodeTitle>`. Put all new lines of text for that node immediately after this command. Stop when you reach a new `@mention` or another `/validCommand`. Do not include anything else on the same line as the `/rewrite` command apart from the node title. ");
+        }
+
+        if (getInputValue('enable-disconnect')) {
+            promptContent.push("/disconnect followed by the exact title of the node to disconnect from deletes the connection to that node.");
+        }
+
+        if (getInputValue('enable-exit')) {
+            promptContent.push("/exit disconnects you from all connected conversants. ");
+        }
+
         promptContent.push(
-            "Remember, each response is expected to exclusively represent the voice of ", aiIdentity, ". ",
-            "@ symbols start a mention if not preceded by text."
+            "REMEMBER: You have the ability to use @memory to store memories in the same way you can use @mention to send messages.",
+            "@mention to send messages. ",
+            "/ to execute commands. ",
+            "Each response is expected to exclusively represent the voice of ", aiIdentity
         );
 
         messages.push({
@@ -251,10 +262,11 @@ AiNode.sendMessage = async function (node, message = null) {
 
     // For Text Nodes
     if (textNodeInfo.length > 0) {
-        let intro = "Text nodes CONNECTED to MEMORY:";
+        let memoryIntro = "Available text nodes/notes CONNECTED to MEMORY:";
+        let memoryConclusion = ":END OF CONNECTED TEXT NODES: You ensure awareness and utilization of all relevant insights.";
         messages.push({
             role: "system",
-            content: intro + "\n\n" + textNodeInfo.join("\n\n")
+            content: `${memoryIntro}\n\n${textNodeInfo.join("\n\n")}\n\n${memoryConclusion}`
         });
     }
 
@@ -285,7 +297,7 @@ AiNode.sendMessage = async function (node, message = null) {
     lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.aiResponseTextArea);
 
     // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage, PROMPT_IDENTIFIER);
+    handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage);
 
     let wolframData;
     if (Elem.byId('enable-wolfram-alpha-checkbox-' + nodeIndex).checked) {
@@ -325,9 +337,12 @@ AiNode.sendMessage = async function (node, message = null) {
     node.aiResponding = true;
     node.userHasScrolled = false;
 
-    const clickQueues = {};  // Contains a click queue for each AI node
     // Initiates helper functions for aiNode Message loop.
-    const aiNodeMessageLoop = new AiNode.MessageLoop(node, clickQueues);
+    if (!node.aiNodeMessageLoop) {
+        node.aiNodeMessageLoop = new AiNode.MessageLoop(node);
+    }
+
+    const aiNodeMessageLoop = node.aiNodeMessageLoop;
 
     const haltCheckbox = node.haltCheckbox;
 
@@ -349,75 +364,222 @@ AiNode.sendMessage = async function (node, message = null) {
         });
 }
 
-function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize) {
-    let flag = false;
-    const cleanedData = info.data.replace("Text Content:", '');
-    if (cleanedData.trim()) {
-        const tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
-        let tempTokenCount = TokenCounter.forString(tempString);
-
-        if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
-            tempInfoList.push(cleanedData);
-            remainingTokens -= tempTokenCount;
-            totalTokenCount += tempTokenCount;
-        } else {
-            flag = true;
-        }
-    }
-    return [remainingTokens, totalTokenCount, flag];
-}
-
 AiNode.MessageLoop = class {
     static userPromptActive = false;
     static userPromptQueue = [];
     static isProcessingQueue = false;
 
-    constructor(node, clickQueues = {}) {
+    constructor(node) {
         this.node = node;
-        this.clickQueues = clickQueues;
+        this.clickQueues = {};
     }
 
-    async processClickQueue(nodeId) {
-        const queue = this.clickQueues[nodeId] || [];
-        while (true) {
-            if (AiNode.MessageLoop.userPromptActive) {
-                Logger.debug("Global pause - waiting for user response");
-                await Promise.delay(2500);
-                continue;
+    // ────── MENTIONS REGISTRY ──────
+    static Mentions = {
+        registry: {
+            all: {
+                process(instance, message, connectedNodes) {
+                    return connectedNodes; // Return all connected nodes
+                }
+            },
+            user: {
+                async process(instance, message) {
+                    const userResponse = await instance.getUserResponse(message);
+                    if (userResponse) {
+                        const responseMessage = `@user says,\n${userResponse.trim()}`;
+                        instance.processTargetNode(instance.node, responseMessage, false);
+                    }
+                    return []; // Do not forward message further
+                }
+            },
+            memory: {
+                process(instance, message) {
+                    // Find the first newline character
+                    const newlineIndex = message.indexOf('\n');
+                    // Extract content after the newline
+                    const trimmedMessage = newlineIndex !== -1 ? message.slice(newlineIndex + 1) : '';
+                    
+                    const root = instance.node;
+        		    const parent = Node.parentAvailableFromRoot(root);
+
+        			const theta = thetaForNodes(parent, root);
+        			const memoryNode = spawnZettelkastenNode(parent, 1.5, theta, null, trimmedMessage);
+        			connectNodes(parent, memoryNode);
+    		    return { root, memoryNode};
+                }
+            }
+        },
+
+        // Normalize recipient name for consistent matching
+        normalize(recipient) {
+            return recipient.toLowerCase().replace(/[\s@_-]/g, '');
+        },
+
+        // Check if a mention is valid
+        isValid(mention, node) {
+            // If it's in our registry, it's valid
+            if (this.registry.hasOwnProperty(mention)) {
+                return true;
             }
 
-            if (queue.length > 0) {
-                const { connectedNode, sendButton } = queue[0];
+            // Special case for "@no_name": true if there's any connected node with empty or null title
+            if (mention === 'no_name') {
+                const connected = AiNode.calculateDirectionalityLogic(node);
+                return connected.some(n => !n.getTitle() || !n.getTitle().trim());
+            }
 
-                const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
-                if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
-                    Logger.warn("Node", connectedNode.index, "has no more connections or its AI response is halted. Exiting queue.");
+            // Otherwise, check if it matches a connected node by normalized title
+            const connected = AiNode.calculateDirectionalityLogic(node);
+            const normalizedMention = this.normalize(mention);
+            return connected.some(n => this.normalize(n.getTitle()) === normalizedMention);
+        },
+
+        // Process a mention and get the target nodes
+        async process(instance, recipient, message, connectedNodes) {
+            // If recipient is in registry, use its processing method
+            if (this.registry.hasOwnProperty(recipient)) {
+                let result = this.registry[recipient].process(instance, message, connectedNodes);
+                if (result instanceof Promise) {
+                    result = await result;
+                }
+                return result;
+            }
+
+            // If recipient is "@no_name", return all connected nodes that have an empty or null title
+            if (recipient === 'no_name') {
+                return connectedNodes.filter(n => {
+                    const title = n.getTitle();
+                    return !title || !title.trim();
+                });
+            }
+
+            // Otherwise, find the specific node by name
+            const targetNode = connectedNodes.find(node =>
+                this.normalize(node.getTitle()) === this.normalize(recipient)
+            );
+
+            return targetNode ? [targetNode] : [];
+        }
+    };
+
+    // ────── COMMANDS REGISTRY ──────
+    static Commands = {
+        registry: [
+            {
+                name: "exit",
+                pattern: /^\/exit\b/,
+                multiLine: false,
+                action(match, instance, content) {
+                    instance.node.haltResponse();
+                    const connectedNodes = AiNode.calculateDirectionalityLogic(instance.node);
+                    instance.node.removeConnectedNodes(connectedNodes);
+                    Logger.debug("AI has exited the conversation.");
+                }
+            },
+            {
+                name: "disconnect",
+                pattern: /^\/disconnect\s+(.+)/,
+                multiLine: false,
+                action(match, instance, content) {
+                    const target = match[1].trim();
+                    if (target) {
+                        Logger.debug(`Processing /disconnect for node title: ${target}`);
+                        instance.node.removeEdgeByTitle(target);
+                    } else {
+                        Logger.warn("Disconnect command used without specifying a target title.");
+                    }
+                }
+            },
+            {
+                name: "rewrite",
+                pattern: /^\/rewrite\s+(.+)/,
+                multiLine: true,
+                action(match, instance, content) {
+                    const targetTitle = match[1].trim();
+                    if (!targetTitle) {
+                        Logger.warn("Rewrite command used without specifying a target title.");
+                        return;
+                    }
+
+                    if (content && content.trim()) {
+                        const targetNode = Node.byTitle(targetTitle);
+                        targetNode.textarea.value = content.trim();
+                        targetNode.textarea.dispatchEvent(new Event('input'));
+                    } else {
+                        Logger.warn("No rewrite content provided for node title:", targetTitle);
+                    }
+                }
+            }
+        ],
+
+        parse(text) {
+            const lines = text.split("\n");
+            const nonCommandLines = [];
+            const commands = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+
+                if (!trimmed || !trimmed.startsWith("/")) {
+                    nonCommandLines.push(line);
+                    continue;
+                }
+
+                let foundCommand = false;
+                for (const cmd of this.registry) {
+                    const match = trimmed.match(cmd.pattern);
+                    if (!match) continue;
+
+                    foundCommand = true;
+                    let content = "";
+
+                    if (cmd.multiLine) {
+                        const contentLines = [];
+                        while (++i < lines.length) {
+                            const nextTrimmed = lines[i].trim();
+                            if (nextTrimmed.startsWith("/") || nextTrimmed.includes("@")) break;
+                            contentLines.push(lines[i]);
+                        }
+                        content = contentLines.join("\n");
+                    } else {
+                        i++;
+                    }
+
+                    commands.push({ name: cmd.name, match, content, action: cmd.action });
                     break;
                 }
 
-                if (!connectedNode.aiResponding) {
-                    queue.shift(); // Remove the processed message
-                    sendButton.click();
-                }
+                if (!foundCommand) nonCommandLines.push(line);
             }
 
-            await Promise.delay(2500);
+            return { commands, cleanedText: nonCommandLines.join("\n") };
+        },
+
+        // Execute the extracted commands
+        execute(commands, instance) {
+            commands.forEach(cmd => {
+                cmd.action(cmd.match, instance, cmd.content);
+            });
         }
+    };
 
-        delete this.clickQueues[nodeId];
-    }
-
+    // ────── MAIN PROCESSING METHODS ──────
     async questionConnectedAiNodes() {
         Logger.debug("Questioning connected AI nodes...");
-        const lastResponse = this.getLastAiResponse();
+        const [lastResponse] = AiNode.getLastPromptsAndResponses(this.node, 1, "ai") || [];
         const connectedAiNodes = AiNode.calculateDirectionalityLogic(this.node);
 
-        let parsedMessages = this.parseMessages(lastResponse);
-        if (parsedMessages.length === 0) {
-            Logger.warn("Standard parsing failed. Using fallback method.");
-            parsedMessages = this.fallbackParse(lastResponse);
-        }
+        // Parse commands and cleaned text from the last response.
+        const { commands, cleanedText } = AiNode.MessageLoop.Commands.parse(lastResponse);
 
+        // Parse messages with mentions from the cleaned text.
+        const parsedMessages = this.parseMessages(cleanedText);
+
+        // Group messages by recipient node
+        const messagesByNode = new Map();
+
+        // Process each message based on its recipient.
         for (const { recipient, message } of parsedMessages) {
             if (!message.trim()) {
                 Logger.debug("Skipping empty message for recipient:", recipient);
@@ -426,55 +588,135 @@ AiNode.MessageLoop = class {
 
             Logger.debug(`Processing message for ${recipient}: ${message}`);
 
-            // Handle /exit command
-            if (message.includes('/exit')) {
-                this.node.haltResponse();
-                this.removeEdgesToConnectedNodes(connectedAiNodes);
-                Logger.debug("AI has exited the conversation.");
-                break;
-            }
+            // Get target nodes for this recipient using the Mentions system.
+            const targetNodes = await AiNode.MessageLoop.Mentions.process(
+                this,
+                recipient,
+                message,
+                connectedAiNodes
+            );
 
-            // Handle messages to specific recipients or 'all'
-            let targetNodes = [];
-            if (recipient === 'all') {
-                targetNodes = connectedAiNodes;
-            } else if (recipient === 'user') {
-                const userResponse = await this.getUserResponse(message);
-                if (userResponse) {
-                    const responseMessage = `@user says,\n${userResponse.trim()}`;
-                    this.processTargetNode(this.node, responseMessage, false);
-                }
-                continue;
-            } else if (recipient === 'self') {
-                Logger.debug("Skipping self-directed message.");
-                continue;
-            } else {
-                // Handle specific recipient
-                const targetNode = connectedAiNodes.find(node =>
-                    this.normalizeRecipient(node.getTitle()) === this.normalizeRecipient(recipient)
-                );
-                if (targetNode) {
-                    targetNodes.push(targetNode);
-                } else {
-                    Logger.warn("No connected node found for recipient", recipient);
-                    continue;
+            // Group messages by target node
+            if (Array.isArray(targetNodes) && targetNodes.length > 0) {
+                for (const node of targetNodes) {
+                    if (!messagesByNode.has(node)) {
+                        messagesByNode.set(node, []);
+                    }
+                    messagesByNode.get(node).push(message);
                 }
             }
+        }
 
-            for (const connectedNode of targetNodes) {
-                this.processTargetNode(connectedNode, message);
-            }
+        // Send accumulated messages to each target node
+        for (const [node, messages] of messagesByNode.entries()) {
+            // Join all messages for this node with newlines
+            const combinedMessage = messages.join('\n\n');
+            this.processTargetNode(node, combinedMessage);
         }
+
+        // Finally, execute the commands after processing mentions.
+        AiNode.MessageLoop.Commands.execute(commands, this);
     }
-    removeEdgesToConnectedNodes(connectedAiNodes) {
-        const connectedAiNodeSet = new Set(connectedAiNodes.map(String.uuidOf));
-        for (let i = this.node.edges.length - 1; i >= 0; i--) {
-            const edge = this.node.edges[i];
-            if (edge.pts.some(pt => connectedAiNodeSet.has(pt.uuid))) {
-                edge.remove();
-            }
+
+    parseMessages(text) {
+        Logger.debug("Parsing messages...");
+        Logger.debug("Input text:", text);
+
+        if (!text.trim()) {
+            Logger.warn("Empty text to parse");
+            return [];
         }
+
+        const messages = [];
+        const senderName = this.node.getTitle() || "no_name";
+        let currentRecipients = new Set();
+        let currentMessageLines = [];
+        let foundAnyMention = false;
+        let hasInvalidMention = false;
+
+        text.split(/\n/).forEach(line => {
+            const trimmedLine = line.trim();
+            const matches = [...trimmedLine.matchAll(/@([a-zA-Z0-9._-]+)/g)]; // Find all mentions
+
+            if (matches.length > 0) {
+                if (currentRecipients.size > 0 && currentMessageLines.length > 0) {
+                    // Finalize any accumulated message before processing a new mention
+                    currentRecipients.forEach(recipient => {
+                        this.finalizeMessage(messages, recipient, currentMessageLines.join("\n"), senderName);
+                    });
+                    currentMessageLines = [];
+                }
+
+                let validRecipients = new Set();
+                hasInvalidMention = false; // Reset for each line
+
+                matches.forEach(match => {
+                    const mention = match[1].replace(/[.,!?;:]+$/, "").toLowerCase();
+                    if (AiNode.MessageLoop.Mentions.isValid(mention, this.node)) {
+                        foundAnyMention = true;
+                        validRecipients.add(mention);
+                    } else {
+                        Logger.warn(`Invalid mention: @${mention}, ignoring mention.`);
+                        hasInvalidMention = true;
+                    }
+                });
+
+                if (hasInvalidMention) {
+                    // If there's an invalid mention, clear recipients and do not process this line
+                    currentRecipients.clear();
+                    currentMessageLines = [];
+                    return;
+                }
+
+                if (validRecipients.size > 0) {
+                    // Remove the first mention if it appears at the start of the line
+                    let cleanLine = trimmedLine.replace(/^@[a-zA-Z0-9._-]+\s*/, ""); // Remove only the first mention
+                    currentRecipients = validRecipients;
+                    currentMessageLines = [cleanLine];
+                    return;
+                }
+            }
+
+            // Accumulate the line for the current recipients if no invalid mentions were found
+            if (currentRecipients.size > 0) {
+                currentMessageLines.push(line);
+            }
+        });
+
+        // Finalize any remaining accumulated messages
+        if (currentRecipients.size > 0 && currentMessageLines.length > 0) {
+            currentRecipients.forEach(recipient => {
+                this.finalizeMessage(messages, recipient, currentMessageLines.join("\n"), senderName);
+            });
+        }
+
+        // If no mentions were found, default to @all
+        if (!foundAnyMention) {
+            Logger.warn("No recognized mentions found. Falling back to '@all'.");
+            messages.push({ recipient: "all", message: `${senderName} says,\n${text.trim()}` });
+        }
+
+        Logger.debug("Parsed", messages.length, "messages");
+        return messages;
     }
+
+    // Create final message object with sender prefix
+    finalizeMessage(messagesArray, recipient, message, senderName) {
+        if (!message.trim()) {
+            Logger.debug("Skipping empty message");
+            return;
+        }
+
+        messagesArray.push({
+            recipient: recipient,
+            message: `${senderName} says,\n${message.trim()}`
+        });
+    }
+
+
+    // ────── USER INTERACTION METHODS ──────
+
+    // Get response from user via prompt
     getUserResponse(message) {
         return new Promise((resolve) => {
             // Add to queue instead of showing immediately
@@ -489,6 +731,8 @@ AiNode.MessageLoop = class {
             }
         });
     }
+
+    // Process the user prompt queue
     async processUserPromptQueue() {
         AiNode.MessageLoop.isProcessingQueue = true;
 
@@ -511,178 +755,146 @@ AiNode.MessageLoop = class {
         AiNode.MessageLoop.userPromptActive = false;
         AiNode.MessageLoop.isProcessingQueue = false;
     }
-    processTargetNode(connectedNode, message, skipClickQueue = false) {
-        const uniqueNodeId = connectedNode.index;
 
-        if (connectedNode.aiResponseHalted || this.node.aiResponseHalted) {
-            Logger.warn("AI response for node", uniqueNodeId, "or its connected node is halted. Skipping this node.");
+    // ────── NODE COMMUNICATION METHODS ──────
+
+    // Process a target node to send a message
+    processTargetNode(targetNode, message, skipClickQueue = false) {
+        const nodeId = targetNode.index;
+        console.log(nodeId);
+        // 1) If the message is empty or whitespace, skip entirely
+        if (!message || !message.trim()) {
+            Logger.debug("Skipping send because message is empty for node", nodeId);
             return;
         }
 
-        const promptElement = connectedNode.content.querySelector('#nodeprompt-' + uniqueNodeId);
-        const sendButton = connectedNode.content.querySelector('#prompt-form-' + uniqueNodeId);
+        if (targetNode.aiResponseHalted || this.node.aiResponseHalted) {
+            Logger.warn("AI response for node", nodeId, "or its connected node is halted. Skipping this node.");
+            return;
+        }
+
+        const promptElement = targetNode.content.querySelector('#nodeprompt-' + nodeId);
+        const sendButton = targetNode.content.querySelector('#prompt-form-' + nodeId);
 
         if (!promptElement || !sendButton) {
-            Logger.err("Elements for", uniqueNodeId, "are not found");
+            Logger.err("Elements for", nodeId, "are not found");
             return;
         }
 
         this.updatePromptElement(promptElement, message);
 
         if (!skipClickQueue) {
-            this.enqueueClick(uniqueNodeId, sendButton, connectedNode);
+            this.enqueueClick(nodeId, sendButton, targetNode);
         }
     }
 
-    updatePromptElement(promptElement, message) {
-        if (promptElement instanceof HTMLTextAreaElement) {
-            promptElement.value += '\n' + message;
-        } else if (promptElement instanceof HTMLDivElement) {
-            promptElement.innerHTML += "<br>" + message;
+    // Add a click to the queue for processing
+    enqueueClick(nodeId, sendButton, targetNode) {
+        // Create the queue if it doesn't exist
+        if (!this.clickQueues[nodeId]) {
+            this.clickQueues[nodeId] = [];
+            this.processClickQueue(nodeId);
+        }
+
+        // Check if this exact node is already in the queue
+        const alreadyInQueue = this.clickQueues[nodeId].some(item =>
+            item.connectedNode === targetNode
+        );
+
+        // Only add if not already queued
+        if (!alreadyInQueue) {
+            this.clickQueues[nodeId].push({
+                sendButton,
+                connectedNode: targetNode
+            });
         } else {
-            Logger.err(`Element with ID prompt-${uniqueNodeId} is neither a textarea nor a div`)
+            Logger.debug("Node", nodeId, "is already in queue. Skipping duplicate add.");
+        }
+    }
+
+    // Update the prompt element with the message
+    updatePromptElement(element, message) {
+        if (element instanceof HTMLTextAreaElement) {
+            element.value += '\n' + message;
+        } else if (element instanceof HTMLDivElement) {
+            element.innerHTML += "<br>" + message;
+        } else {
+            Logger.err("Element is neither a textarea nor a div");
         }
 
-        promptElement.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
+        // Dispatch input event to trigger any listeners
+        element.dispatchEvent(new Event('input', { 'bubbles': true, 'cancelable': true }));
     }
 
-    enqueueClick(uniqueNodeId, sendButton, connectedNode) {
-        const clickQueues = this.clickQueues;
-        if (!clickQueues[uniqueNodeId]) {
-            clickQueues[uniqueNodeId] = [];
-            this.processClickQueue(uniqueNodeId);
-        }
-        clickQueues[uniqueNodeId].push({ sendButton, connectedNode });
-    }
+    // Process the click queue for a node
+    async processClickQueue(nodeId) {
+        const queue = this.clickQueues[nodeId] || [];
 
-    fallbackParse(text) {
-        Logger.debug("Using fallback parsing method");
-        const senderName = this.node.getTitle() || "no_name";
-        return [{
-            recipient: 'all',
-            message: `${senderName} says,\n${text.trim()}`
-        }];
-    }
+        while (true) {
+            if (AiNode.MessageLoop.userPromptActive) {
+                Logger.debug("Global pause - waiting for user response");
+                await Promise.delay(2500);
+                continue;
+            }
 
-    isValidRecipient(mention) {
-        const validRecipients = ['self', 'all', 'user'];
-        return validRecipients.includes(mention) || this.isConnectedNode(mention);
-    }
+            if (queue.length > 0) {
+                const { connectedNode, sendButton } = queue[0];
 
-    isConnectedNode(nodeName) {
-        const normalizedNodeName = this.normalizeRecipient(nodeName);
-        const func = (node) => (this.normalizeRecipient(node.getTitle()) === normalizedNodeName);
-        return AiNode.calculateDirectionalityLogic(this.node).some(func);
-    }
+                const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
+                if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
+                    Logger.warn("Node", connectedNode.index, "has no more connections or its AI response is halted. Exiting queue.");
+                    break;
+                }
 
-    extractMentionType(mention) {
-        if (mention === 'self') return 'self';
-        if (mention === 'all') return 'all';
-        if (mention === 'user') return 'user';
-        return mention;
-    }
-
-    normalizeRecipient(recipient) {
-        return recipient.toLowerCase().replace(/[\s@_-]/g, '');
-    }
-
-    parseMessages(text) {
-        Logger.debug("Parsing messages...");
-        Logger.debug("Input text:", text);
-        const messages = [];
-        const mentionPattern = /@([a-zA-Z0-9._-]+)(?:[\s,:]|$)/g;
-        const senderName = this.node.getTitle() || "no_name";
-
-        let currentRecipient = 'all';
-        let currentMessage = '';
-
-        // Split the text into paragraphs
-        const paragraphs = text.split(/\n\s*\n/);
-
-        for (const paragraph of paragraphs) {
-            const parts = paragraph.split(mentionPattern);
-
-            for (let i = 0; i < parts.length; i++) {
-                if (i % 2 === 0) {
-                    // This is message content
-                    currentMessage += parts[i];
-                } else {
-                    // This is a mention
-                    const mention = parts[i].toLowerCase();
-
-                    if (this.isValidRecipient(mention)) {
-                        if (currentMessage.trim()) {
-                            this.finalizeMessage(messages, currentRecipient, currentMessage.trim(), senderName);
-                        }
-                        currentRecipient = this.extractMentionType(mention);
-                        currentMessage = '';
-                    } else {
-                        currentMessage += "@" + parts[i];
-                    }
+                if (!connectedNode.aiResponding) {
+                    queue.shift(); // Remove the processed message
+                    sendButton.click();
+                    Logger.debug("sendButton clicked for", connectedNode.getTitle());
                 }
             }
 
-            // Finalize the message for this paragraph
-            if (currentMessage.trim()) {
-                this.finalizeMessage(messages, currentRecipient, currentMessage.trim(), senderName);
-                currentMessage = '';
-            }
+            await Promise.delay(2500);
         }
 
-        Logger.debug("Parsed", messages.length, "messages");
-        Logger.debug("Parsed messages:", JSON.stringify(messages));
+        delete this.clickQueues[nodeId];
+    }
+};
 
-        if (messages.length === 0) {
-            Logger.warn("No messages parsed. Using fallback method.");
-            return this.fallbackParse(text);
-        }
 
-        return messages;
+AiNode.getLastPromptsAndResponses = function (node, count = 1, type = "both", maxTokens = null) {
+    return getAllPromptAndResponsePairs(node.aiResponseTextArea, count, maxTokens, type);
+};
+
+
+AiNode.calculateDirectionalityLogic = function (node, visited = new Set(), includeNonLLM = false) {
+    const useAllConnectedNodes = Elem.byId('use-all-connected-ai-nodes').checked;
+
+    if (useAllConnectedNodes) {
+        return node.getAllConnectedNodes(false).filter(n => includeNonLLM || n.isLLMNode);
     }
 
-    finalizeMessage(messages, recipient, message, senderName) {
-        Logger.debug("Finalizing message for recipient:", recipient);
-        if (!message.trim()) {
-            Logger.debug("Skipping empty message");
-            return;
-        }
-
-        messages.push({
-            recipient: recipient,
-            message: `${senderName} says,\n${message.trim()}`
-        });
-    }
-
-    getLastAiResponse() {
-        const responseWrappers = this.node.aiResponseDiv.querySelectorAll('.response-wrapper');
-        if (responseWrappers.length > 0) {
-            const lastWrapper = responseWrappers[responseWrappers.length - 1];
-            const aiResponseDiv = lastWrapper.querySelector('.ai-response');
-            if (aiResponseDiv) return aiResponseDiv.textContent.trim();
-        }
-
-        Logger.warn("No AI response found.");
-        return '';
-    }
-}
-
-AiNode.calculateDirectionalityLogic = function (node, visited = new Set()) {
-    const connectedAiNodes = [];
+    // Look at edges that are "outgoing" or "none."
     visited.add(node.uuid);
+    const connectedNodes = [];
 
     for (const { edge, directionality } of node.getEdgeDirectionalities()) {
-        if (directionality !== 'outgoing' && directionality !== 'none') continue;
-
+        if (directionality !== 'outgoing' && directionality !== 'none') {
+            continue;
+        }
         for (const pt of edge.pts) {
-            if (pt.uuid === node.uuid || visited.has(pt.uuid)) continue;
+            if (pt.uuid === node.uuid || visited.has(pt.uuid)) {
+                continue;
+            }
+            visited.add(pt.uuid);
 
-            if (pt.isLLMNode) {
-                connectedAiNodes.push(pt);
-            } else {
-                connectedAiNodes.push(...AiNode.calculateDirectionalityLogic(pt, visited));
+            // Only add LLM nodes unless explicitly told otherwise
+            if (includeNonLLM || pt.isLLMNode) {
+                connectedNodes.push(pt);
+                // Recurse deeper
+                connectedNodes.push(...AiNode.calculateDirectionalityLogic(pt, visited, includeNonLLM));
             }
         }
     }
 
-    return connectedAiNodes;
-}
+    return connectedNodes;
+};

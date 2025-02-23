@@ -329,7 +329,7 @@ Animation.ZoomToNode = class {
         this.#resolve = resolve;
         this.launch();
         this.#idInterval = setInterval(this.#onCheck, 100); // every 100 msecs
-        setTimeout(this.#onTimeout, 3000); // after 3 secs
+        Promise.delay(3000).then(this.#onTimeout); // after 3 secs
     }
 }
 
@@ -482,7 +482,7 @@ Animation.waitForAllActive = class {
 
         clearInterval(this.#idInterval);
         Logger.info("All animations completed. Waiting additional delay...");
-        setTimeout(this.#onTimeout, this.additionalDelay);
+        Promise.delay(this.additionalDelay).then(this.#onTimeout);
     }
     #onTimeout = ()=>{
         Logger.info("Additional delay completed.");
@@ -663,7 +663,7 @@ function neuriteAddNote(nodeTitle, nodeText) {
     const node = ui.scrollToTitle(formattedTitle);
 
     return Promise.forAnimation("Add Note", 0,
-        ()=>(new Promise( (resolve)=>setTimeout( ()=>resolve(node) , 300) ))
+        ()=>Promise.delay(300).then( ()=>node )
     );
 }
 

@@ -207,7 +207,7 @@ class NodeView {
             if (node.isTextNode) {
                 const nodeInfo = getZetNodeCMInstance(node);
                 nodeInfo.ui.scrollToTitle(node.getTitle());
-                zetPanes.switchPane(nodeInfo.paneId);
+                App.zetPanes.switchPane(nodeInfo.paneId);
             }
         });
 
@@ -225,7 +225,9 @@ class NodeView {
             btnFs.children[1].setAttribute('fill', fillColor);
             btnCol.children[1].setAttribute('stroke', strokeColor);
 
-            node.displayDiv.classList.toggle('focused', focused);
+            if (node.displayDiv) {
+                node.displayDiv.classList.toggle('focused', focused);
+            }
             node.view.resizeHandle.classList.toggle('focused', focused);
         }
 

@@ -16,7 +16,7 @@ var gen = iter();
 
 function frame() {
     gen.next();
-    setTimeout(frame, 100);
+    Promise.delay(100).then(frame);
 }
 
 const panInput = Elem.byId('pan');

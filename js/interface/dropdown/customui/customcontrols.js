@@ -97,11 +97,6 @@ function updateSettingsFromControls() {
     saveControls();
 }
 
-On.DOMContentLoaded(document, (e)=>{
-    loadControls();
-    updateSettingsFromControls();
-});
-
 function prepareForKeyChange(key) {
     // Clear the current key display when the user clicks to change the key
     Elem.byId(key + 'Input').innerText = "Press a key...";

@@ -320,19 +320,15 @@ AiNode.setupResponseDivListeners = function(node){
 
     let userHasScrolled = false;
 
-    // Function to scroll to bottom
-    const scrollToBottom = () => {
-        if (!userHasScrolled) {
-            setTimeout(() => {
-                aiResponseDiv.scrollTo({
-                    top: aiResponseDiv.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }, 0);
-        }
-    };
-
-    On.input(node.aiResponseTextArea, scrollToBottom);
+    function scrollToBottom(){
+        aiResponseDiv.scrollTo({
+            top: aiResponseDiv.scrollHeight,
+            behavior: 'smooth'
+        })
+    }
+    On.input(node.aiResponseTextArea, ()=>{
+        if (!userHasScrolled) Promise.delay(1).then(scrollToBottom)
+    });
 
     const epsilon = 5; // Tolerance in pixels
 
@@ -451,23 +447,35 @@ function conditionalStopPropagation(event) {
     }
 }
 
-AiNode.makeSettingsContainer = function(nodeIndex, containerDiv){
-    const initialTemperature = Elem.byId('model-temperature').value;
-    const initialMaxTokens = Elem.byId('max-tokens-slider').value;
-    const initialMaxContextSize = Elem.byId('max-context-size-slider').value;
+AiNode.makeSettingsContainer = function (nodeIndex, containerDiv) {
+    function getSliderAttributes(id) {
+        const elem = Elem.byId(id);
+        return {
+            value: elem.value,
+            min: elem.min,
+            max: elem.max,
+            step: elem.step
+        };
+    }
+
+    const tempAttrs = getSliderAttributes('model-temperature');
+    const tokensAttrs = getSliderAttributes('max-tokens-slider');
+    const contextAttrs = getSliderAttributes('max-context-size-slider');
 
     const container = Html.make.div('ainode-settings-container');
     container.style.display = 'none';
     container.append(
         createAndConfigureLocalLlmSelects(nodeIndex),
-        Elem.makeSlider('node-temperature-' + nodeIndex, 'Temperature', initialTemperature, 0, 1, 0.1),
-        Elem.makeSlider('node-max-tokens-' + nodeIndex, 'Max Tokens', initialMaxTokens, 10, 16000, 1),
-        Elem.makeSlider('node-max-context-' + nodeIndex, 'Max Context', initialMaxContextSize, 1, initialMaxTokens, 1),
+        Elem.makeSlider(`node-temperature-${nodeIndex}`, 'Temperature', tempAttrs.value, tempAttrs.min, tempAttrs.max, tempAttrs.step),
+        Elem.makeSlider(`node-max-tokens-${nodeIndex}`, 'Max Tokens', tokensAttrs.value, tokensAttrs.min, tokensAttrs.max, tokensAttrs.step),
+        Elem.makeSlider(`node-max-context-${nodeIndex}`, 'Max Context', contextAttrs.value, contextAttrs.min, Math.min(contextAttrs.max, tokensAttrs.value), contextAttrs.step),
         createCheckboxArray(nodeIndex, allOptions.slice(0, 6)),
         containerDiv
     );
+
     return container;
-}
+};
+
 
 // Function to toggle the settings container
 function toggleSettings(event, settingsContainer) {

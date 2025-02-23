@@ -388,6 +388,33 @@ class Node {
         this.edges[index].remove();
         this.edges.splice(index, 1);
     }
+    removeEdgeByTitle(targetTitle) {
+        const edges = this.node.edges;
+        let removed = false;
+
+        for (let i = edges.length - 1; i >= 0; i--) {
+            if (edges[i].pts.some(pt => pt.getTitle() === targetTitle)) {
+                Logger.debug(`Disconnecting edge to node: ${targetTitle}`);
+                edges[i].remove(); // Directly remove the edge
+                removed = true;
+            }
+        }
+
+        if (!removed) {
+            Logger.warn(`No edge found connecting to node: ${targetTitle}`);
+        }
+    }
+    removeConnectedNodes(nodes) {
+        const nodeUUIDs = new Set(nodes.map(node => String.uuidOf(node)));
+
+        for (let i = this.node.edges.length - 1; i >= 0; i--) {
+            const edge = this.node.edges[i];
+            if (edge.pts.some(pt => nodeUUIDs.has(pt.uuid))) {
+                edge.remove();
+            }
+        }
+    }
+
     remove(){ Graph.deleteNode(this) }
 
     static byUuid(uuid){ return Graph.nodes[uuid] }
