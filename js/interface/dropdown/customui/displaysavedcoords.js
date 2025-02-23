@@ -277,8 +277,9 @@ async function saveCurrentView() {
 
     // Update button text temporarily
     const saveButton = Elem.byId('saveCoordinatesBtn');
-    saveButton.textContent = 'Saved!';
-    setTimeout(() => saveButton.textContent = 'Save Coordinates', 500);
+    saveButton.textContent = "Saved!";
+    const cb = ()=>{ saveButton.textContent = "Save Coordinates" } ;
+    Promise.delay(500).then(cb);
 }
 
 On.change(Elem.byId('fractal-select'), displaySavedCoordinates);
@@ -420,8 +421,3 @@ function displaySavedCoordinates() {
     appendViewsToContainer(topViews, 'savedCoordinatesContainerTop', mainViews.length);
     appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
 }
-
-On.DOMContentLoaded(document, (e) => {
-    updateSavedViewsCache();
-    displaySavedCoordinates();
-});

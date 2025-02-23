@@ -80,14 +80,15 @@ function testProgressBar(key) {
         if (progress >= 100) {
             clearInterval(interval);
             Logger.info("Progress complete for", key);
-            setTimeout(VectorDb.removeLoadingIndicator.bind(VectorDb, key), 1000);
+            const cb = VectorDb.removeLoadingIndicator.bind(VectorDb, key);
+            Promise.delay(1000).then(cb);
         }
     }, 1000);
 }
 function testMultipleProgressBars() {
     testProgressBar('File1.pdf');
-    setTimeout(() => testProgressBar('File2.docx'), 1000);
-    setTimeout(() => testProgressBar('File3.txt'), 2000);
+    Promise.delay(1000).then(testProgressBar.bind(null, 'File2.docx'));
+    Promise.delay(2000).then(testProgressBar.bind(null, 'File3.txt'));
 }
 
 function setupVectorDbImportConfirmModal(initialText, initialMaxLength, initialOverlapSize, storageId) {

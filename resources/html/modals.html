@@ -162,11 +162,11 @@
     <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="padding-bottom: 20px;">
             <label for="node-tag">Node Tag:</label>
-            <input type="text" id="node-tag" value="##" style="width:80px;" />
+            <input type="text" id="node-tag" data-key="node" value="##" style="width:80px;" />
         </div>
         <div>
-            <label for="node-tag">Link Tag:</label>
-            <input type="text" id="ref-tag" value="[[" style="width:80px;" />
+            <label for="ref-tag">Link Tag:</label>
+            <input type="text" id="ref-tag" data-key="ref" value="[[" style="width:80px;" />
         </div>
     </div>
     <br />
@@ -279,16 +279,20 @@
 
     <h3 class="modal-title">Multi-Agent</h3>
     <div class="single-column-layout">
-        <input type="checkbox" id="use-all-connected-ai-nodes">
-        <label for="use-all-connected-ai-nodes"><strong>Message All Connected AI</strong></label>
         <input type="checkbox" id="enable-exit" checked>
         <label for="enable-exit"><strong>/exit</strong></label>
+        <input type="checkbox" id="enable-disconnect" checked>
+        <label for="enable-disconnect"><strong>/disconnect</strong></label>
+        <input type="checkbox" id="enable-rewrite" checked>
+        <label for="enable-rewrite"><strong>/rewrite</strong></label>
         <input type="checkbox" id="enable-all" checked>
         <label for="enable-all"><strong>@all</strong></label>
-        <input type="checkbox" id="enable-self" checked>
-        <label for="enable-self"><strong>@self</strong></label>
+        <input type="checkbox" id="enable-memory" checked>
+        <label for="enable-memory"><strong>@memory</strong></label>
         <input type="checkbox" id="enable-user" checked>
         <label for="enable-user"><strong>@user</strong></label>
+        <input type="checkbox" id="use-all-connected-ai-nodes">
+        <label for="use-all-connected-ai-nodes"><strong>Message All</strong></label>
     </div>
 </div>
 

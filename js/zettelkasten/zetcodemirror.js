@@ -1,4 +1,4 @@
-function getAllInternalZetNodeWraps() {
+﻿function getAllInternalZetNodeWraps() {
     const wrapPerTitle = {};
     window.zettelkastenProcessors.forEach(processor => {
         Object.assign(wrapPerTitle, processor.wrapPerTitle);
@@ -8,11 +8,16 @@ function getAllInternalZetNodeWraps() {
 
 let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates
 
+RegExp.forNodeTitle = function(tag){
+    return new RegExp(`^${RegExp.escape(tag)}\\s*(.*)$`);
+}
+
 class ZettelkastenParser {
+    static regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
     constructor(codeMirrorInstance) {
         this.cm = codeMirrorInstance;
         this.nodeTitleToLineMap = new Map();
-        this.internalParserInstanceTitles = new Set(); // Use a Set to manage instance-specific titles
+        this.internalParserInstanceTitles = new Set();
         this.initializeParser();
     }
 
@@ -20,18 +25,34 @@ class ZettelkastenParser {
         this.cm.on('change', () => {
             this.updateNodeTitleToLineMap();
             this.identifyNodeTitles();
+            this.removeEmptyPrompts();
         });
+    }
+
+    removeEmptyPrompts() {
+        const promptStart = PROMPT_IDENTIFIER;
+        const promptEnd = PROMPT_END; 
+
+        const emptyPromptRegex = new RegExp(
+            promptStart + "\\s*" + promptEnd, "g"
+        );
+
+        const text = this.cm.getValue();
+        const newText = text.replace(emptyPromptRegex, "");
+
+        if (newText !== text) {
+            this.cm.setValue(newText);
+        }
     }
 
     identifyNodeTitles() {
         const newTitles = new Set();
         this.cm.eachLine((line) => {
-            const match = line.text.match(nodeTitleRegexGlobal);
+            const match = line.text.match(ZettelkastenParser.regexpNodeTitle);
             if (!match) return;
 
-            let title = match[1].trim();
-            if (title.endsWith(',')) title = title.slice(0, -1);
-            newTitles.add(title);
+            const title = match[1].trim();
+            newTitles.add(title.endsWith(',') ? title.slice(0, -1) : title);
         });
 
         this.updateGlobalTitles(newTitles);
@@ -259,6 +280,7 @@ function updateAllZettelkastenProcessors() {
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
+    const PromptEnd = `${PROMPT_END}`;
     var node = parserConfig.node || '';
     var ref = parserConfig.ref || '';
 
@@ -271,7 +293,8 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
         startState: function () {
             return {
                 inBlock: null,
-                subState: null
+                subState: null,
+                inPrompt: false
             };
         },
         token: function (stream, state) {
@@ -298,24 +321,29 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
                 return (map[state.inBlock]).token(stream, state.subState);
             }
 
-            if (stream.match(Prompt)) return "Prompt";
-            if (stream.match(node)) return "node";
+            if (stream.match(Prompt, true)) {
+                state.inPrompt = true;
+                return "hidden-delimiter";
+            }
 
-            // Check the refTag in the bracketsMap
+            if (stream.match(PromptEnd, true)) {
+                state.inPrompt = false;
+                return "hidden-delimiter";
+            }
+
+            if (state.inPrompt) {
+                stream.next();
+                return "prompt-block";
+            }
+
+            if (stream.match(node, true)) return "node";
+
             if (bracketsMap[ref]) {
-                if (stream.match(ref, false)) {  // Check for the opening bracket
-                    stream.match(ref);  // Consume the opening bracket
-                    return "ref";
-                }
-
+                if (stream.match(ref, true)) return "ref"; 
                 const closingBracket = bracketsMap[ref];
-                if (stream.match(closingBracket, false)) {  // Check for the corresponding closing bracket
-                    stream.match(closingBracket);  // Consume the closing bracket
-                    return "ref";
-                }
-            } else {
-                // If refTag isn't in the bracketsMap, match it directly
-                if (stream.match(ref)) return "ref";
+                if (stream.match(closingBracket, true)) return "ref";
+            } else if (stream.match(ref, true)) {
+                return "ref";
             }
 
             stream.next();
@@ -323,6 +351,8 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
         },
     };
 });
+
+
 
 function getActiveZetCMInstanceInfo() {
     const activeCodeMirror = window.currentActiveZettelkastenMirror;

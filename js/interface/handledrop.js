@@ -496,24 +496,23 @@ On.paste(window, (e) => {
 });
 
 On.paste(window, (e) => {
-    let codeMirrorWrapper = window.currentActiveZettelkastenMirror.getWrapperElement();
+    const cm = window.currentActiveZettelkastenMirror;
+    const codeMirrorWrapper = cm.getWrapperElement();
     if (codeMirrorWrapper.contains(e.target)) {
         Logger.debug("Paste detected in CodeMirror");
 
-        // Use setTimeout to defer the execution until after the paste event
-        setTimeout(() => {
+        function paste(){
             processAll = true;
             Logger.debug("processAll set to true after paste in CodeMirror");
 
             // Simulate a minor change in content to trigger an input event
-            const cursorPos = window.currentActiveZettelkastenMirror.getCursor();
-            window.currentActiveZettelkastenMirror.replaceRange(' ', cursorPos); // Insert a temporary space
-            window.currentActiveZettelkastenMirror.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
+            const cursorPos = cm.getCursor();
+            cm.replaceRange(' ', cursorPos); // Insert a temporary space
+            cm.replaceRange('', cursorPos, { line: cursorPos.line, ch: cursorPos.ch + 1 }); // Immediately remove it
 
             Logger.debug("Triggered input event in CodeMirror");
-
-            // Additional logic as required
-        }, 0);
+        }
+        Promise.delay(1).then(paste);
         e.stopPropagation();
     } else {
         // Check for other textarea or input elements

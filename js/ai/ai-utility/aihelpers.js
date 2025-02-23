@@ -43,26 +43,28 @@ async function isEmbedEnabled(aiNode) {
 const TOKEN_COST_PER_IMAGE = 200; // Flat token cost assumption for each image
 
 class TokenCounter {
-    constructor(){
+    constructor() {
         this.tokenCount = 0;
+    }
+    static tokenize(str) {
+        return str.match(/[\w]+|[^\s\w]/g) || [];
+    }
+    static forString(str) {
+        return TokenCounter.tokenize(str).length;
     }
     static forMessages(messages) {
         const counter = new TokenCounter();
         messages.forEach(counter.addTokensOfMessage, counter);
         return counter.tokenCount;
     }
-    static forString(str) {
-        const tokens = str.match(/[\w]+|[^\s\w]/g);
-        return (tokens ? tokens.length : 0);
-    }
-    addTokensOfItem(item){
+    addTokensOfItem(item) {
         if (item.type === 'text' && typeof item.text === 'string') {
             this.tokenCount += TokenCounter.forString(item.text);
         } else if (item.type === 'image_url') {
             this.tokenCount += TOKEN_COST_PER_IMAGE;
         }
     }
-    addTokensOfMessage(message){
+    addTokensOfMessage(message) {
         const content = message.content;
         if (typeof content === 'string') {
             this.tokenCount += TokenCounter.forString(content);
@@ -72,16 +74,36 @@ class TokenCounter {
     }
 }
 
+
+function updateInfoList(info, tempInfoList, remainingTokens, totalTokenCount, maxContextSize) {
+    let flag = false;
+    const cleanedData = info.data.replace("Text Content:", '');
+    if (cleanedData.trim()) {
+        const tempString = tempInfoList.join("\n\n") + "\n\n" + cleanedData;
+        let tempTokenCount = TokenCounter.forString(tempString);
+
+        if (tempTokenCount <= remainingTokens && totalTokenCount + tempTokenCount <= maxContextSize) {
+            tempInfoList.push(cleanedData);
+            remainingTokens -= tempTokenCount;
+            totalTokenCount += tempTokenCount;
+        } else {
+            flag = true;
+        }
+    }
+    return [remainingTokens, totalTokenCount, flag];
+}
+
 function ensureClosedBackticks(text) {
     const backtickCount = (text.match(/```/g) || []).length;
     if (backtickCount % 2 !== 0) text += '```';
     return text;
 }
 
-function handleUserPromptAppend(element, userMessage, promptIdentifier) {
+function handleUserPromptAppend(element, userMessage) {
     element.value = ensureClosedBackticks(element.value);
     element.dispatchEvent(new Event('input'));
-    element.value += `\n\n${promptIdentifier} ${userMessage}\n`; // Append the user prompt
+
+    element.value += `\n\n${PROMPT_IDENTIFIER} ${userMessage} ${PROMPT_END}\n`;
     element.dispatchEvent(new Event('input'));
 }
 
@@ -93,36 +115,74 @@ function handleUserPromptAppendCodeMirror(editor, userMessage, promptIdentifier)
     // Ensure no unclosed triple backticks in the current content
     doc.setValue(ensureClosedBackticks(currentText));
 
-    // Append the user prompt to the CodeMirror editor
-    editor.replaceRange(`\n\n${promptIdentifier} ${userMessage}\n`, { line: lineBeforeAppend, ch: 0 });
+    // Append the user prompt with an explicit end marker
+    editor.replaceRange(`\n${promptIdentifier}\n${userMessage}\n${PROMPT_END}\n`, { line: lineBeforeAppend, ch: 0 });
 }
 
-function getLastPromptsAndResponses(count, maxTokens, textarea = zetPanes.getActiveTextarea()) {
+function getAllPromptAndResponsePairs(textarea, count = null, maxTokens = null, type = "both") {
     if (!textarea) {
         Logger.err("No active textarea found");
-        return '';
+        return [];
     }
 
-    const lines = textarea.value.split('\n');
-    const promptsAndResponses = [];
-    let promptCount = 0;
-    let tokenCount = 0;
-    for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].startsWith(PROMPT_IDENTIFIER)) promptCount += 1;
-        if (promptCount > count) break;
+    const content = textarea.value || "";
+    if (!content.trim()) return [];
 
-        tokenCount += lines[i].split(/\s+/).length;
-        promptsAndResponses.unshift(lines[i]);
+    const pattern = new RegExp(
+        `${PROMPT_IDENTIFIER}\\s*([\\s\\S]*?)${PROMPT_END}\\s*([\\s\\S]*?)(?=${PROMPT_IDENTIFIER}|$)`,
+        "g"
+    );
+
+    const allMatches = [];
+    let match;
+
+    while ((match = pattern.exec(content)) !== null) {
+        const userText = match[1].trim();
+        const aiText = match[2].trim();
+        allMatches.push({ user: userText, ai: aiText });
     }
-    while (tokenCount > maxTokens) {
-        const removedLine = promptsAndResponses.shift();
-        tokenCount -= removedLine.split(/\s+/).length;
+
+    if (!allMatches.length) return [];
+
+    // Get the last `count` items, reversing to maintain order
+    let lastItems = count !== null ? allMatches.slice(-count).reverse() : allMatches.reverse();
+
+    // Token limit enforcement
+    if (maxTokens !== null) {
+        let tokenCount = 0;
+        const filteredItems = [];
+
+        for (const item of lastItems) {
+            const userTokens = TokenCounter.forString(item.user);
+            const aiTokens = TokenCounter.forString(item.ai);
+
+            if (tokenCount + userTokens + aiTokens > maxTokens) break;
+
+            filteredItems.push(item);
+            tokenCount += userTokens + aiTokens;
+        }
+
+        lastItems = filteredItems;
     }
-    return promptsAndResponses.join('\n') + '\n';
+
+    // Apply filtering: "both" (default), "user", or "ai"
+    if (type === "user") return lastItems.map(pair => pair.user);
+    if (type === "ai") return lastItems.map(pair => pair.ai);
+    return lastItems; // Default: structured { user, ai } pairs
 }
 
+function getLastPromptsAndResponses(count, maxTokens = null, textarea = App.zetPanes.getActiveTextarea()) {
+    const lastItems = getAllPromptAndResponsePairs(textarea, count, maxTokens, "both");
+    if (!lastItems.length) return '';
+
+    return lastItems
+        .map(({ user, ai }) => `${PROMPT_IDENTIFIER} ${user} ${PROMPT_END}\n${ai}`)
+        .join('\n') + '\n';
+}
+
+
 function removeLastResponse() {
-    const noteInput = zetPanes.getActiveTextarea();
+    const noteInput = App.zetPanes.getActiveTextarea();
     const lines = noteInput.value.split('\n');
 
     // Find the index of the last "Prompt:"
@@ -189,20 +249,15 @@ function extractLastPrompt() {
 }
 
 function trimToTokenCount(inputText, maxTokens) {
-    const tokens = inputText.match(/[\w]+|[^\s\w]/g);
-    if (tokens === null) return '';
+    if (!inputText.trim()) return '';
 
-    let trimmedText = '';
-    let currentTokenCount = 0;
+    const tokens = TokenCounter.tokenize(inputText);
 
-    for (const token of tokens) {
-        currentTokenCount += 1;
-        if (currentTokenCount > maxTokens) break;
+    // If already within limit, return as-is
+    if (tokens.length <= maxTokens) return inputText;
 
-        trimmedText += token + ' ';
-    }
-
-    return trimmedText;
+    // Trim to maxTokens and reconstruct text
+    return tokens.slice(0, maxTokens).join(' ');
 }
 
 function getLastLineFromTextArea(textArea) {

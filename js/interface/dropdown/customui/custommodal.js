@@ -29,7 +29,7 @@ Modal.storeInputValue = debounce(function (input, contentId) {
     localStorage.setItem('modalInputValues', JSON.stringify(Modal.inputValues));
 
     // modal-specific actions
-    if (contentId === 'noteModal') updatePathOptions();
+    if (contentId === 'noteModal') ZetPath.updateOptions();
 }, 100);
 
 Modal.currentCustomClass = null;

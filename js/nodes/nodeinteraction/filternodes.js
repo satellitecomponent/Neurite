@@ -44,7 +44,7 @@ function extractTitlesFromContent(content) {
 function removeTitlesFromContext(contentStr, titlesToForget) {
     const keptLines = [];
     contentStr.split('\n').forEach( (line)=>{
-        const match = line.trim().match(nodeTitleRegexGlobal);
+        const match = line.trim().match(ZettelkastenParser.regexpNodeTitle);
         if (match && match[1]
             && titlesToForget.has(match[1].trim())) return;
 

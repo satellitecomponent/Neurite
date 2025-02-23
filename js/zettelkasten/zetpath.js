@@ -136,7 +136,7 @@ ZetPath.Empty = class extends ZetPath {
     }
 }
 
-function createZetPath(styleName, options) {
+ZetPath.create = function(styleName, options){
     let zetPath;
     const zetPlacementOverride = (styleName === 'Random');
 
@@ -198,9 +198,7 @@ ZetPath.options = {
     }
 }
 
-let zetPath = createZetPath('Radial', ZetPath.options.default);
-
-function updatePathOptions(targetProcessor = null) {
+ZetPath.updateOptions = function(targetProcessor = null){
     Logger.debug("Updating path options...");
     const styleName = Modal.inputValues.zetPathTypeDropdown || 'Radial';
     const options = {
@@ -219,17 +217,14 @@ function updatePathOptions(targetProcessor = null) {
     }
     ['Branching', 'Radial', 'Spiral'].forEach(updateStyle);
 
-    const pathObject = createZetPath(styleName, options);
+    const pathObject = ZetPath.create(styleName, options);
     pathObject.zetPath.generatePath();
     const updateForThisPath = ZettelkastenProcessor.updateForThisPath;
     if (targetProcessor) updateForThisPath.call(pathObject, targetProcessor)
-    else if (window.zettelkastenProcessors && window.zettelkastenProcessors.forEach) {
-        window.zettelkastenProcessors.forEach(updateForThisPath, pathObject);
-    }
+    else window.zettelkastenProcessors.forEach(updateForThisPath, pathObject)
 
     Logger.debug("Updated path options:", pathObject.zetPath.options);
 
-    // Adjust visibility of sliders based on path type
     adjustSliderVisibilityBasedOnPathType(styleName);
 }
 
@@ -248,7 +243,7 @@ function adjustSliderVisibilityBasedOnPathType(styleName) {
     document.querySelectorAll(sliderClass).forEach(Elem.displayBlock);
 }
 
-On.DOMContentLoaded(document, (e)=>{
+ZetPath.init = function(){
     function setDefaultValue(styleName){
         const defaultOptions = ZetPath.options.default[styleName];
         const style = ZetPath.options[styleName];
@@ -258,5 +253,5 @@ On.DOMContentLoaded(document, (e)=>{
     }
     ['Branching', 'Radial', 'Spiral'].forEach(setDefaultValue);
 
-    updatePathOptions()
-});
+    ZetPath.updateOptions();
+}

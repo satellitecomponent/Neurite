@@ -572,10 +572,10 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
         throw err;
     } finally {
         updateProgressBar(100);
-        setTimeout(() => {
+        Promise.delay(500).then( ()=>{
             VectorDb.removeLoadingIndicator(key);
             Keys.fetchAndDisplayAll();
-        }, 500);
+        });
     }
 }
 

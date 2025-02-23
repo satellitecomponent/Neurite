@@ -85,8 +85,7 @@ class On {
     }
 }
 [
-    'blur', 'change', 'click', 'contextmenu',
-    'dblclick', 'DOMContentLoaded',
+    'blur', 'change', 'click', 'contextmenu', 'dblclick',
     'drag', 'dragend', 'dragenter', 'dragleave', 'dragover', 'dragstart', 'drop',
     'error', 'focus', 'gesturechange', 'gestureend', 'gesturestart',
     'input', 'keydown', 'keypress', 'keyup', 'load', 'loadedmetadata',
@@ -99,18 +98,6 @@ class On {
     On[eName] = On.thisEvent.bind(eName);
     Off[eName] = Off.thisEvent.bind(eName);
 });
-
-On.DOMContentLoaded = function (target, cb, options) {
-    if (document.readyState === 'loading') {
-        target.addEventListener('DOMContentLoaded', cb, options);
-    } else {
-        cb();
-    }
-};
-
-Off.DOMContentLoaded = function (target, cb, options) {
-    target.removeEventListener('DOMContentLoaded', cb, options);
-};
 
 Request.makeJsonOptions = function(method, body){
     return {
@@ -147,13 +134,21 @@ class App {
     selectedNodes = new SelectedNodes();
     viewCode = new View.Code();
     viewGraphs = new View.Graphs();
+    zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
 
     init(){
+        Tag.init();
         Body.addEventListeners(document.body);
         this.nodeSimulation.start();
         Ai.init();
         this.viewCode.init();
         this.viewGraphs.init();
+        this.zetPanes.init();
+        ZetPath.init();
+        loadControls();
+        updateSettingsFromControls();
+        updateSavedViewsCache();
+        displaySavedCoordinates();
     }
     get nodeMode(){ return this.interface.nodeMode.val }
 }

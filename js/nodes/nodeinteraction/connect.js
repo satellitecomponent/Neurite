@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 function connect(na, nb, length = 0.2, linkStrength = 0.1, linkStyle = {
     stroke: "none",
@@ -133,7 +133,6 @@ Node.prototype.getData = function(){
 
 Node.prototype.topologicalSort = function(visited, stack, filterAfterLLM = false, branchUUID = undefined){
     visited.add(this.uuid);
-
     // Push the node to the stack before checking the conditions.
     stack.push(this);
 
@@ -182,4 +181,30 @@ Node.prototype.getAllConnectedNodes = function(filterAfterLLM){
     const arr = [];
     this.traverseConnectedNodes(arr.push, arr, filterAfterLLM);
     return arr;
+}
+
+Node.parentAvailableFromRoot = function(root, max = 3, filterAfterLLM = false){
+    const queue = [root];
+    const visited = new Set([root.uuid]);
+
+    while (queue.length) {
+        const node = queue.shift();
+        const kids = [];
+        node.forEachConnectedNode( (kid)=>{
+            if (kid.isTextNode) kids.push(kid)
+        });
+        if (kids.length < max) {
+            if (node.isTextNode ||
+                (filterAfterLLM && node.isLLM) ||
+                node === root) return node;
+        }
+
+        kids.forEach( (kid)=>{
+            if (visited.has(kid.uuid)) return;
+
+            visited.add(kid.uuid);
+            queue.push(kid);
+        });
+    }
+    return root;
 }
