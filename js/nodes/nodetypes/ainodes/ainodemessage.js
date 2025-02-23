@@ -357,14 +357,14 @@ AiNode.MessageLoop = class {
                     const newlineIndex = message.indexOf('\n');
                     // Extract content after the newline
                     const trimmedMessage = newlineIndex !== -1 ? message.slice(newlineIndex + 1) : '';
-                    
-                    const root = instance.node;
-        		    const parent = Node.parentAvailableFromRoot(root);
 
-        			const theta = thetaForNodes(parent, root);
-        			const memoryNode = spawnZettelkastenNode(parent, 1.5, theta, null, trimmedMessage);
-        			connectNodes(parent, memoryNode);
-    		    return { root, memoryNode};
+                    const root = instance.node;
+                    const parent = Node.parentAvailableFromRoot(root);
+
+                    const theta = thetaForNodes(parent, root);
+                    const memoryNode = spawnZettelkastenNode(parent, 1.5, theta, null, trimmedMessage);
+                    connectNodes(parent, memoryNode);
+                return { root, memoryNode};
                 }
             }
         },

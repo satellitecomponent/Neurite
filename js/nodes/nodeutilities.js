@@ -6,11 +6,12 @@ class Graph {
     funcPopulate = 'populateForBackground';
     htmlEdges = Elem.byId('edges');
     htmlNodes = Elem.byId('nodes');
-    nodes = {};
-    nodeViews = {};
+    lastPos = {x: 0, y: 0};
     model = svg;
     movingNode;
     #nextUuid = 0;
+    nodes = {};
+    nodeViews = {};
     own = {self: this};
 
     addEdge(edge){
@@ -30,6 +31,7 @@ class Graph {
         div.setAttribute("onmousemove","(e)=>nodes["+id+"].onmousemove(e)");*/
         if (node.view) this.nodeViews[node.view.id] = node.view;
         this.nodes[node.uuid] = node;
+        this.lastPos = node.pos;
     }
     appendNode(node){ this.htmlNodes.append(node.content) }
 

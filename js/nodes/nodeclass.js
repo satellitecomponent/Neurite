@@ -106,17 +106,17 @@ class Node {
         let p = fromZtoUV(this.pos);
         const cond = p.minus(new vec2(0.5, 0.5)).mag2() > 16;
         e.style.display = (cond ? 'none' : 'initial');
-    
+
         const w = Math.min(svgbb.width, svgbb.height);
         const off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
         p.x = w * p.x - (off - svgbb.right) / 2;
         p.y = w * p.y - (off - svgbb.bottom) / 2;
-    
+
         const bb = e.getBoundingClientRect();
         p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
         e.style.left = p.x + 'px';
         e.style.top = p.y + 'px';
-    
+
         //e.style['margin-top'] = "-"+(e.offsetHeight/2)+'px';//"-50%";
         //e.style['margin-left'] = "-"+(e.offsetWidth/2)+'px';//"-50%";
         //e.style['vertical-align']= 'middle';

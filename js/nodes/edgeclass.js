@@ -329,29 +329,29 @@ class EdgeView {
         const startWeight = adjustedEndScale / totalAdjustedScale;
         const endWeight = adjustedStartScale / totalAdjustedScale;
         const midPoint = startPoint.scale(startWeight).plus(endPoint.scale(endWeight));
-    
+
         const arrowScaleFactor = 1.5;
         const arrowLength = ((startScale + endScale) / 2 * wscale * 5) * arrowScaleFactor;
         const arrowWidth = ((startScale + endScale) / 2 * wscale * 3) * arrowScaleFactor;
         const direction = endPoint.minus(startPoint);
         const directionNormed = direction.normed(arrowLength);
         const perp = new vec2(-directionNormed.y, directionNormed.x).normed(arrowWidth);
-    
+
         let arrowBase1 = midPoint.minus(perp);
         let arrowBase2 = midPoint.plus(perp);
         let arrowTip = midPoint.plus(directionNormed);
-    
+
         const arrowFlipFactor = 0.85;
         const arrowBaseCenterX = (arrowBase1.x + arrowBase2.x) / 2;
         const arrowBaseCenterY = (arrowBase1.y + arrowBase2.y) / 2;
         const arrowCenterX = arrowBaseCenterX * arrowFlipFactor + arrowTip.x * (1 - arrowFlipFactor);
         const arrowCenterY = arrowBaseCenterY * arrowFlipFactor + arrowTip.y * (1 - arrowFlipFactor);
         const arrowCenter = new vec2(arrowCenterX, arrowCenterY);
-    
+
         arrowBase1 = this.rotatePoint(arrowBase1, arrowCenter);
         arrowBase2 = this.rotatePoint(arrowBase2, arrowCenter);
         arrowTip = this.rotatePoint(arrowTip, arrowCenter);
-    
+
         const arrowPath = "M " + toSVG(arrowBase1)
                         + " L " + toSVG(arrowTip)
                         + " L " + toSVG(arrowBase2) + " Z";
@@ -359,16 +359,16 @@ class EdgeView {
     }
     makeBorderPath(svgArrow){
         const { arrowBase1, arrowBase2, arrowTip } = svgArrow;
-    
+
         const arrowMidX = (arrowBase1.x + arrowBase2.x + arrowTip.x) / 3;
         const arrowMidY = (arrowBase1.y + arrowBase2.y + arrowTip.y) / 3;
         const arrowMidPoint = new vec2(arrowMidX, arrowMidY);
-    
+
         const offsetScale = 1.4;
         const borderBase1 = arrowMidPoint.plus(arrowBase1.minus(arrowMidPoint).scale(offsetScale));
         const borderBase2 = arrowMidPoint.plus(arrowBase2.minus(arrowMidPoint).scale(offsetScale));
         const borderTip = arrowMidPoint.plus(arrowTip.minus(arrowMidPoint).scale(offsetScale));
-    
+
         return "M " + toSVG(borderBase1)
             + " L " + toSVG(borderTip)
             + " L " + toSVG(borderBase2) + " Z";
