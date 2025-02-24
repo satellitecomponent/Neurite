@@ -3,7 +3,7 @@
         <label for="fractalSettingsContainer" class="button-label" onclick="toggleFractalSettingsPanel()">Controls</label>
         <div class="fractal-settings-container" id="fractalSettingsContainer">
             <div class="fractal-settings-panel hidden">
-                <div class="settingsSlider centered" title="Adjust the exponent for the current fractal" style="margin-bottom: 10px;">
+                <div class="settingsSlider centered" title="Adjusts exponent of current fractal" style="margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between;">
                         <label style="white-space: nowrap;">
                             <span id="equation"></span>
@@ -26,7 +26,7 @@
                     </div>
                     <input id="exponent" type="range" min="1" max="8" value="2">
                 </div>
-                <div class="settingsSlider centered" title="Adjust smoothness of fractal lines. Higher = Lower FPS" style="margin-bottom: 10px;">
+                <div class="settingsSlider centered" title="Adjust smoothness of fractal lines. Lower to reduce lag" style="margin-bottom: 10px;">
                     <div style="display:flex; justify-content: space-between;">
                         <div id="quality_value">Quality</div>
                         <div id="fps">fps:?? (is javascript enabled?)</div>
@@ -35,17 +35,17 @@
                 </div>
                 <div class="gridLayout">
 
-                    <div class="settingsSlider" title="Adjust how long the fractal lines are">
+                    <div class="settingsSlider" title="Adjusts length of fractal lines. Lower to reduce lag">
                         <label for="length">Length: <span id="length_value"></span></label>
                         <input id="length" type="range" min="0" max="100" value="50">
                     </div>
 
-                    <div class="settingsSlider" title="Adjust how wide the fractal lines are">
+                    <div class="settingsSlider" title="Adjusts width of fractal lines">
                         <label for="renderWidthMultSlider">Width: <span id="renderWidthMultValue"></span></label>
                         <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.001">
                     </div>
 
-                    <div class="settingsSlider" title="Set the removal limit for number of lines displayed">
+                    <div class="settingsSlider" title="Adjusts amount of fractal lines. Lower to reduce lag">
                         <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
                         <input type="range"
                                id="maxLinesSlider"
@@ -54,16 +54,16 @@
                                step="1">
                     </div>
 
-                    <div class="settingsSlider" title="Set how fast the fractal lines regenerate">
+                    <div class="settingsSlider" title="Adjusts fractal line generation speed. Lower to reduce lag">
                         <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
                         <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
                     </div>
-                    <div class="settingsSlider" title="Set the strength of line generation around your mouse">
+                    <div class="settingsSlider" title="Adjusts cursor's control of line generation">
                         <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
                         <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
                     </div>
 
-                    <div class="settingsSlider" title="Set the radius of line generation around your mouse">
+                    <div class="settingsSlider" title="Adjusts radius of line generation around cursor">
                         <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
                         <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
                     </div>
