@@ -132,6 +132,7 @@ class App {
     processedNodes = new ProcessedNodes();
     recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
     selectedNodes = new SelectedNodes();
+    telemetry = new NeuralTelemetry();
     viewCode = new View.Code();
     viewGraphs = new View.Graphs();
     zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
