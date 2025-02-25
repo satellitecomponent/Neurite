@@ -140,6 +140,10 @@ class ZettelkastenParser {
             }
 
             this.cm.replaceRange('', { line: startLineNo, ch: 0 }, { line: endLineNo + 1, ch: 0 });
+
+            if (this.cm.getValue().trim() === '') {
+                this.cm.setValue('');
+            }
             this.cm.refresh();
         }
     }
@@ -262,6 +266,11 @@ class ZettelkastenParser {
 
         cm.refresh();
     }
+    updatePlaceholder() {
+        const newPlaceholder = generateCmPlaceholder();
+        this.cm.setOption("placeholder", newPlaceholder);
+        this.cm.refresh();
+    }
 }
 
 function updateAllZetMirrorModes() {
@@ -277,6 +286,34 @@ function updateAllZettelkastenProcessors() {
         if (typeof processor?.processInput === 'function') processor.processInput();
     });
 }
+
+function updateAllCodeMirrorPlaceholders() {
+    const parsers = window.zettelkastenParsers || [];
+    parsers.forEach(parser => {
+      if (typeof parser?.updatePlaceholder === 'function') parser.updatePlaceholder();
+    });
+  }
+
+  function generateCmPlaceholder() {
+    const nodeTag = tagValues.nodeTag;
+    const refTag = tagValues.refTag;
+    
+    let refExample;
+    if (isBracketLinks) {
+      const closingBracket = bracketsMap[refTag];
+      refExample = `${refTag}Reference${closingBracket}`;
+    } else {
+      refExample = `${refTag}Reference`;
+    }
+    
+    return `To create notes...
+
+  ${nodeTag} Title Header
+
+  Plain Text
+
+  ${refExample}`;
+  }
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
