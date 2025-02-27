@@ -75,12 +75,9 @@ function convertBlobUrlToBase64(blobUrl) {
 
 async function getImageNodeData(node) {
     let imageUrl = node.imageData;
-
-    if (imageUrl.startsWith('data:image/')) return { type: 'image_url', image_url: { url: imageUrl } };
     if (imageUrl.startsWith('blob:')) imageUrl = await convertBlobUrlToBase64(imageUrl);
-    if (!imageUrl.startsWith('data:image')) imageUrl = `data:image/png;base64,${imageUrl}`;
-
-    return { type: 'image_url', image_url: { url: imageUrl } };
+    if (!imageUrl.startsWith('data:image/')) imageUrl = `data:image/png;base64,${imageUrl}`;
+    return imageUrl;
 }
 
 View.Code.prototype.callVisionModel = async function(messages, onStreamComplete){

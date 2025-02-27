@@ -185,20 +185,20 @@ async function sendMessage(event, autoModeMessage = null) {
         });
     }
 
-    // Add Prompt
-    if (autoModeMessage) {
-        messages.push({
-            role: "user",
-            content: `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
-Original ${PROMPT_IDENTIFIER} ${Ai.originalUserMessage}
-Self-Prompting is ENABLED, on the LAST line, end your response with ${PROMPT_IDENTIFIER} Message distinct from your current self-${PROMPT_IDENTIFIER} and original ${PROMPT_IDENTIFIER} to continue the flow of ideas (Consider if the original ${PROMPT_IDENTIFIER} has been ACCOMPLISHED while also branching into NOVEL INSIGHTS and UNIQUE TOPICS)]`,
-        });
-    } else {
-        messages.push({
-            role: "user",
-            content: `${message} ${isAutoModeEnabled ? `Self-Prompting is ENABLED, on the last line, END your response with ${PROMPT_IDENTIFIER} message to continue the FLOW of ideas` : ''}`,
-        });
-    }
+    const autoModePrompt = isAutoModeEnabled 
+    ? `Self-Prompting is ENABLED. On the last line, WRAP a message to yourself with ${PROMPT_IDENTIFIER} to start and ${PROMPT_END} to end the prompt. Progress the conversation yourself.`
+    : '';
+
+    messages.push({
+        role: "user",
+        content: autoModeMessage
+            ? `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
+    Original ${PROMPT_IDENTIFIER} ${Ai.originalUserMessage}
+    ${autoModePrompt}`
+            : `${message}\n${autoModePrompt}`.trim(),
+    });
+
+
 
     let lineBeforeAppend = myCodeMirror.lastLine();
 

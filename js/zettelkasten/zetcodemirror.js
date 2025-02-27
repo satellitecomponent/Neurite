@@ -306,7 +306,8 @@ function updateAllCodeMirrorPlaceholders() {
       refExample = `${refTag}Reference`;
     }
     
-    return `To create notes...
+    return `
+  To create notes...
 
   ${nodeTag} Title Header
 
@@ -602,17 +603,25 @@ class ZettelkastenUI {
 
     highlightNodeTitles() {
         this.cm.getAllMarks().forEach(mark => mark.clear());
-
+    
         this.cm.eachLine((line) => {
             nodeTitles.forEach((title) => {
                 if (title.length < 1) return;
-
+    
                 const escapedTitle = RegExp.escape(title);
                 const regex = new RegExp(escapedTitle, "ig");
                 let match;
-                while (match = regex.exec(line.text)) {
+    
+                while ((match = regex.exec(line.text))) {
                     const idx = match.index;
                     if (idx !== -1) {
+                        const token = this.cm.getTokenAt(CodeMirror.Pos(line.lineNo(), idx));
+    
+                        // Skip highlighting if the token belongs to a prompt block
+                        if (token && token.type === "prompt-block") {
+                            continue;
+                        }
+    
                         this.cm.markText(
                             CodeMirror.Pos(line.lineNo(), idx),
                             CodeMirror.Pos(line.lineNo(), idx + title.length),
@@ -625,7 +634,7 @@ class ZettelkastenUI {
                 }
             });
         });
-    }
+    }    
 
     scrollToLine(cm, lineNumber) {
         const validLineNumber = Math.min(lineNumber, cm.lastLine());

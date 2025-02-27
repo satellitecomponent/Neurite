@@ -96,7 +96,6 @@ function createLlmNode(name = '', sx, sy, x, y) {
     node.latestUserMessage = null;
     node.shouldContinue = true;
 
-    node.isLLMNode = true;
     node.shouldAppendQuestion = false;
     node.aiResponseHalted = false;
     node.savedLLMSelection = '';
