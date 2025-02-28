@@ -102,34 +102,66 @@ Node.prototype.forEachConnectedNode = function(cb, ct){
     this.edges.forEach(Node.callNodeOnEdgePerThis, {cb, ct, uuid: this.uuid})
 }
 
-Node.prototype.getData = function(){
-    if (this.isImageNode) {
-        Logger.debug("Skipping image node", this.uuid);
-        return null;
-    }
-
+Node.prototype.getData = async function(){
     const titleInput = this.view.titleInput;
     const title = titleInput ? titleInput.value : "No title found";
 
     if (!this.createdAt) {
-        Logger.warn("Node.getData: Creation time for node", this.uuid, "is not defined.")
+        Logger.warn("Node.getData: Creation time for node", this.uuid, "is not defined.");
+    }
+
+    if (this.isImageNode) {
+        return {
+            type: 'image',
+            data: await getImageNodeData(this).catch(error => {
+                Logger.warn("Error processing image node:", this, error);
+                return null;
+            }),
+            title: title
+        };
+    }
+
+    if (this.isLink) {
+        const key = this.linkUrl.startsWith('blob:') ? (titleInput ? titleInput.value : "No title found") : this.linkUrl;
+        return {
+            type: 'link',
+            data: { url: this.linkUrl, key: key },
+            title: title
+        };
     }
 
     if (this.isLLM) {
         const lastPromptsAndResponses = getLastPromptsAndResponses(4, 400, this.aiResponseTextArea);
-        const nodeInfo = `${tagValues.nodeTag} ${title} (AI Node)\nConversation History:${lastPromptsAndResponses}`;
-        return nodeInfo;
+        const safeTitle = title.trim() ? title : "no_name";
+        return {
+            type: 'llm',
+            data: `${tagValues.nodeTag} ${safeTitle} Conversation History with ${safeTitle}: ${lastPromptsAndResponses}`,
+            title: title
+        };
     }
 
     const contentText = Node.getTextareaContent(this);
     if (!contentText) {
-        Logger.warn("No content found for node");
         return null;
     }
 
-    const nodeInfo = `${tagValues.nodeTag} ${title}\nText Content: ${contentText}`;
-    return nodeInfo;
-}
+    return {
+        type: 'text',
+        data: `${tagValues.nodeTag} ${title}\n${contentText}`,
+        title: title
+    };
+};
+
+Node.prototype.getAllConnectedNodesData = async function(filterAfterLLM){
+    const nodes = [];
+    this.traverseConnectedNodes(node => nodes.push(node), null, filterAfterLLM);
+
+    return await Promise.all(nodes.map(async node => ({
+        node: node,
+        data: await node.getData(),
+        isLLM: node.isLLM
+    })));
+};
 
 Node.prototype.topologicalSort = function(visited, stack, filterAfterLLM = false, branchUUID = undefined){
     visited.add(this.uuid);
@@ -162,19 +194,6 @@ Node.prototype.traverseConnectedNodes = function(cb, ct, filterAfterLLM = false)
         const currentNode = stack.pop();
         if (currentNode.uuid !== this.uuid) cb.call(ct, currentNode);
     }
-}
-
-Node.prototype.getAllConnectedNodesData = function(filterAfterLLM){
-    const arr = [];
-    const cb = (node)=>{
-        arr.push({
-            node: node,
-            data: node.getData(),
-            isLLM: node.isLLM
-        })
-    }
-    this.traverseConnectedNodes(cb, arr, filterAfterLLM);
-    return arr;
 }
 
 Node.prototype.getAllConnectedNodes = function(filterAfterLLM){
