@@ -1,0 +1,27 @@
+{
+  "name": "neurite",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "fractal mind map",
+  "scripts": {
+    "start": "vite",
+    "start:host": "vite --host",
+    "build": "vite build",
+    "postbuild": "shx cp -r js dist/js"
+  },
+  "keywords": [],
+  "author": "satellitecomponent",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^6.1.1",
+    "shx": "^0.3.3"
+  },
+  "dependencies": {
+  },
+  "overrides": {
+    "glob": "^11.0.1",
+    "vite": {
+      "esbuild": "^0.25.0"
+    }
+  }
+}

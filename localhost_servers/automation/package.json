@@ -1,0 +1,15 @@
+{
+  "name": "neurite-automation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "automation.js",
+  "scripts": {
+    "start": "node automation.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "1.42.1"
+  }
+}

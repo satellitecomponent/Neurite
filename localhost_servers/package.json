@@ -1,0 +1,15 @@
+{
+  "name": "neurite-servers",
+  "version": "1.0.0",
+  "description": "Starts all Localhost Servers for Neurite",
+  "main": "start_servers.js",
+  "type": "module",
+  "scripts": {
+    "start": "node start_servers.js",
+    "start:neurite": "node start_servers.js neurite"
+  },
+  "author": "satelliteComponent",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

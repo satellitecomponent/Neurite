@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Automation",
+    "dir": "./automation",
+    "main": "automation.js",
+    "startNeurite": true
+  },
+  {
+    "name": "WebScrape",
+    "dir": "./webscrape",
+    "main": "index.js"
+  },
+  {
+    "name": "WikiSearch",
+    "dir": "./wiki-search",
+    "main": "novelty.js"
+  },
+  {
+    "name": "WolframAlpha",
+    "dir": "./wolfram-alpha",
+    "main": "index.js"
+  },
+  {
+    "name": "AIProxy",
+    "dir": "./ai-proxy",
+    "main": "ai-proxy.js"
+  },
+  {
+    "name": "DirectAccess",
+    "dir": "./direct-access",
+    "main": "direct-access.js"
+  }
+]
