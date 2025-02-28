@@ -158,43 +158,41 @@ const defaultMovements = {
     // Add more default movements as needed
 };
 
-function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanParams = {}, customRotateParams = {}, customDuration = 1000) {
-    // Ensure movementTypes is always treated as an array
-    if (!Array.isArray(movementTypes)) {
-        movementTypes = [movementTypes]; // Convert to array if it's not already
-    }
-
-    let combinedZoomParams = {};
-    let combinedPanParams = {};
-    let combinedRotateParams = {};
-    let duration = customDuration;
-
-    // Combine defaults from each movement type
-    movementTypes.forEach(movementType => {
-        if (defaultMovements[movementType]) {
-            combinedZoomParams = { ...defaultMovements[movementType].zoomParams, ...combinedZoomParams };
-            combinedPanParams = { ...defaultMovements[movementType].panParams, ...combinedPanParams };
-            combinedRotateParams = { ...defaultMovements[movementType].rotateParams, ...combinedRotateParams };
-            duration = defaultMovements[movementType].duration || duration;
-        }
-    });
-
-    // Override with custom parameters
-    combinedZoomParams = { ...combinedZoomParams, ...customZoomParams };
-    combinedPanParams = { ...combinedPanParams, ...customPanParams };
-    combinedRotateParams = { ...combinedRotateParams, ...customRotateParams };
-
-    const { zoomFactor = 0, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
-    const { deltaX = 0, deltaY = 0 } = combinedPanParams;
-    const destZoom = toZ(new vec2(zoomX, zoomY));
-    const endZoom = zoom.scale(zoomFactor + 1);
-    const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-    const endPan = pan.plus(dp);
-
-    return (new Animation(duration, Animation.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom, combinedRotateParams)
-    .executeProm("Movement");
-}
+function neuriteMovement(movements = [], cz = {}, cp = {}, cr = {}, d = 1000) {
+    movements = [].concat(movements);
+    const { z, p, r, duration } = movements.reduce(
+      (acc, m) => {
+        const def = defaultMovements[m] || {};
+        if (def.zoomParams) Object.assign(acc.z, def.zoomParams);
+        if (def.panParams) Object.assign(acc.p, def.panParams);
+        if (def.rotateParams?.rotationAngle !== undefined) Object.assign(acc.r, def.rotateParams);
+        acc.duration = def.duration || acc.duration;
+        return acc;
+      },
+      { z: {}, p: {}, r: {}, duration: d }
+    );
+    Object.assign(z, cz);
+    Object.assign(p, cp);
+    Object.assign(r, "rotationAngle" in cr ? cr : {});
+    let endPan = Object.keys(p).length
+        ? pan.plus(toDZ(new vec2(p.deltaX || 0, p.deltaY || 0).scale(settings.panSpeed)))
+        : pan;
+    let endZoom = zoom;
+    const { zoomFactor = 1, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = z;
+    ({ endPan, endZoom } =
+      Object.keys(z).length && zoomFactor !== 1
+        ? {
+            endPan: toZ(new vec2(zoomX, zoomY))
+              .scale(1 - zoomFactor)
+              .plus(endPan.scale(zoomFactor)),
+            endZoom: zoom.scale(zoomFactor)
+          }
+        : { endPan, endZoom }
+    );
+    return new Animation(duration, Animation.interpolateZoomAndPan)
+      .setParams(pan, endPan, zoom, endZoom, Object.keys(r).length ? r : null)
+      .executeProm("Movement");
+  }  
 
 /*
 panTo = new vec2(0, 0); //this.pos;
