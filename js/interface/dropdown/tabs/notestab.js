@@ -183,6 +183,7 @@ class ZetPanes {
             theme: 'default',
             mode: 'custom',
             virtualRendering: true,
+            placeholder: generateCmPlaceholder()
         });
 
         const zettelkastenParser = new ZettelkastenParser(cm);

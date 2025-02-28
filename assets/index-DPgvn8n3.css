@@ -2238,6 +2238,12 @@ input[type=range] {
 .CodeMirror-linenumbers div {
     color: black !important;
 }
+.CodeMirror-placeholder {
+    white-space: pre-wrap;
+    word-wrap: break-word; 
+    padding: 5px;
+    color: #555;
+  }
 /* Syntax Highlighting - Mimics our Prism.js Tomorrow theme */
 
 /* Define CSS variables for syntax highlighting colors */

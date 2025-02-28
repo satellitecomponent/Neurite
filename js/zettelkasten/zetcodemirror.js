@@ -140,6 +140,10 @@ class ZettelkastenParser {
             }
 
             this.cm.replaceRange('', { line: startLineNo, ch: 0 }, { line: endLineNo + 1, ch: 0 });
+
+            if (this.cm.getValue().trim() === '') {
+                this.cm.setValue('');
+            }
             this.cm.refresh();
         }
     }
@@ -262,6 +266,11 @@ class ZettelkastenParser {
 
         cm.refresh();
     }
+    updatePlaceholder() {
+        const newPlaceholder = generateCmPlaceholder();
+        this.cm.setOption("placeholder", newPlaceholder);
+        this.cm.refresh();
+    }
 }
 
 function updateAllZetMirrorModes() {
@@ -277,6 +286,35 @@ function updateAllZettelkastenProcessors() {
         if (typeof processor?.processInput === 'function') processor.processInput();
     });
 }
+
+function updateAllCodeMirrorPlaceholders() {
+    const parsers = window.zettelkastenParsers || [];
+    parsers.forEach(parser => {
+      if (typeof parser?.updatePlaceholder === 'function') parser.updatePlaceholder();
+    });
+  }
+
+  function generateCmPlaceholder() {
+    const nodeTag = tagValues.nodeTag;
+    const refTag = tagValues.refTag;
+    
+    let refExample;
+    if (isBracketLinks) {
+      const closingBracket = bracketsMap[refTag];
+      refExample = `${refTag}Reference${closingBracket}`;
+    } else {
+      refExample = `${refTag}Reference`;
+    }
+    
+    return `
+  To create notes...
+
+  ${nodeTag} Title Header
+
+  Plain Text
+
+  ${refExample}`;
+  }
 
 CodeMirror.defineMode("custom", function (config, parserConfig) {
     const Prompt = `${PROMPT_IDENTIFIER}`;
@@ -357,18 +395,22 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
 function getActiveZetCMInstanceInfo() {
     const activeCodeMirror = window.currentActiveZettelkastenMirror;
     if (activeCodeMirror) {
-        for (const ui of window.zettelkastenUIs) {
+        for (let i = 0; i < window.zettelkastenUIs.length; i++) {
+            const ui = window.zettelkastenUIs[i];
             if (ui.cm !== activeCodeMirror) continue;
 
             const textarea = activeCodeMirror.getTextArea();
-            const textareaId = activeCodeMirror.getTextArea().id;
+            const textareaId = textarea.id;
             const paneId = textareaId.replace('zet-note-input-', 'zet-pane-');
+            const processor = window.zettelkastenProcessors[i]; // Get the corresponding processor
+
             return {
                 ui,
                 parser: ui.parser,
                 cm: activeCodeMirror,
                 textarea,
-                paneId
+                paneId,
+                zettelkastenProcessor: processor
             };
         }
     }
@@ -565,17 +607,25 @@ class ZettelkastenUI {
 
     highlightNodeTitles() {
         this.cm.getAllMarks().forEach(mark => mark.clear());
-
+    
         this.cm.eachLine((line) => {
             nodeTitles.forEach((title) => {
                 if (title.length < 1) return;
-
+    
                 const escapedTitle = RegExp.escape(title);
                 const regex = new RegExp(escapedTitle, "ig");
                 let match;
-                while (match = regex.exec(line.text)) {
+    
+                while ((match = regex.exec(line.text))) {
                     const idx = match.index;
                     if (idx !== -1) {
+                        const token = this.cm.getTokenAt(CodeMirror.Pos(line.lineNo(), idx));
+    
+                        // Skip highlighting if the token belongs to a prompt block
+                        if (token && token.type === "prompt-block") {
+                            continue;
+                        }
+    
                         this.cm.markText(
                             CodeMirror.Pos(line.lineNo(), idx),
                             CodeMirror.Pos(line.lineNo(), idx + title.length),
@@ -588,7 +638,7 @@ class ZettelkastenUI {
                 }
             });
         });
-    }
+    }    
 
     scrollToLine(cm, lineNumber) {
         const validLineNumber = Math.min(lineNumber, cm.lastLine());

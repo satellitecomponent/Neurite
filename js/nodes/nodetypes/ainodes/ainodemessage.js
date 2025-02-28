@@ -3,6 +3,7 @@
         Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
     }
+    node.aiResponding = true;
 
     const nodeIndex = node.index;
 
@@ -14,7 +15,7 @@
     const allConnectedNodes = AiNode.calculateDirectionalityLogic(node, new Set(), true);
 
     // Get only LLM nodes
-    const connectedAiNodes = allConnectedNodes.filter(n => n.isLLMNode);
+    const connectedAiNodes = allConnectedNodes.filter(n => n.isLLM);
 
     node.latestUserMessage = message || node.promptTextArea.value;
 
@@ -103,7 +104,7 @@
     if (Elem.byId('code-checkbox-' + nodeIndex).checked) messages.push(aiNodeCodeMessage());
     if (Elem.byId('instructions-checkbox').checked) messages.push(instructionsMessage());
 
-    const truncatedRecentContext = getLastPromptsAndResponses(2, 150, node.aiResponseTextArea);
+    const truncatedRecentContext = getLastPromptsAndResponses(2, 1500, node.aiResponseTextArea);
 
     if (Wikipedia.isEnabled(nodeIndex)) {
         const keywordsArray = await generateKeywords(node.latestUserMessage, 3, node);
@@ -128,8 +129,13 @@
 
     let searchQuery = null;
     let filteredKeys = null;
+    const allConnectedNodesData = await node.getAllConnectedNodesData(true);
 
-    if (isGoogleSearchEnabled(nodeIndex) || (filteredKeys = await isEmbedEnabled(node))) {
+    if (
+        isGoogleSearchEnabled(nodeIndex) ||
+        (filteredKeys = await isEmbedEnabled(node)) ||
+        (allConnectedNodesData && allConnectedNodesData.some(info => info.data?.type === 'link'))
+    ) {
         try {
             searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
         } catch (err) {
@@ -156,140 +162,94 @@
         });
     }
 
-    let relevantKeys = [];
-
-    // Check for connected link nodes
-    const hasLinkNodes = allConnectedNodes.some(node => node.isLink);
-    if (hasLinkNodes) {
-        const linkNodes = allConnectedNodes.filter(node => node.isLink);
-        const linkInfo = linkNodes.map(node => ({
-            url: node.linkUrl,
-            key: node.linkUrl.startsWith('blob:') ? node.view.titleInput.value : node.linkUrl
-        }));
-
-        const allKeysFromServer = await Keys.getAll();
-
-        relevantKeys = linkInfo
-            .filter(info => allKeysFromServer.includes(info.key))
-            .map(info => info.key);
-
-        const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
-
-        if (notExtractedLinks.length > 0) {
-            await handleNotExtractedLinks(notExtractedLinks, linkNodes);
-        }
-
-        // Refresh the relevant keys after handling not extracted links
-        const updatedKeysFromServer = await Keys.getAll();
-        relevantKeys = linkInfo
-            .filter(info => updatedKeysFromServer.includes(info.key))
-            .map(info => info.key);
-    } else if (searchQuery !== null && filteredKeys) {
-        // Obtain relevant keys based on the user message
-        relevantKeys = await Keys.getRelevant(node.latestUserMessage, truncatedRecentContext, searchQuery, filteredKeys);
-    }
+    // --- PROCESS IMAGE, TEXT, LINK NODES ---
+    // --- LINK NODES HANDLING ---
+    const relevantKeys = await Keys.getRelevantNodeLinks(
+        allConnectedNodesData,
+        node.latestUserMessage,
+        searchQuery,
+        filteredKeys,
+        truncatedRecentContext
+    );
 
     if (relevantKeys.length > 0) {
-        // Get relevant chunks based on the relevant keys
-        node.currentTopNChunks = await getRelevantChunks(node.latestUserMessage, topN, relevantKeys);
-        let topNChunks = groupAndSortChunks(node.currentTopNChunks, MAX_CHUNK_SIZE);
-        // Construct the embed message
-        const embedMessage = {
-            role: "system",
-            content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n` + topNChunks + `\nProvide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
-        };
-        messages.push(embedMessage);
-    }
-
-    let allConnectedNodesData = node.getAllConnectedNodesData(true);
+      // Get relevant chunks based on the relevant keys
+      node.currentTopNChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);
+      const topNChunks = groupAndSortChunks(node.currentTopNChunks, MAX_CHUNK_SIZE);
+    
+      // Construct and add the embed message
+      const embedMessage = {
+        role: "system",
+        content: `Top ${topN} MATCHED chunks of TEXT from extracted WEBPAGES:\n${topNChunks}\nProvide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
+      };
+      messages.push(embedMessage);
+    }  
+  
     let totalTokenCount = TokenCounter.forMessages(messages);
     let remainingTokens = Math.max(0, maxTokens - totalTokenCount);
     const maxContextSize = Elem.byId('node-max-context-' + nodeIndex).value;
-
+  
     let textNodeInfo = [];
-    let llmNodeInfo = [];
-    let imageNodeInfo = [];
-
-    const TOKEN_COST_PER_IMAGE = 150; // Flat token cost assumption for each image
-
-    for (const connectedNode of allConnectedNodes) {
-        if (connectedNode.isImageNode) {
-            // First, check if we have enough tokens
-            if (remainingTokens < TOKEN_COST_PER_IMAGE) {
-                Logger.warn("Not enough tokens to include the image:", connectedNode);
-                continue;
-            }
-
-            // Use an inline .catch to handle errors for this node without a try/catch block.
-            const imageData = await getImageNodeData(connectedNode).catch(error => {
-                Logger.warn("Error processing image node:", connectedNode, error);
-                return null;
-            });
-
-            if (imageData) {
-                // The returned imageData should be an object like:
-                // { type: 'image_url', image_url: { url: 'data:image/png;base64,...' } }
-                messages.push({
-                    role: 'user',
-                    content: [imageData]
-                });
-                remainingTokens -= TOKEN_COST_PER_IMAGE;
-            } else {
-                Logger.warn("Failed to retrieve image data for:", connectedNode);
-            }
+    const TOKEN_COST_PER_IMAGE = 150; // Flat token cost for each image node
+  
+    // Process image nodes from the gathered data
+    allConnectedNodesData
+    .filter(info => info.data && info.data.type === 'image')
+    .forEach(info => {
+        if (remainingTokens < TOKEN_COST_PER_IMAGE) {
+        Logger.warn("Not enough tokens to include the image:", info.node);
+        return;
         }
-    }
-
-    let messageTrimmed = false;
-
-    allConnectedNodesData.sort((a, b) => a.isLLM - b.isLLM);
-    allConnectedNodesData.forEach(info => {
-        if (!info.data?.replace) return;
-
-        if (info.isLLM) {
-            /* Check if the AI node is present in the connectedAiNodes array
-            if (connectedAiNodes.some(aiNode => aiNode.uuid === info.node.uuid)) {
-                [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
-                    info, llmNodeInfo, remainingTokens, totalTokenCount, maxContextSize
-                );
-            }*/
+        if (info.data.data) {
+        messages.push({
+            role: 'user',
+            content: [
+            {
+                type: 'image_url',
+                image_url: { url: info.data.data }
+            }
+            ]
+        });
+        remainingTokens -= TOKEN_COST_PER_IMAGE;
         } else {
-            [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
-                info, textNodeInfo, remainingTokens, totalTokenCount, maxContextSize
-            );
+        Logger.warn("Failed to retrieve image data for:", info.node);
         }
     });
 
-    // For Text Nodes
+
+    let messageTrimmed = false;
+    
+    // Update remainingTokens
+    allConnectedNodesData
+    .filter(info => info.data) // Only process nodes with data
+    .forEach(info => {
+      // Ensure we have a valid string in info.data.data
+      if (!info.data.data?.replace) return;
+
+      // Create a new object with the data property as a string
+      const nodeInfoForUpdate = { ...info, data: info.data.data };
+      [remainingTokens, totalTokenCount, messageTrimmed] = updateInfoList(
+        nodeInfoForUpdate, 
+        textNodeInfo, 
+        remainingTokens, 
+        totalTokenCount, 
+        maxContextSize
+      );
+    });
+
+    // Text Nodes
     if (textNodeInfo.length > 0) {
-        let memoryIntro = "Available text nodes/notes CONNECTED to MEMORY:";
-        let memoryConclusion = ":END OF CONNECTED TEXT NODES: You ensure awareness and utilization of all relevant insights.";
+        const memoryIntro = "Available text nodes/notes CONNECTED to MEMORY:";
+        const memoryConclusion = ":END OF CONNECTED TEXT NODES: You ensure awareness and utilization of all relevant insights.";
         messages.push({
             role: "system",
             content: `${memoryIntro}\n\n${textNodeInfo.join("\n\n")}\n\n${memoryConclusion}`
         });
     }
 
-    /* For LLM Nodes
-    if (llmNodeInfo.length > 0) {
-        let intro = "AI you are CONVERSING with:";
-        messages.push({
-            role: "system",
-            content: intro + "\n\n" + llmNodeInfo.join("\n\n")
-        });
-    }*/
-
-    if (messageTrimmed) {
-        messages.push({
-            role: "system",
-            content: "Previous messages trimmed."
-        });
-    }
-
     totalTokenCount = TokenCounter.forMessages(messages);
     remainingTokens = Math.max(0, maxTokens - totalTokenCount);
-
-    // calculate contextSize again
+    // Recalculate context size based on the remaining tokens and max allowed context size
     contextSize = Math.min(remainingTokens, maxContextSize);
 
     // Init value of getLastPromptsAndResponses
@@ -301,7 +261,7 @@
 
     let wolframData;
     if (Elem.byId('enable-wolfram-alpha-checkbox-' + nodeIndex).checked) {
-        const wolframContext = getLastPromptsAndResponses(2, 300, node.aiResponseTextArea);
+        const wolframContext = getLastPromptsAndResponses(2, 1500, node.aiResponseTextArea);
         wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
     }
 
@@ -318,7 +278,7 @@
         messages.push(wolframAlphaMessage);
 
         // Redefine lastPromptsAndResponses after Wolfram's response.
-        lastPromptsAndResponses = getLastPromptsAndResponses(10, contextSize, node.aiResponseTextArea);
+        lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.aiResponseTextArea);
     }
 
     if (lastPromptsAndResponses.trim().length > 0) {
@@ -334,7 +294,6 @@
         content: node.latestUserMessage
     });
 
-    node.aiResponding = true;
     node.userHasScrolled = false;
 
     // Initiates helper functions for aiNode Message loop.
@@ -621,35 +580,40 @@ AiNode.MessageLoop = class {
     parseMessages(text) {
         Logger.debug("Parsing messages...");
         Logger.debug("Input text:", text);
-
+    
         if (!text.trim()) {
             Logger.warn("Empty text to parse");
             return [];
         }
-
+    
         const messages = [];
         const senderName = this.node.getTitle() || "no_name";
         let currentRecipients = new Set();
         let currentMessageLines = [];
         let foundAnyMention = false;
         let hasInvalidMention = false;
-
+    
         text.split(/\n/).forEach(line => {
             const trimmedLine = line.trim();
             const matches = [...trimmedLine.matchAll(/@([a-zA-Z0-9._-]+)/g)]; // Find all mentions
-
+    
             if (matches.length > 0) {
+                // Finalize any accumulated message before processing a new mention
                 if (currentRecipients.size > 0 && currentMessageLines.length > 0) {
-                    // Finalize any accumulated message before processing a new mention
-                    currentRecipients.forEach(recipient => {
-                        this.finalizeMessage(messages, recipient, currentMessageLines.join("\n"), senderName);
-                    });
+                    // Check if message contains only empty lines
+                    const joinedMessage = currentMessageLines.join("\n").trim();
+                    if (joinedMessage) {
+                        currentRecipients.forEach(recipient => {
+                            this.finalizeMessage(messages, recipient, joinedMessage, senderName);
+                        });
+                    }
                     currentMessageLines = [];
                 }
-
+    
                 let validRecipients = new Set();
                 hasInvalidMention = false; // Reset for each line
-
+    
+                // Check if all mentions are valid
                 matches.forEach(match => {
                     const mention = match[1].replace(/[.,!?;:]+$/, "").toLowerCase();
                     if (AiNode.MessageLoop.Mentions.isValid(mention, this.node)) {
@@ -660,53 +624,56 @@ AiNode.MessageLoop = class {
                         hasInvalidMention = true;
                     }
                 });
-
+    
                 if (hasInvalidMention) {
                     // If there's an invalid mention, clear recipients and do not process this line
                     currentRecipients.clear();
                     currentMessageLines = [];
                     return;
                 }
-
+    
                 if (validRecipients.size > 0) {
-                    // Remove the first mention if it appears at the start of the line
-                    let cleanLine = trimmedLine.replace(/^@[a-zA-Z0-9._-]+\s*/, ""); // Remove only the first mention
                     currentRecipients = validRecipients;
-                    currentMessageLines = [cleanLine];
+                    
+                    // Preserve the text on the same line as the mentions
+                    currentMessageLines = [trimmedLine];
                     return;
                 }
             }
-
+    
             // Accumulate the line for the current recipients if no invalid mentions were found
             if (currentRecipients.size > 0) {
                 currentMessageLines.push(line);
             }
         });
-
+    
         // Finalize any remaining accumulated messages
         if (currentRecipients.size > 0 && currentMessageLines.length > 0) {
-            currentRecipients.forEach(recipient => {
-                this.finalizeMessage(messages, recipient, currentMessageLines.join("\n"), senderName);
-            });
+            const joinedMessage = currentMessageLines.join("\n").trim();
+            if (joinedMessage) {
+                currentRecipients.forEach(recipient => {
+                    this.finalizeMessage(messages, recipient, joinedMessage, senderName);
+                });
+            }
         }
-
+    
         // If no mentions were found, default to @all
         if (!foundAnyMention) {
             Logger.warn("No recognized mentions found. Falling back to '@all'.");
             messages.push({ recipient: "all", message: `${senderName} says,\n${text.trim()}` });
         }
-
+    
         Logger.debug("Parsed", messages.length, "messages");
         return messages;
     }
-
+    
     // Create final message object with sender prefix
     finalizeMessage(messagesArray, recipient, message, senderName) {
         if (!message.trim()) {
             Logger.debug("Skipping empty message");
             return;
         }
-
+    
         messagesArray.push({
             recipient: recipient,
             message: `${senderName} says,\n${message.trim()}`
@@ -866,11 +833,11 @@ AiNode.getLastPromptsAndResponses = function (node, count = 1, type = "both", ma
 };
 
 
-AiNode.calculateDirectionalityLogic = function (node, visited = new Set(), includeNonLLM = false) {
+AiNode.calculateDirectionalityLogic = function (node, visited = new Set(), includeNonLLM = false, passThroughLLM = false) {
     const useAllConnectedNodes = Elem.byId('use-all-connected-ai-nodes').checked;
 
     if (useAllConnectedNodes) {
-        return node.getAllConnectedNodes(false).filter(n => includeNonLLM || n.isLLMNode);
+        return node.getAllConnectedNodes(false).filter(n => includeNonLLM || n.isLLM);
     }
 
     // Look at edges that are "outgoing" or "none."
@@ -885,14 +852,24 @@ AiNode.calculateDirectionalityLogic = function (node, visited = new Set(), inclu
             if (pt.uuid === node.uuid || visited.has(pt.uuid)) {
                 continue;
             }
+            
+            // Skip traversing through AI nodes unless passThroughLLM is true
+            if (pt.isLLM && !passThroughLLM) {
+                if (includeNonLLM || pt.isLLM) {
+                    connectedNodes.push(pt);
+                }
+                continue; // Don't recurse through AI nodes
+            }
+            
             visited.add(pt.uuid);
 
-            // Only add LLM nodes unless explicitly told otherwise
-            if (includeNonLLM || pt.isLLMNode) {
+            // Add the current node if it meets criteria
+            if (includeNonLLM || pt.isLLM) {
                 connectedNodes.push(pt);
-                // Recurse deeper
-                connectedNodes.push(...AiNode.calculateDirectionalityLogic(pt, visited, includeNonLLM));
             }
+            
+            // Recurse with the same parameter values
+            connectedNodes.push(...AiNode.calculateDirectionalityLogic(pt, visited, includeNonLLM, passThroughLLM));
         }
     }
 
