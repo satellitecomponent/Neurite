@@ -395,18 +395,22 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
 function getActiveZetCMInstanceInfo() {
     const activeCodeMirror = window.currentActiveZettelkastenMirror;
     if (activeCodeMirror) {
-        for (const ui of window.zettelkastenUIs) {
+        for (let i = 0; i < window.zettelkastenUIs.length; i++) {
+            const ui = window.zettelkastenUIs[i];
             if (ui.cm !== activeCodeMirror) continue;
 
             const textarea = activeCodeMirror.getTextArea();
-            const textareaId = activeCodeMirror.getTextArea().id;
+            const textareaId = textarea.id;
             const paneId = textareaId.replace('zet-note-input-', 'zet-pane-');
+            const processor = window.zettelkastenProcessors[i]; // Get the corresponding processor
+
             return {
                 ui,
                 parser: ui.parser,
                 cm: activeCodeMirror,
                 textarea,
-                paneId
+                paneId,
+                zettelkastenProcessor: processor
             };
         }
     }

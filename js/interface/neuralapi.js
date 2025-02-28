@@ -637,32 +637,44 @@ async function neuriteGetUserResponse(message) {
 }
 
 function neuriteAddNote(nodeTitle, nodeText) {
+    const instanceInfo = getActiveZetCMInstanceInfo();
+    if (!instanceInfo) {
+        Logger.warn("No active Zettelkasten instance found.");
+        return;
+    }
+
+    const { cm, ui, paneId, zettelkastenProcessor } = instanceInfo;
+
     const formattedTitle = neuriteGetUniqueNodeTitle(nodeTitle.replace(/\n/g, ' '));
-
     const contentToAdd = Tag.node + ' ' + formattedTitle + '\n' + (nodeText ?? '');
-    const codeMirror = window.currentActiveZettelkastenMirror;
 
-    const lastLine = codeMirror.lastLine();
-    const lastLineText = codeMirror.getLine(lastLine);
+    // Enable random node placement
+    zettelkastenProcessor.placementStrategy.zetPlacementOverride = true;
+
+    const lastLine = cm.lastLine();
+    const lastLineText = cm.getLine(lastLine);
 
     let newLinesToAdd = '';
     if (lastLineText !== '') {
         newLinesToAdd = '\n\n';
-    } else if (codeMirror.getLine(lastLine - 1) !== '') {
+    } else if (cm.getLine(lastLine - 1) !== '') {
         newLinesToAdd = '\n';
     }
 
     const position = { line: lastLine, ch: lastLineText.length };
     processAll = true;
-    codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
+    cm.replaceRange(newLinesToAdd + contentToAdd, position);
     processAll = false;
 
-    ui = getZetNodeCMInstance(nodeTitle).ui;
     const node = ui.scrollToTitle(formattedTitle);
 
-    return Promise.forAnimation("Add Note", 0,
-        ()=>Promise.delay(300).then( ()=>node )
-    );
+    return Promise.forAnimation("Add Note", 0, () => {
+        return new Promise((resolve) => {
+            // Return to use of placement strategy
+            zettelkastenProcessor.placementStrategy.zetPlacementOverride = false;
+            resolve(node);
+        });
+    });
 }
 
 function neuriteGetUniqueNodeTitle(baseTitle) {
