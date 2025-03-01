@@ -116,15 +116,7 @@ function bundleWebContent(nodesInfo) {
             continue;
         }
 
-        let splitContent = nodeInfo.split("Text Content:", 2);
-
-        if (splitContent.length < 2) {
-            Logger.warn("No content found for node");
-            continue;
-        }
-
-        let content = splitContent[1].trim();
-        let codeBlocks = content.matchAll(/```(.*?)\n([\s\S]*?)```/gs);
+        let codeBlocks = nodeInfo.matchAll(/```(.*?)\n([\s\S]*?)```/gs);
 
         for (let block of codeBlocks) {
             let language = block[1].trim();
@@ -142,7 +134,7 @@ function bundleWebContent(nodesInfo) {
                     jsContent.push(code);
                     break;
                 default:
-                    Logger.warn("Language", language, "not supported for bundling.")
+                    Logger.warn("Language", language, "not supported for bundling.");
             }
         }
     }
@@ -189,7 +181,7 @@ async function handleCodeExecution(textarea, htmlView, pythonView, node) {
         }
 
         if (allWebCode.length > 0) {
-            displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight);
+            await displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight);
         } else {
             htmlView.classList.add('hidden');
         }
@@ -216,27 +208,39 @@ function collectCodeBlocks(textarea) {
         if (language === 'python') {
             allPythonCode += '\n' + code;
         } else if (['html', 'css', 'javascript', 'js', ''].includes(language)) {
-            allWebCode.push({ data: `Text Content: \n\`\`\`${language}\n${code}\n\`\`\`` });
+            allWebCode.push({ data: `\`\`\`${language}\n${code}\n\`\`\`` });
         }
     }
 
     return { allPythonCode, allWebCode };
 }
 
-function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
+async function displayHTMLView(allWebCode, htmlView, node, initialWindowWidth, initialWindowHeight) {
     // Hide the syntax display div
     let displayDiv = node.content.querySelector('.syntax-display-div');
     if (displayDiv) {
         displayDiv.style.display = 'none';
         node.displayDiv = displayDiv;
     } else {
-        Logger.warn("syntax-display-div not found.")
+        Logger.warn("syntax-display-div not found.");
     }
 
-    let allConnectedNodesInfo = node.getAllConnectedNodesData();
+    // Await the asynchronous connected nodes data
+    let allConnectedNodesInfo = await node.getAllConnectedNodesData();
     allConnectedNodesInfo.push(...allWebCode);
     Logger.info("allconnectednodesinfo", allConnectedNodesInfo);
-    let bundledContent = bundleWebContent(allConnectedNodesInfo);
+
+    // Pre-destructure text data:
+    const processedNodesInfo = allConnectedNodesInfo.map(nodeInfoObj => {
+        let { data } = nodeInfoObj;
+        // If data is an object with a nested string, extract that string.
+        if (typeof data === "object" && typeof data.data === "string") {
+            data = data.data;
+        }
+        return { ...nodeInfoObj, data };
+    });
+
+    let bundledContent = bundleWebContent(processedNodesInfo);
 
     // Ensuring iframe is interactable
     htmlView.style.width = initialWindowWidth;
