@@ -539,7 +539,7 @@ AiNode.setupContextSpecificSliderListeners = function(node){
     // Handle synchronization if both sliders are present
     const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
     if (maxTokensSlider && maxContextSizeSlider) {
-        aiTab.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
+        App.tabAi.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
     }
 
     // Additional specific behaviors for other sliders can be added here

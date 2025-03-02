@@ -151,7 +151,7 @@ class Node {
     applyMandelbrotForce() {
         if (this.anchorForce !== 0) return;
 
-        const g = Fractal.mandGrad(settings.iterations, this.pos);
+        const g = Fractal.grad(settings.iterations, this.pos);
 
         if (settings.useFlowDirection && g.mag2() > 0) {
             const randomRotation = this.randomNodeFlowRange;

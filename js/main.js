@@ -132,6 +132,8 @@ class App {
     processedNodes = new ProcessedNodes();
     recentSuggestions = new Manager.RecentSuggestions('nodeMethodCalls');
     selectedNodes = new SelectedNodes();
+    tabAi = new AiTab();
+    tabEdit = new EditTab();
     telemetry = new NeuralTelemetry();
     viewCode = new View.Code();
     viewGraphs = new View.Graphs();
@@ -140,8 +142,10 @@ class App {
     init(){
         Tag.init();
         Body.addEventListeners(document.body);
+        Fractal.initializeSelect();
         this.nodeSimulation.start();
         Ai.init();
+        this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();
         this.zetPanes.init();

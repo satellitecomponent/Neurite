@@ -349,7 +349,7 @@
             if (fractalType) {
                 fractalSelectElement.value = fractalType;
                 Select.updateSelectedOption(fractalSelectElement);
-                updateJuliaDisplay(fractalType);
+                Fractal.updateJuliaDisplay(fractalType);
             }
             fractalTypeSaveElement.remove();
         }
