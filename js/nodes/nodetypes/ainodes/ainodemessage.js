@@ -4,6 +4,8 @@
         return;
     }
     node.aiResponding = true;
+    node.aiResponseHalted = false;
+    node.shouldContinue = true;
 
     const nodeIndex = node.index;
 
@@ -398,21 +400,26 @@ AiNode.MessageLoop = class {
 
         // Check if a mention is valid
         isValid(mention, node) {
-            // If it's in our registry, it's valid
+            Logger.debug(`Checking mention: ${mention}`);
             if (this.registry.hasOwnProperty(mention)) {
                 return true;
             }
-
-            // Special case for "@no_name": true if there's any connected node with empty or null title
             if (mention === 'no_name') {
                 const connected = AiNode.calculateDirectionalityLogic(node);
-                return connected.some(n => !n.getTitle() || !n.getTitle().trim());
+                return connected.some(n => {
+                    const title = n.getTitle();
+                    Logger.debug(`Connected node title: ${title}`);
+                    return !title || !title.trim();
+                });
             }
-
-            // Otherwise, check if it matches a connected node by normalized title
             const connected = AiNode.calculateDirectionalityLogic(node);
             const normalizedMention = this.normalize(mention);
-            return connected.some(n => this.normalize(n.getTitle()) === normalizedMention);
+            Logger.debug(`Normalized mention: ${normalizedMention}`);
+            return connected.some(n => {
+                const normTitle = this.normalize(n.getTitle());
+                Logger.debug(`Normalized node title: ${normTitle}`);
+                return normTitle === normalizedMention;
+            });
         },
 
         // Process a mention and get the target nodes
@@ -473,20 +480,18 @@ AiNode.MessageLoop = class {
                 pattern: /^\/rewrite\s+(.+)/,
                 multiLine: true,
                 action(match, instance, content) {
-                    const targetTitle = match[1].trim();
-                    if (!targetTitle) {
-                        Logger.warn("Rewrite command used without specifying a target title.");
-                        return;
-                    }
-
-                    if (content && content.trim()) {
-                        const targetNode = Node.byTitle(targetTitle);
-                        targetNode.textarea.value = content.trim();
+                    const targetTitle = match[1]?.trim();
+                    if (!targetTitle) return;
+                
+                    const targetNode = Node.byTitle(targetTitle);
+                    if (!targetNode?.textarea) return;
+                
+                    const trimmedContent = content?.trim();
+                    if (trimmedContent) {
+                        targetNode.textarea.value = trimmedContent;
                         targetNode.textarea.dispatchEvent(new Event('input'));
-                    } else {
-                        Logger.warn("No rewrite content provided for node title:", targetTitle);
                     }
-                }
+                }                
             }
         ],
 
@@ -612,7 +617,7 @@ AiNode.MessageLoop = class {
         let foundAnyMention = false;
     
         // Use a refined regex that robustly matches underscores and other allowed characters
-        const mentionRegex = /@([a-zA-Z0-9_]+(?:[._-][a-zA-Z0-9_]+)*)/g;
+        const mentionRegex = /@((?:\\.|[a-zA-Z0-9_.-])+)/g;
     
         text.split(/\n/).forEach(line => {
             const trimmedLine = line.trim();
@@ -634,7 +639,10 @@ AiNode.MessageLoop = class {
     
                 // Process each mention separately without aborting the whole line for a single invalid mention
                 matches.forEach(match => {
-                    const mention = match[1].replace(/[.,!?;:]+$/, "").toLowerCase();
+                    // Unescape any escaped characters (like turning "\_" into "_")
+                    let mentionRaw = match[1].replace(/\\_/g, '_');
+                    const mention = mentionRaw.replace(/[.,!?;:]+$/, "").toLowerCase();
+                    Logger.debug("Checking mention:", mention);
                     if (AiNode.MessageLoop.Mentions.isValid(mention, this.node)) {
                         foundAnyMention = true;
                         validRecipients.add(mention);
@@ -686,7 +694,7 @@ AiNode.MessageLoop = class {
     
         messagesArray.push({
             recipient: recipient,
-            message: `${senderName} says,\n${message.trim()}`
+            message: `${senderName} says,\n${message.trim().replace(/\\_/g, '_')}`
         });
     }
 
@@ -712,10 +720,11 @@ AiNode.MessageLoop = class {
     // Process the user prompt queue
     async processUserPromptQueue() {
         AiNode.MessageLoop.isProcessingQueue = true;
-
         while (AiNode.MessageLoop.userPromptQueue.length > 0) {
+            if (this.destroyed) break; // Stop processing if cleaned up.
+    
             AiNode.MessageLoop.userPromptActive = true;
-
+    
             const { message, resolveFn } = AiNode.MessageLoop.userPromptQueue.shift();
             try {
                 const response = await window.prompt(message);
@@ -724,14 +733,12 @@ AiNode.MessageLoop = class {
                 console.error("Prompt error:", err);
                 resolveFn("");
             }
-
-            // Add brief pause between prompts
+    
             await Promise.delay(500);
         }
-
         AiNode.MessageLoop.userPromptActive = false;
         AiNode.MessageLoop.isProcessingQueue = false;
-    }
+    }    
 
     // ────── NODE COMMUNICATION METHODS ──────
 
@@ -762,18 +769,17 @@ AiNode.MessageLoop = class {
 
     // Add a click to the queue for processing
     enqueueClick(nodeId, sendButton, targetNode) {
-        // Create the queue if it doesn't exist
+        // Ensure queue exists
         if (!this.clickQueues[nodeId]) {
             this.clickQueues[nodeId] = [];
             this.processClickQueue(nodeId);
         }
-
-        // Check if this exact node is already in the queue
-        const alreadyInQueue = this.clickQueues[nodeId].some(item =>
+    
+        // Check if already queued, but avoid checking on undefined
+        const alreadyInQueue = this.clickQueues[nodeId]?.some(item =>
             item.connectedNode === targetNode
-        );
-
-        // Only add if not already queued
+        ) || false; // Default to false if undefined
+    
         if (!alreadyInQueue) {
             this.clickQueues[nodeId].push({
                 sendButton,
@@ -782,7 +788,7 @@ AiNode.MessageLoop = class {
         } else {
             Logger.debug("Node", nodeId, "is already in queue. Skipping duplicate add.");
         }
-    }
+    }    
 
     // Update the prompt element with the message
     updatePromptElement(element, message) {
@@ -801,34 +807,39 @@ AiNode.MessageLoop = class {
     // Process the click queue for a node
     async processClickQueue(nodeId) {
         const queue = this.clickQueues[nodeId] || [];
-
         while (true) {
+            if (this.destroyed) break; // Exit if cleaned up.
+    
             if (AiNode.MessageLoop.userPromptActive) {
-                Logger.debug("Global pause - waiting for user response");
                 await Promise.delay(2500);
                 continue;
             }
-
+    
             if (queue.length > 0) {
                 const { connectedNode, sendButton } = queue[0];
-
+    
                 const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
                 if (connectedAiNodes.length === 0) {
-                    Logger.warn("Node", connectedNode.index, "has no more connections. Exiting queue.");
                     break;
                 }
-
+    
                 if (!connectedNode.aiResponding) {
-                    queue.shift(); // Remove the processed message
+                    queue.shift();
                     sendButton.click();
-                    Logger.debug("sendButton clicked for", connectedNode.getTitle());
                 }
             }
-
             await Promise.delay(2500);
         }
-
         delete this.clickQueues[nodeId];
+    }    
+
+    cleanup() {
+        this.destroyed = true;
+        AiNode.MessageLoop.userPromptQueue = [];
+        AiNode.MessageLoop.isProcessingQueue = false;
+        AiNode.MessageLoop.userPromptActive = false;
+        this.clickQueues = {};
+        this.node = null;
     }
 };
 
@@ -838,7 +849,6 @@ AiNode.getLastPromptsAndResponses = function (node, count = 1, type = "both", ma
 };
 
 AiNode.exitConversation = function (node) {
-    node.haltResponse();
     const connectedNodes = AiNode.calculateDirectionalityLogic(node);
     if (connectedNodes) {
         node.removeConnectedNodes(connectedNodes);

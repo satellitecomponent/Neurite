@@ -256,7 +256,8 @@ class ResponseHandler {
     appendMarkdownSegment(divResponse, segment) {
         divResponse.dataset.markdown = (divResponse.dataset.markdown || '') + segment;
         const mentionPattern = /(?<=^|\s)@[a-zA-Z0-9._@-]+/g;
-        const highlightedSegment = divResponse.dataset.markdown.replace(mentionPattern, match => 
+        const unescapedMarkdown = divResponse.dataset.markdown.replace(/\\_/g, '_');
+        const highlightedSegment = unescapedMarkdown.replace(mentionPattern, match => 
             `<span class="mention">${match}</span>`
         );
         divResponse.innerHTML = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });

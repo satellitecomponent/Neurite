@@ -253,43 +253,44 @@ AiNode.init = function(node, restoreNewLines){
 }
 
 AiNode.HaltResponse = function (node) {
-    if (node.aiResponding) {
-        // AI is responding, so we want to stop it
-        node.controller.abort(); // Send the abort signal to the fetch request
-        node.aiResponding = false;
-        node.shouldContinue = false;
-        node.regenerateButton.innerHTML = Svg.refresh;
-        node.promptTextArea.value = node.latestUserMessage; // Restore last user message
+    if (node.aiResponseHalted) {
+        return;
+    }
+    node.aiResponseHalted = true;
+    node.controller.abort();
+    node.aiResponding = false;
+    node.shouldContinue = false;
+    node.regenerateButton.innerHTML = Svg.refresh;
 
-        // Access the resHandler from the nodeResponseHandlers map
-        const resHandler = nodeResponseHandlers.get(node);
-
-        // If currently in a code block
-        if (resHandler?.inCodeBlock) {
-            resHandler.codeBlockContent += '```\n'; // Add closing backticks
-            resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
+    const resHandler = nodeResponseHandlers.get(node);
+    if (resHandler?.inCodeBlock) {
+        resHandler.codeBlockContent += '```\n'; // Add closing backticks
+        resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
             
-            // Reset the code block state
-            resHandler.codeBlockContent = '';
-            resHandler.codeBlockStartIndex = -1;
-            resHandler.inCodeBlock = false;
+        // Reset the code block state
+        resHandler.codeBlockContent = '';
+        resHandler.codeBlockStartIndex = -1;
+        resHandler.inCodeBlock = false;
 
-            // Update response text area
-            node.aiResponseTextArea.value = resHandler.previousContent + resHandler.codeBlockContent;
-            resHandler.previousContentLength = node.aiResponseTextArea.value.length;
-            node.aiResponseTextArea.dispatchEvent(new Event('input'));
-        }
-
-        node.aiResponseHalted = true;
+        // Update response text area
+        node.aiResponseTextArea.value = resHandler.previousContent + resHandler.codeBlockContent;
+        resHandler.previousContentLength = node.aiResponseTextArea.value.length;
+        node.aiResponseTextArea.dispatchEvent(new Event('input'));
     }
 
+    // Clear the active message loop for this node
+    if (node.aiNodeMessageLoop) {
+        node.aiNodeMessageLoop.cleanup();
+        node.aiNodeMessageLoop = null;
+    }
+    
     // Halt connected AI nodes
     const connectedNodes = AiNode.calculateDirectionalityLogic(node);
 
     if (Array.isArray(connectedNodes)) {
         connectedNodes.forEach((connectedNode) => {
-            if (connectedNode && connectedNode.isLLM && connectedNode.aiResponding) {
-                AiNode.HaltResponse(connectedNode);
+            if (connectedNode && connectedNode.isLLM) { // Exclude check for connectedNode.aiResponding incase its response just finished
+                connectedNode.haltResponse();
             }
         });
     }
@@ -385,10 +386,6 @@ AiNode.setupSendButtonListeners = function(node){
 
     On.click(button, (e)=>{
         e.preventDefault();
-
-        node.aiResponseHalted = false;
-        node.shouldContinue = true;
-
         AiNode.sendMessage(node);
     });
 }
