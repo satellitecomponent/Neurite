@@ -404,11 +404,11 @@ class Node {
             Logger.warn(`No edge found connecting to node: ${targetTitle}`);
         }
     }
-    removeConnectedNodes(nodes) {
+    removeConnectedNodes(nodes) {   
         const nodeUUIDs = new Set(nodes.map(node => String.uuidOf(node)));
-
-        for (let i = this.node.edges.length - 1; i >= 0; i--) {
-            const edge = this.node.edges[i];
+        
+        for (let i = this.edges.length - 1; i >= 0; i--) {
+            const edge = this.edges[i];   
             if (edge.pts.some(pt => nodeUUIDs.has(pt.uuid))) {
                 edge.remove();
             }

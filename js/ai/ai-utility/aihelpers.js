@@ -263,7 +263,6 @@ Ai.haltZettelkasten = function(){
 
     Ai.isResponding = false;
     Ai.shouldContinue = false;
-    Ai.isFirstAutoModeMessage = true;
 
     Ai.mainPrompt.setLatestUserMessage();
 }
@@ -281,14 +280,16 @@ Ai.onRegenClicked = function(){
 }
 
 // Extract the prompt from the last message
-function extractLastPrompt() {
-    const lastMessage = getLastPromptsAndResponses(1, 400);
-    const promptRegex = new RegExp(`${PROMPT_IDENTIFIER}\\s*(.*)`, "i");
-    const match = promptRegex.exec(lastMessage);
-    if (match) return match[1].trim();
+function extractLastPrompt(node = null) {
+    const textarea = node?.aiResponseTextArea || App.zetPanes.getActiveTextarea();
+    const lastUserPrompts = getAllPromptAndResponsePairs(textarea, 1, 4000, "user");
 
-    Logger.warn("Prompt not found in the last message. Sending with a blank prompt.");
-    return '';
+    if (!lastUserPrompts.length) {
+        Logger.warn("Prompt not found in the last message. Sending with a blank prompt.");
+        return '';
+    }
+
+    return lastUserPrompts[0].trim();
 }
 
 function trimToTokenCount(inputText, maxTokens) {

@@ -1,7 +1,3 @@
-On.change(Elem.byId('auto-mode-checkbox'), function(e){
-    if (this.checked) Ai.isFirstAutoModeMessage = true;
-});
-
 async function sendMessage(event, autoModeMessage = null) {
     const activeInstance = getActiveZetCMInstanceInfo();
     const noteInput = activeInstance.textarea;
@@ -24,9 +20,9 @@ async function sendMessage(event, autoModeMessage = null) {
     const message = autoModeMessage ? autoModeMessage : promptValue;
     Ai.latestUserMessage = message;
 
-    const isAutoModeEnabled = Elem.byId('auto-mode-checkbox').checked;
+    Ai.isAutoModeEnabled = Elem.byId('auto-mode-checkbox').checked;
 
-    if (isAutoModeEnabled && Ai.originalUserMessage === null) {
+    if (Ai.isAutoModeEnabled && Ai.originalUserMessage === null) {
         Ai.originalUserMessage = message;
     }
 
@@ -136,7 +132,7 @@ async function sendMessage(event, autoModeMessage = null) {
     const maxContextSize = Elem.byId('max-context-size-slider').value;
     const contextSize = Math.min(remainingTokens, maxContextSize);
 
-// Get the context
+    // Get the context
     context = getLastPromptsAndResponses(100, contextSize);
     let topMatchedNodesContent = '';
 
@@ -185,28 +181,23 @@ async function sendMessage(event, autoModeMessage = null) {
         });
     }
 
-    const autoModePrompt = isAutoModeEnabled 
+    const autoModePrompt = Ai.isAutoModeEnabled 
     ? `Self-Prompting is ENABLED. On the last line, WRAP a message to yourself with ${PROMPT_IDENTIFIER} to start and ${PROMPT_END} to end the prompt. Progress the conversation yourself.`
     : '';
 
     messages.push({
         role: "user",
         content: autoModeMessage
-            ? `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} :
-    Original ${PROMPT_IDENTIFIER} ${Ai.originalUserMessage}
+            ? `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} ${PROMPT_END}
+    Original ${PROMPT_IDENTIFIER} ${Ai.originalUserMessage} ${PROMPT_END}
     ${autoModePrompt}`
             : `${message}\n${autoModePrompt}`.trim(),
     });
 
-
-
     let lineBeforeAppend = myCodeMirror.lastLine();
 
-    // Add the user prompt and a newline only if it's the first message in auto mode or not in auto mode
-    if (!autoModeMessage || (Ai.isFirstAutoModeMessage && autoModeMessage)) {
+    if (!autoModeMessage) {
         handleUserPromptAppendCodeMirror(myCodeMirror, message, PROMPT_IDENTIFIER);
-        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(myCodeMirror.lastLine()));
-        Ai.isFirstAutoModeMessage = false;
     } else if (autoModeMessage) {
         myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
     }
@@ -238,7 +229,7 @@ async function sendMessage(event, autoModeMessage = null) {
     // Main AI call
     await callchatAPI(messages, stream = true);
 
-    if (Ai.shouldContinue && Elem.byId('auto-mode-checkbox').checked) {
+    if (Ai.isResponding && Elem.byId('auto-mode-checkbox').checked) {
         sendMessage(null, extractLastPrompt())
     }
 

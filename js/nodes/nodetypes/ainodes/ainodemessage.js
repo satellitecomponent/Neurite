@@ -1,5 +1,5 @@
-﻿AiNode.sendMessage = async function (node, message = null) {
-    if (node.aiResponding) {
+﻿AiNode.sendMessage = async function (node, message = null, autoModeMessage = null) {
+    if (!autoModeMessage && node.aiResponding) {
         Logger.info("AI is currently responding. Wait for the current response to complete before sending a new message.");
         return;
     }
@@ -18,6 +18,12 @@
     const connectedAiNodes = allConnectedNodes.filter(n => n.isLLM);
 
     node.latestUserMessage = message || node.promptTextArea.value;
+    const latestUserMessage = node.latestUserMessage
+    
+    node.isAutoModeEnabled = node.autoCheckbox.checked;
+    if (node.isAutoModeEnabled && node.originalUserMessage === null) {
+        node.originalUserMessage = latestUserMessage;
+    }
 
     // Clear the prompt textarea
     node.promptTextArea.value = '';
@@ -107,7 +113,7 @@
     const truncatedRecentContext = getLastPromptsAndResponses(2, 1500, node.aiResponseTextArea);
 
     if (Wikipedia.isEnabled(nodeIndex)) {
-        const keywordsArray = await generateKeywords(node.latestUserMessage, 3, node);
+        const keywordsArray = await generateKeywords(latestUserMessage, 3, node);
         const keywordsString = keywordsArray.join(' ');
 
         // Use the first keyword from the array for specific lookups
@@ -137,7 +143,7 @@
         (allConnectedNodesData && allConnectedNodesData.some(info => info.data?.type === 'link'))
     ) {
         try {
-            searchQuery = await constructSearchQuery(node.latestUserMessage, truncatedRecentContext, node);
+            searchQuery = await constructSearchQuery(latestUserMessage, truncatedRecentContext, node);
         } catch (err) {
             Logger.err("In constructing search query:", err);
             searchQuery = null;
@@ -149,7 +155,7 @@
         const searchResultsData = await performSearch(searchQuery);
         if (searchResultsData) {
             searchResults = processSearchResults(searchResultsData);
-            await displayResultsRelevantToMessage(searchResults, node.latestUserMessage);
+            await displayResultsRelevantToMessage(searchResults, latestUserMessage);
         }
 
         const searchResultsContent = searchResults.map((result, index) => {
@@ -166,7 +172,7 @@
     // --- LINK NODES HANDLING ---
     const relevantKeys = await Keys.getRelevantNodeLinks(
         allConnectedNodesData,
-        node.latestUserMessage,
+        latestUserMessage,
         searchQuery,
         filteredKeys,
         truncatedRecentContext
@@ -256,13 +262,14 @@
     let lastPromptsAndResponses;
     lastPromptsAndResponses = getLastPromptsAndResponses(20, contextSize, node.aiResponseTextArea);
 
-    // Append the user prompt to the AI response area with a distinguishing mark and end tag
-    handleUserPromptAppend(node.aiResponseTextArea, node.latestUserMessage);
+    if (!autoModeMessage) {
+        handleUserPromptAppend(node.aiResponseTextArea, latestUserMessage);
+    }
 
     let wolframData;
     if (Elem.byId('enable-wolfram-alpha-checkbox-' + nodeIndex).checked) {
         const wolframContext = getLastPromptsAndResponses(2, 1500, node.aiResponseTextArea);
-        wolframData = await fetchWolfram(node.latestUserMessage, true, node, wolframContext);
+        wolframData = await fetchWolfram(latestUserMessage, true, node, wolframContext);
     }
 
     if (wolframData) {
@@ -288,10 +295,26 @@
         });
     }
 
-    //Finally, send the user message last.
+    const autoModePrompt = node.isAutoModeEnabled
+    ? `Self-Prompting is ENABLED. On the last line, WRAP a message to yourself with ${PROMPT_IDENTIFIER} to start and ${PROMPT_END} to end the prompt. Progress the conversation yourself.`
+    : "";
+
+    let finalUserContent;
+    if (node.isAutoModeEnabled) {
+        if (autoModeMessage) {
+            finalUserContent = `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} ${PROMPT_END}
+Original ${PROMPT_IDENTIFIER} ${node.originalUserMessage} ${PROMPT_END}
+${autoModePrompt}`;
+        } else {
+            finalUserContent = `${latestUserMessage}\n${autoModePrompt}`.trim();
+        }
+    } else {
+        finalUserContent = latestUserMessage;
+    }
+
     messages.push({
         role: "user",
-        content: node.latestUserMessage
+        content: finalUserContent
     });
 
     node.userHasScrolled = false;
@@ -303,21 +326,20 @@
 
     const aiNodeMessageLoop = node.aiNodeMessageLoop;
 
-    const haltCheckbox = node.haltCheckbox;
-
     // AI call
     callchatLLMnode(messages, node, true, inferenceOverride)
         .then(() => {
-            node.aiResponding = false;
             aiLoadingIcon.style.display = 'none';
-
             const hasConnectedAiNode = AiNode.calculateDirectionalityLogic(node).length > 0;
-            if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode && !node.aiResponseHalted) {
+            if (node.shouldContinue && node.shouldAppendQuestion && hasConnectedAiNode) {
                 return aiNodeMessageLoop.questionConnectedAiNodes();
+            }
+            if (node.aiResponding && node.isAutoModeEnabled) {
+                const lastPrompt = extractLastPrompt(node);
+                AiNode.sendMessage(node, lastPrompt, lastPrompt);
             }
         })
         .catch((err) => {
-            if (haltCheckbox) haltCheckbox.checked = true;
             Logger.err("While getting response:", err);
             aiErrorIcon.style.display = 'block';
         });
@@ -371,8 +393,8 @@ AiNode.MessageLoop = class {
 
         // Normalize recipient name for consistent matching
         normalize(recipient) {
-            return recipient.toLowerCase().replace(/[\s@_-]/g, '');
-        },
+            return recipient.toLowerCase().replace(/[\s@_-]/g, ''); // Keep underscores!
+        },        
 
         // Check if a mention is valid
         isValid(mention, node) {
@@ -429,10 +451,7 @@ AiNode.MessageLoop = class {
                 pattern: /^\/exit\b/,
                 multiLine: false,
                 action(match, instance, content) {
-                    instance.node.haltResponse();
-                    const connectedNodes = AiNode.calculateDirectionalityLogic(instance.node);
-                    instance.node.removeConnectedNodes(connectedNodes);
-                    Logger.debug("AI has exited the conversation.");
+                    AiNode.exitConversation(instance.node);
                 }
             },
             {
@@ -591,16 +610,17 @@ AiNode.MessageLoop = class {
         let currentRecipients = new Set();
         let currentMessageLines = [];
         let foundAnyMention = false;
-        let hasInvalidMention = false;
+    
+        // Use a refined regex that robustly matches underscores and other allowed characters
+        const mentionRegex = /@([a-zA-Z0-9_]+(?:[._-][a-zA-Z0-9_]+)*)/g;
     
         text.split(/\n/).forEach(line => {
             const trimmedLine = line.trim();
-            const matches = [...trimmedLine.matchAll(/@([a-zA-Z0-9._-]+)/g)]; // Find all mentions
-    
+            const matches = [...trimmedLine.matchAll(mentionRegex)]; // Find all mentions
+            Logger.info(`Extracted mentions: ${matches.map(m => m[1]).join(', ')}`);
             if (matches.length > 0) {
                 // Finalize any accumulated message before processing a new mention
                 if (currentRecipients.size > 0 && currentMessageLines.length > 0) {
-                    // Check if message contains only empty lines
                     const joinedMessage = currentMessageLines.join("\n").trim();
                     if (joinedMessage) {
                         currentRecipients.forEach(recipient => {
@@ -611,37 +631,27 @@ AiNode.MessageLoop = class {
                 }
     
                 let validRecipients = new Set();
-                hasInvalidMention = false; // Reset for each line
     
-                // Check if all mentions are valid
+                // Process each mention separately without aborting the whole line for a single invalid mention
                 matches.forEach(match => {
                     const mention = match[1].replace(/[.,!?;:]+$/, "").toLowerCase();
                     if (AiNode.MessageLoop.Mentions.isValid(mention, this.node)) {
                         foundAnyMention = true;
                         validRecipients.add(mention);
                     } else {
-                        Logger.warn(`Invalid mention: @${mention}, ignoring mention.`);
-                        hasInvalidMention = true;
+                        Logger.warn(`Invalid mention: @${mention}, ignoring this mention.`);
                     }
                 });
     
-                if (hasInvalidMention) {
-                    // If there's an invalid mention, clear recipients and do not process this line
-                    currentRecipients.clear();
-                    currentMessageLines = [];
-                    return;
-                }
-    
                 if (validRecipients.size > 0) {
                     currentRecipients = validRecipients;
-                    
                     // Preserve the text on the same line as the mentions
                     currentMessageLines = [trimmedLine];
                     return;
                 }
             }
     
-            // Accumulate the line for the current recipients if no invalid mentions were found
+            // Accumulate the line for the current recipients if there are valid ones
             if (currentRecipients.size > 0) {
                 currentMessageLines.push(line);
             }
@@ -735,11 +745,6 @@ AiNode.MessageLoop = class {
             return;
         }
 
-        if (targetNode.aiResponseHalted || this.node.aiResponseHalted) {
-            Logger.warn("AI response for node", nodeId, "or its connected node is halted. Skipping this node.");
-            return;
-        }
-
         const promptElement = targetNode.content.querySelector('#nodeprompt-' + nodeId);
         const sendButton = targetNode.content.querySelector('#prompt-form-' + nodeId);
 
@@ -808,8 +813,8 @@ AiNode.MessageLoop = class {
                 const { connectedNode, sendButton } = queue[0];
 
                 const connectedAiNodes = AiNode.calculateDirectionalityLogic(connectedNode);
-                if (connectedAiNodes.length === 0 || connectedNode.aiResponseHalted) {
-                    Logger.warn("Node", connectedNode.index, "has no more connections or its AI response is halted. Exiting queue.");
+                if (connectedAiNodes.length === 0) {
+                    Logger.warn("Node", connectedNode.index, "has no more connections. Exiting queue.");
                     break;
                 }
 
@@ -830,6 +835,15 @@ AiNode.MessageLoop = class {
 
 AiNode.getLastPromptsAndResponses = function (node, count = 1, type = "both", maxTokens = null) {
     return getAllPromptAndResponsePairs(node.aiResponseTextArea, count, maxTokens, type);
+};
+
+AiNode.exitConversation = function (node) {
+    node.haltResponse();
+    const connectedNodes = AiNode.calculateDirectionalityLogic(node);
+    if (connectedNodes) {
+        node.removeConnectedNodes(connectedNodes);
+    }
+    Logger.debug("AI has exited the conversation.");
 };
 
 
