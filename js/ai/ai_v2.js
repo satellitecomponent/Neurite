@@ -1,7 +1,7 @@
 const Ai = {
     isResponding: false,
     latestUserMessage: null,
-    isFirstAutoModeMessage: true,
+    isAutoModeEnabled: false,
     originalUserMessage: null,
     shouldContinue: true
 };
@@ -32,7 +32,9 @@ async function callchatAPI(messages, stream = false, customTemperature = null) {
     }
 
     function onAfterCall() {
-        Ai.isResponding = false;
+        if (!Ai.isAutoModeEnabled) {
+            Ai.isResponding = false;
+        }
         Ai.mainPrompt.setRefresh();
         Elem.hideById('aiLoadingIcon');
     }
@@ -107,7 +109,9 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
     }
 
     function onAfterCall() {
-        node.aiResponding = false;
+        if (!node.isAutoModeEnabled) {
+            node.aiResponding = false;
+        }
         node.regenerateButton.innerHTML = Svg.refresh;
         node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'none';
     }
@@ -119,9 +123,9 @@ async function callchatLLMnode(messages, node, stream = false, inferenceOverride
     }
 
     function onError(errorMsg) {
+        node.haltResponse();
         Logger.err("In calling Chat API:", errorMsg);
         node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
-        if (node.haltCheckbox) node.haltCheckbox.checked = true;
     }
     const controller = node.controller;
 

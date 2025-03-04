@@ -70,8 +70,10 @@ class NodeSimulation {
             mousePathPos = toZ(mousePos);
             this.mousePath = ["M ", toSVG(mousePathPos), " L "];
         }
+
+        const step = Fractal.step;
         for (let i = 0; i < settings.orbitStepRate; i++) {
-            mousePathPos = mand_step(mousePathPos, toZ(mousePos));
+            mousePathPos = step(mousePathPos, toZ(mousePos));
             if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60) {
                 this.mousePath.push(toSVG(mousePathPos), " ")
             }

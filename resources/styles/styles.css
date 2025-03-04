@@ -2700,6 +2700,7 @@ input[type=range] {
     height: 550px;
     width: 500px;
     position: relative;
+    margin-right: 2px;
 }
 
 .ai-response-div {

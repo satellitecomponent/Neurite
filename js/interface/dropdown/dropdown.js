@@ -1,9 +1,4 @@
-﻿
-
-const aiTab = new AiTab();
-const editTab = new EditTab(settings);
-
-// Function to save the value of a specific slider or color picker
+﻿// Function to save the value of a specific slider or color picker
 function saveInputValue(input) {
     const savedValues = localStorage.getItem('inputValues');
     const inputValues = savedValues ? JSON.parse(savedValues) : {};

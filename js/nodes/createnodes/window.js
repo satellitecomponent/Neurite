@@ -365,25 +365,25 @@ class NodeView {
         style.maxWidth = 'fit-content';
         style.maxHeight = 'fit-content';
     }
-    
+
     observeContentResize(iframeWrapper, displayWrapper){
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 const { width, height } = entry.contentRect;
-    
+
                 const buttonsWrapper = this.div.querySelector(".buttons-wrapper");
                 if (!buttonsWrapper) continue;
-    
+
                 const buttonsHeight = buttonsWrapper.offsetHeight || 0;
                 const iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
-    
+
                 iframeWrapper.style.width = width + 'px';
                 iframeWrapper.style.height = iframeHeight + 'px';
                 displayWrapper.style.width = width + 'px';
                 displayWrapper.style.height = iframeHeight + 'px';
             }
         });
-    
+
         resizeObserver.observe(this.div);
     }
 

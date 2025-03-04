@@ -12,11 +12,10 @@ function getMaxDistForExponent(exponent) {
     return exponentToMaxDist[exponent] || 4; // default to 4 if no mapping found
 }
 
-// EditTab class
 class EditTab {
-    constructor() {
-        this.initSliders();
-        this.initEventListeners();
+    init(){
+        this.#initSliders();
+        this.#initEventListeners();
         this.setRenderLength(this.getLength());
         this.setRenderQuality(this.getQuality());
         this.updateFilters();
@@ -24,7 +23,7 @@ class EditTab {
         this.updateFlashlightRadius();
     }
 
-    initSliders() {
+    #initSliders(){
         const renderWidthMultSlider = Elem.byId('renderWidthMultSlider');
         renderWidthMultSlider.value = settings.renderWidthMult;
         renderWidthMultSlider.dispatchEvent(new Event('input'));
@@ -43,7 +42,7 @@ class EditTab {
         triggerInputEvent('flashlightRadius');
     }
 
-    initEventListeners() {
+    #initEventListeners(){
         const innerOpacitySlider = Elem.byId('inner_opacity');
         On.input(innerOpacitySlider, (e)=>{
             settings.innerOpacity = innerOpacitySlider.value / 100;
@@ -84,7 +83,7 @@ class EditTab {
             Elem.byId('quality_value').textContent = "Quality:" + (Math.round(v * 100) / 100);
         });
 
-        On.input(Elem.byId('exponent'), (e)=>updateMandStep() );
+        On.input(Elem.byId('exponent'), Fractal.updateStep);
 
         On.input(Elem.byId('flashlightStrength'), this.updateFlashlightStrength);
         On.input(Elem.byId('flashlightRadius'), this.updateFlashlightRadius);
