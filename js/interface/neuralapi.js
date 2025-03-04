@@ -547,11 +547,11 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
     const messages = [
         {
             role: 'system',
-            content: neuriteNeuralVisionPrompt
+            content: Prompt.vision()
         },
         {
             role: 'system',
-            content: createTelemetryPrompt(neuralTelemetry, true) //set vision model to true
+            content: Prompt.forTelemetry(App.telemetry, true) // true for vision
         },
         {
             role: 'user',

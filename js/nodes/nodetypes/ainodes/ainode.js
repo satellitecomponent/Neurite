@@ -92,8 +92,9 @@ function createLlmNode(name = '', sx, sy, x, y) {
     node.id = aiResponseTextArea.id;
     node.index = llmNodeCount;
     node.aiResponding = false;
-    node.localAiResponding = false;
     node.latestUserMessage = null;
+    node.originalUserMessage = null;
+    node.isAutoModeEnabled = false;
     node.shouldContinue = true;
 
     node.shouldAppendQuestion = false;
@@ -211,7 +212,7 @@ AiNode.init = function(node, restoreNewLines){
     node.aiResponseTextArea = content.querySelector('[id^="LLMnoderesponse-"]');
     node.promptTextArea = content.querySelector('[id^="nodeprompt-"]');
     node.sendButton = content.querySelector('[id^="prompt-form-"]');
-    node.haltCheckbox = content.querySelector('input[id^="halt-questions-checkbox"]');
+    node.autoCheckbox = content.querySelector('input[id^="auto-checkbox"]');
     node.regenerateButton = content.querySelector('#prompt-form');
 
     // This is now the container for our inferenence select dropdown.
@@ -251,42 +252,48 @@ AiNode.init = function(node, restoreNewLines){
     }
 }
 
-AiNode.HaltResponse = function(node){
-    if (node.aiResponding) {
-        // AI is responding, so we want to stop it
-        node.controller.abort(); // Send the abort signal to the fetch request
-        node.aiResponding = false;
-        node.shouldContinue = false;
-        node.regenerateButton.innerHTML = Svg.refresh;
-        node.promptTextArea.value = node.latestUserMessage; // Add the last user message to the prompt input
+AiNode.HaltResponse = function (node) {
+    if (node.aiResponseHalted) {
+        return;
+    }
+    node.aiResponseHalted = true;
+    node.controller.abort();
+    node.aiResponding = false;
+    node.shouldContinue = false;
+    node.regenerateButton.innerHTML = Svg.refresh;
 
-        // Access the resHandler from the nodeResponseHandlers map
-        const resHandler = nodeResponseHandlers.get(node);
+    const resHandler = nodeResponseHandlers.get(node);
+    if (resHandler?.inCodeBlock) {
+        resHandler.codeBlockContent += '```\n'; // Add closing backticks
+        resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
+            
+        // Reset the code block state
+        resHandler.codeBlockContent = '';
+        resHandler.codeBlockStartIndex = -1;
+        resHandler.inCodeBlock = false;
 
-        // If currently in a code block
-        if (resHandler?.inCodeBlock) {
-            // Add closing backticks to the current code block content
-            resHandler.codeBlockContent += '```\n';
-
-            // Render the final code block
-            resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
-
-            // Reset the code block state
-            resHandler.codeBlockContent = '';
-            resHandler.codeBlockStartIndex = -1;
-            resHandler.inCodeBlock = false;
-
-            // Clear the textarea value to avoid reprocessing
-            node.aiResponseTextArea.value = resHandler.previousContent + resHandler.codeBlockContent;
-
-            // Update the previous content length
-            resHandler.previousContentLength = node.aiResponseTextArea.value.length;
-            node.aiResponseTextArea.dispatchEvent(new Event('input'));
-        }
-        node.aiResponseHalted = true;
+        // Update response text area
+        node.aiResponseTextArea.value = resHandler.previousContent + resHandler.codeBlockContent;
+        resHandler.previousContentLength = node.aiResponseTextArea.value.length;
+        node.aiResponseTextArea.dispatchEvent(new Event('input'));
     }
 
-    if (node.haltCheckbox) node.haltCheckbox.checked = true;
+    // Clear the active message loop for this node
+    if (node.aiNodeMessageLoop) {
+        node.aiNodeMessageLoop.cleanup();
+        node.aiNodeMessageLoop = null;
+    }
+    
+    // Halt connected AI nodes
+    const connectedNodes = AiNode.calculateDirectionalityLogic(node);
+
+    if (Array.isArray(connectedNodes)) {
+        connectedNodes.forEach((connectedNode) => {
+            if (connectedNode && connectedNode.isLLM) { // Exclude check for connectedNode.aiResponding incase its response just finished
+                connectedNode.haltResponse();
+            }
+        });
+    }
 
     // Reinitialize the controller for future use
     node.controller = new AbortController();
@@ -372,8 +379,6 @@ AiNode.setupPromptTextAreaListeners = function(node){
 AiNode.setupSendButtonListeners = function(node){
     const button = node.sendButton;
 
-    const haltCheckbox = node.haltCheckbox;
-
     On.mouseover(button, Elem.setBothColors.bind(button, '#222226', '#293e34'));
     On.mouseout(button, Elem.setBothColors.bind(button, '#ddd', '#222226'));
     On.mousedown(button, Elem.setBackgroundColor.bind(button, '#45a049'));
@@ -381,21 +386,8 @@ AiNode.setupSendButtonListeners = function(node){
 
     On.click(button, (e)=>{
         e.preventDefault();
-
-        node.aiResponseHalted = false;
-        node.shouldContinue = true;
-
-        if (haltCheckbox) haltCheckbox.checked = false;
-
         AiNode.sendMessage(node);
     });
-
-    if (haltCheckbox) {
-        On.change(haltCheckbox, (e)=>{
-            node.aiResponseHalted = haltCheckbox.checked;
-            if (haltCheckbox.checked) node.haltResponse();
-        });
-    }
 }
 
 AiNode.setupRegenerateButtonListeners = function(node){
@@ -539,7 +531,7 @@ AiNode.setupContextSpecificSliderListeners = function(node){
     // Handle synchronization if both sliders are present
     const maxTokensSlider = node.content.querySelector('#node-max-tokens-' + node.index);
     if (maxTokensSlider && maxContextSizeSlider) {
-        aiTab.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
+        App.tabAi.autoContextTokenSync(maxTokensSlider, maxContextSizeSlider);
     }
 
     // Additional specific behaviors for other sliders can be added here
@@ -645,7 +637,7 @@ AiNode.refreshOptions = function(node, setValues){
 const allOptions = [
     { id: 'google-search', label: 'Search' },
     { id: 'code', label: 'Code' },
-    { id: 'halt-questions', label: 'Halt' },
+    { id: 'auto', label: 'Auto' },
     { id: 'embed', label: 'Data' },
     { id: 'enable-wolfram-alpha', label: 'Wolfram' },
     { id: 'wiki', label: 'Wiki' }

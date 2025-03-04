@@ -65,7 +65,7 @@ class Node {
     toJSON() {
         return JSON.stringify({...this}, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
-                k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
+                k === "aiResponseEditor" || k === "aiNodeMessageLoop" || k === "sensor" || k === "responseHandler" ||
                 k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
             }
@@ -106,17 +106,17 @@ class Node {
         let p = fromZtoUV(this.pos);
         const cond = p.minus(new vec2(0.5, 0.5)).mag2() > 16;
         e.style.display = (cond ? 'none' : 'initial');
-    
+
         const w = Math.min(svgbb.width, svgbb.height);
         const off = svgbb.width < svgbb.height ? svgbb.right : svgbb.bottom;
         p.x = w * p.x - (off - svgbb.right) / 2;
         p.y = w * p.y - (off - svgbb.bottom) / 2;
-    
+
         const bb = e.getBoundingClientRect();
         p = p.minus(new vec2(bb.width, bb.height).scale(0.5 / s));
         e.style.left = p.x + 'px';
         e.style.top = p.y + 'px';
-    
+
         //e.style['margin-top'] = "-"+(e.offsetHeight/2)+'px';//"-50%";
         //e.style['margin-left'] = "-"+(e.offsetWidth/2)+'px';//"-50%";
         //e.style['vertical-align']= 'middle';
@@ -151,7 +151,7 @@ class Node {
     applyMandelbrotForce() {
         if (this.anchorForce !== 0) return;
 
-        const g = Fractal.mandGrad(settings.iterations, this.pos);
+        const g = Fractal.grad(settings.iterations, this.pos);
 
         if (settings.useFlowDirection && g.mag2() > 0) {
             const randomRotation = this.randomNodeFlowRange;
@@ -404,11 +404,11 @@ class Node {
             Logger.warn(`No edge found connecting to node: ${targetTitle}`);
         }
     }
-    removeConnectedNodes(nodes) {
+    removeConnectedNodes(nodes) {   
         const nodeUUIDs = new Set(nodes.map(node => String.uuidOf(node)));
-
-        for (let i = this.node.edges.length - 1; i >= 0; i--) {
-            const edge = this.node.edges[i];
+        
+        for (let i = this.edges.length - 1; i >= 0; i--) {
+            const edge = this.edges[i];   
             if (edge.pts.some(pt => nodeUUIDs.has(pt.uuid))) {
                 edge.remove();
             }
