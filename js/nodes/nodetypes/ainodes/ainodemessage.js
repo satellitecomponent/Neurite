@@ -322,7 +322,7 @@ ${autoModePrompt}`;
     node.userHasScrolled = false;
 
     // Initiates helper functions for aiNode Message loop.
-    if (!node.aiNodeMessageLoop) {
+    if (!node.aiNodeMessageLoop && connectedAiNodes.length > 0) {
         node.aiNodeMessageLoop = new AiNode.MessageLoop(node);
     }
 

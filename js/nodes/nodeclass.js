@@ -65,7 +65,7 @@ class Node {
     toJSON() {
         return JSON.stringify({...this}, (k, v) => {
             if (k === "content" || k === "edges" || k === "save_extras" ||
-                k === "aiResponseEditor" || k === "sensor" || k === "responseHandler" ||
+                k === "aiResponseEditor" || k === "aiNodeMessageLoop" || k === "sensor" || k === "responseHandler" ||
                 k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
             }
