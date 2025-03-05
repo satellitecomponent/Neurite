@@ -1,4 +1,9 @@
-const { ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    startedViaElectron: true,
+    sendReady: () => ipcRenderer.send('renderer-ready')
+});
 
 window.addEventListener('contextmenu', () => { }, true);
 
