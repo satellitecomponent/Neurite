@@ -154,6 +154,13 @@ class App {
         updateSettingsFromControls();
         updateSavedViewsCache();
         displaySavedCoordinates();
+        this.signalReady();
+    }
+    signalReady() {
+        window.appReady = true; 
+        if (window.startedViaElectron) {
+            window.electronAPI?.sendReady?.();
+        }
     }
     get nodeMode(){ return this.interface.nodeMode.val }
 }

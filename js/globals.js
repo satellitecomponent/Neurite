@@ -1,3 +1,5 @@
+window.appReady = false;
+window.startedViaElectron = window.electronAPI?.startedViaElectron || false;
 window.startedViaPlaywright = window.startedViaPlaywright || false;
 
 //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
