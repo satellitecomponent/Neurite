@@ -495,48 +495,82 @@ AiNode.MessageLoop = class {
             }
         ],
 
-        parse(text) {
+        parse(text, instance) {
             const lines = text.split("\n");
             const nonCommandLines = [];
             const commands = [];
-
+    
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 const trimmed = line.trim();
-
+    
+                // Skip lines that are empty or don't start with '/'
                 if (!trimmed || !trimmed.startsWith("/")) {
                     nonCommandLines.push(line);
                     continue;
                 }
-
+    
                 let foundCommand = false;
                 for (const cmd of this.registry) {
                     const match = trimmed.match(cmd.pattern);
                     if (!match) continue;
-
+    
                     foundCommand = true;
                     let content = "";
-
+    
                     if (cmd.multiLine) {
                         const contentLines = [];
+    
                         while (++i < lines.length) {
-                            const nextTrimmed = lines[i].trim();
-                            if (nextTrimmed.startsWith("/") || nextTrimmed.includes("@")) break;
-                            contentLines.push(lines[i]);
+                            const nextLine = lines[i];
+                            const trimmedNext = nextLine.trim();
+                            if (trimmedNext.startsWith("/")) {
+                                i--;
+                                break;
+                            }
+    
+                            // Check if there's an '@' in this line.
+                            const atIndex = nextLine.indexOf("@");
+                            if (atIndex !== -1) {
+                                const remainder = nextLine.slice(atIndex + 1); 
+                                const mention = remainder.split(/\s+/)[0];
+
+                                if (Mentions.isValid(mention, instance.node)) {
+                                    contentLines.push(nextLine.slice(0, atIndex));
+                                    lines[i] = nextLine.slice(atIndex);
+                                    i--;
+                                    break;
+                                } else {
+                                    contentLines.push(nextLine);
+                                }
+                            } else {
+                                contentLines.push(nextLine);
+                            }
                         }
+    
                         content = contentLines.join("\n");
                     } else {
                         i++;
                     }
-
-                    commands.push({ name: cmd.name, match, content, action: cmd.action });
+    
+                    commands.push({
+                        name: cmd.name,
+                        match,
+                        content,
+                        action: cmd.action
+                    });
                     break;
                 }
-
-                if (!foundCommand) nonCommandLines.push(line);
+    
+                if (!foundCommand) {
+                    nonCommandLines.push(line);
+                }
             }
-
-            return { commands, cleanedText: nonCommandLines.join("\n") };
+    
+            return {
+                commands,
+                cleanedText: nonCommandLines.join("\n")
+            };
         },
 
         // Execute the extracted commands
