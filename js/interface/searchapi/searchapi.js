@@ -11,27 +11,13 @@ async function generateKeywords(message, count, specificContext = null, node = n
             .map(String.trim);
     }
 
-    const messages = [
-        {
-            role: "system",
-            content: `Recent conversation:${lastPromptsAndResponses}`,
-        },
-        {
-            role: "system",
-            content: "Provide three single-word keywords relevant to the latest user message. Enclose each keyword in quotations and separate them with commas.",
-        },
-        {
-            role: "user",
-            content: `${message}`,
-        },
-    ];
+    const aiCall = AiCall.single(node)
+        .addSystemPrompt("Recent conversation:" + lastPromptsAndResponses)
+        .addSystemPrompt("Provide three single-word keywords relevant to the latest user message. Enclose each keyword in quotations and separate them with commas.")
+        .addUserPrompt(message);
+    aiCall.customTemperature = 0;
 
-    let response;
-    if (node) {
-        response = await callchatLLMnode(messages, node, false, 0);
-    } else {
-        response = await callchatAPI(messages, false, 0);
-    }
+    const response = aiCall.exec();
 
     Logger.info("Generate Keywords Ai Response:", response);
 
@@ -57,7 +43,6 @@ function isGoogleSearchEnabled(nodeIndex = null) {
     return (globalCheckbox ? globalCheckbox.checked : false);
 }
 
-// console.log("Sending context to AI:", messages);
 function performSearch(searchQuery) {
     Logger.info("Search Query in processLinkInput:", searchQuery);
 
@@ -105,28 +90,14 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     }
 
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
-    const queryContext = [
-        {
-            role: "system",
-            content: `Recent conversation context: \n${recentContext}`
-        },
-        {
-            role: "system",
-            content: "Without unnecessary preface or summary... From the provided context history, predict a relevant search query within quotation marks."
-        },
-        {
-            role: "user",
-            content: userMessage
-        }
-    ];
+    const aiCall = AiCall.single(node)
+        .addSystemPrompt("Recent conversation context: \n" + recentContext)
+        .addSystemPrompt("Without unnecessary preface or summary... From the provided context history, predict a relevant search query within quotation marks.")
+        .addUserPrompt(userMessage);
+    aiCall.customTemperature = 0;
 
     try {
-        let apiResponse;
-        if (node) {
-            apiResponse = await callchatLLMnode(queryContext, node, false, 0);
-        } else {
-            apiResponse = await callchatAPI(queryContext, false, 0);
-        }
+        const apiResponse = aiCall.exec();
 
         const extractedQuery = apiResponse.match(/"([^"]*)"/);
         const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
@@ -210,12 +181,18 @@ function processLinkInput(linkUrl) {
     }
 }
 
-async function handleNaturalLanguageSearch(query) {
+async function handleNaturalLanguageSearch(query, message) {
     if (query === null) return;
 
     const searchResultsData = await performSearch(query);
     if (!searchResultsData) return;
 
     const searchResults = processSearchResults(searchResultsData);
-    await displayResultsRelevantToMessage(searchResults, query);
+    await displayResultsRelevantToMessage(searchResults, message ?? query);
+    if (!message) return;
+
+    return searchResults.map( (result, index)=>{
+        const descr = result.description.substring(0, 100);
+        return `Search Result ${index + 1}: ${result.title} - ${descr}...\n[Link: ${result.link}]\n`;
+    }).join('\n');
 }

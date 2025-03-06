@@ -192,7 +192,7 @@ function neuriteMovement(movements = [], cz = {}, cp = {}, cr = {}, d = 1000) {
     return new Animation(duration, Animation.interpolateZoomAndPan)
       .setParams(pan, endPan, zoom, endZoom, Object.keys(r).length ? r : null)
       .executeProm("Movement");
-  }  
+  }
 
 /*
 panTo = new vec2(0, 0); //this.pos;
@@ -545,27 +545,13 @@ async function neuriteCallMovementAi(movementIntention, totalIterations = 1, cur
     }
 
     const messages = [
-        {
-            role: 'system',
-            content: Prompt.vision()
-        },
-        {
-            role: 'system',
-            content: Prompt.forTelemetry(App.telemetry, true) // true for vision
-        },
-        {
-            role: 'user',
-            content: [
-                {
-                    type: 'image_url',
-                    image_url: screenshotBase64 // PNG format is already included in the return value
-                }
-            ]
-        },
-        {
-            role: 'user',
-            content: movementIntention
-        }
+        Message.system(Prompt.vision()),
+        Message.system(Prompt.forTelemetry(App.telemetry, true)), // true for vision
+        Message.user([{
+            type: 'image_url',
+            image_url: screenshotBase64 // PNG format is already included in the return value
+        }]),
+        Message.user(movementIntention)
     ];
 
     try {
@@ -716,7 +702,7 @@ registerFunctions([
     },
     {
         baseFunctionName: 'neuritePromptZettelkasten',
-        baseFunction: neuritePromptZettelkasten,
+        baseFunction: Prompt.zettelkasten,
         alternateNames: ['promptZettelkasten', 'zettelkastenPrompt', 'promptZettelkastenAi', 'callZettelkastenAi', `zettelkastenAi`]
     },
     {

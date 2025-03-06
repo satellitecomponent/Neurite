@@ -78,7 +78,12 @@ Wikipedia.getSummaries = async function(keywords, top_n_links = 3){
         combinedSummaries.push(...summaries.slice(1, top_n_links));
     }
     combinedSummaries.forEach(Wikipedia.displayResult);
-    return combinedSummaries;
+
+    return (!Array.isArray(combinedSummaries)) ? "Wiki Disabled"
+         : combinedSummaries
+            .filter( (s)=>(s?.title !== undefined && s?.summary !== undefined) )
+            .map( (s)=>(s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary) )
+            .join("\n\n");
 }
 
 Wikipedia.displayResult = function(result){

@@ -66,7 +66,6 @@ function testGetLastFunctionCalls(n) {
     Logger.info(`Last ${n} function calls:`, lastCalls);
 }
 
-const Prompt = {};
 Prompt.forTelemetry = function(telemetry, vision = false){
     const mandelbrotCoords = telemetry.getCurrentMandelbrotCoords();
     const currentEquation = telemetry.getCurrentEquation();

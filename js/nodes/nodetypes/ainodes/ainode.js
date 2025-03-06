@@ -266,7 +266,7 @@ AiNode.HaltResponse = function (node) {
     if (resHandler?.inCodeBlock) {
         resHandler.codeBlockContent += '```\n'; // Add closing backticks
         resHandler.renderCodeBlock(resHandler.codeBlockContent, true);
-            
+
         // Reset the code block state
         resHandler.codeBlockContent = '';
         resHandler.codeBlockStartIndex = -1;
@@ -283,7 +283,7 @@ AiNode.HaltResponse = function (node) {
         node.aiNodeMessageLoop.cleanup();
         node.aiNodeMessageLoop = null;
     }
-    
+
     // Halt connected AI nodes
     const connectedNodes = AiNode.calculateDirectionalityLogic(node);
 
