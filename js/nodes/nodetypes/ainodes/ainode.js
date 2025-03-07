@@ -336,7 +336,7 @@ AiNode.setupResponseDivListeners = function(node){
         if (!userHasScrolled) Promise.delay(1).then(scrollToBottom)
     });
 
-    const epsilon = 5; // Tolerance in pixels
+    const epsilon = 2; // Tolerance in pixels
 
     const handleScroll = () => {
         if (Math.abs(aiResponseDiv.scrollTop + aiResponseDiv.clientHeight - aiResponseDiv.scrollHeight) > epsilon) {
