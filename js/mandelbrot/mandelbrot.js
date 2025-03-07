@@ -415,17 +415,49 @@ Fractal.gradzr = function(f, z, epsilon = 1e-6){
 }
 
 Fractal.trace_circle = function* (iters, z0, step = 0.5) {
-    const getDist = Fractal.dist;
-    const getGrad = Fractal.grad;
+    const { dist: getDist, grad: getGrad } = Fractal;
+    const epsilon = 1e-10;
+    const maxDeviation = 1.0;
     const level = getDist(iters, z0);
+
     let z = z0;
+    let prevGradMag2 = Infinity;
+    let totalAngle = 0; // Track cumulative direction changes
+    let prevDirection = null; // Previous step direction
+
     while (true) {
-        yield z;
         const val = getDist(iters, z);
         const grad = getGrad(iters, z);
-        z = z.plus(grad.cmult(new vec2(level - val, step).unscale(grad.mag2())));
+        const gradMag2 = grad.mag2();
+
+        // Core termination: vanishing gradient or excessive deviation
+        if (gradMag2 < epsilon || Math.abs(val - level) > maxDeviation) break;
+
+        // Oscillation detection (sudden gradient spikes)
+        if (gradMag2 > prevGradMag2 * 4) break;
+
+        yield z;
+
+        // Calculate step
+        const residual = level - val;
+        const direction = new vec2(residual, step);
+        const delta = grad.cmult(direction).unscale(gradMag2);
+
+        // Terminate on invalid steps
+        if (!delta.isFinite() || delta.mag() > 2 * Math.abs(step)) break;
+
+        // Detect looping paths via cumulative angle change
+        if (prevDirection) {
+            const angleChange = Math.abs(delta.ang() - prevDirection.ang());
+            totalAngle += angleChange;
+            if (totalAngle > 2 * Math.PI) break; // Full rotation = closed loop
+        }
+        prevDirection = delta;
+
+        z = z.plus(delta);
+        prevGradMag2 = gradMag2;
     }
-}
+};
 
 Fractal.color = function(iters, z){
     let i = Fractal.dist(iters, z);
