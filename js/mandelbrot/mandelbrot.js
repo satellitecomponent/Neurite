@@ -198,14 +198,13 @@ function fromZtoUV(z) {
 Svg.oldPan = new vec2(0, 0);
 Svg.pan = new vec2(0, 0);
 
-Svg.updateViewbox = function(){
-    //let lc = toSVG(toZ(new vec2(0,0)));
+Svg.updateViewbox = function() {
     const zoom_mag = zoom.mag();
     let left_corner = toSVG(new vec2(-zoom_mag, -zoom_mag).plus(pan));
     const diameter = zoom_mag * 2 * this.zoom;
     const rotation = zoom.ang();
-    //let rotCenter = fromZ(pan);// = {let s = window.innerWidth; return new vec2(.5*s,.5*s);}
 
+    // Handle recentering and rezooming (may update pan/zoom and set needsRecalc)
     if (diameter < Math.abs(this.recenterThreshold * left_corner.x) || diameter < Math.abs(this.recenterThreshold * left_corner.y)) {
         this.updatePan(pan.scale(1));
         left_corner = toSVG(toZ(new vec2(0, 0)));
@@ -215,40 +214,26 @@ Svg.updateViewbox = function(){
         this.updateZoom(this.zoom * this.rezoomFactor / diameter);
         Logger.debug("rezooming...");
     }
-    if (this.needsRecalc) {
-        requestAnimationFrame(() => this.recalc());
-    }
 
-    const center = toSVG(pan); //center of rotation
-    //where it ends up if you do the rotation about SVGpan
-    const rotated_corner = center.cmult(zoom.unscale(zoom_mag).cconj());
-    left_corner = left_corner.plus(rotated_corner.minus(center));
+    // Synchronously recalc if needed (before viewBox computation)
+    if (this.needsRecalc) this.recalc(); 
 
-    svg.setAttribute("viewBox", left_corner.x + ' ' + left_corner.y + ' ' + diameter + ' ' + diameter);
+    // Recompute values with latest pan/zoom after potential changes
+    const updated_zoom_mag = zoom.mag();
+    const updated_left_corner = toSVG(new vec2(-updated_zoom_mag, -updated_zoom_mag).plus(pan));
+    const updated_diameter = updated_zoom_mag * 2 * this.zoom;
+
+    const center = toSVG(pan);
+    const rotated_corner = center.cmult(zoom.unscale(updated_zoom_mag).cconj());
+    const final_left_corner = updated_left_corner.plus(rotated_corner.minus(center));
+
+    svg.setAttribute("viewBox", `${final_left_corner.x} ${final_left_corner.y} ${updated_diameter} ${updated_diameter}`);
 
     if (rotation !== this.oldRotation) {
         this.oldRotation = rotation;
-        svg_viewmat.setAttribute("transform", "rotate(" + (-rotation * 180 / Math.PI) + ')');
-        //svg_viewmat.setAttribute("transform","rotate("+(-r*180/Math.PI)+" "+c.x+" "+c.y+')');
+        svg_viewmat.setAttribute("transform", `rotate(${-rotation * 180 / Math.PI})`);
     }
-
-    return
-
-    // the below has the issue of low-res svg when changing the matrix in firefox
-    //svg.setAttribute("viewBox", (-svg_viewbox_size / 2) + ' ' + (-svg_viewbox_size / 2) + ' ' + svg_viewbox_size + ' ' + svg_viewbox_size);
-    // z = bal(uv)*zoom+pan
-    // svg = (z-svgpan)*svgzoom
-    // want matrix to go svg -> bal(uv)*65536
-    // bal(uv)*65536 = 65536*(z-pan)/zoom = 65536*(svg/svgzoom-svgpan-pan)/zoom
-    // d/dsvg = 65536/svgzoom/zoom
-    // f(0) = -65536*(svgpan+pan)/zoom
-    //let t = zoom.crecip().scale(svg_viewbox_size / SVGzoom / 2);
-    //let p = pan.minus(SVGpan).scale(-svg_viewbox_size / 2).cdiv(zoom);
-
-    //svg_viewmat.setAttribute("transform", "matrix(" + t.x + ' ' + (t.y) + ' ' + (-t.y) + ' ' + (t.x) + ' ' + (p.x) + ' ' + (p.y) + ')');
-    //svg_bg.setAttribute("transform","matrix("+z.x+' '+(-z.y)+' '+(z.y)+' '+(z.x)+' '+SVGpan.x+' '+SVGpan.y+')');
-
-}
+};
 
 Svg.recalc = function() {
     const oldPan = this.oldPan;
