@@ -206,7 +206,6 @@ async function callAiApi({
     }
 
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
-    Logger.info("Message Array", messages);
     Logger.info("Token count:", TokenCounter.forMessages(messages));
 
     if (!params) {

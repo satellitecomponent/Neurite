@@ -33,9 +33,11 @@ Object.forEach = function(obj, cb, ct){
     for (const k in obj) cb.call(ct, obj[k])
 }
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Object.hasNameThis = function(obj){ return obj.name === this.valueOf() }
 Object.hasTitleThis = function(obj){ return obj.title === this.valueOf() }
 Object.isntThis = function(obj){ return obj !== this.valueOf() }
 Object.isThis = function(obj){ return obj === this.valueOf() }
+
 Logger = class {
     addLevel(prefix, funcName, id = funcName){
         const func = console[funcName].bind(console, prefix);
@@ -145,6 +147,7 @@ class App {
         Fractal.initializeSelect();
         this.nodeSimulation.start();
         Ai.init();
+        Embeddings.init();
         this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();

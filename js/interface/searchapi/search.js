@@ -154,7 +154,6 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
 
     const matched = [];
 
-    const fetchEmbeddings = Embeddings.fetch;
     async function fetchNodeEmbedding(node){
         const compoundKey = node.uuid + '-' + Embeddings.selectModel.value;
         const cachedEmbedding = nodeCache.get(compoundKey);
@@ -165,14 +164,14 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         Logger.debug("Extracted title text:", titleText);
         Logger.debug("Extracted content text:", contentText);
 
-        const embedding = await fetchEmbeddings(titleText + ' ' + contentText);
+        const embedding = await Embeddings.fetch(titleText + ' ' + contentText);
         nodeCache.set(compoundKey, embedding);
         return embedding;
     }
 
-    const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
-    const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
-    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
+    const promSearchTermEmbedding = Embeddings.fetch(searchTerm);
+    const promsNodeEmbeddings = nodes.map(fetchNodeEmbedding);
+    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([promSearchTermEmbedding, ...promsNodeEmbeddings]);
 
     Logger.debug("Keyword Embedding:", keywordEmbedding);
     for (let i = 0; i < nodes.length; i++) {

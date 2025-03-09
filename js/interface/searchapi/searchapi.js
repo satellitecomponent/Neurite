@@ -115,13 +115,12 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
 }
 
 async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
-    const fetchEmbeddings = Embeddings.fetch;
-    const userMessageEmbedding = await fetchEmbeddings(userMessage);
+    const userMessageEmbedding = await Embeddings.fetch(userMessage);
 
     const searchResultEmbeddings = await Promise.all(
         searchResults.map(async result => {
             const titleAndDescription = result.title + " " + result.description;
-            const embedding = await fetchEmbeddings(titleAndDescription);
+            const embedding = await Embeddings.fetch(titleAndDescription);
             return {
                 result,
                 embedding
