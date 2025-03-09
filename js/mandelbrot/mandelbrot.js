@@ -215,7 +215,9 @@ Svg.updateViewbox = function(){
         this.updateZoom(this.zoom * this.rezoomFactor / diameter);
         Logger.debug("rezooming...");
     }
-    if (this.needsRecalc) this.recalc();
+    if (this.needsRecalc) {
+        requestAnimationFrame(() => this.recalc());
+    }
 
     const center = toSVG(pan); //center of rotation
     //where it ends up if you do the rotation about SVGpan
@@ -248,17 +250,17 @@ Svg.updateViewbox = function(){
 
 }
 
-Svg.recalc = function(){
+Svg.recalc = function() {
     const oldPan = this.oldPan;
     const oldZoom = this.oldZoom;
     const pan = this.pan;
     const zoom = this.zoom;
-    for (const child of svg_bg.children){
+    for (const child of svg_bg.children) {
         const recalculated = [];
         let coord = 0;
         const parts = child.getAttribute('d').split(/[, ]+/g);
-        for (let p of parts){
-            if (p.length && !isNaN(Number(p))){
+        for (let p of parts) {
+            if (p.length && !isNaN(Number(p))) {
                 const c = (coord ? 'y' : 'x');
                 p = Number(p) / oldZoom + oldPan[c];
                 p = (p - pan[c]) * zoom;
@@ -270,6 +272,8 @@ Svg.recalc = function(){
         const strokeWidth = child.getAttribute('stroke-width');
         child.setAttribute('stroke-width', strokeWidth * zoom / oldZoom);
     }
+    this.oldPan = pan;
+    this.oldZoom = zoom;
     this.needsRecalc = false;
 }
 
