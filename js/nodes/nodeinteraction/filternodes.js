@@ -7,23 +7,12 @@ async function forget(userMessage, combinedContext) {
         return new Set(); // Return an empty Set since no titles are to be forgotten.
     }
 
-    const forgetQueryContext = [
-        {
-            role: "system",
-            content: `Here's the current context and top matched nodes to help you decide which node titles should be forgotten:\n\n${combinedContext}`
-        },
-        {
-            role: "user",
-            content: userMessage
-        },
-        {
-            role: "system",
-            content: "Without preface or explanation, based on the provided user message and context, suggest which node titles should be forgotten. Return the exact titles to forget separated by newlines."
-        },
-    ];
+    const aiCall = AiCall.single() // forget query context
+        .addSystemPrompt("Here's the current context and top matched nodes to help you decide which node titles should be forgotten:\n\n" + combinedContext)
+        .addUserPrompt(userMessage)
+        .addSystemPrompt("Without preface or explanation, based on the provided user message and context, suggest which node titles should be forgotten. Return the exact titles to forget separated by newlines.");
 
-    // Now we'll mock calling the AI API just like you did with the 'callchatAPI' function.
-    const response = await callchatAPI(forgetQueryContext);
+    const response = await aiCall.exec(); // mock calling the AI API
     Logger.info(response);
     // Extract the node titles to forget from the AI's response
     const titlesToForget = new Set(response.split('\n'));
@@ -45,15 +34,14 @@ function removeTitlesFromContext(contentStr, titlesToForget) {
     const keptLines = [];
     contentStr.split('\n').forEach( (line)=>{
         const match = line.trim().match(ZettelkastenParser.regexpNodeTitle);
-        if (match && match[1]
-            && titlesToForget.has(match[1].trim())) return;
+        if (match && match[1] && titlesToForget.has(match[1].trim())) return;
 
         keptLines.push(line);
     });
     return keptLines.join('\n');
 }
 
-function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget, nodeTag) {
+function filterAndProcessNodesByExistingTitles(nodes, existingTitles, titlesToForget = new Set(), nodeTag) {
     const arr = [];
     nodes.forEach( (node)=>{
         if (!node) return;

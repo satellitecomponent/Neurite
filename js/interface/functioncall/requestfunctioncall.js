@@ -69,14 +69,14 @@ View.Code.prototype.requestFunctionCall = async function () {
     this.inputPrompt.dispatchEvent(event);
 
     const messages = [
-        { role: "system", content: Prompt.neuralApi() },
-        { role: "system", content: Prompt.forTelemetry(App.telemetry, false) }
+        Message.system(Prompt.neuralApi()),
+        Message.system(Prompt.forTelemetry(App.telemetry, false))
     ];
 
     const maxContextSize = Elem.byId('max-context-size-slider').value;
     View.Code.trimMessages(messages, maxContextSize);
 
-    messages.push({ role: "user", content });
+    messages.push(Message.user(content));
 
     return this.getFunctionResponse(messages);
 }

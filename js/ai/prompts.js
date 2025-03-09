@@ -1,18 +1,22 @@
-const codeMessage = () => ({
-    role: "system",
-    content: `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
+const Prompt = {};
 
-${tagValues.nodeTag} Optional Preface (Optional)
+Prompt.code = function(){
+    const { refTag, nodeTag } = tagValues;
+    const titles = (!isBracketLinks) ? refTag + " followed by titles of nodes (html, js, css)"
+                 : refTag + " bracketed titles of nodes (html, js, css)" + getClosingBracket(refTag);
+    return `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
+
+${nodeTag} Optional Preface (Optional)
 -Make sure your explanations are in separate nodes from your code blocks.
 -Write code in the requested language. (default to html if none is given)
 
-${tagValues.nodeTag} HTML/JS Code Title
+${nodeTag} HTML/JS Code Title
 1. Wrap code in codeblocks with language label ((backticks)html, css, or javascript) on the same line as the backticks.
 2. JS runs in iframe, can't access parent DOM.
 3. Create full document in one node or connect via tags.
-After the closing the codeblock for that node, one a new line, use ${isBracketLinks ? `${tagValues.refTag} bracketed titles of nodes (html, js, css)${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} followed by titles of nodes (html, js, css)`} to connect and bundle. Avoid connecting code to non-code.
+After the closing the codeblock for that node, one a new line, use ${titles} to connect and bundle. Avoid connecting code to non-code.
 
-${tagValues.nodeTag} Python Code Title
+${nodeTag} Python Code Title
 1. Wrap code in 'python' triple backtick blocks.
 2. Use Pyodide-compatible libraries. Ensure output to the HTML environment.
 3. Visuals? Output as base64 in HTML img tags. Ex:
@@ -22,15 +26,14 @@ output_html(f'<img src="data:image/png;base64,{base64_string}"/>')
 5. Keep all Python in a single node.
 Ensure consideration of Pyodide's limitations in browser.
 
-${tagValues.nodeTag} Final Explanation Title
+${nodeTag} Final Explanation Title
 1. Explain code and output.
 2. All nodes that connect together will be included in the code bundling
- - This means, never connect code nodes to any nodes besides those which include code to bundle together.</code>`
-});
+ - This means, never connect code nodes to any nodes besides those which include code to bundle together.</code>`;
+}
 
-const aiNodeCodeMessage = () => ({
-    role: "system",
-    content: `HTML/JS Code
+Prompt.aiNodeCode = function(){
+    return `HTML/JS Code
 1. Enclose code in labeled triple backtick blocks.
 
 Python Code
@@ -43,14 +46,14 @@ Python Code
 Ensure consideration of Pyodide's limitations in browser.
 
 Bundling: Code nodes will bundle codeblocks in any connected nodes.`
-});
+}
 
-const instructionsMessage = () => ({
-    role: "system",
-    content: `The How-to checkbox is on. In your own words (without making anything up) Please explain the following application you are responding within.
+Prompt.instructions = function(){
+    const nodeTag = tagValues.nodeTag;
+    return `The How-to checkbox is on. In your own words (without making anything up) Please explain the following application you are responding within.
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
-${tagValues.nodeTag} Essential Controls
+${nodeTag} Essential Controls
 - Drag to move; Scroll to zoom; Alt/Option + Scroll to rotate; Alt/Option + Click or Alt/Option + Drag to select multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
@@ -63,12 +66,12 @@ ${tagValues.nodeTag} Essential Controls
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
 
-${tagValues.nodeTag} Zettelkasten:
-- Type notes in the Zettelkasten text area using ${tagValues.nodeTag} and ${tagValues.refTag} (node reference tag) format.
+${nodeTag} Zettelkasten:
+- Type notes in the Zettelkasten text area using ${nodeTag} and ${tagValues.refTag} (node reference tag) format.
     -The Zettelkasten text area is a place the ai responds to found in the Notes tab, (the other place being within an ai node.)
 - Save/Load notes in the Save tab or by copying and pasting main text area's content.
 
-${tagValues.nodeTag} Advanced Controls:
+${nodeTag} Advanced Controls:
 - Checkboxes below main text area provide additional features.
 - API key setup needed for Open-Ai, Google Search, and Wolfram Alpha. API key inputs are in the Ai tab. LocalHost servers required for Extracts, Wolfram, and Wiki. Instructions are in Github link at the ? tab.
 - Code checkbox activates code block rendering in new text nodes (HTML and Python).
@@ -84,51 +87,65 @@ ${tagValues.nodeTag} Advanced Controls:
 -Alt/Option Double Click to create an Ai node.
 -Alt/Option + Shift + Double click to create a code editor node.
 
-Make sure to exclusivly reference the above described controls. Avoid divergence from the above how-to.`
-});
+Make sure to exclusivly reference the above described controls. Avoid divergence from the above how-to.`;
+}
 
-const aiNodesMessage = () => ({
-    role: "system",
-    content: `You are an Ai Agent Constructor. Here is how to create Ai nodes.
+Prompt.aiNodes = function(){
+    const refTag = tagValues.refTag;
+    const closingBracket = getClosingBracket(refTag);
+    const titles = (!isBracketLinks) ? refTag + " CSV Titles to Link"
+                 : refTag + "Titles to Link" + closingBracket;
+    const prompt1 = (!isBracketLinks) ? refTag + " Related Nodes 1"
+                 : refTag + "Related Nodes 1" + closingBracket;
+    const prompt2 = (!isBracketLinks) ? refTag + " Related Nodes 2"
+                 : refTag + "Related Nodes 2" + closingBracket;
+    return `You are an Ai Agent Constructor. Here is how to create Ai nodes.
     1. New AI Node: "${LLM_TAG} Title"
     2. Add Prompt: Follow with a user-defined prompt.
-    3. Link Nodes: Use ${isBracketLinks ? `${tagValues.refTag}Titles to Link${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} CSV Titles to Link`}
+    3. Link Nodes: Use ${titles}
     4. Define text
     Example:
     ${LLM_TAG} (Your Topic 1)
     (Your Prompt 1)
-    ${isBracketLinks ? `${tagValues.refTag}Related Nodes 1${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 1`}
+    ${prompt1}
 
     ${LLM_TAG} (Your Topic 2)
     (Your Prompt 2)
-    ${isBracketLinks ? `${tagValues.refTag}Related Nodes 2${getClosingBracket(tagValues.refTag)}` : `${tagValues.refTag} Related Nodes 2`}`,
-});
+    ${prompt2}`;
+}
 
-const zettelkastenPrompt = () => {
+Prompt.zettelkasten = function(){
     const { refTag, nodeTag } = tagValues;
-    const closeBracket = getClosingBracket(refTag);
-    const refSnippet = isBracketLinks
-        ? `EACH ref IN node.Refs: PRINT ${refTag}+ref.node+${closeBracket}; END;`
-        : `PRINT ${refTag}+JOIN(node.Refs, ', ');`;
+    const closingBracket = getClosingBracket(refTag);
+    const refSnippet = (!isBracketLinks) ? `PRINT ${refTag}+JOIN(node.Refs, ', ');`
+                : `EACH ref IN node.Refs: PRINT ${refTag}+ref.node+${closingBracket}; END;`;
+    const titles = (!isBracketLinks) ? refTag + " followed by comma-separated note titles"
+                : refTag + "Note Title" + closingBracket;
+    const concept = (!isBracketLinks) ? refTag + " Principle B, Element D"
+                : refTag + `Principle B${closingBracket} ${refTag}Element D` + closingBracket;
+    const principle = (!isBracketLinks) ? refTag + " Concept A, Idea C"
+                : refTag + `Concept A${closingBracket} ${refTag}Idea C` + closingBracket;
+    const idea = (!isBracketLinks) ? refTag + " Principle B, Concept A"
+                : refTag + `Principle B${closingBracket} ${refTag}Concept A` + closingBracket;
 
     return `You are an AI assistant creating a mind map using the following format:
 ${nodeTag} KEY POINTS:
 - Create nodes with "${nodeTag} Unique Title".
-- Link nodes using ${refTag}${isBracketLinks ? `Note Title${closeBracket}` : ` followed by comma-separated note titles`}.
+- Link nodes using ${titles}.
 - Each title must be unique.
 - Create connections between notes.
 
 ${nodeTag} Concept A
 Description of A.
-${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Element D${closeBracket}` : `${refTag} Principle B, Element D`}
+${concept}
 
 ${nodeTag} Principle B
 Text of B.
-${isBracketLinks ? `${refTag}Concept A${closeBracket} ${refTag}Idea C${closeBracket}` : `${refTag} Concept A, Idea C`}
+${principle}
 
 ${nodeTag} Idea C
 Synthesis of A and B.
-${isBracketLinks ? `${refTag}Principle B${closeBracket} ${refTag}Concept A${closeBracket}` : `${refTag} Principle B, Concept A`}
+${idea}
 
 Utilize the above meta-format in your response.`;
-};
+}

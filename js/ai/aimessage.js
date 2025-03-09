@@ -1,12 +1,56 @@
-async function sendMessage(event, autoModeMessage = null) {
-    const activeInstance = getActiveZetCMInstanceInfo();
-    const noteInput = activeInstance.textarea;
-    const myCodeMirror = activeInstance.cm;
+Prompt.autoMode = function(begin, end){
+    return `Self-Prompting is ENABLED. On the last line, WRAP a message to yourself with ${begin} to begin and ${end} to end the prompt. Progress the conversation yourself.`
+}
+Prompt.googleSearch = function(content){
+    return `Google Search RESULTS displayed to the user:<searchresults>${content}</searchresults> CITE your sources! Always REMEMBER to follow the <format> message`
+}
+Prompt.history = function(context){
+    return `CONVERSATION HISTORY: <context>${context}</context>`
+}
+Prompt.markdownIdentity = function(aiId){
+    return "You are " + aiId + ". Conversation renders via markdown."
+}
+Prompt.matchedNodes = function(content){
+    return `Semantically RELEVANT NOTES retrieved. BRANCH UNIQUE notes OFF OF the following ALREADY EXISTING nodes.:\n<topmatchednodes>${content}</topmatchednodes>SYNTHESIZE missing, novel, and connected KNOWLEDGE from the given topmatchednodes.`
+}
+Prompt.searchQuery = async function(message, searchQuery, filteredKeys, topN, recentContext, node, allConnectedNodesData){
+    if (!searchQuery || !filteredKeys) return;
 
+    const relevantKeys = await (!node) ? Keys.getRelevant(message, recentContext, searchQuery, filteredKeys)
+                             : Keys.getRelevantNodeLinks(
+                                    allConnectedNodesData,
+                                    message,
+                                    searchQuery,
+                                    filteredKeys,
+                                    recentContext
+                               );
+    if (relevantKeys.length < 1) return;
+
+    const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);
+    if (node) node.currentTopNChunks = relevantChunks;
+    const topNChunks = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
+    return `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>${topNChunks}</topNchunks>\n> Provide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
+}
+Prompt.wikipedia = function(keywords, summaries){
+    return `Wikipedia Summaries (Keywords: ${keywords}): \n ${summaries} END OF SUMMARIES`
+}
+Prompt.wolfram = function(data){
+    createWolframNode(data);
+    const textResult = data.wolframAlphaTextResult;
+    Logger.info("wolframAlphaTextResult:", textResult);
+    return "The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: " + textResult;
+}
+
+async function sendMessage(event, autoModeMessage) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
+
+    const activeInstance = getActiveZetCMInstanceInfo();
+    const noteInput = activeInstance.textarea;
+    const cm = activeInstance.cm;
+
     const promptElement = Elem.byId('prompt');
     const promptValue = promptElement.value;
     promptElement.value = ''; // Clear the textarea
@@ -14,51 +58,27 @@ async function sendMessage(event, autoModeMessage = null) {
         'bubbles': true,
         'cancelable': true
     });
-
     promptElement.dispatchEvent(promptEvent);
 
-    const message = autoModeMessage ? autoModeMessage : promptValue;
-    Ai.latestUserMessage = message;
+    const message = Ai.latestUserMessage = autoModeMessage || promptValue;
 
     Ai.isAutoModeEnabled = Elem.byId('auto-mode-checkbox').checked;
-
     if (Ai.isAutoModeEnabled && Ai.originalUserMessage === null) {
         Ai.originalUserMessage = message;
     }
 
     // Check if the last character in the note-input is not a newline, and add one if needed
     if (noteInput.value.length > 0 && noteInput.value[noteInput.value.length - 1] !== '\n') {
-        myCodeMirror.replaceRange('\n', CodeMirror.Pos(myCodeMirror.lastLine()));
+        cm.replaceRange('\n', CodeMirror.Pos(cm.lastLine()));
     }
 
-    // Call generateKeywords function to get keywords
-    const count = 3; // Set the number of desired keywords
-    const keywordsArray = await generateKeywords(message, count);
+    const arrKeywords = await generateKeywords(message, 3); // number of desired keywords
+    const strKeywords = arrKeywords.join(' ');
 
-    // Join the keywords array into a single string when needed for operations that require a string
-    const keywordsString = keywordsArray.join(' ');
-
-    // Use the first keyword from the array for specific lookups
-    const firstKeyword = keywordsArray[0];
-
-    let wikipediaSummaries;
-    let wikipediaMessage;
-
+    let wikipediaPrompt;
     if (Wikipedia.isEnabled()) {
-        // Fetch Wikipedia summaries using the first keyword
-        wikipediaSummaries = await Wikipedia.getSummaries([firstKeyword]);
-
-        // Format the Wikipedia summaries output
-        wikipediaMessage = {
-            role: "system",
-            content: `Wikipedia Summaries (Keywords: ${keywordsString}): \n ${Array.isArray(wikipediaSummaries)
-                ? wikipediaSummaries
-                    .filter(s => s !== undefined && s.title !== undefined && s.summary !== undefined)
-                    .map(s => `${s.title} (Relevance Score: ${s.relevanceScore.toFixed(2)}): ${s.summary}`)
-                    .join("\n\n")
-                : "Wiki Disabled"
-                } END OF SUMMARIES`
-        };
+        const summaries = await Wikipedia.getSummaries([arrKeywords[0]]);
+        wikipediaPrompt = Prompt.wikipedia(strKeywords, summaries);
     }
 
     let searchQuery = null;
@@ -69,169 +89,98 @@ async function sendMessage(event, autoModeMessage = null) {
             searchQuery = await constructSearchQuery(message);
         } catch (err) {
             Logger.err("In constructing search query:", err);
-            searchQuery = null;
         }
     }
 
-    let searchResultsData = null;
-    let searchResults = [];
-    let searchResultsContent;
-    let googleSearchMessage;
-
+    let googleSearchPrompt;
     if (isGoogleSearchEnabled()) {
-        searchResultsData = await performSearch(searchQuery);
-
-        if (searchResultsData) {
-            searchResults = processSearchResults(searchResultsData);
-            await displayResultsRelevantToMessage(searchResults, message);
-        }
-        searchResultsContent = searchResults.map((result, index) => {
-            return `Search Result ${index + 1}: ${result.title} - ${result.description.substring(0, 100)}...\n[Link: ${result.link}]\n`;
-        }).join('\n');
-
-        googleSearchMessage = {
-            role: "system",
-            content: "Google Search RESULTS displayed to the user:<searchresults>" + searchResultsContent + "</searchresults> CITE your sources! Always REMEMBER to follow the <format> message",
-        };
+        const content = handleNaturalLanguageSearch(searchQuery, message);
+        googleSearchPrompt = Prompt.googleSearch(content);
     }
 
-    // Start the message
-    let messages = [
-        {
-            role: "system",
-            content: `${zettelkastenPrompt()}`,
-        },
-    ];
-
-    if (Elem.byId('instructions-checkbox').checked) messages.push(instructionsMessage());
-    if (Elem.byId('code-checkbox').checked) messages.push(codeMessage());
-    if (Elem.byId('wiki-checkbox').checked) messages.push(wikipediaMessage);
-    if (Elem.byId('google-search-checkbox').checked) messages.push(googleSearchMessage);
-    if (Elem.byId('ai-nodes-checkbox').checked) messages.push(aiNodesMessage());
-
-    if (searchQuery != null && filteredKeys) {
-        // Obtain relevant keys based on the user message
-        const relevantKeys = await Keys.getRelevant(message, null, searchQuery, filteredKeys);
-
-        // Get relevant chunks based on the relevant keys
-        const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);
-        const topNChunksContent = groupAndSortChunks(relevantChunks, MAX_CHUNK_SIZE);
-
-        // Construct the embed message
-        const embedMessage = {
-            role: "system",
-            content: `Top ${topN} MATCHED snippets of TEXT from extracted WEBPAGES:\n <topNchunks>` + topNChunksContent + `</topNchunks>\n> Provide EXACT INFORMATION from the given snippets! Use [Snippet n](source) to display references to exact snippets. Make exclusive use of the provided snippets.`
-        };
-
-        messages.push(embedMessage);
+    const aiCall = AiCall.stream().addSystemPrompt(Prompt.zettelkasten());
+    if (Elem.byId('instructions-checkbox').checked) {
+        aiCall.addSystemPrompt(Prompt.instructions())
     }
+    if (Elem.byId('code-checkbox').checked) {
+        aiCall.addSystemPrompt(Prompt.code())
+    }
+    if (wikipediaPrompt) aiCall.addSystemPrompt(wikipediaPrompt);
+    if (googleSearchPrompt) aiCall.addSystemPrompt(googleSearchPrompt);
+    if (Elem.byId('ai-nodes-checkbox').checked) {
+        aiCall.addSystemPrompt(Prompt.aiNodes())
+    }
+
+    const searchQueryPrompt = await Prompt.searchQuery(message, searchQuery, filteredKeys, topN);
+    if (searchQueryPrompt) aiCall.addSystemPrompt(searchQueryPrompt);
 
     // calculate remaining tokens
     const maxTokens = Elem.byId('max-tokens-slider').value;
-    const remainingTokens = Math.max(0, maxTokens - TokenCounter.forMessages(messages));
+    const remainingTokens = Math.max(0, maxTokens - TokenCounter.forMessages(aiCall.messages));
     const maxContextSize = Elem.byId('max-context-size-slider').value;
     const contextSize = Math.min(remainingTokens, maxContextSize);
 
-    // Get the context
-    context = getLastPromptsAndResponses(100, contextSize);
-    let topMatchedNodesContent = '';
+    let context = getLastPromptsAndResponses(100, contextSize);
 
     const existingTitles = extractTitlesFromContent(context);
     Logger.debug(`existingTitles`, existingTitles, context);
+
     // Replace the original search and highlight code with neuriteSearchNotes
-    const topMatchedNodes = await neuriteSearchNotes(keywordsString);
-
-    let titlesToForget = new Set();
-
-    const nodeTag = Tag.node;
-    const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag);
+    const topMatchedNodes = await neuriteSearchNotes(strKeywords);
+    const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles);
     Logger.debug(nodeContents);
-    topMatchedNodesContent = nodeContents.join("\n\n");
+
+    let topMatchedNodesContent = nodeContents.join("\n\n");
 
     // If forgetting is enabled, extract titles to forget
     if (Elem.byId('forget-checkbox').checked) {
-
-        titlesToForget = await forget(message, `${context}\n\n${topMatchedNodesContent}`);
-
+        const titlesToForget = await forget(message, `${context}\n\n${topMatchedNodesContent}`);
         Logger.info("Titles to Forget:", titlesToForget);
 
-        // Use helper function to forget nodes from context
-        context = removeTitlesFromContext(context, titlesToForget, nodeTag);
+        context = removeTitlesFromContext(context, titlesToForget);
 
-        // Refilter topMatchedNodesContent by removing titles to forget
-        topMatchedNodesContent = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget, nodeTag).join("\n\n");
+        topMatchedNodesContent = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles, titlesToForget).join("\n\n");
         Logger.debug("Refiltered Top Matched Nodes Content:", topMatchedNodesContent);
     }
 
-    // Check if the content string is not empty
-    if (typeof topMatchedNodesContent === "string" && topMatchedNodesContent.trim() !== '') {
-        if (!Elem.byId('instructions-checkbox').checked) {
-            messages.splice(1, 0, {
-                role: "system",
-                content: `Semantically RELEVANT NOTES retrieved. BRANCH UNIQUE notes OFF OF the following ALREADY EXISTING nodes.:\n<topmatchednodes>${topMatchedNodesContent}</topmatchednodes>SYNTHESIZE missing, novel, and connected KNOWLEDGE from the given topmatchednodes.`,
-            });
-        }
+    if (topMatchedNodesContent.trim() !== '' && !Elem.byId('instructions-checkbox').checked) {
+        const prompt = Prompt.matchedNodes(topMatchedNodesContent);
+        aiCall.messages.splice(1, 0, Message.system(prompt));
     }
 
     if (context.trim() !== '') {
-        // Add the recent dialogue message only if the context is not empty
-        messages.splice(2, 0, {
-            role: "system",
-            content: `CONVERSATION HISTORY: <context>${context}</context>`,
-        });
+        aiCall.messages.splice(2, 0, Message.system(Prompt.history(context)))
     }
 
-    const autoModePrompt = Ai.isAutoModeEnabled 
-    ? `Self-Prompting is ENABLED. On the last line, WRAP a message to yourself with ${PROMPT_IDENTIFIER} to start and ${PROMPT_END} to end the prompt. Progress the conversation yourself.`
-    : '';
+    const autoModePrompt = (!Ai.isAutoModeEnabled) ? ''
+                         : Prompt.autoMode(PROMPT_IDENTIFIER, PROMPT_END);
 
-    messages.push({
-        role: "user",
-        content: autoModeMessage
-            ? `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} ${PROMPT_END}
+    const prompt = (!autoModeMessage) ? `${message}\n${autoModePrompt}`.trim()
+                 : `Your current self-${PROMPT_IDENTIFIER} ${autoModeMessage} ${PROMPT_END}
     Original ${PROMPT_IDENTIFIER} ${Ai.originalUserMessage} ${PROMPT_END}
-    ${autoModePrompt}`
-            : `${message}\n${autoModePrompt}`.trim(),
-    });
+    ${autoModePrompt}`;
+    aiCall.addUserPrompt(prompt);
 
-    let lineBeforeAppend = myCodeMirror.lastLine();
+    const lineBeforeAppend = cm.lastLine();
 
     if (!autoModeMessage) {
-        handleUserPromptAppendCodeMirror(myCodeMirror, message, PROMPT_IDENTIFIER);
+        handleUserPromptAppendCodeMirror(cm, message, PROMPT_IDENTIFIER);
     } else if (autoModeMessage) {
-        myCodeMirror.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
+        cm.replaceRange(`\n`, CodeMirror.Pos(lineBeforeAppend));
     }
 
-    activeInstance.ui.scrollToLine(myCodeMirror, lineBeforeAppend + 2); // Scroll to the new last line
+    activeInstance.ui.scrollToLine(cm, lineBeforeAppend + 2); // Scroll to the new last line
     userScrolledUp = false;
 
     // Handle Wolfram Loop after appending the prompt.
 
-    let wolframData;
+    const wolframData = (!Elem.byId('enable-wolfram-alpha').checked) ? ''
+                      : await fetchWolfram(message);
+    if (wolframData) aiCall.addSystemPrompt(Prompt.wolfram(wolframData));
 
-    if (Elem.byId('enable-wolfram-alpha').checked) {
-        wolframData = await fetchWolfram(message);
-    }
-
-    if (wolframData) {
-        const { wolframAlphaTextResult } = wolframData;
-        createWolframNode(wolframData);
-
-        const wolframAlphaMessage = {
-            role: "system",
-            content: `The Wolfram result has ALREADY been returned based off the current user message. INSTEAD of generating a new query, USE the following Wolfram result as CONTEXT: ${wolframAlphaTextResult}`
-        };
-
-        Logger.info("wolframAlphaTextResult:", wolframAlphaTextResult);
-        messages.push(wolframAlphaMessage);
-    }
-
-    // Main AI call
-    await callchatAPI(messages, stream = true);
+    await aiCall.exec();
 
     if (Ai.isResponding && Elem.byId('auto-mode-checkbox').checked) {
         sendMessage(null, extractLastPrompt())
     }
-
-    return false;
 }

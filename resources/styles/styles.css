@@ -2974,6 +2974,9 @@ textarea:focus {
 }
 
 .language-label {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     font-size: 12px;
     background-color: black;
     color: #bbb;
@@ -2983,6 +2986,12 @@ textarea:focus {
     box-sizing: border-box;
     cursor: grab;
     user-select: none;
+}
+
+.language-label:hover {
+    transform: scale(1.05);
+    transform-origin: top center;
+    transition: transform 0.3s ease;
 }
 
 .code-block {
@@ -3002,11 +3011,12 @@ textarea:focus {
     color: #D4D4D4;
 }
 
-.code-block-container.hovered {
+.code-block-container.hovered > *:not(.language-label) {
     transform: scale(1.05);
     transform-origin: top center;
     transition: transform 0.3s ease;
 }
+
 
 code.language-markdown {
     white-space: break-spaces !important;

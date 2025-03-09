@@ -181,18 +181,18 @@ Keys.getRelevant = async function(userInput, recentContext = null, searchQuery, 
         });
     });
 
-    const aiPrompt = [
-        { role: "system", content: `Determine the filepaths to select. Given the User Message and Search Query "${searchQuery}", identify between ONE and THREE numbered documents from the list most relevant to this context.` },
-        { role: "system", content: "Here is the list of files:\n" + keysDisplay.join('') }
-    ];
+    const aiCall = AiCall.single()
+        .addSystemPrompt(`Determine the filepaths to select. Given the User Message and Search Query "${searchQuery}", identify between ONE and THREE numbered documents from the list most relevant to this context.`)
+        .addSystemPrompt("Here is the list of files:\n" + keysDisplay.join(''));
+    aiCall.customTemperature = 0;
 
     if (recentContext && recentContext.trim() !== '') {
-        aiPrompt.push({ role: "system", content: "The following recent conversation may provide context:\n" + recentContext });
+        aiCall.addSystemPrompt("The following recent conversation may provide context:\n" + recentContext)
     }
 
-    aiPrompt.push({ role: "user", content: userInput });
+    aiCall.addUserPrompt(userInput);
 
-    const aiResponse = await callchatAPI(aiPrompt, false, 0);
+    const aiResponse = await aiCall.exec();
 
     const numberPattern = /\b\d+\b/g;
     let match;
@@ -212,23 +212,23 @@ Keys.getRelevant = async function(userInput, recentContext = null, searchQuery, 
 
 Keys.getRelevantNodeLinks = async function(allConnectedNodesData, userMessage, searchQuery, filteredKeys, recentContext) {
     let relevantKeys = [];
-  
+
     // Filter out only link-type nodes
     const linkNodesData = allConnectedNodesData.filter(info => info.data?.type === 'link');
-  
+
     if (linkNodesData.length > 0) {
       // Collect url and key from each link node
       const linkInfo = linkNodesData.map(info => ({
         url: info.data.data.url,
         key: info.data.data.key
       }));
-  
+
       // Get all keys from the server and determine which ones are relevant
       const allKeysFromServer = await this.getAll();
       relevantKeys = linkInfo
         .filter(info => allKeysFromServer.includes(info.key))
         .map(info => info.key);
-  
+
       // Handle any links that have not yet been extracted
       const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
       if (notExtractedLinks.length > 0) {
@@ -238,21 +238,20 @@ Keys.getRelevantNodeLinks = async function(allConnectedNodesData, userMessage, s
           linkNodesData.map(info => info.node) // Pass the link node objects themselves
         );
       }
-  
+
       // Refresh the keys after processing not-extracted links
       const updatedKeysFromServer = await this.getAll();
       relevantKeys = linkInfo
         .filter(info => updatedKeysFromServer.includes(info.key))
         .map(info => info.key);
-  
+
     } else if (searchQuery !== null && filteredKeys) {
       // Fallback: obtain relevant keys based on the user message
       relevantKeys = await this.getRelevant(userMessage, recentContext, searchQuery, filteredKeys);
     }
-  
+
     return relevantKeys;
 }
-  
 
 Keys.fetchAndDisplayAll = function(){
     const onError = Logger.err.bind(Logger, "(Server disconnect) Failed to fetch keys:");
