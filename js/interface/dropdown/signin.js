@@ -96,6 +96,7 @@ async function signIn() {
             alert("Please enable popups for this site to complete the verification.");
             return;
         }
+        neuritePanel.open();
     } catch (error) {
         console.error("Sign-in failed:", error);
     }
