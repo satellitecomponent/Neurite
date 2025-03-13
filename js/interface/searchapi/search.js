@@ -144,12 +144,13 @@ const MAX_CACHE_SIZE = 300;
 const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
 
-async function embeddedSearch(searchTerm, maxNodesOverride) {
+
+Embeddings.search = async function(searchTerm, maxNodesOverride){
     const searchTermLowered = searchTerm.toLowerCase();
     const maxNodes = maxNodesOverride ?? Elem.byId('node-count-slider').value;
     const keywords = searchTermLowered.split(/,\s*/);
 
-    const nodes = getNodeText();
+    const nodes = Object.values(Graph.nodes);
     if (nodes.length < 1) return [];
 
     const matched = [];
@@ -159,8 +160,8 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         const cachedEmbedding = nodeCache.get(compoundKey);
         if (cachedEmbedding) return cachedEmbedding;
 
-        const titleText = node.view.titleInput;
-        const contentText = node.contentText;
+        const titleText = node.getTitle() || '';
+        const contentText = node.getText() || '';
         Logger.debug("Extracted title text:", titleText);
         Logger.debug("Extracted content text:", contentText);
 
@@ -185,7 +186,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         // Updated to use new property names
         const contentMatchScore = keywords.filter(keyword => {
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            return node.contentText.match(regex);
+            return node.getText().match(regex);
         }).length;
 
         const weightedTitleScore = titleMatchScore * 10;

@@ -11,7 +11,7 @@ class NodeView {
     static windowify(title, content, node, nscale_mult = 1, intrinsicScale = 1){
         const odiv = node.content;
         const div = Html.make.div('window');
-        const svg = Elem.byId('elements').children[0].cloneNode(true);
+        const svg = Elem.deepClone(Elem.byId('elements').children[0]);
         svg.setAttribute('class', 'button-container');
 
         const headerContainer = Html.make.div('header-container');

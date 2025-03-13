@@ -7,6 +7,13 @@
 }
 
 let nodeTitles = new Set(); // Use a Set for global titles to avoid duplicates
+function getUniqueNodeTitle(baseTitle){
+    if (!nodeTitles.has(baseTitle)) return baseTitle;
+
+    const arr = [baseTitle, '(', 2, ')'];
+    while (nodeTitles.has(arr.join(''))) arr[2] += 1;
+    return arr.join('');
+}
 
 RegExp.forNodeTitle = function(tag){
     return new RegExp(`^${RegExp.escape(tag)}\\s*(.*)$`);

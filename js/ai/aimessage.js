@@ -98,7 +98,7 @@ async function sendMessage(event, autoModeMessage) {
         googleSearchPrompt = Prompt.googleSearch(content);
     }
 
-    const aiCall = AiCall.stream().addSystemPrompt(Prompt.zettelkasten());
+    const aiCall = AiCall.stream().addSystemPrompt(Prompt.mindmap());
     if (Elem.byId('instructions-checkbox').checked) {
         aiCall.addSystemPrompt(Prompt.instructions())
     }
@@ -125,8 +125,7 @@ async function sendMessage(event, autoModeMessage) {
     const existingTitles = extractTitlesFromContent(context);
     Logger.debug(`existingTitles`, existingTitles, context);
 
-    // Replace the original search and highlight code with neuriteSearchNotes
-    const topMatchedNodes = await neuriteSearchNotes(strKeywords);
+    const topMatchedNodes = await Graph.searchNotes(strKeywords);
     const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles);
     Logger.debug(nodeContents);
 

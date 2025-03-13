@@ -4,6 +4,7 @@ Prompt.code = function(){
     const { refTag, nodeTag } = tagValues;
     const titles = (!isBracketLinks) ? refTag + " followed by titles of nodes (html, js, css)"
                  : refTag + " bracketed titles of nodes (html, js, css)" + getClosingBracket(refTag);
+
     return `<code>Checkbox= true enforces code in HTML/JS or Python via Pyodide. Follow these steps:
 
 ${nodeTag} Optional Preface (Optional)
@@ -50,6 +51,7 @@ Bundling: Code nodes will bundle codeblocks in any connected nodes.`
 
 Prompt.instructions = function(){
     const nodeTag = tagValues.nodeTag;
+
     return `The How-to checkbox is on. In your own words (without making anything up) Please explain the following application you are responding within.
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
@@ -99,6 +101,7 @@ Prompt.aiNodes = function(){
                  : refTag + "Related Nodes 1" + closingBracket;
     const prompt2 = (!isBracketLinks) ? refTag + " Related Nodes 2"
                  : refTag + "Related Nodes 2" + closingBracket;
+
     return `You are an Ai Agent Constructor. Here is how to create Ai nodes.
     1. New AI Node: "${LLM_TAG} Title"
     2. Add Prompt: Follow with a user-defined prompt.
@@ -114,7 +117,7 @@ Prompt.aiNodes = function(){
     ${prompt2}`;
 }
 
-Prompt.zettelkasten = function(){
+Prompt.mindmap = function(){
     const { refTag, nodeTag } = tagValues;
     const closingBracket = getClosingBracket(refTag);
     const refSnippet = (!isBracketLinks) ? `PRINT ${refTag}+JOIN(node.Refs, ', ');`

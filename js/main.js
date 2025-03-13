@@ -1,5 +1,6 @@
 class Elem {
     static byId = document.getElementById.bind(document);
+    static deepClone(elem){ return elem.cloneNode(true) }
     static displayBlock(elem){ if (elem) elem.style.display = 'block' }
     static findChild(elem, cb, ct){
         return Array.prototype.find.call(elem.children, cb, ct)
@@ -148,6 +149,7 @@ class App {
         this.nodeSimulation.start();
         Ai.init();
         Embeddings.init();
+        Recorder.init();
         this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();
@@ -245,10 +247,10 @@ class PageLoad {
         'js/ai/ai-utility/dummyai.js',
         'js/ai/automata.js',
         'js/ai/network.js',
+        'js/interface/searchapi/embeddingsdb.js',
         'js/interface/searchapi/search.js',
         'js/interface/searchapi/searchapi.js',
         'js/interface/searchapi/wikipedia.js',
-        'js/interface/searchapi/embeddingsdb.js',
         'js/interface/searchapi/codeparser/parsemirror.js',
         'js/interface/searchapi/codeparser/gitparsed.js',
         'js/interface/searchapi/wolframapi.js',

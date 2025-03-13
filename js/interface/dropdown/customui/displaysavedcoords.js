@@ -208,23 +208,14 @@ function getSavedViews() {
 }
 
 function receiveCurrentView() {
-    const standardCoords = neuriteGetMandelbrotCoords();
-    const functionCallFormat = neuriteGetMandelbrotCoords(true);
-
     return window.prompt("Enter a title for the saved view:")
-        .then((title) => {
-            if (title === null) return null;
-
-            return {
-                title,
-                standardCoords,
-                functionCall: functionCallFormat
-            };
-        })
-        .catch((error) => {
-            Logger.err("Failed to get prompt input:", error);
-            return null;
-        });
+        .then( (title)=>(title === null ? null : {
+                            title,
+                            standardCoords: Graph.getCoords(),
+                            functionCall: Graph.getCoords(true)
+                        })
+        )
+        .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
 }
 
 function generateCopyPasteSavedViews() {
@@ -325,8 +316,7 @@ function returnToSavedView(savedView, animate = true, speed = 0.0001) {
     const panReal = parseFloat(panParts[0]);
     const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
 
-    // Call neuriteSetMandelbrotCoords with the parsed coordinates
-    neuriteSetMandelbrotCoords(
+    Animation.setCoords(
         parseFloat(standardCoords.zoom),
         panReal,
         panImaginary,

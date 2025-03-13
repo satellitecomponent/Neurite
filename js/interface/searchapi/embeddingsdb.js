@@ -15,6 +15,7 @@ const Embeddings = {
     init(){
         this.selectModel = Elem.byId('embeddingsModelSelect');
         this.worker = new Worker('/embeddings.js', { type: 'module' });
+        this.listenToWorker = this.listenToWorker.bind(this);
 
         /*
         // Initialize both models
@@ -203,37 +204,35 @@ Keys.getRelevantNodeLinks = async function(allConnectedNodesData, userMessage, s
     const linkNodesData = allConnectedNodesData.filter(info => info.data?.type === 'link');
 
     if (linkNodesData.length > 0) {
-      // Collect url and key from each link node
-      const linkInfo = linkNodesData.map(info => ({
-        url: info.data.data.url,
-        key: info.data.data.key
-      }));
+        // Collect url and key from each link node
+        const linkInfo = linkNodesData.map(info => ({
+            url: info.data.data.url,
+            key: info.data.data.key
+        }));
 
-      // Get all keys from the server and determine which ones are relevant
-      const allKeysFromServer = await this.getAll();
-      relevantKeys = linkInfo
-        .filter(info => allKeysFromServer.includes(info.key))
-        .map(info => info.key);
+        // Get all keys from the server and determine which ones are relevant
+        const allKeysFromServer = await this.getAll();
+        relevantKeys = linkInfo
+            .filter(info => allKeysFromServer.includes(info.key))
+            .map(info => info.key);
 
-      // Handle any links that have not yet been extracted
-      const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
-      if (notExtractedLinks.length > 0) {
-        // Make sure handleNotExtractedLinks is defined or imported
-        await handleNotExtractedLinks(
-          notExtractedLinks,
-          linkNodesData.map(info => info.node) // Pass the link node objects themselves
-        );
-      }
+        // Handle any links that have not yet been extracted
+        const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
+        if (notExtractedLinks.length > 0) {
+            // Make sure handleNotExtractedLinks is defined or imported
+            await handleNotExtractedLinks(
+            notExtractedLinks,
+            linkNodesData.map(info => info.node) // Pass the link node objects themselves
+            );
+        }
 
-      // Refresh the keys after processing not-extracted links
-      const updatedKeysFromServer = await this.getAll();
-      relevantKeys = linkInfo
-        .filter(info => updatedKeysFromServer.includes(info.key))
-        .map(info => info.key);
-
+        // Refresh the keys after processing not-extracted links
+        const updatedKeysFromServer = await this.getAll();
+        relevantKeys = linkInfo
+            .filter(info => updatedKeysFromServer.includes(info.key))
+            .map(info => info.key);
     } else if (searchQuery !== null && filteredKeys) {
-      // Fallback: obtain relevant keys based on the user message
-      relevantKeys = await this.getRelevant(userMessage, recentContext, searchQuery, filteredKeys);
+        relevantKeys = await this.getRelevant(userMessage, recentContext, searchQuery, filteredKeys)
     }
 
     return relevantKeys;

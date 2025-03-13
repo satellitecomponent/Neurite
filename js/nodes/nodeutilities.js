@@ -276,18 +276,3 @@ function testNodeText(title) {
     Logger.info("Node with title:", title, "has text:", text);
     return text;
 }
-
-function getNodeText() {
-    const nodes = [];
-    Graph.forEachNode( (node)=>{
-        const titleInput = node.view.titleInput;
-        const contentText = node.hiddenTextarea;
-
-        nodes.push({
-            ...node,
-            titleInput: titleInput ? titleInput.value : '',
-            contentText: contentText ? contentText.value : ''
-        });
-    });
-    return nodes;
-}

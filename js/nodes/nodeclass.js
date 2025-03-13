@@ -363,6 +363,9 @@ class Node {
         e.stopPropagation();
     }
 
+    getText(){
+        return (this.textarea || this.contentEditableDiv)?.value || ''
+    }
     getTitle(){ return this.view.titleInput.value }
 
     getEdgeDirectionalities() {

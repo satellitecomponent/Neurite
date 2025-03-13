@@ -366,7 +366,7 @@ class DropHandler {
         const imageElement = Html.new.img();
         imageElement.src = url;
         imageElement.onload = () => {
-            const node = createImageNode(imageElement, metadataOrFile.name || metadataOrFile);
+            const node = NodeView.addForImage(imageElement, metadataOrFile.name || metadataOrFile);
             this.afterNodeCreation(node);
         };
     }

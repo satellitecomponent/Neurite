@@ -10,9 +10,9 @@ class Model {
     }
 
     initialize(input){
-        return import(this.urlTransformers)
-                .then(this.#getExtractor.bind(this))
-                .then(this.#postReady.bind(this), this.#onInitError)
+        return this.#promExtractor = import(this.urlTransformers)
+            .then(this.#getExtractor.bind(this))
+            .then(this.#postReady.bind(this), this.#onInitError)
     }
     #getExtractor(transformers){
         const { pipeline, env } = transformers;
@@ -44,15 +44,17 @@ class Model {
         }
 
         const onExtractor = this.#passTextToExtractor.bind(this, text);
-        return (this.#promExtractor ||= this.initialize())
-                .then(onExtractor, this.#postError);
+        return this.#promExtractor = (this.#promExtractor || this.initialize())
+            .then(onExtractor, this.#postError);
     }
     #passTextToExtractor(text, extractor){
         const options = {
             pooling: 'mean',
             normalize: true,
         };
-        return extractor(text, options).then(this.#postResult);
+        return extractor(text, options)
+            .then(this.#postResult)
+            .then( ()=>extractor );
     }
     #postResult(output){ post('result', Array.from(output.data)) }
     #postError = (err)=>{ post.error(err.message) }
