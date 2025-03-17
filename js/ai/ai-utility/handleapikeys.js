@@ -224,11 +224,8 @@ Proxy.checkServer = async function(){
     useProxy = await Request.send(new Proxy.checkServer.ct());
     if (useProxy) {
         Ollama.library = await getOllamaLibrary();
-        Ollama.baseUrl = 'http://localhost:7070/ollama/';
-    } else {
-        Ollama.baseUrl = 'http://127.0.0.1:11434/api/';
     }
-
+    Ollama.baseUrl = Ollama.getBaseUrl();
     await Ollama.selectOnPageLoad();
 }
 Proxy.checkServer.ct = class {
@@ -243,22 +240,20 @@ Proxy.provideAPIKeys = async function(){
     await Request.send(new Proxy.provideAPIKeys.ct())
 }
 Proxy.provideAPIKeys.ct = class {
-    constructor(){
+    constructor() {
         this.url = 'http://localhost:7070/api-keys';
         this.options = {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 openaiApiKey: Elem.byId('api-key-input').value,
                 groqApiKey: Elem.byId('GROQ-api-key-input').value,
-                anthropicApiKey: Elem.byId('anthropic-api-key-input').value
+                anthropicApiKey: Elem.byId('anthropic-api-key-input').value,
+                ollamaBaseUrl: Ollama.userBaseUrl()
             })
-        }
+        };
     }
-    // onSuccess(){ return "API keys provided to the proxy server" }
-    onFailure(){ return "Failed to provide API keys to the proxy server:" }
+    onFailure() { return "Failed to provide API keys to the proxy server"; }
 }
 
 function getAPIParams(messages, stream, customTemperature, inferenceOverride) {

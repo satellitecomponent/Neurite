@@ -13,6 +13,9 @@ let anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 let groqApiKey = process.env.GROQ_API_KEY;
 let customApiKey = process.env.CUSTOM_API_KEY;
 
+// Ollama Base URL
+let ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/api/';
+
 // Middleware to parse JSON request bodies
 app.use(express.json({ limit: '50mb' })); // Increase the limit to handle large payloads
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -34,19 +37,13 @@ app.get('/check', (req, res) => {
 
 // Endpoint to receive API keys from the client-side JavaScript
 app.post('/api-keys', (req, res) => {
-    const { openaiApiKey: clientOpenaiApiKey, groqApiKey: clientGroqApiKey, anthropicApiKey: clientAnthropicApiKey } = req.body;
-    if (!openaiApiKey && clientOpenaiApiKey) {
-        openaiApiKey = clientOpenaiApiKey;
-        console.log('OpenAI API Key received from client-side JavaScript');
-    }
-    if (!groqApiKey && clientGroqApiKey) {
-        groqApiKey = clientGroqApiKey;
-        console.log('GROQ API Key received from client-side JavaScript');
-    }
-    if (!anthropicApiKey && clientAnthropicApiKey) {
-        anthropicApiKey = clientAnthropicApiKey;
-        console.log('Anthropic API Key received from client-side JavaScript');
-    }
+    const { openaiApiKey: clientOpenaiApiKey, groqApiKey: clientGroqApiKey, anthropicApiKey: clientAnthropicApiKey, ollamaBaseUrl: clientOllamaBaseUrl } = req.body;
+
+    if (clientOpenaiApiKey) openaiApiKey = clientOpenaiApiKey;
+    if (clientGroqApiKey) groqApiKey = clientGroqApiKey;
+    if (clientAnthropicApiKey) anthropicApiKey = clientAnthropicApiKey;
+    if (clientOllamaBaseUrl) ollamaBaseUrl = clientOllamaBaseUrl;
+
     res.sendStatus(200);
 });
 
@@ -227,7 +224,7 @@ app.post('/groq', async (req, res) => {
 });
 
 app.post('/ollama/chat', async (req, res) => {
-    await handleApiRequest(req, res, 'http://127.0.0.1:11434/api/chat', null, 'ollama', { context: "" });
+    await handleApiRequest(req, res, `${ollamaBaseUrl}chat`, null, 'ollama', { context: "" });
 });
 
 app.post('/custom', async (req, res) => {
@@ -238,7 +235,7 @@ app.post('/custom', async (req, res) => {
 
 app.get('/ollama/tags', async (req, res) => {
     try {
-        const response = await axios.get('http://127.0.0.1:11434/api/tags');
+        const response = await axios.get(`${ollamaBaseUrl}tags`);
         res.json(response.data);
     } catch (error) {
         console.error('Error fetching Ollama tags:', error);
@@ -270,7 +267,7 @@ app.get('/ollama/library', async (req, res) => {
 app.post('/ollama/embeddings', async (req, res) => {
     const { model, prompt, options, keep_alive } = req.body;
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/embeddings', {
+        const response = await axios.post(`${ollamaBaseUrl}embeddings`, {
             model,
             prompt,
             options,
@@ -286,7 +283,7 @@ app.post('/ollama/embeddings', async (req, res) => {
 app.post('/ollama/pull', async (req, res) => {
     const { name, insecure, stream } = req.body;
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/pull', {
+        const response = await axios.post(`${ollamaBaseUrl}pull`, {
             name,
             insecure,
             stream
@@ -315,7 +312,7 @@ app.post('/ollama/pull', async (req, res) => {
 app.delete('/ollama/delete', async (req, res) => {
     const { name } = req.body;
     try {
-        const response = await axios.delete('http://127.0.0.1:11434/api/delete', {
+        const response = await axios.delete(`${ollamaBaseUrl}delete`, {
             data: { name }
         });
         res.json(response.data);
@@ -328,7 +325,7 @@ app.delete('/ollama/delete', async (req, res) => {
 app.post('/ollama/create', async (req, res) => {
     const { name, modelfile, stream, path } = req.body;
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/create', {
+        const response = await axios.post(`${ollamaBaseUrl}create`, {
             name,
             modelfile,
             stream,
@@ -344,7 +341,7 @@ app.post('/ollama/create', async (req, res) => {
 app.post('/ollama/show', async (req, res) => {
     const { name } = req.body;
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/show', {
+        const response = await axios.post(`${ollamaBaseUrl}show`, {
             name
         });
         res.json(response.data);
@@ -358,7 +355,7 @@ app.post('/ollama/show', async (req, res) => {
 app.head('/ollama/blobs/:digest', async (req, res) => {
     const { digest } = req.params;
     try {
-        const response = await axios.head(`http://127.0.0.1:11434/api/blobs/${digest}`);
+        const response = await axios.head(`${ollamaBaseUrl}blobs/${digest}`);
         res.status(response.status).end();
     } catch (error) {
         console.error('Error checking blob:', error);
@@ -370,7 +367,7 @@ app.head('/ollama/blobs/:digest', async (req, res) => {
 app.post('/ollama/blobs/:digest', async (req, res) => {
     const { digest } = req.params;
     try {
-        const response = await axios.post(`http://127.0.0.1:11434/api/blobs/${digest}`, req.body, {
+        const response = await axios.post(`${ollamaBaseUrl}blobs/${digest}`, req.body, {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -385,7 +382,7 @@ app.post('/ollama/blobs/:digest', async (req, res) => {
 app.post('/ollama/push', async (req, res) => {
     const { name, insecure, stream } = req.body;
     try {
-        const response = await axios.post('http://127.0.0.1:11434/api/push', {
+        const response = await axios.post(`${ollamaBaseUrl}push`, {
             name,
             insecure,
             stream

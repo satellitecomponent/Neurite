@@ -2,7 +2,17 @@
     curInstalledNames: new Map(),
     defaultModels: [],
     library: null
-};
+}
+
+Ollama.userBaseUrl = function(){
+    return Modal.getInputValue('ollamaManagerModal', 'ollamaBaseUrl', 'http://127.0.0.1:11434/api/');
+}
+
+Ollama.getBaseUrl = function(){
+    const base = Ollama.userBaseUrl();
+    return useProxy ? 'http://localhost:7070/ollama/' : base;
+}
+
 
 Ollama.selectOnPageLoad = async function(){
     const select = Elem.byId('local-model-select');
