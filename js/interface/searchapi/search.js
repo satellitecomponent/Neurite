@@ -51,13 +51,10 @@ function performZettelkastenSearch(searchTerm) {
         div.appendChild(title);
 
         function onClick(e){
-            this.zoom_to();
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFrame(this).start()
         }
         function onDblClick(e){
-            this.zoom_to();
-            skipAutopilot();
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFrame(this).skip().start()
         }
         On.click(div, onClick.bind(node));
         On.dblclick(div, onDblClick.bind(node));

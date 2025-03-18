@@ -40,7 +40,7 @@ class NodeView {
         odiv.dataset.viewType = 'nodeViews';
         odiv.dataset.viewId = node.uuid;
 
-        node.scale = nscale_mult * (zoom.mag2() ** settings.zoomContentExp);
+        node.scale = nscale_mult * (Graph.zoom.mag2() ** settings.zoomContentExp);
         node.intrinsicScale = intrinsicScale;
         const view = node.view = new NodeView(node);
         view.buttons = svg;
@@ -99,7 +99,7 @@ class NodeView {
         });
 
         On.mousedown(windowDiv, (e)=>{
-            autopilotSpeed = 0;
+            Autopilot.stop();
             dropdown.classList.add('no-select');
             Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
         });
@@ -201,9 +201,7 @@ class NodeView {
         });
 
         ui(btnFs, () => {
-            node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.2);
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFitFrame(node).targetZoom_scaleBy(1.2).start();
             if (node.isTextNode) {
                 const nodeInfo = getZetNodeCMInstance(node);
                 nodeInfo.ui.scrollToTitle(node.getTitle());

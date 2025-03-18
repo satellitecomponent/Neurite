@@ -147,47 +147,6 @@ var flashlight_fraction = 0.73; // this is what fraction of samples are diverted
 
 
 
-class Interface {
-    altHeld = false;
-    nodeMode = new NodeMode(this.autoToggleAllOverlays.bind(this));
-    overlays = [];
-    constructor(){
-        On.keydown(document, this.altKeyDown);
-        On.keyup(document, this.altKeyUp);
-        On.message(window, this.onMessage);
-    }
-
-    autoToggleAllOverlays(){
-        const condition = (this.altHeld || this.nodeMode.val === 1);
-        for (const overlay of this.overlays) {
-            overlay.style.display = (condition ? 'block' : 'none');
-        }
-    }
-    altKeyDown = (e)=>{
-        if (e.altKey) {
-            this.altHeld = true;
-            this.autoToggleAllOverlays();
-            e.preventDefault(); // e.g. focusing on the iframe
-        }
-    }
-    altKeyUp = (e)=>{
-        if (!e.altKey) {
-            this.altHeld = false;
-            this.autoToggleAllOverlays();
-        }
-    }
-    onMessage = (e)=>{
-        const data = e.data;
-        if (data.altHeld !== undefined) {
-            this.altHeld = data.altHeld;
-            this.autoToggleAllOverlays();
-        }
-        this.nodeMode.val = data.nodeMode ?? 0;
-    }
-}
-
-
-
 class ProcessedNodes {
     map = {};
 

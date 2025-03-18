@@ -20,8 +20,8 @@ function saveControls() {
 }
 
 function updateMouseButtons() {
-    mousePanButton = settings.panClick;
-    mouseZoomButton = settings.zoomClick;
+    App.interface.mousePanButton = settings.panClick;
+    App.interface.mouseZoomButton = settings.zoomClick;
 }
 
 function openControlsModal() {

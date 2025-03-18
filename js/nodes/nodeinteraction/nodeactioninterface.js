@@ -111,8 +111,7 @@ NodeActions.base = class BaseNodeActions {
     updateSensor() { this.node.updateSensor(); }
     zoomTo() { Animation.zoomToNodeTitle(this.node); }
     follow() {
-        autopilotSpeed = settings.autopilotSpeed;
-        autopilotReferenceFrame = this.node;
+        Autopilot.setNode(this.node).start();
         App.menuContext.hide();
     }
     connect() {

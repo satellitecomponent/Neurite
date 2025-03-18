@@ -316,7 +316,7 @@ function returnToSavedView(savedView, animate = true, speed = 0.0001) {
     const panReal = parseFloat(panParts[0]);
     const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
 
-    Animation.setCoords(
+    Animation.goToCoords(
         parseFloat(standardCoords.zoom),
         panReal,
         panImaginary,

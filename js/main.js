@@ -150,6 +150,7 @@ class App {
         Ai.init();
         Embeddings.init();
         Recorder.init();
+        this.interface.init();
         this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();

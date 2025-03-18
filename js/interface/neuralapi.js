@@ -1,118 +1,125 @@
 // If funcUpdate depends on requestAnimationFrame, duration should be positive.
 Promise.forAnimation = function(name, duration, funcUpdate, funcIsComplete){
-    return (new Animation(duration, funcUpdate, funcIsComplete))
+    return (new Animation(duration))
+        .setFuncs(funcUpdate, funcIsComplete)
         .executeProm(name)
 }
 
 class Animation {
     static activeCount = 0;
     funcEase = easeInOutCubic;
+    funcIsComplete = Animation.onDurationCompleted;
+    funcUpdate = Animation.interpolateZoomAndPan;
     name = "unnamed";
-    reject = Function.nop;
-    resolve = Function.nop;
+
+    startPan = Graph.pan;
     startTime = Date.now();
     // startValue = 0;
-    // endValue = 1;
-    constructor(duration, funcUpdate, funcIsComplete){
-        this.duration = duration;
-        this.funcUpdate = funcUpdate;
-        this.funcIsComplete = funcIsComplete || Animation.onDurationCompleted;
+    startZoom = Graph.zoom;
 
-        this.setParams();
+    endPan = null;
+    // endValue = 1;
+    endZoom = null;
+
+    constructor(duration){ this.duration = duration }
+    setFuncs(funcUpdate, funcIsComplete){
+        this.funcUpdate = funcUpdate || Animation.interpolateZoomAndPan;
+        this.funcIsComplete = funcIsComplete || Animation.onDurationCompleted;
+        return this;
     }
 
     static interpolateZoomAndPan(t){
-        pan = interpolateVec2(this.startPan, this.endPan, t);
+        Graph.pan_set(Interpolation.forVec2(this.startPan, this.endPan, t));
         if (this.endZoom !== null) {
-            zoom = linterpolateVec2(this.startZoom.clog(), this.endZoom.clog(), t).cexp();
+            Graph.zoom_set(Interpolation.forVec2Log(this.startZoom.clog(), this.endZoom.clog(), t).cexp());
             if (this.rotationAngle !== null) {
-                const currentRotation = interpolate(this.startRotation, this.endRotation, t);
-                const r = new vec2(Math.cos(currentRotation), Math.sin(currentRotation));
-                zoom = zoom.cmult(r);
-
-                const pivot = toZ(new vec2(this.pivotX, this.pivotY));
-                const zc = pivot.minus(pan);
-                pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
+                const curRotation = Interpolation.forNums(this.startRotation, this.endRotation, t);
+                const r = new vec2(Math.cos(curRotation), Math.sin(curRotation));
+                const pivot = Graph.xyToZ(this.pivotX, this.pivotY);
+                const zc = pivot.minus(Graph.pan);
+                Graph.zoom_cmultWith(r)
+                    .pan_incBy(zc.cmult(new vec2(1, 0).minus(r)));
             }
         }
-        Svg.updateViewbox(pan, zoom);
+        Svg.updateViewbox(Graph.pan, Graph.zoom);
     }
     static onDurationCompleted(progress){ return progress >= 1 }
 
-    onStep = ()=>{
+    #onStep = ()=>{
         let res;
         const progress = Math.min((Date.now() - this.startTime) / this.duration, 1);
         try {
             res = this.funcUpdate.call(this, this.funcEase(progress));
         } catch (err) {
-            if (!this.reject) throw(err);
+            if (!this.#reject) throw(err);
 
-            return this.onError(err);
+            return this.#onError(err);
         }
         if (!this.funcIsComplete(progress)) {
-            requestAnimationFrame(this.onStep);
+            requestAnimationFrame(this.#onStep);
             return;
         }
-        if (!this.resolve) return;
+        if (!this.#resolve) return;
 
-        this.onComplete(res);
+        this.#onComplete(res);
     }
-    onComplete = (res)=>{
+    #onComplete = (res)=>{
         Animation.activeCount -= 1;
         Logger.info(this.name, "completed, left:", Animation.activeCount);
-        this.resolve(res);
+        this.#resolve(res);
     }
-    onError = (err)=>{
+    #onError = (err)=>{
         Animation.activeCount -= 1;
         Logger.err("In", this.name, "animation:", err);
-        this.reject(err);
+        this.#reject(err);
     }
 
-    execute(){ requestAnimationFrame(this.onStep) }
+    #reject = Function.nop;
+    #resolve = Function.nop;
+    execute(){ requestAnimationFrame(this.#onStep) }
     executeProm(name = "unnamed"){
         this.name = name;
         return new Promise(this.#exec);
     }
     #exec = (resolve, reject)=>{
-        this.resolve = resolve;
-        this.reject = reject;
+        this.#resolve = resolve;
+        this.#reject = reject;
         Animation.activeCount += 1;
         if (this.duration > 0) return this.execute();
 
-        this.funcUpdate().then(this.onComplete).catch(this.onError);
+        this.funcUpdate().then(this.#onComplete).catch(this.#onError);
     }
 
-    setParams(startPan, endPan, startZoom = null, endZoom = null, rotateParams){
-        this.startPan = startPan;
+    setEndPanAndZoom(endPan, endZoom = null){
         this.endPan = endPan;
-        this.startZoom = startZoom;
         this.endZoom = endZoom;
+        return this;
+    }
+    setRotationParams(params){
+        this.rotationAngle = params.rotationAngle ?? null;
+        if (this.rotationAngle === null) return this;
 
-        const rotationAngle = this.rotationAngle = rotateParams?.rotationAngle ?? null;
-        if (rotationAngle !== null) {
-            this.startRotation = 0;
-            this.endRotation = rotationAngle * Math.PI / 180; // Convert degrees to radians
-            this.pivotX = rotateParams.pivotX ?? window.innerWidth / 2;
-            this.pivotY = rotateParams.pivotY ?? window.innerHeight / 2;
-        }
-
+        this.startRotation = 0;
+        this.endRotation = this.rotationAngle * Math.PI / 180; // Convert degrees to radians
+        this.pivotX = params.pivotX ?? window.innerWidth / 2;
+        this.pivotY = params.pivotY ?? window.innerHeight / 2;
         return this;
     }
 }
 
-function interpolate(startValue, endValue, t) {
-    return startValue + (endValue - startValue) * t;
+const Interpolation = {
+    forNums(numStart, numEnd, t){
+        return numStart + (numEnd - numStart) * t
+    },
+    forVec2(vecStart, vecEnd, t){
+        const x = this.forNums(vecStart.x, vecEnd.x, t);
+        const y = this.forNums(vecStart.y, vecEnd.y, t);
+        return new vec2(x, y);
+    },
+    forVec2Log(a, b, t){
+        return this.forVec2(a.clog(), b.clog(), t).cexp()
+    }
 }
-
-// Use logarithmic interpolate for zoom  (a,b,t) => interpolateVec2(a.clog(),b.clog(),t).cexp()
-function interpolateVec2(startVec, endVec, t) {
-    const x = interpolate(startVec.x, endVec.x, t);
-    const y = interpolate(startVec.y, endVec.y, t);
-    return new vec2(x, y);
-}
-
-const linterpolateVec2 = (a, b, t) => interpolateVec2(a.clog(), b.clog(), t).cexp()
-
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -121,29 +128,23 @@ function easeInOutCubic(t) {
 
 Animation.zoom = function(zoomFactor, targetX = window.innerWidth / 2, targetY = window.innerHeight / 2, duration = 1000){
     const inverseFactor = 1 / zoomFactor;
-    const dest = toZ(new vec2(targetX, targetY));
-    const endPan = dest.scale(1 - inverseFactor).plus(pan.scale(inverseFactor));
-    const endZoom = zoom.scale(inverseFactor);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-        .setParams(pan, endPan, zoom, endZoom).execute();
+    const dest = Graph.xyToZ(targetX, targetY);
+    const endPan = dest.scale(1 - inverseFactor).plus(Graph.pan.scale(inverseFactor));
+    const endZoom = Graph.zoom.scale(inverseFactor);
+    (new Animation(duration)).setEndPanAndZoom(endPan, endZoom).execute();
 }
 Animation.pan = function(deltaX, deltaY, duration = 1000){
     const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-    const endPan = pan.plus(dp);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-        .setParams(pan, endPan).execute();
+    const endPan = Graph.pan.plus(dp);
+    (new Animation(duration)).setEndPanAndZoom(endPan).execute();
 }
 Animation.rotate = function(rotationAngle, pivotX, pivotY, duration = 1000){
-    const p = toZ(new vec2(pivotX, pivotY));
-    const zc = p.minus(pan);
+    const p = Graph.xyToZ(pivotX, pivotY);
+    const zc = p.minus(Graph.pan);
     const r = new vec2(Math.cos(rotationAngle), Math.sin(rotationAngle));
-    const endPan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
-    const endZoom = zoom.cmult(r);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-        .setParams(pan, endPan, zoom, endZoom).execute();
+    const endPan = Graph.pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
+    const endZoom = Graph.zoom.cmult(r);
+    (new Animation(duration)).setEndPanAndZoom(endPan, endZoom).execute();
 }
 
 const defaultMovements = {
@@ -162,37 +163,36 @@ const defaultMovements = {
 Animation.movement = function(movements = [], cz = {}, cp = {}, cr = {}, d = 1000){
     movements = [].concat(movements);
     const { z, p, r, duration } = movements.reduce(
-      (acc, m) => {
-        const def = defaultMovements[m] || {};
-        if (def.zoomParams) Object.assign(acc.z, def.zoomParams);
-        if (def.panParams) Object.assign(acc.p, def.panParams);
-        if (def.rotateParams?.rotationAngle !== undefined) Object.assign(acc.r, def.rotateParams);
-        acc.duration = def.duration || acc.duration;
-        return acc;
-      },
-      { z: {}, p: {}, r: {}, duration: d }
+        (acc, m)=>{
+            const def = defaultMovements[m] || {};
+            if (def.zoomParams) Object.assign(acc.z, def.zoomParams);
+            if (def.panParams) Object.assign(acc.p, def.panParams);
+            if (def.rotateParams?.rotationAngle !== undefined) Object.assign(acc.r, def.rotateParams);
+            acc.duration = def.duration || acc.duration;
+            return acc;
+        },
+        { z: {}, p: {}, r: {}, duration: d }
     );
     Object.assign(z, cz);
     Object.assign(p, cp);
-    Object.assign(r, "rotationAngle" in cr ? cr : {});
-    let endPan = Object.keys(p).length
-        ? pan.plus(toDZ(new vec2(p.deltaX || 0, p.deltaY || 0).scale(settings.panSpeed)))
-        : pan;
-    let endZoom = zoom;
-    const { zoomFactor = 1, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = z;
-    ({ endPan, endZoom } =
-      Object.keys(z).length && zoomFactor !== 1
-        ? {
-            endPan: toZ(new vec2(zoomX, zoomY))
-                .scale(1 - zoomFactor)
-                .plus(endPan.scale(zoomFactor)),
-            endZoom: zoom.scale(zoomFactor)
-          }
-        : { endPan, endZoom }
-    );
-    const rotateParams = (Object.keys(r).length ? r : null);
-    return new Animation(duration, Animation.interpolateZoomAndPan)
-        .setParams(pan, endPan, zoom, endZoom, rotateParams)
+    Object.assign(r, cr);
+
+    let endPan = (Object.keys(p).length < 1) ? Graph.pan
+        : Graph.pan.plus(toDZ(new vec2(p.deltaX || 0, p.deltaY || 0).scale(settings.panSpeed)));
+    let endZoom = Graph.zoom;
+    const zoomFactor = z.zoomFactor;
+    if (zoomFactor !== undefined && zoomFactor !== 1) {
+        const zoomX = z.zoomX ?? window.innerWidth / 2;
+        const zoomY = z.zoomY ?? window.innerHeight / 2;
+        endPan = Graph.xyToZ(zoomX, zoomY)
+            .scale(1 - zoomFactor)
+            .plus(endPan.scale(zoomFactor));
+        endZoom = Graph.zoom.scale(zoomFactor);
+    }
+
+    return (new Animation(duration))
+        .setEndPanAndZoom(endPan, endZoom)
+        .setRotationParams(r)
         .executeProm("Movement");
   }
 
@@ -203,7 +203,7 @@ zoomTo = zoom.unscale(gz ** 0.5);
 autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
-Animation.setCoords = function(zoomMagnitude, panReal, panImaginary, speed = 0.1){
+Animation.goToCoords = function(zoomMagnitude, panReal, panImaginary, speed = 0.1){
     let animate = true;
 
     const newZoomMagnitude = parseFloat(zoomMagnitude);
@@ -213,69 +213,59 @@ Animation.setCoords = function(zoomMagnitude, panReal, panImaginary, speed = 0.1
     if (!animate) { // Resolve immediately
         // Directly set the new zoom and pan values
         if (newZoomMagnitude !== 0) {
-            zoom = zoom.scale(newZoomMagnitude / zoom.mag());
+            Graph.zoom_scaleBy(newZoomMagnitude / Graph.zoom.mag())
         }
-        pan = new vec2(newPanReal, newPanImaginary);
+        Graph.pan_set(new vec2(newPanReal, newPanImaginary));
         return Promise.resolve();
     }
 
-    const targetZoom = zoom.scale(newZoomMagnitude / zoom.mag());
+    const targetZoom = Graph.zoom.scale(newZoomMagnitude / Graph.zoom.mag());
     const targetPan = new vec2(newPanReal, newPanImaginary);
-    return (new Animation.SetCoords(targetPan, targetZoom, speed)).promise();
+    return (new Animation.GoToCoords(targetPan, targetZoom, speed)).promise();
 }
-Animation.SetCoords = class {
+Animation.GoToCoords = class {
     constructor(targetPan, targetZoom, speed){
         this.targetPan = targetPan;
         this.targetZoom = targetZoom;
         this.speed = speed;
     }
     promise(){
-        const speed = this.speed;
-        autopilotSpeed = (speed > 1 ? settings.autopilotSpeed : speed);
-        autopilotReferenceFrame = undefined;
-
+        Autopilot.setNode().start(this.speed > 1 ? undefined : this.speed);
         return Promise.forAnimation("Set Coords", 1, this.update, this.isComplete) // positive duration
-            .finally(resetAutopilot);
+            .finally(Autopilot.reset);
     }
     update = (t)=>{
         // Regular animation steps
         const targetZoom = this.targetZoom;
-        const currentZoom = zoom.mag();
+        const currentZoom = Graph.zoom.mag();
         const stepZoom = currentZoom + (targetZoom.mag() - currentZoom) * t;
 
         // Ensure zoom does not undershoot or overshoot
-        if (Math.abs(stepZoom - targetZoom.mag()) < autopilotThreshold) {
-            zoomTo = targetZoom;
+        if (Math.abs(stepZoom - targetZoom.mag()) < Autopilot.threshold) {
+            Autopilot.targetZoom = targetZoom
         } else {
-            zoomTo = zoom.scale(stepZoom / currentZoom);
+            Autopilot.targetZoom = Graph.zoom.scale(stepZoom / currentZoom)
         }
 
+        const pan = Graph.pan;
         const stepPanX = pan.x + (this.targetPan.x - pan.x) * t;
         const stepPanY = pan.y + (this.targetPan.y - pan.y) * t;
-        panTo = new vec2(stepPanX, stepPanY);
+        Autopilot.targetPan = new vec2(stepPanX, stepPanY);
     }
     isComplete = ()=>{
-        if (autopilotSpeed === 0) {
+        if (!Autopilot.isMoving()) {
             Logger.info("Animation interrupted by user interaction.");
             return true;
         }
 
-        const res = zoom.closeEnough(this.targetZoom, autopilotThreshold)
-                 && pan.closeEnough(this.targetPan, autopilotThreshold);
+        const res = Autopilot.vectorsCloseEnough(Graph.zoom, this.targetZoom)
+                 && Autopilot.vectorsCloseEnough(Graph.pan, this.targetPan);
         if (res) { // If close-enough, equate them
-            pan = this.targetPan;
-            zoom = this.targetZoom;
+            Graph.pan_set(this.targetPan).zoom_set(this.targetZoom)
         }
         return res;
     }
 }
-
-const autopilotThreshold = 0.000001; // Define a suitable threshold
-
-// Helper function to check if two vectors are close enough (within a threshold)
-vec2.prototype.closeEnough = function (target, autopilotThreshold) {
-    return this.minus(target).mag() < autopilotThreshold;
-};
 
 Animation.zoomToNodeTitle = function(nodeOrTitle, zoomLevel = 1.0, delay){
     let node;
@@ -298,18 +288,15 @@ Animation.ZoomToNode = class {
         this.node = node;
     }
     launch(){
-        const bb = this.node.content.getBoundingClientRect();
-        if (bb && bb.width > 0 && bb.height > 0) {
-            this.node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.5);
+        if (this.node.hasBoundingRectangle()) {
+            Autopilot.zoomToFitFrame(this.node).targetZoom_scaleBy(1.5).start()
         } else {
-            this.node.zoom_to(0.5);
+            Autopilot.zoomToFrame(this.node, 0.5).start()
         }
-        autopilotSpeed = settings.autopilotSpeed;
     }
     finish(){
         clearInterval(this.#idInterval);
-        resetAutopilot();
+        Autopilot.reset();
         this.#resolve(this.node);
     }
     promise(){ return Promise.forAnimation("Zoom to Node", 0, this.run) }
@@ -318,13 +305,13 @@ Animation.ZoomToNode = class {
     #idInterval = 0;
     #resolve = Function.nop;
     #onCheck = ()=>{
-        if (autopilotSpeed !== 0) return;
+        if (Autopilot.isMoving()) return;
 
         Logger.info("Animation interrupted by user interaction.");
         this.finish();
     }
     #onTimeout = ()=>{
-        if (autopilotSpeed !== 0) Logger.debug("Animation completed normally.");
+        if (Autopilot.isMoving()) Logger.debug("Animation completed normally.");
         this.finish();
     }
     #runExec = (resolve)=>{
@@ -363,28 +350,28 @@ Animation.searchAndZoom = function(searchTerm, maxNodesOverride = null, zoomLeve
 }
 Animation.resetView = function(animate = true, duration = 2000){
     const defaultZoomMagnitude = 1.3;
+    const defaultZoom = Graph.zoom.scale(defaultZoomMagnitude / Graph.zoom.mag());
+
     const defaultPanReal = -0.3;
     const defaultPanImaginary = 0;
-    const defaultZoom = zoom.scale(defaultZoomMagnitude / zoom.mag());
     const defaultPan = new vec2(defaultPanReal, defaultPanImaginary);
 
     if (!animate) { // Resolve immediately
-        zoom = defaultZoom;
-        pan = defaultPan;
+        Graph.zoom_set(defaultZoom).pan_set(defaultPan);
         return Promise.resolve();
     }
 
     return Promise.forAnimation("Reset View", duration, (t)=>{
-        zoom = interpolateVec2(zoom, defaultZoom, t);
-        pan = interpolateVec2(pan, defaultPan, t);
+        Graph.zoom_set(Interpolation.forVec2(Graph.zoom, defaultZoom, t))
+            .pan_set(Interpolation.forVec2(Graph.pan, defaultPan, t))
     });
 }
 
 Graph.prototype.getCoords = function(forFunctionCall = false){
     // Extract and format zoom and pan values
-    const zoomValue = zoom.x.toExponential();
-    const panReal = pan.x.toExponential();
-    const panImaginary = pan.y.toExponential();
+    const zoomValue = this.zoom.x.toExponential();
+    const panReal = this.pan.x.toExponential();
+    const panImaginary = this.pan.y.toExponential();
 
     if (forFunctionCall) {
         // Format for setMandelbrotCoords function call
@@ -458,7 +445,7 @@ Animation.queueAnimations = function(animations){
     const processQueue = neuriteAnimationQueue.bind(null, transformedAnimations);
     return Promise.forAnimation("Queue Animations", 0, processQueue);
 }
-Animation.waitForAllActive = class {
+Animation.WaitForAllActive = class {
     constructor(additionalDelay = 0){ this.additionalDelay = additionalDelay }
     promise(){ return new Promise(this.#exec) }
 
@@ -545,7 +532,7 @@ Animation.movementAi = async function(movementIntention, totalIterations = 1, cu
         await App.viewCode.callVisionModel(messages, async ()=>{
             App.viewCode.runCode(true); // Run code with increment and decrement of activeAnimations.
 
-            await (new Animation.waitForAllActive).promise();
+            await (new Animation.WaitForAllActive).promise();
             Logger.info("awaited");
             // Recursive call for the next iteration
             await Animation.movementAi(movementIntention, totalIterations, currentIteration + 1);
@@ -635,13 +622,10 @@ Animation.addNote = function(nodeTitle, nodeText){
     processAll = false;
 
     const node = ui.scrollToTitle(formattedTitle);
-
-    return Promise.forAnimation("Add Note", 0, () => {
-        return new Promise((resolve) => {
-            // Return to use of placement strategy
-            zettelkastenProcessor.placementStrategy.zetPlacementOverride = false;
-            resolve(node);
-        });
+    return Promise.forAnimation("Add Note", 0, ()=>{
+        // Return to use of placement strategy
+        zettelkastenProcessor.placementStrategy.zetPlacementOverride = false;
+        return Promise.resolve(node);
     });
 }
 
@@ -704,7 +688,7 @@ registerFunctions([
     },
     {
         baseFunctionName: 'neuriteSetMandelbrotCoords',
-        baseFunction: Animation.setCoords,
+        baseFunction: Animation.goToCoords,
         alternateNames: ['setMandelbrotCoords', 'updateMandelbrotPosition', 'mandelbrotCoords']
     },
     {

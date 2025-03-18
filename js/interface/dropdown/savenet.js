@@ -338,7 +338,8 @@
         const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
         if (mandelbrotSaveElement) {
             const mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
-            Animation.setCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
+            const pan = mandelbrotParams.pan.split('+i');
+            Animation.goToCoords(mandelbrotParams.zoom, pan[0], pan[1]); // Direct function call using parsed params
             mandelbrotSaveElement.remove();
         }
 
