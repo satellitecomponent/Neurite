@@ -288,7 +288,7 @@ async function callAiApi({
 
 Ai.ctCancelRequest = class {
     constructor(requestId){
-        this.url = 'http://localhost:7070/cancel';
+        this.url = `${Proxy.baseUrl}/aiproxy/cancel`;
         this.options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

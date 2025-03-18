@@ -1,11 +1,23 @@
 class Path {
     static directoryFetcher = class DirectoryFetcher { // from the Node.js server
-        static baseUrl = 'http://localhost:9099/api/navigate?path=';
+        static baseUrl = `${Proxy.baseUrl}/directaccess/api/navigate?path=`;
         constructor(path) {
             this.url = DirectoryFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;
         }
-        onResponse(res) { return res.json().then(this.onData) }
+        onResponse(res) {
+            const contentType = res.headers.get('Content-Type');
+            Logger.debug("Response Content-Type:", contentType);
+            Logger.debug("Response Status:", res.status);
+        
+            if (!contentType || !contentType.includes('application/json')) {
+                return res.text().then(text => {
+                    Logger.err("Unexpected response:", text);
+                    throw new Error(`Unexpected Content-Type: ${contentType}`);
+                });
+            }
+            return res.json().then(this.onData);
+        }
         onData(data) {
             Logger.debug("Directory data:", data);
             return data;
@@ -15,7 +27,7 @@ class Path {
     static fileFetcher = class FileFetcher {
         blob = null;
         content = null;
-        static baseUrl = 'http://localhost:9099/api/read-file?path=';
+        static baseUrl = `${Proxy.baseUrl}/directaccess/api/read-file?path=`;
         constructor(path) {
             this.url = FileFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;

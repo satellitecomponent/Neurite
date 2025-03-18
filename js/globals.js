@@ -407,6 +407,12 @@ class Svg {
 
 //ai.js
 
+const Proxy = {
+    baseUrl: 'http://localhost:7070'
+};
+
+let useProxy = false;
+
 // nodedef.js ainodemessage.js
 const AiNode = {
     count: 0

@@ -132,7 +132,7 @@ Keys.getAll = async function(){
     return (await Request.send(new Keys.fetcher())) || []
 }
 Keys.fetcher = class {
-    url = 'http://localhost:4000/get-keys';
+    url = `${Proxy.baseUrl}/webscrape/get-keys`;
     onResponse(res){ return res.json() }
     onFailure(){ return "Failed to fetch keys:" }
 }
@@ -325,7 +325,7 @@ Keys.deleteKey = async function(key){
     await Request.send(new Keys.eraser(key))
 }
 Keys.eraser = class {
-    static baseUrl = 'http://localhost:4000/delete-chunks?key=';
+    static baseUrl = `${Proxy.baseUrl}/webscrape/delete-chunks?key=`;
     options = {
         method: 'DELETE'
     };
@@ -450,12 +450,14 @@ async function extractTextFromPDF(pdfLink) {
     }
 }
 
-Link.fetchContentText = function(link){ // promise
+Link.fetchContentText = function (link) { // promise
+    if (useProxy && !isGitHubUrl(link)) {
+        return Request.send(new Link.textFetcher(link));
+    }
+
     if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
         return extractTextFromPDF(link);
     }
-
-    if (!isGitHubUrl(link)) return Request.send(new Link.textFetcher(link));
 
     const details = extractGitHubRepoDetails(link);
     if (!details) {
@@ -464,9 +466,10 @@ Link.fetchContentText = function(link){ // promise
     }
 
     return fetchGitHubRepoContent(details.owner, details.repo);
-}
+};
+
 Link.textFetcher = class TextFetcher {
-    static baseUrl = 'http://localhost:4000/proxy?url=';
+    static baseUrl = `${Proxy.baseUrl}/webscrape/proxy?url=`;
     constructor(link){
         this.url = TextFetcher.baseUrl + encodeURIComponent(link);
         this.link = link;
@@ -577,7 +580,7 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
 
         // Now send all requests
         for (let i = 0; i < requests.length; i++) {
-            const response = await fetch('http://localhost:4000/store-embedding-and-text', {
+            const response = await fetch(`${Proxy.baseUrl}/webscrape/store-embedding-and-text`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -611,7 +614,7 @@ async function storeAdditionalEmbedding(key, source, embedding) {
     await Request.send(new storeAdditionalEmbedding.ct(key, source, embedding));
 }
 storeAdditionalEmbedding.ct = class {
-    url = 'http://localhost:4000/store-additional-embedding';
+    url = `${Proxy.baseUrl}/webscrape/store-additional-embedding`;
     constructor(key, source, embedding){
         this.options = Request.makeJsonOptions('POST', { key, source, embedding })
     }
@@ -712,7 +715,7 @@ async function fetchEmbeddingsForKeys(keys, source) {
     return (await Request.send(new fetchEmbeddingsForKeys.ct(keys, source))) || []
 }
 fetchEmbeddingsForKeys.ct = class {
-    url = 'http://localhost:4000/fetch-embeddings-by-keys';
+    url = `${Proxy.baseUrl}/webscrape/fetch-embeddings-by-keys`;
     constructor(keys, source){
         this.options = Request.makeJsonOptions('POST', { keys, source })
     }
@@ -732,7 +735,7 @@ async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
         Logger.warn("No relevant keys provided for fetching embeddings.");
         return [];
     }
-
+    console.log(relevantKeys);
     const selectedModel = Embeddings.selectModel.value;
     const relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
     const queryEmbedding = await Embeddings.fetch(searchQuery, selectedModel);

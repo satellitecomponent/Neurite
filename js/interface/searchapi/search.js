@@ -100,7 +100,6 @@ On.click(Elem.byId('vectorDbSearchButton'), (e)=>{
 async function performVectorDbDisplaySearch() {
     const searchQuery = Elem.byId('vectorDbSearchInput').value;
     const relevantKeys = Keys.getVisible(await Keys.getAll()); // Get filtered keys if any filters are applied
-
     const searchResultsContainer = Elem.byId('vectorDbSearchDisplay');
     searchResultsContainer.innerHTML = ''; // Clear previous search results
 

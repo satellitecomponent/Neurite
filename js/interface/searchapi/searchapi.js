@@ -97,8 +97,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     aiCall.customTemperature = 0;
 
     try {
-        const apiResponse = aiCall.exec();
-
+        const apiResponse = await aiCall.exec();
         const extractedQuery = apiResponse.match(/"([^"]*)"/);
         const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
         Logger.info("Search Query:", searchQuery);

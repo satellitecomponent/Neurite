@@ -41,7 +41,7 @@ async function getOllamaLibrary() {
     if (useProxy) {
         try {
             const response = await Promise.race([
-                fetch('http://localhost:7070/ollama/library'),
+                fetch(`${Proxy.baseUrl}/aiproxy/ollama/library`),
                 new Promise((_, reject) =>
                     setTimeout( ()=>reject(new Error("Request timed out")) , 2500)
                 ),

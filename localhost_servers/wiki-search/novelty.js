@@ -1,18 +1,7 @@
 const express = require('express');
-const cors = require('cors');
 const axios = require('axios');
-const { stringify } = require('querystring');
 
 const app = express();
-
-const corsOptions = {
-    origin: ['https://neurite.network', 'http://localhost:8080'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
 
 function removeHtmlTags(text) {
   return text.replace(/<.*?>/g, '');
@@ -167,7 +156,4 @@ app.get('/wikipedia_summaries', async (req, res) => {
   res.json(summaries);
 });
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+module.exports = app;

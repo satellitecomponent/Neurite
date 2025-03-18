@@ -16,14 +16,17 @@ Prompt.matchedNodes = function(content){
 Prompt.searchQuery = async function(message, searchQuery, filteredKeys, topN, recentContext, node, allConnectedNodesData){
     if (!searchQuery || !filteredKeys) return;
 
-    const relevantKeys = await (!node) ? Keys.getRelevant(message, recentContext, searchQuery, filteredKeys)
-                             : Keys.getRelevantNodeLinks(
-                                    allConnectedNodesData,
-                                    message,
-                                    searchQuery,
-                                    filteredKeys,
-                                    recentContext
-                               );
+    const relevantKeys = await (
+        (!node)
+          ? Keys.getRelevant(message, recentContext, searchQuery, filteredKeys)
+          : Keys.getRelevantNodeLinks(
+               allConnectedNodesData,
+               message,
+               searchQuery,
+               filteredKeys,
+               recentContext
+            )
+      );
     if (relevantKeys.length < 1) return;
 
     const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);

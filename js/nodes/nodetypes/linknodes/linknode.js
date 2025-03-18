@@ -161,7 +161,7 @@ class LinkNode {
         this.makeIframe(iframeWrapper).setAttribute('srcdoc', webpageContent);
     }
     static proxy = class Proxy {
-        static baseUrl = 'http://localhost:4000/raw-proxy?url=';
+        static baseUrl = `${Proxy.baseUrl}/webscrape/raw-proxy?url=`;
         constructor(linkUrl){
             this.url = Proxy.baseUrl + encodeURIComponent(linkUrl);
         }

@@ -1,11 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const cors = require('cors');
 const cheerio = require('cheerio');
-const bodyParser = require('body-parser');
 const app = express();
-const PORT = process.env.PORT || 7070;
 
 // Initialize API keys
 let openaiApiKey = process.env.OPENAI_API_KEY;
@@ -15,25 +12,6 @@ let customApiKey = process.env.CUSTOM_API_KEY;
 
 // Ollama Base URL
 let ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/api/';
-
-// Middleware to parse JSON request bodies
-app.use(express.json({ limit: '50mb' })); // Increase the limit to handle large payloads
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Enable CORS for all routes
-const corsOptions = {
-    origin: ['https://neurite.network', 'http://localhost:8080'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
-
-// Endpoint to check if the proxy server is working
-app.get('/check', (req, res) => {
-    res.sendStatus(200);
-});
 
 // Endpoint to receive API keys from the client-side JavaScript
 app.post('/api-keys', (req, res) => {
@@ -394,7 +372,4 @@ app.post('/ollama/push', async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Proxy server is running on port ${PORT}`);
-});
+module.exports = app;

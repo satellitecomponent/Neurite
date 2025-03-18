@@ -486,7 +486,7 @@ Animation.waitForAllActive = class {
 Recorder.captureScreenshot = function(){
     if (window.startedViaPlaywright) {
         // Playwright controlled session, use fetch to request screenshot
-        fetch('http://localhost:8081/screenshot')
+        fetch('${Proxy.baseUrl}/automation/screenshot')
             .then(response => response.text())
             .then(base64Image => {
                 // Create an image element from the base64 data
@@ -505,7 +505,7 @@ On.click(Elem.byId('screenshotButton'), Recorder.captureScreenshot);
 Recorder.returnScreenshot = function(){
     if (window.startedViaPlaywright) {
         // Playwright controlled session, use fetch to request screenshot
-        return fetch('http://localhost:8081/screenshot')
+        return fetch('${Proxy.baseUrl}/automation/screenshot')
             .then( (response)=>response.text() )
             .then( (base64Image)=>("data:image/png;base64," + base64Image) )
             .catch( (err)=>{
