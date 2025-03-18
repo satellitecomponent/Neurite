@@ -1,6 +1,6 @@
 class Path {
     static directoryFetcher = class DirectoryFetcher { // from the Node.js server
-        static baseUrl = `${Proxy.baseUrl}/directaccess/api/navigate?path=`;
+        static baseUrl = `${Proxy.baseUrl}/directaccess/navigate?path=`;
         constructor(path) {
             this.url = DirectoryFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;
@@ -27,7 +27,7 @@ class Path {
     static fileFetcher = class FileFetcher {
         blob = null;
         content = null;
-        static baseUrl = `${Proxy.baseUrl}/directaccess/api/read-file?path=`;
+        static baseUrl = `${Proxy.baseUrl}/directaccess/read-file?path=`;
         constructor(path) {
             this.url = FileFetcher.baseUrl + encodeURIComponent(path);
             this.path = path;

@@ -70,7 +70,7 @@ function getMimeType(extension) {
 }
 
 // API to navigate directories and get file structure
-app.get('/api/navigate', (req, res) => {
+app.get('/navigate', (req, res) => {
     const dirPath = req.query.path ? path.resolve(req.query.path) : path.resolve('/'); // Root directory by default
 
     fs.stat(dirPath, (err, stats) => {
@@ -94,7 +94,7 @@ app.get('/api/navigate', (req, res) => {
 });
 
 // API to stream file content (supports both text and binary files)
-app.get('/api/read-file', (req, res) => {
+app.get('/read-file', (req, res) => {
     const filePath = req.query.path ? path.resolve(req.query.path) : null;
 
     if (!filePath) {
