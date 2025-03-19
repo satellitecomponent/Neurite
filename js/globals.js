@@ -366,8 +366,13 @@ class Svg {
 
 //ai.js
 
-const Proxy = {
-    baseUrl: 'http://localhost:7070'
+const Host = {
+    baseUrl: 'http://localhost:7070',
+    urlForPath(path){
+        const url = this.baseUrl + path;
+        Logger.debug("Made url:", url);
+        return url;
+    }
 };
 
 let useProxy = false;

@@ -132,7 +132,7 @@ Keys.getAll = async function(){
     return (await Request.send(new Keys.fetcher())) || []
 }
 Keys.fetcher = class {
-    url = `${Proxy.baseUrl}/webscrape/get-keys`;
+    url = Host.urlForPath('/webscrape/get-keys');
     onResponse(res){ return res.json() }
     onFailure(){ return "Failed to fetch keys:" }
 }
@@ -325,7 +325,7 @@ Keys.deleteKey = async function(key){
     await Request.send(new Keys.eraser(key))
 }
 Keys.eraser = class {
-    static baseUrl = `${Proxy.baseUrl}/webscrape/delete-chunks?key=`;
+    static baseUrl = Host.urlForPath('/webscrape/delete-chunks?key=');
     options = {
         method: 'DELETE'
     };
@@ -469,7 +469,7 @@ Link.fetchContentText = function (link) { // promise
 };
 
 Link.textFetcher = class TextFetcher {
-    static baseUrl = `${Proxy.baseUrl}/webscrape/proxy?url=`;
+    static baseUrl = Host.urlForPath('/webscrape/proxy?url=');
     constructor(link){
         this.url = TextFetcher.baseUrl + encodeURIComponent(link);
         this.link = link;
@@ -580,7 +580,7 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
 
         // Now send all requests
         for (let i = 0; i < requests.length; i++) {
-            const response = await fetch(`${Proxy.baseUrl}/webscrape/store-embedding-and-text`, {
+            const response = await fetch(Host.urlForPath('/webscrape/store-embedding-and-text'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -614,7 +614,7 @@ async function storeAdditionalEmbedding(key, source, embedding) {
     await Request.send(new storeAdditionalEmbedding.ct(key, source, embedding));
 }
 storeAdditionalEmbedding.ct = class {
-    url = `${Proxy.baseUrl}/webscrape/store-additional-embedding`;
+    url = Host.urlForPath('/webscrape/store-additional-embedding');
     constructor(key, source, embedding){
         this.options = Request.makeJsonOptions('POST', { key, source, embedding })
     }
@@ -715,7 +715,7 @@ async function fetchEmbeddingsForKeys(keys, source) {
     return (await Request.send(new fetchEmbeddingsForKeys.ct(keys, source))) || []
 }
 fetchEmbeddingsForKeys.ct = class {
-    url = `${Proxy.baseUrl}/webscrape/fetch-embeddings-by-keys`;
+    url = Host.urlForPath('/webscrape/fetch-embeddings-by-keys');
     constructor(keys, source){
         this.options = Request.makeJsonOptions('POST', { keys, source })
     }

@@ -9,8 +9,8 @@ Ollama.userBaseUrl = function(){
 }
 
 Ollama.getBaseUrl = function(){
-    const base = Ollama.userBaseUrl();
-    return useProxy ? `${Proxy.baseUrl}/aiproxy/ollama/` : base;
+    return (useProxy) ? Host.urlForPath('/aiproxy/ollama/')
+         : Ollama.userBaseUrl()
 }
 
 

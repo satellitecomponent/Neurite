@@ -143,6 +143,7 @@ class App {
     zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
 
     init(){
+        Host.checkServer();
         Tag.init();
         Body.addEventListeners(document.body);
         Fractal.initializeSelect();

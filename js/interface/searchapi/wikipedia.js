@@ -46,7 +46,7 @@ async function calculateRelevanceScores(summaries, searchTermEmbedding) {
 Wikipedia.ctGetSummary = class {
     constructor(keyword, top_n_links){
         const encodedKeyword = encodeURIComponent(keyword);
-        this.url = `${Proxy.baseUrl}/wikisearch/wikipedia_summaries?keyword=${encodedKeyword}&top_n_links=${top_n_links}`;
+        this.url = `${Host.baseUrl}/wikisearch/wikipedia_summaries?keyword=${encodedKeyword}&top_n_links=${top_n_links}`;
         this.keyword = keyword;
     }
     onResponse(res){ return res.json().then(this.onData) }

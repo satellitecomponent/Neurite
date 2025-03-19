@@ -213,28 +213,26 @@ function clearKeys() {
     }
 }
 
-Proxy.checkServer = async function(){
-    useProxy = await Request.send(new Proxy.checkServer.ct());
+Host.checkServer = async function(){
+    useProxy = await Request.send(new Host.checkServer.ct());
     if (useProxy) {
         Ollama.library = await getOllamaLibrary();
     }
     Ollama.baseUrl = Ollama.getBaseUrl();
     await Ollama.selectOnPageLoad();
 }
-Proxy.checkServer.ct = class {
-    url = `${Proxy.baseUrl}/check`;
+Host.checkServer.ct = class {
+    url = Host.urlForPath('/check');
     onSuccess(){ return "AI proxy server is working" }
     onFailure(){ return "AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through JS until the page is refreshed while the ai-proxy is running. -" }
 }
 
-Proxy.checkServer();
-
-Proxy.provideAPIKeys = async function(){
-    await Request.send(new Proxy.provideAPIKeys.ct())
+Host.provideAPIKeys = async function(){
+    await Request.send(new Host.provideAPIKeys.ct())
 }
-Proxy.provideAPIKeys.ct = class {
+Host.provideAPIKeys.ct = class {
     constructor() {
-        this.url = `${Proxy.baseUrl}/aiproxy/api-keys`;
+        this.url = Host.urlForPath('/aiproxy/api-keys');
         this.options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -284,13 +282,13 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
         // Use the AI proxy server
         switch (providerId) {
             case 'GROQ':
-                API_URL = `${Proxy.baseUrl}/aiproxy/groq`;
+                API_URL = Host.urlForPath('/aiproxy/groq');
                 break;
             case 'anthropic':
-                API_URL = `${Proxy.baseUrl}/aiproxy/anthropic`;
+                API_URL = Host.urlForPath('/aiproxy/anthropic');
                 break;
             case 'ollama':
-                API_URL = `${Proxy.baseUrl}/aiproxy/ollama/chat`;
+                API_URL = Host.urlForPath('/aiproxy/ollama/chat');
                 break;
             case 'custom':
                 // Assume 'modelName' is the name or identifier you are working with
@@ -299,14 +297,14 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
                     Logger.err("Failed to fetch API details for the model:", model);
                     break;
                 }
-                API_URL = `${Proxy.baseUrl}/aiproxy/custom`;
+                API_URL = Host.urlForPath('/aiproxy/custom');
                 apiEndpoint = apiDetails.apiEndpoint;
                 API_KEY = apiDetails.apiKey;
                 break;
             default:
-                API_URL = `${Proxy.baseUrl}/aiproxy/openai`;
+                API_URL = Host.urlForPath('/aiproxy/openai');
         }
-        Proxy.provideAPIKeys();
+        Host.provideAPIKeys();
     } else {
         // Use the direct API endpoints
         switch (providerId) {
