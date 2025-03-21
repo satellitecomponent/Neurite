@@ -292,9 +292,9 @@ Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) 
 const PROMPT_IDENTIFIER = "Prompt:";
 const PROMPT_END = ":End Prompt"
 
-class Html {
-    static create = document.createElement.bind(document);
-    static make = {
+globalThis.Html = {
+    create: document.createElement.bind(document),
+    make: {
         a(href, className){
             const a = Html.new.a();
             if (href !== undefined) a.href = href;
@@ -314,14 +314,14 @@ class Html {
             if (onClick !== undefined) On.click(li, onClick);
             return li;
         }
-    };
-    static makeWithClass(tagName, className){
+    },
+    makeWithClass(tagName, className){
         const elem = Html.new[tagName]();
         if (className !== undefined) elem.setAttribute('class', className);
         return elem;
-    }
-    static new = {};
-}
+    },
+    new: {}
+};
 [
     'code', 'div', 'iframe', 'input',
     'pre', 'select', 'span', 'textarea'

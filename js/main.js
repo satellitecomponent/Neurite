@@ -39,7 +39,7 @@ Object.hasTitleThis = function(obj){ return obj.title === this.valueOf() }
 Object.isntThis = function(obj){ return obj !== this.valueOf() }
 Object.isThis = function(obj){ return obj === this.valueOf() }
 
-Logger = class {
+globalThis.Logger = new (class {
     addLevel(prefix, funcName, id = funcName){
         const func = console[funcName].bind(console, prefix);
         this.#levels.push({ func, id });
@@ -67,8 +67,8 @@ Logger = class {
     #switch(factor, dflt = 3){
         return this.level = factor * Math.abs(this.#level || dflt)
     }
-}
-Logger = new Logger()
+});
+Logger
     .addLevel("ERR:", 'error', 'err')
     .addLevel("WARN:", 'warn')
     .addLevel("INFO:", 'info')
@@ -223,7 +223,7 @@ class PageLoad {
         'js/nodes/nodeinteraction/connect.js',
         'js/nodes/nodeinteraction/togglenodestate.js',
         'js/nodes/nodeinteraction/filternodes.js',
-        'js/nodes/nodeinteraction/bundlecode.js',
+        'js/nodes/nodeinteraction/bundlecode.js:MODULE',
         'js/nodes/nodeinteraction/modalconnect.js',
         'js/nodes/nodeinteraction/nodesensor.js',
         'js/nodes/nodeinteraction/nodestep.js',
@@ -280,6 +280,10 @@ class PageLoad {
     loadScript(src){ // dynamically
         return new Promise( (resolve, reject)=>{
             const script = document.createElement('script');
+            if (src.endsWith(':MODULE')) {
+                src = src.slice(0, -7);
+                script.type = 'module';
+            }
             script.src = src;
             script.onload = resolve;
             script.onerror = ()=>{ reject(new Error("Failed to load script: " + src)) };

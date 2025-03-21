@@ -149,13 +149,8 @@ NodeActions.text = class TextNodeActions extends NodeActions.base {
         };
     }
 
-    toggleCode() {
-        const node = this.node;
-        handleCodeExecution(node.textarea, node.htmlView, node.pythonView, node);
-    }
-    testNodeText() {
-        testNodeText(this.node.getTitle());
-    }
+    toggleCode() { handleCodeExecution(this.node) }
+    testNodeText() { testNodeText(this.node.getTitle()) }
     delete() {
         this.applyActionToSelectedNodes( (node)=>{
             const nodeTitle = node.getTitle();
