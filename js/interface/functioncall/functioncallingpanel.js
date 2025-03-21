@@ -1,8 +1,19 @@
 class Stored {
-    constructor(key){ this.key = key }
-    delete(){ localStorage.removeItem(this.key) }
-    load(){ return JSON.parse(localStorage.getItem(this.key)) }
-    save(obj){ localStorage.setItem(this.key, JSON.stringify(obj)) }
+    constructor(name){
+        this.name = name;
+        this.table = localforage.createInstance({
+            name: 'Neurite',
+            storeName: name
+        });
+    }
+    delete(key){ return this.table.removeItem(key ?? this.name) }
+    load(key){ return this.table.getItem(key ?? this.name) }
+    save(key, val){
+        return this.table.setItem(
+            (val !== undefined ? key : this.name),
+            val ?? key
+        )
+    }
 }
 
 function formatResultAsTitle(result) {
@@ -36,14 +47,6 @@ function formatResultAsTitle(result) {
     }
 
     return "Result: " + titleString;
-}
-
-function generateUUID(){
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c)=>{
-        const r = Math.random() * 16 | 0;
-        const v = (c === 'x' ? r : (r & 0x3 | 0x8));
-        return v.toString(16);
-    })
 }
 
 ['click', 'mousedown', 'wheel', 'dragstart', 'dragend']
@@ -101,7 +104,7 @@ View.Code = class CodeView {
     inputPrompt = Elem.byId('function-prompt');
     isAiProcessing = false;
     mostRecentMsg = '';
-    #stored = new Stored('neuriteFunctionCalls');
+    #stored = new Stored('functionCalls');
     svgSend = this.btnSend.querySelector('svg');
 
     init(){
@@ -111,7 +114,9 @@ View.Code = class CodeView {
         this.#initDivItemList(this.#divItemList);
         this.initForRequestfunctioncall();
 
-        (this.#stored.load() || []).forEach(this.#addItemFromData, this);
+        this.#stored.load().then( (data)=>{
+            if (data) data.forEach(this.#addItemFromData, this)
+        });
     }
 
     #CM = class {
@@ -157,15 +162,13 @@ View.Code = class CodeView {
         const codeToRun = codeBlocks.length > 0 ? codeBlocks.join('\n') : code;
 
         this.#forEachItem(this.#removeActiveState);
-
-        const defaultTitle = CodeView.titleForCode(codeToRun);
-        this.#customConsole.logs = [defaultTitle];
-        this.#runCode(code, codeToRun, defaultTitle);
+        return this.#runCode(code, codeToRun);
     }
 
     #CustomConsole = class {
         logs = [];
-        constructor(onCustomLog){
+        constructor(item, onCustomLog){
+            this.item = item;
             this.onCustomLog = onCustomLog;
             for (const funcName in console){
                 if (!this[funcName]) this[funcName] = console[funcName]
@@ -181,7 +184,7 @@ View.Code = class CodeView {
                 if (index > 0) this.logs.push(' ');
                 this.logs.push(this.#renderArg(arg));
             });
-            this.onCustomLog();
+            this.onCustomLog.call(this.item, this.logs.join('\n'));
         }
         log(...args){
             console.log(...args);
@@ -192,54 +195,57 @@ View.Code = class CodeView {
             this.customLog(...args);
         }
     }
-    #customConsole = new this.#CustomConsole(()=>this.#updateTitleOfItem());
 
-    #itemId = null;
-    async #runCode(code, codeToRun, defaultTitle){
+    async #runCode(code, codeToRun){
         const originalOnError = window.onerror;
         window.onerror = (message, source, lineno, colno, error)=>{
-            this.#customConsole.customLog(message, error);
+            customConsole.customLog(message, error);
             return false;
         };
 
+        const defaultTitle = CodeView.titleForCode(codeToRun);
+        const item = this.#makeItem(defaultTitle, code);
+        this.#appendItem(item);
+
+        const onCustomLog = this.#updateTitleOfThisItem;
+        const customConsole = new this.#CustomConsole(item, onCustomLog);
+        customConsole.logs = [defaultTitle];
+
+        const customFuncToRun = AsyncFunction('originalConsole', 'customConsole',
+            `const console = customConsole;
+            ${codeToRun}`);
+
         try {
-            const customFuncToRun = AsyncFunction('originalConsole', 'customConsole',
-                `const console = customConsole;
-                ${codeToRun}`);
-            const result = await customFuncToRun(console, this.#customConsole);
-            this.#addItem(defaultTitle, code);
+            const result = await customFuncToRun(console, customConsole);
             if (result !== undefined) {
-                this.#customConsole.logs.push(JSON.stringify(result));
+                customConsole.customLog(JSON.stringify(result))
             }
         } catch (err) {
             Logger.err('In executing code:', err);
-            this.#addItem(err.message, code, true);
+            const item = this.#makeItem(err.message ?? err, code, true);
+            this.#appendItem(item);
+        } finally {
+            window.onerror = originalOnError;
+            this.cm.empty();
         }
 
-        // Cleanup
-        window.onerror = originalOnError;
-        this.#updateTitleOfItem();
-        this.cm.empty();
+        await this.#stored.save(this.#getItems());
     }
 
-    #updateTitleOfItem(){ // based on collected logs
-        const title = this.#customConsole.logs.join(' \n');
-        const item = document.querySelector(`[data-item-id="${this.#itemId}"]`);
-        if (!item) return;
-
-        item.innerHTML = title.replace(/\n/g, '<br>');
+    #updateTitleOfThisItem(title){ // based on collected logs
+        this.innerHTML = title.replace(/\n/g, '<br>');
 
         // Update callData with the new title
-        const callData = JSON.parse(item.dataset.callData);
-        callData.functionName = title.replace(/<br>/g, '\n'); // Convert <br> back to \n for the data structure
-        item.dataset.callData = JSON.stringify(callData);
-        item.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const callData = JSON.parse(this.dataset.callData);
+        callData.functionName = title;
+        this.dataset.callData = JSON.stringify(callData);
+
+        this.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    #addItem(functionName, code, isError = false){
+    #makeItem(functionName, code, isError = false){
         const item = Html.make.div('function-call-item');
         if (isError) item.dataset.isError = isError;
-        item.dataset.itemId = this.#itemId = generateUUID();
         item.innerHTML = functionName.replace(/\n/g, '<br>');
         item.originalText = code;
 
@@ -267,10 +273,7 @@ View.Code = class CodeView {
         On.mouseleave(item, this.#onItemLeft);
         On.click(item, this.#onItemClicked);
 
-        this.#divItemList.appendChild(item);
-        item.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
-        this.#stored.save(this.#getItems());
+        return item;
     }
     #onItemEntered(e){
         const item = e.currentTarget;
@@ -377,7 +380,12 @@ View.Code = class CodeView {
         return items;
     }
     #addItemFromData(data){
-        this.#addItem(data.functionName, data.code, data.isError)
+        const item = this.#makeItem(data.functionName, data.code, data.isError);
+        this.#appendItem(item);
+    }
+    #appendItem(item){
+        this.#divItemList.appendChild(item);
+        item.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
     static extractCodeBlocks(code){
