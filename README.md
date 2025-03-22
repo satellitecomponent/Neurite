@@ -3,7 +3,7 @@
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
 
-# 🌐 **[neurite.network](https://neurite.network/)** 🌐
+# 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
 
 ⚠️ `Warning:` Contains flashing lights and colors which may affect those with photosensitive epilepsy.
 
@@ -36,13 +36,13 @@
 
 ## Bridging Fractals and Thought
 
-### 💡 **[neurite.network](https://neurite.network/) unleashes a new dimension of digital interface...**
+### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
 
 ### ***...the fractal dimension.***
 
 🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
-For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping technique.
+For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping techniques.
 
 <table>
   <tr>
@@ -54,20 +54,20 @@ For over two years we've been iterating out a virtually limitless workspace that
     </td>
     <td valign="top" width="50%">
       <p align="center">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/11815c92-0b8c-4f37-8f4d-6f300b380813" alt="whyfractals" width="100%">
       </p>
     </td>
   </tr>
   <tr>
     <td valign="top" width="50%">
       <p align="center">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/65afd5d3-3078-4d17-ac9f-a75fee9784ac" alt="whynodes" height="400" >
       </p>
     </td>
     <td valign="top" width="50%">
       <h3><code>Why Nodes?</code></h3>
       <p>Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭.</p>
-      <p><a href="https://neurite.network/">neurite.network</a> connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
+      <p><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a> connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
     </td>
   </tr>
 </table>
@@ -77,7 +77,7 @@ For over two years we've been iterating out a virtually limitless workspace that
 
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
 
-## [neurite.network](https://neurite.network/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
+## [neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
 
 # Key Features
 
@@ -158,7 +158,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://neurite.network/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
+### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
 
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
@@ -262,7 +262,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
 - `Ai Tutorial`: The HOW-TO checkbox sends a context message to the AI that allows it to answer some questions about Neurite.
 
 <p align="center">
-   <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/c000566f-01ae-4c89-a2ab-18e0593b08b7" alt="whynodes3" height="400" >
 </p>
 
 ## `Synchronized Knowledge Management`
@@ -270,7 +270,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
   <tr>
     <!-- Top Left: Introduction and Main Features -->
     <td valign="top" width="50%">
-      <h3><a href="https://neurite.network/">neurite.network</a></h3>
+      <h3><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a></h3>
       <p><a href="https://en.wikipedia.org/wiki/Markdown">Markdown</a> formatted, <a href="https://en.wikipedia.org/wiki/File_synchronization">bi-directional synchronization</a> between UI-focused <a href="https://en.wikipedia.org/wiki/Mind_map">Mind-Mapping</a> and text-based <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlinking</a>.</p>
       <ul>
         <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
@@ -282,7 +282,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
     <!-- Top Right: Image -->
     <td valign="top" width="50%">
       <p align="center">
-         <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/da23628a-d3e2-4fe6-8dda-6f3f15e850f0" alt="SKM3" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/da23628a-d3e2-4fe6-8dda-6f3f15e850f0" alt="SKM3" width="100%">
       </p>
     </td>
   </tr>
@@ -290,7 +290,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
     <!-- Bottom Left: image 2 -->
     <td valign="top" width="50%">
        <p align="center">
-         <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/3718856b-fa35-4b5a-bb78-3f0507712ad1" alt="SKM" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/3718856b-fa35-4b5a-bb78-3f0507712ad1" alt="SKM" width="100%">
       </p>
     </td>
     <!-- Bottom Right: Additional Info or CTA -->
@@ -329,8 +329,8 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
     <!-- Right: Image -->
     <td valign="top" width="55%">
       <p align="center">
-         <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/6d8684cf-934a-4669-b16d-1df782b6017a" alt="lucky999" width="100%">
-         <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/9f820226-bc14-4f05-8ad1-5963271b6836" alt="FractalGPT" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/6d8684cf-934a-4669-b16d-1df782b6017a" alt="lucky999" width="100%">
+         <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/9f820226-bc14-4f05-8ad1-5963271b6836" alt="FractalGPT" width="100%">
       </p>
     </td>
   </tr>
@@ -372,9 +372,9 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
     <!-- Right: Image -->
     <td valign="top" width="50%">
       <p align="center">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
-                <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/2f6f16be-659c-4048-aa8e-3aa7bcc73f35" alt="Multi-Agent Chat Networks3" width="100%">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/bada5e60-73de-41de-8a64-10e7451393b0" alt="Multi-Agent Chat Networks" width="100%">
+                <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/2f6f16be-659c-4048-aa8e-3aa7bcc73f35" alt="Multi-Agent Chat Networks3" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/baf78511-3d07-41d0-afc8-93ad80b693ab" alt="Multi-Agent Chat Networks2" width="100%">
       </p>
     </td>
   </tr>
@@ -473,7 +473,7 @@ npm start
 
 The Localhost Servers are an important component of Neurite that serves as an optional backend and enables complete functionality.
 
-### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fhttps://neurite.network/%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers). 
+### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers). 
 
 *alternatively clone the entire repo.
 
@@ -489,7 +489,7 @@ This will install and run all of the servers at once. They'll work on our GitHub
 As of our recent update, the servers now support an AI proxy that connects Neurite to any inference backend.
 
 <p align="center">
-<img src="https://github.com/https://neurite.network//Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
+<img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
 
 Neurite realizes a tapestry of thought reasoning for AI, all within our innovative real-time Mandelbrot visualization.
@@ -510,7 +510,7 @@ Neurite realizes a tapestry of thought reasoning for AI, all within our innovati
     <!-- Right: Image -->
     <td valign="top" width="60%">
       <p align="center">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e" alt="AI Integration Diagram" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e" alt="AI Integration Diagram" width="100%">
       </p>
     </td>
   </tr>
@@ -522,7 +522,7 @@ Neurite realizes a tapestry of thought reasoning for AI, all within our innovati
     <!-- Left: Image -->
     <td valign="top" width="40%">
       <p align="center">
-        <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="neuralapi" width="100%">
+        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d45fe622-6dab-4e43-91c7-06e0d7cddaed" alt="neuralapi" width="100%">
       </p>
     </td>
     <!-- Right: Description of the Function Calling Panel -->
@@ -550,22 +550,22 @@ console.log(neuralAPI);</code></pre>
 </table>
 
 ## Join the Conversation
-See our contributing guidelines [here](https://github.com/https://neurite.network//Neurite/tree/local-ai).
+See our contributing guidelines [here](https://github.com/satellitecomponent/Neurite/tree/local-ai).
 
 If you are a developer who is interested in contributing to this project, contact us at contactdendrite@gmail.com or visit our  [discord](https://discord.gg/6fdmDF8SmT) 🔗
 
 ## `Gallery`
 
 <p align="center">
-    <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="70%">
-    <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404" alt="whyfractals2" width="70%">
-   <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
-   <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/7593dbcf-1eb7-415b-9f83-b817229f0c17" alt="whyfractals4" width="70%">
-    <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/d5800897-1eb8-4113-8a9e-75ce029eb67a" alt="whyfractals6" width="70%">
-  <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
-             <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
-  <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac" alt="SKM3" width="70%">
-  <img src="https://github.com/https://neurite.network//Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
+    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="70%">
+    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/e77b2866-db77-41e9-ba08-e55d29f77404" alt="whyfractals2" width="70%">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/795da35f-93f3-471d-a4fa-26decec75168" alt="whyfractals" width="70%">
+   <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/7593dbcf-1eb7-415b-9f83-b817229f0c17" alt="whyfractals4" width="70%">
+    <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/d5800897-1eb8-4113-8a9e-75ce029eb67a" alt="whyfractals6" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/fd7a9cb3-9ea6-435c-9b88-3d0189e6a304" alt="whyfractals5" width="70%">
+             <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/5504ea4e-7e73-4d9d-80d3-af411c615aea" alt="SKM" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/4f93af1b-895c-48a5-8e7c-2da5cbddd6ac" alt="SKM3" width="70%">
+  <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/02871c35-7f93-4226-87aa-4adcc296e0a8" alt="whynodes2" height="400">
 </p>
 <a href="https://star-history.com/#satellitecomponent/Neurite&Date">
 
