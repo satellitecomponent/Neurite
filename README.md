@@ -3,7 +3,7 @@
 [![Discord](https://img.shields.io/discord/1093603405609582755?style=flat&logo=discord&logoColor=white&label=Discord&color=%237289da)](https://discord.gg/NymeSwK9TH)
 
 
-# 🌐 **[neurite.network](https://satellitecomponent.github.io/Neurite/)** 🌐
+# 🌐 **[neurite.network](https://neurite.network/)** 🌐
 
 ⚠️ `Warning:` Contains flashing lights and colors which may affect those with photosensitive epilepsy.
 
@@ -36,7 +36,7 @@
 
 ## Bridging Fractals and Thought
 
-### 💡 **[neurite.network](https://satellitecomponent.github.io/Neurite/) unleashes a new dimension of digital interface...**
+### 💡 **[neurite.network](https://neurite.network/) unleashes a new dimension of digital interface...**
 
 ### ***...the fractal dimension.***
 
@@ -67,7 +67,7 @@ For over two years we've been iterating out a virtually limitless workspace that
     <td valign="top" width="50%">
       <h3><code>Why Nodes?</code></h3>
       <p>Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭.</p>
-      <p><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a> connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
+      <p><a href="https://neurite.network/">neurite.network</a> connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.</p>
     </td>
   </tr>
 </table>
@@ -77,7 +77,7 @@ For over two years we've been iterating out a virtually limitless workspace that
 
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
 
-## [neurite.network](https://satellitecomponent.github.io/Neurite/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
+## [neurite.network](https://neurite.network/) is unique in its ability to seamlessly navigate the Mandelbrot set in real time! 🚀
 
 # Key Features
 
@@ -158,7 +158,7 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 
 ## `How to Use Neurite`
 
-### 📚 [Neurite](https://satellitecomponent.github.io/Neurite/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
+### 📚 [Neurite](https://neurite.network/) lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
 
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
@@ -270,7 +270,7 @@ Custom `## title` and `[[reference]]` tags can be set in the Zettelkasten Settin
   <tr>
     <!-- Top Left: Introduction and Main Features -->
     <td valign="top" width="50%">
-      <h3><a href="https://satellitecomponent.github.io/Neurite/">neurite.network</a></h3>
+      <h3><a href="https://neurite.network/">neurite.network</a></h3>
       <p><a href="https://en.wikipedia.org/wiki/Markdown">Markdown</a> formatted, <a href="https://en.wikipedia.org/wiki/File_synchronization">bi-directional synchronization</a> between UI-focused <a href="https://en.wikipedia.org/wiki/Mind_map">Mind-Mapping</a> and text-based <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlinking</a>.</p>
       <ul>
         <li><strong>FractalGPT</strong>: Engage with non-linear, rhizomatic memory through our biomimetic interface.</li>
