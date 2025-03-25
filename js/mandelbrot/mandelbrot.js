@@ -723,7 +723,9 @@ Fractal.render_hair = function(num_pts_max) {
     Fractal.cull_extra_lines();
 }
 Fractal.animate_path_removal = async function(path) {
+    if (!svg_bg.contains(path)) return;
     path.setAttribute('data-animating', 'true');
+    path.dataset.removing = 'true';
     try {
         const rawPoints = JSON.parse(path.getAttribute('data-original-points') || []);
         let originalPoints = rawPoints
@@ -740,31 +742,43 @@ Fractal.animate_path_removal = async function(path) {
         }
     } finally {
         path.remove();
+        path.removeAttribute('data-animating');
+        delete path.dataset.removing;
     }
 }
 Fractal.cull_extra_lines = function() {
     const maxLines = settings.maxLines;
+    
+    // Immediate removal case
     if (maxLines === 0) {
         const children = Array.from(svg_bg.children).reverse();
         children.forEach(Fractal.removeNonPreserved);
         return;
     }
 
-    const unpreserved = Array.prototype.filter.call(
-        svg_bg.children, 
-        path => Fractal.isNotPreserved(path) && 
-               !path.hasAttribute('data-animating') &&
-               !path.dataset.removing
-    ).reverse();
-    
-    while (unpreserved.length > maxLines) {
-        const path = unpreserved.pop();
-        if (settings.useDelayedRendering && settings.renderDelay !== 0) {
+    // Get all non-preserved lines (including animating ones)
+    const allLines = Array.from(svg_bg.children)
+        .filter(path => Fractal.isNotPreserved(path));
+        
+    // Count only non-animating, non-removing lines against the limit
+    const activeCount = allLines.filter(path => 
+        !path.hasAttribute('data-animating') && 
+        !path.dataset.removing
+    ).length;
+
+    // Remove oldest lines if over limit (FIFO)
+    if (activeCount > maxLines) {
+        const toRemove = allLines
+            .filter(path => 
+                !path.hasAttribute('data-animating') && 
+                !path.dataset.removing
+            )
+            .slice(0, activeCount - maxLines);
+            
+        toRemove.forEach(path => {
             path.dataset.removing = 'true';
             Fractal.animate_path_removal(path);
-        } else {
-            path.remove();
-        }
+        });
     }
 }
 Fractal.addPreservation = function(child){
