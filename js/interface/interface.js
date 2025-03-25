@@ -179,7 +179,7 @@ class Interface {
             e.preventDefault();
         } else if (this.isMouseZooming) {
             const dragDistance = e.clientY - this.mouseZoomStartY;
-            const amount = Math.exp(-dragDistance * settings.dragZoomSpeed);
+            const amount = Math.exp(-dragDistance * settings.dragZoomSpeed * settings.zoomSpeedMultiplier);
             const dest = Graph.vecToZ();
             performZoom(amount, dest);
             this.mouseZoomStartY = e.clientY;
@@ -314,7 +314,7 @@ class Interface {
             this.coordsLive = true;
             const dest = Graph.vecToZ();
             regenAmount += Math.abs(e.deltaY);
-            const amount = Math.exp(e.deltaY * settings.zoomSpeed);
+            const amount = Math.exp(e.deltaY * settings.zoomSpeed * settings.zoomSpeedMultiplier);
             performZoom(amount, dest);
             e.stopPropagation();
         } else if (settings.panClick === "scroll") {

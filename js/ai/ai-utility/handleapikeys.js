@@ -223,8 +223,8 @@ Host.checkServer = async function(){
 }
 Host.checkServer.ct = class {
     url = Host.urlForPath('/check');
-    onSuccess(){ return "AI proxy server is working" }
-    onFailure(){ return "AI proxy server is not enabled. See Neurite/Localhost Servers/ai-proxy folder for our ai-proxy.js file. Fetch requests will be made through JS until the page is refreshed while the ai-proxy is running. -" }
+    onSuccess(){ return "Connected to Localhost Servers" }
+    onFailure(){ return "Not connected to Localhost Servers" }
 }
 
 Host.provideAPIKeys = async function(){

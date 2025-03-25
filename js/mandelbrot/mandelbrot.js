@@ -604,21 +604,21 @@ Fractal.path_to_basin = function* (pt) {
         yield pt;
     }
 }
-Fractal.hair_svg_path = function(pt, num_pts_max){
-    const result = ["M", pt.toSvg(), settings.renderDChar];
+Fractal.generate_path_data = function(pt, num_pts_max) {
+    const originalPoints = [pt];
     let length = 0;
     let opt = pt;
     let opacity;
-
+    let color;
     let num_pts = 0;
     const mand_i = Fractal.mand_i;
     const iters = settings.iterations;
+
     if (mand_i(pt, iters) > iters) { //inside the set
         for (const next_pt of Fractal.path_to_basin(pt)) {
-            const svg_pt = next_pt.toSvg();
+            if (!next_pt?.isFinite?.()) break;
             if (mand_i(next_pt, iters) <= iters) break;
-            if (!svg_pt.isFinite()) break;
-            result.push(svg_pt);
+            originalPoints.push(next_pt);
             length += next_pt.minus(pt).mag();
             pt = next_pt;
             num_pts++;
@@ -627,51 +627,145 @@ Fractal.hair_svg_path = function(pt, num_pts_max){
         opacity = settings.innerOpacity / 10;
         length /= 4;
     } else { //outside the set
-        if (Fractal.dist(iters, pt) < settings.maxDist) return; //skip if too far
-
-        for (let next_pt of Fractal.trace_circle(iters, pt, Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
-            //Logger.debug(p);
-            //if ((n&3) == 0)
-            const svg_pt = next_pt.toSvg();
-            if (!svg_pt.isFinite()) break;
-            result.push(svg_pt);
+        if (Fractal.dist(iters, pt) < settings.maxDist) return null;
+        for (let next_pt of Fractal.trace_circle(iters, pt, 
+            Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
+            if (!next_pt?.isFinite?.()) break;
+            originalPoints.push(next_pt);
             length += next_pt.minus(pt).mag();
             pt = next_pt;
             num_pts++;
             if (num_pts >= num_pts_max) break;
         }
-        color = Color.strRgb(Fractal.dist(iters, pt));
         opacity = settings.outerOpacity;
     }
-    if (length === 0) return;
+
+    if (originalPoints.some(p => !p?.isFinite?.())) return null;
+    if (length === 0) return null;
 
     const width = Math.min(settings.renderWidthMult * length / num_pts, 0.1);
-    const path = Svg.new.path();
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', Fractal.color(iters, opt));
-    path.setAttribute('stroke-width', String(width * Svg.zoom));
-    path.setAttribute('stroke-opacity', String(opacity));
-    path.setAttribute('d', result.join(' '));
+    color = Fractal.color(iters, opt);
+
+    return {
+        originalPoints,
+        width,
+        color,
+        opacity,
+        length
+    };
+}
+Fractal.build_path_d = function(points) {
+    if (!points?.length) return '';
+    const svgPoints = points
+        .map(p => p?.toSvg?.())
+        .filter(p => p?.isFinite?.());
+    
+    if (!svgPoints.length) return '';
+    
+    let path = `M ${svgPoints[0].x} ${svgPoints[0].y}`;
+    if (svgPoints.length > 1) {
+        path += ` ${settings.renderDChar} ${svgPoints.slice(1).map(p => 
+            `${p.x} ${p.y}`
+        ).join(' ')}`;
+    }
     return path;
 }
-Fractal.cull_extra_lines = function(){
-    const maxLines = settings.maxLines;
-    if (maxLines === 0) {
-        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved);
-        return;
-    }
+Fractal.hair_svg_path = function(pt, num_pts_max) {
+    const pathData = Fractal.generate_path_data(pt, num_pts_max);
+    if (!pathData) return null;
 
-    const unpreserved = Array.prototype.filter
-        .call(svg_bg.children, Fractal.isNotPreserved).reverse();
-    while (unpreserved.length > maxLines) unpreserved.pop().remove();
+    const path = Svg.new.path();
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', pathData.color);
+    path.setAttribute('stroke-width', String(pathData.width * Svg.zoom));
+    path.setAttribute('stroke-opacity', String(pathData.opacity));
+    path.setAttribute('data-original-points', JSON.stringify(pathData.originalPoints));
+    path.setAttribute('d', Fractal.build_path_d(pathData.originalPoints));
+    return path;
 }
-Fractal.render_hair = function(num_pts_max){
+Fractal.hair_svg_path_delayed = function(pt, num_pts_max) {
+    const pathData = Fractal.generate_path_data(pt, num_pts_max);
+    if (!pathData) return null;
+
+    const path = Svg.new.path();
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', pathData.color);
+    path.setAttribute('stroke-width', String(pathData.width * Svg.zoom));
+    path.setAttribute('stroke-opacity', pathData.opacity);
+    path.setAttribute('data-original-points', JSON.stringify(pathData.originalPoints));
+
+    let currentPoints = [pathData.originalPoints[0]];
+    path.setAttribute('d', Fractal.build_path_d(currentPoints));
+    path.setAttribute('data-animating', 'true');
+    const animate = async () => {
+        const dynamicDelay = Math.max(10, settings.renderDelay / settings.regenDebtAdjustmentFactor);
+        for (let i = 1; i < pathData.originalPoints.length; i++) {
+            await Promise.delay(dynamicDelay);
+            currentPoints.push(pathData.originalPoints[i]);
+            path.setAttribute('data-original-points', JSON.stringify(currentPoints));
+            path.setAttribute('d', Fractal.build_path_d(currentPoints));
+        }
+        path.removeAttribute('data-animating');
+    };
+
+    animate();
+    return path;
+}
+Fractal.render_hair = function(num_pts_max) {
     const random_point = Fractal.sample_random_point();
-    const path = Fractal.hair_svg_path(random_point, num_pts_max);
+    const path = (settings.useDelayedRendering && settings.renderDelay !== 0)
+        ? Fractal.hair_svg_path_delayed(random_point, num_pts_max)
+        : Fractal.hair_svg_path(random_point, num_pts_max);
+
     if (!path) return;
 
     svg_bg.appendChild(path);
     Fractal.cull_extra_lines();
+}
+Fractal.animate_path_removal = async function(path) {
+    path.setAttribute('data-animating', 'true');
+    try {
+        const rawPoints = JSON.parse(path.getAttribute('data-original-points') || []);
+        let originalPoints = rawPoints
+            .filter(p => typeof p?.x === 'number' && typeof p?.y === 'number')
+            .map(p => new vec2(p.x, p.y));
+        
+        const dynamicDelay = Math.max(10, settings.renderDelay / settings.regenDebtAdjustmentFactor);
+        
+        while (originalPoints.length > 1) {
+            await Promise.delay(dynamicDelay);
+            originalPoints.shift(); 
+            path.setAttribute('data-original-points', JSON.stringify(originalPoints));
+            path.setAttribute('d', Fractal.build_path_d(originalPoints));
+        }
+    } finally {
+        path.remove();
+    }
+}
+Fractal.cull_extra_lines = function() {
+    const maxLines = settings.maxLines;
+    if (maxLines === 0) {
+        const children = Array.from(svg_bg.children).reverse();
+        children.forEach(Fractal.removeNonPreserved);
+        return;
+    }
+
+    const unpreserved = Array.prototype.filter.call(
+        svg_bg.children, 
+        path => Fractal.isNotPreserved(path) && 
+               !path.hasAttribute('data-animating') &&
+               !path.dataset.removing
+    ).reverse();
+    
+    while (unpreserved.length > maxLines) {
+        const path = unpreserved.pop();
+        if (settings.useDelayedRendering && settings.renderDelay !== 0) {
+            path.dataset.removing = 'true';
+            Fractal.animate_path_removal(path);
+        } else {
+            path.remove();
+        }
+    }
 }
 Fractal.addPreservation = function(child){
     if (child.classList.contains('preserve')) return;

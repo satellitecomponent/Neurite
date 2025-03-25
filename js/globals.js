@@ -105,12 +105,15 @@ var settings = {
 
     rotateModifierSpeed: Math.PI / 180 / 36,
     dragRotateSpeed: 0.01,
+    zoomSpeedMultiplier: 1,
 
     //slider adjustment
     maxLines: 128,
     renderWidthMult: 0.3, //1,
     regenDebtAdjustmentFactor: 1,
 
+    useDelayedRendering: true,
+    renderDelay: 0,
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,
     renderDChar: "L",

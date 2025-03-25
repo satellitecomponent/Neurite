@@ -13,8 +13,8 @@
                         </div>
                         <div class="dropdown-container" title="Select the current fractal equation">
                             <select id="fractal-select" class="model-selector custom-select">
-                                <option value="julia">Julia Set</option>
                                 <option value="mandelbrot">Mandelbrot</option>
+                                <option value="julia">Julia Set</option>
                                 <option value="burningShip">Burning Ship</option>
                                 <option value="tricorn">Tricorn</option>
                                 <option value="buffalo">Buffalo</option>
@@ -66,6 +66,16 @@
                     <div class="settingsSlider" title="Set the radius of line generation around your mouse">
                         <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
                         <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
+                    </div>
+
+                    <div class="settingsSlider" title="Delay between segment reveals">
+                        <label for="renderDelaySlider">Draw Speed: <span id="renderDelayValue">0</span>ms</label>
+                        <input type="range" id="renderDelaySlider" min="0" max="300" value="0">
+                    </div>
+
+                    <div class="settingsSlider" title="Adjust zoom sensitivity for mouse wheel and drag zooming">
+                        <label for="zoomSpeedSlider">Zoom Speed: <span id="zoomSpeedValue">1.0</span>x</label>
+                        <input type="range" id="zoomSpeedSlider" min="0.1" max="5" step="0.1" value="1.0">
                     </div>
 
                 </div>
