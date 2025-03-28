@@ -4085,3 +4085,22 @@ code.language-markdown {
 .alert-modal .modal-title {
     color: #8c7474; /* Example: slightly different red */
 }
+
+.number-input {
+    background-color: #222226;
+    width: fit-content;
+    border: none;
+}
+
+.number-input:focus {
+    background-color: #18181c;
+    border: none;
+    outline: none;
+}
+
+.number-input:hover {
+    background-color: #18181c;
+    border: none;
+    outline: none;
+}
+

@@ -29,43 +29,45 @@
                 <div class="settingsSlider centered" title="Adjust smoothness of fractal lines. Lower to reduce lag" style="margin-bottom: 10px;">
                     <div style="display:flex; justify-content: space-between;">
                         <div id="quality_value">Quality</div>
-                        <div id="fps">fps:?? (is javascript enabled?)</div>
+                        <div id="fps">17 fps</div>
                     </div>
                     <input id="quality" type="range" min="0" max="100" value="16">
                 </div>
                 <div class="gridLayout">
 
                     <div class="settingsSlider" title="Adjusts length of fractal lines. Lower to reduce lag">
-                        <label for="length">Length: <span id="length_value"></span></label>
+                        <label for="length">Length:</label>
+                        <input id="length_value" class="number-input" type="number" min="0" max="100" step="1">
                         <input id="length" type="range" min="0" max="100" value="50">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts width of fractal lines">
-                        <label for="renderWidthMultSlider">Width: <span id="renderWidthMultValue"></span></label>
+                        <label for="renderWidthMultSlider">Width:</label>
+                        <input id="renderWidthMultValue" class="number-input" type="number" min="0" max="24" step="1">
                         <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.001">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts amount of fractal lines. Lower to reduce lag">
-                        <label for="maxLinesSlider">Max Lines: <span id="maxLinesValue"></span></label>
-                        <input type="range"
-                               id="maxLinesSlider"
-                               min="0"
-                               max="2048"
-                               step="1">
+                        <label for="maxLinesSlider">Lines:</label>
+                        <input id="maxLinesValue" class="number-input" type="number" min="0" max="2048" step="32">
+                        <input type="range" id="maxLinesSlider" min="0" max="2048" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts fractal line generation speed. Lower to reduce lag">
-                        <label for="regenDebtSlider">Speed: <span id="regenDebtValue"></span></label>
+                        <label for="regenDebtSlider">Speed:</label>
+                        <input id="regenDebtValue" class="number-input" type="number" min="0" max="4" step="0.1">
                         <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
                     </div>
                     <div class="settingsSlider" title="Adjusts cursor's control of line generation">
-                        <label for="flashlightStrength">Strength: <span id="flashlightStrength_value"></span></label>
-                        <input id="flashlightStrength" type="range" min="0" max="1" step="0.001">
+                        <label for="flashlightStrength">Strength:</label>
+                        <input id="flashlightStrength_value" class="number-input" type="number" min="0" max="100" step="1">
+                        <input id="flashlightStrength" type="range" min="0" max="100" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts radius of line generation around cursor">
-                        <label for="flashlightRadius">Radius: <span id="flashlightRadius_value"></span></label>
-                        <input type="range" id="flashlightRadius" min="0" max="1" step="0.001">
+                        <label for="flashlightRadius">Radius:</label>
+                        <input id="flashlightRadius_value" class="number-input" type="number" min="0" max="100" step="1">
+                        <input type="range" id="flashlightRadius" min="0" max="100" step="1">
                     </div>
 
                 </div>
@@ -76,16 +78,17 @@
                 <div class="icon-wrapper">
                     <div class="toggle-icon">
                         <!-- Icon SVG -->
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+                        
                     </div>
                 </div>
                 <div class="bar right-bar"></div>
             </div>
         </div>
     </div>
-    <br />
+    
+
     <div class="label-bar-container">
         <label for="colorSettingsContainer" class="button-label" onclick="toggleColorSettingsPanel()">Color</label>
         <div class="color-settings-container" id="colorSettingsContainer">
@@ -109,28 +112,33 @@
                             <input type="color" id="colorPicker" name="colorPicker" value="#000000" style="background:#222226;">
                         </div>
                     </div>
-                    <br />
+                    
+
                     <div id="colorsliders">
                         <input type="range" min="0" max="255" id="rSlider" value="0" style="display: none;">
                         <div class="gridLayout">
 
                             <div class="settingsSlider" title="Adjusts fractal line brightness">
-                                <label for="cSlider">Brightness<span id="c_value"></span></label>
+                                <label for="cSlider">Brightness</label>
+                                <input id="c_value" class="number-input" type="number" min="0" max="255" step="1">
                                 <input type="range" min="0" max="255" id="cSlider" value="128">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts fractal line vibrance">
-                                <label for="sSlider">Saturation<span id="s_value"></span></label>
+                                <label for="sSlider">Saturation</label>
+                                <input id="s_value" class="number-input" type="number" min="0" max="255" step="1">
                                 <input type="range" min="0" max="255" id="sSlider" value="127">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts opacity of fractal lines">
-                                <label for="outer_opacity">Outer Opacity<span id="outer_opacity_value"></span></label>
+                                <label for="outer_opacity">Outer Opacity</label>
+                                <input id="outer_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
                                 <input id="outer_opacity" type="range" min="0" max="100" value="100">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts opacity of fractal line's interior">
-                                <label for="inner_opacity">Inner Opacity<span id="inner_opacity_value"></span></label>
+                                <label for="inner_opacity">Inner Opacity</label>
+                                <input id="inner_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
                                 <input id="inner_opacity" type="range" min="0" max="100" value="100">
                             </div>
 
@@ -154,9 +162,9 @@
                 <div class="icon-wrapper">
                     <div class="toggle-icon">
                         <!-- Icon SVG -->
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+                        
                     </div>
                 </div>
                 <div class="bar right-bar"></div>
