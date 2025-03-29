@@ -256,13 +256,8 @@ class Node {
 
         windowDiv.classList.toggle('window-anchored', anchored);
     }
-    onDblClick = (e)=>{
-        this.anchor = this.pos;
-        this.anchorForce = 1 - this.anchorForce;
-        this.toggleWindowAnchored(this.anchorForce === 1);
-        Logger.debug(this.getAllConnectedNodesData());
-        e.stopPropagation();
-    }
+    onDblClick = (e) => {
+    }  
     onMouseDown = (e)=>{
         this.mouseAnchor = Graph.xyToZ(e.clientX, e.clientY).minus(this.pos);
         this.followingMouse = 1;

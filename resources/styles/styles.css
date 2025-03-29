@@ -126,7 +126,6 @@ body {
     height: fit-content;
     border: 1px solid rgba(0, 0, 0, 0);
     z-index: 2;
-    transition: border 0.3s ease-in-out;
 }
 
 .window-anchored {

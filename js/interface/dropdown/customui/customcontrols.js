@@ -31,6 +31,9 @@ function openControlsModal() {
     const altKeyChange = prepareForKeyChange.bind(null, 'altKey');
     On.click(Elem.byId('altKeyInput'), altKeyChange);
 
+    const controlKeyChange = prepareForKeyChange.bind(null, 'controlKey');
+    On.click(Elem.byId('controlKeyInput'), controlKeyChange);
+
     const shiftKeyChange = prepareForKeyChange.bind(null, 'shiftKey');
     On.click(Elem.byId('shiftKeyInput'), shiftKeyChange);
 
@@ -71,6 +74,7 @@ function onExplanationButtonClicked(e){
 function initializeKeyInputs() {
     const modal = {
         altKeyInput: Elem.byId('altKeyInput'),
+        controlKeyInput: Elem.byId('controlKeyInput'),
         shiftKeyInput: Elem.byId('shiftKeyInput'),
         zoomClickSelect: Elem.byId('zoomClickSelect'),
         panClickSelect: Elem.byId('panClickSelect'),
@@ -78,6 +82,7 @@ function initializeKeyInputs() {
     }
 
     modal.altKeyInput.innerText = controls.altKey.value || controls.altKey.default;
+    modal.controlKeyInput.innerText = controls.controlKey.value || controls.controlKey.default;
     modal.shiftKeyInput.innerText = controls.shiftKey.value || controls.shiftKey.default;
 
     modal.zoomClickSelect.value = controls.zoomClick.value;
@@ -90,6 +95,7 @@ function initializeKeyInputs() {
 function updateSettingsFromControls() {
     settings.nodeModeKey = controls.shiftKey.value;
     settings.rotateModifier = controls.altKey.value;
+    settings.controlKey = controls.controlKey.value;
     settings.zoomClick = controls.zoomClick.value;
     settings.panClick = controls.panClick.value;
     settings.contextKey = controls.contextMenuButton.value; // Add this line

@@ -56,14 +56,14 @@ Prompt.instructions = function(){
 Neurite, fractal mind map:
 Users can scroll through a visualization of the Mandelbrot set, create nodes, talk to an ai (you), and the following...
 ${nodeTag} Essential Controls
-- Drag to move; Scroll to zoom; Alt/Option + Scroll to rotate; Alt/Option + Click or Alt/Option + Drag to select multiple nodes.
+- Drag to move; Scroll to zoom; Alt/Option + Scroll to rotate; Control/Option + Click or Control/Option + Drag to select multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
 - Shift + click on two nodes to link; Shift + Double Click on edges to delete.
 - Double Click a node to anchor/unanchor.
 - Alt/Option + Drag on a node textarea to allow the drag to pass through the textarea.
-- Ctrl + Click to prevent custom right click.
+- Ctrl + Click to open browser right click instead of the custom Neurite one.
 
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.

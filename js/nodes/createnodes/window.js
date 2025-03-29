@@ -80,7 +80,7 @@ class NodeView {
         let clickStartX, clickStartY;
 
         On.mousedown(windowDiv, (e)=>{
-            if (e.getModifierState(controls.altKey.value)) {
+            if (e.getModifierState(controls.controlKey.value)) {
                 // Record the starting position of the mouse only if the Alt key is held
                 clickStartX = e.clientX;
                 clickStartY = e.clientY;
@@ -88,7 +88,7 @@ class NodeView {
         });
 
         On.mouseup(windowDiv, (e)=>{
-            if (e.getModifierState(controls.altKey.value)) {
+            if (e.getModifierState(controls.controlKey.value)) {
                 const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
                 // Check if the mouse has moved more than a certain threshold
                 const dragThreshold = 10; // pixels
@@ -113,6 +113,23 @@ class NodeView {
             dropdown.classList.remove('no-select');
             Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
         });
+
+        On.dblclick(windowDiv, (e) => {
+            const isTextArea = e.target.tagName === 'TEXTAREA';
+            const isContentEditable = e.target.closest('[contenteditable="true"]');
+        
+            const isTextInteraction = isTextArea || isContentEditable;
+            const altHeld = e.getModifierState(controls.altKey.value);
+        
+            if (isTextInteraction && !altHeld) {
+                return; // Don’t toggle anchoring if inside text and Alt is not held
+            }
+        
+            node.anchor = node.pos;
+            node.anchorForce = 1 - node.anchorForce;
+            node.toggleWindowAnchored(node.anchorForce === 1);
+            e.stopPropagation();
+        });        
     }
 
     setTitleInputListeners(){

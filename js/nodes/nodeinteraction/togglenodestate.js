@@ -185,7 +185,7 @@ let dragBox = null;
 let startX, startY;
 
 On.mousedown(document, (e)=>{
-    if (e.button === 0 && e.getModifierState(controls.altKey.value)) {
+    if (e.button === 0 && e.getModifierState(controls.controlKey.value)) {
         e.preventDefault();
         e.stopPropagation();
         isDraggingDragBox = true;
