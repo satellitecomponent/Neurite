@@ -38,13 +38,24 @@
         <tr>
             <td>
                 <div class="label-container">
+                    <button class="question-button" data-explanation-id="alt-explanation">
+                        <svg><use href="#question-mark"></use></svg>
+                    </button>
+                    <strong>Alt/Option</strong>
+                </div>
+            </td>
+            <td><button id="altKeyInput" class="linkbuttons">{{currentAltKey}}</button></td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label-container">
                     <button class="question-button" data-explanation-id="selection-explanation">
                         <svg><use href="#question-mark"></use></svg>
                     </button>
                     <strong>Selection</strong>
                 </div>
             </td>
-            <td><button id="altKeyInput" class="linkbuttons">{{currentAltKey}}</button></td>
+            <td><button id="controlKeyInput" class="linkbuttons">{{currentControlKey}}</button></td>
         </tr>
         <tr>
             <td>
@@ -111,14 +122,20 @@
         </ul>
     </div>
 
-    <div id="selection-explanation" class="explanation-content" style="display: none;">
+    <div id="alt-explanation" class="explanation-content" style="display: none;">
         <strong>Selection: ({{altKey}})</strong>
         <ul>
-            <li>{{altKey}} + Drag nodes to avoid text selection.</li>
-            <li>{{altKey}} + Click to select a node.</li>
-            <li>{{altKey}} + Drag to select multiple nodes.</li>
+            <li>{{altKey}} + Allows dragging, selecting, anchoring, or connecting nodes to pass through textarea elements in the node.</li>
             <li>{{altKey}} + {{zoomClick}} to rotate the canvas.</li>
             <li>{{altKey}} + Double Click the canvas to create an Ai node.</li>
+        </ul>
+    </div>
+
+    <div id="selection-explanation" class="explanation-content" style="display: none;">
+        <strong>Selection: ({{controlKey}})</strong>
+        <ul>
+            <li>{{controlKey}} + Click to select a node.</li>
+            <li>{{controlKey}} + Drag to select multiple nodes.</li>
         </ul>
     </div>
 
