@@ -1,5 +1,6 @@
 class Elem {
     static byId = document.getElementById.bind(document);
+    static deepClone(elem){ return elem.cloneNode(true) }
     static displayBlock(elem){ if (elem) elem.style.display = 'block' }
     static findChild(elem, cb, ct){
         return Array.prototype.find.call(elem.children, cb, ct)
@@ -33,10 +34,12 @@ Object.forEach = function(obj, cb, ct){
     for (const k in obj) cb.call(ct, obj[k])
 }
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
+Object.hasNameThis = function(obj){ return obj.name === this.valueOf() }
 Object.hasTitleThis = function(obj){ return obj.title === this.valueOf() }
 Object.isntThis = function(obj){ return obj !== this.valueOf() }
 Object.isThis = function(obj){ return obj === this.valueOf() }
-Logger = class {
+
+globalThis.Logger = new (class {
     addLevel(prefix, funcName, id = funcName){
         const func = console[funcName].bind(console, prefix);
         this.#levels.push({ func, id });
@@ -64,8 +67,8 @@ Logger = class {
     #switch(factor, dflt = 3){
         return this.level = factor * Math.abs(this.#level || dflt)
     }
-}
-Logger = new Logger()
+});
+Logger
     .addLevel("ERR:", 'error', 'err')
     .addLevel("WARN:", 'warn')
     .addLevel("INFO:", 'info')
@@ -140,11 +143,15 @@ class App {
     zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
 
     init(){
+        Host.checkServer();
         Tag.init();
         Body.addEventListeners(document.body);
         Fractal.initializeSelect();
         this.nodeSimulation.start();
         Ai.init();
+        Embeddings.init();
+        Recorder.init();
+        this.interface.init();
         this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();
@@ -216,7 +223,7 @@ class PageLoad {
         'js/nodes/nodeinteraction/connect.js',
         'js/nodes/nodeinteraction/togglenodestate.js',
         'js/nodes/nodeinteraction/filternodes.js',
-        'js/nodes/nodeinteraction/bundlecode.js',
+        'js/nodes/nodeinteraction/bundlecode.js:MODULE',
         'js/nodes/nodeinteraction/modalconnect.js',
         'js/nodes/nodeinteraction/nodesensor.js',
         'js/nodes/nodeinteraction/nodestep.js',
@@ -242,10 +249,10 @@ class PageLoad {
         'js/ai/ai-utility/dummyai.js',
         'js/ai/automata.js',
         'js/ai/network.js',
+        'js/interface/searchapi/embeddingsdb.js',
         'js/interface/searchapi/search.js',
         'js/interface/searchapi/searchapi.js',
         'js/interface/searchapi/wikipedia.js',
-        'js/interface/searchapi/embeddingsdb.js',
         'js/interface/searchapi/codeparser/parsemirror.js',
         'js/interface/searchapi/codeparser/gitparsed.js',
         'js/interface/searchapi/wolframapi.js',
@@ -273,6 +280,10 @@ class PageLoad {
     loadScript(src){ // dynamically
         return new Promise( (resolve, reject)=>{
             const script = document.createElement('script');
+            if (src.endsWith(':MODULE')) {
+                src = src.slice(0, -7);
+                script.type = 'module';
+            }
             script.src = src;
             script.onload = resolve;
             script.onerror = ()=>{ reject(new Error("Failed to load script: " + src)) };

@@ -51,9 +51,9 @@ function performSearch(searchQuery) {
 
     if (!apiKey || !searchEngineId) {
         return window.alert('API Key or Search Engine ID is missing. Please enter them.')
-            .then(() => Promise.resolve())
-            .catch((error) => {
-                Logger.err("Failed to display alert:", error);
+            .then(Promise.resolve)
+            .catch( (err)=>{
+                Logger.err("Failed to display alert:", err);
                 return Promise.resolve();
             });
     }
@@ -73,9 +73,9 @@ performSearch.ct = class {
     }
     onFailure(){
         return window.alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.")
-            .then(() => "Failed to fetch search results:")
-            .catch((error) => {
-                Logger.err("Failed to display alert:", error);
+            .then( ()=>"Failed to fetch search results:" )
+            .catch( (err)=>{
+                Logger.err("Failed to display alert:", err);
                 return "Failed to fetch search results:";
             });
     }
@@ -97,8 +97,7 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     aiCall.customTemperature = 0;
 
     try {
-        const apiResponse = aiCall.exec();
-
+        const apiResponse = await aiCall.exec();
         const extractedQuery = apiResponse.match(/"([^"]*)"/);
         const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
         Logger.info("Search Query:", searchQuery);
@@ -115,13 +114,12 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
 }
 
 async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
-    const fetchEmbeddings = Embeddings.fetch;
-    const userMessageEmbedding = await fetchEmbeddings(userMessage);
+    const userMessageEmbedding = await Embeddings.fetch(userMessage);
 
     const searchResultEmbeddings = await Promise.all(
         searchResults.map(async result => {
             const titleAndDescription = result.title + " " + result.description;
-            const embedding = await fetchEmbeddings(titleAndDescription);
+            const embedding = await Embeddings.fetch(titleAndDescription);
             return {
                 result,
                 embedding
@@ -164,20 +162,20 @@ async function displayResultsRelevantToMessage(searchResults, message){
 }
 
 function returnLinkNodes() {
-    window.prompt("Enter a Link or Search Query", '').then((linkUrl) => {
-        if (linkUrl) processLinkInput(linkUrl);
-    }).catch((error) => {
-        Logger.err("Failed to get prompt input:", error);
-    });
+    window.prompt("Enter a Link or Search Query", '')
+        .then( (linkInput)=>{
+            if (linkInput) processLinkInput(linkInput)
+        })
+        .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
 }
 
     //for interface.js link node drop handler
-function processLinkInput(linkUrl) {
-    if (String.isUrl(linkUrl)) {
-        const node = new LinkNode(linkUrl, linkUrl);
+function processLinkInput(linkInput) {
+    if (String.isUrl(linkInput)) {
+        const node = new LinkNode(linkInput, linkInput);
         setupNodeForPlacement(node);
     } else {
-        return handleNaturalLanguageSearch(linkUrl)
+        return handleNaturalLanguageSearch(linkInput)
     }
 }
 

@@ -109,10 +109,9 @@ NodeActions.base = class BaseNodeActions {
 
     // Common methods for all nodes
     updateSensor() { this.node.updateSensor(); }
-    zoomTo() { neuriteZoomToNodeTitle(this.node); }
+    zoomTo() { Animation.zoomToNodeTitle(this.node); }
     follow() {
-        autopilotSpeed = settings.autopilotSpeed;
-        autopilotReferenceFrame = this.node;
+        Autopilot.setNode(this.node).start();
         App.menuContext.hide();
     }
     connect() {
@@ -150,13 +149,8 @@ NodeActions.text = class TextNodeActions extends NodeActions.base {
         };
     }
 
-    toggleCode() {
-        const node = this.node;
-        handleCodeExecution(node.textarea, node.htmlView, node.pythonView, node);
-    }
-    testNodeText() {
-        testNodeText(this.node.getTitle());
-    }
+    toggleCode() { handleCodeExecution(this.node) }
+    testNodeText() { testNodeText(this.node.getTitle()) }
     delete() {
         this.applyActionToSelectedNodes( (node)=>{
             const nodeTitle = node.getTitle();
@@ -184,17 +178,14 @@ NodeActions.llm = class LLMNodeActions extends NodeActions.base {
         // Check if the prompt textarea is empty
         if (!promptTextarea.value.trim()) {
             window.prompt("Please enter your prompt:")
-                .then((userInput) => {
+                .then( (userInput)=>{
                     if (userInput === null || userInput.trim() === '') {
-                        Logger.info("No prompt entered");
-                        return;
+                        return Logger.info("No prompt entered")
                     }
 
                     promptTextarea.value = userInput;
                 })
-                .catch((error) => {
-                    Logger.err("Failed to get prompt input:", error);
-                });
+                .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
         }
 
         this.simulateClick(this.node.sendButton, "Send");

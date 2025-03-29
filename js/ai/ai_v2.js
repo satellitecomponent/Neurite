@@ -206,7 +206,6 @@ async function callAiApi({
     }
 
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
-    Logger.info("Message Array", messages);
     Logger.info("Token count:", TokenCounter.forMessages(messages));
 
     if (!params) {
@@ -288,8 +287,8 @@ async function callAiApi({
 }
 
 Ai.ctCancelRequest = class {
+    url = Host.urlForPath('/aiproxy/cancel');
     constructor(requestId){
-        this.url = 'http://localhost:7070/cancel';
         this.options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

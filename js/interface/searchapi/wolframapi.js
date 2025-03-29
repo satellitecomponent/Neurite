@@ -66,7 +66,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     // Call Wolfram Alpha API with the reformulated query
     const apiKey = Elem.byId('wolframApiKey').value;
 
-    const response = await fetch("http://localhost:3000", {
+    const response = await fetch(Host.urlForPath('/wolframalpha'), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

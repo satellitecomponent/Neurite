@@ -36,7 +36,7 @@ function createLlmNode(name = '', sx, sy, x, y) {
     aiNodeSettingsButton.type = "button";
     aiNodeSettingsButton.id = 'aiNodeSettingsButton';
     aiNodeSettingsButton.style.cssText = "display: flex; justify-content: center; align-items: center; padding: 3px; z-index: 1; font-size: 14px; cursor: pointer; background-color: #222226; transition: background-color 0.3s; border: inset; border-color: #8882; width: 30px; height: 30px;";
-    const settingsIcon = Elem.byId('aiNodeSettingsIcon').cloneNode(true);
+    const settingsIcon = Elem.deepClone(Elem.byId('aiNodeSettingsIcon'));
     settingsIcon.style.display = 'inline-block';
     aiNodeSettingsButton.appendChild(settingsIcon);
     aiNodeSettingsButton.isActive = false;

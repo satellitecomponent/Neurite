@@ -36,6 +36,14 @@ class EditTab {
         regenDebtSlider.value = settings.regenDebtAdjustmentFactor;
         regenDebtSlider.dispatchEvent(new Event('input'));
 
+        const renderDelaySlider = Elem.byId('renderDelaySlider');
+        renderDelaySlider.value = settings.renderDelay;
+        renderDelaySlider.dispatchEvent(new Event('input'));
+
+        const zoomSpeedSlider = Elem.byId('zoomSpeedSlider');
+        zoomSpeedSlider.value = settings.zoomSpeedMultiplier;
+        zoomSpeedSlider.dispatchEvent(new Event('input'));
+
         Elem.byId('flashlightStrength').value = flashlight_fraction;
         Elem.byId('flashlightRadius').value = flashlight_stdev;
         triggerInputEvent('flashlightStrength');
@@ -64,6 +72,17 @@ class EditTab {
             settings.regenDebtAdjustmentFactor = v;
             Elem.byId('regenDebtValue').textContent = v;
         });
+
+        On.input(Elem.byId('renderDelaySlider'), (e) => {
+            settings.renderDelay = parseInt(e.target.value);
+            Elem.byId('renderDelayValue').textContent = settings.renderDelay;
+        })
+
+        On.input(Elem.byId('zoomSpeedSlider'), (e)=>{
+            const zoomSpeed = parseFloat(e.target.value);
+            settings.zoomSpeedMultiplier = zoomSpeed;
+            Elem.byId('zoomSpeedValue').textContent = zoomSpeed.toFixed(1);
+        })
 
         On.input(Elem.byId('renderWidthMultSlider'), (e)=>{
             const adjustedValue = this.getRenderWidthMult();

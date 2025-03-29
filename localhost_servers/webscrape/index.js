@@ -1,29 +1,16 @@
 const express = require('express');
-const cors = require('cors');
 const fetch = require('node-fetch');
 const sqlite3 = require('sqlite3').verbose();
-const { JSDOM } = require('jsdom');
 const pdf = require('pdf-parse');
 const cheerio = require('cheerio');
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
-
-const corsOptions = {
-    origin: ['https://neurite.network', 'http://localhost:8080'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
 
 // Initialize SQLite database
 const db = new sqlite3.Database('database.db', (err) => {
     if (err) {
         console.error(err.message);
     }
-    console.log('Connected to the in-memory SQlite database.');
 });
 
 
@@ -98,6 +85,9 @@ app.get('/proxy', async (req, res) => {
             extractedText = await extractVisibleText(url);
         } else if (contentType.includes("application/pdf")) {
             extractedText = await extractTextFromPDF(url);
+        } else if (contentType.includes("text/plain")) {
+            // Directly return the plain text content.
+            extractedText = await response.text();
         } else {
             res.status(400).send('Invalid content type');
             return;
@@ -133,9 +123,6 @@ app.post('/store-embedding-and-text', (req, res) => {
         if (err) {
             console.error(err.message);
             res.status(500).send('Error storing embedding and text');
-        } else {
-            console.log('Embedding and text stored successfully');
-            res.send('Embedding and text stored successfully');
         }
     });
 });
@@ -221,11 +208,6 @@ app.post('/fetch-embeddings-by-keys', async (req, res) => {
     db.all(query, keys.map(key => `${key.split('_chunk_')[0]}%`), callback);
 });
 
-
-
-
-
-
 // Define endpoint to fetch all keys
 app.get('/get-keys', (req, res) => {
     db.all('SELECT key FROM embeddings', [], (err, rows) => {
@@ -265,35 +247,4 @@ app.delete('/delete-chunks', (req, res) => {
     });
 });
 
-
-// Function to log the contents of the database
-function logDatabaseContents() {
-    /* Log the contents of the 'embeddings' table
-    db.all('SELECT * FROM embeddings', [], (err, rows) => {
-        if (err) {
-            console.error(err.message);
-        } else {
-            console.log('Contents of the embeddings table:');
-            console.log(rows);
-        }
-    });*/
-
-    // Log the contents of the 'webpage_text' table
-    db.all('SELECT * FROM webpage_text', [], (err, rows) => {
-        if (err) {
-            console.error(err.message);
-        } else {
-            console.log('Contents of the webpage_text table:');
-            console.log(rows);
-        }
-    });
-}
-
-// Log the contents of the database when the server starts
-logDatabaseContents();
-
-// Start the server
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
-});
+module.exports = app;

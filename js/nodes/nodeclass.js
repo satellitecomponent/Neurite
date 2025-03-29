@@ -38,7 +38,7 @@ class Node {
         } else {
             this.content = Html.new.div();
             this.uuid = String(Graph.nextUuid);
-            this.pos = toZ(mousePos);
+            this.pos = Graph.vecToZ();
 
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
@@ -96,9 +96,14 @@ class Node {
         Logger.debug("extended radius", this.sensor.nodesWithinExtendedRadius);
     }
 
+    hasBoundingRectangle(){
+        const bb = this.content.getBoundingClientRect();
+        return bb && bb.width > 0 && bb.height > 0;
+    }
+
     draw() {
         const e = this.content;
-        const s = this.intrinsicScale * this.scale * (zoom.mag2() ** -settings.zoomContentExp);
+        const s = this.intrinsicScale * this.scale * (Graph.zoom.mag2() ** -settings.zoomContentExp);
 
         const svgbb = svg.getBoundingClientRect();
         e.style.position = 'absolute';
@@ -173,7 +178,7 @@ class Node {
     handleMouseInteraction(dt) {
         if (!this.followingMouse) return;
 
-        const p = toZ(mousePos).minus(this.mouseAnchor);
+        const p = Graph.vecToZ().minus(this.mouseAnchor);
         const velocity = p.minus(this.pos).unscale(App.nodeMode ? 1 : dt);
 
         this.vel = velocity;
@@ -234,28 +239,6 @@ class Node {
         }, 4000); // 4 secs
     }
 
-    zoom_to_fit(margin = 1) {
-        const bb = this.content.getBoundingClientRect();
-        const svgbb = svg.getBoundingClientRect();
-        const aspect = svgbb.width / svgbb.height;
-        const scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
-        this.zoom_by(1 / scale);
-    }
-    zoom_to(s = 1) {
-        panTo = new vec2(0, 0); //this.pos;
-        const gz = zoom.mag2() * ((this.scale * s) ** (-1 / settings.zoomContentExp));
-        zoomTo = zoom.unscale(gz ** 0.5);
-        autopilotReferenceFrame = this;
-        panToI = new vec2(0, 0);
-    }
-    zoom_by(s = 1) {
-        panTo = new vec2(0, 0); //this.pos;
-        const gz = ((s) ** (-1 / settings.zoomContentExp));
-        zoomTo = zoom.unscale(gz ** 0.5);
-        autopilotReferenceFrame = this;
-        panToI = new vec2(0, 0);
-    }
-
     searchStrings() {
         function* search(e) {
             yield e.textContent;
@@ -281,7 +264,7 @@ class Node {
         e.stopPropagation();
     }
     onMouseDown = (e)=>{
-        this.mouseAnchor = toZ(new vec2(e.clientX, e.clientY)).minus(this.pos);
+        this.mouseAnchor = Graph.xyToZ(e.clientX, e.clientY).minus(this.pos);
         this.followingMouse = 1;
         Graph.draggedNode = this;
         Graph.movingNode = this;
@@ -335,8 +318,8 @@ class Node {
 
         const amount = Math.exp(e.wheelDelta * -settings.zoomSpeed);
 
-        if (autopilotSpeed !== 0 && this.uuid === autopilotReferenceFrame.uuid) {
-            zoomTo = zoomTo.scale(1 / amount);
+        if (Autopilot.isMoving() && this.uuid === Autopilot.referenceFrame.uuid) {
+            Autopilot.targetZoom_scaleBy(1 / amount);
         } else {
             // Scale selected nodes or individual node
             const targetWindow = e.target.closest('.window');
@@ -346,7 +329,7 @@ class Node {
 
                     // Only update position if the node is not anchored
                     if (node.anchorForce !== 1) {
-                        node.pos = node.pos.lerpto(toZ(mousePos), 1 - amount);
+                        node.pos = node.pos.lerpto(Graph.vecToZ(), 1 - amount);
                     }
 
                     updateNodeEdgesLength(node);
@@ -356,13 +339,16 @@ class Node {
 
                 // Only update position if not anchored
                 if (this.anchorForce !== 1) {
-                    this.pos = this.pos.lerpto(toZ(mousePos), 1 - amount);
+                    this.pos = this.pos.lerpto(Graph.vecToZ(), 1 - amount);
                 }
             }
         }
         e.stopPropagation();
     }
 
+    getText(){
+        return (this.textarea || this.contentEditableDiv)?.value || ''
+    }
     getTitle(){ return this.view.titleInput.value }
 
     getEdgeDirectionalities() {

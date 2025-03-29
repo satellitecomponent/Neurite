@@ -218,7 +218,7 @@
 
     const id = 'enable-wolfram-alpha-checkbox-' + nodeIndex;
     const wolframData = Elem.byId(id).checked
-                        && await fetchWolfram(latestUserMessage, true, node, wolframContext);
+                        && await fetchWolfram(latestUserMessage, true, node, truncatedRecentContext);
     if (wolframData) {
         aiCall.addSystemPrompt(Prompt.wolfram(wolframData));
 
