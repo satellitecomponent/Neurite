@@ -1,22 +1,8 @@
 import express from 'express';
 import axios from 'axios';
-import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 const WOLFRAM_API_URL = 'https://api.wolframalpha.com/v2/query';
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-const corsOptions = {
-    origin: ['https://neurite.network', 'http://localhost:8080'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
 
 const MAX_ATTEMPTS = 5;
 
@@ -97,6 +83,4 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Wolfram Alpha API server listening at http://localhost:${PORT}`);
-});
+export default app;

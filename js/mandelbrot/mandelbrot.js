@@ -131,20 +131,14 @@ class vec2 {
     ctostring(){
         return (this.y < 0 ? this.x + "-i" + (-this.y) : this.x + "+i" + this.y)
     }
-}
 
-function toSVG(coords) {
-//    return coords.minus(Svg.pan).scale(Svg.zoom)
-    return new vec2(
-        (coords.x - Svg.pan.x) * Svg.zoom,
-        (coords.y - Svg.pan.y) * Svg.zoom
-    )
+    toSvg(){
+//        return this.minus(Svg.pan).scale(Svg.zoom)
+        const x = (this.x - Svg.pan.x) * Svg.zoom;
+        const y = (this.y - Svg.pan.y) * Svg.zoom;
+        return new vec2(x, y);
+    }
 }
-
-var mousePos = new vec2(0, 0);
-var zoom = new vec2(1, 0); //bigger is farther out
-var pan = new vec2(0, 0);
-var rotation = new vec2(1, 0);
 
 Math.lerp = function(a, b, t){
     return a * (1 - t) + b * t
@@ -164,21 +158,12 @@ Svg.updateScaleAndOffset = function(){
     Svg.offset = new vec2(-(off - svgbb.right) / 2, -(off - svgbb.bottom) / 2);
 }
 
-function toZ(c) {
-    Svg.updateScaleAndOffset();
-//    return c.minus(Svg.offset).unscale(Svg.scale).minus(new vec2(.5, .5)).scale(2).cmult(zoom).cadd(pan);
-    return new vec2(
-        ((c.x - Svg.offset.x) / Svg.scale - .5) * 2,
-        ((c.y - Svg.offset.y) / Svg.scale - .5) * 2
-    ).cmult(zoom).cadd(pan);
-}
-
 function toS(c) {
 //    return c.unscale(Svg.windowScale()).scale(2)
     const scale = Svg.windowScale();
     return new vec2(2 * c.x / scale, 2 * c.y / scale);
 }
-function toDZ(c){ return toS(c).cmult(zoom) }
+function toDZ(c){ return toS(c).cmult(Graph.zoom) }
 
 function fromZ(z) {
     Svg.updateScaleAndOffset();
@@ -190,8 +175,8 @@ function fromZ(z) {
     );
 }
 function fromZtoUV(z) {
-//    return z.csub(pan).cdiv(zoom).unscale(2).plus(new vec2(.5, .5))
-    const t = z.csub(pan).cdiv(zoom);
+//    return z.csub(Graph.pan).cdiv(Graph.zoom).unscale(2).plus(new vec2(.5, .5))
+    const t = z.csub(Graph.pan).cdiv(Graph.zoom);
     return new vec2(t.x / 2 + .5, t.y / 2 + .5);
 }
 
@@ -199,15 +184,15 @@ Svg.oldPan = new vec2(0, 0);
 Svg.pan = new vec2(0, 0);
 
 Svg.updateViewbox = function() {
-    const zoom_mag = zoom.mag();
-    let left_corner = toSVG(new vec2(-zoom_mag, -zoom_mag).plus(pan));
+    const zoom_mag = Graph.zoom.mag();
+    let left_corner = (new vec2(-zoom_mag, -zoom_mag).plus(Graph.pan)).toSvg();
     const diameter = zoom_mag * 2 * this.zoom;
-    const rotation = zoom.ang();
+    const rotation = Graph.zoom.ang();
 
     // Handle recentering and rezooming (may update pan/zoom and set needsRecalc)
     if (diameter < Math.abs(this.recenterThreshold * left_corner.x) || diameter < Math.abs(this.recenterThreshold * left_corner.y)) {
-        this.updatePan(pan.scale(1));
-        left_corner = toSVG(toZ(new vec2(0, 0)));
+        this.updatePan(Graph.pan.scale(1));
+        left_corner = Graph.xyToZ(0, 0).toSvg();
         Logger.debug("recentering...");
     }
     if (diameter < this.rezoomThreshold || diameter > this.rezoomFactor / this.rezoomThreshold) {
@@ -219,12 +204,12 @@ Svg.updateViewbox = function() {
     if (this.needsRecalc) this.recalc(); 
 
     // Recompute values with latest pan/zoom after potential changes
-    const updated_zoom_mag = zoom.mag();
-    const updated_left_corner = toSVG(new vec2(-updated_zoom_mag, -updated_zoom_mag).plus(pan));
+    const updated_zoom_mag = Graph.zoom.mag();
+    const updated_left_corner = (new vec2(-updated_zoom_mag, -updated_zoom_mag).plus(Graph.pan)).toSvg();
     const updated_diameter = updated_zoom_mag * 2 * this.zoom;
 
-    const center = toSVG(pan);
-    const rotated_corner = center.cmult(zoom.unscale(updated_zoom_mag).cconj());
+    const center = Graph.pan.toSvg();
+    const rotated_corner = center.cmult(Graph.zoom.unscale(updated_zoom_mag).cconj());
     const final_left_corner = updated_left_corner.plus(rotated_corner.minus(center));
 
     svg.setAttribute("viewBox", `${final_left_corner.x} ${final_left_corner.y} ${updated_diameter} ${updated_diameter}`);
@@ -271,8 +256,7 @@ Body.startPanning = function(e){
     this.style.userSelect = 'none'; // Disable text selection
 }
 Body.onMousemove = function(e){
-    mousePos.x = e.pageX;
-    mousePos.y = e.pageY;
+    Graph.mousePos_setXY(e.pageX, e.pageY);
     App.nodeSimulation.mousePath = [];
 }
 Body.stopPanning = function(e){
@@ -502,7 +486,7 @@ Color.strRgb = function(i, r, c, s){
 
 function outlineMand(start, step = 0.1, iters = 256) {
     const a0 = start.pang();
-    const data = ["M ", toSVG(start), "\nL "];
+    const data = ["M ", start.toSvg(), "\nL "];
     let prevZ = start;
     let maxlen = 32768; // 2 ^ 15
     const minD2 = 0.25 / 200 / 200;
@@ -513,7 +497,7 @@ function outlineMand(start, step = 0.1, iters = 256) {
         maxlen -= 1;
         if (maxlen <= 0) break;
 
-        data.push(toSVG(z), ' ');
+        data.push(z.toSvg(), ' ');
         prevZ = z;
     }
     return data.join('');
@@ -542,7 +526,7 @@ function* iter() {
         svg.children[1].appendChild(path);
         const start = new vec2(x, 0);
         const a0 = start.pang();
-        const data = ["M ", toSVG(start), "\nL "];
+        const data = ["M ", start.toSvg(), "\nL "];
         let prevZ = start;
         let maxlen = 4096; // 2 ^ 12
         const minD2 = 0.01 / 200 / 200;
@@ -560,7 +544,7 @@ function* iter() {
             }
             if (z.minus(prevZ).mag2() < minD2) continue;
 
-            data.push(toSVG(z), ' ');
+            data.push(z.toSvg(), ' ');
             prevZ = z;
         }
         data.push(" z");
@@ -571,7 +555,7 @@ function* iter() {
 
 function random_screen_pt_z() {
     const svgbb = svg.getBoundingClientRect();
-    return toZ(new vec2(Math.random() * svgbb.width, Math.random() * svgbb.height));
+    return Graph.xyToZ(Math.random() * svgbb.width, Math.random() * svgbb.height);
 }
 
 // https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
@@ -585,7 +569,8 @@ function gaussianRandom2() {
 
 Fractal.sample_random_point = function(){
     if (Math.random() <= flashlight_fraction){
-        return gaussianRandom2().scale(flashlight_stdev).cmult(zoom).cadd(toZ(mousePos));
+        return gaussianRandom2().scale(flashlight_stdev)
+            .cmult(Graph.zoom).cadd(Graph.vecToZ())
     }
 
     const getGrad = Fractal.grad;
@@ -599,7 +584,7 @@ Fractal.sample_random_point = function(){
             const gz = getGrad(iters, pt);
             pt = pt.plus(gz.unscale(gz.mag2() * 10 + 1));
             //if (mand_i(pt,iters) > iters){
-            //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(zoom).cadd(pan);
+            //    pt = (new vec2(Math.random()*2-1,Math.random()*2-1)).cmult(Graph.zoom).cadd(Graph.pan);
             //}
         }
         tries -= 1;
@@ -614,26 +599,26 @@ Fractal.path_to_basin = function* (pt) {
     const func = (z)=>iter_n(p.i, z, z).mag2() ;
     while (true) {
         let delta = gradzr(func, pt, 1e-5);
-        delta = delta.unscale(delta.mag() + 1e-300).scale(zoom.mag() * .1); //normalize and scale delta
+        delta = delta.unscale(delta.mag() + 1e-300).scale(Graph.zoom.mag() * .1); //normalize and scale delta
         pt = pt.plus(delta.scale(-settings.renderStepSize));
         yield pt;
     }
 }
-Fractal.hair_svg_path = function(pt, num_pts_max){
-    const result = ["M", toSVG(pt), settings.renderDChar];
+Fractal.generate_path_data = function(pt, num_pts_max) {
+    const originalPoints = [pt];
     let length = 0;
     let opt = pt;
     let opacity;
-
+    let color;
     let num_pts = 0;
     const mand_i = Fractal.mand_i;
     const iters = settings.iterations;
+
     if (mand_i(pt, iters) > iters) { //inside the set
         for (const next_pt of Fractal.path_to_basin(pt)) {
-            const svg_pt = toSVG(next_pt);
+            if (!next_pt?.isFinite?.()) break;
             if (mand_i(next_pt, iters) <= iters) break;
-            if (!svg_pt.isFinite()) break;
-            result.push(svg_pt);
+            originalPoints.push(next_pt);
             length += next_pt.minus(pt).mag();
             pt = next_pt;
             num_pts++;
@@ -642,51 +627,159 @@ Fractal.hair_svg_path = function(pt, num_pts_max){
         opacity = settings.innerOpacity / 10;
         length /= 4;
     } else { //outside the set
-        if (Fractal.dist(iters, pt) < settings.maxDist) return; //skip if too far
-
-        for (let next_pt of Fractal.trace_circle(iters, pt, Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
-            //Logger.debug(p);
-            //if ((n&3) == 0)
-            const svg_pt = toSVG(next_pt);
-            if (!svg_pt.isFinite()) break;
-            result.push(svg_pt);
+        if (Fractal.dist(iters, pt) < settings.maxDist) return null;
+        for (let next_pt of Fractal.trace_circle(iters, pt, 
+            Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
+            if (!next_pt?.isFinite?.()) break;
+            originalPoints.push(next_pt);
             length += next_pt.minus(pt).mag();
             pt = next_pt;
             num_pts++;
             if (num_pts >= num_pts_max) break;
         }
-        color = Color.strRgb(Fractal.dist(iters, pt));
         opacity = settings.outerOpacity;
     }
-    if (length === 0) return;
+
+    if (originalPoints.some(p => !p?.isFinite?.())) return null;
+    if (length === 0) return null;
 
     const width = Math.min(settings.renderWidthMult * length / num_pts, 0.1);
-    const path = Svg.new.path();
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', Fractal.color(iters, opt));
-    path.setAttribute('stroke-width', String(width * Svg.zoom));
-    path.setAttribute('stroke-opacity', String(opacity));
-    path.setAttribute('d', result.join(' '));
+    color = Fractal.color(iters, opt);
+
+    return {
+        originalPoints,
+        width,
+        color,
+        opacity,
+        length
+    };
+}
+Fractal.build_path_d = function(points) {
+    if (!points?.length) return '';
+    const svgPoints = points
+        .map(p => p?.toSvg?.())
+        .filter(p => p?.isFinite?.());
+    
+    if (!svgPoints.length) return '';
+    
+    let path = `M ${svgPoints[0].x} ${svgPoints[0].y}`;
+    if (svgPoints.length > 1) {
+        path += ` ${settings.renderDChar} ${svgPoints.slice(1).map(p => 
+            `${p.x} ${p.y}`
+        ).join(' ')}`;
+    }
     return path;
 }
-Fractal.cull_extra_lines = function(){
-    const maxLines = settings.maxLines;
-    if (maxLines === 0) {
-        Elem.forEachChild(svg_bg, Fractal.removeNonPreserved);
-        return;
-    }
+Fractal.hair_svg_path = function(pt, num_pts_max) {
+    const pathData = Fractal.generate_path_data(pt, num_pts_max);
+    if (!pathData) return null;
 
-    const unpreserved = Array.prototype.filter
-        .call(svg_bg.children, Fractal.isNotPreserved).reverse();
-    while (unpreserved.length > maxLines) unpreserved.pop().remove();
+    const path = Svg.new.path();
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', pathData.color);
+    path.setAttribute('stroke-width', String(pathData.width * Svg.zoom));
+    path.setAttribute('stroke-opacity', String(pathData.opacity));
+    path.setAttribute('data-original-points', JSON.stringify(pathData.originalPoints));
+    path.setAttribute('d', Fractal.build_path_d(pathData.originalPoints));
+    return path;
 }
-Fractal.render_hair = function(num_pts_max){
+Fractal.hair_svg_path_delayed = function(pt, num_pts_max) {
+    const pathData = Fractal.generate_path_data(pt, num_pts_max);
+    if (!pathData) return null;
+
+    const path = Svg.new.path();
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', pathData.color);
+    path.setAttribute('stroke-width', String(pathData.width * Svg.zoom));
+    path.setAttribute('stroke-opacity', pathData.opacity);
+    path.setAttribute('data-original-points', JSON.stringify(pathData.originalPoints));
+
+    let currentPoints = [pathData.originalPoints[0]];
+    path.setAttribute('d', Fractal.build_path_d(currentPoints));
+    path.setAttribute('data-animating', 'true');
+    const animate = async () => {
+        const dynamicDelay = Math.max(10, settings.renderDelay / settings.regenDebtAdjustmentFactor);
+        for (let i = 1; i < pathData.originalPoints.length; i++) {
+            await Promise.delay(dynamicDelay);
+            currentPoints.push(pathData.originalPoints[i]);
+            path.setAttribute('data-original-points', JSON.stringify(currentPoints));
+            path.setAttribute('d', Fractal.build_path_d(currentPoints));
+        }
+        path.removeAttribute('data-animating');
+    };
+
+    animate();
+    return path;
+}
+Fractal.render_hair = function(num_pts_max) {
     const random_point = Fractal.sample_random_point();
-    const path = Fractal.hair_svg_path(random_point, num_pts_max);
+    const path = (settings.useDelayedRendering && settings.renderDelay !== 0)
+        ? Fractal.hair_svg_path_delayed(random_point, num_pts_max)
+        : Fractal.hair_svg_path(random_point, num_pts_max);
+
     if (!path) return;
 
     svg_bg.appendChild(path);
     Fractal.cull_extra_lines();
+}
+Fractal.animate_path_removal = async function(path) {
+    if (!svg_bg.contains(path)) return;
+    path.setAttribute('data-animating', 'true');
+    path.dataset.removing = 'true';
+    try {
+        const rawPoints = JSON.parse(path.getAttribute('data-original-points') || []);
+        let originalPoints = rawPoints
+            .filter(p => typeof p?.x === 'number' && typeof p?.y === 'number')
+            .map(p => new vec2(p.x, p.y));
+        
+        const dynamicDelay = Math.max(10, settings.renderDelay / settings.regenDebtAdjustmentFactor);
+        
+        while (originalPoints.length > 1) {
+            await Promise.delay(dynamicDelay);
+            originalPoints.shift(); 
+            path.setAttribute('data-original-points', JSON.stringify(originalPoints));
+            path.setAttribute('d', Fractal.build_path_d(originalPoints));
+        }
+    } finally {
+        path.remove();
+        path.removeAttribute('data-animating');
+        delete path.dataset.removing;
+    }
+}
+Fractal.cull_extra_lines = function() {
+    const maxLines = settings.maxLines;
+    
+    // Immediate removal case
+    if (maxLines === 0) {
+        const children = Array.from(svg_bg.children).reverse();
+        children.forEach(Fractal.removeNonPreserved);
+        return;
+    }
+
+    // Get all non-preserved lines (including animating ones)
+    const allLines = Array.from(svg_bg.children)
+        .filter(path => Fractal.isNotPreserved(path));
+        
+    // Count only non-animating, non-removing lines against the limit
+    const activeCount = allLines.filter(path => 
+        !path.hasAttribute('data-animating') && 
+        !path.dataset.removing
+    ).length;
+
+    // Remove oldest lines if over limit (FIFO)
+    if (activeCount > maxLines) {
+        const toRemove = allLines
+            .filter(path => 
+                !path.hasAttribute('data-animating') && 
+                !path.dataset.removing
+            )
+            .slice(0, activeCount - maxLines);
+            
+        toRemove.forEach(path => {
+            path.dataset.removing = 'true';
+            Fractal.animate_path_removal(path);
+        });
+    }
 }
 Fractal.addPreservation = function(child){
     if (child.classList.contains('preserve')) return;
@@ -890,7 +983,7 @@ return true; // The point does not escape, part of the set
 }
 
 function isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius) {
-let c = toZ(new vec2(x, y));
+let c = Graph.xyToZ(x, y);
 let isCurrentPixelInSet = isMandelbrotPixel(c, iters, escapeRadius);
 
 // Check neighboring pixels
@@ -898,7 +991,7 @@ for (let dx = -pixelSpacing; dx <= pixelSpacing; dx += pixelSpacing) {
     for (let dy = -pixelSpacing; dy <= pixelSpacing; dy += pixelSpacing) {
         if (dx === 0 && dy === 0) continue; // Skip the current pixel
 
-        let neighborC = toZ(new vec2(x + dx, y + dy));
+        let neighborC = Graph.xyToZ(x + dx, y + dy);
         let isNeighborInSet = isMandelbrotPixel(neighborC, iters, escapeRadius);
 
         if (isCurrentPixelInSet !== isNeighborInSet) {
@@ -916,7 +1009,7 @@ let pixelSpacing = calculatePixelSpacing(svgElement);
 
 for (let x = 0; x < window.innerWidth; x += pixelSpacing) {
     for (let y = 0; y < window.innerHeight; y += pixelSpacing) {
-        let c = toZ(new vec2(x, y));
+        let c = Graph.xyToZ(x, y);
         if (isPerimeterPixel(x, y, pixelSpacing, svgElement, iters, escapeRadius)) {
             // Convert back to screen coordinates and apply scaling
             let screenCoords = fromZ(c);

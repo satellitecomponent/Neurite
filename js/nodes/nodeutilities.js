@@ -8,11 +8,16 @@ class Graph {
     htmlNodes = Elem.byId('nodes');
     lastPos = {x: 0, y: 0};
     model = svg;
+    mouseDownPos = new vec2(0, 0);
+    mousePos = new vec2(0, 0);
     movingNode;
     #nextUuid = 0;
     nodes = {};
     nodeViews = {};
     own = {self: this};
+    pan = new vec2(0, 0);
+    rotation = new vec2(1, 0);
+    zoom = new vec2(1, 0); // bigger is farther out
 
     addEdge(edge){
         this.addEdgeView(edge.view);
@@ -98,6 +103,15 @@ class Graph {
     forEachNode(cb, ct){ Object.forEach(this.nodes, cb, ct) }
     forEachNodeView(cb, ct){ Object.forEach(this.nodeViews, cb, ct) }
 
+    mouseDownPos_setXY(x, y){
+        this.mouseDownPos.x = x ?? this.mousePos.x;
+        this.mouseDownPos.y = y ?? this.mousePos.y;
+    }
+    mousePos_setXY(x, y){
+        this.mousePos.x = x;
+        this.mousePos.y = y;
+    }
+
     get nextUuid(){
         const nodes = this.nodes;
         while (nodes[this.#nextUuid]) {
@@ -105,9 +119,42 @@ class Graph {
         }
         return this.#nextUuid;
     }
+
+    pan_decBy(vec){
+        this.pan = this.pan.minus(vec);
+        return this;
+    }
+    pan_incBy(vec){
+        this.pan = this.pan.plus(vec);
+        return this;
+    }
+    pan_set(vecNew){
+        this.pan = vecNew;
+        return this;
+    }
+
     setEdgeDirectionalityFromData(edgeData){
         this.edgeDirectionalities[edgeData.edgeKey] ||=
             Edge.directionalityFromData(edgeData.directionality)
+    }
+    updateRotationByAngle(angle){
+//        const delta = new vec2(Math.cos(angle), Math.sin(angle));
+//        this.rotation = this.rotation.cmult(delta);
+        const x = Math.cos(angle);
+        const y = Math.sin(angle);
+        const rotation = this.rotation;
+        this.rotation = new vec2(
+            rotation.x * x - rotation.y * y,
+            rotation.y * x + rotation.x * y
+        )
+        return this;
+    }
+    vecToZ(c = this.mousePos){
+//        Svg.updateScaleAndOffset();
+//        return c.minus(Svg.offset).unscale(Svg.scale)
+//            .minus(new vec2(.5, .5)).scale(2)
+//            .cmult(this.zoom).cadd(this.pan);
+        return this.xyToZ(c.x, c.y)
     }
     viewForElem(target){
         const viewType = target.dataset.viewType;
@@ -115,6 +162,30 @@ class Graph {
 
         const elem = target.closest('[data-view-type]');
         if (elem) return this[elem.dataset.viewType][elem.dataset.viewId];
+    }
+    xyToZ(x, y){
+        Svg.updateScaleAndOffset();
+        return new vec2(
+            ((x - Svg.offset.x) / Svg.scale - .5) * 2,
+            ((y - Svg.offset.y) / Svg.scale - .5) * 2
+        ).cmult(this.zoom).cadd(this.pan);
+    }
+
+    zoom_cmultWith(o){
+        this.zoom = this.zoom.cmult(o);
+        return this;
+    }
+    zoom_rotBy(angle){
+        this.zoom = this.zoom.rot(angle);
+        return this;
+    }
+    zoom_set(vecNew){
+        this.zoom = vecNew;
+        return this;
+    }
+    zoom_scaleBy(scale){
+        this.zoom = this.zoom.scale(scale);
+        return this;
     }
 }
 svg.dataset.viewType = 'own';
@@ -196,8 +267,8 @@ class SelectedNodes {
         });
 
         // If needed, scale the user screen (global zoom)
-        //zoom = zoom.scale(scaleFactor);
-        //pan = centralPoint.scale(1 - scaleFactor).plus(pan.scale(scaleFactor));
+        //Graph.zoom_scaleBy(scaleFactor)
+        //    .pan_set(centralPoint.scale(1 - scaleFactor).plus(Graph.pan.scale(scaleFactor)));
     }
 }
 
@@ -275,19 +346,4 @@ function testNodeText(title) {
     const text = Node.getTextareaContent(node);
     Logger.info("Node with title:", title, "has text:", text);
     return text;
-}
-
-function getNodeText() {
-    const nodes = [];
-    Graph.forEachNode( (node)=>{
-        const titleInput = node.view.titleInput;
-        const contentText = node.hiddenTextarea;
-
-        nodes.push({
-            ...node,
-            titleInput: titleInput ? titleInput.value : '',
-            contentText: contentText ? contentText.value : ''
-        });
-    });
-    return nodes;
 }

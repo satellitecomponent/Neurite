@@ -1,5 +1,5 @@
 const Embeddings = {
-    fetchFromModel: {
+    fetchPerModelName: {
         "local-embeddings-gte-small": "fetchLocal",
         "local-embeddings-all-MiniLM-L6-v2": "fetchLocal",
         "mxbai-embed-large": "fetchOllama",
@@ -10,107 +10,94 @@ const Embeddings = {
         "text-embedding-3-small": "fetchOpenAI"
     },
     selectModel: null,
-    worker: null
-}
+    worker: null,
 
-let browserEmbeddingsInitialized = {};
+    init(){
+        this.selectModel = Elem.byId('embeddingsModelSelect');
+        this.worker = new Worker('/embeddings.js', { type: 'module' });
+        this.listenToWorker = this.listenToWorker.bind(this);
 
-Embeddings.initializeWorker = function(){
-    Embeddings.selectModel = Elem.byId('embeddingsModelSelect');
+        /*
+        // Initialize both models
+        this.post('initialize', 'local-embeddings-gte-small');
+        this.post('initialize', 'local-embeddings-all-MiniLM-L6-v2');
+        */
+    },
+    post(verb, modelName, input){
+        this.worker.postMessage({ verb, modelName, input })
+    },
 
-    const worker = Embeddings.worker = new Worker('/embeddings.js', { type: 'module' });
+    fetch(text, source){
+        const modelName = source || this.selectModel.value;
 
-    function onMessage(e){
-        const data = e.data;
-        if (data.type === 'ready') {
-            browserEmbeddingsInitialized[data.model] = true;
-        } else if (data.type === 'error') {
-            Logger.err("From embeddings worker:", data.error);
-        }
-    }
-
-    On.message(worker, onMessage);
-    worker.onerror = Logger.err.bind(Logger, "From embeddings worker:");
-
-    // Initialize both models
-    worker.postMessage({ type: 'initialize', model: 'local-embeddings-gte-small' });
-    worker.postMessage({ type: 'initialize', model: 'local-embeddings-all-MiniLM-L6-v2' });
-}
-
-Embeddings.initializeWorker();
-
-Embeddings.fetch = function(text, source){
-    const model = source || Embeddings.selectModel.value;
-    const fetch = Embeddings.fetchFromModel[model];
-    if (!fetch) return Promise.reject(new Error("Unsupported model: " + model));
-
-    try {
-        return Embeddings[fetch](model, text)
-    } catch (err) {
-        Logger.err(`In generating embeddings for model ${model}:`, err);
-        return Promise.resolve([]);
-    }
-}
-
-Embeddings.fetchLocal = function(model, text){
-    return new Promise( (resolve, reject)=>{
-        if (!browserEmbeddingsInitialized[model]) {
-            return reject(new Error(`Embeddings worker is not initialized for ${model}.`))
+        const fetch = this.fetchPerModelName[modelName];
+        if (!fetch) {
+            return Promise.reject(new Error("Unsupported model: " + modelName))
         }
 
-        const worker = Embeddings.worker;
-        function onMessage(e){
-            Off.message(worker, onMessage);
+        return this[fetch](modelName, text).catch( (err)=>{
+            const msg = `In generating embeddings for model ${modelName}:`;
+            Logger.err(msg, err);
+            return Promise.resolve([]);
+        });
+    },
+
+    fetchLocal(modelName, text){
+        const prom = new Promise(this.listenToWorker);
+        this.post('generate', modelName, text);
+        return prom;
+    },
+    listenToWorker(resolve, reject){
+        const onMessage = (e)=>{
             const data = e.data;
             if (data.type === 'result') {
-                resolve(data.data)
-            } else { // data.type === 'error'
-                reject(new Error(data.error))
+                Off.message(this.worker, onMessage);
+                resolve(data.res);
+            } else if (data.type === 'error') {
+                Off.message(this.worker, onMessage);
+                reject(new Error(data.res));
             }
         }
-        On.message(worker, onMessage);
-        worker.postMessage({ type: 'generate', text: text, model: model });
-    })
-}
+        On.message(this.worker, onMessage);
+    },
 
-Embeddings.fetchOllama = async function(model, text){
-    const modelList = await receiveOllamaModelList(true);
-    const isModelAvailable = modelList.some(m => m.name === model);
-
-    if (!isModelAvailable) {
-        const isPulled = await pullOllamaModelWithProgress(model);
-        if (!isPulled) {
-            throw new Error("Failed to pull Ollama model: " + model);
+    async fetchOllama(modelName, text){
+        const modelList = await receiveOllamaModelList(true);
+        const isModelAvailable = modelList.some(Object.hasNameThis, modelName);
+        if (!isModelAvailable) {
+            const isPulled = await pullOllamaModelWithProgress(modelName);
+            if (!isPulled) {
+                throw new Error("Failed to pull Ollama model: " + modelName)
+            }
         }
+
+        const embedding = await Ollama.fetchEmbeddings(modelName, text);
+        if (embedding) return embedding;
+
+        throw new Error("Failed to generate Ollama embedding for model: " + modelName);
+    },
+
+    async fetchOpenAI(modelName, text){
+        const API_URL = 'https://api.openai.com/v1/embeddings';
+        const headers = new Headers({
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + Elem.byId('api-key-input').value
+        });
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ model: modelName, input: text })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error("OpenAI API error: " + JSON.stringify(data));
+        }
+
+        return data.data[0].embedding;
     }
-
-    const embedding = await Ollama.fetchEmbeddings(model, text);
-    if (!embedding) {
-        throw new Error("Failed to generate Ollama embedding for model: " + model);
-    }
-    return embedding;
-}
-
-Embeddings.fetchOpenAI = async function(model, text){
-    const API_URL = 'https://api.openai.com/v1/embeddings';
-    const headers = new Headers({
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + Elem.byId('api-key-input').value
-    });
-
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ model, input: text })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error("OpenAI API error: " + JSON.stringify(data));
-    }
-
-    return data.data[0].embedding;
 }
 
 function cosineSimilarity(vecA, vecB) {
@@ -145,7 +132,7 @@ Keys.getAll = async function(){
     return (await Request.send(new Keys.fetcher())) || []
 }
 Keys.fetcher = class {
-    url = 'http://localhost:4000/get-keys';
+    url = Host.urlForPath('/webscrape/get-keys');
     onResponse(res){ return res.json() }
     onFailure(){ return "Failed to fetch keys:" }
 }
@@ -217,37 +204,35 @@ Keys.getRelevantNodeLinks = async function(allConnectedNodesData, userMessage, s
     const linkNodesData = allConnectedNodesData.filter(info => info.data?.type === 'link');
 
     if (linkNodesData.length > 0) {
-      // Collect url and key from each link node
-      const linkInfo = linkNodesData.map(info => ({
-        url: info.data.data.url,
-        key: info.data.data.key
-      }));
+        // Collect url and key from each link node
+        const linkInfo = linkNodesData.map(info => ({
+            url: info.data.data.url,
+            key: info.data.data.key
+        }));
 
-      // Get all keys from the server and determine which ones are relevant
-      const allKeysFromServer = await this.getAll();
-      relevantKeys = linkInfo
-        .filter(info => allKeysFromServer.includes(info.key))
-        .map(info => info.key);
+        // Get all keys from the server and determine which ones are relevant
+        const allKeysFromServer = await this.getAll();
+        relevantKeys = linkInfo
+            .filter(info => allKeysFromServer.includes(info.key))
+            .map(info => info.key);
 
-      // Handle any links that have not yet been extracted
-      const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
-      if (notExtractedLinks.length > 0) {
-        // Make sure handleNotExtractedLinks is defined or imported
-        await handleNotExtractedLinks(
-          notExtractedLinks,
-          linkNodesData.map(info => info.node) // Pass the link node objects themselves
-        );
-      }
+        // Handle any links that have not yet been extracted
+        const notExtractedLinks = linkInfo.filter(info => !allKeysFromServer.includes(info.key));
+        if (notExtractedLinks.length > 0) {
+            // Make sure handleNotExtractedLinks is defined or imported
+            await handleNotExtractedLinks(
+            notExtractedLinks,
+            linkNodesData.map(info => info.node) // Pass the link node objects themselves
+            );
+        }
 
-      // Refresh the keys after processing not-extracted links
-      const updatedKeysFromServer = await this.getAll();
-      relevantKeys = linkInfo
-        .filter(info => updatedKeysFromServer.includes(info.key))
-        .map(info => info.key);
-
+        // Refresh the keys after processing not-extracted links
+        const updatedKeysFromServer = await this.getAll();
+        relevantKeys = linkInfo
+            .filter(info => updatedKeysFromServer.includes(info.key))
+            .map(info => info.key);
     } else if (searchQuery !== null && filteredKeys) {
-      // Fallback: obtain relevant keys based on the user message
-      relevantKeys = await this.getRelevant(userMessage, recentContext, searchQuery, filteredKeys);
+        relevantKeys = await this.getRelevant(userMessage, recentContext, searchQuery, filteredKeys)
     }
 
     return relevantKeys;
@@ -340,7 +325,7 @@ Keys.deleteKey = async function(key){
     await Request.send(new Keys.eraser(key))
 }
 Keys.eraser = class {
-    static baseUrl = 'http://localhost:4000/delete-chunks?key=';
+    static baseUrl = Host.urlForPath('/webscrape/delete-chunks?key=');
     options = {
         method: 'DELETE'
     };
@@ -465,12 +450,14 @@ async function extractTextFromPDF(pdfLink) {
     }
 }
 
-Link.fetchContentText = function(link){ // promise
+Link.fetchContentText = function (link) { // promise
+    if (useProxy && !isGitHubUrl(link)) {
+        return Request.send(new Link.textFetcher(link));
+    }
+
     if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
         return extractTextFromPDF(link);
     }
-
-    if (!isGitHubUrl(link)) return Request.send(new Link.textFetcher(link));
 
     const details = extractGitHubRepoDetails(link);
     if (!details) {
@@ -479,9 +466,10 @@ Link.fetchContentText = function(link){ // promise
     }
 
     return fetchGitHubRepoContent(details.owner, details.repo);
-}
+};
+
 Link.textFetcher = class TextFetcher {
-    static baseUrl = 'http://localhost:4000/proxy?url=';
+    static baseUrl = Host.urlForPath('/webscrape/proxy?url=');
     constructor(link){
         this.url = TextFetcher.baseUrl + encodeURIComponent(link);
         this.link = link;
@@ -592,7 +580,7 @@ async function storeEmbeddingsAndChunksInDatabase(key, chunks, embeddings) {
 
         // Now send all requests
         for (let i = 0; i < requests.length; i++) {
-            const response = await fetch('http://localhost:4000/store-embedding-and-text', {
+            const response = await fetch(Host.urlForPath('/webscrape/store-embedding-and-text'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -626,7 +614,7 @@ async function storeAdditionalEmbedding(key, source, embedding) {
     await Request.send(new storeAdditionalEmbedding.ct(key, source, embedding));
 }
 storeAdditionalEmbedding.ct = class {
-    url = 'http://localhost:4000/store-additional-embedding';
+    url = Host.urlForPath('/webscrape/store-additional-embedding');
     constructor(key, source, embedding){
         this.options = Request.makeJsonOptions('POST', { key, source, embedding })
     }
@@ -727,7 +715,7 @@ async function fetchEmbeddingsForKeys(keys, source) {
     return (await Request.send(new fetchEmbeddingsForKeys.ct(keys, source))) || []
 }
 fetchEmbeddingsForKeys.ct = class {
-    url = 'http://localhost:4000/fetch-embeddings-by-keys';
+    url = Host.urlForPath('/webscrape/fetch-embeddings-by-keys');
     constructor(keys, source){
         this.options = Request.makeJsonOptions('POST', { keys, source })
     }
@@ -747,17 +735,16 @@ async function getRelevantChunks(searchQuery, topN, relevantKeys = []) {
         Logger.warn("No relevant keys provided for fetching embeddings.");
         return [];
     }
-
+    console.log(relevantKeys);
     const selectedModel = Embeddings.selectModel.value;
-    const fetchEmbeddings = Embeddings.fetch;
     const relevantEmbeddings = await fetchEmbeddingsForKeys(relevantKeys, selectedModel);
-    const queryEmbedding = await fetchEmbeddings(searchQuery, selectedModel);
+    const queryEmbedding = await Embeddings.fetch(searchQuery, selectedModel);
 
     // Process embeddings and calculate similarities
     const topNChunks = await Promise.all(relevantEmbeddings.map(async (embedding) => {
         let embeddingVector = embedding.embedding;
         if (!embeddingVector) {
-            embeddingVector = await fetchEmbeddings(embedding.text, selectedModel);
+            embeddingVector = await Embeddings.fetch(embedding.text, selectedModel);
             await storeAdditionalEmbedding(embedding.key, selectedModel, embeddingVector);
         }
 

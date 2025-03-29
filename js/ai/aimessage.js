@@ -16,14 +16,17 @@ Prompt.matchedNodes = function(content){
 Prompt.searchQuery = async function(message, searchQuery, filteredKeys, topN, recentContext, node, allConnectedNodesData){
     if (!searchQuery || !filteredKeys) return;
 
-    const relevantKeys = await (!node) ? Keys.getRelevant(message, recentContext, searchQuery, filteredKeys)
-                             : Keys.getRelevantNodeLinks(
-                                    allConnectedNodesData,
-                                    message,
-                                    searchQuery,
-                                    filteredKeys,
-                                    recentContext
-                               );
+    const relevantKeys = await (
+        (!node)
+          ? Keys.getRelevant(message, recentContext, searchQuery, filteredKeys)
+          : Keys.getRelevantNodeLinks(
+               allConnectedNodesData,
+               message,
+               searchQuery,
+               filteredKeys,
+               recentContext
+            )
+      );
     if (relevantKeys.length < 1) return;
 
     const relevantChunks = await getRelevantChunks(searchQuery, topN, relevantKeys);
@@ -98,7 +101,7 @@ async function sendMessage(event, autoModeMessage) {
         googleSearchPrompt = Prompt.googleSearch(content);
     }
 
-    const aiCall = AiCall.stream().addSystemPrompt(Prompt.zettelkasten());
+    const aiCall = AiCall.stream().addSystemPrompt(Prompt.mindmap());
     if (Elem.byId('instructions-checkbox').checked) {
         aiCall.addSystemPrompt(Prompt.instructions())
     }
@@ -125,8 +128,7 @@ async function sendMessage(event, autoModeMessage) {
     const existingTitles = extractTitlesFromContent(context);
     Logger.debug(`existingTitles`, existingTitles, context);
 
-    // Replace the original search and highlight code with neuriteSearchNotes
-    const topMatchedNodes = await neuriteSearchNotes(strKeywords);
+    const topMatchedNodes = await Graph.searchNotes(strKeywords);
     const nodeContents = filterAndProcessNodesByExistingTitles(topMatchedNodes, existingTitles);
     Logger.debug(nodeContents);
 

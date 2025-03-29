@@ -4,20 +4,6 @@ class NeuralTelemetry {
         // but in this case, it might not be needed if we're only fetching current data.
     }
 
-    // Method to directly fetch current Mandelbrot coordinates
-    getCurrentMandelbrotCoords() {
-        // Assuming neuriteGetMandelbrotCoords is a globally available function
-        const coords = neuriteGetMandelbrotCoords();
-        return {
-            zoom: coords.zoom,
-            pan: coords.pan
-        };
-    }
-
-    getCurrentEquation() {
-        return Elem.byId('equation').innerHTML
-    }
-
     // Method to get a range of node titles
     getRangeOfNodeTitles(startCount, endCount) {
         const allTitles = Array.from(nodeTitles);
@@ -67,14 +53,10 @@ function testGetLastFunctionCalls(n) {
 }
 
 Prompt.forTelemetry = function(telemetry, vision = false){
-    const mandelbrotCoords = telemetry.getCurrentMandelbrotCoords();
-    const currentEquation = telemetry.getCurrentEquation();
-    const historyCount = 3;
-    const lastFunctionCalls = telemetry.getLastFunctionCalls(historyCount);
-    //const savedViewsList = telemetry.getListOfSavedViews();
-
-    const prompt = ["/* ", "Current Zoom", ": ", mandelbrotCoords.zoom, ", ",
-                            "Current Pan", ": ", mandelbrotCoords.pan, ", ",
+    const coords = Graph.getCoords();
+    const currentEquation = Elem.byId('equation').innerHTML;
+    const prompt = ["/* ", "Current Zoom", ": ", coords.zoom, ", ",
+                            "Current Pan", ": ", coords.pan, ", ",
                             "Current Equation", ": ", currentEquation];
 
     if (!vision) {
@@ -88,6 +70,7 @@ Prompt.forTelemetry = function(telemetry, vision = false){
     }
 
     // Append the list of saved views with their coordinates
+    //const savedViewsList = telemetry.getListOfSavedViews();
     //if (savedViewsList.length > 0) {
     //    const formattedViews = savedViewsList.map(view => {
     //        return `{Title: "${view.title}", Coordinates: Zoom ${view.coordinates.zoom}, Pan ${view.coordinates.pan}}`;
@@ -96,6 +79,8 @@ Prompt.forTelemetry = function(telemetry, vision = false){
     //}
 
     // Append the history of function calls
+    const historyCount = 3;
+    const lastFunctionCalls = telemetry.getLastFunctionCalls(historyCount);
     if (lastFunctionCalls.length > 0) {
         const formattedCalls = lastFunctionCalls.map(call => {
             return `{Title/Result: "${call.functionName}", initZoom: ${call.zoom}, initPan: ${call.pan}, code: ${call.code}}`;

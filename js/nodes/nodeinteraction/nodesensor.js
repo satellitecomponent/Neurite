@@ -175,8 +175,8 @@ class SearchArea {
         if (!this.farthestPoint) return; // Do nothing if farthestPoint is not set
 
         // Transform both the origin position and farthest point for SVG rendering
-        const transformedOrigin = toSVG(this.originNode.pos);
-        const transformedFarthestPoint = toSVG(this.farthestPoint);
+        const transformedOrigin = this.originNode.pos.toSvg();
+        const transformedFarthestPoint = this.farthestPoint.toSvg();
 
         // Calculate radius as the direct distance to farthest point after transformation
         const radius = Math.sqrt(
@@ -218,8 +218,8 @@ class SensorEdge {
     }
 
     calculatePath() {
-        const origin = toSVG(this.originNode.pos);
-        const target = toSVG(this.targetData.pos);
+        const origin = this.originNode.pos.toSvg();
+        const target = this.targetData.pos.toSvg();
 
         const normalizedDirection = target.minus(origin).normed();
         const perpendicular = normalizedDirection.rot90();
