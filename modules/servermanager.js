@@ -65,7 +65,8 @@ function startLocalServers() {
         console.log(`[serverManager] Starting servers with: ${scriptFullPath}`);
 
         try {
-            childProcess = spawn(process.argv0, [scriptFullPath], {
+            const nodeBinary = process.platform === 'win32' ? 'node.exe' : 'node';
+            childProcess = spawn(nodeBinary, [scriptFullPath], {
                 cwd: serversFolder,
                 windowsHide: true,
                 shell: true, // Required for Windows path resolution
