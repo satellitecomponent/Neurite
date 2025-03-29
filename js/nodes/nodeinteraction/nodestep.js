@@ -82,7 +82,7 @@ class NodeSimulation {
         const svg_mousePath = this.svg_mousePath;
         let width = zoom.mag() * 0.0005 * Svg.zoom;
 
-        if (App.nodeMode && Node.prev) {
+        if (Node.prev) {
             const m = toSVG(Node.prev.pos);
             const l = toSVG(toZ(mousePos));
             svg_mousePath.setAttribute('d', "M " + m + " L " + l);

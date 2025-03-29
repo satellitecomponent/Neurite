@@ -121,10 +121,15 @@ On.mousemove(svg, (e)=>{
         if (delta.mag() > DRAG_THRESHOLD) controlDragOccurred = true;
     }
 });
-
-On.mousedown(svg, (e)=>{
+on.mousedown(svg, (e) => {
     mouseDownPos = new vec2(e.pageX, e.pageY);
     controlDragOccurred = false;
+    Node.prev = null;
+
+    // Handle focus on background click
+    if (e.target === svg) {
+        svg.focus(); // Assuming the SVG element can be focused
+    }
 
     // Handle zooming and rotating
     if (
@@ -159,6 +164,7 @@ On.mousedown(svg, (e)=>{
         }
     }
 });
+
 
 On.mouseup(window, (e)=>{
     if (e.button === mouseZoomButton) {

@@ -280,21 +280,18 @@ class Node {
         Logger.debug(this.getAllConnectedNodesData());
         e.stopPropagation();
     }
-    onMouseDown = (e)=>{
+    onMouseDown = (e) => {
         this.mouseAnchor = toZ(new vec2(e.clientX, e.clientY)).minus(this.pos);
         this.followingMouse = 1;
         Graph.draggedNode = this;
         Graph.movingNode = this;
-        if (App.nodeMode) {
-            if (!Node.prev) {
-                Node.prev = this;
-            } else {
-                connectNodes(this, Node.prev);
-                Node.prev = null;
-            }
-            clearTextSelections();
+        if (Node.prev) {
+            connectNodes(this, Node.prev);
+            Node.prev = null;
+        } else if (App.nodeMode) {
+            Node.prev = this;
         }
-
+        clearTextSelections();
         On.mouseup(window, this.stopFollowingMouse);
         this.disableIframePointerEvents();
         e.stopPropagation();
