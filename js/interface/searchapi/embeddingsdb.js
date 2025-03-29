@@ -451,12 +451,12 @@ async function extractTextFromPDF(pdfLink) {
 }
 
 Link.fetchContentText = function (link) { // promise
-    if (useProxy && !isGitHubUrl(link)) {
-        return Request.send(new Link.textFetcher(link));
+    if (link.startsWith('blob:')) {
+        return extractTextFromPDF(link);
     }
 
-    if (link.toLowerCase().endsWith('.pdf') || link.startsWith('blob:')) {
-        return extractTextFromPDF(link);
+    if (useProxy && !isGitHubUrl(link)) {
+        return Request.send(new Link.textFetcher(link));
     }
 
     const details = extractGitHubRepoDetails(link);
