@@ -1,11 +1,16 @@
-﻿On.dblclick(document, (e)=>{
+﻿On.dblclick(document, (e) => {
     e.stopPropagation();
 
+    // Ensure the click target is the background SVG
+    const isSvgBackground = e.target.id === 'svg_bg';
+    if (!isSvgBackground) return;
+
     if (e.getModifierState(controls.altKey.value)) {
-        // Alt + double click behavior
+        // Alt + double click => Create LLM node
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (App.nodeMode && !Node.prev) { // Node mode (Shift) + double click behavior *text nodes
+    } else if (App.nodeMode && !Node.prev) {
+        // Shift + double click => Create regular node
         createNodeFromWindow();
     }
 });
