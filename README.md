@@ -42,7 +42,7 @@
 
 🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
-For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping techniques.
+For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping technique.
 
 <table>
   <tr>
@@ -209,14 +209,14 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   <tr>
     <td rowspan="6"><strong>Node Selection & Arrangement</strong></td>
     <td><code>Alt/Option + Drag Node</code></td>
-    <td>Arrange the node (avoids text selection)</td>
+    <td>Allows node selection, connection, dragging, and anchoring to pass through textareas.</td>
   </tr>
   <tr>
-    <td><code>Alt/Option + Click</code></td>
+    <td><code>Control + Click</code></td>
     <td>Select nodes</td>
   </tr>
   <tr>
-    <td><code>Alt/Option + Drag Canvas</code></td>
+    <td><code>Control + Drag Canvas</code></td>
     <td>Select multiple nodes</td>
   </tr>
   <tr>
