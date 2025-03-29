@@ -73,7 +73,6 @@ function makeIconDraggable(iconDiv) {
 
 document.querySelectorAll('.panel-icon').forEach(makeIconDraggable);
 
-
 class DropHandler {
     constructor(dropAreaId) {
         this.dropArea = Elem.byId(dropAreaId);
@@ -84,15 +83,10 @@ class DropHandler {
             video: this.createMediaNode.bind(this, 'video'),
             audio: this.createMediaNode.bind(this, 'audio'),
             text: this.createTextNode.bind(this),
-            code: this.createCodeNode.bind(this), // Use createCodeNode for code files
-            application: this.handleApplication.bind(this), // Handle PDFs and other application types
+            code: this.createCodeNode.bind(this),
+            application: this.handleApplication.bind(this),
             unknown: this.handleUnknown.bind(this)
         };
-    }
-
-    dragOverHandler = (ev) => {
-        ev.preventDefault(); // Allow drop
-        ev.dataTransfer.dropEffect = 'copy'; // Show a copy icon when dragging
     }
 
     initialize() {
@@ -100,345 +94,208 @@ class DropHandler {
         On.drop(this.dropArea, this.handleDrop);
     }
 
+    dragOverHandler = (ev) => {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = 'copy';
+    }
+
     determineBaseType(mimeType) {
         if (!mimeType) return 'unknown';
+        const base = mimeType.split(';')[0].trim().toLowerCase();
 
-        const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
+        const nonTextApps = new Set([
+            'application/pdf', 'application/zip', 'application/x-rar-compressed',
+            'application/x-7z-compressed', 'application/x-tar', 'application/gzip'
+        ]);
 
-        // Define exceptions for 'application/' types that are not code or text
-        const nonTextApplicationTypes = [
-            'application/pdf',
-            'application/zip',
-            'application/x-rar-compressed',
-            'application/x-7z-compressed',
-            'application/x-tar',
-            'application/gzip',
-            // Add more non-text 'application/' types as needed
-        ];
+        if (nonTextApps.has(base)) return 'application';
+        if (base.startsWith('image/')) return 'image';
+        if (base.startsWith('video/')) return 'video';
+        if (base.startsWith('audio/')) return 'audio';
 
-        if (nonTextApplicationTypes.includes(mimeTypeWithoutParams)) {
-            return 'application';
-        }
-
-        // Define common code-related MIME types (text/* and remaining application/*)
-        const codeRelatedMimeTypes = ['text/', 'application/'];
-        const imageRelatedMimeTypes = ['image/'];
-        const videoRelatedMimeTypes = ['video/'];
-        const audioRelatedMimeTypes = ['audio/'];
-
-        // Code types
-        if (codeRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) {
-            const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
-            return codeLanguage ? 'code' : 'text';
-        }
-
-        // Non-code types
-        if (imageRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'image';
-        if (videoRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'video';
-        if (audioRelatedMimeTypes.some(prefix => mimeTypeWithoutParams.startsWith(prefix))) return 'audio';
-
-        return 'unknown';
+        const lang = this.getCodeLanguageFromMimeType(base);
+        return lang ? 'code' : (base.startsWith('text/') || base.startsWith('application/')) ? 'text' : 'unknown';
     }
 
     getCodeLanguageFromMimeType(mimeType) {
-        const mimeTypeToLanguageMap = {
-            'application/javascript': 'javascript',
-            'application/typescript': 'typescript',
-            'application/json': 'json',
-            'application/xml': 'xml',
-            'application/x-sh': 'bash',
-            'application/x-python-code': 'python',
-            'application/x-httpd-php': 'php',
-            'text/x-java-source': 'java',
-            'text/x-csrc': 'c',
-            'text/x-c++src': 'cpp',
-            'text/x-csharp': 'csharp',
-            'text/x-go': 'go',
-            'application/x-rust': 'rust',
-            'application/xhtml+xml': 'html',
-            'text/html': 'html',
-            'text/css': 'css',
-            'text/javascript': 'javascript',
-            'text/markdown': 'markdown', // Optional
+        const map = {
+            'application/javascript': 'javascript', 'application/typescript': 'typescript',
+            'application/json': 'json', 'application/xml': 'xml',
+            'application/x-sh': 'bash', 'application/x-python-code': 'python',
+            'application/x-httpd-php': 'php', 'text/x-java-source': 'java',
+            'text/x-csrc': 'c', 'text/x-c++src': 'cpp', 'text/x-csharp': 'csharp',
+            'text/x-go': 'go', 'application/x-rust': 'rust',
+            'application/xhtml+xml': 'html', 'text/html': 'html',
+            'text/css': 'css', 'text/javascript': 'javascript', 'text/markdown': 'markdown'
         };
-
-        return mimeTypeToLanguageMap[mimeType.toLowerCase()] || null; // Ensure case-insensitive matching
+        return map[mimeType.toLowerCase()] || null;
     }
 
-    // Process the file based on its base type
-    processFile(fileName, content, mimeType, blob = null) {
-        const mimeTypeWithoutParams = mimeType.split(';')[0].trim().toLowerCase();
-        const baseType = this.determineBaseType(mimeTypeWithoutParams);
+    processFile(name, content, mimeType, blob = null) {
+        const base = this.determineBaseType(mimeType);
+        const lang = this.getCodeLanguageFromMimeType(mimeType);
 
-        Logger.debug(`Processing file: ${fileName}, MIME Type: ${mimeTypeWithoutParams}, Base Type: ${baseType}`);
-
-        // Route to code file handler
-        if (baseType === 'code') {
-            const codeLanguage = this.getCodeLanguageFromMimeType(mimeTypeWithoutParams);
-            if (!content) {
-                Logger.debug("Content is undefined for code file:", fileName);
-                // Attempt to read blob as text
-                if (!blob) return;
-
-                const reader = new FileReader();
-
-                On.load(reader, (e) => {
-                    const textContent = reader.result;
-                    this.createCodeNode({ name: fileName }, textContent, codeLanguage);
-                });
-
-                const msgError = "In reading blob for code file:";
-                On.error(reader, Logger.err.bind(Logger, msgError, fileName));
-
-                reader.readAsText(blob);
-                return;
-            }
-
-            Logger.debug("Creating code node for:", fileName, ", Language:", codeLanguage);
-            this.createCodeNode({ name: fileName }, content, codeLanguage);
+        if (base === 'code') {
+            if (content) return this.createCodeNode({ name }, content, lang);
+            if (!blob) return;
+            const reader = new FileReader();
+            On.load(reader, () => this.createCodeNode({ name }, reader.result, lang));
+            On.error(reader, Logger.err.bind(Logger, 'In reading blob for code file:', name));
+            reader.readAsText(blob);
             return;
         }
 
-        if (baseType === 'text') {
-            if (content) {
-                this.typeHandlers[baseType]({ name: fileName }, null, content, mimeTypeWithoutParams);
-            } else {
-                Logger.err("Content is undefined for text file:", fileName)
-            }
-            return;
+        if (base === 'text') {
+            return this.createTextNode({ name }, null, content || '', mimeType);
         }
 
-        // Handle application types (PDFs, etc.)
-        if (baseType === 'application') {
-            if (mimeTypeWithoutParams === 'application/pdf') {
-                if (!blob) {
-                    Logger.err("Blob is undefined for PDF file:", fileName);
-                    return;
-                }
-                const objectURL = URL.createObjectURL(blob);
-                this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
-            } else {
-                if (!content) {
-                    Logger.err("Content is undefined for application file:", fileName);
-                    return;
-                }
-                // Treat other application types as text
-                this.typeHandlers['text']({ name: fileName }, null, content, mimeTypeWithoutParams);
+        if (base === 'application') {
+            if (mimeType.endsWith('pdf') && blob) {
+                const url = URL.createObjectURL(blob);
+                return this.handleApplication({ name }, url, null, mimeType);
             }
-            return;
+            if (content) return this.createTextNode({ name }, null, content, mimeType);
+            return Logger.err('Content is undefined for application file:', name);
         }
 
-        // Handle binary files (image, video, audio)
-        if (['image', 'video', 'audio'].includes(baseType)) {
-            if (!blob) {
-                Logger.err("Blob is undefined for binary file:", fileName);
-                return;
-            }
-            const objectURL = URL.createObjectURL(blob);
-            this.typeHandlers[baseType]({ name: fileName }, objectURL, null, mimeTypeWithoutParams);
-            return;
+        if (['image', 'video', 'audio'].includes(base)) {
+            if (!blob) return Logger.err('Blob is undefined for binary file:', name);
+            const url = URL.createObjectURL(blob);
+            return this.typeHandlers[base]({ name }, url, null, mimeType);
         }
 
-        Logger.warn("Unhandled file type:", mimeTypeWithoutParams, "for file:", fileName);
+        Logger.warn('Unhandled file type:', mimeType, 'for file:', name);
     }
 
     handleDrop = async (ev) => {
         ev.preventDefault();
 
-        // **Handle Folder Drops First**
-        const folderMetadataJSON = ev.dataTransfer.getData('application/my-app-folder');
-        if (folderMetadataJSON && String.isJson(folderMetadataJSON)) {
-            const folderMetadata = JSON.parse(folderMetadataJSON);
-            await this.processFolderDrop(folderMetadata);
-            return;
-        }
+        const folderData = ev.dataTransfer.getData('application/my-app-folder');
+        if (folderData && String.isJson(folderData)) return this.processFolderDrop(JSON.parse(folderData));
 
-        // **Handle File Drops**
-        const fileMetadataJSON = ev.dataTransfer.getData('application/my-app-file');
-        if (fileMetadataJSON && String.isJson(fileMetadataJSON)) {
-            const fileMetadata = JSON.parse(fileMetadataJSON);
-            await this.processCustomDrop(fileMetadata);
-            return;
-        }
+        const fileData = ev.dataTransfer.getData('application/my-app-file');
+        if (fileData && String.isJson(fileData)) return this.processCustomDrop(JSON.parse(fileData));
 
-        // Attempt to retrieve JSON data
-        const data = ev.dataTransfer.getData('text');
-        if (data && String.isJson(data)) {
-            const parsedData = JSON.parse(data);
-            if (parsedData.type === 'icon') {
-                // Handle the icon drop
-                this.handleIconDrop(ev, parsedData.iconName);
-                return;
-            }
-
-            // Handle specific div types
-            this.handleDivDrop(parsedData);
-            return;
+        const plainData = ev.dataTransfer.getData('text');
+        if (plainData && String.isJson(plainData)) {
+            const parsed = JSON.parse(plainData);
+            if (parsed.type === 'icon') return this.handleIconDrop(ev, parsed.iconName);
+            return this.handleDivDrop(parsed);
         }
 
         this.handleOSFileDrop(ev);
     }
 
-    async processCustomDrop(metadata) {
+    async processCustomDrop(meta) {
         try {
-            const fetcher = new Path.fileFetcher(metadata.path);
+            const fetcher = new Path.fileFetcher(meta.path);
             await Request.send(fetcher);
             const { blob, content, mimeType } = fetcher;
-            if (content === null && blob === null) {
-                throw new Error("Failed to fetch file content for: " + metadata.path);
-            }
-
-            this.processFile(metadata.name, content, mimeType, blob);
-        } catch (err) {
-            Logger.err(err)
+            this.processFile(meta.name, content, mimeType, blob);
+        } catch (e) {
+            Logger.err(e);
         }
     }
 
     processOSFile(file) {
-        const mimeType = file.type || '';
-        const fileName = file.name;
-
+        const mimeType = file.type || '', name = file.name;
         const reader = new FileReader();
 
         On.load(reader, (e) => {
-            const contentOrBlob = e.target.result;
-            if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-                this.processFile(fileName, contentOrBlob, mimeType);
-            } else {
-                const blob = new Blob([contentOrBlob], { type: mimeType });
-                this.processFile(fileName, null, mimeType, blob);
-            }
+            const result = e.target.result;
+            const isText = mimeType.startsWith('text/') || mimeType === 'application/json';
+            const blob = new Blob([result], { type: mimeType });
+            this.processFile(name, isText ? result : null, mimeType, isText ? null : blob);
         });
 
-        if (mimeType.startsWith('text/') || mimeType.startsWith('application/')) {
-            reader.readAsText(file);
-        } else {
-            reader.readAsArrayBuffer(file); // Read as binary
-        }
+        if (mimeType === 'application/pdf') reader.readAsArrayBuffer(file);
+        else if (mimeType.startsWith('text/') || mimeType === 'application/json') reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
     }
 
-    async processFolderDrop(folderMetadata) {
+    async processFolderDrop(meta) {
         try {
-            const node = await FileTreeNode.create(folderMetadata.path);
+            const node = await FileTreeNode.create(meta.path);
             this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
         } catch (err) {
-            Logger.err("In processing folder drop:", err)
+            Logger.err('In processing folder drop:', err);
         }
     }
 
-    createTextNode(metadata, url, content, mimeType) {
-        const text = typeof content === 'string' ? content : undefined;
-        const name = metadata.name || metadata;
-        const node = createNodeFromWindow(name, text, true);
+    createTextNode(meta, url, content, mime) {
+        createNodeFromWindow(meta.name || meta, content, true);
     }
 
-    // Create a code node with syntax highlighting
-    createCodeNode(metadata, content, codeLanguage) {
-        const name = metadata.name || 'Code';
-        if (!codeLanguage) {
-            Logger.warn(`No language specified for code file: ${name}. Defaulting to plaintext.`)
-        }
-        const language = codeLanguage || 'plaintext';
-        const codeBlock = `\`\`\`${language}\n${content}\n\`\`\``;
-        const node = createNodeFromWindow(name, codeBlock, true);
+    createCodeNode(meta, content, lang) {
+        const name = meta.name || 'Code';
+        const code = `\`\`\`${lang || 'plaintext'}\n${content}\n\`\`\``;
+        createNodeFromWindow(name, code, true);
     }
 
-    // Centralized handler for 'application' base type (e.g., PDFs)
     createPDFNode(name, url) {
-        const node = new LinkNode(name, name, url);
+        const node = new LinkNode(url, name);
         node.fileName = name;
         this.afterNodeCreation(node);
     }
 
-    handleApplication(metadataOrFile, url, content, mimeType) {
-        if (mimeType && mimeType.endsWith('pdf')) {
-            this.createPDFNode(metadataOrFile.name, url);
-        } else {
-            Logger.info("Unsupported application type:", mimeType)
-        }
+    handleApplication(meta, url, content, mime) {
+        if (mime.endsWith('pdf')) return this.createPDFNode(meta.name, url);
+        Logger.info('Unsupported application type:', mime);
     }
 
-    handleUnknown(metadataOrFile, url, content, mimeType) {
-        Logger.info("Unsupported file type:", mimeType || metadataOrFile.type)
+    handleUnknown(meta, url, content, mime) {
+        Logger.info('Unsupported file type:', mime || meta.type);
     }
 
-    createImageNode(metadataOrFile, url) {
-        const imageElement = Html.new.img();
-        imageElement.src = url;
-        imageElement.onload = () => {
-            const node = NodeView.addForImage(imageElement, metadataOrFile.name || metadataOrFile);
+    createImageNode(meta, url) {
+        const img = Html.new.img();
+        img.src = url;
+        img.onload = () => {
+            const node = NodeView.addForImage(img, meta.name || meta);
             this.afterNodeCreation(node);
         };
     }
 
-    createMediaNode(type, metadataOrFile, url) {
-        const node = createMediaNode(type, metadataOrFile, url);
-        const divisor = (type === 'audio' ? 4 : 1.2);
-        const offset = new vec2(0, -node.content.offsetHeight / divisor);
-        this.afterNodeCreation(node, toDZ(offset));
+    createMediaNode(type, meta, url) {
+        const node = createMediaNode(type, meta, url);
+        const d = type === 'audio' ? 4 : 1.2;
+        this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / d)));
     }
 
-    afterNodeCreation(node, mouseAnchor) {
-        setupNodeForPlacement(node, mouseAnchor);
+    afterNodeCreation(node, anchor) {
+        setupNodeForPlacement(node, anchor);
     }
 
     handleOSFileDrop(ev) {
         const files = ev.dataTransfer.files;
-        if (!files || files.length === 0) {
-            Logger.warn("No files detected in OS drop");
-            return;
-        }
-
-        for (const file of files) {
-            this.processOSFile(file);
-        }
+        if (!files || !files.length) return Logger.warn('No files detected in OS drop');
+        for (const file of files) this.processOSFile(file);
     }
 
-    handleIconDrop(event, iconName) {
-        Logger.debug("Dropped icon:", iconName);
-
-        switch (iconName) {
-            case 'note-icon':
-                const textNode = createNodeFromWindow('', '', true); // The last parameter sets followMouse to true
-                break;
-            case 'ai-icon':
-                this.afterNodeCreation(createLlmNode(''));
-                break;
-            case 'link-icon':
-                returnLinkNodes();
-                break;
+    handleIconDrop(ev, icon) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        switch (icon) {
+            case 'note-icon': createNodeFromWindow('', '', true); break;
+            case 'ai-icon': this.afterNodeCreation(createLlmNode('')); break;
+            case 'link-icon': returnLinkNodes(); break;
             case 'edges-icon':
-                const fileTreeNode = FileTreeNode.create();
-                this.afterNodeCreation(fileTreeNode, toDZ(new vec2(0, -fileTreeNode.content.offsetHeight / 4)));
+                const node = FileTreeNode.create();
+                this.afterNodeCreation(node, toDZ(new vec2(0, -node.content.offsetHeight / 4)));
                 break;
-            default:
-                Logger.warn("No handler defined for icon:", iconName);
-                break;
+            default: Logger.warn('No handler defined for icon:', icon);
         }
-
-        event.stopPropagation();
-        event.preventDefault();
     }
 
-    handleDivDrop(parsedData) {
-        let [title, content] = parsedData;
-
+    handleDivDrop(parsed) {
+        let [title, content] = parsed;
         if (['AI Response', 'Prompt', 'Code Block'].includes(title)) {
             if (title === 'Code Block') {
                 const lines = content.split('\n');
-
-                // Remove the second line (index 1 in a 0-indexed array)
                 if (lines.length > 1) lines.splice(1, 1);
-
-                // Add the triple backticks at the start of the first line and at the end of the content
-                content = (lines[0] ? "```" + lines[0] : "```") + '\n' + lines.slice(1).join('\n') + "\n```";
+                content = (lines[0] ? '```' + lines[0] : '```') + '\n' + lines.slice(1).join('\n') + '\n```';
             }
-
-            const fullTitle = title + ' ' + getDefaultTitle();
-            const node = createNodeFromWindow(fullTitle, content, true);
-
-            // Stop the drop event from being handled further
-            return;
+            const node = createNodeFromWindow(title + ' ' + getDefaultTitle(), content, true);
         }
     }
 }

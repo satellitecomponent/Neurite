@@ -303,20 +303,22 @@ class ResponseHandler {
 
     handleUserPrompt(promptContent) {
         if (!promptContent) return;
-        
+    
         const divOuter = Html.new.div();
         divOuter.style.width = '100%';
         divOuter.style.textAlign = 'right';
-        
+    
         const divPrompt = Html.make.div('user-prompt');
         divPrompt.id = 'prompt-' + this.responseCount++;
         divPrompt.contentEditable = false;
-        divPrompt.innerHTML = promptContent.replace(/\n/g, '<br>');
-        
+    
+        const escapedContent = escapeHtml(promptContent).replace(/\n/g, '<br>');
+        divPrompt.innerHTML = escapedContent;
+    
         divOuter.appendChild(divPrompt);
         this.node.aiResponseDiv.appendChild(divOuter);
         this.setupUserPrompt(divPrompt);
-    }
+    }    
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
         // Parse language and content
@@ -380,7 +382,7 @@ class ResponseHandler {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 this.removeResponsesUntil(divPrompt.id);
-                const message = divPrompt.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                const message = divPrompt.textContent;
                 Logger.debug(`Sending message: "${message}"`);
                 AiNode.sendMessage(this.node, message);
             }
@@ -410,7 +412,12 @@ class ResponseHandler {
                 Off.keydown(divPrompt, handleKeyDown);
             }
         };
-    
+
+        divPrompt.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
         On.blur(divPrompt, () => isEditing && toggleEditMode(false));
         On.dblclick(divPrompt, (e) => toggleEditMode(!isEditing, e));
     }
