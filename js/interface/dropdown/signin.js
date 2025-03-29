@@ -15,6 +15,7 @@ window.addEventListener('message', async function (event) {
 
         if (email) {
             updateSignInState(email);
+            neuritePanel.open();
         }
     } else if (event.data.type === 'stripe') {
         const paymentStatus = event.data.status;
@@ -96,7 +97,6 @@ async function signIn() {
             alert("Please enable popups for this site to complete the verification.");
             return;
         }
-        neuritePanel.open();
     } catch (error) {
         console.error("Sign-in failed:", error);
     }
