@@ -27,13 +27,22 @@ function startLocalServers() {
         const scriptFullPath = path.join(serversFolder, 'start_servers.js');
 
         console.log(`[serverManager] Using server path: ${serversFolder}`);
-        console.log(`[serverManager] Attempting to start servers with: ${scriptFullPath}`);
+
+        try {
+            // Run npm install BEFORE starting the server
+            execSync('npm install', { cwd: serversFolder, stdio: 'inherit' });
+        } catch (installErr) {
+            return reject(new Error(`npm install failed: ${installErr.message}`));
+        }
+
+        console.log(`[serverManager] Starting servers with: ${scriptFullPath}`);
 
         childProcess = spawn('node', [scriptFullPath], {
             cwd: serversFolder,
             detached: true,
-            stdio: 'ignore'
-        });
+            stdio: 'ignore',
+            windowsHide: true
+        });        
 
         childProcess.unref(); // Allows process to run independently
 
@@ -62,6 +71,7 @@ function startLocalServers() {
         setTimeout(checkServer, checkInterval);
     });
 }
+
 
 function stopLocalServers() {
     if (!childProcess) {
