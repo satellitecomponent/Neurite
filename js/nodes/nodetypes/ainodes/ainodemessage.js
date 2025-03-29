@@ -127,9 +127,6 @@
         } catch (err) {
             Logger.err("In constructing search query:", err);
         }
-        if (!filteredKeys) {
-            filteredKeys = Keys.getVisible(await Keys.getAll());
-        }
     }
     
     if (isGoogleSearchEnabled(nodeIndex)) {

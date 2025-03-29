@@ -20,22 +20,26 @@ Ai.determineModel = function(node){
 
 // Function to check if Embed (Data) is enabled
 async function isEmbedEnabled(aiNode) {
-    let checkbox = null;
+    let checkboxChecked = false;
+    let hasLinkedConnections = false;
+
     if (aiNode) {
-        checkbox = aiNode.content.querySelector('#embed-checkbox-' + aiNode.index);
-        if (!checkbox) Logger.info("Data checkbox not found in the AI node");
+        const checkbox = aiNode.content.querySelector('#embed-checkbox-' + aiNode.index);
+        checkboxChecked = checkbox?.checked ?? false;
+
+        const allConnectedNodesData = await aiNode.getAllConnectedNodesData?.(true);
+        hasLinkedConnections = Array.isArray(allConnectedNodesData)
+            && allConnectedNodesData.some(info => info.data?.type === 'link');
     } else {
-        checkbox = Elem.byId('embed-checkbox');
+        const checkbox = Elem.byId('embed-checkbox');
+        checkboxChecked = checkbox?.checked ?? false;
     }
-    if (!checkbox?.checked) return;
+
+    if (!checkboxChecked && !hasLinkedConnections) return false;
 
     const allKeys = await Keys.getAll();
     const visibleKeys = Keys.getVisible(allKeys);
-    if (visibleKeys.length > 0) {
-        return visibleKeys;
-    } else {
-        return false;
-    }
+    return visibleKeys.length > 0 ? visibleKeys : false;
 }
 
 
