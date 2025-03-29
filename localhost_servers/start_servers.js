@@ -1,48 +1,99 @@
-import { spawn, execSync } from 'child_process';
+import express from 'express';
+import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-const servers = JSON.parse(fs.readFileSync("./servers.json", "utf8"));
+import { fileURLToPath, pathToFileURL } from 'url';
+import { dirname } from 'path';
+import { execSync } from 'child_process';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 7070;
+
+// Global middleware
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+const corsOptions = {
+  origin: ['https://neurite.network', 'http://localhost:8080'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+app.use(cors(corsOptions));
+
+const servers = JSON.parse(fs.readFileSync(path.join(__dirname, 'servers.json'), 'utf8'));
 const startNeurite = process.argv.includes('neurite');
+const mountedServices = [];
 
+// Function to check and install dependencies
 function checkDependencies(dir) {
-    // Check for node_modules and a lock file
-    return fs.existsSync(path.join(dir, 'node_modules')) && (fs.existsSync(path.join(dir, 'package-lock.json')) || fs.existsSync(path.join(dir, 'yarn.lock')));
+  return fs.existsSync(path.join(dir, 'node_modules')) &&
+         (fs.existsSync(path.join(dir, 'package-lock.json')) ||
+          fs.existsSync(path.join(dir, 'yarn.lock')));
 }
 
 function installDependencies(server) {
-    const { name, dir } = server;
-    if (!checkDependencies(dir)) {
-        console.log(`Installing dependencies for ${name} server...`);
-        execSync('npm install', { cwd: dir, stdio: 'inherit' });
+  const serverDir = path.join(__dirname, server.dir);
+  if (!checkDependencies(serverDir)) {
+    console.log(`Installing dependencies for ${server.name} server...`);
+    execSync('npm install', { cwd: serverDir, stdio: 'inherit' });
+  }
+}
+
+async function start() {
+  for (const server of servers) {
+    if (server.startNeurite && !startNeurite) {
+      console.log(`Skipping ${server.name} server as it requires the 'neurite' flag.`);
+      continue;
     }
-}
 
-function startServer(server) {
-    const { name, dir, main } = server;
-    console.log(`Starting ${name} server...`);
-    const serverProcess = spawn('node', [main], {
-        cwd: dir,
-        stdio: 'inherit',
-        windowsHide: true
-    });
+    installDependencies(server);
 
-    serverProcess.on('error', (error) => {
-        console.error(`Failed to start ${name} server:`, error);
-    });
+    const modulePath = path.join(__dirname, server.dir, server.main);
+    try {
+      const moduleUrl = pathToFileURL(modulePath).href;
+      const serverModule = await import(moduleUrl);
+      const serverApp = serverModule.default;
+      const basePath = `/${server.name.toLowerCase()}`;
 
-    serverProcess.on('exit', (code) => {
-        console.log(`${name} server (PID: ${serverProcess.pid}) exited with code ${code}`);
-    });
-}
+      app.use(basePath, serverApp);
+      mountedServices.push(server.name);
+      console.log(`Mounted ${server.name} at ${basePath}`);
+    } catch (error) {
+      console.error(`Error importing ${server.name} from ${modulePath}:`, error);
+    }
+  }
 
-// Iterate over each server and decide on actions based on conditions
-servers.forEach(server => {
-    // Check if server requires the 'neurite' flag to start
-    if (!server.startNeurite || (server.startNeurite && startNeurite)) {
-        installDependencies(server); // Install dependencies if needed
-        startServer(server); // Then start server
+  // **Health Check Endpoint**
+  app.get('/check', (req, res) => {
+    // Only consider servers that should run given current flags
+    const expectedServices = servers
+      .filter(server => !(server.startNeurite && !startNeurite))
+      .map(server => server.name);
+  
+    const missingServices = expectedServices.filter(name => !mountedServices.includes(name));
+  
+    if (missingServices.length === 0) {
+      res.json({
+        status: 'ok',
+        message: 'All expected services are running',
+        services: mountedServices
+      });
     } else {
-        console.log(`Skipping ${server.name} server as it requires the 'neurite' flag.`);
+      res.status(500).json({
+        status: 'error',
+        message: 'Some expected services failed to mount',
+        missingServices
+      });
     }
-});
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Main server running on http://localhost:${PORT}`);
+  });
+}
+
+start();

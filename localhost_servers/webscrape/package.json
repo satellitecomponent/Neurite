@@ -7,11 +7,8 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "article-parser": "^7.2.6-rc1",
     "cheerio": "^1.0.0-rc.12",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "jsdom": "^16.7.0",
+    "express": "^4.21.2",
     "node-fetch": "^2.6.9",
     "pdf-parse": "^1.1.1",
     "sqlite3": "^5.1.6"
