@@ -216,6 +216,7 @@ body {
     height: 100%;
     box-shadow: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .editor-wrapper {

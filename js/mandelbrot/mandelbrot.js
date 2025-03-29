@@ -748,7 +748,7 @@ Fractal.animate_path_removal = async function(path) {
 }
 Fractal.cull_extra_lines = function() {
     const maxLines = settings.maxLines;
-    
+
     // Immediate removal case
     if (maxLines === 0) {
         const children = Array.from(svg_bg.children).reverse();
@@ -756,28 +756,34 @@ Fractal.cull_extra_lines = function() {
         return;
     }
 
-    // Get all non-preserved lines (including animating ones)
+    // Get all non-preserved lines
     const allLines = Array.from(svg_bg.children)
         .filter(path => Fractal.isNotPreserved(path));
         
     // Count only non-animating, non-removing lines against the limit
-    const activeCount = allLines.filter(path => 
-        !path.hasAttribute('data-animating') && 
+    const activeCount = allLines.filter(path =>
+        !path.hasAttribute('data-animating') &&
         !path.dataset.removing
     ).length;
 
-    // Remove oldest lines if over limit (FIFO)
+    // If over limit, remove oldest non-animating lines
     if (activeCount > maxLines) {
         const toRemove = allLines
-            .filter(path => 
-                !path.hasAttribute('data-animating') && 
+            .filter(path =>
+                !path.hasAttribute('data-animating') &&
                 !path.dataset.removing
             )
             .slice(0, activeCount - maxLines);
-            
+
+        const shouldAnimate = settings.useDelayedRendering && settings.renderDelay !== 0;
+
         toRemove.forEach(path => {
             path.dataset.removing = 'true';
-            Fractal.animate_path_removal(path);
+            if (shouldAnimate) {
+                Fractal.animate_path_removal(path);
+            } else {
+                path.remove();
+            }
         });
     }
 }
