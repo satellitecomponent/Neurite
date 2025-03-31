@@ -48,19 +48,28 @@ function deleteOldVersionsExcept(versionToKeep) {
 }
 
 async function getLatestReleaseAssetUrl() {
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=100`;
 
     const response = await axios.get(apiUrl, {
         headers: { 'User-Agent': 'Neurite-Electron-Updater' }
     });
 
-    const asset = response.data.assets.find(a => a.name === assetName);
+    const releases = response.data
+        .filter(r => r.tag_name.startsWith('servers-') && !r.draft && !r.prerelease)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (releases.length === 0) {
+        throw new Error(`No servers-* release found`);
+    }
+
+    const latest = releases[0];
+    const asset = latest.assets.find(a => a.name === assetName);
     if (!asset) {
-        throw new Error(`Asset "${assetName}" not found in latest release.`);
+        throw new Error(`Asset "${assetName}" not found in latest servers release.`);
     }
 
     return {
-        version: response.data.tag_name,
+        version: latest.tag_name,
         downloadUrl: asset.browser_download_url
     };
 }
