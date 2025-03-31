@@ -1,0 +1,50 @@
+name: Auto Release Localhost Servers
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'localhost_servers/**'
+
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.name "neurite-bot"
+          git config --global user.email "bot@satellitecomponent.dev"
+
+      - name: Delete existing release and tag (if they exist)
+        run: |
+          gh release delete servers-latest -y || echo "No existing release to delete"
+          git push origin --delete servers-latest || echo "No existing tag to delete"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create servers.zip (only git-tracked files)
+        run: |
+          mkdir release
+          git ls-files localhost_servers | zip -@ release/servers.zip
+
+      - name: Create new tag servers-latest
+        run: |
+          git tag servers-latest
+          git push origin servers-latest
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: servers-latest
+          name: "Localhost Servers Latest"
+          body: "This is the latest version of localhost servers for Neurite."
+          files: release/servers.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
