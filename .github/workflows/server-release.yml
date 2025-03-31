@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'localhost_servers/**'
-
   workflow_dispatch:
 
 jobs:
@@ -17,24 +16,24 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Delete existing release and tag (if they exist)
+      - name: Set up GitHub CLI
+        uses: cli/gh-action@v2
+
+      - name: Delete previous release (if exists)
         run: |
-          gh release delete servers-latest -y || echo "No existing release to delete"
-          # Note: gh release delete removes the tag too, so we don’t need to manually delete it
+          gh release delete servers-latest -y || echo "No existing release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create servers.zip (only git-tracked files)
+      - name: Zip localhost_servers
         run: |
           mkdir release
           git ls-files localhost_servers | zip -@ release/servers.zip
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: servers-latest
-          name: "Localhost Servers Latest"
-          body: "This is the latest version of localhost servers for Neurite."
-          files: release/servers.zip
+      - name: Create servers-latest release
+        run: |
+          gh release create servers-latest release/servers.zip \
+            --title "Localhost Servers Latest" \
+            --notes "This is the latest version of localhost servers for Neurite."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
