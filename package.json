@@ -9,6 +9,7 @@
     "build": "electron-builder"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "axios": "^1.7.9",
     "electron-log": "^5.2.4",
     "electron-updater": "^6.3.9",
@@ -25,14 +26,10 @@
     "appId": "com.satellitecomponent.neurite",
     "productName": "Neurite",
     "asar": true,
-    "asarUnpack": [
-      "localhost_servers/**/*"
-    ],
     "files": [
       "main.js",
       "loading.html",
       "modules/**/*",
-      "localhost_servers/**/*",
       "build/icons/**/*"
     ],
     "directories": {

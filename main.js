@@ -1,9 +1,9 @@
-// main.js
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { createLoadingWindow, closeLoadingWindow } = require('./modules/loadingwindow');
 const { isLocalServerRunning, startLocalServers, stopLocalServers } = require('./modules/servermanager');
 const { createMainWindow } = require('./modules/windowmanager');
 const { initializeUpdater } = require('./modules/update');
+const { ensureServersDownloaded } = require('./modules/serverdownloader');
 
 app.whenReady().then(async () => {
     // Create the loading screen immediately
@@ -16,9 +16,10 @@ app.whenReady().then(async () => {
     const serversPromise = (async () => {
         const running = await isLocalServerRunning();
         if (!running) {
-            console.log('Local server not running. Starting servers...');
+            console.log('Local server not running. Downloading and starting...');
             try {
-                await startLocalServers();
+                const serverPath = await ensureServersDownloaded();
+                await startLocalServers(serverPath);
                 console.log('Local servers started.');
             } catch (err) {
                 console.error('Failed to start local servers:', err);
@@ -40,6 +41,8 @@ app.whenReady().then(async () => {
     // Wait for both the servers and renderer to be ready.
     await Promise.all([serversPromise, rendererPromise]);
 
+    mainWindow.webContents.executeJavaScript('Host?.checkServer?.()');
+        
     // Once both are ready, close the loading window and show the main window.
     closeLoadingWindow();
     mainWindow.show();

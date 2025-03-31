@@ -1,1 +1,0 @@
-This is a server used to connect various Ai APIS to Neurite's frontend.

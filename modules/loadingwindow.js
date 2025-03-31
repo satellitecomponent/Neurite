@@ -9,7 +9,6 @@ function createLoadingWindow() {
         height: 300,
         frame: false,          // No window frame
         resizable: false,      // Prevent resizing
-        alwaysOnTop: true,     // Ensure it stays visible until closed
         webPreferences: {
             // Depending on your security requirements
             nodeIntegration: false,
