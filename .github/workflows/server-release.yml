@@ -16,24 +16,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up GitHub CLI
-        uses: cli/gh-action@v2
-
-      - name: Delete previous release (if exists)
+      - name: Ensure GitHub CLI is installed
         run: |
-          gh release delete servers-latest -y || echo "No existing release"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sudo apt update
+          sudo apt install -y gh
 
-      - name: Zip localhost_servers
+      - name: Authenticate GH CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Delete existing release if it exists
+        run: |
+          gh release delete servers-latest -y || echo "No release to delete"
+
+      - name: Create servers.zip (tracked files only)
         run: |
           mkdir release
           git ls-files localhost_servers | zip -@ release/servers.zip
 
-      - name: Create servers-latest release
+      - name: Create new release
         run: |
           gh release create servers-latest release/servers.zip \
             --title "Localhost Servers Latest" \
-            --notes "This is the latest version of localhost servers for Neurite."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --notes "Latest release of localhost servers for Neurite"
