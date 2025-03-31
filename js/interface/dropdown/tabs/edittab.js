@@ -49,15 +49,6 @@ class EditTab {
         const outerOpacitySlider = Elem.byId('outer_opacity');
         const outerOpacityValue = Elem.byId('outer_opacity_value');
     
-        const updateSliderValue = (slider, value) => {
-            value.value = slider.value;
-        };
-    
-        const updateValueSlider = (value, slider) => {
-            slider.value = value.value;
-            setSliderBackground(slider);
-        };
-    
         On.input(innerOpacitySlider, (e) => {
             settings.innerOpacity = innerOpacitySlider.value / 100;
             updateSliderValue(innerOpacitySlider, innerOpacityValue);
@@ -134,11 +125,21 @@ class EditTab {
             settings.maxLines = v;
         });
     
-        On.input(Elem.byId('quality'), (e) => {
-            const v = this.getQuality();
+        const qualitySlider = Elem.byId('quality');
+        const qualityValue = Elem.byId('quality_value_number');
+        
+        On.input(qualitySlider, (e) => {
+            const v = qualitySlider.value / 100;
             this.setRenderQuality(v);
-            Elem.byId('quality_value').textContent = "Quality:" + (Math.round(v * 100) / 100);
+            updateSliderValue(qualitySlider, qualityValue);
         });
+        
+        On.input(qualityValue, (e) => {
+            const v = parseFloat(qualityValue.value);
+            updateValueSlider(qualityValue, qualitySlider);
+            this.setRenderQuality(v / 100);
+        });
+        
     
         On.input(Elem.byId('exponent'), (e) => updateMandStep());
     
@@ -236,12 +237,14 @@ class EditTab {
     }
 
     setRenderQuality(n) {
+        n = Math.min(Math.max(n, 1), 100) / 100; // Clamp value between 1 and 100
         const q = 1 / n;
         const f = settings.renderStepSize / q;
         settings.renderStepSize = q;
         settings.renderWidthMult *= f;
         settings.renderSteps *= f;
     }
+    
 
     getQuality() {
         const v = Elem.byId('quality').value / 100;

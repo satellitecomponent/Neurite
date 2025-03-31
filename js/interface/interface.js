@@ -121,7 +121,7 @@ On.mousemove(svg, (e)=>{
         if (delta.mag() > DRAG_THRESHOLD) controlDragOccurred = true;
     }
 });
-on.mousedown(svg, (e) => {
+On.mousedown(svg, (e) => {
     mouseDownPos = new vec2(e.pageX, e.pageY);
     controlDragOccurred = false;
     Node.prev = null;

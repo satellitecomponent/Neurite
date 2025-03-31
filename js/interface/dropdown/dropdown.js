@@ -1,7 +1,30 @@
-﻿
+﻿const updateSliderValue = (slider, value) => {
+    value.value = slider.value;
+};
+
+const updateValueSlider = (value, slider) => {
+    // Clamp the number input to the slider's min/max values
+    const minValue = parseInt(slider.min, 10);
+    const maxValue = parseInt(slider.max, 10);
+    let newValue = parseInt(value.value, 10);
+
+    if (newValue < minValue) {
+        newValue = minValue;
+    } else if (newValue > maxValue) {
+        newValue = maxValue;
+    }
+
+    value.value = newValue; // Update the number input value
+    slider.value = newValue; // Update the slider value
+    setSliderBackground(slider);
+};
 
 const aiTab = new AiTab();
 const editTab = new EditTab(settings);
+
+
+
+
 
 // Function to save the value of a specific slider or color picker
 function saveInputValue(input) {

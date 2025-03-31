@@ -28,45 +28,60 @@
                 </div>
                 <div class="settingsSlider centered" title="Adjust smoothness of fractal lines. Lower to reduce lag" style="margin-bottom: 10px;">
                     <div style="display:flex; justify-content: space-between;">
-                        <div id="quality_value">Quality</div>
-                        <div id="fps">17 fps</div>
+                        <div class="number-input-wrapper">
+                            <div id="quality_value">Quality</div>
+                            <input id="quality_value_number" class="number-input" type="number" min="0" max="100" value="16" step="0.1">
+                        </div>
+                        <div id="fps">?? fps (Is javascript enabled?)</div>
                     </div>
                     <input id="quality" type="range" min="0" max="100" value="16">
                 </div>
                 <div class="gridLayout">
 
                     <div class="settingsSlider" title="Adjusts length of fractal lines. Lower to reduce lag">
-                        <label for="length">Length:</label>
-                        <input id="length_value" class="number-input" type="number" min="0" max="100" step="1">
+                        <div class="number-input-wrapper">
+                            <label for="length">Length:</label>
+                            <input id="length_value" class="number-input" type="number" min="0" max="100" step="1">
+                        </div>
                         <input id="length" type="range" min="0" max="100" value="50">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts width of fractal lines">
-                        <label for="renderWidthMultSlider">Width:</label>
-                        <input id="renderWidthMultValue" class="number-input" type="number" min="0" max="24" step="1">
+                        <div class="number-input-wrapper">
+                            <label for="renderWidthMultSlider">Width:</label>
+                            <input id="renderWidthMultValue" class="number-input" type="number" min="0" max="24" step="1">
+                        </div>
                         <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.001">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts amount of fractal lines. Lower to reduce lag">
-                        <label for="maxLinesSlider">Lines:</label>
-                        <input id="maxLinesValue" class="number-input" type="number" min="0" max="2048" step="32">
+                        <div class="number-input-wrapper">
+                            <label for="maxLinesSlider">Lines:</label>
+                            <input id="maxLinesValue" class="number-input" type="number" min="0" max="2048" step="32">
+                        </div>
                         <input type="range" id="maxLinesSlider" min="0" max="2048" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts fractal line generation speed. Lower to reduce lag">
-                        <label for="regenDebtSlider">Speed:</label>
-                        <input id="regenDebtValue" class="number-input" type="number" min="0" max="4" step="0.1">
+                        <div class="number-input-wrapper">
+                            <label for="regenDebtSlider">Speed:</label>
+                            <input id="regenDebtValue" class="number-input" type="number" min="0" max="4" step="0.1">
+                        </div>
                         <input type="range" id="regenDebtSlider" min="0" max="4" step="0.001">
                     </div>
                     <div class="settingsSlider" title="Adjusts cursor's control of line generation">
-                        <label for="flashlightStrength">Strength:</label>
-                        <input id="flashlightStrength_value" class="number-input" type="number" min="0" max="100" step="1">
+                        <div class="number-input-wrapper">
+                            <label for="flashlightStrength">Strength:</label>
+                            <input id="flashlightStrength_value" class="number-input" type="number" min="0" max="100" step="1">
+                        </div>
                         <input id="flashlightStrength" type="range" min="0" max="100" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts radius of line generation around cursor">
-                        <label for="flashlightRadius">Radius:</label>
-                        <input id="flashlightRadius_value" class="number-input" type="number" min="0" max="100" step="1">
+                        <div class="number-input-wrapper">
+                            <label for="flashlightRadius">Radius:</label>
+                            <input id="flashlightRadius_value" class="number-input" type="number" min="0" max="100" step="1">
+                        </div>
                         <input type="range" id="flashlightRadius" min="0" max="100" step="1">
                     </div>
 
@@ -119,26 +134,34 @@
                         <div class="gridLayout">
 
                             <div class="settingsSlider" title="Adjusts fractal line brightness">
-                                <label for="cSlider">Brightness</label>
-                                <input id="c_value" class="number-input" type="number" min="0" max="255" step="1">
+                                <div class="number-input-wrapper" style="flex-direction: column;">
+                                    <label for="cSlider">Brightness:</label>
+                                    <input id="c_value" class="number-input" type="number" min="0" max="255" step="1">
+                                </div>
                                 <input type="range" min="0" max="255" id="cSlider" value="128">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts fractal line vibrance">
-                                <label for="sSlider">Saturation</label>
-                                <input id="s_value" class="number-input" type="number" min="0" max="255" step="1">
+                                <div class="number-input-wrapper" style="flex-direction: column;">
+                                    <label for="sSlider">Saturation:</label>
+                                    <input id="s_value" class="number-input" type="number" min="0" max="255" step="1">
+                                </div>
                                 <input type="range" min="0" max="255" id="sSlider" value="127">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts opacity of fractal lines">
-                                <label for="outer_opacity">Outer Opacity</label>
-                                <input id="outer_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
+                                <div class="number-input-wrapper" style="flex-direction: column;">
+                                    <label for="outer_opacity">Outer Opacity:</label>
+                                    <input id="outer_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
+                                </div>
                                 <input id="outer_opacity" type="range" min="0" max="100" value="100">
                             </div>
 
                             <div class="settingsSlider" title="Adjusts opacity of fractal line's interior">
-                                <label for="inner_opacity">Inner Opacity</label>
-                                <input id="inner_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
+                                <div class="number-input-wrapper" style="flex-direction: column;">
+                                    <label for="inner_opacity">Inner Opacity:</label>
+                                    <input id="inner_opacity_value" class="number-input" type="number" min="0" max="100" step="1">
+                                </div>
                                 <input id="inner_opacity" type="range" min="0" max="100" value="100">
                             </div>
 
