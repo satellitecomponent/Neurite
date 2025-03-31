@@ -381,7 +381,9 @@ class ZettelkastenProcessor {
             endLineIndex = range.endLineNo;
         }
         const allReferences = [];
-        this.forEachReferenceInRange(startLineIndex, endLineIndex, lines, allReferences.push, allReferences);
+        this.forEachReferenceInRange(startLineIndex, endLineIndex, lines, function(ref) {
+            allReferences.push(ref);
+        });
         this.handleRefTags(allReferences, currentNodeTitle);
 
         // Build plain text for node after tags
