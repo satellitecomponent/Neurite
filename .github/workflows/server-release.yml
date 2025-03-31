@@ -18,7 +18,10 @@ jobs:
 
       - name: Generate timestamp version
         id: version
-        run: echo "tag=servers-$(date +'%Y.%m.%d.%H%M%S')" >> $GITHUB_OUTPUT
+        run: |
+          timestamp=$(date +'%Y.%m.%d.%H%M%S')
+          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+          echo "tag=servers-$timestamp" >> $GITHUB_OUTPUT
 
       - name: Create servers.zip (tracked files only)
         run: |
@@ -37,7 +40,7 @@ jobs:
       - name: Create new dated release
         run: |
           gh release create ${{ steps.version.outputs.tag }} release/servers.zip \
-            --title "Localhost Servers ${{ steps.version.outputs.tag }}" \
+            --title "Localhost Servers ${{ steps.version.outputs.timestamp }}" \
             --notes "Current release of Neurite's localhost servers"
 
       - name: Delete older servers-* releases (keep latest)
