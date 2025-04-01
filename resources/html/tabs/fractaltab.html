@@ -49,49 +49,55 @@
                     <div class="settingsSlider" title="Adjusts width of fractal lines">
                         <div class="number-input-wrapper">
                             <label for="renderWidthMultSlider">Width:</label>
-                            <input id="renderWidthMultValue" class="number-input" type="number" min="0" max="24" step="0.01">
+                            <input id="renderWidthMultValue" class="number-input" type="number" min="0" max="12" value="0.5" step="0.01">
                         </div>
-                        <input type="range" id="renderWidthMultSlider" min="0" max="12" step="0.01">
+                        <input type="range" id="renderWidthMultSlider" min="0" max="12" value="0.5" step="0.01">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts amount of fractal lines. Lower to reduce lag">
                         <div class="number-input-wrapper">
                             <label for="maxLinesSlider">Lines:</label>
-                            <input id="maxLinesValue" class="number-input" type="number" min="0" max="2048" step="32">
+                            <input id="maxLinesValue" class="number-input" type="number" min="0" max="2048" value="128" step="32">
                         </div>
-                        <input type="range" id="maxLinesSlider" min="0" max="2048" step="1">
+                        <input type="range" id="maxLinesSlider" min="0" max="2048" value="128" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts fractal line generation speed. Lower to reduce lag">
                         <div class="number-input-wrapper">
                             <label for="regenDebtSlider">Speed:</label>
-                            <input id="regenDebtValue" class="number-input" type="number" min="0" max="4" step="0.01">
+                            <input id="regenDebtValue" class="number-input" type="number" min="0" max="4" value="1" step="0.01">
                         </div>
-                        <input type="range" id="regenDebtSlider" min="0" max="4" step="0.01">
+                        <input type="range" id="regenDebtSlider" min="0" max="4" value="1" step="0.01">
                     </div>
                     <div class="settingsSlider" title="Adjusts cursor's control of line generation">
                         <div class="number-input-wrapper">
                             <label for="flashlightStrength">Strength:</label>
-                            <input id="flashlightStrength_value" class="number-input" type="number" min="0" max="100" step="1">
+                            <input id="flashlightStrength_value" class="number-input" type="number" min="0" max="100" value="0" step="1">
                         </div>
-                        <input id="flashlightStrength" type="range" min="0" max="100" step="1">
+                        <input id="flashlightStrength" type="range" min="0" max="100" value="0" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Adjusts radius of line generation around cursor">
                         <div class="number-input-wrapper">
                             <label for="flashlightRadius">Radius:</label>
-                            <input id="flashlightRadius_value" class="number-input" type="number" min="0" max="100" step="1">
+                            <input id="flashlightRadius_value" class="number-input" type="number" min="0" max="100" value="0" step="1">
                         </div>
-                        <input type="range" id="flashlightRadius" min="0" max="100" step="1">
+                        <input type="range" id="flashlightRadius" min="0" max="100" value="0" step="1">
                     </div>
 
                     <div class="settingsSlider" title="Delay between segment reveals">
-                        <label for="renderDelaySlider">Draw Speed: <span id="renderDelayValue">0</span>ms</label>
-                        <input type="range" id="renderDelaySlider" min="0" max="300" value="0">
+                        <div class="number-input-wrapper" style="flex-direction: column;">
+                            <label for="renderDelaySlider">Draw Speed:</label>
+                            <input id="draw_speed_value" class="number-input" type="number" min="0" max="300" value="0" step="1">
+                        </div>
+                        <input type="range" id="renderDelaySlider" min="0" max="300" value="0" step="1">
                     </div>
-
+                    
                     <div class="settingsSlider" title="Adjust zoom sensitivity for mouse wheel and drag zooming">
-                        <label for="zoomSpeedSlider">Zoom Speed: <span id="zoomSpeedValue">1.0</span>x</label>
+                        <div class="number-input-wrapper" style="flex-direction: column;">
+                            <label for="zoomSpeedSlider">Zoom Speed:</label>
+                            <input id="zoom_speed_value" class="number-input" type="number" min="0.1" max="5" value="1" step="0.1">
+                        </div>
                         <input type="range" id="zoomSpeedSlider" min="0.1" max="5" step="0.1" value="1.0">
                     </div>
 

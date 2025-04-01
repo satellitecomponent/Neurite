@@ -3,21 +3,24 @@
 };
 
 const updateValueSlider = (value, slider) => {
-    // Clamp the number input to the slider's min/max values
-    const minValue = parseInt(slider.min, 10);
-    const maxValue = parseInt(slider.max, 10);
-    let newValue = parseInt(value.value, 10);
+    const step = parseFloat(slider.step);
+    const minValue = parseFloat(slider.min);
+    const maxValue = parseFloat(slider.max);
+    let newValue = parseFloat(value.value);
 
-    if (newValue < minValue) {
-        newValue = minValue;
-    } else if (newValue > maxValue) {
-        newValue = maxValue;
-    }
+    if (isNaN(newValue)) return; // Ignore invalid input
 
-    value.value = newValue; // Update the number input value
-    slider.value = newValue; // Update the slider value
+    // Clamp to min/max
+    newValue = Math.max(minValue, Math.min(maxValue, newValue));
+
+    // Optional: round to nearest step
+    const precision = (step < 1) ? step.toString().split('.')[1]?.length || 2 : 0;
+    newValue = parseFloat(newValue.toFixed(precision));
+
+    value.value = newValue;
+    slider.value = newValue;
     setSliderBackground(slider);
-};
+}
 
 const aiTab = new AiTab();
 const editTab = new EditTab(settings);

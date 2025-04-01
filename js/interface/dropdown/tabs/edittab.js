@@ -118,16 +118,28 @@ class EditTab {
             this.setRenderWidthMult(adjustedValue);
         });
 
-        On.input(Elem.byId('renderDelaySlider'), (e) => {
-            settings.renderDelay = parseInt(e.target.value);
-            Elem.byId('renderDelayValue').textContent = settings.renderDelay;
-        })
-
-        On.input(Elem.byId('zoomSpeedSlider'), (e)=>{
-            const zoomSpeed = parseFloat(e.target.value);
-            settings.zoomSpeedMultiplier = zoomSpeed;
-            Elem.byId('zoomSpeedValue').textContent = zoomSpeed.toFixed(1);
-        })
+        const renderDelaySlider = Elem.byId('renderDelaySlider');
+        const renderDelayValue = Elem.byId('draw_speed_value');
+        On.input(renderDelaySlider, (e) => {
+            settings.renderDelay = parseInt(renderDelaySlider.value);
+            updateSliderValue(renderDelaySlider, renderDelayValue);
+        });
+        On.input(renderDelayValue, (e) => {
+            updateValueSlider(renderDelayValue, renderDelaySlider);
+            settings.renderDelay = parseInt(renderDelaySlider.value);
+        });
+        
+        const zoomSpeedSlider = Elem.byId('zoomSpeedSlider');
+        const zoomSpeedValue = Elem.byId('zoom_speed_value');
+        On.input(zoomSpeedSlider, (e) => {
+            settings.zoomSpeedMultiplier = parseFloat(zoomSpeedSlider.value);
+            updateSliderValue(zoomSpeedSlider, zoomSpeedValue);
+        });
+        On.input(zoomSpeedValue, (e) => {
+            updateValueSlider(zoomSpeedValue, zoomSpeedSlider);
+            settings.zoomSpeedMultiplier = parseFloat(zoomSpeedSlider.value);
+        });
+        
     
         const maxLinesSlider = Elem.byId('maxLinesSlider');
         const maxLinesValue = Elem.byId('maxLinesValue');
