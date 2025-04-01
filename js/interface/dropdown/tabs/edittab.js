@@ -124,22 +124,21 @@ class EditTab {
             const v = this.getMaxLines();
             settings.maxLines = v;
         });
-    
+
         const qualitySlider = Elem.byId('quality');
         const qualityValue = Elem.byId('quality_value_number');
-        
+    
         On.input(qualitySlider, (e) => {
-            const v = qualitySlider.value / 100;
+            const v = this.getQuality(qualitySlider);
             this.setRenderQuality(v);
             updateSliderValue(qualitySlider, qualityValue);
         });
         
         On.input(qualityValue, (e) => {
-            const v = parseFloat(qualityValue.value);
             updateValueSlider(qualityValue, qualitySlider);
-            this.setRenderQuality(v / 100);
+            const v = this.getQuality(qualityValue);
+            this.setRenderQuality(v);
         });
-        
     
         On.input(Elem.byId('exponent'), (e) => updateMandStep());
     
@@ -237,18 +236,19 @@ class EditTab {
     }
 
     setRenderQuality(n) {
-        n = Math.min(Math.max(n, 1), 100) / 100; // Clamp value between 1 and 100
         const q = 1 / n;
         const f = settings.renderStepSize / q;
         settings.renderStepSize = q;
         settings.renderWidthMult *= f;
         settings.renderSteps *= f;
     }
-    
 
-    getQuality() {
-        const v = Elem.byId('quality').value / 100;
-        return 2 ** (v * 4);
+    computeQuality(v) {
+        return 2 ** ((v / 100) * 4);
+    }
+    
+    getQuality(sourceElem = Elem.byId('quality')) {
+        return this.computeQuality(parseFloat(sourceElem.value));
     }
 
     updateFilters() {
@@ -273,11 +273,9 @@ class EditTab {
 
     updateFlashlightStrength() {
         flashlight_fraction = (parseFloat(Elem.byId('flashlightStrength').value) / 100);
-        Elem.byId('flashlightStrength_value').value = flashlight_fraction.toFixed(3);
     }
 
     updateFlashlightRadius() {
         flashlight_stdev = (parseFloat(Elem.byId('flashlightRadius').value) / 100);
-        Elem.byId('flashlightRadius_value').value = flashlight_stdev.toFixed(3);
     }
 }
