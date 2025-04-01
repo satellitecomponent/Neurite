@@ -203,6 +203,13 @@ class Interface {
     onMouseDown = (e)=>{
         Graph.mouseDownPos_setXY(e.pageX, e.pageY);
         this.controlDragOccurred = false;
+        
+        Node.prev = null;
+
+        // Handle focus on background click
+        if (e.target === svg) {
+            svg.focus(); // Assuming the SVG element can be focused
+        }
 
         // Handle zooming and rotating
         if (
