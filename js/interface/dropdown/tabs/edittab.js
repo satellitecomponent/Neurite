@@ -12,11 +12,10 @@ function getMaxDistForExponent(exponent) {
     return exponentToMaxDist[exponent] || 4; // default to 4 if no mapping found
 }
 
-// EditTab class
 class EditTab {
-    constructor() {
-        this.initSliders();
-        this.initEventListeners();
+    init(){
+        this.#initSliders();
+        this.#initEventListeners();
         this.setRenderLength(this.getLength());
         this.setRenderQuality(this.getQuality());
         this.updateFilters();
@@ -24,7 +23,7 @@ class EditTab {
         this.updateFlashlightRadius();
     }
 
-    initSliders() {
+    #initSliders(){
         const renderWidthMultSlider = Elem.byId('renderWidthMultSlider');
         renderWidthMultSlider.value = settings.renderWidthMult;
         renderWidthMultSlider.dispatchEvent(new Event('input'));
@@ -37,13 +36,21 @@ class EditTab {
         regenDebtSlider.value = settings.regenDebtAdjustmentFactor;
         regenDebtSlider.dispatchEvent(new Event('input'));
 
+        const renderDelaySlider = Elem.byId('renderDelaySlider');
+        renderDelaySlider.value = settings.renderDelay;
+        renderDelaySlider.dispatchEvent(new Event('input'));
+
+        const zoomSpeedSlider = Elem.byId('zoomSpeedSlider');
+        zoomSpeedSlider.value = settings.zoomSpeedMultiplier;
+        zoomSpeedSlider.dispatchEvent(new Event('input'));
+
         Elem.byId('flashlightStrength').value = flashlight_fraction;
         Elem.byId('flashlightRadius').value = flashlight_stdev;
         triggerInputEvent('flashlightStrength');
         triggerInputEvent('flashlightRadius');
     }
 
-    initEventListeners() {
+    #initEventListeners(){
         const innerOpacitySlider = Elem.byId('inner_opacity');
         const innerOpacityValue = Elem.byId('inner_opacity_value');
         const outerOpacitySlider = Elem.byId('outer_opacity');
@@ -110,6 +117,17 @@ class EditTab {
             const adjustedValue = this.getRenderWidthMult();
             this.setRenderWidthMult(adjustedValue);
         });
+
+        On.input(Elem.byId('renderDelaySlider'), (e) => {
+            settings.renderDelay = parseInt(e.target.value);
+            Elem.byId('renderDelayValue').textContent = settings.renderDelay;
+        })
+
+        On.input(Elem.byId('zoomSpeedSlider'), (e)=>{
+            const zoomSpeed = parseFloat(e.target.value);
+            settings.zoomSpeedMultiplier = zoomSpeed;
+            Elem.byId('zoomSpeedValue').textContent = zoomSpeed.toFixed(1);
+        })
     
         const maxLinesSlider = Elem.byId('maxLinesSlider');
         const maxLinesValue = Elem.byId('maxLinesValue');

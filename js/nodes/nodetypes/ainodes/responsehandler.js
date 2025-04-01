@@ -29,162 +29,190 @@ class ResponseHandler {
         this.processingQueue = Promise.resolve();
         this.previousContentLength = 0;
         this.responseCount = 0;
-        this.currentResponseEnded = false;
-
+        this.pendingPromptContent = '';
+        this.foundPromptStart = false;
         this.tooltip = new TopNChunksTooltip();
-
-        // Attach the input event listener for new input
-        On.input(this.node.aiResponseTextArea, (e)=>{
-            this.processingQueue = this.processingQueue.then(this.handleInput);
-        });
+        On.input(this.node.aiResponseTextArea, () => this.processingQueue = this.processingQueue.then(this.handleInput));
     }
 
-    handleInput = async ()=>{
+    handleInput = async () => {
         try {
             const content = this.node.aiResponseTextArea.value;
-            let newContent = content.substring(this.previousContentLength);
-            let trimmedNewContent = newContent.trim();
-            if (trimmedNewContent.startsWith(`\n\n${PROMPT_IDENTIFIER} `)) {
-                trimmedNewContent = trimmedNewContent.trimStart();
-            }
-            // Find the last occurrence of the prompt identifier in the trimmed content
-            const lastPromptIndex = trimmedNewContent.lastIndexOf(`${PROMPT_IDENTIFIER}`);
-            if (lastPromptIndex !== -1) {
-                // Find the end of the prompt using PROMPT_END
-                const promptEndIndex = trimmedNewContent.indexOf(PROMPT_END, lastPromptIndex);
-                if (promptEndIndex !== -1) {
-                    // Extract the prompt content between PROMPT_IDENTIFIER and PROMPT_END
-                    const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length, promptEndIndex).trim();
-                    const segments = promptContent.split('```');
-                    for (let i = 0; i < segments.length; i++) {
-                        const segment = segments[i].trim();
-                        if (segment) {
-                            if (i % 2 === 0) {
-                                this.handleUserPrompt(segment); // Even segments are regular text
-                            } else {
-                                this.renderCodeBlock(segment, true, true); // Odd segments are code blocks within user prompts
-                            }
-                        }
-                    }
-                    // Clear newContent after processing the prompt
-                    newContent = trimmedNewContent.substring(promptEndIndex + PROMPT_END.length).trim();
-                } else {
-                    // If PROMPT_END is not found, treat the entire content as part of the prompt
-                    const promptContent = trimmedNewContent.substring(lastPromptIndex + PROMPT_IDENTIFIER.length).trim();
-                    this.handleUserPrompt(promptContent);
-                    newContent = '';
-                }
-            } else {
-                // Handle non-prompt content (code blocks and markdown)
-                if (this.inCodeBlock) {
-                    this.codeBlockContent += newContent;
-                    const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
-                    if (endOfCodeBlockIndex !== -1) {
-                        const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
-                        this.renderCodeBlock(codeContent, true);
-                        this.codeBlockContent = '';
-                        this.codeBlockStartIndex = -1;
-                        this.inCodeBlock = false;
-                        newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
-                    } else {
-                        this.renderCodeBlock(this.codeBlockContent, false);
-                        newContent = '';
-                    }
-                }
-
-                while (newContent.length > 0) {
-                    const startOfCodeBlockIndex = newContent.indexOf('```');
-                    if (startOfCodeBlockIndex !== -1) {
-                        if (startOfCodeBlockIndex > 0) {
-                            this.handleMarkdown(newContent.substring(0, startOfCodeBlockIndex));
-                        }
-                        this.inCodeBlock = true;
-                        this.codeBlockStartIndex = this.previousContent.length + startOfCodeBlockIndex;
-                        this.codeBlockContent = newContent.substring(startOfCodeBlockIndex + 3);
-                        const endOfCodeBlockIndex = this.codeBlockContent.indexOf('```');
-                        if (endOfCodeBlockIndex !== -1) {
-                            const codeContent = this.codeBlockContent.substring(0, endOfCodeBlockIndex);
-                            this.renderCodeBlock(codeContent, true);
-                            this.codeBlockContent = '';
-                            this.codeBlockStartIndex = -1;
-                            this.inCodeBlock = false;
-                            newContent = this.codeBlockContent.substring(endOfCodeBlockIndex + 3);
-                        } else {
-                            this.renderCodeBlock(this.codeBlockContent, false);
-                            newContent = '';
-                        }
-                    } else {
-                        this.handleMarkdown(newContent);
-                        newContent = '';
-                    }
-                }
-            }
+            await this.processContent(content.substring(this.previousContentLength));
+            this.checkForCompletePrompts();
             this.previousContent = content;
-            this.previousContentLength = this.previousContent.length;
+            this.previousContentLength = content.length;
         } catch (err) {
-            Logger.err("While processing markdown:", err)
+            Logger.err("While processing markdown:", err);
         }
     }
+    
+    processContent = async (newContent) => {
+        const trimmedContent = newContent.trim();
+        
+        if (this.foundPromptStart) {
+            this.pendingPromptContent += newContent;
+            const promptEndIndex = this.pendingPromptContent.indexOf(PROMPT_END);
+            if (promptEndIndex !== -1) {
+                this.processPromptContent(this.pendingPromptContent.substring(0, promptEndIndex + PROMPT_END.length));
+                this.foundPromptStart = false;
+                const remainingContent = this.pendingPromptContent.substring(promptEndIndex + PROMPT_END.length);
+                this.pendingPromptContent = '';
+                if (remainingContent) await this.processContent(remainingContent);
+                return;
+            }
+            return;
+        }
+        
+        if (trimmedContent.includes(PROMPT_IDENTIFIER)) {
+            const promptStartIndex = trimmedContent.indexOf(PROMPT_IDENTIFIER);
+            if (promptStartIndex > 0) this.processNonPromptContent(trimmedContent.substring(0, promptStartIndex));
+            
+            this.foundPromptStart = true;
+            this.pendingPromptContent = trimmedContent.substring(promptStartIndex);
+            
+            const promptEndIndex = this.pendingPromptContent.indexOf(PROMPT_END);
+            if (promptEndIndex !== -1) {
+                this.processPromptContent(this.pendingPromptContent.substring(0, promptEndIndex + PROMPT_END.length));
+                this.foundPromptStart = false;
+                const remainingContent = this.pendingPromptContent.substring(promptEndIndex + PROMPT_END.length);
+                this.pendingPromptContent = '';
+                if (remainingContent) await this.processContent(remainingContent);
+            }
+            return;
+        }
+        
+        this.processNonPromptContent(newContent);
+    }
+    
+    processPromptContent = (promptContent) => {
+        const startIndex = promptContent.indexOf(PROMPT_IDENTIFIER) + PROMPT_IDENTIFIER.length;
+        const endIndex = promptContent.indexOf(PROMPT_END);
+        const extractedContent = promptContent.substring(startIndex, endIndex).trim();
+        
+        extractedContent.split('```').forEach((segment, i) => {
+            if (!segment.trim()) return;
+            i % 2 === 0 ? this.handleUserPrompt(segment.trim()) : this.renderCodeBlock(segment, true, true);
+        });
+    }
+    
+    processNonPromptContent = (content) => {
+        if (this.inCodeBlock) {
+            this.codeBlockContent += content;
+            const endIndex = this.codeBlockContent.indexOf('```');
+            if (endIndex !== -1) {
+                this.renderCodeBlock(this.codeBlockContent.substring(0, endIndex), true);
+                this.codeBlockContent = '';
+                this.codeBlockStartIndex = -1;
+                this.inCodeBlock = false;
+                const remaining = this.codeBlockContent.substring(endIndex + 3);
+                if (remaining) this.processNonPromptContent(remaining);
+            } else {
+                this.renderCodeBlock(this.codeBlockContent, false);
+            }
+            return;
+        }
 
-    restoreResponse(child){
+        let remaining = content;
+        while (remaining.length > 0) {
+            const startIndex = remaining.indexOf('```');
+            if (startIndex !== -1) {
+                if (startIndex > 0) this.handleMarkdown(remaining.substring(0, startIndex));
+                this.inCodeBlock = true;
+                this.codeBlockStartIndex = this.previousContent.length + startIndex;
+                this.codeBlockContent = remaining.substring(startIndex + 3);
+                const endIndex = this.codeBlockContent.indexOf('```');
+                if (endIndex !== -1) {
+                    this.renderCodeBlock(this.codeBlockContent.substring(0, endIndex), true);
+                    this.codeBlockContent = '';
+                    this.codeBlockStartIndex = -1;
+                    this.inCodeBlock = false;
+                    remaining = this.codeBlockContent.substring(endIndex + 3);
+                } else {
+                    this.renderCodeBlock(this.codeBlockContent, false);
+                    remaining = '';
+                }
+            } else {
+                this.handleMarkdown(remaining);
+                remaining = '';
+            }
+        }
+    }
+    
+    checkForCompletePrompts = () => {
+        const lastWrapper = this.node.aiResponseDiv.lastElementChild;
+        if (!lastWrapper?.classList.contains('response-wrapper')) return;
+        
+        const lastResponseDiv = lastWrapper.querySelector('.ai-response');
+        if (!lastResponseDiv?.dataset.markdown) return;
+        
+        const content = lastResponseDiv.dataset.markdown;
+        const promptStartIndex = content.indexOf(PROMPT_IDENTIFIER);
+        if (promptStartIndex === -1) return;
+        
+        const promptEndIndex = content.indexOf(PROMPT_END, promptStartIndex);
+        if (promptEndIndex === -1) return;
+        
+        const beforePrompt = content.substring(0, promptStartIndex);
+        const promptContent = content.substring(promptStartIndex, promptEndIndex + PROMPT_END.length);
+        const afterPrompt = content.substring(promptEndIndex + PROMPT_END.length);
+        
+        const newContent = beforePrompt + afterPrompt;
+        
+        if (newContent.trim() === '') {
+            lastWrapper.remove();
+        } else {
+            lastResponseDiv.dataset.markdown = newContent;
+            lastResponseDiv.innerHTML = marked.parse(lastResponseDiv.dataset.markdown, { renderer: this.getMarkedRenderer() });
+        }
+        
+        this.processPromptContent(promptContent);
+    }
+
+    restoreResponse(child) {
         const divUserPrompt = child.querySelector('.user-prompt');
         if (divUserPrompt) {
-            this.setupUserPrompt(divUserPrompt)
+            this.setupUserPrompt(divUserPrompt);
         } else if (child.classList.contains('response-wrapper')) {
             const divResponse = child.querySelector('.ai-response');
-            if (!divResponse) return;
-
-            this.setupAiResponse(child);
-            this.reattachTooltips(divResponse);
+            if (divResponse) {
+                this.setupAiResponse(child);
+                this.reattachTooltips(divResponse);
+            }
         } else if (child.classList.contains('code-block-container')) {
-            this.setupCodeBlock(child)
+            this.setupCodeBlock(child);
         }
     }
 
     reattachTooltips(divResponse) {
         divResponse.querySelectorAll('a.snippet-ref').forEach(link => {
-            if (!link.dataset.snippetData) return;
-
-            this.tooltip.detachTooltipEvents(link);
-            this.tooltip.attachTooltipEvents(link);
+            if (link.dataset.snippetData) {
+                this.tooltip.detachTooltipEvents(link);
+                this.tooltip.attachTooltipEvents(link);
+            }
         });
     }
 
     findSnippetData(snippetNumber, source) {
-        // First, check in the current top N chunks
         if (this.node.currentTopNChunks) {
             const snippet = this.node.currentTopNChunks.find(chunk => {
                 const [chunkSource, chunkNumber] = chunk.key.split('_chunk_');
                 return chunkSource === source && parseInt(chunkNumber) === snippetNumber;
             });
-            if (snippet) {
-                return {
-                    source,
-                    relevanceScore: snippet.relevanceScore,
-                    text: snippet.text
-                };
-            }
+            if (snippet) return { source, relevanceScore: snippet.relevanceScore, text: snippet.text };
         }
-
-        // If not found, search in previous AI responses
         return this.findSnippetDataInPreviousResponses(snippetNumber, source);
     }
 
     findSnippetDataInPreviousResponses(snippetNumber, source) {
-        const aiResponseDivs = Array.from(this.node.aiResponseDiv.querySelectorAll('.ai-response'));
-        // Get the 10 most recent response divs, adjust number as needed for balance between depth and performance
-        const recentResponseDivs = aiResponseDivs.slice(-10);
-
+        const recentResponseDivs = Array.from(this.node.aiResponseDiv.querySelectorAll('.ai-response')).slice(-10);
         for (let i = recentResponseDivs.length - 1; i >= 0; i--) {
             const links = recentResponseDivs[i].querySelectorAll('a.snippet-ref');
             for (const link of links) {
                 if (!link.dataset.snippetData) continue;
-
                 const snippetDataList = JSON.parse(link.dataset.snippetData);
-                const matchingSnippet = snippetDataList.find(snippet =>
-                    snippet.source === source && snippet.snippetNumber === snippetNumber
-                );
-                if (matchingSnippet) return matchingSnippet;
+                const match = snippetDataList.find(s => s.source === source && s.snippetNumber === snippetNumber);
+                if (match) return match;
             }
         }
         return null;
@@ -193,373 +221,288 @@ class ResponseHandler {
     attachSnippetTooltips(aiResponseDiv) {
         aiResponseDiv.querySelectorAll('a').forEach(link => {
             const href = link.getAttribute('href');
-            const text = link.textContent;
-            const snippetMatch = text.match(/^Snippet (\d+(?:,\s*\d+)*)/);
+            const snippetMatch = link.textContent.match(/^Snippet (\d+(?:,\s*\d+)*)/);
             if (!snippetMatch) return;
-
-            const snippetNumbers = snippetMatch[1].split(',').map(Number);
-            const cb = (snippetNumber)=>this.findSnippetData(snippetNumber, href) ;
-            const snippetDataList = snippetNumbers.map(cb).filter(Boolean);
+            
+            const snippetDataList = snippetMatch[1].split(',')
+                .map(Number)
+                .map(num => this.findSnippetData(num, href))
+                .filter(Boolean);
+                
             this.addTooltipEventListeners(link, snippetDataList);
         });
     }
 
     addTooltipEventListeners(link, snippetDataList) {
         if (snippetDataList.length < 1) return;
-
         link.classList.add('snippet-ref');
         link.dataset.snippetData = JSON.stringify(snippetDataList);
         this.tooltip.attachTooltipEvents(link);
     }
 
     handleMarkdown(markdown) {
-        if (!this.node.aiResponding && !this.node.localAiResponding) return;
-
-        const segments = markdown.split('\n\n\n');
+        if (!this.node.aiResponding) return;
+        
         let linkFound = false;
-
-        segments.forEach((segment, index) => {
+        markdown.split('\n\n\n').forEach((segment, index) => {
             const divResponse = this.getOrCreateResponseDiv(index);
             this.appendMarkdownSegment(divResponse, segment);
-            // Check for links as segments are processed to avoid re-querying later
             if (!linkFound && divResponse.querySelector('a')) linkFound = true;
         });
 
-        if (linkFound) {
-            this.attachSnippetTooltips(this.node.aiResponseDiv);
-        }
+        if (linkFound) this.attachSnippetTooltips(this.node.aiResponseDiv);
     }
 
     appendMarkdownSegment(divResponse, segment) {
-        // Update the dataset with the new segment
         divResponse.dataset.markdown = (divResponse.dataset.markdown || '') + segment;
-
-        // Updated regex to handle mentions more flexibly
-        // Matches mentions starting with @, and including any subsequent @ symbols until a space or end of string
         const mentionPattern = /(?<=^|\s)@[a-zA-Z0-9._@-]+/g;
-
-        // Replace mentions with a span for highlighting
-        const highlightedSegment = divResponse.dataset.markdown.replace(mentionPattern, (match) => {
-            return `<span class="mention">${match}</span>`
-        });
-
-        // Properly parse and render the updated content using the marked library
-        const parsedHtml = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
-        divResponse.innerHTML = parsedHtml;
+        const unescapedMarkdown = divResponse.dataset.markdown.replace(/\\_/g, '_');
+        const highlightedSegment = unescapedMarkdown.replace(mentionPattern, match => 
+            `<span class="mention">${match}</span>`
+        );
+        divResponse.innerHTML = marked.parse(highlightedSegment, { renderer: this.getMarkedRenderer() });
     }
 
     getOrCreateResponseDiv(index) {
         const divLastWrapper = this.node.aiResponseDiv.lastElementChild;
-        if (index === 0 && divLastWrapper && divLastWrapper.classList.contains('response-wrapper')) {
+        if (index === 0 && divLastWrapper?.classList.contains('response-wrapper')) {
             return divLastWrapper.querySelector('.ai-response');
         }
 
         const divResponse = Html.make.div('ai-response');
-
         const divWrapper = Html.make.div('response-wrapper');
         divWrapper.append(this.makeDivHandle(), divResponse);
-
         this.node.aiResponseDiv.appendChild(divWrapper);
         this.setupAiResponse(divResponse);
-
         return divResponse;
     }
 
     makeDivHandle() {
         const div = Html.make.div('drag-handle');
-        div.innerHTML = `
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-        `;
+        div.innerHTML = `<span class="dot"></span><span class="dot"></span><span class="dot"></span>`;
         return div;
     }
 
     getMarkedRenderer() {
         const renderer = new marked.Renderer();
-        renderer.image = function (href, title, text) {
-            // Check if the image URL is a valid URL
-            if (String.isUrl(href)) {
-                return `<img src="${href}" alt="${text}" title="${title || ''}" />`;
-            } else {
-                // If the image URL is not a valid URL, treat it as a relative path
-                const imagePath = 'path/to/your/images/directory/' + href;
-                return `<img src="${imagePath}" alt="${text}" title="${title || ''}" />`;
-            }
+        renderer.image = (href, title, text) => {
+            const src = String.isUrl(href) ? href : `path/to/your/images/directory/${href}`;
+            return `<img src="${src}" alt="${text}" title="${title || ''}" />`;
         };
         return renderer;
     }
 
     setupAiResponse(divResponse) {
-        // Find the wrapper and handle divs relative to the divResponse
         const divWrapper = divResponse.closest('.response-wrapper');
         const divHandle = divWrapper.querySelector('.drag-handle');
-
-        // Apply logic specific to AI response div
         makeDivDraggable(divWrapper, 'AI Response', divHandle);
-
         const classList = divWrapper.classList;
-        On.mouseover(divHandle, (e)=>{ classList.add('hovered') });
-        On.mouseout(divHandle, (e)=>{ classList.remove('hovered') });
+        On.mouseover(divHandle, () => classList.add('hovered'));
+        On.mouseout(divHandle, () => classList.remove('hovered'));
     }
 
     handleUserPrompt(promptContent) {
         if (!promptContent) return;
-
-        const formattedContent = promptContent.replace(/\n/g, '<br>');
-
+    
         const divOuter = Html.new.div();
         divOuter.style.width = '100%';
         divOuter.style.textAlign = 'right';
-
+    
         const divPrompt = Html.make.div('user-prompt');
-        divPrompt.id = 'prompt-' + this.responseCount;
+        divPrompt.id = 'prompt-' + this.responseCount++;
         divPrompt.contentEditable = false;
-
-        // Set the innerHTML to display new lines correctly
-        divPrompt.innerHTML = formattedContent;
-
+    
+        const escapedContent = escapeHtml(promptContent).replace(/\n/g, '<br>');
+        divPrompt.innerHTML = escapedContent;
+    
         divOuter.appendChild(divPrompt);
-
         this.node.aiResponseDiv.appendChild(divOuter);
-
         this.setupUserPrompt(divPrompt);
-
-        this.responseCount += 1;
-    }
+    }    
 
     renderCodeBlock(content, isFinal = false, isUserPromptCodeBlock = false) {
-        let languageString = '';
-        let codeContent = content;
-
-        // Check if the content starts with a language string
+        // Parse language and content
         const languageStringEndIndex = content.indexOf('\n');
-        if (languageStringEndIndex !== -1) {
-            languageString = content.substring(0, languageStringEndIndex).trim();
-            codeContent = content.substring(languageStringEndIndex + 1);
-        }
-
+        const languageString = languageStringEndIndex !== -1 ? content.substring(0, languageStringEndIndex).trim() : '';
+        const codeContent = languageStringEndIndex !== -1 ? content.substring(languageStringEndIndex + 1) : content;
+    
+        // Remove old block if not final
         if (!isFinal && this.node.lastBlockId) {
             const oldBlock = Elem.byId(this.node.lastBlockId);
             if (oldBlock) oldBlock.parentNode.removeChild(oldBlock);
         }
-
+    
+        // Create or get code block container
         const codeBlockDivId = `code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`;
-        let divExistingContainer = Elem.byId(codeBlockDivId);
-
-        if (!divExistingContainer) {
-            divExistingContainer = Html.make.div('code-block-container');
-            divExistingContainer.id = codeBlockDivId;
-            this.node.aiResponseDiv.appendChild(divExistingContainer);
-
-            // Add a specific identifier or class for user-prompt code blocks
-            if (isUserPromptCodeBlock) {
-                divExistingContainer.classList.add('user-prompt-codeblock');
-            }
-
+        let divExistingContainer = Elem.byId(codeBlockDivId) || (() => {
+            const container = Html.make.div('code-block-container');
+            container.id = codeBlockDivId;
+            this.node.aiResponseDiv.appendChild(container);
+            
+            if (isUserPromptCodeBlock) container.classList.add('user-prompt-codeblock');
+            
             const divLanguageLabel = Html.make.div('language-label');
             const divExistingWrapper = Html.make.div('code-block-wrapper custom-scrollbar');
-            divExistingContainer.append(divLanguageLabel, divExistingWrapper);
-
             divExistingWrapper.append(Html.make.pre('code-block'));
-        }
-
+            container.append(divLanguageLabel, divExistingWrapper);
+            
+            return container;
+        })();
+    
+        // Update code content with syntax highlighting
         const divExistingWrapper = divExistingContainer.getElementsByClassName('code-block-wrapper')[0];
         const divPre = divExistingWrapper.getElementsByClassName('code-block')[0];
-
-        const className = 'language-' + (languageString || this.currentLanguage);
-        const codeElement = Html.make.code(className);
+        const codeElement = Html.make.code('language-' + (languageString || this.currentLanguage));
         codeElement.textContent = decodeHTML(encodeHTML(codeContent));
-
         Prism.highlightElement(codeElement);
-
         divPre.innerHTML = '';
         divPre.appendChild(codeElement);
-
+    
+        // Setup language label and copy button
         const divLanguageLabel = divExistingContainer.getElementsByClassName('language-label')[0];
         divLanguageLabel.innerText = languageString || this.currentLanguage;
         divLanguageLabel.style.display = 'flex';
         divLanguageLabel.style.justifyContent = 'space-between';
         divLanguageLabel.style.alignItems = 'center';
-
+        
         const copyButton = Html.make.button('copy-btn', "Copy");
         divLanguageLabel.appendChild(copyButton);
-
+    
         this.setupCodeBlock(divExistingContainer);
-
+    
         if (isFinal) this.node.codeBlockCount += 1;
-        this.node.lastBlockId = (isFinal ? null : codeBlockDivId);
+        this.node.lastBlockId = isFinal ? null : codeBlockDivId;
     }
-
+    
     setupUserPrompt(divPrompt) {
         makeDivDraggable(divPrompt, 'Prompt');
-
         let isEditing = false;
-
-        const handleKeyDown = (event)=>{
+    
+        const handleKeyDown = (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 this.removeResponsesUntil(divPrompt.id);
-
-                const message = divPrompt.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                const message = divPrompt.textContent;
                 Logger.debug(`Sending message: "${message}"`);
                 AiNode.sendMessage(this.node, message);
             }
-        }
-
-        function onBlur(){
-            if (isEditing) { // div loses focus
-                divPrompt.classList.remove('editing');
-                divPrompt.contentEditable = false;
-
-                isEditing = false;
-
-                // Reset styles to non-editing state
-                divPrompt.style.backgroundColor = '';
-                divPrompt.style.color = '';
-
-                divPrompt.style.cursor = "move";
-
-                // Make the div draggable
-                makeDivDraggable(divPrompt, 'Prompt');
-                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
-                Off.keydown(divPrompt, handleKeyDown);
-            }
-        }
-
-        function onDblClick(e){
-            e.preventDefault();
-            e.stopPropagation();
-
-            isEditing = !isEditing;
-            if (isEditing) { // entering edit mode
-                divPrompt.classList.add('editing');
-                divPrompt.contentEditable = true;
+        };
+    
+        const toggleEditMode = (activate, e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            
+            isEditing = activate;
+            divPrompt.classList[activate ? 'add' : 'remove']('editing');
+            divPrompt.contentEditable = activate;
+            divPrompt.style.cursor = activate ? 'text' : 'move';
+            divPrompt.style.backgroundColor = activate ? 'inherit' : '';
+            divPrompt.style.color = activate ? '#bbb' : '';
+            
+            if (activate) {
                 divPrompt.removeAttribute('draggable');
-
-                // Set the background and text color to match original, remove inherited text decoration
-                const style = divPrompt.style;
-                style.cursor = 'text';
-                style.backgroundColor = 'inherit';
-                style.color = '#bbb';
-                style.textDecoration = 'none';
-                style.outline = 'none';
-                style.border = 'none';
-
+                divPrompt.style.textDecoration = 'none';
+                divPrompt.style.outline = 'none';
+                divPrompt.style.border = 'none';
                 divPrompt.focus();
                 On.keydown(divPrompt, handleKeyDown);
-
-                On.dragstart(divPrompt, (e)=>false ); // Make non-draggable
-            } else { // leaving edit mode
-                divPrompt.classList.remove('editing');
-                divPrompt.contentEditable = false;
-
-                const style = divPrompt.style;
-                style.backgroundColor = '';
-                style.color = '';
-                style.cursor = "move";
-
+                On.dragstart(divPrompt, () => false);
+            } else {
                 makeDivDraggable(divPrompt, 'Prompt');
-                On.dragstart(divPrompt, (e)=>(isEditing ? false : null) );
+                On.dragstart(divPrompt, () => isEditing ? false : null);
                 Off.keydown(divPrompt, handleKeyDown);
             }
-        }
+        };
 
-        On.blur(divPrompt, onBlur);
-        On.dblclick(divPrompt, onDblClick);
+        divPrompt.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+        On.blur(divPrompt, () => isEditing && toggleEditMode(false));
+        On.dblclick(divPrompt, (e) => toggleEditMode(!isEditing, e));
     }
-
+    
     setupCodeBlock(divCodeBlock) {
-        // Query necessary child elements within divCodeBlock
         const divLanguageLabel = divCodeBlock.querySelector('.language-label');
         const copyButton = divCodeBlock.querySelector('.copy-btn');
         const decodedContent = divCodeBlock.querySelector('.code-block');
-
-        // Apply logic specific to code block div
+    
         makeDivDraggable(divCodeBlock, 'Code Block', divLanguageLabel);
-
-        On.click(copyButton, (e)=>{
+    
+        On.click(copyButton, () => {
             const textarea = Html.new.textarea();
-            textarea.value = decodedContent;
+            textarea.value = decodedContent.textContent;
             document.body.appendChild(textarea);
             textarea.select();
-
+        
             if (document.execCommand('copy')) {
                 copyButton.innerText = "Copied!";
-                function revert(){ copyButton.innerText = "Copy" }
-                Promise.delay(1200).then(revert);
+                Promise.delay(1200).then(() => copyButton.innerText = "Copy");
             }
-
             document.body.removeChild(textarea);
         });
-
-        On.mouseover(divCodeBlock, (e)=>{
+        
+    
+        On.mouseover(divCodeBlock, (e) => {
             if (e.target === divLanguageLabel || e.target === copyButton) {
                 divCodeBlock.classList.add('hovered');
             }
         });
-        On.mouseout(divCodeBlock, (e)=>{
+        
+        On.mouseout(divCodeBlock, (e) => {
             if (e.target === divLanguageLabel || e.target === copyButton) {
                 divCodeBlock.classList.remove('hovered');
             }
         });
     }
-
+    
     removeLastResponse() {
-        // Handling the div as per the new version
+        // Handle div removal
         const prompts = this.node.aiResponseDiv.querySelectorAll('.user-prompt');
         const lastPrompt = prompts[prompts.length - 1];
         const lastPromptId = lastPrompt ? lastPrompt.id : null;
-
+    
         if (lastPrompt) {
-            // Remove everything after the last 'user-prompt' div
             while (this.node.aiResponseDiv.lastChild !== lastPrompt.parentNode) {
                 this.node.aiResponseDiv.removeChild(this.node.aiResponseDiv.lastChild);
             }
-            // Remove the last 'user-prompt' div itself
             this.node.aiResponseDiv.removeChild(lastPrompt.parentNode);
         }
-
-        // Handling the textarea as per the old version
+    
+        // Handle textarea content
         const lines = this.node.aiResponseTextArea.value.split('\n');
-
-        // Find the index of the last "Prompt:"
         let lastPromptIndex = lines.length - 1;
-        while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(`${PROMPT_IDENTIFIER}`)) {
+        while (lastPromptIndex >= 0 && !lines[lastPromptIndex].startsWith(PROMPT_IDENTIFIER)) {
             lastPromptIndex -= 1;
         }
-
-        // Remove all lines from the last "Prompt:" to the end
+    
         if (lastPromptIndex >= 0) {
             lines.length = lastPromptIndex;
             this.node.aiResponseTextArea.value = lines.join('\n');
-            this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength here
+            this.previousContentLength = this.node.aiResponseTextArea.value.length;
         }
-
-        // Handle the case where a code block is being processed but is not yet complete
+    
+        // Reset code block state if needed
         if (this.inCodeBlock) {
-            // Reset properties related to code block
             this.inCodeBlock = false;
             this.codeBlockContent = '';
             this.codeBlockStartIndex = -1;
             this.currentLanguage = "javascript";
-
-            // Remove the partial code block from the div if present
+    
             const divCodeBlock = Elem.byId(`code-block-wrapper-${this.node.id}-${this.node.codeBlockCount}`);
             if (divCodeBlock) divCodeBlock.parentNode.removeChild(divCodeBlock);
-
-            // Remove the partial code block from the textarea
+    
             const codeBlockStartLine = this.node.aiResponseTextArea.value.lastIndexOf("```", this.previousContentLength);
             if (codeBlockStartLine >= 0) {
                 this.node.aiResponseTextArea.value = this.node.aiResponseTextArea.value.substring(0, codeBlockStartLine);
-                this.previousContentLength = this.node.aiResponseTextArea.value.length; // Update previousContentLength again
+                this.previousContentLength = this.node.aiResponseTextArea.value.length;
             }
         }
-
-        this.handleInput(); // Invoke handleInput here
+    
+        this.handleInput();
         return lastPromptId;
     }
-
+    
     removeResponsesUntil(id) {
         let lastRemovedId;
         do {

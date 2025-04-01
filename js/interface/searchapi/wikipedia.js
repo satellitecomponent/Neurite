@@ -46,14 +46,14 @@ async function calculateRelevanceScores(summaries, searchTermEmbedding) {
 Wikipedia.ctGetSummary = class {
     constructor(keyword, top_n_links){
         const encodedKeyword = encodeURIComponent(keyword);
-        this.url = `http://localhost:5000/wikipedia_summaries?keyword=${encodedKeyword}&top_n_links=${top_n_links}`;
+        this.url = `${Host.baseUrl}/wikisearch/wikipedia_summaries?keyword=${encodedKeyword}&top_n_links=${top_n_links}`;
         this.keyword = keyword;
     }
     onResponse(res){ return res.json().then(this.onData) }
     onData = (data)=>Embeddings.fetch(this.keyword)
                      .then(calculateRelevanceScores.bind(null, data))
     onFailure(){
-        alert("Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running on localhost:5000. Localhosts can be found at the Github link in the ? tab.");
+        alert("Failed to fetch Wikipedia summaries. Please ensure your Wikipedia server is running. Localhosts can be found at the Github link in the ? tab.");
         return "Failed to fetch Wikipedia summaries:";
     }
 }
@@ -78,7 +78,12 @@ Wikipedia.getSummaries = async function(keywords, top_n_links = 3){
         combinedSummaries.push(...summaries.slice(1, top_n_links));
     }
     combinedSummaries.forEach(Wikipedia.displayResult);
-    return combinedSummaries;
+
+    return (!Array.isArray(combinedSummaries)) ? "Wiki Disabled"
+         : combinedSummaries
+            .filter( (s)=>(s?.title !== undefined && s?.summary !== undefined) )
+            .map( (s)=>(s.title + " (Relevance Score: " + s.relevanceScore.toFixed(2) + "): " + s.summary) )
+            .join("\n\n");
 }
 
 Wikipedia.displayResult = function(result){

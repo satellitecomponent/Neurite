@@ -11,5 +11,8 @@
   "author": "satelliteComponent",
   "license": "MIT",
   "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3",
+    "cors": "^2.8.5"
   }
 }

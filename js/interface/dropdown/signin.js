@@ -15,6 +15,7 @@ window.addEventListener('message', async function (event) {
 
         if (email) {
             updateSignInState(email);
+            neuritePanel.open();
         }
     } else if (event.data.type === 'stripe') {
         const paymentStatus = event.data.status;

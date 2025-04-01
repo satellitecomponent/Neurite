@@ -68,16 +68,15 @@ View.Code.prototype.requestFunctionCall = async function () {
     const event = new Event('input', { bubbles: true, cancelable: true });
     this.inputPrompt.dispatchEvent(event);
 
-    const neuralTelemetryPrompt = createTelemetryPrompt(neuralTelemetry, false);
     const messages = [
-        { role: "system", content: neuriteNeuralApiPrompt },
-        { role: "system", content: neuralTelemetryPrompt }
+        Message.system(Prompt.neuralApi()),
+        Message.system(Prompt.forTelemetry(App.telemetry, false))
     ];
 
     const maxContextSize = Elem.byId('max-context-size-slider').value;
     View.Code.trimMessages(messages, maxContextSize);
 
-    messages.push({ role: "user", content });
+    messages.push(Message.user(content));
 
     return this.getFunctionResponse(messages);
 }

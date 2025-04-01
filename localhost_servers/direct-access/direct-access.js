@@ -1,21 +1,9 @@
 // server.js
 
 const express = require('express');
-const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-
-// Enable CORS for all routes
-const corsOptions = {
-    origin: ['https://neurite.network', 'http://localhost:8080'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
-app.use(express.json()); // Middleware to parse JSON request bodies
 
 // Helper function to get MIME type based on file extension
 function getMimeType(extension) {
@@ -82,7 +70,7 @@ function getMimeType(extension) {
 }
 
 // API to navigate directories and get file structure
-app.get('/api/navigate', (req, res) => {
+app.get('/navigate', (req, res) => {
     const dirPath = req.query.path ? path.resolve(req.query.path) : path.resolve('/'); // Root directory by default
 
     fs.stat(dirPath, (err, stats) => {
@@ -106,7 +94,7 @@ app.get('/api/navigate', (req, res) => {
 });
 
 // API to stream file content (supports both text and binary files)
-app.get('/api/read-file', (req, res) => {
+app.get('/read-file', (req, res) => {
     const filePath = req.query.path ? path.resolve(req.query.path) : null;
 
     if (!filePath) {
@@ -136,8 +124,4 @@ app.get('/api/read-file', (req, res) => {
     });
 });
 
-// Start the server
-const PORT = 9099;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+module.exports = app;

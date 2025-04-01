@@ -11,7 +11,7 @@ class NodeView {
     static windowify(title, content, node, nscale_mult = 1, intrinsicScale = 1){
         const odiv = node.content;
         const div = Html.make.div('window');
-        const svg = Elem.byId('elements').children[0].cloneNode(true);
+        const svg = Elem.deepClone(Elem.byId('elements').children[0]);
         svg.setAttribute('class', 'button-container');
 
         const headerContainer = Html.make.div('header-container');
@@ -40,7 +40,7 @@ class NodeView {
         odiv.dataset.viewType = 'nodeViews';
         odiv.dataset.viewId = node.uuid;
 
-        node.scale = nscale_mult * (zoom.mag2() ** settings.zoomContentExp);
+        node.scale = nscale_mult * (Graph.zoom.mag2() ** settings.zoomContentExp);
         node.intrinsicScale = intrinsicScale;
         const view = node.view = new NodeView(node);
         view.buttons = svg;
@@ -80,7 +80,7 @@ class NodeView {
         let clickStartX, clickStartY;
 
         On.mousedown(windowDiv, (e)=>{
-            if (e.getModifierState(controls.altKey.value)) {
+            if (e.getModifierState(controls.controlKey.value)) {
                 // Record the starting position of the mouse only if the Alt key is held
                 clickStartX = e.clientX;
                 clickStartY = e.clientY;
@@ -88,7 +88,7 @@ class NodeView {
         });
 
         On.mouseup(windowDiv, (e)=>{
-            if (e.getModifierState(controls.altKey.value)) {
+            if (e.getModifierState(controls.controlKey.value)) {
                 const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
                 // Check if the mouse has moved more than a certain threshold
                 const dragThreshold = 10; // pixels
@@ -99,7 +99,7 @@ class NodeView {
         });
 
         On.mousedown(windowDiv, (e)=>{
-            autopilotSpeed = 0;
+            Autopilot.stop();
             dropdown.classList.add('no-select');
             Array.from(wrapperDivs).forEach(div => div.classList.add('no-select'));
         });
@@ -113,6 +113,23 @@ class NodeView {
             dropdown.classList.remove('no-select');
             Array.from(wrapperDivs).forEach(div => div.classList.remove('no-select'));
         });
+
+        On.dblclick(windowDiv, (e) => {
+            const isTextArea = e.target.tagName === 'TEXTAREA';
+            const isContentEditable = e.target.closest('[contenteditable="true"]');
+        
+            const isTextInteraction = isTextArea || isContentEditable;
+            const altHeld = e.getModifierState(controls.altKey.value);
+        
+            if (isTextInteraction && !altHeld) {
+                return; // Don’t toggle anchoring if inside text and Alt is not held
+            }
+        
+            node.anchor = node.pos;
+            node.anchorForce = 1 - node.anchorForce;
+            node.toggleWindowAnchored(node.anchorForce === 1);
+            e.stopPropagation();
+        });        
     }
 
     setTitleInputListeners(){
@@ -201,9 +218,7 @@ class NodeView {
         });
 
         ui(btnFs, () => {
-            node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.2);
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFitFrame(node).targetZoom_scaleBy(1.2).start();
             if (node.isTextNode) {
                 const nodeInfo = getZetNodeCMInstance(node);
                 nodeInfo.ui.scrollToTitle(node.getTitle());
@@ -365,25 +380,25 @@ class NodeView {
         style.maxWidth = 'fit-content';
         style.maxHeight = 'fit-content';
     }
-    
+
     observeContentResize(iframeWrapper, displayWrapper){
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 const { width, height } = entry.contentRect;
-    
+
                 const buttonsWrapper = this.div.querySelector(".buttons-wrapper");
                 if (!buttonsWrapper) continue;
-    
+
                 const buttonsHeight = buttonsWrapper.offsetHeight || 0;
                 const iframeHeight = Math.max(0, height - buttonsHeight - 50); // Subtract additional margin
-    
+
                 iframeWrapper.style.width = width + 'px';
                 iframeWrapper.style.height = iframeHeight + 'px';
                 displayWrapper.style.width = width + 'px';
                 displayWrapper.style.height = iframeHeight + 'px';
             }
         });
-    
+
         resizeObserver.observe(this.div);
     }
 

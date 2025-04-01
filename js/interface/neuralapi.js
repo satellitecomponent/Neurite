@@ -1,148 +1,150 @@
 // If funcUpdate depends on requestAnimationFrame, duration should be positive.
 Promise.forAnimation = function(name, duration, funcUpdate, funcIsComplete){
-    return (new Animation(duration, funcUpdate, funcIsComplete))
-    .executeProm(name)
+    return (new Animation(duration))
+        .setFuncs(funcUpdate, funcIsComplete)
+        .executeProm(name)
 }
 
 class Animation {
     static activeCount = 0;
     funcEase = easeInOutCubic;
+    funcIsComplete = Animation.onDurationCompleted;
+    funcUpdate = Animation.interpolateZoomAndPan;
     name = "unnamed";
-    reject = Function.nop;
-    resolve = Function.nop;
+
+    startPan = Graph.pan;
     startTime = Date.now();
     // startValue = 0;
+    startZoom = Graph.zoom;
+
+    endPan = null;
     // endValue = 1;
-    constructor(duration, funcUpdate, funcIsComplete){
-        this.duration = duration;
-        this.funcUpdate = funcUpdate;
+    endZoom = null;
+
+    constructor(duration){ this.duration = duration }
+    setFuncs(funcUpdate, funcIsComplete){
+        this.funcUpdate = funcUpdate || Animation.interpolateZoomAndPan;
         this.funcIsComplete = funcIsComplete || Animation.onDurationCompleted;
-
-        this.setParams();
+        return this;
     }
-    static interpolateZoomAndPan(t){
-        pan = interpolateVec2(this.startPan, this.endPan, t);
-        if (this.endZoom !== null) {
-            zoom = linterpolateVec2(this.startZoom.clog(), this.endZoom.clog(), t).cexp();
-            if (this.rotationAngle !== null) {
-                const currentRotation = interpolate(this.startRotation, this.endRotation, t);
-                const r = new vec2(Math.cos(currentRotation), Math.sin(currentRotation));
-                zoom = zoom.cmult(r);
 
-                const pivot = toZ(new vec2(this.pivotX, this.pivotY));
-                const zc = pivot.minus(pan);
-                pan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
+    static interpolateZoomAndPan(t){
+        Graph.pan_set(Interpolation.forVec2(this.startPan, this.endPan, t));
+        if (this.endZoom !== null) {
+            Graph.zoom_set(Interpolation.forVec2Log(this.startZoom.clog(), this.endZoom.clog(), t).cexp());
+            if (this.rotationAngle !== null) {
+                const curRotation = Interpolation.forNums(this.startRotation, this.endRotation, t);
+                const r = new vec2(Math.cos(curRotation), Math.sin(curRotation));
+                const pivot = Graph.xyToZ(this.pivotX, this.pivotY);
+                const zc = pivot.minus(Graph.pan);
+                Graph.zoom_cmultWith(r)
+                    .pan_incBy(zc.cmult(new vec2(1, 0).minus(r)));
             }
         }
-        Svg.updateViewbox(pan, zoom);
+        Svg.updateViewbox(Graph.pan, Graph.zoom);
     }
     static onDurationCompleted(progress){ return progress >= 1 }
-    onStep = ()=>{
+
+    #onStep = ()=>{
         let res;
         const progress = Math.min((Date.now() - this.startTime) / this.duration, 1);
         try {
             res = this.funcUpdate.call(this, this.funcEase(progress));
         } catch (err) {
-            if (!this.reject) throw(err);
+            if (!this.#reject) throw(err);
 
-            return this.onError(err);
+            return this.#onError(err);
         }
         if (!this.funcIsComplete(progress)) {
-            requestAnimationFrame(this.onStep);
+            requestAnimationFrame(this.#onStep);
             return;
         }
-        if (!this.resolve) return;
+        if (!this.#resolve) return;
 
-        this.onComplete(res);
+        this.#onComplete(res);
     }
-    onComplete(res){
+    #onComplete = (res)=>{
         Animation.activeCount -= 1;
         Logger.info(this.name, "completed, left:", Animation.activeCount);
-        this.resolve(res);
+        this.#resolve(res);
     }
-    onError(err){
+    #onError = (err)=>{
         Animation.activeCount -= 1;
         Logger.err("In", this.name, "animation:", err);
-        this.reject(err);
+        this.#reject(err);
     }
-    execute(){ requestAnimationFrame(this.onStep) }
+
+    #reject = Function.nop;
+    #resolve = Function.nop;
+    execute(){ requestAnimationFrame(this.#onStep) }
     executeProm(name = "unnamed"){
         this.name = name;
-        return new Promise( (resolve, reject)=>{
-            this.resolve = resolve;
-            this.reject = reject;
-            Animation.activeCount += 1;
-            if (this.duration > 0) return this.execute();
-
-            const onError = this.onError.bind(this);
-            const onComplete = this.onComplete.bind(this);
-            this.funcUpdate().then(onComplete).catch(onError);
-        });
+        return new Promise(this.#exec);
     }
-    setParams(startPan, endPan, startZoom = null, endZoom = null, rotateParams){
-        this.startPan = startPan;
+    #exec = (resolve, reject)=>{
+        this.#resolve = resolve;
+        this.#reject = reject;
+        Animation.activeCount += 1;
+        if (this.duration > 0) return this.execute();
+
+        this.funcUpdate().then(this.#onComplete).catch(this.#onError);
+    }
+
+    setEndPanAndZoom(endPan, endZoom = null){
         this.endPan = endPan;
-        this.startZoom = startZoom;
         this.endZoom = endZoom;
+        return this;
+    }
+    setRotationParams(params){
+        this.rotationAngle = params.rotationAngle ?? null;
+        if (this.rotationAngle === null) return this;
 
-        const rotationAngle = this.rotationAngle = rotateParams?.rotationAngle ?? null;
-        if (rotationAngle !== null) {
-            this.startRotation = 0;
-            this.endRotation = rotationAngle * Math.PI / 180; // Convert degrees to radians
-            this.pivotX = rotateParams.pivotX ?? window.innerWidth / 2;
-            this.pivotY = rotateParams.pivotY ?? window.innerHeight / 2;
-        }
-
+        this.startRotation = 0;
+        this.endRotation = this.rotationAngle * Math.PI / 180; // Convert degrees to radians
+        this.pivotX = params.pivotX ?? window.innerWidth / 2;
+        this.pivotY = params.pivotY ?? window.innerHeight / 2;
         return this;
     }
 }
 
-function interpolate(startValue, endValue, t) {
-    return startValue + (endValue - startValue) * t;
+const Interpolation = {
+    forNums(numStart, numEnd, t){
+        return numStart + (numEnd - numStart) * t
+    },
+    forVec2(vecStart, vecEnd, t){
+        const x = this.forNums(vecStart.x, vecEnd.x, t);
+        const y = this.forNums(vecStart.y, vecEnd.y, t);
+        return new vec2(x, y);
+    },
+    forVec2Log(a, b, t){
+        return this.forVec2(a.clog(), b.clog(), t).cexp()
+    }
 }
-
-// Use logarithmic interpolate for zoom  (a,b,t) => interpolateVec2(a.clog(),b.clog(),t).cexp()
-function interpolateVec2(startVec, endVec, t) {
-    const x = interpolate(startVec.x, endVec.x, t);
-    const y = interpolate(startVec.y, endVec.y, t);
-    return new vec2(x, y);
-}
-
-const linterpolateVec2 = (a, b, t) => interpolateVec2(a.clog(), b.clog(), t).cexp()
-
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 
 
-function neuriteZoom(zoomFactor, targetX = window.innerWidth / 2, targetY = window.innerHeight / 2, duration = 1000) {
+Animation.zoom = function(zoomFactor, targetX = window.innerWidth / 2, targetY = window.innerHeight / 2, duration = 1000){
     const inverseFactor = 1 / zoomFactor;
-    const dest = toZ(new vec2(targetX, targetY));
-    const endPan = dest.scale(1 - inverseFactor).plus(pan.scale(inverseFactor));
-    const endZoom = zoom.scale(inverseFactor);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom).execute();
+    const dest = Graph.xyToZ(targetX, targetY);
+    const endPan = dest.scale(1 - inverseFactor).plus(Graph.pan.scale(inverseFactor));
+    const endZoom = Graph.zoom.scale(inverseFactor);
+    (new Animation(duration)).setEndPanAndZoom(endPan, endZoom).execute();
 }
-
-function neuritePan(deltaX, deltaY, duration = 1000) {
+Animation.pan = function(deltaX, deltaY, duration = 1000){
     const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-    const endPan = pan.plus(dp);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-    .setParams(pan, endPan).execute();
+    const endPan = Graph.pan.plus(dp);
+    (new Animation(duration)).setEndPanAndZoom(endPan).execute();
 }
-
-function neuriteRotate(rotationAngle, pivotX, pivotY, duration = 1000) {
-    const p = toZ(new vec2(pivotX, pivotY));
-    const zc = p.minus(pan);
+Animation.rotate = function(rotationAngle, pivotX, pivotY, duration = 1000){
+    const p = Graph.xyToZ(pivotX, pivotY);
+    const zc = p.minus(Graph.pan);
     const r = new vec2(Math.cos(rotationAngle), Math.sin(rotationAngle));
-    const endPan = pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
-    const endZoom = zoom.cmult(r);
-
-    (new Animation(duration, Animation.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom).execute();
+    const endPan = Graph.pan.plus(zc.cmult(new vec2(1, 0).minus(r)));
+    const endZoom = Graph.zoom.cmult(r);
+    (new Animation(duration)).setEndPanAndZoom(endPan, endZoom).execute();
 }
 
 const defaultMovements = {
@@ -158,43 +160,41 @@ const defaultMovements = {
     // Add more default movements as needed
 };
 
-function neuriteMovement(movementTypes = [], customZoomParams = {}, customPanParams = {}, customRotateParams = {}, customDuration = 1000) {
-    // Ensure movementTypes is always treated as an array
-    if (!Array.isArray(movementTypes)) {
-        movementTypes = [movementTypes]; // Convert to array if it's not already
+Animation.movement = function(movements = [], cz = {}, cp = {}, cr = {}, d = 1000){
+    movements = [].concat(movements);
+    const { z, p, r, duration } = movements.reduce(
+        (acc, m)=>{
+            const def = defaultMovements[m] || {};
+            if (def.zoomParams) Object.assign(acc.z, def.zoomParams);
+            if (def.panParams) Object.assign(acc.p, def.panParams);
+            if (def.rotateParams?.rotationAngle !== undefined) Object.assign(acc.r, def.rotateParams);
+            acc.duration = def.duration || acc.duration;
+            return acc;
+        },
+        { z: {}, p: {}, r: {}, duration: d }
+    );
+    Object.assign(z, cz);
+    Object.assign(p, cp);
+    Object.assign(r, cr);
+
+    let endPan = (Object.keys(p).length < 1) ? Graph.pan
+        : Graph.pan.plus(toDZ(new vec2(p.deltaX || 0, p.deltaY || 0).scale(settings.panSpeed)));
+    let endZoom = Graph.zoom;
+    const zoomFactor = z.zoomFactor;
+    if (zoomFactor !== undefined && zoomFactor !== 1) {
+        const zoomX = z.zoomX ?? window.innerWidth / 2;
+        const zoomY = z.zoomY ?? window.innerHeight / 2;
+        endPan = Graph.xyToZ(zoomX, zoomY)
+            .scale(1 - zoomFactor)
+            .plus(endPan.scale(zoomFactor));
+        endZoom = Graph.zoom.scale(zoomFactor);
     }
 
-    let combinedZoomParams = {};
-    let combinedPanParams = {};
-    let combinedRotateParams = {};
-    let duration = customDuration;
-
-    // Combine defaults from each movement type
-    movementTypes.forEach(movementType => {
-        if (defaultMovements[movementType]) {
-            combinedZoomParams = { ...defaultMovements[movementType].zoomParams, ...combinedZoomParams };
-            combinedPanParams = { ...defaultMovements[movementType].panParams, ...combinedPanParams };
-            combinedRotateParams = { ...defaultMovements[movementType].rotateParams, ...combinedRotateParams };
-            duration = defaultMovements[movementType].duration || duration;
-        }
-    });
-
-    // Override with custom parameters
-    combinedZoomParams = { ...combinedZoomParams, ...customZoomParams };
-    combinedPanParams = { ...combinedPanParams, ...customPanParams };
-    combinedRotateParams = { ...combinedRotateParams, ...customRotateParams };
-
-    const { zoomFactor = 0, zoomX = window.innerWidth / 2, zoomY = window.innerHeight / 2 } = combinedZoomParams;
-    const { deltaX = 0, deltaY = 0 } = combinedPanParams;
-    const destZoom = toZ(new vec2(zoomX, zoomY));
-    const endZoom = zoom.scale(zoomFactor + 1);
-    const dp = toDZ(new vec2(deltaX, deltaY).scale(settings.panSpeed));
-    const endPan = pan.plus(dp);
-
-    return (new Animation(duration, Animation.interpolateZoomAndPan))
-    .setParams(pan, endPan, zoom, endZoom, combinedRotateParams)
-    .executeProm("Movement");
-}
+    return (new Animation(duration))
+        .setEndPanAndZoom(endPan, endZoom)
+        .setRotationParams(r)
+        .executeProm("Movement");
+  }
 
 /*
 panTo = new vec2(0, 0); //this.pos;
@@ -203,7 +203,7 @@ zoomTo = zoom.unscale(gz ** 0.5);
 autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
-function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed = 0.1) {
+Animation.goToCoords = function(zoomMagnitude, panReal, panImaginary, speed = 0.1){
     let animate = true;
 
     const newZoomMagnitude = parseFloat(zoomMagnitude);
@@ -213,72 +213,61 @@ function neuriteSetMandelbrotCoords(zoomMagnitude, panReal, panImaginary, speed 
     if (!animate) { // Resolve immediately
         // Directly set the new zoom and pan values
         if (newZoomMagnitude !== 0) {
-            zoom = zoom.scale(newZoomMagnitude / zoom.mag());
+            Graph.zoom_scaleBy(newZoomMagnitude / Graph.zoom.mag())
         }
-        pan = new vec2(newPanReal, newPanImaginary);
+        Graph.pan_set(new vec2(newPanReal, newPanImaginary));
         return Promise.resolve();
     }
 
-    const targetZoom = zoom.scale(newZoomMagnitude / zoom.mag());
+    const targetZoom = Graph.zoom.scale(newZoomMagnitude / Graph.zoom.mag());
     const targetPan = new vec2(newPanReal, newPanImaginary);
-    return (new Animation.SetCoords(targetPan, targetZoom, speed)).promise();
+    return (new Animation.GoToCoords(targetPan, targetZoom, speed)).promise();
 }
-Animation.SetCoords = class {
+Animation.GoToCoords = class {
     constructor(targetPan, targetZoom, speed){
         this.targetPan = targetPan;
         this.targetZoom = targetZoom;
         this.speed = speed;
     }
     promise(){
-        const speed = this.speed;
-        autopilotSpeed = (speed > 1 ? settings.autopilotSpeed : speed);
-        autopilotReferenceFrame = undefined;
-
+        Autopilot.setNode().start(this.speed > 1 ? undefined : this.speed);
         return Promise.forAnimation("Set Coords", 1, this.update, this.isComplete) // positive duration
-        .finally(resetAutopilot);
+            .finally(Autopilot.reset);
     }
     update = (t)=>{
         // Regular animation steps
         const targetZoom = this.targetZoom;
-        const currentZoom = zoom.mag();
+        const currentZoom = Graph.zoom.mag();
         const stepZoom = currentZoom + (targetZoom.mag() - currentZoom) * t;
 
         // Ensure zoom does not undershoot or overshoot
-        if (Math.abs(stepZoom - targetZoom.mag()) < autopilotThreshold) {
-            zoomTo = targetZoom;
+        if (Math.abs(stepZoom - targetZoom.mag()) < Autopilot.threshold) {
+            Autopilot.targetZoom = targetZoom
         } else {
-            zoomTo = zoom.scale(stepZoom / currentZoom);
+            Autopilot.targetZoom = Graph.zoom.scale(stepZoom / currentZoom)
         }
 
+        const pan = Graph.pan;
         const stepPanX = pan.x + (this.targetPan.x - pan.x) * t;
         const stepPanY = pan.y + (this.targetPan.y - pan.y) * t;
-        panTo = new vec2(stepPanX, stepPanY);
+        Autopilot.targetPan = new vec2(stepPanX, stepPanY);
     }
     isComplete = ()=>{
-        if (autopilotSpeed === 0) {
+        if (!Autopilot.isMoving()) {
             Logger.info("Animation interrupted by user interaction.");
             return true;
         }
 
-        const res = zoom.closeEnough(this.targetZoom, autopilotThreshold)
-                 && pan.closeEnough(this.targetPan, autopilotThreshold);
+        const res = Autopilot.vectorsCloseEnough(Graph.zoom, this.targetZoom)
+                 && Autopilot.vectorsCloseEnough(Graph.pan, this.targetPan);
         if (res) { // If close-enough, equate them
-            pan = this.targetPan;
-            zoom = this.targetZoom;
+            Graph.pan_set(this.targetPan).zoom_set(this.targetZoom)
         }
         return res;
     }
 }
 
-const autopilotThreshold = 0.000001; // Define a suitable threshold
-
-// Helper function to check if two vectors are close enough (within a threshold)
-vec2.prototype.closeEnough = function (target, autopilotThreshold) {
-    return this.minus(target).mag() < autopilotThreshold;
-};
-
-
-function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
+Animation.zoomToNodeTitle = function(nodeOrTitle, zoomLevel = 1.0, delay){
     let node;
     if (typeof nodeOrTitle === 'object' && nodeOrTitle !== null) {
         node = nodeOrTitle
@@ -291,23 +280,23 @@ function neuriteZoomToNodeTitle(nodeOrTitle, zoomLevel = 1.0) {
         return Promise.resolve();
     }
 
-    return (new Animation.ZoomToNode(node)).promise();
+    return (new Animation.ZoomToNode(node, delay)).promise();
 }
 Animation.ZoomToNode = class {
-    constructor(node){ this.node = node }
+    constructor(node, delay = 3000){ // 3 secs
+        this.delay = delay;
+        this.node = node;
+    }
     launch(){
-        const bb = this.node.content.getBoundingClientRect();
-        if (bb && bb.width > 0 && bb.height > 0) {
-            this.node.zoom_to_fit();
-            zoomTo = zoomTo.scale(1.5);
+        if (this.node.hasBoundingRectangle()) {
+            Autopilot.zoomToFitFrame(this.node).targetZoom_scaleBy(1.5).start()
         } else {
-            this.node.zoom_to(0.5);
+            Autopilot.zoomToFrame(this.node, 0.5).start()
         }
-        autopilotSpeed = settings.autopilotSpeed;
     }
     finish(){
         clearInterval(this.#idInterval);
-        resetAutopilot();
+        Autopilot.reset();
         this.#resolve(this.node);
     }
     promise(){ return Promise.forAnimation("Zoom to Node", 0, this.run) }
@@ -316,26 +305,26 @@ Animation.ZoomToNode = class {
     #idInterval = 0;
     #resolve = Function.nop;
     #onCheck = ()=>{
-        if (autopilotSpeed !== 0) return;
+        if (Autopilot.isMoving()) return;
 
         Logger.info("Animation interrupted by user interaction.");
         this.finish();
     }
     #onTimeout = ()=>{
-        if (autopilotSpeed !== 0) Logger.debug("Animation completed normally.");
+        if (Autopilot.isMoving()) Logger.debug("Animation completed normally.");
         this.finish();
     }
     #runExec = (resolve)=>{
         this.#resolve = resolve;
         this.launch();
         this.#idInterval = setInterval(this.#onCheck, 100); // every 100 msecs
-        Promise.delay(3000).then(this.#onTimeout); // after 3 secs
+        Promise.delay(this.delay).then(this.#onTimeout);
     }
 }
 
-async function neuriteSearchNotes(searchTerm, maxNodesOverride) {
+Graph.prototype.searchNotes = async function(searchTerm, maxNodesOverride){
     Graph.forEachNode(clearSearchHighlight);
-    const matchedPartialNodes = await embeddedSearch(searchTerm, maxNodesOverride);
+    const matchedPartialNodes = await Embeddings.search(searchTerm, maxNodesOverride);
 
     const fullMatchedNodes = [];
     for (const partialNode of matchedPartialNodes) {
@@ -350,44 +339,39 @@ async function neuriteSearchNotes(searchTerm, maxNodesOverride) {
     return fullMatchedNodes;
 }
 
-function neuriteSearchAndZoom(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000) {
+Animation.searchAndZoom = function(searchTerm, maxNodesOverride = null, zoomLevel = 1.0, delayBetweenNodes = 2000){
     return Promise.forAnimation("Search and Zoom", 0, async ()=>{
-        // Search for nodes based on the searchTerm
-        const matchedNodes = await neuriteSearchNotes(searchTerm, maxNodesOverride);
-
-        // Loop through each matched node and zoom to it
+        const matchedNodes = await Graph.searchNotes(searchTerm, maxNodesOverride);
         for (const node of matchedNodes) {
-            await neuriteZoomToNodeTitle(node, zoomLevel);
+            await Animation.zoomToNodeTitle(node, zoomLevel);
             await Promise.delay(delayBetweenNodes);
         }
     })
 }
-// Example usage
-// neuriteSearchAndZoom("desired search term", null, 1.0, 3000);
-
-function neuriteResetView(animate = true, duration = 2000) {
+Animation.resetView = function(animate = true, duration = 2000){
     const defaultZoomMagnitude = 1.3;
+    const defaultZoom = Graph.zoom.scale(defaultZoomMagnitude / Graph.zoom.mag());
+
     const defaultPanReal = -0.3;
     const defaultPanImaginary = 0;
-    const defaultZoom = zoom.scale(defaultZoomMagnitude / zoom.mag());
     const defaultPan = new vec2(defaultPanReal, defaultPanImaginary);
 
     if (!animate) { // Resolve immediately
-        zoom = defaultZoom;
-        pan = defaultPan;
+        Graph.zoom_set(defaultZoom).pan_set(defaultPan);
         return Promise.resolve();
     }
 
     return Promise.forAnimation("Reset View", duration, (t)=>{
-        zoom = interpolateVec2(zoom, defaultZoom, t);
-        pan = interpolateVec2(pan, defaultPan, t);
+        Graph.zoom_set(Interpolation.forVec2(Graph.zoom, defaultZoom, t))
+            .pan_set(Interpolation.forVec2(Graph.pan, defaultPan, t))
     });
 }
-function neuriteGetMandelbrotCoords(forFunctionCall = false) {
+
+Graph.prototype.getCoords = function(forFunctionCall = false){
     // Extract and format zoom and pan values
-    const zoomValue = zoom.x.toExponential();
-    const panReal = pan.x.toExponential();
-    const panImaginary = pan.y.toExponential();
+    const zoomValue = this.zoom.x.toExponential();
+    const panReal = this.pan.x.toExponential();
+    const panImaginary = this.pan.y.toExponential();
 
     if (forFunctionCall) {
         // Format for setMandelbrotCoords function call
@@ -433,10 +417,6 @@ function shuffleArray(array) {
     return array;
 }
 
-function neuriteDelay(delay) {
-    return Promise.delay(delay)
-}
-
 // Verbose Schema
 async function neuriteAnimationQueue(animations) {
     for (const animation of animations) {
@@ -449,7 +429,7 @@ async function neuriteAnimationQueue(animations) {
 }
 
 // Enchanced to reduce size of request format.
-function neuriteQueueAnimations(animations) {
+Animation.queueAnimations = function(animations){
     const transformedAnimations = animations.map(animation => {
         if (!Array.isArray(animation[1])) {
             animation[1] = [animation[1]]; // Wrap single argument into an array
@@ -465,7 +445,7 @@ function neuriteQueueAnimations(animations) {
     const processQueue = neuriteAnimationQueue.bind(null, transformedAnimations);
     return Promise.forAnimation("Queue Animations", 0, processQueue);
 }
-Animation.waitForAllActive = class {
+Animation.WaitForAllActive = class {
     constructor(additionalDelay = 0){ this.additionalDelay = additionalDelay }
     promise(){ return new Promise(this.#exec) }
 
@@ -490,94 +470,72 @@ Animation.waitForAllActive = class {
     }
 }
 
-function neuriteCaptureScreenshot() {
+Recorder.captureScreenshot = function(){
     if (window.startedViaPlaywright) {
         // Playwright controlled session, use fetch to request screenshot
-        fetch('http://localhost:8081/screenshot')
+        fetch(Host.urlForPath('/automation/screenshot'))
             .then(response => response.text())
             .then(base64Image => {
                 // Create an image element from the base64 data
                 const img = new Image();
                 img.src = `data:image/png;base64,${base64Image}`;
-
-                // Create and add the image node
-                createImageNode(img, 'Screenshot', false); // false because it's not a direct URL
+                NodeView.addForImage(img, 'Screenshot');
             })
-            .catch(Logger.err.bind(Logger));
+            .catch(Logger.err.bind(Logger))
     } else {
         // Regular session, use existing screenshot mechanism
-        captureScreenshot();
+        Recorder.captureScreenToImage()
     }
 }
-On.click(Elem.byId('screenshotButton'), neuriteCaptureScreenshot);
+On.click(Elem.byId('screenshotButton'), Recorder.captureScreenshot);
 
-async function neuriteReturnScreenshot() {
-    return new Promise(async (resolve, reject) => {
-        if (window.startedViaPlaywright) {
-            // Playwright controlled session, use fetch to request screenshot
-            fetch('http://localhost:8081/screenshot')
-                .then(response => response.text())
-                .then(base64Image => {
-                    resolve("data:image/png;base64," + base64Image);
-                })
-                .catch(err => {
-                    Logger.err(err);
-                    reject(err);
-                });
-        } else {
-            // If not in a Playwright session, use captureScreenToBase64
-            try {
-                const base64Image = await captureScreenToBase64();
-                resolve(base64Image);
-            } catch (err) {
+Recorder.returnScreenshot = function(){
+    if (window.startedViaPlaywright) {
+        // Playwright controlled session, use fetch to request screenshot
+        return fetch(Host.urlForPath('/automation/screenshot'))
+            .then( (response)=>response.text() )
+            .then( (base64Image)=>("data:image/png;base64," + base64Image) )
+            .catch( (err)=>{
+                Logger.err(err);
+                return Promise.reject(err);
+            })
+    } else {
+        // If not in a Playwright session, use captureScreenToBase64
+        return Recorder.captureScreenToBase64()
+            .catch( (err)=>{
                 Logger.err("In capturing display:", err);
-                reject(err);
-            }
-        }
-    });
+                return Promise.reject(err);
+            })
+    }
 }
 
-async function neuriteCallMovementAi(movementIntention, totalIterations = 1, currentIteration = 0) {
+Animation.movementAi = async function(movementIntention, totalIterations = 1, currentIteration = 0){
     if (currentIteration >= totalIterations) return;
 
-    const screenshotBase64 = await neuriteReturnScreenshot();
+    const screenshotBase64 = await Recorder.returnScreenshot();
     if (!screenshotBase64) {
         Logger.info("Not in a Playwright session or unable to capture screenshot.");
         return;
     }
 
     const messages = [
-        {
-            role: 'system',
-            content: neuriteNeuralVisionPrompt
-        },
-        {
-            role: 'system',
-            content: createTelemetryPrompt(neuralTelemetry, true) //set vision model to true
-        },
-        {
-            role: 'user',
-            content: [
-                {
-                    type: 'image_url',
-                    image_url: screenshotBase64 // PNG format is already included in the return value
-                }
-            ]
-        },
-        {
-            role: 'user',
-            content: movementIntention
-        }
+        Message.system(Prompt.vision()),
+        Message.system(Prompt.forTelemetry(App.telemetry, true)), // true for vision
+        Message.user([{
+            type: 'image_url',
+            image_url: screenshotBase64 // PNG format is already included in the return value
+        }]),
+        Message.user(movementIntention)
     ];
 
     try {
         await App.viewCode.callVisionModel(messages, async ()=>{
             App.viewCode.runCode(true); // Run code with increment and decrement of activeAnimations.
 
-            await (new Animation.waitForAllActive).promise();
+            await (new Animation.WaitForAllActive).promise();
             Logger.info("awaited");
             // Recursive call for the next iteration
-            await neuriteCallMovementAi(movementIntention, totalIterations, currentIteration + 1);
+            await Animation.movementAi(movementIntention, totalIterations, currentIteration + 1);
         });
     } catch (err) {
         Logger.err("In API call:", err);
@@ -597,7 +555,7 @@ function resolveAiMessageIfAppropriate(response, isError = false) {
     }
 }
 
-function neuritePromptZettelkasten(message) {
+Animation.promptZettelkasten = function(message){
     const promptTextArea = Elem.byId('prompt');
     if (!promptTextArea) {
         Logger.err("Prompt textarea not found.");
@@ -628,53 +586,47 @@ function neuritePromptZettelkasten(message) {
     });
 }
 
-async function neuriteGetUserResponse(message) {
-    try {
-        const response = await window.prompt(message); // Assuming window.prompt() is now async
-        return response;
-    } catch (error) {
-        Logger.err("Failed to get user response:", error);
-        return null; // Handle error gracefully
-    }
+function getUserInput(message){
+    return window.prompt(message)
+        .catch(Logger.err.bind(Logger, "Failed to get user response:"))
 }
 
-function neuriteAddNote(nodeTitle, nodeText) {
-    const formattedTitle = neuriteGetUniqueNodeTitle(nodeTitle.replace(/\n/g, ' '));
+Animation.addNote = function(nodeTitle, nodeText){
+    const instanceInfo = getActiveZetCMInstanceInfo();
+    if (!instanceInfo) {
+        Logger.warn("No active Zettelkasten instance found.");
+        return;
+    }
 
+    const { cm, ui, paneId, zettelkastenProcessor } = instanceInfo;
+
+    const formattedTitle = getUniqueNodeTitle(nodeTitle.replace(/\n/g, ' '));
     const contentToAdd = Tag.node + ' ' + formattedTitle + '\n' + (nodeText ?? '');
-    const codeMirror = window.currentActiveZettelkastenMirror;
 
-    const lastLine = codeMirror.lastLine();
-    const lastLineText = codeMirror.getLine(lastLine);
+    // Enable random node placement
+    zettelkastenProcessor.placementStrategy.zetPlacementOverride = true;
+
+    const lastLine = cm.lastLine();
+    const lastLineText = cm.getLine(lastLine);
 
     let newLinesToAdd = '';
     if (lastLineText !== '') {
         newLinesToAdd = '\n\n';
-    } else if (codeMirror.getLine(lastLine - 1) !== '') {
+    } else if (cm.getLine(lastLine - 1) !== '') {
         newLinesToAdd = '\n';
     }
 
     const position = { line: lastLine, ch: lastLineText.length };
     processAll = true;
-    codeMirror.replaceRange(newLinesToAdd + contentToAdd, position);
+    cm.replaceRange(newLinesToAdd + contentToAdd, position);
     processAll = false;
 
-    ui = getZetNodeCMInstance(nodeTitle).ui;
     const node = ui.scrollToTitle(formattedTitle);
-
-    return Promise.forAnimation("Add Note", 0,
-        ()=>Promise.delay(300).then( ()=>node )
-    );
-}
-
-function neuriteGetUniqueNodeTitle(baseTitle) {
-    let counter = 2;
-    let uniqueTitle = baseTitle;
-    while (nodeTitles.has(uniqueTitle)) {
-        uniqueTitle = baseTitle + '(' + counter + `)`;
-        counter += 1;
-    }
-    return uniqueTitle;
+    return Promise.forAnimation("Add Note", 0, ()=>{
+        // Return to use of placement strategy
+        zettelkastenProcessor.placementStrategy.zetPlacementOverride = false;
+        return Promise.resolve(node);
+    });
 }
 
 const functionRegistry = {};
@@ -701,62 +653,62 @@ function initializeFunctionMappings() {
 registerFunctions([
     {
         baseFunctionName: 'neuriteAddNote',
-        baseFunction: neuriteAddNote,
+        baseFunction: Animation.addNote,
         alternateNames: ['addNote', 'createNote', 'zettelkastenAddNote', `promptNote`]
     },
     {
         baseFunctionName: 'neuritePromptZettelkasten',
-        baseFunction: neuritePromptZettelkasten,
+        baseFunction: Animation.promptZettelkasten,
         alternateNames: ['promptZettelkasten', 'zettelkastenPrompt', 'promptZettelkastenAi', 'callZettelkastenAi', `zettelkastenAi`]
     },
     {
         baseFunctionName: 'neuriteGetUserResponse',
-        baseFunction: neuriteGetUserResponse,
+        baseFunction: getUserInput,
         alternateNames: ['getUserResponse', 'promptUser', 'requestUserResponse']
     },
     {
         baseFunctionName: 'neuriteZoomToNodeTitle',
-        baseFunction: neuriteZoomToNodeTitle,
+        baseFunction: Animation.zoomToNodeTitle,
         alternateNames: ['zoomToNodeTitle', 'focusNode', 'zoomToNote', 'zoomToNoteByTitle', `zoomToNode`]
     },
     {
         baseFunctionName: 'neuriteCallMovementAi',
-        baseFunction: neuriteCallMovementAi,
+        baseFunction: Animation.movementAi,
         alternateNames: ['callMovementAi', 'promptMovementAi', 'initiateMovementAi']
     },
     {
         baseFunctionName: 'neuriteQueueAnimations',
-        baseFunction: neuriteQueueAnimations,
+        baseFunction: Animation.queueAnimations,
         alternateNames: ['queueAnimations', 'performSequence', 'neuritePerformSequence']
     },
     {
         baseFunctionName: 'neuriteResetView',
-        baseFunction: neuriteResetView,
+        baseFunction: Animation.resetView,
         alternateNames: ['resetView', 'returnToStart', 'reinitializeView']
     },
     {
         baseFunctionName: 'neuriteSetMandelbrotCoords',
-        baseFunction: neuriteSetMandelbrotCoords,
+        baseFunction: Animation.goToCoords,
         alternateNames: ['setMandelbrotCoords', 'updateMandelbrotPosition', 'mandelbrotCoords']
     },
     {
         baseFunctionName: 'neuriteMovement',
-        baseFunction: neuriteMovement,
+        baseFunction: Animation.movement,
         alternateNames: ['movement', 'startMovement', 'performMovement']
     },
     {
         baseFunctionName: 'neuriteDelay',
-        baseFunction: neuriteDelay,
+        baseFunction: Promise.delay,
         alternateNames: ['delay', 'setDelay']
     },
     {
         baseFunctionName: 'neuriteSearchNotes',
-        baseFunction: neuriteSearchNotes,
+        baseFunction: Graph.prototype.searchNotes,
         alternateNames: ['searchNotes', 'returnSearchedNodes', `searchNodes`]
     },
     {
         baseFunctionName: 'neuriteSearchAndZoom',
-        baseFunction: neuriteSearchAndZoom,
+        baseFunction: Animation.searchAndZoom,
         alternateNames: ['searchAndZoom', 'searchZoom', `zoomToRelevantNodes`]
     },
 ]);

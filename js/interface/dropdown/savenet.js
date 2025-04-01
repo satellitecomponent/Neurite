@@ -168,10 +168,10 @@
         });
 
         ['dragenter', 'dragover']
-        .forEach( (eName)=>On[eName](dropArea, this.#highlight) );
+            .forEach( (eName)=>On[eName](dropArea, this.#highlight) );
 
         ['dragleave', 'drop']
-        .forEach( (eName)=>On[eName](dropArea, this.#unhighlight) );
+            .forEach( (eName)=>On[eName](dropArea, this.#unhighlight) );
 
         On.drop(dropArea, this.#savedGraphsDrop);
     }
@@ -304,7 +304,7 @@
         const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
 
         // Get current Mandelbrot coords in a standard format
-        const mandelbrotParams = neuriteGetMandelbrotCoords();
+        const mandelbrotParams = Graph.getCoords();
         const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
 
         // Get the selected fractal type from localStorage
@@ -338,7 +338,8 @@
         const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
         if (mandelbrotSaveElement) {
             const mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
-            neuriteSetMandelbrotCoords(mandelbrotParams.zoom, mandelbrotParams.pan.split('+i')[0], mandelbrotParams.pan.split('+i')[1]); // Direct function call using parsed params
+            const pan = mandelbrotParams.pan.split('+i');
+            Animation.goToCoords(mandelbrotParams.zoom, pan[0], pan[1]); // Direct function call using parsed params
             mandelbrotSaveElement.remove();
         }
 
@@ -349,7 +350,7 @@
             if (fractalType) {
                 fractalSelectElement.value = fractalType;
                 Select.updateSelectedOption(fractalSelectElement);
-                updateJuliaDisplay(fractalType);
+                Fractal.updateJuliaDisplay(fractalType);
             }
             fractalTypeSaveElement.remove();
         }
@@ -403,11 +404,12 @@
             handleSave(existingTitle);  // Sync path
         } else {
             // Async prompt handling without making #save async
-            prompt("Enter a title for this save:").then((result) => {
-                const title = (result ?? "").trim();
-                if (!title) return;
-                handleSave(title);
-            }).catch(console.error);
+            prompt("Enter a title for this save:")
+                .then( (input)=>{
+                    const title = (input ?? "").trim();
+                    if (title) handleSave(title);
+                })
+                .catch(Logger.err)
         }
     }
 
@@ -510,9 +512,9 @@
 
     #loadStateFromFile(stateFromURL){ // in the /wiki/pages directory
         fetch(`/wiki/pages/neurite-wikis/${stateFromURL}.txt`)
-        .then(this.#onResponseFetched)
-        .then(this.#onResponseText)
-        .catch(this.#onResponseError)
+            .then(this.#onResponseFetched)
+            .then(this.#onResponseText)
+            .catch(this.#onResponseError)
     }
     #onResponseFetched = (res)=>{
         if (res.ok) return res.text();

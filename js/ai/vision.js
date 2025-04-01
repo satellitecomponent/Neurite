@@ -45,18 +45,18 @@ function calculateImageTokenCost(width, height, detailLevel) {
 // Converts a blob URL to a Base64 data URL using an Image and Canvas.
 function convertBlobUrlToBase64(blobUrl) {
     return new Promise((resolve, reject) => {
-        const imageElement = new Image();
+        const elemImage = new Image();
         // Uncomment the following if cross-origin issues are a concern.
-        // imageElement.crossOrigin = "Anonymous";
+        // elemImage.crossOrigin = "Anonymous";
 
-        imageElement.onload = () => {
+        elemImage.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = imageElement.naturalWidth;
-            canvas.height = imageElement.naturalHeight;
+            canvas.width = elemImage.naturalWidth;
+            canvas.height = elemImage.naturalHeight;
             const context = canvas.getContext('2d');
 
             try {
-                context.drawImage(imageElement, 0, 0);
+                context.drawImage(elemImage, 0, 0);
                 // Get Base64 encoded image as a data URL
                 const dataURL = canvas.toDataURL('image/png');
                 resolve(dataURL);
@@ -65,22 +65,16 @@ function convertBlobUrlToBase64(blobUrl) {
             }
         };
 
-        imageElement.onerror = (error) => {
-            reject(error);
-        };
-
-        imageElement.src = blobUrl;
+        elemImage.onerror = reject;
+        elemImage.src = blobUrl;
     });
 }
 
 async function getImageNodeData(node) {
     let imageUrl = node.imageData;
-
-    if (imageUrl.startsWith('data:image/')) return { type: 'image_url', image_url: { url: imageUrl } };
     if (imageUrl.startsWith('blob:')) imageUrl = await convertBlobUrlToBase64(imageUrl);
-    if (!imageUrl.startsWith('data:image')) imageUrl = `data:image/png;base64,${imageUrl}`;
-
-    return { type: 'image_url', image_url: { url: imageUrl } };
+    if (!imageUrl.startsWith('data:image/')) imageUrl = `data:image/png;base64,${imageUrl}`;
+    return imageUrl;
 }
 
 View.Code.prototype.callVisionModel = async function(messages, onStreamComplete){

@@ -51,13 +51,10 @@ function performZettelkastenSearch(searchTerm) {
         div.appendChild(title);
 
         function onClick(e){
-            this.zoom_to();
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFrame(this).start()
         }
         function onDblClick(e){
-            this.zoom_to();
-            skipAutopilot();
-            autopilotSpeed = settings.autopilotSpeed;
+            Autopilot.zoomToFrame(this).skip().start()
         }
         On.click(div, onClick.bind(node));
         On.dblclick(div, onDblClick.bind(node));
@@ -100,7 +97,6 @@ On.click(Elem.byId('vectorDbSearchButton'), (e)=>{
 async function performVectorDbDisplaySearch() {
     const searchQuery = Elem.byId('vectorDbSearchInput').value;
     const relevantKeys = Keys.getVisible(await Keys.getAll()); // Get filtered keys if any filters are applied
-
     const searchResultsContainer = Elem.byId('vectorDbSearchDisplay');
     searchResultsContainer.innerHTML = ''; // Clear previous search results
 
@@ -144,35 +140,35 @@ const MAX_CACHE_SIZE = 300;
 const nodeCache = new LRUCache(MAX_CACHE_SIZE);
 
 
-async function embeddedSearch(searchTerm, maxNodesOverride) {
+
+Embeddings.search = async function(searchTerm, maxNodesOverride){
     const searchTermLowered = searchTerm.toLowerCase();
     const maxNodes = maxNodesOverride ?? Elem.byId('node-count-slider').value;
     const keywords = searchTermLowered.split(/,\s*/);
 
-    const nodes = getNodeText();
+    const nodes = Object.values(Graph.nodes);
     if (nodes.length < 1) return [];
 
     const matched = [];
 
-    const fetchEmbeddings = Embeddings.fetch;
     async function fetchNodeEmbedding(node){
         const compoundKey = node.uuid + '-' + Embeddings.selectModel.value;
         const cachedEmbedding = nodeCache.get(compoundKey);
         if (cachedEmbedding) return cachedEmbedding;
 
-        const titleText = node.view.titleInput;
-        const contentText = node.contentText;
+        const titleText = node.getTitle() || '';
+        const contentText = node.getText() || '';
         Logger.debug("Extracted title text:", titleText);
         Logger.debug("Extracted content text:", contentText);
 
-        const embedding = await fetchEmbeddings(titleText + ' ' + contentText);
+        const embedding = await Embeddings.fetch(titleText + ' ' + contentText);
         nodeCache.set(compoundKey, embedding);
         return embedding;
     }
 
-    const searchTermEmbeddingPromise = fetchEmbeddings(searchTerm);
-    const nodeEmbeddingsPromises = nodes.map(fetchNodeEmbedding);
-    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([searchTermEmbeddingPromise, ...nodeEmbeddingsPromises]);
+    const promSearchTermEmbedding = Embeddings.fetch(searchTerm);
+    const promsNodeEmbeddings = nodes.map(fetchNodeEmbedding);
+    const [keywordEmbedding, ...nodeEmbeddings] = await Promise.all([promSearchTermEmbedding, ...promsNodeEmbeddings]);
 
     Logger.debug("Keyword Embedding:", keywordEmbedding);
     for (let i = 0; i < nodes.length; i++) {
@@ -186,7 +182,7 @@ async function embeddedSearch(searchTerm, maxNodesOverride) {
         // Updated to use new property names
         const contentMatchScore = keywords.filter(keyword => {
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            return node.contentText.match(regex);
+            return node.getText().match(regex);
         }).length;
 
         const weightedTitleScore = titleMatchScore * 10;

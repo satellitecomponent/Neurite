@@ -20,22 +20,26 @@ Ai.determineModel = function(node){
 
 // Function to check if Embed (Data) is enabled
 async function isEmbedEnabled(aiNode) {
-    let checkbox = null;
+    let checkboxChecked = false;
+    let hasLinkedConnections = false;
+
     if (aiNode) {
-        checkbox = aiNode.content.querySelector('#embed-checkbox-' + aiNode.index);
-        if (!checkbox) Logger.info("Data checkbox not found in the AI node");
+        const checkbox = aiNode.content.querySelector('#embed-checkbox-' + aiNode.index);
+        checkboxChecked = checkbox?.checked ?? false;
+
+        const allConnectedNodesData = await aiNode.getAllConnectedNodesData?.(true);
+        hasLinkedConnections = Array.isArray(allConnectedNodesData)
+            && allConnectedNodesData.some(info => info.data?.type === 'link');
     } else {
-        checkbox = Elem.byId('embed-checkbox');
+        const checkbox = Elem.byId('embed-checkbox');
+        checkboxChecked = checkbox?.checked ?? false;
     }
-    if (!checkbox?.checked) return;
+
+    if (!checkboxChecked && !hasLinkedConnections) return false;
 
     const allKeys = await Keys.getAll();
     const visibleKeys = Keys.getVisible(allKeys);
-    if (visibleKeys.length > 0) {
-        return visibleKeys;
-    } else {
-        return false;
-    }
+    return visibleKeys.length > 0 ? visibleKeys : true;
 }
 
 
@@ -135,7 +139,6 @@ function getAllPromptAndResponsePairs(textarea, count = null, maxTokens = null, 
 
     const allMatches = [];
     let match;
-
     while ((match = pattern.exec(content)) !== null) {
         const userText = match[1].trim();
         const aiText = match[2].trim();
@@ -144,32 +147,76 @@ function getAllPromptAndResponsePairs(textarea, count = null, maxTokens = null, 
 
     if (!allMatches.length) return [];
 
-    // Get the last `count` items, reversing to maintain order
-    let lastItems = count !== null ? allMatches.slice(-count).reverse() : allMatches.reverse();
+    // Grab the last N messages
+    let lastItems = count !== null ? allMatches.slice(-count) : [...allMatches];
 
-    // Token limit enforcement
+    // Enforce token limit, but keep the most recent first
     if (maxTokens !== null) {
+        lastItems.reverse(); // so index 0 is the newest
         let tokenCount = 0;
-        const filteredItems = [];
+        const filtered = [];
 
         for (const item of lastItems) {
-            const userTokens = TokenCounter.forString(item.user);
-            const aiTokens = TokenCounter.forString(item.ai);
+            const userTokens = TokenCounter.tokenize(item.user);
+            const aiTokens = TokenCounter.tokenize(item.ai);
 
-            if (tokenCount + userTokens + aiTokens > maxTokens) break;
+            // Total tokens if we keep both fully
+            const totalTokensThisPair = userTokens.length + aiTokens.length;
+            const remaining = maxTokens - tokenCount;
 
-            filteredItems.push(item);
-            tokenCount += userTokens + aiTokens;
+            // If the entire pair fits, push it all
+            if (totalTokensThisPair <= remaining) {
+                filtered.push(item);
+                tokenCount += totalTokensThisPair;
+            } else {
+                // We might partially trim user and/or AI
+                if (remaining <= 0) {
+                    // No space left at all
+                    break;
+                }
+
+                // 1) Trim user if needed
+                const userCanFit = userTokens.length <= remaining;
+                let userPart = '';
+                let aiPart = '';
+
+                if (userCanFit) {
+                    // Keep user fully
+                    userPart = item.user;
+                    tokenCount += userTokens.length;
+
+                    // 2) Check if there's room for AI
+                    const newRemaining = maxTokens - tokenCount;
+                    if (newRemaining > 0) {
+                        // Trim AI if needed
+                        aiPart = trimToTokenCount(item.ai, newRemaining);
+                        const usedForAi = TokenCounter.tokenize(aiPart).length;
+                        tokenCount += usedForAi;
+                    }
+                } else {
+                    // Not enough room for entire user text; trim partially
+                    userPart = trimToTokenCount(item.user, remaining);
+                    tokenCount += TokenCounter.tokenize(userPart).length;
+                }
+
+                // Push our partial pair (could be partial user or user+partial AI)
+                filtered.push({ user: userPart, ai: aiPart });
+            }
         }
 
-        lastItems = filteredItems;
+        // Re-reverse to restore chronological order
+        filtered.reverse();
+        lastItems = filtered;
     }
 
-    // Apply filtering: "both" (default), "user", or "ai"
-    if (type === "user") return lastItems.map(pair => pair.user);
-    if (type === "ai") return lastItems.map(pair => pair.ai);
-    return lastItems; // Default: structured { user, ai } pairs
+    if (type === "user") {
+        return lastItems.map(pair => pair.user);
+    } else if (type === "ai") {
+        return lastItems.map(pair => pair.ai);
+    }
+    return lastItems;
 }
+
 
 function getLastPromptsAndResponses(count, maxTokens = null, textarea = App.zetPanes.getActiveTextarea()) {
     const lastItems = getAllPromptAndResponsePairs(textarea, count, maxTokens, "both");
@@ -220,7 +267,6 @@ Ai.haltZettelkasten = function(){
 
     Ai.isResponding = false;
     Ai.shouldContinue = false;
-    Ai.isFirstAutoModeMessage = true;
 
     Ai.mainPrompt.setLatestUserMessage();
 }
@@ -238,14 +284,16 @@ Ai.onRegenClicked = function(){
 }
 
 // Extract the prompt from the last message
-function extractLastPrompt() {
-    const lastMessage = getLastPromptsAndResponses(1, 400);
-    const promptRegex = new RegExp(`${PROMPT_IDENTIFIER}\\s*(.*)`, "i");
-    const match = promptRegex.exec(lastMessage);
-    if (match) return match[1].trim();
+function extractLastPrompt(node = null) {
+    const textarea = node?.aiResponseTextArea || App.zetPanes.getActiveTextarea();
+    const lastUserPrompts = getAllPromptAndResponsePairs(textarea, 1, 4000, "user");
 
-    Logger.warn("Prompt not found in the last message. Sending with a blank prompt.");
-    return '';
+    if (!lastUserPrompts.length) {
+        Logger.warn("Prompt not found in the last message. Sending with a blank prompt.");
+        return '';
+    }
+
+    return lastUserPrompts[0].trim();
 }
 
 function trimToTokenCount(inputText, maxTokens) {

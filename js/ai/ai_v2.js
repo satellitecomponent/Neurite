@@ -1,7 +1,7 @@
 const Ai = {
     isResponding: false,
     latestUserMessage: null,
-    isFirstAutoModeMessage: true,
+    isAutoModeEnabled: false,
     originalUserMessage: null,
     shouldContinue: true
 };
@@ -18,128 +18,159 @@ function generateRequestId() {
     return `req-${Date.now()}-${++globalRequestIdCounter}`;
 }
 
-// Call Chat API Function
-async function callchatAPI(messages, stream = false, customTemperature = null) {
-    Ai.shouldContinue = true;
-    const requestId = generateRequestId();
-    let streamedResponse = ""; // Local streamedResponse for this request
+const Message = {};
+Message.system = function(content){ return { role: 'system', content } }
+Message.user = function(content){ return { role: 'user', content } }
 
-    function onBeforeCall() {
-        Ai.isResponding = true;
-        Ai.mainPrompt.setPause();
-        Elem.byId('aiLoadingIcon').style.display = 'block';
-        Elem.hideById('aiErrorIcon');
+class AiCall {
+    customTemperature = null;
+    inferenceOverride = null;
+    messages = [];
+    constructor(stream, node){
+        this.node = node || null;
+        this.stream = Boolean(stream);
+    }
+    static single(node){ return new AiCall(false, node) }
+    static stream(node){ return new AiCall(true, node) }
+
+    addSystemPrompt(prompt){
+        this.messages.push(Message.system(prompt));
+        return this;
+    }
+    addUserPrompt(prompt){
+        this.messages.push(Message.user(prompt));
+        return this;
+    }
+    exec(){
+        return (this.node) ? this.#callchatLLMnode() : this.#callchatAPI();
     }
 
-    function onAfterCall() {
-        Ai.isResponding = false;
-        Ai.mainPrompt.setRefresh();
-        Elem.hideById('aiLoadingIcon');
-    }
+    async #callchatAPI(){
+        Ai.shouldContinue = true;
+        const requestId = generateRequestId();
+        let streamedResponse = ""; // Local streamedResponse for this request
 
-    function onError(errorMsg) {
-        Logger.err("In calling Ai API:", errorMsg);
-        Elem.byId('aiErrorIcon').style.display = 'block';
-        failCounter += 1;
-        if (failCounter >= MAX_FAILS) {
-            Logger.err("Max attempts reached. Stopping further API calls.");
-            Ai.haltZettelkasten();
-            resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
+        function onBeforeCall() {
+            Ai.isResponding = true;
+            Ai.mainPrompt.setPause();
+            Elem.byId('aiLoadingIcon').style.display = 'block';
+            Elem.hideById('aiErrorIcon');
+        }
+
+        function onAfterCall() {
+            if (!Ai.isAutoModeEnabled) {
+                Ai.isResponding = false;
+            }
+            Ai.mainPrompt.setRefresh();
+            Elem.hideById('aiLoadingIcon');
+        }
+
+        function onError(errorMsg) {
+            Logger.err("In calling Ai API:", errorMsg);
+            Elem.byId('aiErrorIcon').style.display = 'block';
+            failCounter += 1;
+            if (failCounter >= MAX_FAILS) {
+                Logger.err("Max attempts reached. Stopping further API calls.");
+                Ai.haltZettelkasten();
+                resolveAiMessageIfAppropriate("Error: " + errorMsg, true);
+            }
+        }
+
+        function onStreamingResponse(content) {
+            // Verify if the request is still active
+            if (!activeRequests.has(requestId) || !Ai.shouldContinue || content.trim() === "[DONE]") return;
+
+            const myCodeMirror = window.currentActiveZettelkastenMirror;
+            const scrollThreshold = 10; // Adjust as needed
+            const scrollInfo = myCodeMirror.getScrollInfo();
+            const isScrolledToBottom = scrollInfo.height - scrollInfo.clientHeight - scrollInfo.top <= scrollThreshold;
+
+            const currentDoc = myCodeMirror.getDoc();
+            const lastLine = currentDoc.lastLine();
+            const lastLineLength = currentDoc.getLine(lastLine).length;
+            myCodeMirror.replaceRange(content, CodeMirror.Pos(lastLine, lastLineLength));
+            streamedResponse += content;
+
+            if (isScrolledToBottom) {
+                myCodeMirror.scrollTo(null, scrollInfo.height);
+            }
+
+            myCodeMirror.focus();
+        }
+
+        // Initialize AbortController for Zettelkasten Request
+        const controller = new AbortController();
+        activeRequests.set(requestId, { type: 'zettelkasten', controller });
+
+        try {
+            const responseData = await callAiApi({
+                messages: this.messages,
+                stream: this.stream,
+                customTemperature: this.customTemperature,
+                onBeforeCall,
+                onAfterCall,
+                onStreamingResponse,
+                onError,
+                inferenceOverride: null, // Assuming no override for global calls
+                controller, // Pass the controller
+                requestId // Pass the unique requestId
+            });
+            return streamedResponse || responseData;
+        } finally {
+            // Clean up after the request is done
+            activeRequests.delete(requestId);
         }
     }
 
-    function onStreamingResponse(content) {
-        // Verify if the request is still active
-        if (!activeRequests.has(requestId) || !Ai.shouldContinue || content.trim() === "[DONE]") return;
+    async #callchatLLMnode(){
+        const node = this.node;
+        const requestId = generateRequestId();
+        let streamedResponse = ""; // Local streamedResponse for this node's request
 
-        const myCodeMirror = window.currentActiveZettelkastenMirror;
-        const scrollThreshold = 10; // Adjust as needed
-        const scrollInfo = myCodeMirror.getScrollInfo();
-        const isScrolledToBottom = scrollInfo.height - scrollInfo.clientHeight - scrollInfo.top <= scrollThreshold;
-
-        const currentDoc = myCodeMirror.getDoc();
-        const lastLine = currentDoc.lastLine();
-        const lastLineLength = currentDoc.getLine(lastLine).length;
-        myCodeMirror.replaceRange(content, CodeMirror.Pos(lastLine, lastLineLength));
-        streamedResponse += content;
-
-        if (isScrolledToBottom) {
-            myCodeMirror.scrollTo(null, scrollInfo.height);
+        function onBeforeCall() {
+            node.aiResponding = true;
+            node.regenerateButton.innerHTML = Svg.pause;
+            node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'block';
+            node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'none';
         }
 
-        myCodeMirror.focus();
-    }
+        function onAfterCall() {
+            if (!node.isAutoModeEnabled) {
+                node.aiResponding = false;
+            }
+            node.regenerateButton.innerHTML = Svg.refresh;
+            node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'none';
+        }
 
-    // Initialize AbortController for Zettelkasten Request
-    const controller = new AbortController();
-    activeRequests.set(requestId, { type: 'zettelkasten', controller });
+        function onStreamingResponse(content) {
+            // Verify if the request is still active
+            if (!activeRequests.has(requestId) || !node.shouldContinue || content.trim() === "[DONE]") return;
+            if (node.shouldContinue && content.trim() !== "[DONE]") TextArea.append.call(node.aiResponseTextArea, content)
+        }
 
-    try {
-        const responseData = await callAiApi({
-            messages,
-            stream,
-            customTemperature,
+        function onError(errorMsg) {
+            node.haltResponse();
+            Logger.err("In calling Chat API:", errorMsg);
+            node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
+        }
+        const controller = node.controller;
+
+        // Track the node-specific request
+        activeRequests.set(requestId, { type: 'node', controller, node });
+
+        return callAiApi({
+            messages: this.messages,
+            stream: this.stream,
+            customTemperature: parseFloat(node.content.querySelector('#node-temperature-' + node.index).value),
             onBeforeCall,
             onAfterCall,
             onStreamingResponse,
             onError,
-            inferenceOverride: null, // Assuming no override for global calls
-            controller, // Pass the controller
-            requestId // Pass the unique requestId
+            inferenceOverride: this.inferenceOverride || Ai.determineModel(node),
+            controller, // node-specific controller
+            requestId
         });
-        return streamedResponse || responseData;
-    } finally {
-        // Clean up after the request is done
-        activeRequests.delete(requestId);
     }
-}
-
-// Call Chat LLM Node Function
-async function callchatLLMnode(messages, node, stream = false, inferenceOverride = null) {
-    const requestId = generateRequestId();
-    let streamedResponse = ""; // Local streamedResponse for this node's request
-
-    function onBeforeCall() {
-        node.aiResponding = true;
-        node.regenerateButton.innerHTML = Svg.pause;
-        node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'block';
-        node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'none';
-    }
-
-    function onAfterCall() {
-        node.aiResponding = false;
-        node.regenerateButton.innerHTML = Svg.refresh;
-        node.content.querySelector('#aiLoadingIcon-' + node.index).style.display = 'none';
-    }
-
-    function onStreamingResponse(content) {
-        // Verify if the request is still active
-        if (!activeRequests.has(requestId) || !node.shouldContinue || content.trim() === "[DONE]") return;
-        if (node.shouldContinue && content.trim() !== "[DONE]") TextArea.append.call(node.aiResponseTextArea, content)
-    }
-
-    function onError(errorMsg) {
-        Logger.err("In calling Chat API:", errorMsg);
-        node.content.querySelector('#aiErrorIcon-' + node.index).style.display = 'block';
-        if (node.haltCheckbox) node.haltCheckbox.checked = true;
-    }
-    const controller = node.controller;
-
-    // Track the node-specific request
-    activeRequests.set(requestId, { type: 'node', controller, node });
-
-    return callAiApi({
-        messages,
-        stream,
-        customTemperature: parseFloat(node.content.querySelector('#node-temperature-' + node.index).value),
-        onBeforeCall,
-        onAfterCall,
-        onStreamingResponse,
-        onError,
-        inferenceOverride: inferenceOverride || Ai.determineModel(node),
-        controller, // node-specific controller
-        requestId
-    });
 }
 
 // AI.js
@@ -175,7 +206,6 @@ async function callAiApi({
     }
 
     const params = getAPIParams(messages, stream, customTemperature, inferenceOverride);
-    Logger.info("Message Array", messages);
     Logger.info("Token count:", TokenCounter.forMessages(messages));
 
     if (!params) {
@@ -257,8 +287,8 @@ async function callAiApi({
 }
 
 Ai.ctCancelRequest = class {
+    url = Host.urlForPath('/aiproxy/cancel');
     constructor(requestId){
-        this.url = 'http://localhost:7070/cancel';
         this.options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

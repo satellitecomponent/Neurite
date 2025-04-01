@@ -192,7 +192,7 @@ View.Code = class CodeView {
             this.customLog(...args);
         }
     }
-    #customConsole = new this.#CustomConsole(()=>this.#updateTitleOfItem);
+    #customConsole = new this.#CustomConsole(()=>this.#updateTitleOfItem());
 
     #itemId = null;
     async #runCode(code, codeToRun, defaultTitle){
@@ -237,23 +237,18 @@ View.Code = class CodeView {
     }
 
     #addItem(functionName, code, isError = false){
-        const currentCoords = neuriteGetMandelbrotCoords(); // Get current coordinates
-
         const item = Html.make.div('function-call-item');
         if (isError) item.dataset.isError = isError;
-
         item.dataset.itemId = this.#itemId = generateUUID();
-
-        // Replace newline characters with <br> tags for HTML rendering
-        const formattedFunctionName = functionName.replace(/\n/g, '<br>');
-        item.innerHTML = formattedFunctionName;
+        item.innerHTML = functionName.replace(/\n/g, '<br>');
         item.originalText = code;
 
         // Store code along with the current zoom and pan
+        const coords = Graph.getCoords();
         const callData = {
             code,
-            zoom: currentCoords.zoom,
-            pan: currentCoords.pan,
+            zoom: coords.zoom,
+            pan: coords.pan,
             functionName,
             isError
         };
@@ -262,10 +257,9 @@ View.Code = class CodeView {
         if (isError) {
             item.classList.add('error-item');
 
-            const errorIcon = Elem.byId('funcErrorIcon').cloneNode(true);
+            const errorIcon = Elem.deepClone(Elem.byId('funcErrorIcon'));
             errorIcon.style.display = 'inline-block';
             errorIcon.classList.add('func-error-icon');
-
             item.insertBefore(errorIcon, item.firstChild);
         }
 

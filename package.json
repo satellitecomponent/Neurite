@@ -7,7 +7,7 @@
     "start": "vite",
     "start:host": "vite --host",
     "build": "vite build",
-    "postbuild": "shx cp -r js dist/js"
+    "postbuild": "shx cp -r js dist/js && shx cp -r resources dist/resources && shx cp -r wiki dist/wiki"
   },
   "keywords": [],
   "author": "satellitecomponent",

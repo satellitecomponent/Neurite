@@ -1,15 +1,62 @@
-var zoomTo = new vec2(4, 0);
-var panTo = new vec2(0, 0);
-var autopilotReferenceFrame = undefined;
-var autopilotSpeed = 0;
+const Autopilot = {
+    panToI: new vec2(0, 0),
+    panToI_prev: null,
+    referenceFrame: null,
+    referenceScalePrev: 1,
+    speed: 0,
+    targetPan: new vec2(0, 0),
+    targetZoom: new vec2(4, 0),
+    threshold: 0.000001,
 
-function resetAutopilot() {
-    autopilotSpeed = 0;
-    autopilotReferenceFrame = undefined;
-}
-function skipAutopilot() {
-    zoom = zoomTo
-    pan = autopilotReferenceFrame ? autopilotReferenceFrame.pos.plus(panTo) : panTo;
+    isMoving(){ return this.speed !== 0 },
+    reset(){
+        Autopilot.speed = 0;
+        return Autopilot.setNode();
+    },
+    setNode(node = null){
+        this.referenceFrame = node;
+        return this;
+    },
+    skip(){
+        Graph.zoom_set(this.targetZoom)
+            .pan_set(!this.referenceFrame ? this.targetPan
+                    : this.referenceFrame.pos.plus(this.targetPan));
+        return this;
+    },
+    start(speed = settings.autopilotSpeed){
+        this.speed = speed;
+        return this;
+    },
+    stop(){
+        this.speed = 0;
+        return this;
+    },
+    targetZoom_scaleBy(scale){
+        this.targetZoom = this.targetZoom.scale(scale);
+        return this;
+    },
+    vectorsCloseEnough(vec1, vec2){
+        return vec1.minus(vec2).mag() < this.threshold
+    },
+    zoomToFitFrame(frame, margin = 1){
+        const bb = frame.content.getBoundingClientRect();
+        const svgbb = svg.getBoundingClientRect();
+        const aspect = svgbb.width / svgbb.height;
+        const scale = bb.height * aspect > bb.width ? svgbb.height / (margin * bb.height) : svgbb.width / (margin * bb.width);
+        const gz = (1 / scale) ** (-1 / settings.zoomContentExp);
+        return this.zoomToFrameByGz(frame, gz);
+    },
+    zoomToFrame(frame, s = 1){
+        const gz = Graph.zoom.mag2() * ((frame.scale * s) ** (-1 / settings.zoomContentExp));
+        return this.zoomToFrameByGz(frame, gz);
+    },
+    zoomToFrameByGz(frame, gz){
+        this.panToI = new vec2(0, 0);
+        this.referenceFrame = frame;
+        this.targetPan = new vec2(0, 0); //frame.pos;
+        this.targetZoom = Graph.zoom.unscale(gz ** 0.5);
+        return this;
+    }
 }
 
 var gen = iter();
@@ -22,25 +69,24 @@ function frame() {
 const panInput = Elem.byId('pan');
 const zoomInput = Elem.byId('zoom');
 
-let coordsLive = true;
 const coords = Elem.byId('coordinates');
 
 On.input(panInput, (e)=>{
-    coordsLive = false;
+    App.interface.coordsLive = false;
     const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)\s*,?\s*([+-]?i?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
     const m = panInput.value.match(r);
     if (m === null) return;
 
-    pan = new vec2(parseFloat(m[0]), parseFloat(m[6].replace(/[iI]/, '')));
+    Graph.pan_set(new vec2(parseFloat(m[0]), parseFloat(m[6].replace(/[iI]/, ''))));
 });
 On.input(zoomInput, (e)=>{
-    coordsLive = false;
+    App.interface.coordsLive = false;
     const r = /([+-]?(([0-9]*\.[0-9]*)|([0-9]+))([eE][+-]?[0-9]+)?)/;
     const m = zoomInput.value.match(r);
     if (m === null) return;
 
     const z = parseFloat(m);
-    if (z !== 0) zoom = zoom.scale(z / zoom.mag());
+    if (z !== 0) Graph.zoom_scaleBy(z / Graph.zoom.mag());
 });
 ['paste', 'mousemove', 'mousedown', 'dblclick', 'click'].forEach( (eName)=>{
     On[eName](panInput, Event.stopPropagation);
@@ -49,221 +95,247 @@ On.input(zoomInput, (e)=>{
 
 function performZoom(amount, dest) {
     const inverseAmount = 1 / amount;
-    zoom = zoom.scale(inverseAmount);
-    pan = dest.scale(1 - inverseAmount).plus(pan.scale(inverseAmount));
+    Graph.zoom_scaleBy(inverseAmount)
+        .pan_set(dest.scale(1 - inverseAmount).plus(Graph.pan.scale(inverseAmount)));
 }
-
-// Variables for Mouse Interaction
-let isMouseZooming = false;
-let mouseZoomStartY = 0;
-
-let isMousePanning = false;
-let mouseDownPos = new vec2(0, 0);
-
-let mousePanButton = settings.panClick;
-let mouseZoomButton = settings.zoomClick;
-
-let isRotating = false;
-let rotateStartPos = new vec2(0, 0);
-let rotatePrevPos = new vec2(0, 0);
 
 // Constants
 const DRAG_THRESHOLD = 1; // pixels
 
-let controlDragOccurred = false;
-
-On.mousemove(svg, (e)=>{
-    if (isDraggingDragBox) return;
-
-    mousePos = new vec2(e.pageX, e.pageY);
-
-    if (isRotating) {
-        const currentPos = new vec2(e.pageX, e.pageY);
-        const deltaPos = currentPos.minus(rotatePrevPos);
-
-        const angleDelta = (deltaPos.x - deltaPos.y) * settings.dragRotateSpeed;
-
-        // Update rotation incrementally
-        const deltaRotation = new vec2(Math.cos(angleDelta), Math.sin(angleDelta));
-        rotation = rotation.cmult(deltaRotation);
-
-        // Adjust zoom and pan to reflect rotation around the pivot point
-        const zc = toZ(rotateStartPos).minus(pan);
-
-        zoom = zoom.cmult(deltaRotation);
-        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
-
-        rotatePrevPos = currentPos;
-
-        if (deltaPos.mag() > DRAG_THRESHOLD) controlDragOccurred = true;
-
-        e.preventDefault();
-    } else if (isMouseZooming) {
-        const dragDistance = e.clientY - mouseZoomStartY;
-        const amount = Math.exp(-dragDistance * settings.dragZoomSpeed);
-        const dest = toZ(mousePos);
-        performZoom(amount, dest);
-        mouseZoomStartY = e.clientY;
-        regenAmount += Math.abs(dragDistance);
-
-        if (Math.abs(dragDistance) > DRAG_THRESHOLD) controlDragOccurred = true;
-
-        e.preventDefault();
-    } else if (isMousePanning) {
-        isAnimating = false;
-        autopilotSpeed = 0;
-        coordsLive = true;
-        const delta = mousePos.minus(mouseDownPos);
-        pan = pan.minus(toDZ(delta));
-        regenAmount += delta.mag() * 0.25;
-        mouseDownPos = mousePos.scale(1);
-
-        if (delta.mag() > DRAG_THRESHOLD) controlDragOccurred = true;
-    }
-});
-On.mousedown(svg, (e) => {
-    mouseDownPos = new vec2(e.pageX, e.pageY);
+class Interface {
+    altHeld = false;
     controlDragOccurred = false;
-    Node.prev = null;
+    coordsLive = true;
+    isMousePanning = false;
+    isMouseZooming = false;
+    isRotating = false;
+    mousePanButton = settings.panClick;
+    mouseZoomButton = settings.zoomClick;
+    mouseZoomStartY = 0;
+    nodeMode = new NodeMode(this.autoToggleAllOverlays.bind(this));
+    overlays = [];
+    rotateStartPos = new vec2(0, 0);
+    rotatePrevPos = new vec2(0, 0);
+    init(){
+        On.keydown(document, this.onAltKeyDown);
+        On.keyup(document, this.onAltKeyUp);
+        On.message(window, this.onMessage);
 
-    // Handle focus on background click
-    if (e.target === svg) {
-        svg.focus(); // Assuming the SVG element can be focused
+        On.mousemove(svg, this.onMouseMove);
+        On.mousedown(svg, this.onMouseDown);
+        On.mouseup(window, this.onMouseUp);
+        On.contextmenu(document, this.onContextMenu);
+        On.wheel(svg, this.onWheel);
     }
 
-    // Handle zooming and rotating
-    if (
-        settings.zoomClick !== "scroll" &&
-        e.button === mouseZoomButton &&
-        e.getModifierState(settings.rotateModifier)
-    ) {
-        isRotating = true;
-        rotateStartPos = new vec2(e.pageX, e.pageY);
-        rotatePrevPos = rotateStartPos;
-        e.preventDefault();
-    } else if (e.button === mouseZoomButton) {
-        isMouseZooming = true;
-        mouseZoomStartY = e.clientY;
-        e.preventDefault();
-    }
-
-    // Handle panning
-    if (e.button === mousePanButton) {
-        autopilotSpeed = 0;
-        mouseDownPos = mousePos.scale(1);
-        isMousePanning = true;
-        e.preventDefault();
-    }
-
-    // Handle context menu button press
-    if (e.button === parseInt(settings.contextKey)) {
-        controlDragOccurred = false;
-
-        if (controls.contextMenuButton.value === 2) { // Assuming 2 is right-click
-            e.preventDefault(); // suppress browser context menu
+    autoToggleAllOverlays(){
+        const condition = (this.altHeld || this.nodeMode.val === 1);
+        for (const overlay of this.overlays) {
+            overlay.style.display = (condition ? 'block' : 'none');
         }
     }
-});
+    onAltKeyDown = (e)=>{
+        if (e.altKey) {
+            this.altHeld = true;
+            this.autoToggleAllOverlays();
+            e.preventDefault(); // e.g. focusing on the iframe
+        }
+    }
+    onAltKeyUp = (e)=>{
+        if (!e.altKey) {
+            this.altHeld = false;
+            this.autoToggleAllOverlays();
+        }
+    }
+    onMessage = (e)=>{
+        const data = e.data;
+        if (data.altHeld !== undefined) {
+            this.altHeld = data.altHeld;
+            this.autoToggleAllOverlays();
+        }
+        this.nodeMode.val = data.nodeMode ?? 0;
+    }
 
+    onMouseMove = (e)=>{
+        if (isDraggingDragBox) return;
 
-On.mouseup(window, (e)=>{
-    if (e.button === mouseZoomButton) {
-        if (isMouseZooming || isRotating) {
-            isMouseZooming = false;
-            isRotating = false;
+        Graph.mousePos_setXY(e.pageX, e.pageY);
+
+        if (this.isRotating) {
+            const currentPos = new vec2(e.pageX, e.pageY);
+            const deltaPos = currentPos.minus(this.rotatePrevPos);
+
+            const angleDelta = (deltaPos.x - deltaPos.y) * settings.dragRotateSpeed;
+            // Adjust zoom and pan to reflect rotation around the pivot point
+            const zc = Graph.vecToZ(this.rotateStartPos).minus(Graph.pan);
+            Graph.updateRotationByAngle(angleDelta) // Update rotation incrementally
+                .zoom_cmultWith(deltaRotation)
+                .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
+
+            this.rotatePrevPos = currentPos;
+
+            if (deltaPos.mag() > DRAG_THRESHOLD) this.controlDragOccurred = true;
+
+            e.preventDefault();
+        } else if (this.isMouseZooming) {
+            const dragDistance = e.clientY - this.mouseZoomStartY;
+            const amount = Math.exp(-dragDistance * settings.dragZoomSpeed * settings.zoomSpeedMultiplier);
+            const dest = Graph.vecToZ();
+            performZoom(amount, dest);
+            this.mouseZoomStartY = e.clientY;
+            regenAmount += Math.abs(dragDistance);
+
+            if (Math.abs(dragDistance) > DRAG_THRESHOLD) this.controlDragOccurred = true;
+
+            e.preventDefault();
+        } else if (this.isMousePanning) {
+            Autopilot.stop();
+            this.coordsLive = true;
+            const delta = Graph.mousePos.minus(Graph.mouseDownPos);
+            Graph.pan_decBy(toDZ(delta));
+            regenAmount += delta.mag() * 0.25;
+            Graph.mouseDownPos_setXY();
+
+            if (delta.mag() > DRAG_THRESHOLD) this.controlDragOccurred = true;
+        }
+    }
+
+    onMouseDown = (e)=>{
+        Graph.mouseDownPos_setXY(e.pageX, e.pageY);
+        this.controlDragOccurred = false;
+        
+        Node.prev = null;
+
+        // Handle focus on background click
+        if (e.target === svg) {
+            svg.focus(); // Assuming the SVG element can be focused
+        }
+
+        // Handle zooming and rotating
+        if (
+            settings.zoomClick !== "scroll" &&
+            e.button === this.mouseZoomButton &&
+            e.getModifierState(settings.rotateModifier)
+        ) {
+            this.isRotating = true;
+            this.rotateStartPos = new vec2(e.pageX, e.pageY);
+            this.rotatePrevPos = this.rotateStartPos;
+            e.preventDefault();
+        } else if (e.button === this.mouseZoomButton) {
+            this.isMouseZooming = true;
+            this.mouseZoomStartY = e.clientY;
             e.preventDefault();
         }
-    }
-    if (e.button === mousePanButton && isMousePanning) {
-        isMousePanning = false;
-    }
 
-    // Handle context menu opening
-    if (e.button === parseInt(settings.contextKey)) {
-        if (!controlDragOccurred) App.menuContext.open(e.pageX, e.pageY, e.target);
-        // Do not reset 'controlDragOccurred' here; let 'contextmenu' handler manage it
-        e.preventDefault();
-    }
+        // Handle panning
+        if (e.button === this.mousePanButton) {
+            Autopilot.stop();
+            Graph.mouseDownPos_setXY();
+            this.isMousePanning = true;
+            e.preventDefault();
+        }
 
-    if (Graph.movingNode !== undefined) Graph.movingNode.onMouseUp(e);
-    Mouse.isDragging = false;
-});
+        // Handle context menu button press
+        if (e.button === parseInt(settings.contextKey)) {
+            this.controlDragOccurred = false;
 
-On.contextmenu(document, (e)=>{
-    // Function to check if the default context menu should be used
-    function shouldUseDefaultContextMenu(target) {
-        return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content, .tooltip') ||
-            target.tagName === 'IFRAME' ||
-            target.tagName === 'IMG' ||
-            target.tagName === 'VIDEO';
+            if (controls.contextMenuButton.value === 2) { // Assuming 2 is right-click
+                e.preventDefault(); // suppress browser context menu
+            }
+        }
     }
 
-    if (controlDragOccurred) { // prevent both native and custom context menus
-        e.preventDefault();
-        controlDragOccurred = false;
-        return;
+    onMouseUp = (e)=>{
+        if (e.button === this.mouseZoomButton) {
+            if (this.isMouseZooming || this.isRotating) {
+                this.isMouseZooming = false;
+                this.isRotating = false;
+                e.preventDefault();
+            }
+        }
+        if (e.button === this.mousePanButton && this.isMousePanning) {
+            this.isMousePanning = false;
+        }
+
+        // Handle context menu opening
+        if (e.button === parseInt(settings.contextKey)) {
+            if (!this.controlDragOccurred) App.menuContext.open(e.pageX, e.pageY, e.target);
+            // Do not reset 'controlDragOccurred' here; let 'contextmenu' handler manage it
+            e.preventDefault();
+        }
+
+        if (Graph.movingNode !== undefined) Graph.movingNode.onMouseUp(e);
+        Mouse.isDragging = false;
     }
 
-    // Allow browser context menu if not dragging
+    onContextMenu = (e)=>{
+        // Function to check if the default context menu should be used
+        function shouldUseDefaultContextMenu(target) {
+            return target.closest('.dropdown, .CodeMirror, #customContextMenu, #suggestions-container, .modal-content, .tooltip') ||
+                target.tagName === 'IFRAME' ||
+                target.tagName === 'IMG' ||
+                target.tagName === 'VIDEO';
+        }
 
-    if (controls.contextMenuButton.value !== 2) { // not right-click
-        return; // allow browser context menu
+        if (this.controlDragOccurred) { // prevent both native and custom context menus
+            e.preventDefault();
+            this.controlDragOccurred = false;
+            return;
+        }
+
+        // Allow browser context menu if not dragging
+
+        if (controls.contextMenuButton.value !== 2) { // not right-click
+            return; // allow browser context menu
+        }
+
+        // If the default context menu should be used, do nothing
+        if (e.ctrlKey || shouldUseDefaultContextMenu(e.target)) {
+            App.menuContext.hide();
+            return; // allow browser context menu
+        }
+
+        e.preventDefault(); // // suppress browser context menu
     }
 
-    // If the default context menu should be used, do nothing
-    if (e.ctrlKey || shouldUseDefaultContextMenu(e.target)) {
-        App.menuContext.hide();
-        return; // allow browser context menu
+    onWheel = (e)=>{
+        // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
+        if (settings.zoomClick === "scroll" && App.nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
+            Autopilot.stop();
+            this.coordsLive = true;
+
+            const zc = Graph.vecToZ().minus(Graph.pan);
+            Graph.updateRotationByAngle(e.deltaY * settings.rotateModifierSpeed)
+                .zoom_cmultWith(newRotation)
+                .pan_incBy(zc.cmult(new vec2(1, 0).minus(newRotation)));
+
+            e.stopPropagation();
+            return;
+        }
+
+        if (settings.zoomClick === "scroll") {
+            // Zooming via scroll wheel
+            Autopilot.stop();
+            Coordinate.deselect();
+            App.menuContext.hide();
+            this.coordsLive = true;
+            const dest = Graph.vecToZ();
+            regenAmount += Math.abs(e.deltaY);
+            const amount = Math.exp(e.deltaY * settings.zoomSpeed * settings.zoomSpeedMultiplier);
+            performZoom(amount, dest);
+            e.stopPropagation();
+        } else if (settings.panClick === "scroll") {
+            // Panning via scroll wheel
+            Autopilot.stop();
+            this.coordsLive = true;
+            let dest = Graph.vecToZ();
+            const dp = toDZ(new vec2(e.deltaX, e.deltaY).scale(settings.panSpeed));
+            regenAmount += Math.hypot(e.deltaX, e.deltaY);
+            Graph.pan_incBy(dp);
+            e.stopPropagation();
+        }
     }
-
-    e.preventDefault(); // // suppress browser context menu
-});
-
-On.wheel(svg, (e)=>{
-    isAnimating = false;
-
-    // Only perform rotation via Alt + scroll wheel when zoomClick is "scroll"
-    if (settings.zoomClick === "scroll" && App.nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
-        autopilotSpeed = 0;
-        coordsLive = true;
-
-        const amount = e.deltaY * settings.rotateModifierSpeed;
-        const zc = toZ(mousePos).minus(pan);
-
-        // Update the rotation by rotating the vector by the given amount
-        const newRotation = new vec2(Math.cos(amount), Math.sin(amount));
-        rotation = rotation.cmult(newRotation); // Compose rotations
-
-        // Apply zoom rotation and adjust pan
-        zoom = zoom.cmult(newRotation); // Rotate the zoom
-        pan = pan.plus(zc.cmult(new vec2(1, 0).minus(newRotation)));
-
-        e.stopPropagation();
-        return;
-    }
-
-    if (settings.zoomClick === "scroll") {
-        // Zooming via scroll wheel
-        autopilotSpeed = 0;
-        Coordinate.deselect();
-        App.menuContext.hide();
-        coordsLive = true;
-        const dest = toZ(mousePos);
-        regenAmount += Math.abs(e.deltaY);
-        const amount = Math.exp(e.deltaY * settings.zoomSpeed);
-        performZoom(amount, dest);
-        e.stopPropagation();
-    } else if (settings.panClick === "scroll") {
-        // Panning via scroll wheel
-        autopilotSpeed = 0;
-        coordsLive = true;
-        let dest = toZ(mousePos);
-        const dp = toDZ(new vec2(e.deltaX, e.deltaY).scale(settings.panSpeed));
-        regenAmount += Math.hypot(e.deltaX, e.deltaY);
-        pan = pan.plus(dp);
-        e.stopPropagation();
-    }
-});
+}
 
 
 
@@ -300,10 +372,10 @@ On.touchmove(svg, (e)=>{
     }
     switch (touches.size) {
         case 1:
-            autopilotSpeed = 0;
-            coordsLive = true;
+            Autopilot.stop();
+            App.interface.coordsLive = true;
             const t = [...touches.values()][0];
-            pan = pan.plus(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
+            Graph.pan_incBy(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
             e.stopPropagation();
             break;
         case 2:
@@ -320,21 +392,14 @@ On.touchmove(svg, (e)=>{
             // Calculate the zoom factor based on the distance between the touch points
             const zoomFactor = p2p.minus(p1p).mag() / p2n.minus(p1n).mag();
 
-            // Calculate the rotation angle between the previous and current touch points
             const anglePrev = Math.atan2(p2p.y - p1p.y, p2p.x - p1p.x);
             const angleNow = Math.atan2(p2n.y - p1n.y, p2n.x - p1n.x);
-            const rotationAngle = anglePrev - angleNow; // Calculate rotation between previous and current touch points
+            const rotationAngle = anglePrev - angleNow;
 
-            // Update the global rotation vector
-            const rotationDelta = new vec2(Math.cos(rotationAngle), Math.sin(rotationAngle));
-            rotation = rotation.cmult(rotationDelta); // Update rotation
-
-            zoom = zoom.rot(rotationAngle);
-
-            const zoomDiff = newZoom.minus(zoom);
-            const panDiff = midpointNow.minus(midpointPrev).cmult(zoom);
-            pan = pan.minus(panDiff);
-            zoom = newZoom;
+            Graph.updateRotationByAngle(rotationAngle)
+                .zoom_rotBy(rotationAngle)
+                .pan_decBy(midpointNow.minus(midpointPrev).cmult(Graph.zoom))
+                .zoom_set(newZoom);
 
             e.preventDefault();
             e.stopPropagation();
@@ -351,8 +416,8 @@ var gestureStartParams = {
     x: 0,
     y: 0,
     scale: 0,
-    zoom: new vec2(),
-    pan: new vec2()
+    zoom: new vec2(0, 0),
+    pan: new vec2(0, 0)
 };
 On.gesturestart(window, (e)=>{
     e.preventDefault();
@@ -361,9 +426,8 @@ On.gesturestart(window, (e)=>{
     gestureStartParams.scale = e.scale;
     gestureStartParams.x = e.pageX;
     gestureStartParams.y = e.pageY;
-    gestureStartParams.zoom = zoom;
-    gestureStartParams.pan = pan;
-
+    gestureStartParams.zoom = Graph.zoom;
+    gestureStartParams.pan = Graph.pan;
 });
 On.gesturechange(window, (e)=>{
     e.preventDefault();
@@ -371,22 +435,23 @@ On.gesturechange(window, (e)=>{
     let d_theta = e.rotation - gestureStartParams.rotation;
     let d_scale = e.scale;
     const r = -e.rotation * settings.gestureRotateSpeed;
-    pan = gestureStartParams.pan;
-    zoom = gestureStartParams.zoom;
-    const r_center = toZ(new vec2(e.pageX, e.pageY));
+    const o = new vec2(Math.cos(r), Math.sin(r));
+    Graph.pan_set(gestureStartParams.pan)
+        .zoom_set(gestureStartParams.zoom.cmult(o));
+
+    const r_center = Graph.xyToZ(e.pageX, e.pageY);
     let s = 0;
-    zoom = gestureStartParams.zoom.cmult(new vec2(Math.cos(r), Math.sin(r)));
     if (e.scale !== 0) {
         let s = 1 / e.scale;
-        zoom = zoom.scale(s);
+        Graph.zoom_scaleBy(s);
         regenAmount += Math.abs(Math.log(s)) * settings.maxLines;
     }
     let dest = r_center;
     let amount = s;
     const dp = r_center.minus(gestureStartParams.pan);
-    pan = gestureStartParams.pan.plus(
-        dp.minus(dp.cmult(zoom.cdiv(gestureStartParams.zoom))));
-    //pan = dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount));
+    Graph.pan_set(gestureStartParams.pan.plus(dp.minus(
+                    dp.cmult(Graph.zoom.cdiv(gestureStartParams.zoom)))));
+    //Graph.pan_set(dest.scale(1-amount).plus(gestureStartParams.pan.scale(amount)));
 
 });
 On.gestureend(window, Event.preventDefault);

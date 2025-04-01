@@ -1,4 +1,4 @@
-const wolframmessage = `Based off the user message, arrive at a valid query to Wolfram Alpha.
+const wolframMessage = `Based off the user message, arrive at a valid query to Wolfram Alpha.
 - Quotation marks delimit the Wolfram Query that is extracted from your response.
 - Ensure the query will return a relevant result from Wolfram. (If the user message is not a valid Wolfram Query, reformulate until it is.)
 - Utilize Wolfram Syntax or formats known to be valid.
@@ -21,33 +21,20 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
         window.currentActiveZettelkastenMirror.replaceRange(`${tagValues.nodeTag} Wolfram ${wolframCallCounter}\n`, CodeMirror.Pos(window.currentActiveZettelkastenMirror.lastLine()));
     }
 
-    let messages = [
-        {
-            role: "system",
-            content: `${wolframmessage}`
-        },
-        {
-            role: "user",
-            content: `${message} Wolfram Query`,
-        }
-    ];
+    const aiCall = AiCall.stream(isAINode && node)
+        .addSystemPrompt(wolframMessage)
+        .addUserPrompt(message + " Wolfram Query");
 
     // Only add the recentcontext message if it is not empty
     if (recentcontext.trim() !== "") {
-        messages.splice(1, 0, {
-            role: "system",
-            content: `Conversation history; \n ${recentcontext},`
-        });
+        const prompt = `Conversation history; \n ${recentcontext},`;
+        aiCall.messages.splice(1, 0, Message.system(prompt));
     }
 
-    let fullResponse;
+    const fullResponse = await aiCall.exec();
     if (isAINode && node) {
-        fullResponse = await callchatLLMnode(messages, node, true);  // calling the LLM node version
-
         // Add a line break to node.aiResponseDiv after the call is complete
         node.aiResponseDiv.innerHTML += '<br />';
-    } else {
-        fullResponse = await callchatAPI(messages, true);  // existing call
     }
 
     // The regular expression to match text between quotation marks
@@ -79,7 +66,7 @@ async function fetchWolfram(message, isAINode = false, node = null, wolframConte
     // Call Wolfram Alpha API with the reformulated query
     const apiKey = Elem.byId('wolframApiKey').value;
 
-    const response = await fetch("http://localhost:3000", {
+    const response = await fetch(Host.urlForPath('/wolframalpha'), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

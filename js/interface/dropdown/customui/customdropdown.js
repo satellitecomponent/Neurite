@@ -401,8 +401,7 @@ function createZetContainerDropdown(option) {
     On.input(inputDiv, (e)=>{
         option.text = inputDiv.innerText;
 
-        const paneId = option.value;
-        const pane = document.querySelector('#' + paneId);
+        const pane = Elem.byId(option.value);
         if (pane) pane.dataset.paneName = option.text;
 
         if (option.selected) Select.updateSelectedOption(option.parentNode);

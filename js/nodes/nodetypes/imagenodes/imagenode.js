@@ -2,19 +2,17 @@ function isImageUrl(url) {
     return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
 }
 
-function createImageNode(imageElement, title) {
-    // Set the target height to 500px and calculate the width based on the aspect ratio
-    const targetHeight = 600;
-    const aspectRatio = imageElement.naturalWidth / imageElement.naturalHeight;
-    const targetWidth = targetHeight * aspectRatio;
+Elem.resizeToFitHeight = function(elem, height){
+    const aspectRatio = elem.naturalWidth / elem.naturalHeight;
+    elem.style.width = (height * aspectRatio) + 'px';
+    elem.style.height = height + 'px';
+}
 
-    // Resize the image element to fit the target size
-    imageElement.style.width = `${targetWidth}px`;
-    imageElement.style.height = `${targetHeight}px`;
+NodeView.addForImage = function(elemImage, title){
+    Elem.resizeToFitHeight(elemImage, 600);
 
-    // Add the node with the resized image
     const node = new Node();
-    NodeView.addAtNaturalScale(node, title, imageElement);
+    NodeView.addAtNaturalScale(node, title, elemImage);
 
     node.push_extra_cb((node) => {
         return {
@@ -27,7 +25,7 @@ function createImageNode(imageElement, title) {
     });
 
     node.isImageNode = true;
-    node.imageData = imageElement.src; // Store the base64Data directly from imageElement.src
+    node.imageData = elemImage.src; // Store the base64Data directly from elemImage.src
     Logger.debug(node.imageData);
     return node;
 }

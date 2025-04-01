@@ -1,3 +1,5 @@
+window.appReady = false;
+window.startedViaElectron = window.electronAPI?.startedViaElectron || false;
 window.startedViaPlaywright = window.startedViaPlaywright || false;
 
 //https://github.com/tc39/proposal-regex-escaping/blob/main/specInJs.js
@@ -28,7 +30,14 @@ if (!RegExp.escape) {
         return L;
     };
 }
-
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
 
 class Modal {
@@ -103,12 +112,15 @@ var settings = {
 
     rotateModifierSpeed: Math.PI / 180 / 36,
     dragRotateSpeed: 0.01,
+    zoomSpeedMultiplier: 1,
 
     //slider adjustment
     maxLines: 128,
     renderWidthMult: 0.3, //1,
     regenDebtAdjustmentFactor: 1,
 
+    useDelayedRendering: true,
+    renderDelay: 0,
     renderStepSize: 0.1, //0.25,
     renderSteps: 16, //64,
     renderDChar: "L",
@@ -142,47 +154,6 @@ var settings = {
 
 var flashlight_stdev = 0.25; // this is the radius of the flashlight
 var flashlight_fraction = 0.73; // this is what fraction of samples are diverted to the flashlight
-
-
-
-class Interface {
-    altHeld = false;
-    nodeMode = new NodeMode(this.autoToggleAllOverlays.bind(this));
-    overlays = [];
-    constructor(){
-        On.keydown(document, this.altKeyDown);
-        On.keyup(document, this.altKeyUp);
-        On.message(window, this.onMessage);
-    }
-
-    autoToggleAllOverlays(){
-        const condition = (this.altHeld || this.nodeMode.val === 1);
-        for (const overlay of this.overlays) {
-            overlay.style.display = (condition ? 'block' : 'none');
-        }
-    }
-    altKeyDown = (e)=>{
-        if (e.altKey) {
-            this.altHeld = true;
-            this.autoToggleAllOverlays();
-            e.preventDefault(); // e.g. focusing on the iframe
-        }
-    }
-    altKeyUp = (e)=>{
-        if (!e.altKey) {
-            this.altHeld = false;
-            this.autoToggleAllOverlays();
-        }
-    }
-    onMessage = (e)=>{
-        const data = e.data;
-        if (data.altHeld !== undefined) {
-            this.altHeld = data.altHeld;
-            this.autoToggleAllOverlays();
-        }
-        this.nodeMode.val = data.nodeMode ?? 0;
-    }
-}
 
 
 
@@ -270,10 +241,11 @@ class Tag {
         const input = e.currentTarget;
         const tag = input.value.trim();
         Tag[input.dataset.key] = (tag === '' ? ' ' : tag);
-
+        
         ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();
+        updateAllCodeMirrorPlaceholders();
     }
 }
 
@@ -330,9 +302,9 @@ Promise.delay = (msecs)=>( new Promise( (resolve)=>setTimeout(resolve, msecs) ) 
 const PROMPT_IDENTIFIER = "Prompt:";
 const PROMPT_END = ":End Prompt"
 
-class Html {
-    static create = document.createElement.bind(document);
-    static make = {
+globalThis.Html = {
+    create: document.createElement.bind(document),
+    make: {
         a(href, className){
             const a = Html.new.a();
             if (href !== undefined) a.href = href;
@@ -352,14 +324,14 @@ class Html {
             if (onClick !== undefined) On.click(li, onClick);
             return li;
         }
-    };
-    static makeWithClass(tagName, className){
+    },
+    makeWithClass(tagName, className){
         const elem = Html.new[tagName]();
         if (className !== undefined) elem.setAttribute('class', className);
         return elem;
-    }
-    static new = {};
-}
+    },
+    new: {}
+};
 [
     'code', 'div', 'iframe', 'input',
     'pre', 'select', 'span', 'textarea'
@@ -403,6 +375,17 @@ class Svg {
 .forEach( (name)=>{ Svg.new[name] = Svg.create.bind(Elem, name) } );
 
 //ai.js
+
+const Host = {
+    baseUrl: 'http://localhost:7070',
+    urlForPath(path){
+        const url = this.baseUrl + path;
+        Logger.debug("Made url:", url);
+        return url;
+    }
+};
+
+let useProxy = false;
 
 // nodedef.js ainodemessage.js
 const AiNode = {

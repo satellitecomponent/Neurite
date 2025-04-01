@@ -11,27 +11,13 @@ async function generateKeywords(message, count, specificContext = null, node = n
             .map(String.trim);
     }
 
-    const messages = [
-        {
-            role: "system",
-            content: `Recent conversation:${lastPromptsAndResponses}`,
-        },
-        {
-            role: "system",
-            content: "Provide three single-word keywords relevant to the latest user message. Enclose each keyword in quotations and separate them with commas.",
-        },
-        {
-            role: "user",
-            content: `${message}`,
-        },
-    ];
+    const aiCall = AiCall.single(node)
+        .addSystemPrompt("Recent conversation:" + lastPromptsAndResponses)
+        .addSystemPrompt("Provide three single-word keywords relevant to the latest user message. Enclose each keyword in quotations and separate them with commas.")
+        .addUserPrompt(message);
+    aiCall.customTemperature = 0;
 
-    let response;
-    if (node) {
-        response = await callchatLLMnode(messages, node, false, 0);
-    } else {
-        response = await callchatAPI(messages, false, 0);
-    }
+    const response = aiCall.exec();
 
     Logger.info("Generate Keywords Ai Response:", response);
 
@@ -57,7 +43,6 @@ function isGoogleSearchEnabled(nodeIndex = null) {
     return (globalCheckbox ? globalCheckbox.checked : false);
 }
 
-// console.log("Sending context to AI:", messages);
 function performSearch(searchQuery) {
     Logger.info("Search Query in processLinkInput:", searchQuery);
 
@@ -66,9 +51,9 @@ function performSearch(searchQuery) {
 
     if (!apiKey || !searchEngineId) {
         return window.alert('API Key or Search Engine ID is missing. Please enter them.')
-            .then(() => Promise.resolve())
-            .catch((error) => {
-                Logger.err("Failed to display alert:", error);
+            .then(Promise.resolve)
+            .catch( (err)=>{
+                Logger.err("Failed to display alert:", err);
                 return Promise.resolve();
             });
     }
@@ -88,9 +73,9 @@ performSearch.ct = class {
     }
     onFailure(){
         return window.alert("Failed to fetch search results. Please check your API key, search engine ID, and ensure your Google Cloud project is properly configured.")
-            .then(() => "Failed to fetch search results:")
-            .catch((error) => {
-                Logger.err("Failed to display alert:", error);
+            .then( ()=>"Failed to fetch search results:" )
+            .catch( (err)=>{
+                Logger.err("Failed to display alert:", err);
                 return "Failed to fetch search results:";
             });
     }
@@ -105,29 +90,14 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
     }
 
     recentContext = recentContext || getLastPromptsAndResponses(2, 150);
-    const queryContext = [
-        {
-            role: "system",
-            content: `Recent conversation context: \n${recentContext}`
-        },
-        {
-            role: "system",
-            content: "Without unnecessary preface or summary... From the provided context history, predict a relevant search query within quotation marks."
-        },
-        {
-            role: "user",
-            content: userMessage
-        }
-    ];
+    const aiCall = AiCall.single(node)
+        .addSystemPrompt("Recent conversation context: \n" + recentContext)
+        .addSystemPrompt("Without unnecessary preface or summary... From the provided context history, predict a relevant search query within quotation marks.")
+        .addUserPrompt(userMessage);
+    aiCall.customTemperature = 0;
 
     try {
-        let apiResponse;
-        if (node) {
-            apiResponse = await callchatLLMnode(queryContext, node, false, 0);
-        } else {
-            apiResponse = await callchatAPI(queryContext, false, 0);
-        }
-
+        const apiResponse = await aiCall.exec();
         const extractedQuery = apiResponse.match(/"([^"]*)"/);
         const searchQuery = extractedQuery ? extractedQuery[1] : apiResponse;
         Logger.info("Search Query:", searchQuery);
@@ -144,13 +114,12 @@ async function constructSearchQuery(userMessage, recentContext = null, node = nu
 }
 
 async function getRelevantSearchResults(userMessage, searchResults, topN = 5) {
-    const fetchEmbeddings = Embeddings.fetch;
-    const userMessageEmbedding = await fetchEmbeddings(userMessage);
+    const userMessageEmbedding = await Embeddings.fetch(userMessage);
 
     const searchResultEmbeddings = await Promise.all(
         searchResults.map(async result => {
             const titleAndDescription = result.title + " " + result.description;
-            const embedding = await fetchEmbeddings(titleAndDescription);
+            const embedding = await Embeddings.fetch(titleAndDescription);
             return {
                 result,
                 embedding
@@ -193,29 +162,35 @@ async function displayResultsRelevantToMessage(searchResults, message){
 }
 
 function returnLinkNodes() {
-    window.prompt("Enter a Link or Search Query", '').then((linkUrl) => {
-        if (linkUrl) processLinkInput(linkUrl);
-    }).catch((error) => {
-        Logger.err("Failed to get prompt input:", error);
-    });
+    window.prompt("Enter a Link or Search Query", '')
+        .then( (linkInput)=>{
+            if (linkInput) processLinkInput(linkInput)
+        })
+        .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
 }
 
     //for interface.js link node drop handler
-function processLinkInput(linkUrl) {
-    if (String.isUrl(linkUrl)) {
-        const node = new LinkNode(linkUrl, linkUrl);
+function processLinkInput(linkInput) {
+    if (String.isUrl(linkInput)) {
+        const node = new LinkNode(linkInput, linkInput);
         setupNodeForPlacement(node);
     } else {
-        return handleNaturalLanguageSearch(linkUrl)
+        return handleNaturalLanguageSearch(linkInput)
     }
 }
 
-async function handleNaturalLanguageSearch(query) {
+async function handleNaturalLanguageSearch(query, message) {
     if (query === null) return;
 
     const searchResultsData = await performSearch(query);
     if (!searchResultsData) return;
 
     const searchResults = processSearchResults(searchResultsData);
-    await displayResultsRelevantToMessage(searchResults, query);
+    await displayResultsRelevantToMessage(searchResults, message ?? query);
+    if (!message) return;
+
+    return searchResults.map( (result, index)=>{
+        const descr = result.description.substring(0, 100);
+        return `Search Result ${index + 1}: ${result.title} - ${descr}...\n[Link: ${result.link}]\n`;
+    }).join('\n');
 }

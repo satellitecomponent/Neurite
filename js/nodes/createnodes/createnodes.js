@@ -1,11 +1,16 @@
-﻿On.dblclick(document, (e)=>{
+﻿On.dblclick(document, (e) => {
     e.stopPropagation();
 
+    // Ensure the click target is the background SVG
+    const isSvgBackground = e.target.id === 'svg_bg';
+    if (!isSvgBackground) return;
+
     if (e.getModifierState(controls.altKey.value)) {
-        // Alt + double click behavior
+        // Alt + double click => Create LLM node
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (App.nodeMode && !Node.prev) { // Node mode (Shift) + double click behavior *text nodes
+    } else if (App.nodeMode && !Node.prev) {
+        // Shift + double click => Create regular node
         createNodeFromWindow();
     }
 });
@@ -77,10 +82,7 @@ function createTextNodeWithPosAndScale(title, text, scale, x, y) {
 function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null, title = null, text = null) {
     const scaleFactor = 0.8; // Factor to scale the new node relative to the original
 
-    // If theta is not provided, select a random angle between 0 and 2π
-    if (theta === null) {
-        theta = Math.random() * Math.PI * 2;
-    }
+    if (theta === null) theta = thetaForPos(spawningNode.pos, Graph.lastPos);
 
     // Calculate new position based on angle and distance
     const newPositionX = spawningNode.pos.x + offsetDistance * Math.cos(theta) * spawningNode.scale;
@@ -99,13 +101,18 @@ function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null,
 Math.PHI = 5 ** .5 * .5 + .5;
 function thetaForNodes(n1, n2){
     const lastEdge = n1.edges[n1.edges.length - 1];
-    n2 = (lastEdge ? lastEdge.getPointBarUuid(n1.uuid) : n2);
-    if (n1 === n2) return Math.random() * Math.PI * 2;
+    if (lastEdge) n2 = lastEdge.getPointBarUuid(n1.uuid);
+    return thetaForPos(n1.pos, n2.pos);
+}
+function thetaForPos(pos1, pos2){
+    const x = pos2.x - pos1.x;
+    const y = pos2.y - pos1.y;
+    if (x === 0 && y === 0) return 2 * Math.PI * Math.random();
 
-    const vector = new vec2(n2.pos.x - n1.pos.x, n2.pos.y - n1.pos.y);
-    const baseTheta = vector.ang();
+    const baseTheta = Math.atan2(y, x);
     return (baseTheta + 2 * Math.PI / Math.PHI) % (2 * Math.PI);
 }
+
 function spawnMemoryNode(root, title, message) {
     const parent = Node.parentAvailableFromRoot(root);
     const theta = thetaForNodes(parent, root);

@@ -21,7 +21,7 @@ class TextNode {
 
         // Handle position and scale if necessary
         if (sx !== undefined) {
-            const pos = (new vec2(sx, sy)).cmult(zoom).plus(pan);
+            const pos = (new vec2(sx, sy)).cmult(Graph.zoom).plus(Graph.pan);
             y = pos.y;
             x = pos.x;
         }

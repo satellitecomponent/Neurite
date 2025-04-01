@@ -1,18 +1,57 @@
 //frame();
 let nodeMode_v = 0;
-let mousePathPos;
 let current_time;
 let regenAmount = 0;
 let regenDebt = 0;
 let avgfps = 0;
-let panToI = new vec2(0, 0);
-let panToI_prev;
 
 //let manualConnectionOverride = false;
 
+Autopilot.update = function(time){
+    const oldPan = Graph.pan;
+    let newPan;
+    if (this.referenceFrame && this.speed !== 0) {
+        if (!this.panToI_prev) {
+            this.panToI_prev = this.referenceFrame.pos.scale(1);
+            this.referenceScalePrev = this.referenceFrame.scale;
+        }
+        this.panToI = this.panToI.scale(1 - settings.autopilotRF_Iscale).plus(this.referenceFrame.pos.minus(this.panToI_prev).scale(settings.autopilotRF_Iscale));
+        newPan = oldPan.scale(1 - this.speed).plus(this.referenceFrame.pos.scale(this.speed).plus(this.panToI));
+        this.panToI_prev = this.referenceFrame.pos.scale(1);
+
+        if (this.referenceFrame.scale !== this.referenceScalePrev) {
+            let scaleFactor = this.referenceFrame.scale / this.referenceScalePrev;
+            const maxScaleChangePerFrame = 0.1;
+            scaleFactor = Math.max(Math.min(scaleFactor, 1 + maxScaleChangePerFrame), 1 - maxScaleChangePerFrame);
+
+            this.targetZoom = this.targetZoom.scale(scaleFactor);
+            this.referenceScalePrev = this.referenceFrame.scale;
+        }
+    } else {
+        newPan = oldPan.scale(1 - this.speed)
+                .plus(this.targetPan.scale(this.speed));
+        this.panToI_prev = null;
+    }
+
+    const autopilot_travelDist = oldPan.minus(newPan).mag() / Graph.zoom.mag();
+    if (autopilot_travelDist > settings.autopilotMaxSpeed) {
+        newPan = oldPan.plus(newPan.minus(oldPan).scale(settings.autopilotMaxSpeed / autopilot_travelDist));
+        const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed / autopilot_travelDist + 1e-300) / 10) * 2;
+        Graph.zoom_scaleBy(1 - speedCoeff * this.speed);
+    } else {
+        Graph.zoom_set(Graph.zoom.scale(1 - this.speed)
+                        .plus(this.targetZoom.scale(this.speed)));
+    }
+    Graph.pan_set(newPan);
+    if (App.interface.coordsLive) {
+        panInput.value = Graph.pan.ctostring();
+        zoomInput.value = String(Graph.zoom.mag());
+    }
+}
+
 class NodeSimulation {
     mousePath = [];
-    prevNodeScale = 1;
+    mousePathPos = new vec2(0, 0);
     svg_mousePath = svg.getElementById('mousePath');
     current_time = undefined;
 
@@ -25,66 +64,29 @@ class NodeSimulation {
         App.selectedNodes.forEach(Node.moveAtThisAngle, movementAngle);
     }
 
-    updateAutopilot(time) {
-        let autopilot_travelDist = 0;
-        let newPan = pan;
-
-        if (autopilotReferenceFrame && autopilotSpeed !== 0) {
-            if (panToI_prev === undefined) {
-                panToI_prev = autopilotReferenceFrame.pos.scale(1);
-                this.prevNodeScale = autopilotReferenceFrame.scale;
-            }
-            panToI = panToI.scale(1 - settings.autopilotRF_Iscale).plus(autopilotReferenceFrame.pos.minus(panToI_prev).scale(settings.autopilotRF_Iscale));
-            newPan = pan.scale(1 - autopilotSpeed).plus(autopilotReferenceFrame.pos.scale(autopilotSpeed).plus(panToI));
-            panToI_prev = autopilotReferenceFrame.pos.scale(1);
-
-            if (autopilotReferenceFrame.scale !== this.prevNodeScale) {
-                let scaleFactor = autopilotReferenceFrame.scale / this.prevNodeScale;
-                const maxScaleChangePerFrame = 0.1;
-                scaleFactor = Math.max(Math.min(scaleFactor, 1 + maxScaleChangePerFrame), 1 - maxScaleChangePerFrame);
-
-                zoomTo = zoomTo.scale(scaleFactor);
-                this.prevNodeScale = autopilotReferenceFrame.scale;
-            }
-        } else {
-            newPan = pan.scale(1 - autopilotSpeed).plus(panTo.scale(autopilotSpeed));
-            panToI_prev = undefined;
-        }
-        autopilot_travelDist = pan.minus(newPan).mag() / zoom.mag();
-        if (autopilot_travelDist > settings.autopilotMaxSpeed) {
-            newPan = pan.plus(newPan.minus(pan).scale(settings.autopilotMaxSpeed / autopilot_travelDist));
-            const speedCoeff = Math.tanh(Math.log(settings.autopilotMaxSpeed / autopilot_travelDist + 1e-300) / 10) * 2;
-            zoom = zoom.scale(1 - speedCoeff * autopilotSpeed);
-        } else {
-            zoom = zoom.scale(1 - autopilotSpeed).plus(zoomTo.scale(autopilotSpeed));
-        }
-        pan = newPan;
-        if (coordsLive) {
-            panInput.value = pan.ctostring();
-            zoomInput.value = String(zoom.mag());
-        }
-    }
-
     updateMousePath() {
         if (this.mousePath.length < 1) {
-            mousePathPos = toZ(mousePos);
-            this.mousePath = ["M ", toSVG(mousePathPos), " L "];
+            this.mousePathPos = Graph.vecToZ();
+            this.mousePath = ["M ", this.mousePathPos.toSvg(), " L "];
         }
-        for (let i = 0; i < settings.orbitStepRate; i++) {
-            mousePathPos = mand_step(mousePathPos, toZ(mousePos));
-            if (toSVG(mousePathPos).isFinite() && toSVG(mousePathPos).mag2() < 1e60) {
-                this.mousePath.push(toSVG(mousePathPos), " ")
+
+        const step = Fractal.step;
+        for (let i = 0; i < settings.orbitStepRate; i += 1) {
+            this.mousePathPos = step(this.mousePathPos, Graph.vecToZ());
+            const vecSvg = this.mousePathPos.toSvg();
+            if (vecSvg.isFinite() && vecSvg.mag2() < 1e60) {
+                this.mousePath.push(vecSvg, " ")
             }
         }
     }
 
     updateMousePathWidth() {
         const svg_mousePath = this.svg_mousePath;
-        let width = zoom.mag() * 0.0005 * Svg.zoom;
+        let width = Graph.zoom.mag() * 0.0005 * Svg.zoom;
 
         if (Node.prev) {
-            const m = toSVG(Node.prev.pos);
-            const l = toSVG(toZ(mousePos));
+            const m = Node.prev.pos.toSvg();
+            const l = Graph.vecToZ().toSvg();
             svg_mousePath.setAttribute('d', "M " + m + " L " + l);
             width *= 50;
         } else {
@@ -122,7 +124,7 @@ class NodeSimulation {
     }
     updateForThisDt(item){
         item.step(this);
-        //let d = toZ(mousePos).minus(n.pos);
+        //let d = Graph.vecToZ().minus(n.pos);
     }
     updateEdges(dt) {
         Graph.forEachEdge(this.updateForThisDt, dt);
@@ -143,7 +145,7 @@ class NodeSimulation {
     nodeStep = (time)=>{
         if (App.selectedNodes.uuids.size > 0) this.processSelectedNodes();
 
-        this.updateAutopilot(time);
+        Autopilot.update(time);
         Svg.updateViewbox();
         this.updateMousePath();
         this.updateMousePathWidth();
