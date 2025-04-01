@@ -1,7 +1,7 @@
 {
   "name": "neurite-electron",
   "version": "1.0.0",
-  "description": "Electron build for Neurite fractal mind map.",
+  "description": "Neurite for desktop.",
   "author": "satellitecomponent",
   "main": "main.js",
   "scripts": {
@@ -11,8 +11,6 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "axios": "^1.7.9",
-    "electron-log": "^5.2.4",
-    "electron-updater": "^6.3.9",
     "tree-kill": "^1.2.2"
   },
   "devDependencies": {

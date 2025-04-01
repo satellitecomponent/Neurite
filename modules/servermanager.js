@@ -20,7 +20,7 @@ async function isLocalServerRunning() {
 }
 
 async function runNpmInstall(folder, logStream) {
-    console.log(`[serverManager] Installing root dependencies in ${folder}`);
+    console.log(`[serverManager] Installing localhost_servers`);
     return new Promise((resolve, reject) => {
         const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
         const install = spawn(npmCmd, ['install'], {
@@ -86,7 +86,7 @@ async function startLocalServers(serversFolder) {
 
         const checkServer = async () => {
             if (await isLocalServerRunning()) {
-                logStream.write(`[serverManager] Servers confirmed running\n`);
+                logStream.write(`[serverManager] localhost_servers running\n`);
                 return resolve();
             }
             setTimeout(checkServer, 1000);

@@ -1,0 +1,102 @@
+name: Multi-Platform Electron Release (Testable)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (draft, prerelease, final)'
+        required: false
+        default: 'draft'
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.version.outputs.timestamp }}
+      tag: ${{ steps.version.outputs.tag }}
+      draft: ${{ steps.version.outputs.draft }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Generate timestamped version
+        id: version
+        run: |
+          timestamp=$(date +'%Y.%m.%d.%H%M%S')
+          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+          echo "tag=electron-$timestamp" >> $GITHUB_OUTPUT
+
+          if [[ "${{ github.event.inputs.release_type }}" == "draft" ]]; then
+            echo "draft=true" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.inputs.release_type }}" == "prerelease" ]]; then
+            echo "draft=false" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "draft=false" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: set-version
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
+      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write embedded version file
+        run: |
+          echo "{\"version\": \"$RELEASE_VERSION\"}" > modules/build-version.json
+
+      - name: Build Electron app
+        run: npm run build
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          body: |
+            Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          draft: ${{ needs.set-version.outputs.draft }}
+          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: |
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh jq
+
+      - name: Authenticate with GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Delete old electron-* releases (keep latest)
+        run: |
+          gh release list --limit 100 --json tagName,createdAt \
+          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+          | sort -r \
+          | tail -n +2 \
+          | awk '{print $2}' \
+          | xargs -r -n 1 gh release delete -y
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

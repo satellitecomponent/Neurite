@@ -6,31 +6,43 @@ const { initializeUpdater } = require('./modules/update');
 const { ensureServersDownloaded } = require('./modules/serverdownloader');
 
 app.whenReady().then(async () => {
-    // Create the loading screen immediately
-    createLoadingWindow();
+    // Run updater and wait for possible restart
+    const shouldContinue = await initializeUpdater();
+    if (!shouldContinue) return;
+
+    const loadingWindow = createLoadingWindow();
+
+    loadingWindow.on('closed', () => {
+        // If the main window hasn't been shown yet, assume the user quit early
+        const anyVisible = BrowserWindow.getAllWindows().some(win => win.isVisible());
+        if (!anyVisible) {
+            console.log('[main] Loading window closed before main window was shown. Quitting app...');
+            app.quit(); // Triggers before-quit and will clean up servers
+        }
+    });
 
     // Create the main window in hidden mode so it can load in the background.
     const mainWindow = createMainWindow();
 
-    // Promise for server readiness: If the server is already running, this resolves immediately.
+    // Server readiness
     const serversPromise = (async () => {
         const running = await isLocalServerRunning();
         if (!running) {
-            console.log('Local server not running. Downloading and starting...');
+            console.log('[main] Starting localhost_servers...');
             try {
                 const serverPath = await ensureServersDownloaded();
                 await startLocalServers(serverPath);
-                console.log('Local servers started.');
+                console.log('localhost_servers started.');
             } catch (err) {
-                console.error('Failed to start local servers:', err);
+                console.error('[main] Failed to start localhost_servers:', err);
             }
         } else {
-            console.log('Local servers already running.');
+            console.log('[main] localhost_servers already running.');
         }
         return true;
     })();
 
-    // Promise for renderer readiness
+    // Renderer readiness
     const rendererPromise = new Promise((resolve) => {
         ipcMain.once('renderer-ready', () => {
             console.log('Renderer signaled ready');
@@ -38,26 +50,19 @@ app.whenReady().then(async () => {
         });
     });
 
-    // Wait for both the servers and renderer to be ready.
     await Promise.all([serversPromise, rendererPromise]);
 
     mainWindow.webContents.executeJavaScript('Host?.checkServer?.()');
-        
-    // Once both are ready, close the loading window and show the main window.
+
     closeLoadingWindow();
     mainWindow.show();
 
-    // Initialize updater functionality
-    initializeUpdater(mainWindow);
-
-    // macOS: Re-create window when dock icon is clicked and no windows are open
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createMainWindow().show();
         }
     });
 });
-
 // Clean up when quitting the app
 app.on('before-quit', () => {
     stopLocalServers();

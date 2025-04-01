@@ -23,8 +23,9 @@ function getVersionCacheFilePath() {
 function getCachedVersion() {
     try {
         const data = fs.readFileSync(getVersionCacheFilePath(), 'utf8');
-        return JSON.parse(data).version;
-    } catch {
+        const parsed = JSON.parse(data);
+        return parsed.version;
+    } catch (err) {
         return null;
     }
 }
@@ -35,14 +36,63 @@ function saveVersion(version) {
 
 function deleteOldVersionsExcept(versionToKeep) {
     const baseDir = getServerExtractBasePath();
-    if (!fs.existsSync(baseDir)) return;
+    if (!fs.existsSync(baseDir)) {
+        console.log(`[debug] No base directory to clean.`);
+        return;
+    }
 
     const entries = fs.readdirSync(baseDir, { withFileTypes: true });
     for (const entry of entries) {
         if (entry.isDirectory() && entry.name !== versionToKeep) {
             const fullPath = path.join(baseDir, entry.name);
-            console.log(`[downloader] Removing old server version: ${entry.name}`);
             fs.rmSync(fullPath, { recursive: true, force: true });
+        }
+    }
+}
+
+function preservePathsBeforeUpdate(baseDir, patterns) {
+    const preserved = [];
+
+    if (!fs.existsSync(baseDir)) {
+        console.log(`[debug] Base directory for preservation does not exist: ${baseDir}`);
+        return preserved;
+    }
+
+    function recurse(current) {
+        const entries = fs.readdirSync(current, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(current, entry.name);
+
+            if (entry.isDirectory()) {
+                if (patterns.includes(entry.name)) {
+                    const relPath = path.relative(baseDir, fullPath);
+                    preserved.push({ type: 'dir', relPath, src: fullPath });
+                } else {
+                    recurse(fullPath);
+                }
+            } else {
+                if (patterns.includes(entry.name)) {
+                    const relPath = path.relative(baseDir, fullPath);
+                    const contents = fs.readFileSync(fullPath);
+                    preserved.push({ type: 'file', relPath, contents });
+                }
+            }
+        }
+    }
+
+    recurse(baseDir);
+    return preserved;
+}
+
+function restorePreservedPaths(baseDir, preserved) {
+    for (const item of preserved) {
+        const targetPath = path.join(baseDir, item.relPath);
+
+        if (item.type === 'file') {
+            fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+            fs.writeFileSync(targetPath, item.contents);
+        } else if (item.type === 'dir') {
+            fs.cpSync(item.src, targetPath, { recursive: true });
         }
     }
 }
@@ -75,40 +125,67 @@ async function getLatestReleaseAssetUrl() {
 }
 
 async function ensureServersDownloaded() {
-    const { version, downloadUrl } = await getLatestReleaseAssetUrl();
+    let latest;
+    let wasDownloaded = false;
+    let preservedItems = [];
+
+    try {
+        latest = await getLatestReleaseAssetUrl();
+    } catch (err) {
+        console.warn(`[downloader] Failed to fetch latest release info: ${err.message}`);
+    }
+
     const cachedVersion = getCachedVersion();
-    const versionRoot = getServerExtractPath(version);
+    const versionToUse = latest?.version || cachedVersion;
+    const versionRoot = getServerExtractPath(versionToUse);
     const serverRoot = path.join(versionRoot, 'localhost_servers');
     const checkFile = path.join(serverRoot, 'start_servers.js');
 
-    if (version === cachedVersion && fs.existsSync(checkFile)) {
-        console.log(`[downloader] Server version '${version}' already downloaded at ${serverRoot}`);
-        return serverRoot;
+    const needsDownload = !fs.existsSync(checkFile);
+
+    if (needsDownload) {
+        if (!latest) {
+            throw new Error('[downloader] No usable server version available.');
+        }
+
+        if (cachedVersion) {
+            const oldServerRoot = path.join(getServerExtractPath(cachedVersion), 'localhost_servers');
+            preservedItems = preservePathsBeforeUpdate(oldServerRoot, ['database.db', 'node_modules']);
+        }
+
+        fs.mkdirSync(versionRoot, { recursive: true });
+        const zipPath = path.join(versionRoot, 'servers.zip');
+
+        const writer = fs.createWriteStream(zipPath);
+        const response = await axios.get(latest.downloadUrl, { responseType: 'stream' });
+        await new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        const zip = new AdmZip(zipPath);
+        zip.extractAllTo(versionRoot, true);
+        fs.unlinkSync(zipPath);
+
+        restorePreservedPaths(serverRoot, preservedItems);
+
+        saveVersion(latest.version);
+        deleteOldVersionsExcept(latest.version);
+
+        wasDownloaded = true;
     }
 
-    console.log(`[downloader] Downloading new server version '${version}' from ${downloadUrl}`);
-    fs.mkdirSync(versionRoot, { recursive: true });
-    const zipPath = path.join(versionRoot, 'servers.zip');
+    const summary = {
+        status: wasDownloaded ? 'Downloaded new' : 'Using cached',
+        version: versionToUse
+    };
 
-    const writer = fs.createWriteStream(zipPath);
-    const response = await axios.get(downloadUrl, { responseType: 'stream' });
-    await new Promise((resolve, reject) => {
-        response.data.pipe(writer);
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-    });
-
-    console.log('[downloader] Extracting...');
-    const zip = new AdmZip(zipPath);
-    zip.extractAllTo(versionRoot, true); // true = overwrite
-
-    fs.unlinkSync(zipPath); // clean up
-
-    saveVersion(version);
-    deleteOldVersionsExcept(version);
+    console.log(`[updater] ${summary.status} localhost_${summary.version}`);
 
     return serverRoot;
 }
+
 
 module.exports = {
     ensureServersDownloaded
