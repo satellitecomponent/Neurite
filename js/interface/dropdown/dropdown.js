@@ -21,7 +21,7 @@ const updateValueSlider = (value, slider) => {
     slider.value = newValue;
     setSliderBackground(slider);
 }
- 
+
 const aiTab = new AiTab();
 const editTab = new EditTab(settings);
 
