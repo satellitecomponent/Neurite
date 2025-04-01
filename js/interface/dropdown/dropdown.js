@@ -1,4 +1,35 @@
-﻿// Function to save the value of a specific slider or color picker
+﻿const updateSliderValue = (slider, value) => {
+    value.value = slider.value;
+};
+
+const updateValueSlider = (value, slider) => {
+    const step = parseFloat(slider.step);
+    const minValue = parseFloat(slider.min);
+    const maxValue = parseFloat(slider.max);
+    let newValue = parseFloat(value.value);
+
+    if (isNaN(newValue)) return; // Ignore invalid input
+
+    // Clamp to min/max
+    newValue = Math.max(minValue, Math.min(maxValue, newValue));
+
+    // Optional: round to nearest step
+    const precision = (step < 1) ? step.toString().split('.')[1]?.length || 2 : 0;
+    newValue = parseFloat(newValue.toFixed(precision));
+
+    value.value = newValue;
+    slider.value = newValue;
+    setSliderBackground(slider);
+}
+
+const aiTab = new AiTab();
+const editTab = new EditTab(settings);
+
+
+
+
+
+// Function to save the value of a specific slider or color picker
 function saveInputValue(input) {
     const savedValues = localStorage.getItem('inputValues');
     const inputValues = savedValues ? JSON.parse(savedValues) : {};

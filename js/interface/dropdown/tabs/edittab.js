@@ -52,75 +52,185 @@ class EditTab {
 
     #initEventListeners(){
         const innerOpacitySlider = Elem.byId('inner_opacity');
-        On.input(innerOpacitySlider, (e)=>{
-            settings.innerOpacity = innerOpacitySlider.value / 100;
-        });
-
+        const innerOpacityValue = Elem.byId('inner_opacity_value');
         const outerOpacitySlider = Elem.byId('outer_opacity');
-        On.input(outerOpacitySlider, (e)=>{
-            settings.outerOpacity = outerOpacitySlider.value / 100;
+        const outerOpacityValue = Elem.byId('outer_opacity_value');
+    
+        On.input(innerOpacitySlider, (e) => {
+            settings.innerOpacity = innerOpacitySlider.value / 100;
+            updateSliderValue(innerOpacitySlider, innerOpacityValue);
         });
-
-        On.input(Elem.byId('length'), (e)=>{
+    
+        On.input(innerOpacityValue, (e) => {
+            settings.innerOpacity = innerOpacityValue.value / 100;
+            updateValueSlider(innerOpacityValue, innerOpacitySlider);
+        });
+    
+        On.input(outerOpacitySlider, (e) => {
+            settings.outerOpacity = outerOpacitySlider.value / 100;
+            updateSliderValue(outerOpacitySlider, outerOpacityValue);
+        });
+    
+        On.input(outerOpacityValue, (e) => {
+            settings.outerOpacity = outerOpacityValue.value / 100;
+            updateValueSlider(outerOpacityValue, outerOpacitySlider);
+        });
+    
+        const lengthSlider = Elem.byId('length');
+        const lengthValue = Elem.byId('length_value');
+        On.input(lengthSlider, (e) => {
             const v = this.getLength();
             this.setRenderLength(v);
-            Elem.byId('length_value').textContent = (Math.round(v * 100) / 100);
+            updateSliderValue(lengthSlider, lengthValue);
         });
-
-        On.input(Elem.byId('regenDebtSlider'), (e)=>{
+    
+        On.input(lengthValue, (e) => {
+            updateValueSlider(lengthValue, lengthSlider);
+            const v = this.getLength();
+            this.setRenderLength(v);
+        });
+    
+        const regenDebtSlider = Elem.byId('regenDebtSlider');
+        const regenDebtValue = Elem.byId('regenDebtValue');
+        On.input(regenDebtSlider, (e) => {
             const v = this.getRegenDebtAdjustmentFactor();
             settings.regenDebtAdjustmentFactor = v;
-            Elem.byId('regenDebtValue').textContent = v;
+            updateSliderValue(regenDebtSlider, regenDebtValue);
         });
-
-        On.input(Elem.byId('renderDelaySlider'), (e) => {
-            settings.renderDelay = parseInt(e.target.value);
-            Elem.byId('renderDelayValue').textContent = settings.renderDelay;
-        })
-
-        On.input(Elem.byId('zoomSpeedSlider'), (e)=>{
-            const zoomSpeed = parseFloat(e.target.value);
-            settings.zoomSpeedMultiplier = zoomSpeed;
-            Elem.byId('zoomSpeedValue').textContent = zoomSpeed.toFixed(1);
-        })
-
-        On.input(Elem.byId('renderWidthMultSlider'), (e)=>{
+    
+        On.input(regenDebtValue, (e) => {
+            updateValueSlider(regenDebtValue, regenDebtSlider);
+            const v = this.getRegenDebtAdjustmentFactor();
+            settings.regenDebtAdjustmentFactor = v;
+        });
+    
+        const renderWidthMultSlider = Elem.byId('renderWidthMultSlider');
+        const renderWidthMultValue = Elem.byId('renderWidthMultValue');
+        On.input(renderWidthMultSlider, (e) => {
             const adjustedValue = this.getRenderWidthMult();
             this.setRenderWidthMult(adjustedValue);
-            Elem.byId('renderWidthMultValue').textContent = adjustedValue.toFixed(2);
+            updateSliderValue(renderWidthMultSlider, renderWidthMultValue);
+        });
+    
+        On.input(renderWidthMultValue, (e) => {
+            updateValueSlider(renderWidthMultValue, renderWidthMultSlider);
+            const adjustedValue = this.getRenderWidthMult();
+            this.setRenderWidthMult(adjustedValue);
         });
 
-        On.input(Elem.byId('maxLinesSlider'), (e)=>{
+        const renderDelaySlider = Elem.byId('renderDelaySlider');
+        const renderDelayValue = Elem.byId('draw_speed_value');
+        On.input(renderDelaySlider, (e) => {
+            settings.renderDelay = parseInt(renderDelaySlider.value);
+            updateSliderValue(renderDelaySlider, renderDelayValue);
+        });
+        On.input(renderDelayValue, (e) => {
+            updateValueSlider(renderDelayValue, renderDelaySlider);
+            settings.renderDelay = parseInt(renderDelaySlider.value);
+        });
+        
+        const zoomSpeedSlider = Elem.byId('zoomSpeedSlider');
+        const zoomSpeedValue = Elem.byId('zoom_speed_value');
+        On.input(zoomSpeedSlider, (e) => {
+            settings.zoomSpeedMultiplier = parseFloat(zoomSpeedSlider.value);
+            updateSliderValue(zoomSpeedSlider, zoomSpeedValue);
+        });
+        On.input(zoomSpeedValue, (e) => {
+            updateValueSlider(zoomSpeedValue, zoomSpeedSlider);
+            settings.zoomSpeedMultiplier = parseFloat(zoomSpeedSlider.value);
+        });
+        
+    
+        const maxLinesSlider = Elem.byId('maxLinesSlider');
+        const maxLinesValue = Elem.byId('maxLinesValue');
+        On.input(maxLinesSlider, (e) => {
             const v = this.getMaxLines();
             settings.maxLines = v;
-            Elem.byId('maxLinesValue').textContent = v;
+            updateSliderValue(maxLinesSlider, maxLinesValue);
+        });
+    
+        On.input(maxLinesValue, (e) => {
+            updateValueSlider(maxLinesValue, maxLinesSlider);
+            const v = this.getMaxLines();
+            settings.maxLines = v;
         });
 
-        On.input(Elem.byId('quality'), (e)=>{
-            const v = this.getQuality();
+        const qualitySlider = Elem.byId('quality');
+        const qualityValue = Elem.byId('quality_value_number');
+    
+        On.input(qualitySlider, (e) => {
+            const v = this.getQuality(qualitySlider);
             this.setRenderQuality(v);
-            Elem.byId('quality_value').textContent = "Quality:" + (Math.round(v * 100) / 100);
+            updateSliderValue(qualitySlider, qualityValue);
         });
-
-        On.input(Elem.byId('exponent'), Fractal.updateStep);
-
-        On.input(Elem.byId('flashlightStrength'), this.updateFlashlightStrength);
-        On.input(Elem.byId('flashlightRadius'), this.updateFlashlightRadius);
-
+        
+        On.input(qualityValue, (e) => {
+            updateValueSlider(qualityValue, qualitySlider);
+            const v = this.getQuality(qualityValue);
+            this.setRenderQuality(v);
+        });
+    
+        On.input(Elem.byId('exponent'), (e) => updateMandStep());
+    
+        const flashlightStrengthSlider = Elem.byId('flashlightStrength');
+        const flashlightStrengthValue = Elem.byId('flashlightStrength_value');
+        On.input(flashlightStrengthSlider, (e) => {
+            this.updateFlashlightStrength();
+            updateSliderValue(flashlightStrengthSlider, flashlightStrengthValue);
+        });
+    
+        On.input(flashlightStrengthValue, (e) => {
+            updateValueSlider(flashlightStrengthValue, flashlightStrengthSlider);
+            this.updateFlashlightStrength();
+        });
+    
+        const flashlightRadiusSlider = Elem.byId('flashlightRadius');
+        const flashlightRadiusValue = Elem.byId('flashlightRadius_value');
+        On.input(flashlightRadiusSlider, (e) => {
+            this.updateFlashlightRadius();
+            updateSliderValue(flashlightRadiusSlider, flashlightRadiusValue);
+        });
+    
+        On.input(flashlightRadiusValue, (e) => {
+            updateValueSlider(flashlightRadiusValue, flashlightRadiusSlider);
+            this.updateFlashlightRadius();
+        });
+    
         const colorPicker = Elem.byId('colorPicker');
-        On.input(colorPicker, (e)=>{
+        On.input(colorPicker, (e) => {
             document.body.style.backgroundColor = colorPicker.value;
         });
         colorPicker.dispatchEvent(new Event('input'));
 
-        On.input(Elem.byId('inversion-slider'), (e)=>{
+        const brightnessSlider = Elem.byId('cSlider');
+        const brightnessValue = Elem.byId('c_value');
+        On.input(brightnessSlider, (e) => {
+            updateSliderValue(brightnessSlider, brightnessValue);
+        });
+    
+        On.input(brightnessValue, (e) => {
+            updateValueSlider(brightnessValue, brightnessSlider);
+        });
+
+        const saturationSlider = Elem.byId('sSlider');
+        const saturationValue = Elem.byId('s_value');
+        On.input(saturationSlider, (e) => {
+            updateSliderValue(saturationSlider, saturationValue);
+        });
+    
+        On.input(saturationValue, (e) => {
+            updateValueSlider(saturationValue, saturationSlider);
+        });
+    
+        On.input(Elem.byId('inversion-slider'), (e) => {
             this.skipMidRangeInversion();
             this.updateFilters();
         });
-
+    
         const hueRotationSlider = Elem.byId('hue-rotation-slider');
         On.input(hueRotationSlider, this.updateFilters.bind(this));
     }
+    
 
     getLength() {
         const v = Elem.byId('length').value / 100;
@@ -163,9 +273,12 @@ class EditTab {
         settings.renderSteps *= f;
     }
 
-    getQuality() {
-        const v = Elem.byId('quality').value / 100;
-        return 2 ** (v * 4);
+    computeQuality(v) {
+        return 2 ** ((v / 100) * 4);
+    }
+    
+    getQuality(sourceElem = Elem.byId('quality')) {
+        return this.computeQuality(parseFloat(sourceElem.value));
     }
 
     updateFilters() {
@@ -177,7 +290,7 @@ class EditTab {
         Elem.byId('invert-filter').style.backdropFilter = (bothZero ? '' : filterValue);
 
         document.querySelectorAll('.image-video-wrapper').forEach(
-            (wrapper)=>{ wrapper.style.backdropFilter = filterValue }
+            (wrapper) => { wrapper.style.backdropFilter = filterValue }
         );
     }
 
@@ -189,12 +302,10 @@ class EditTab {
     }
 
     updateFlashlightStrength() {
-        flashlight_fraction = parseFloat(Elem.byId('flashlightStrength').value);
-        Elem.byId('flashlightStrength_value').textContent = flashlight_fraction.toFixed(3);
+        flashlight_fraction = (parseFloat(Elem.byId('flashlightStrength').value) / 100);
     }
 
     updateFlashlightRadius() {
-        flashlight_stdev = parseFloat(Elem.byId('flashlightRadius').value);
-        Elem.byId('flashlightRadius_value').textContent = flashlight_stdev.toFixed(3);
+        flashlight_stdev = (parseFloat(Elem.byId('flashlightRadius').value) / 100);
     }
 }
