@@ -30,13 +30,39 @@ function createMainWindow() {
     });
 
     mainWindow.loadURL('https://neurite.network');
+    
+    let pendingContextMenuRequest = null;
 
-    ipcMain.on('show-context-menu', (event, params) => {
-        const { sender } = event;
-        const bw = sender.getOwnerBrowserWindow();
-        const menu = buildContextMenu(bw, params);
-        menu.popup({ window: bw, x: params.x, y: params.y });
+    mainWindow.webContents.on('context-menu', (event, params) => {
+        // Always prevent the native menu
+        event.preventDefault();
+    
+        // Cache full context
+        if (pendingContextMenuRequest) {
+            const { coords, sender } = pendingContextMenuRequest;
+            const bw = sender.getOwnerBrowserWindow();
+    
+            const fullParams = {
+                ...params,
+                x: coords.x,
+                y: coords.y,
+            };
+    
+            const menu = buildContextMenu(bw, fullParams);
+            menu.popup({ window: bw, x: fullParams.x, y: fullParams.y });
+    
+            pendingContextMenuRequest = null; // clear it
+        }
     });
+    
+    ipcMain.on('show-context-menu', (event, coords) => {
+        // Store the request for the next native context-menu event
+        pendingContextMenuRequest = {
+            coords,
+            sender: event.sender
+        };
+    });
+    
 
     // mainWindow.webContents.openDevTools();
     return mainWindow;
