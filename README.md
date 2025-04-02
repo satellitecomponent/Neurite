@@ -203,12 +203,12 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   </tr>
     <tr>
     <td><code>Right Click</code></td>
-    <td>List and run Node Methods. (delete, connect, extractText, zoomTo, among many others!)</td>
+    <td>List and run node methods. (delete, connect, extractText, zoomTo, and more.)</td>
   </tr>
   <!-- Node Selection & Arrangement -->
   <tr>
     <td rowspan="6"><strong>Node Selection & Arrangement</strong></td>
-    <td><code>Alt/Option + Drag Node</code></td>
+    <td><code>Alt/Option + Drag or Click</code></td>
     <td>Allows node selection, connection, dragging, and anchoring to pass through textareas.</td>
   </tr>
   <tr>
@@ -471,15 +471,15 @@ npm start
 
 ## `Local Server Setup`
 
-The Localhost Servers are an important component of Neurite that serves as an optional backend and enables complete functionality.
+The Localhost Servers are an important component of Neurite that serve as an optional backend and enable complete functionality.
 
-### Download Localhost Servers [here](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers). 
+### Download Localhost Servers [here](https://github.com/satellitecomponent/Neurite/releases/download/servers-2025.04.01.034058/servers.zip). 
 
 *alternatively clone the entire repo.
 
 ### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha Results, and Wikipedia Results.
 - The localhost servers require npm and Node.js
-- Without any servers running, Wolfram, Wiki, the Vector Database, and Webpage extractions will not function.
+- Without any servers running, Wolfram, Wiki, the Vector Database, File Tree Nodes, and Webpage extractions will not function.
 - All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
   node start_servers.js
@@ -491,9 +491,6 @@ As of our recent update, the servers now support an AI proxy that connects Neuri
 <p align="center">
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
-
-Neurite realizes a tapestry of thought reasoning for AI, all within our innovative real-time Mandelbrot visualization.
-- Talk to the custom GPT, [Neurite GPT](https://chat.openai.com/g/g-OT9IVbW8H-neurite) with access to Neurite's code and readme. (This is not the ai that interacts with Neurite itself)
 
 <table>
   <tr>
