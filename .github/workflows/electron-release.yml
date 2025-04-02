@@ -58,9 +58,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Write embedded version file
-        run: |
-          echo "{\"version\": \"$RELEASE_VERSION\"}" > modules/build-version.json
+      - name: Write embedded version file using dev script
+        run: npm run set-version $RELEASE_VERSION
 
       - name: Build Electron app
         run: npm run build -- --publish=never
