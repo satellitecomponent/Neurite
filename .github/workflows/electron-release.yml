@@ -63,7 +63,7 @@ jobs:
           echo "{\"version\": \"$RELEASE_VERSION\"}" > modules/build-version.json
 
       - name: Build Electron app
-        run: npm run build
+        run: npm run build -- --publish=never
 
       - name: Debug release mode
         run: |
