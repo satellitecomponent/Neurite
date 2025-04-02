@@ -28,10 +28,19 @@ function platformKey() {
     return map[os.platform()] || 'unknown';
 }
 
+function getExtensionForPlatform(platform) {
+    switch (platform) {
+        case 'win': return '.exe';
+        case 'mac': return '.dmg';
+        case 'linux': return '.AppImage';
+        default: throw new Error(`Unsupported platform: ${platform}`);
+    }
+}
+
 async function getLatestRelease() {
     const res = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases?per_page=100`, {
         headers: { 'User-Agent': 'Neurite-Updater' },
-        timeout: 5000 // Short fail-fast timeout
+        timeout: 5000
     });
 
     const releases = res.data
@@ -52,16 +61,18 @@ async function initializeUpdater() {
     }
 
     const embeddedVersion = getEmbeddedVersion(); // e.g., "2025.04.01.123045"
-    const latestVersion = latest.tag_name.replace(/^electron-/, '');
+    const latestTag = latest.tag_name.replace(/^electron-/, '');
+    const platform = platformKey();
+    const ext = getExtensionForPlatform(platform);
 
-    if (embeddedVersion === latestVersion) {
+    if (embeddedVersion === latestTag) {
         console.log(`[updater] App is up to date (v${embeddedVersion})`);
         return true;
     }
 
-    const asset = latest.assets.find(a => a.name.includes(`Neurite-${platformKey()}`));
+    const asset = latest.assets.find(a => a.name.toLowerCase().endsWith(ext));
     if (!asset) {
-        console.warn(`[updater] No matching asset for platform ${platformKey()}`);
+        console.warn(`[updater] No matching asset found for platform "${platform}"`);
         return true;
     }
 
@@ -71,26 +82,24 @@ async function initializeUpdater() {
         defaultId: 0,
         cancelId: 1,
         title: 'Update Available',
-        message: `A new version (${latestVersion}) is available.`,
-        detail: 'Would you like to download and restart now?',
+        message: `A new version (${latestTag}) is available.`,
+        detail: `Download and install Neurite now?`,
         noLink: true
     });
 
     if (response.response === 0) {
-        await downloadAndInstall(asset.browser_download_url, platformKey());
+        await downloadAndInstall(asset.browser_download_url, platform, ext);
         return false;
     }
 
     return true;
 }
 
-async function downloadAndInstall(url, platform) {
-    const ext = platform === 'mac' ? '.dmg' : platform === 'win' ? '.exe' : '.AppImage';
+async function downloadAndInstall(url, platform, ext) {
     const outPath = path.join(os.tmpdir(), `Neurite-${platform}${ext}`);
-
     const writer = fs.createWriteStream(outPath);
-    const response = await axios.get(url, { responseType: 'stream' });
 
+    const response = await axios.get(url, { responseType: 'stream' });
     await new Promise((resolve, reject) => {
         response.data.pipe(writer);
         writer.on('finish', resolve);
