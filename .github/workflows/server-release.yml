@@ -1,4 +1,4 @@
-name: Auto Release Localhost Servers
+name: Localhost Servers Release
 
 on:
   push:
