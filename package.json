@@ -6,7 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "set-version": "node scripts/set-version.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

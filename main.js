@@ -32,7 +32,7 @@ app.whenReady().then(async () => {
             try {
                 const serverPath = await ensureServersDownloaded();
                 await startLocalServers(serverPath);
-                console.log('localhost_servers started.');
+                console.log('[main] localhost_servers started.');
             } catch (err) {
                 console.error('[main] Failed to start localhost_servers:', err);
             }
