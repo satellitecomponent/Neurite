@@ -10,7 +10,6 @@ on:
 
 jobs:
   set-version:
-    if: github.ref == 'refs/heads/electron'
     runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.version.outputs.timestamp }}
@@ -46,7 +45,10 @@ jobs:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
       RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout electron branch
+        uses: actions/checkout@v3
+        with:
+          ref: electron
 
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -62,10 +64,12 @@ jobs:
 
       - name: Build Electron app
         run: npm run build
+
       - name: Debug release mode
         run: |
           echo "Draft? ${{ needs.set-version.outputs.draft }}"
           echo "Prerelease? ${{ needs.set-version.outputs.prerelease }}"
+
       - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
