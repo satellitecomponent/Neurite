@@ -168,9 +168,9 @@ class Interface {
             const angleDelta = (deltaPos.x - deltaPos.y) * settings.dragRotateSpeed;
             // Adjust zoom and pan to reflect rotation around the pivot point
             const zc = Graph.vecToZ(this.rotateStartPos).minus(Graph.pan);
-            Graph.updateRotationByAngle(angleDelta) // Update rotation incrementally
-                .zoom_cmultWith(deltaRotation)
-                .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
+            const deltaRotation = Graph.applyRotationDelta(angleDelta);
+            Graph.zoom_cmultWith(deltaRotation)
+                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));            
 
             this.rotatePrevPos = currentPos;
 
@@ -303,12 +303,13 @@ class Interface {
         if (settings.zoomClick === "scroll" && App.nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
             Autopilot.stop();
             this.coordsLive = true;
-
+        
+            const angle = e.deltaY * settings.rotateModifierSpeed;
             const zc = Graph.vecToZ().minus(Graph.pan);
-            Graph.updateRotationByAngle(e.deltaY * settings.rotateModifierSpeed)
-                .zoom_cmultWith(newRotation)
-                .pan_incBy(zc.cmult(new vec2(1, 0).minus(newRotation)));
-
+            const deltaRotation = Graph.applyRotationDelta(angle);
+            
+            Graph.zoom_cmultWith(deltaRotation)
+                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));    
             e.stopPropagation();
             return;
         }
@@ -362,7 +363,7 @@ On.touchend(svg, (e)=>{
         touches.delete(touch.identifier);
     }
 }, false);
-On.touchmove(svg, (e)=>{
+On.touchmove(svg, (e) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches.item(i);
         touches.set(touch.identifier, {
@@ -370,40 +371,51 @@ On.touchmove(svg, (e)=>{
             now: touch
         });
     }
+
     switch (touches.size) {
-        case 1:
+        case 1: {
             Autopilot.stop();
             App.interface.coordsLive = true;
             const t = [...touches.values()][0];
-            Graph.pan_incBy(toDZ(new vec2(t.prev.clientX, t.prev.clientY).minus(new vec2(t.now.clientX, t.now.clientY))));
+            const prev = new vec2(t.prev.clientX, t.prev.clientY);
+            const now = new vec2(t.now.clientX, t.now.clientY);
+            Graph.pan_incBy(toDZ(prev.minus(now)));
             e.stopPropagation();
             break;
-        case 2:
+        }
+
+        case 2: {
             const pts = [...touches.values()];
             const p1p = toS(new vec2(pts[0].prev.clientX, pts[0].prev.clientY));
             const p2p = toS(new vec2(pts[1].prev.clientX, pts[1].prev.clientY));
             const p1n = toS(new vec2(pts[0].now.clientX, pts[0].now.clientY));
             const p2n = toS(new vec2(pts[1].now.clientX, pts[1].now.clientY));
 
-            // Calculate the midpoint between the two touch points
             const midpointPrev = p1p.plus(p2p).scale(0.5);
             const midpointNow = p1n.plus(p2n).scale(0.5);
 
-            // Calculate the zoom factor based on the distance between the touch points
-            const zoomFactor = p2p.minus(p1p).mag() / p2n.minus(p1n).mag();
+            const zPrev = Graph.vecToZ(midpointPrev);
+            const zNow = Graph.vecToZ(midpointNow);
+            const zc = zNow.minus(Graph.pan); // relative center
+
+            const zoomFactor = p2n.minus(p1n).mag() / p2p.minus(p1p).mag();
 
             const anglePrev = Math.atan2(p2p.y - p1p.y, p2p.x - p1p.x);
             const angleNow = Math.atan2(p2n.y - p1n.y, p2n.x - p1n.x);
-            const rotationAngle = anglePrev - angleNow;
+            const rotationAngle = angleNow - anglePrev;
+            const deltaRotation = Graph.applyRotationDelta(rotationAngle);
 
-            Graph.updateRotationByAngle(rotationAngle)
-                .zoom_rotBy(rotationAngle)
-                .pan_decBy(midpointNow.minus(midpointPrev).cmult(Graph.zoom))
-                .zoom_set(newZoom);
+            const deltaZoom = new vec2(zoomFactor, 0);
+            Graph.zoom = Graph.zoom.cmult(deltaRotation).scale(zoomFactor);
+            Graph.pan = Graph.pan
+                .plus(zc.cmult(new vec2(1, 0).minus(deltaRotation.cmult(deltaZoom))))
+                .minus(zNow.minus(zPrev));
 
             e.preventDefault();
             e.stopPropagation();
             break;
+        }
+
         default:
             break;
     }
