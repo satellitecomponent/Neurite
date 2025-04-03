@@ -119,12 +119,19 @@ app.get('/fetch-web-page-text', (req, res) => {
 app.post('/store-embedding-and-text', (req, res) => {
     const { key, embeddings, text } = req.body;
 
-    db.run('INSERT OR REPLACE INTO embeddings (key, embeddings, text) VALUES (?, ?, ?)', [key, JSON.stringify(embeddings), text], (err) => {
-        if (err) {
-            console.error(err.message);
-            res.status(500).send('Error storing embedding and text');
+    db.run(
+        'INSERT OR REPLACE INTO embeddings (key, embeddings, text) VALUES (?, ?, ?)',
+        [key, JSON.stringify(embeddings), text],
+        (err) => {
+            if (err) {
+                console.error(`[store-embedding-and-text] DB Error for key=${key}:`, err.message);
+                return res.status(500).send('Error storing embedding and text');
+            }
+
+            console.log(`[store-embedding-and-text] Stored key=${key}`);
+            res.status(200).json({ message: 'Stored successfully', key });
         }
-    });
+    );
 });
 
 app.post('/store-additional-embedding', (req, res) => {
@@ -215,16 +222,17 @@ app.get('/get-keys', (req, res) => {
             console.error(err.message);
             res.status(500).send('Error fetching keys');
         } else {
-            // Initialize an empty set to store distinct keys
             const distinctKeys = new Set();
-
+    
             rows.forEach(row => {
-                // Split the key on '_chunk_' and take the first part as the overall key
+                if (!row.key) {
+                    console.warn('[get-keys] Skipping row with null key:', row);
+                    return;
+                }
                 const overallKey = row.key.split('_chunk_')[0];
                 distinctKeys.add(overallKey);
             });
-
-            // Convert the set of distinct keys back to an array
+    
             const keys = Array.from(distinctKeys);
             res.json(keys);
         }
