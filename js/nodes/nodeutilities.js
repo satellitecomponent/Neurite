@@ -149,6 +149,11 @@ class Graph {
         )
         return this;
     }
+    applyRotationDelta(angle) {
+        const delta = new vec2(Math.cos(angle), Math.sin(angle));
+        this.rotation = this.rotation.cmult(delta);
+        return delta;
+    }
     vecToZ(c = this.mousePos){
 //        Svg.updateScaleAndOffset();
 //        return c.minus(Svg.offset).unscale(Svg.scale)
