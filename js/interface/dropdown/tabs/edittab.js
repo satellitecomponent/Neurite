@@ -170,7 +170,7 @@ class EditTab {
             this.setRenderQuality(v);
         });
     
-        On.input(Elem.byId('exponent'), (e) => updateMandStep());
+        On.input(Elem.byId('exponent'), (e) => Fractal.updateStep());
     
         const flashlightStrengthSlider = Elem.byId('flashlightStrength');
         const flashlightStrengthValue = Elem.byId('flashlightStrength_value');
