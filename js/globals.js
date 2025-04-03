@@ -40,6 +40,32 @@ function escapeHtml(unsafe) {
 }
 
 
+class Stored {
+    static drop(name){
+        localforage.dropInstance( {name} );
+        return this;
+    }
+
+    constructor(surname, name){
+        this.name = name || surname;
+        this.table = localforage.createInstance({
+            name: (name ? surname : 'Neurite'),
+            storeName: name || surname
+        });
+    }
+    clear(){ return this.table.clear() }
+    delete(key){ return this.table.removeItem(String(key) ?? this.name) }
+    load(key){ return this.table.getItem(String(key) ?? this.name) }
+    save(key, val){
+        return this.table.setItem(
+            (val !== undefined ? String(key) : this.name),
+            val ?? key
+        )
+    }
+}
+
+
+
 class Modal {
     static current = null;
     static div = Elem.byId('customModal');
@@ -474,7 +500,6 @@ function getIframeUrl(iframeContent) {
     return match ? match[1] : null; // Return URL or null if not found
 }
 
-Event.dataIndex = function(e){ return Number(e.currentTarget.dataset.index) }
 Event.preventDefault = function(e){ e.preventDefault() }
 Event.stopPropagation = function(e){ e.stopPropagation() }
 Event.stopPropagationByNameForThis = function(eName){

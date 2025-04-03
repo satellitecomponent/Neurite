@@ -1,21 +1,3 @@
-class Stored {
-    constructor(name){
-        this.name = name;
-        this.table = localforage.createInstance({
-            name: 'Neurite',
-            storeName: name
-        });
-    }
-    delete(key){ return this.table.removeItem(key ?? this.name) }
-    load(key){ return this.table.getItem(key ?? this.name) }
-    save(key, val){
-        return this.table.setItem(
-            (val !== undefined ? key : this.name),
-            val ?? key
-        )
-    }
-}
-
 function formatResultAsTitle(result) {
     let titleString;
 

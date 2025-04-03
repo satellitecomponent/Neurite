@@ -82,6 +82,7 @@ class Node {
     }
     push_extra_cb(f) {
         this.save_extras.push(f);
+        return this;
     }
     push_extra(func_name, args = undefined) {
         this.save_extras.push({
