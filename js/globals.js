@@ -41,10 +41,7 @@ function escapeHtml(unsafe) {
 
 
 class Stored {
-    static drop(name){
-        localforage.dropInstance( {name} );
-        return this;
-    }
+    static drop(name){ return localforage.dropInstance( {name} ) }
 
     constructor(surname, name){
         this.name = name || surname;

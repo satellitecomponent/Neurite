@@ -20,7 +20,10 @@
         this.#data.delete(graphId);
         return this.#meta.delete(graphId);
     }
-    drop(){ return Stored.drop('blobs').drop('graphs') }
+    drop(){
+        Stored.drop('blobs');
+        return Stored.drop('graphs');
+    }
 
     forEachBlobMetaAndGraphId(cb){ return this.#blobMeta.table.iterate(cb) }
     forEachMetaAndGraphId(cb){ return this.#meta.table.iterate(cb) }
@@ -300,7 +303,8 @@ View.Graphs = class {
 
     #onBtnClearLocalClicked = (e)=>{
         localStorage.clear();
-        Stored.drop('Neurite').drop('GraphsView');
+        Stored.drop('Neurite');
+        Stored.drop('state');
         this.#stored.drop()
             .then(this.#updateGraphs)
             .then(alert.bind(null, "Local storage has been cleared."));
@@ -359,8 +363,9 @@ View.Graphs = class {
             Logger.info("Added", this.#type, "save:", this.title)
         }
         #onSaveError = (err)=>{
+            Logger.err("Failed to save in local storage:", err);
             return window.confirm(this.#msgFull)
-                .then(this.#handleConfirmDownload)
+                .then(this.#handleConfirmDownload);
         }
         #msgFull = "Local storage is full. Download the data as a .txt file?";
         #handleConfirmDownload = (shouldDownload)=>{
@@ -546,6 +551,8 @@ View.Graphs = class {
         }
         #cleanStored = ()=>{
             const dictMeta = this.#dictMeta;
+            if (!dictMeta) return;
+
             const stored = this.mom.#stored;
 
             const orphans = this.prevBlobs;
