@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+const { registerShortcuts, unregisterShortcuts } = require('./modules/shortcuts');
 const { createLoadingWindow, closeLoadingWindow } = require('./modules/loadingwindow');
 const { isLocalServerRunning, startLocalServers, stopLocalServers } = require('./modules/servermanager');
 const { createMainWindow } = require('./modules/windowmanager');
@@ -23,6 +24,7 @@ app.whenReady().then(async () => {
 
     // Create the main window in hidden mode so it can load in the background.
     const mainWindow = createMainWindow();
+    registerShortcuts();
 
     // Server readiness
     const serversPromise = (async () => {
@@ -52,22 +54,36 @@ app.whenReady().then(async () => {
 
     await Promise.all([serversPromise, rendererPromise]);
 
-    mainWindow.webContents.executeJavaScript('Host?.checkServer?.()');
+    try {
+        await mainWindow.webContents.executeJavaScript('Host?.checkServer?.()');
+    } catch (err) {
+        console.warn('[main] Renderer hook failed:', err);
+    }
 
     closeLoadingWindow();
     mainWindow.show();
 
     app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
+        const existing = BrowserWindow.getAllWindows().find(win => !win.isDestroyed());
+        if (existing) {
+            existing.show();
+        } else {
             createMainWindow().show();
         }
     });
 });
+
+app.on('will-quit', () => {
+    unregisterShortcuts();
+});
+
 // Clean up when quitting the app
 app.on('before-quit', () => {
     stopLocalServers();
 });
 
 app.on('window-all-closed', () => {
-    app.quit();
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });

@@ -13,4 +13,3 @@ window.addEventListener('contextmenu', (evt) => {
         y: evt.clientY
     });
 }, false);
-
