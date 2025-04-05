@@ -72,7 +72,7 @@ For over two years we've been iterating out a virtually limitless workspace that
   </tr>
 </table>
 
-## `Complexity Inspires Creativity / Basins Attract`
+## `Complexity Inspires Simplicity / Basins Attract`
 ### Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface. It's an interactive landscape tracing your ever-branching pathways of thought.
 
 Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact...
