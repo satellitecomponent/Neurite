@@ -321,15 +321,21 @@ AiNode.setupResponseDivListeners = function(node){
     };
 
     On.scroll(aiResponseDiv, handleScroll);
-
-    // Update text highlighting
-    On.keydown(document, (e)=>{
-        if (e.altKey) aiResponseDiv.style.userSelect = 'none';
-    });
-    On.keyup(document, (e)=>{
-        if (!e.altKey) aiResponseDiv.style.userSelect = 'text';
-    });
 }
+
+Elem.disableTextSelection = function(elem){ elem.style.userSelect = 'none' }
+Elem.enableTextSelection = function(elem){ elem.style.userSelect = 'text' }
+const divsAiResponse = document.getElementsByClassName('ai-response-div');
+On.keydown(document, (e)=>{
+    if (!e.altKey) return;
+
+    Array.prototype.forEach.call(divsAiResponse, Elem.disableTextSelection);
+});
+On.keyup(document, (e)=>{
+    if (e.altKey) return;
+
+    Array.prototype.forEach.call(divsAiResponse, Elem.enableTextSelection);
+});
 
 AiNode.setupPromptTextAreaListeners = function(node){
     const textArea = node.promptTextArea;
