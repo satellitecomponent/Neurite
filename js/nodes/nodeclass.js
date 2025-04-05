@@ -438,11 +438,11 @@ Node.Extensions = {
         }
 
         const p = o.p;
-        const v = e.value = o.v;
+        e.value = o.v;
 
         node.push_extra_cb( (n)=>({
             f: "textarea",
-            a: { p, v }
+            a: { p, v: e.value }
         }) );
     },
     "textareaId": (node, o) => {
