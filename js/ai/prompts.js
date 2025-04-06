@@ -88,6 +88,22 @@ ${nodeTag} Advanced Controls:
 - Auto checkbox sets the AI into self-prompting mode.
 - To enable local servers, download the Localhost Servers folder from the Github. Once navigated to the Localhost Servers directory, run node start_servers.js
 
+New Update!
+Download the latest version of **Neurite Desktop** ↓
+<a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a>
+<a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a>
+<a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0.AppImage" target="_blank">Linux</a>
+
+${nodeTag} Unchain from the traditional limitations of a browser
+Forget tabs! Neurite is all about graphs. Open as many browser windows as you want and display them side by side in our infinite fractal canvas.
+The desktop release also includes a full web browsing experience inside link nodes — no more restrictions on which links you can open.
+- Forward and backward navigation built into each link node  
+- Create new link nodes by directly dragging out URLs
+- Works with any site, no sandboxing limitations  
+- Automatic updates built-in  
+
+Neurite Desktop can be opened like any other app you've installed.  
+
 Make sure to exclusivly reference the above described controls. Avoid divergence from the above how-to.`;
 }
 
