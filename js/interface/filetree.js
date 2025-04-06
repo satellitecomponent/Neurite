@@ -104,19 +104,24 @@ class FileTree {
 
     // Load the directory contents and display them
     async loadDirectory(path, parentElement) {
-        if (!useProxy) {  // Strict inequality check
+        if (!useProxy) {
             const errorElement = Html.new.p();
-            errorElement.textContent = "Localhost servers for Neurite are not enabled. \n Download the servers ";
-
-            const href = 'https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fsatellitecomponent%2FNeurite%2Ftree%2Fmain%2Flocalhost_servers';
-            const linkElement = Html.make.a(href);
-            linkElement.textContent = 'here';
-
-            // Open the link in a new tab
+        
+            // Set innerHTML so we can use <br> for line breaks
+            errorElement.innerHTML = `
+                The Localhost servers for Neurite are not enabled.<br><br>
+            `;
+        
+            const releaseUrl = 'https://github.com/satellitecomponent/Neurite/releases/latest?tag=electron';
+            const linkElement = Html.make.a(releaseUrl);
+            linkElement.textContent = 'Download Neurite Desktop';
+        
             linkElement.target = '_blank';
-            linkElement.rel = 'noopener noreferrer';  // For security reasons
-
+            linkElement.rel = 'noopener noreferrer';
+        
+            errorElement.appendChild(document.createElement('br'));
             errorElement.appendChild(linkElement);
+        
             parentElement.appendChild(errorElement);
             return;
         }
