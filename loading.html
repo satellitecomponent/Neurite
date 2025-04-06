@@ -1,240 +1,132 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Loading...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Logo Animation</title>
     <style>
-        html, body {
+        body {
             margin: 0;
-            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000000;
             overflow: hidden;
-            background-color: #222;
-            width: 100%;
-            height: 100%;
         }
 
-        canvas {
-            display: block;
-            background-color: #222;
+        #logo {
+            width: 80%;
+            height: auto;
+        }
+
+        #logo-path {
+            stroke-dasharray: 1500;
+            stroke-dashoffset: 1500;
+            animation: drawHide 6s ease-in-out infinite;
+            stroke: black;
+            stroke-width: 4;
+            fill: none;
+        }
+
+        @keyframes drawHide {
+            0% {
+                stroke-dashoffset: 1500;
+            }
+            50% {
+                stroke-dashoffset: 0;
+            }
+            100% {
+                stroke-dashoffset: 1500;
+            }
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+    <svg version="1.1" id="logo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+         width="720px" height="720px" viewBox="0 0 720 720" style="enable-background:new 0 0 720 720;" xml:space="preserve">
+    <style type="text/css">
+        .st0{display:none;fill:#2B2524;}
+        .st1{display:none;}
+        .st2{display:inline;}
+        .st3{fill:#CC2326;}
+        .st4{fill:#B81C0D;}
+        .st5{display:inline;fill:none;stroke:#A1260C;stroke-miterlimit:10;}
+    </style>
+    <rect class="st0" width="720" height="720"/>
+    <g>
+        <g>
+            <path id="logo-path" class="st3" d="M644.92,212.61c39.2-44.52,5.05-108.87-41.3-103.71c-41.63,4.64-50.84,45.12-37.61,60.03
+                c5.55,6.26,17.84,3.45,13.79-8.59c-6.18-18.37,13.12-30.69,27.18-29.18c34.11,3.65,39.67,65.8-7.68,79.29
+                C505.66,237.13,482,346.48,474.19,403.4c-1.8,13.09-14.25,54.86-38.8,57.52c-47.49,5.14-44.56-86.37,2.76-186.32
+                c36.88-77.88,65.56-195.37,11.94-233.42c-25.9-18.38-65.15-28.98-126.56,32.98c-46.04,46.45-110.71,9.01-125.38-12.23
+                c-4.86-7.04-18.33-5.41-16.83,7.8c9.33,81.81-33.1,100.55-68.15,112.58c-10.91,3.75-9.83,20.07,2.69,21.41
+                c58.56,6.74,78.96,45.61,55.92,146.6c-36.84,161.47,69.38,266.21,62.6,286.8c-1.97,6-57.2-17.23-97.63-53.43
+                C101,551.67,81.45,526.21,66.21,481.58c-10.14-29.7-13.41-98.85,20.24-154.14c7.49-12.3-8.56-19.8-16.33-9.2
+                c-21.99,30-32.69,73.72-31.99,100.33c0.44,16.71-46.3-176.05,81.14-304.86c12.71-12.84-1.85-27.71-12.79-16.65
+                C-17.17,222.04,0.41,374.42,10.64,423.23C53.41,627.4,223.48,689.1,278.71,692.75c51.58,3.42,67.95-20.64,7.74-95.31
+                c-7.67-9.51-100-123.07-78.29-231.43c21.61-107.83,114.02-111.9,138.08-104.24c10.39,3.31,20.2-7.51,10.06-17.56
+                c-47.59-47.16-15.3-104.78,4.97-121.13c16.68-13.45,43.73-24.98,60.35,4.95c24.17,43.54-7.05,127.43-31.53,179.88
+                c-24.48,52.45-40.02,115.69-15.88,186.71c14.37,42.28,17.97,79.86,1.21,99.76c-7.84,9.3-0.2,18.69,7.98,16.82
+                c56.8-12.96,85.72,23.51,96.36,42.23c5.23,9.2,19.05,7.09,18.31-4.51c-4.11-64.7,50.38-82.32,64.74-82.72
+                c10.67-0.29,15.09-10.68,4.17-18.06c-99.04-66.88-56.56-212.34-30.11-249.3c43.75-61.13,119.74-72.92,142.02,20.63
+                c23.01,96.57-34.99,159.86-58.11,155.27c-44.27-8.78-33.07-69.19-14.14-98.12c6.16-9.41-7.24-20.77-17.16-9.19
+                c-12.87,15.03-52.94,102.87,10.71,141.29c52.36,31.6,106.04-42.14,114.47-120.76C730.47,240.35,643.69,214.01,644.92,212.61z
+                 M283.07,185.12c-2.2,20.55-20.64,35.42-41.19,33.21c-20.55-2.2-35.42-20.64-33.21-41.19c2.2-20.55,20.64-35.42,41.19-33.21
+                S285.27,164.57,283.07,185.12z M485.53,553.69c-1.52,14.23-14.3,24.53-28.52,23s-24.53-14.3-23-28.52
+                c1.52-14.23,14.3-24.53,28.52-23C476.75,526.69,487.05,539.46,485.53,553.69z"/>
+        </g>
+    </g>
+    </svg>
+
     <script>
-        /***********************
-         * Global Configuration
-         ***********************/
-        const CONFIG = {
-            // Canvas settings
-            canvasSize: 300,         // Both width and height (perfect square)
-
-            // Bouncing shape properties
-            shapeRadius: 36,         // Radius (or half-size for non-circular shapes)
-            speed: 6,                // Base speed of the bouncing object
-            shapes: ['circle', 'triangle', 'square'],
-            initialShapeIndex: 1,    // Start with this shape from the array
-            randomize: true,         // Random starting position and direction
-            // New parameter to restrict the random starting area (fraction of canvas size)
-            initialAreaFraction: 0.5, // e.g. 0.5 means the ball will start within the central 50% of the canvas
-
-            // Transition (on collision) parameters
-            transitionDuration: 500, // Duration in milliseconds for the transition
-            rotationAmount: Math.PI, // Half-rotation in radians (180°). Second half adds another Math.PI to complete 360°.
-            minScale: 0.1,           // Smallest scale factor at the midpoint of the transition
-
-            // Color properties
-            colorCycleSpeed: 0.1,      // How fast the hue cycles per frame (in degrees)
-
-            // Easing function for transitions (easeInOutQuad)
-            easing: function (t) {
-                return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-            }
+        // Configuration object for animation
+        const config = {
+            duration: 10, // seconds
+            strokeColor: "#CC2326",
+            strokeWidth: 4,
+            easing: "ease-in-out"
         };
 
-        /***********************
-         * BouncingShape Class
-         ***********************/
-        function BouncingShape(config) {
-            this.config = config;
-            this.canvasSize = config.canvasSize;
-            this.radius = config.shapeRadius;
-
-            // Randomize starting position within a limited central area if enabled.
-            if (config.randomize) {
-                // Calculate margin so that the random area is centered.
-                const areaFraction = config.initialAreaFraction || 0.5;
-                const margin = (this.canvasSize * (1 - areaFraction)) / 2;
-                const areaSize = this.canvasSize * areaFraction;
-                this.x = Math.random() * areaSize + margin;
-                this.y = Math.random() * areaSize + margin;
-            } else {
-                this.x = this.canvasSize / 2;
-                this.y = this.canvasSize / 2;
-            }
-
-            // Randomize velocity (using a random angle)
-            const angle = Math.random() * Math.PI * 2;
-            this.dx = Math.cos(angle) * config.speed;
-            this.dy = Math.sin(angle) * config.speed;
-
-            // Shape management
-            this.shapes = config.shapes;
-            this.currentShapeIndex = config.initialShapeIndex;
-
-            // Transition properties
-            this.transitionDuration = config.transitionDuration;
-            this.rotationAmount = config.rotationAmount;
-            this.minScale = config.minScale;
-            this.inTransition = false;
-            this.transitionStartTime = 0;
-            this.transitionProgress = 0;
-            this.currentRotation = 0;
-            this.currentScale = 1;
-            this.shapeChanged = false; // To change shape only once per transition
-            this.rotationDirection = 1; // 1 for forward, -1 for backward
-
-            // Color (using HSL for smooth hue transitions)
-            this.hue = 0;
-            this.colorCycleSpeed = config.colorCycleSpeed;
-
-            // Easing function for transitions
-            this.easing = config.easing;
-        }
-
-        BouncingShape.prototype.startTransition = function () {
-            this.inTransition = true;
-            this.transitionStartTime = performance.now();
-            this.transitionProgress = 0;
-            this.shapeChanged = false;
-            // Randomly choose a rotation direction: 1 (forwards) or -1 (backwards)
-            this.rotationDirection = Math.random() < 0.5 ? 1 : -1;
-        };
-
-        BouncingShape.prototype.updateTransition = function () {
-            const now = performance.now();
-            const elapsed = now - this.transitionStartTime;
-            this.transitionProgress = Math.min(elapsed / this.transitionDuration, 1);
-            const easedProgress = this.easing(this.transitionProgress);
-
-            if (this.transitionProgress < 0.5) {
-                // First half: scale down and rotate in the chosen direction (0 to rotationAmount)
-                let p = easedProgress * 2; // normalize to [0,1]
-                this.currentScale = 1 - p * (1 - this.minScale);
-                this.currentRotation = this.rotationDirection * (p * this.rotationAmount);
-            } else {
-                // Second half: scale back up and continue rotating in the same direction
-                let p = (easedProgress - 0.5) * 2; // normalized for second half [0,1]
-                this.currentScale = this.minScale + p * (1 - this.minScale);
-                // Continue rotation: add an additional rotationAmount so that the total is 2 * rotationAmount (360°)
-                this.currentRotation = this.rotationDirection * (this.rotationAmount + p * this.rotationAmount);
-                // At the midpoint, change the shape (only once)
-                if (!this.shapeChanged) {
-                    this.currentShapeIndex = (this.currentShapeIndex + 1) % this.shapes.length;
-                    this.shapeChanged = true;
-                }
-            }
-
-            // End transition when complete.
-            if (this.transitionProgress >= 1) {
-                this.inTransition = false;
-                this.currentScale = 1;
-                // Reset rotation after a full 360° (optional)
-                this.currentRotation = 0;
-                this.transitionProgress = 0;
-                this.shapeChanged = false;
-            }
-        };
-
-        BouncingShape.prototype.update = function (deltaTime) {
-            // Update position using a frame-rate–independent multiplier (assuming ~60fps baseline)
-            this.x += this.dx * (deltaTime / 16.67);
-            this.y += this.dy * (deltaTime / 16.67);
-
-            // Update hue for continuous color cycling
-            this.hue = (this.hue + this.colorCycleSpeed) % 360;
-
-            // Detect wall collisions
-            let collided = false;
-            if (this.x + this.radius > this.canvasSize || this.x - this.radius < 0) {
-                this.dx = -this.dx;
-                collided = true;
-            }
-            if (this.y + this.radius > this.canvasSize || this.y - this.radius < 0) {
-                this.dy = -this.dy;
-                collided = true;
-            }
-
-            // Start a transition if a collision occurs and none is active
-            if (collided && !this.inTransition) {
-                this.startTransition();
-            }
-
-            // If in transition, update its progress
-            if (this.inTransition) {
-                this.updateTransition();
-            }
-        };
-
-        BouncingShape.prototype.draw = function (ctx) {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.currentRotation);
-            ctx.scale(this.currentScale, this.currentScale);
-            ctx.fillStyle = `hsl(${this.hue}, 100%, 50%)`;
-
-            const shape = this.shapes[this.currentShapeIndex];
-            if (shape === 'circle') {
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-            } else if (shape === 'triangle') {
-                ctx.beginPath();
-                const angleOffset = -Math.PI / 2;
-                for (let i = 0; i < 3; i++) {
-                    const theta = angleOffset + i * (2 * Math.PI / 3);
-                    const px = this.radius * Math.cos(theta);
-                    const py = this.radius * Math.sin(theta);
-                    if (i === 0) {
-                        ctx.moveTo(px, py);
-                    } else {
-                        ctx.lineTo(px, py);
+        // Function to calculate path length and apply animation
+        function setupAnimation() {
+            const path = document.getElementById('logo-path');
+            
+            if (path) {
+                // Get the actual path length
+                const pathLength = path.getTotalLength();
+                
+                // Apply path length to CSS properties
+                path.style.strokeDasharray = pathLength;
+                path.style.strokeDashoffset = pathLength;
+                
+                // Apply configuration
+                path.style.stroke = config.strokeColor;
+                path.style.strokeWidth = config.strokeWidth;
+                path.style.animation = `drawHide ${config.duration}s ${config.easing} infinite`;
+                
+                // Update the @keyframes rule with the correct path length
+                const styleSheet = document.styleSheets[0];
+                for (let i = 0; i < styleSheet.cssRules.length; i++) {
+                    const rule = styleSheet.cssRules[i];
+                    if (rule.name === 'drawHide') {
+                        // Update the keyframes with the actual path length
+                        styleSheet.deleteRule(i);
+                        styleSheet.insertRule(`
+                            @keyframes drawHide {
+                                0% { stroke-dashoffset: ${pathLength}; }
+                                50% { stroke-dashoffset: 0; }
+                                100% { stroke-dashoffset: ${pathLength}; }
+                            }
+                        `, i);
+                        break;
                     }
                 }
-                ctx.closePath();
-                ctx.fill();
-            } else if (shape === 'square') {
-                ctx.fillRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2);
             }
-            ctx.restore();
-        };
-
-        /***********************
-         * Animation Setup
-         ***********************/
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = CONFIG.canvasSize;
-        canvas.height = CONFIG.canvasSize;
-
-        // Create our bouncing shape instance using CONFIG
-        const bouncingShape = new BouncingShape(CONFIG);
-        let lastTime = performance.now();
-
-        function animate() {
-            const currentTime = performance.now();
-            const deltaTime = currentTime - lastTime;
-            lastTime = currentTime;
-
-            bouncingShape.update(deltaTime);
-
-            //ctx.clearRect(0, 0, canvas.width, canvas.height);
-            bouncingShape.draw(ctx);
-
-            requestAnimationFrame(animate);
         }
 
-        animate();
+        // Run setup when the page loads
+        window.addEventListener('load', setupAnimation);
     </script>
 </body>
 </html>
