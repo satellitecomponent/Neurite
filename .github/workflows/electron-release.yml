@@ -59,7 +59,7 @@ jobs:
         run: npm install
 
       - name: Write embedded version file using dev script
-        run: npm run set-version $RELEASE_VERSION
+        run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
       - name: Build Electron app
         run: npm run build -- --publish=never
