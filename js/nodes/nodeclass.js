@@ -64,7 +64,7 @@ class Node {
     }
     toJSON() {
         return JSON.stringify({...this}, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras" ||
+            if (k === "content" || k === "edges" || k === "save_extras" || k === "viewer" ||
                 k === "aiResponseEditor" || k === "aiNodeMessageLoop" || k === "sensor" || k === "responseHandler" ||
                 k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
@@ -82,6 +82,7 @@ class Node {
     }
     push_extra_cb(f) {
         this.save_extras.push(f);
+        return this;
     }
     push_extra(func_name, args = undefined) {
         this.save_extras.push({
@@ -258,45 +259,68 @@ class Node {
     }
     onDblClick = (e) => {
     }  
-    onMouseDown = (e)=>{
+    onMouseDown = (e) => {
+        if (e.buttons !== 1) return;
+    
         this.mouseAnchor = Graph.xyToZ(e.clientX, e.clientY).minus(this.pos);
-        this.followingMouse = 1;
+        this._initialMousePos = { x: e.clientX, y: e.clientY };
+        this._hasStartedDragging = false;
+    
         Graph.draggedNode = this;
         Graph.movingNode = this;
+    
         if (Node.prev) {
             connectNodes(this, Node.prev);
             Node.prev = null;
         } else if (App.nodeMode) {
             Node.prev = this;
         }
+    
         clearTextSelections();
+        On.mousemove(window, this._checkForDragStart);
         On.mouseup(window, this.stopFollowingMouse);
-        this.disableIframePointerEvents();
         e.stopPropagation();
-    }
-
-    stopFollowingMouse = (e)=>{
+    };
+    
+    _checkForDragStart = (e) => {
+        const dx = e.clientX - this._initialMousePos.x;
+        const dy = e.clientY - this._initialMousePos.y;
+        const distanceSq = dx * dx + dy * dy;
+    
+        if (!this._hasStartedDragging && distanceSq > 4) {
+            this._hasStartedDragging = true;
+            this.followingMouse = 1;
+            OverlayHelper.add('grabbing');
+            this.disableEmbedPointerEvents();
+        }
+    
+        if (this.followingMouse) {
+            this.pos = this.pos.plus(toDZ(new vec2(e.movementX, e.movementY)));
+            this.draw();
+        }
+    };
+    
+    stopFollowingMouse = (e) => {
+        if (this._hasStartedDragging) {
+            OverlayHelper.remove();
+            this.enableEmbedPointerEvents();
+        }
+    
         this.followingMouse = 0;
+        this._hasStartedDragging = false;
         Graph.movingNode = undefined;
-
+        Graph.draggedNode = undefined;
+    
+        Off.mousemove(window, this._checkForDragStart);
         Off.mouseup(window, this.stopFollowingMouse);
-        this.enableIframePointerEvents();
-    }
-
-    disableIframePointerEvents(){ this.setIframePointerEvents('none') }
-    enableIframePointerEvents(){ this.setIframePointerEvents('auto') }
-    setIframePointerEvents(value){
-        this.content.querySelectorAll('iframe').forEach(iframe => {
-            iframe.style.pointerEvents = value
-        })
-    }
-
-    onMouseUp = (e)=>{
+    };
+    
+    onMouseUp = (e) => {
         if (this === Graph.draggedNode) {
             this.followingMouse = 0;
             Graph.draggedNode = undefined;
         }
-    }
+    };
     onMouseMove = (e)=>{
         if (this === Graph.draggedNode) Node.prev = null;
         /*if (this.followingMouse){
@@ -336,6 +360,13 @@ class Node {
             }
         }
         e.stopPropagation();
+    }
+    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};   
+    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};   
+    setEmbedPointerEvents(value) {
+        this.content.querySelectorAll('iframe, webview').forEach(embed => {
+            embed.style.pointerEvents = value;
+        });
     }
 
     getText(){
@@ -437,11 +468,11 @@ Node.Extensions = {
         }
 
         const p = o.p;
-        const v = e.value = o.v;
+        e.value = o.v;
 
         node.push_extra_cb( (n)=>({
             f: "textarea",
-            a: { p, v }
+            a: { p, v: e.value }
         }) );
     },
     "textareaId": (node, o) => {

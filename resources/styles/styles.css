@@ -92,6 +92,10 @@ body {
     border-color: transparent;
 }
 
+.windowbutton {
+    cursor: pointer;
+}
+
 
 .expand-button {
     position: absolute;
@@ -321,22 +325,31 @@ body {
     z-index: 1;
 }
 
-.windowbutton {
-    cursor: pointer;
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 6px;
+    margin-top: 0px;
 }
 
-input[type="text"i].title-input {
+.title-input-wrapper {
+    position: relative;
+    display: flex;
     flex-grow: 1;
     flex-shrink: 1;
-    color: #bbb;
-    background: none !important;
-    border-style: solid;
-    border-width: 2px 5px 0px 0;
-    border-color: #aaa;
     margin-top: 2px;
     margin-right: 2px;
     margin-left: -2px;
     z-index: 150;
+}
+
+/* stripped down, now just handles look */
+input[type="text"i].title-input {
+    background: none !important;
+    border-style: solid;
+    border-width: 2px 5px 0px 0;
+    border-color: #aaa;
 }
 
     input[type="text"i].title-input:focus {
@@ -358,6 +371,40 @@ input[type="text"i].title-input {
     text-align: center; /* Centers the text */
 }
 
+.copy-button {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Color and scale on hover */
+.copy-button:hover svg {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* Smooth default size */
+.copy-button svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    transition: transform 0.2s ease, fill 0.2s ease;
+    opacity: 0.85;
+    color: white;
+    fill: white;
+}
+
+/* Pulse effect on click */
+.copy-button:active {
+    transform: scale(0.9);
+}
 
 
 .container-for-textarea-and-pre {
@@ -654,6 +701,8 @@ input[type="text"i].title-input {
     background-color: #222226;
     height: 250px;
     width: 500px;
+    resize: none;
+    border: none;
 }
 #nodeList {
     list-style-type: none;
@@ -2726,14 +2775,6 @@ input[type=range] {
     margin: 10px;
 }
 
-.button-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    margin-bottom: 6px;
-    margin-top: 0px;
-}
-
 .ainode-settings-container {
     display: grid;
     position: absolute; /* Doesn't affect existing elements */
@@ -3214,7 +3255,7 @@ code.language-markdown {
         border-radius: 3px;
     }
 
-.copy-btn {
+.copy-code-btn {
     /* your default styles here */
     padding: 1px 4px;
     background: none;
@@ -3226,12 +3267,12 @@ code.language-markdown {
     user-select: none;
 }
 
-    .copy-btn:hover {
+    .copy-code-btn:hover {
         /* styles for when the mouse is hovering over the button */
         background-color: #18181c;
     }
 
-    .copy-btn:active {
+    .copy-code-btn:active {
         /* styles for when the button is being clicked */
         background-color: black;
     }
@@ -3712,7 +3753,7 @@ code.language-markdown {
 
 #customContextMenu {
     border: 1px solid #eaeaea1a;
-    background: rgb(0 0 0 / 50%); /* White background with transparency */
+    background: rgb(0 0 0 / 69%); /* White background with transparency */
     backdrop-filter: blur(7px); /* Frosted glass effect */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
     padding: 0px; /* Padding around the menu */
@@ -3777,13 +3818,20 @@ code.language-markdown {
             color: black;
         }
 
+        #customContextMenu .custom-node-method-input::placeholder {
+            color: #888; /* Darker grey placeholder text color on hover */
+            font-style: italic;
+        }
+
+
             #customContextMenu .custom-node-method-input:hover::placeholder {
                 color: #333; /* Darker grey placeholder text color on hover */
+                font-style: italic;
             }
 
 .suggestions-container {
     position: absolute;
-    background: rgb(205 207 243 / 19%);
+    background: rgb(117 119 146 / 39%);
     backdrop-filter: blur(17px);
     max-height: 250px; /* Maximum height before scrolling */
     overflow-y: auto; /* Enables vertical scroll */
@@ -3804,12 +3852,10 @@ code.language-markdown {
         justify-content: space-between; /* Space between text and button */
         padding: 8px;
         cursor: pointer;
-        color: #aaa;
     }
 
         .suggestions-container div:hover {
             background-color: rgb(143 146 223 / 40%);
-            color: white;
         }
 
 .suggestion-item {
@@ -3821,7 +3867,7 @@ code.language-markdown {
 
     .suggestion-item span {
         flex-grow: 1; /* Allows the text to take up available space */
-        /* Optional: Set line-height if needed to match the height of the pin button */
+        color: #aaa;
     }
 
 .pin-button {
@@ -4125,4 +4171,21 @@ code.language-markdown {
     width: 100%;
     border: none;
     outline: none;
+}
+
+
+.link-anchor {
+    display: block;
+    padding: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #bbb;
+    background-color: #222226;
+    border-radius: 5px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+.link-anchor:hover {
+    color: #888;
+    background-color: #1a1a1d;
 }

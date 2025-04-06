@@ -183,6 +183,17 @@ class DropHandler {
             return this.handleDivDrop(parsed);
         }
 
+        const uriList = ev.dataTransfer.getData('text/uri-list');
+        const plainText = ev.dataTransfer.getData('text/plain');
+
+        if (uriList && String.maybeUrl(uriList)) {
+            return this.createLinkNode(uriList);
+        }
+
+        if (plainText && String.maybeUrl(plainText)) {
+            return this.createLinkNode(plainText);
+        }
+
         this.handleOSFileDrop(ev);
     }
 
@@ -236,6 +247,12 @@ class DropHandler {
         const node = new LinkNode(url, name);
         node.fileName = name;
         this.afterNodeCreation(node);
+    }
+
+    createLinkNode(link) {
+        const node = new LinkNode(link, link);
+        node.typeNode.toggleViewer?.();
+        this.afterNodeCreation(node, toDZ(new vec2(0, -node.view.div.offsetHeight / 4)));
     }
 
     handleApplication(meta, url, content, mime) {

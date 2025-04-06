@@ -103,58 +103,42 @@ function createLlmNode(name = '', sx, sy, x, y) {
 
     node.currentTopNChunks = null;
 
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
-            a: {
-                p: [0, 0, 1],
-                v: node.view.titleInput.value
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textareaId",
-            a: {
-                p: customInstructionsTextarea.id,
-                v: customInstructionsTextarea.value
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textareaId",
-            a: {
-                p: promptTextArea.id,
-                v: promptTextArea.value
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "textareaId",
-            a: {
-                p: aiResponseTextArea.id,
-                v: aiResponseTextArea.value
-            }
-        };
-    });
+    node.push_extra_cb( (node)=>({
+        f: "textarea",
+        a: {
+            p: [0, 0, 1],
+            v: node.view.titleInput.value
+        }
+    }) ).push_extra_cb( (node)=>({
+        f: "textareaId",
+        a: {
+            p: customInstructionsTextarea.id,
+            v: customInstructionsTextarea.value
+        }
+    }) ).push_extra_cb( (node)=>({
+        f: "textareaId",
+        a: {
+            p: promptTextArea.id,
+            v: promptTextArea.value
+        }
+    }) ).push_extra_cb( (node)=>({
+        f: "textareaId",
+        a: {
+            p: aiResponseTextArea.id,
+            v: aiResponseTextArea.value
+        }
+    }) );
 
     const checkboxes = node.content.querySelectorAll('.checkboxarray input[type="checkbox"]');
 
-    checkboxes.forEach(checkbox => {
-        node.push_extra_cb((node) => {
-            return {
-                f: "checkboxId",
-                a: {
-                    p: checkbox.id,
-                    v: checkbox.checked
-                }
-            };
-        });
+    checkboxes.forEach( (checkbox)=>{
+        node.push_extra_cb( (node)=>({
+            f: "checkboxId",
+            a: {
+                p: checkbox.id,
+                v: checkbox.checked
+            }
+        }) )
     });
 
     // Fetch default values from DOM elements and sliders
@@ -163,38 +147,28 @@ function createLlmNode(name = '', sx, sy, x, y) {
     const defaultMaxContextSize = Elem.byId('max-context-size-slider').value;
 
     // Set initial values for sliders using node.push_extra_cb
-    node.push_extra_cb((node) => {
-        return {
-            f: "sliderId",
-            a: {
-                p: 'node-temperature-' + node.index,
-                v: node.temperature,
-                d: defaultTemperature
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "sliderId",
-            a: {
-                p: 'node-max-tokens-' + node.index,
-                v: node.maxTokens,
-                d: defaultMaxTokens
-            }
-        };
-    });
-
-    node.push_extra_cb((node) => {
-        return {
-            f: "sliderId",
-            a: {
-                p: 'node-max-context-' + node.index,
-                v: node.maxContextSize,
-                d: defaultMaxContextSize
-            }
-        };
-    });
+    node.push_extra_cb( (node)=>({
+        f: "sliderId",
+        a: {
+            p: 'node-temperature-' + node.index,
+            v: node.temperature,
+            d: defaultTemperature
+        }
+    }) ).push_extra_cb( (node)=>({
+        f: "sliderId",
+        a: {
+            p: 'node-max-tokens-' + node.index,
+            v: node.maxTokens,
+            d: defaultMaxTokens
+        }
+    }) ).push_extra_cb( (node)=>({
+        f: "sliderId",
+        a: {
+            p: 'node-max-context-' + node.index,
+            v: node.maxContextSize,
+            d: defaultMaxContextSize
+        }
+    }) );
 
     node.isLLM = true;
 
@@ -347,15 +321,21 @@ AiNode.setupResponseDivListeners = function(node){
     };
 
     On.scroll(aiResponseDiv, handleScroll);
-
-    // Update text highlighting
-    On.keydown(document, (e)=>{
-        if (e.altKey) aiResponseDiv.style.userSelect = 'none';
-    });
-    On.keyup(document, (e)=>{
-        if (!e.altKey) aiResponseDiv.style.userSelect = 'text';
-    });
 }
+
+Elem.disableTextSelection = function(elem){ elem.style.userSelect = 'none' }
+Elem.enableTextSelection = function(elem){ elem.style.userSelect = 'text' }
+const divsAiResponse = document.getElementsByClassName('ai-response-div');
+On.keydown(document, (e)=>{
+    if (!e.altKey) return;
+
+    Array.prototype.forEach.call(divsAiResponse, Elem.disableTextSelection);
+});
+On.keyup(document, (e)=>{
+    if (e.altKey) return;
+
+    Array.prototype.forEach.call(divsAiResponse, Elem.enableTextSelection);
+});
 
 AiNode.setupPromptTextAreaListeners = function(node){
     const textArea = node.promptTextArea;

@@ -30,7 +30,7 @@ class Elem {
 }
 
 Function.nop = function(){}
-Object.forEach = function(obj, cb, ct){
+Object.forEach = function forEachValue(obj, cb, ct){
     for (const k in obj) cb.call(ct, obj[k])
 }
 Object.hasIdThis = function(obj){ return obj.id === this.valueOf() }
@@ -232,7 +232,7 @@ class PageLoad {
         'js/nodes/nodetypes/textnodes/textnode.js',
         'js/nodes/nodetypes/linknodes/linknode.js',
         'js/nodes/nodetypes/linknodes/importlink.js',
-        'js/nodes/nodetypes/imagenodes/imagenode.js',
+        'js/nodes/nodetypes/imagenodes/imagenode.js:MODULE',
         'js/nodes/nodetypes/medianodes/medianode.js',
         'js/nodes/nodetypes/wolframnodes/wolframnode.js',
         'js/ai/prompts.js',
@@ -261,7 +261,7 @@ class PageLoad {
         'js/interface/functioncall/neuraltelemetryprompt.js',
         'js/interface/functioncall/requestfunctioncall.js',
         'js/ai/vision.js',
-        'js/interface/dropdown/savenet.js'
+        'js/interface/dropdown/savenet.js:MODULE'
     ];
 
     async loadResource(templateName){ // dynamically and append to body
