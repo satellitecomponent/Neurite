@@ -610,7 +610,7 @@ View.Graphs = class {
         this.#clearGraph();
 
         const div = Html.new.div();
-        div.innerHTML = text;
+        div.innerHTML = text.replaceAll(/src=\"blob:[^\"]*\"/g, 'src=""');
 
         // Check for the previous single-tab save object
         const zettelSaveElem = div.querySelector("#zettelkasten-save");
