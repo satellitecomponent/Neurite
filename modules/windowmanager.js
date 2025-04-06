@@ -30,7 +30,7 @@ function createMainWindow() {
         trafficLightPosition: isMac ? { x: 6, y: 4 } : undefined, // Adjust inset position
     });
 
-    mainWindow.loadURL('https://neurite.network');
+    mainWindow.loadURL('http://localhost:8080/');
     
     let pendingContextMenuRequest = null;
 

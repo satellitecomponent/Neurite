@@ -1,22 +1,21 @@
 // modules/loadingWindow.js
 const { BrowserWindow } = require('electron');
+const path = require('path');
 
 let loadingWindow;
 
 function createLoadingWindow() {
     loadingWindow = new BrowserWindow({
-        width: 300,            // Perfect square dimensions
+        width: 300,
         height: 300,
-        frame: false,          // No window frame
-        resizable: false,      // Prevent resizing
+        frame: false,
+        resizable: false, 
+        icon: path.join(__dirname, '../build/icons/icon.png'),
         webPreferences: {
-            // Depending on your security requirements
             nodeIntegration: false,
             contextIsolation: true,
         }
     });
-
-    // Load the loading screen HTML file
     loadingWindow.loadFile('loading.html');
     return loadingWindow;
 }
