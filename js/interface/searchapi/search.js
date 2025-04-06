@@ -3,61 +3,66 @@ function setSearchHighlight(match, nomatch, node) {
     classList[match]("search_matched");
     classList[nomatch]("search_nomatch");
 }
+
 const clearSearchHighlight = setSearchHighlight.bind(null, 'remove', 'remove');
 const matchSearchHighlight = setSearchHighlight.bind(null, 'add', 'remove');
 const nomatchSearchHighlight = setSearchHighlight.bind(null, 'remove', 'add');
 
 function nodesForSearchTerm(searchTerm, maxResults) {
-    if (!searchTerm) return Object.values(Graph.nodes);
-
+    const keywords = searchTerm.toLowerCase().split(' ').filter(k => k);
     const matched = [];
-    const keywords = searchTerm.toLowerCase().split(' ');
-    Graph.forEachNode( (node)=>{
+
+    Graph.forEachNode((node) => {
+        clearSearchHighlight(node);
+
+        if (keywords.length === 0) {
+            matched.push({ node, numMatches: 0 });
+            return;
+        }
+
+        const searchable = [...node.searchStrings()].join().toLowerCase();
         let numMatches = 0;
         for (const keyword of keywords) {
-            if ([...node.searchStrings()].join().toLowerCase().includes(keyword)) {
+            if (searchable.includes(keyword)) {
                 numMatches += 1;
             }
         }
+
         if (numMatches > 0) {
-            matched.push({
-                node,
-                numMatches: numMatches
-            });
-        } else {
-            nomatchSearchHighlight(node);
+            matched.push({ node, numMatches });
         }
     });
-    // Sort by the number of matches in descending order
+
     matched.sort((a, b) => b.numMatches - a.numMatches);
 
-    // Apply classes only to the top 'maxResults' (or all if maxResults is null)
     matched.forEach((match, index) => {
-        const matched = (!maxResults || index < maxResults);
-        (matched ? matchSearchHighlight : nomatchSearchHighlight)(match.node);
+        const isTopResult = !maxResults || index < maxResults;
+        (isTopResult ? matchSearchHighlight : nomatchSearchHighlight)(match.node);
     });
 
-    // Return all matched nodes if needed or just the top results
     return (maxResults ? matched.slice(0, maxResults) : matched).map(m => m.node);
 }
 
 function performZettelkastenSearch(searchTerm) {
     const res = document.querySelector("#search-results .results-display-div");
     res.innerHTML = '';
-    for (const node of nodesForSearchTerm(searchTerm)) {
+
+    const nodes = nodesForSearchTerm(searchTerm);
+
+    for (const node of nodes) {
         const div = Html.make.div('search-result-item');
         const title = Html.make.div('search-result-title');
         title.appendChild(document.createTextNode(node.getTitle()));
         div.appendChild(title);
 
-        function onClick(e){
-            Autopilot.zoomToFrame(this).start()
-        }
-        function onDblClick(e){
-            Autopilot.zoomToFrame(this).skip().start()
-        }
-        On.click(div, onClick.bind(node));
-        On.dblclick(div, onDblClick.bind(node));
+        On.click(div, () => {
+            console.log(`[Search] Clicked result: ${node.getTitle()}`);
+            Autopilot.zoomToFrame(node).start();
+        });
+
+        On.dblclick(div, () => {
+            Autopilot.zoomToFrame(node).skip().start();
+        });
 
         res.appendChild(div);
     }
@@ -65,9 +70,10 @@ function performZettelkastenSearch(searchTerm) {
 
 function setupZettelkastenSearchBar() {
     const inp = Elem.byId('Searchbar');
-    On.input(inp, performZettelkastenSearch.bind(null, inp.value));
+    On.input(inp, () => {
+        performZettelkastenSearch(inp.value);
+    });
 }
-
 
 
 On.click(Elem.byId('vectorDbSearchButton'), (e)=>{

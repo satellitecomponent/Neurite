@@ -30,22 +30,18 @@ class TextNode {
         if (y !== undefined) node.pos.y = y;
 
         node.push_extra_cb( (node)=>({
-                f: 'textarea',
-                a: {
-                    p: [0, 0, 1],
-                    v: node.view.titleInput.value
-                }
-            })
-        );
-
-        node.push_extra_cb( (node)=>({
-                f: 'textarea',
-                a: {
-                    p: [0, 1, 0],
-                    v: textarea.value
-                }
-            })
-        );
+            f: 'textarea',
+            a: {
+                p: [0, 0, 1],
+                v: node.view.titleInput.value
+            }
+        }) ).push_extra_cb( (node)=>({
+            f: 'textarea',
+            a: {
+                p: [0, 1, 0],
+                v: textarea.value
+            }
+        }) );
 
         node.isTextNode = true;
         node.codeEditingState = 'edit';

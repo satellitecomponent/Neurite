@@ -161,22 +161,72 @@ async function displayResultsRelevantToMessage(searchResults, message){
     relevantResults.forEach(displaySearchResult);
 }
 
+function getSearchEngineUrl(engine, query = '') {
+    const trimmedQuery = query.trim();
+    const hasQuery = trimmedQuery.length > 0;
+    const q = encodeURIComponent(trimmedQuery);
+
+    switch (engine.toLowerCase()) {
+        case 'duckduckgo':
+            return hasQuery ? `https://duckduckgo.com/?q=${q}` : `https://duckduckgo.com/`;
+        case 'bing':
+            return hasQuery ? `https://www.bing.com/search?q=${q}` : `https://www.bing.com/`;
+        case 'brave':
+            return hasQuery ? `https://search.brave.com/search?q=${q}` : `https://search.brave.com/`;
+        default:
+            return hasQuery ? `https://www.google.com/search?q=${q}` : `https://www.google.com/`;
+    }
+}
+
 function returnLinkNodes() {
-    window.prompt("Enter a Link or Search Query", '')
-        .then( (linkInput)=>{
-            if (linkInput) processLinkInput(linkInput)
-        })
-        .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
+    if (window.startedViaElectron) {
+        const defaultUrl = getSearchEngineUrl(settings.defaultSearchEngine || 'google');
+        const node = processLinkInput(defaultUrl);
+        return node; // return for Electron
+    } else {
+        window.prompt("Enter a Link or Search Query", '')
+            .then(linkInput => {
+                if (!linkInput) return;
+                const searchResults = processLinkInput(linkInput);
+                if (maybePromise instanceof Promise) {
+                    maybePromise.then(() => {});
+                }
+            })
+            .catch(err => Logger.err("Failed to get prompt input:", err));
+        return null; // nothing to return in browser mode
+    }
 }
 
     //for interface.js link node drop handler
 function processLinkInput(linkInput) {
     if (String.isUrl(linkInput)) {
         const node = new LinkNode(linkInput, linkInput);
-        setupNodeForPlacement(node);
+        node.typeNode.toggleViewer();
+        setupNodeForPlacement(node, toDZ(new vec2(0, -node.view.div.offsetHeight / 4)));
+        return node
     } else {
         return handleNaturalLanguageSearch(linkInput)
     }
+}
+
+function resolveLinkOrSearch(input) {
+    const trimmed = input.trim();
+    if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+        return { url: trimmed, label: trimmed };
+    }
+
+    const maybe = String.maybeUrl(trimmed);
+    if (maybe) {
+        return { url: maybe, label: trimmed };
+    }
+
+    if (window.startedViaElectron) {
+        const engine = settings.defaultSearchEngine || 'google';
+        const searchUrl = getSearchEngineUrl(engine, trimmed);
+        return { url: searchUrl, label: trimmed };
+    }
+
+    return handleNaturalLanguageSearch(trimmed);
 }
 
 async function handleNaturalLanguageSearch(query, message) {
@@ -187,7 +237,6 @@ async function handleNaturalLanguageSearch(query, message) {
 
     const searchResults = processSearchResults(searchResultsData);
     await displayResultsRelevantToMessage(searchResults, message ?? query);
-    if (!message) return;
 
     return searchResults.map( (result, index)=>{
         const descr = result.description.substring(0, 100);

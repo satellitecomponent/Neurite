@@ -365,7 +365,7 @@ class ResponseHandler {
         divLanguageLabel.style.justifyContent = 'space-between';
         divLanguageLabel.style.alignItems = 'center';
         
-        const copyButton = Html.make.button('copy-btn', "Copy");
+        const copyButton = Html.make.button('copy-code-btn', "Copy");
         divLanguageLabel.appendChild(copyButton);
     
         this.setupCodeBlock(divExistingContainer);
@@ -424,7 +424,7 @@ class ResponseHandler {
     
     setupCodeBlock(divCodeBlock) {
         const divLanguageLabel = divCodeBlock.querySelector('.language-label');
-        const copyButton = divCodeBlock.querySelector('.copy-btn');
+        const copyButton = divCodeBlock.querySelector('.copy-code-btn');
         const decodedContent = divCodeBlock.querySelector('.code-block');
     
         makeDivDraggable(divCodeBlock, 'Code Block', divLanguageLabel);

@@ -9,6 +9,11 @@
         // Alt + double click => Create LLM node
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
+    } else if (e.getModifierState(controls.controlKey.value)) {
+        // Control + double click => Create Link node
+        e.preventDefault();
+        const node = returnLinkNodes();
+        node.followingMouse = 0;
     } else if (App.nodeMode && !Node.prev) {
         // Shift + double click => Create regular node
         createNodeFromWindow();

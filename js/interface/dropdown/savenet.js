@@ -1,4 +1,46 @@
-﻿View.Graphs = class {
+﻿class GraphsKeeper {
+    #blobData = new Stored('blobs', 'blob-data');
+    #blobMeta = new Stored('graphs', 'blob-meta');
+    #data = new Stored('graphs', 'graph-data');
+    #meta = new Stored('graphs', 'graph-meta');
+
+    blobForBlobId(blobId){ return this.#blobData.load(blobId) }
+    blobMetaForGraphId(graphId){ return this.#blobMeta.load(graphId) }
+    dataForMeta(meta){ return this.#data.load(meta.graphId) }
+
+    deleteBlob(blobId){ this.#blobData.delete(blobId) }
+    deleteBlobMeta(graphId){ this.#blobMeta.delete(graphId) }
+    #deleteBlobs = (dictMeta)=>{ 
+        for (const blobId in dictMeta) this.deleteBlob(blobId)
+    }
+    deleteForMeta(meta){
+        const graphId = meta.graphId;
+        this.#blobMeta.load(graphId).then(this.#deleteBlobs);
+        this.#blobMeta.delete(graphId);
+        this.#data.delete(graphId);
+        return this.#meta.delete(graphId);
+    }
+    drop(){
+        Stored.drop('blobs');
+        return Stored.drop('graphs');
+    }
+
+    forEachBlobMetaAndGraphId(cb){ return this.#blobMeta.table.iterate(cb) }
+    forEachMetaAndGraphId(cb){ return this.#meta.table.iterate(cb) }
+
+    saveBlobData(blobId, blob){ this.#blobData.save(blobId, blob) }
+    saveBlobMeta(graphId, dictMeta){ this.#blobMeta.save(graphId, dictMeta) }
+    saveMetaAndData(meta, data){
+        meta.lastUpdated = new Date().toLocaleString();
+        meta.revisions += 1;
+        meta.size = new Blob([data]).size;
+        this.#data.save(meta.graphId, data);
+        return this.saveMeta(meta);
+    }
+    saveMeta(meta){ return this.#meta.save(meta.graphId, meta) }
+}
+
+View.Graphs = class {
     #btnClear = Elem.byId('clear-button');
     #btnClearSure = Elem.byId('clear-sure-button');
     #btnClearUnsure = Elem.byId('clear-unsure-button');
@@ -6,155 +48,184 @@
     #divClearSure = Elem.byId('clear-sure');
     #dropArea = Elem.byId('saved-networks-container');
 
-    #selectedSaveIndex = -1;
-    #selectedSaveTitle = null;
-    #saves = [];
+    #blobs = {};
+    #graphs = [];
+    #maxBlobId = 0;
+    #maxGraphId = 0;
+    #saver = new View.Graphs.Saver(this);
+    #selectedGraph = null;
+    #state = new Stored('state', 'GraphsView');
+    #stored = new GraphsKeeper();
 
-    #setSelectedSave(index, title){
-        this.#selectedSaveIndex = index;
-        this.#selectedSaveTitle = title;
+    #setSelectedGraph(meta){
+        this.#selectedGraph = meta;
+        this.#state.save('latest-selected', meta?.graphId);
         return this;
     }
 
-    #getLocalLatestSelected(){
-        const index = parseInt(localStorage.getItem('latest-selected'));
-        return this.#selectedSaveIndex = (isNaN(index) ? -1 : index);
-    }
-    #setLocalLatestSelected(){
-        localStorage.setItem('latest-selected', this.#selectedSaveIndex);
-        return this;
-    }
-
-    #getLocalSaves(){
-        const saves = JSON.parse(localStorage.getItem('saves'));
-        return this.#saves = (Array.isArray(saves) ? saves : []);
-    }
-    #setLocalSaves(){
-        localStorage.setItem('saves', JSON.stringify(this.#saves));
-        return this;
-    }
-
-    #downloadData(title, data){
+    #downloadTitledData(title, data){
         const blob = new Blob([data], { type: 'text/plain' });
-        const tempAnchor = Html.make.a(window.URL.createObjectURL(blob));
+        const tempAnchor = Html.make.a(URL.createObjectURL(blob));
         tempAnchor.download = title + '.txt';
         tempAnchor.click();
         Promise.delay(1).then(URL.revokeObjectURL.bind(URL, tempAnchor.href));
     }
 
-    #updateSavedGraphs(){
-        const dropArea = this.#dropArea;
-        dropArea.innerHTML = '';
-        for (const [index, save] of this.#saves.entries()) {
-            dropArea.appendChild(this.#makeDivSave(index, save))
+    #updateGraphs = ()=>{
+        this.#blobs = {};
+        this.#graphs = [];
+        if (this.#selectedGraph) this.#selectedGraph.title = ''; // for autosave
+        this.#dropArea.innerHTML = '';
+        return this.#stored.forEachMetaAndGraphId(this.#appendMeta);
+    }
+    #appendMeta = (meta, graphId)=>{
+        this.#graphs.push(meta);
+        const isSelected = (graphId === this.#selectedGraph?.graphId);
+        if (isSelected) this.#selectedGraph = meta;
+        const viewMeta = new View.Graphs.MetaView(this, meta, isSelected);
+        this.#dropArea.appendChild(viewMeta.div);
+        viewMeta.updateForBlob();
+    }
+
+    #makeMetaForBlobOfTitle(blob, title){
+        return {
+            added: new Date().toLocaleString(),
+            blobId: String(this.#maxBlobId += 1) + '.blob',
+            size: blob.size,
+            title
         }
     }
+    #makeMetaForTitle(title){
+        const strDate = new Date().toLocaleString();
+        return {
+            added: strDate,
+            graphId: String(this.#maxGraphId += 1) + '.graph',
+            lastUpdated: strDate,
+            revisions: 0,
+            size: 0,
+            title
+        };
+    }
 
-    #makeDivSave(index, save){
-        const titleInput = this.#makeTitleInput(index, save.title);
-        const btnSave = this.#makeLinkButton("Save", index);
-        const btnLoad = this.#makeLinkButton("Load", index);
-        const btnDownload = this.#makeLinkButton("↓", index);
-        const btnDelete = this.#makeLinkButton("X", index);
+    #metaByGraphId(graphId){
+        return this.#graphs.find(this.#hasGraphIdThis, graphId || '')
+    }
+    #hasGraphIdThis(obj){ return obj.graphId === this.valueOf() }
 
-        On.change(titleInput, this.#onTitleInputChanged);
-        On.click(btnSave, this.#onBtnSaveClicked);
-        On.click(btnLoad, this.#onBtnLoadClicked);
-        On.click(btnDownload, this.#onBtnDownloadClicked);
-        On.click(btnDelete, this.#onBtnDeleteClicked);
-
-        const div = Html.new.div();
-        if (index === this.#selectedSaveIndex) {
-            div.classList.add("selected-save");
+    static MetaView = class {
+        constructor(mom, meta, isSelected){
+            this.meta = meta;
+            this.mom = mom;
+            this.div = this.#makeDiv(meta, isSelected);
         }
-        div.append(titleInput, btnSave, btnLoad, btnDownload, btnDelete);
-        return div;
-    }
-    #makeLinkButton(text, index){
-        const button = Html.make.button('linkbuttons', text);
-        button.dataset.index = index;
-        return button;
-    }
-    #makeTitleInput(index, title){
-        const input = Html.new.input();
-        input.dataset.index = index;
-        input.style.border = 'none';
-        input.style.width = '100px';
-        input.type = "text";
-        input.value = title;
-        return input;
-    }
 
-    #onTitleInputChanged = (e)=>{
-        this.#saves[Event.dataIndex(e)].title = e.target.value;
-        this.#setLocalSaves();
-    }
-    #onBtnSaveClicked = (e) => {
-        const index = Event.dataIndex(e);
-        const title = this.#saves[index].title;
+        #makeDiv(meta, isSelected){
+            const inputTitle = this.#makeTitleInput(meta.title);
+            const btnSave = this.#makeLinkButton("Save");
+            const btnLoad = this.#makeLinkButton("Load");
+            const btnDownload = this.#makeLinkButton("↓");
+            const btnDelete = this.#makeLinkButton("X");
 
-        if (index !== this.#selectedSaveIndex) {
-            const msg = `This will overwrite ${title} with the currently selected save, ${this.#selectedSaveTitle}. Continue?`;
+            On.change(inputTitle, this.#onTitleInputChanged);
+            On.click(btnSave, this.#onBtnSaveClicked);
+            On.click(btnLoad, this.#onBtnLoadClicked);
+            On.click(btnDownload, this.#onBtnDownloadClicked);
+            On.click(btnDelete, this.#onBtnDeleteClicked);
 
-            window.confirm(msg).then(confirmed => {
-                if (!confirmed) return;
-                this.#save(title);
-            });
-        } else {
-            this.#save(title);
+            const div = Html.new.div();
+            if (isSelected) div.classList.add("selected-save");
+            div.append(inputTitle, btnSave, btnLoad, btnDownload, btnDelete);
+            div.title = "added on: " + meta.added + "\n"
+                    + "revisions: " + meta.revisions + "\n"
+                    + "last: " + meta.lastUpdated + "\n"
+                    + "└ size: " + meta.size + " bytes";
+            return div;
         }
-    }
-    #onBtnLoadClicked = (e) => {
-        const index = Event.dataIndex(e);
-        const save = this.#saves[index];
-
-        if (save.data === '') {
-            window.confirm("Are you sure you want an empty save?").then(confirmed => {
-                if (!confirmed) {
-                    this.#updateSavedGraphs();
-                    return;
-                }
-                this.#proceedWithLoad(index, save);
-            });
-        } else {
-            this.#proceedWithLoad(index, save);
+        #makeLinkButton(text){
+            return Html.make.button('linkbuttons', text)
         }
-    }
-
-    // Helper method
-    #proceedWithLoad(index, save) {
-        this.#autosave();
-        this.#setSelectedSave(index, save.title)
-            .#setLocalLatestSelected()
-            .#loadNet(save.data, true)
-            .#updateSavedGraphs();
-    }
-    #onBtnDeleteClicked = (e)=>{
-        const targetIndex = Event.dataIndex(e);
-        this.#saves.splice(targetIndex, 1);
-
-        let index = -1;
-        let title = null;
-        if (targetIndex === this.#selectedSaveIndex) {
-            localStorage.removeItem('latest-selected');
-        } else {
-            const selectedTitle = this.#selectedSaveTitle;
-            index = this.#saves.findIndex(Object.hasTitleThis, selectedTitle);
-            if (index > -1) title = selectedTitle;
+        #makeTitleInput(title){
+            const input = Html.new.input();
+            input.style.border = 'none';
+            input.style.width = '100px';
+            input.type = "text";
+            input.value = title;
+            return input;
         }
-        this.#setSelectedSave(index, title)
-            .#setLocalSaves()
-            .#updateSavedGraphs();
-    }
-    #onBtnDownloadClicked = (e)=>{
-        const save = this.#saves[Event.dataIndex(e)];
-        const blob = new Blob([save.data], { type: 'text/plain' });
 
-        const tempAnchor = Html.make.a(URL.createObjectURL(blob));
-        tempAnchor.download = save.title + '.txt';
+        #onTitleInputChanged = (e)=>{
+            this.meta.title = e.target.value;
+            this.mom.#stored.saveMeta(this.meta);
+        }
+        #onBtnSaveClicked = (e)=>{
+            const title = this.meta.title;
+            const selected = this.mom.#selectedGraph;
+            if (this.meta === selected) {
+                return this.mom.#saver.saveWithTitle(title)
+            }
 
-        tempAnchor.click();
-        Promise.delay(1).then(URL.revokeObjectURL.bind(URL, tempAnchor.href));
+            const msg = "This will overwrite " + title
+                    + " with the currently selected save, " + selected.title
+                    + ". Continue?"
+            window.confirm(msg).then(this.#handleConfirmOverwrite);
+        }
+        #handleConfirmOverwrite = (confirmed)=>{
+            if (confirmed) this.mom.#saver.saveWithTitle(this.meta.title)
+        }
+
+        #onBtnLoadClicked = (e)=>{
+            if (this.meta.size > 0) return this.#proceedWithLoad();
+
+            const msg = "Are you sure you want an empty save?";
+            window.confirm(msg).then(this.#handleConfirmEmptySave);
+        }
+        #handleConfirmEmptySave = (confirmed)=>{
+            if (confirmed) this.#proceedWithLoad()
+        }
+        #proceedWithLoad(){
+            this.mom.#autosave();
+            this.mom.#stored.dataForMeta(this.meta).then(this.#loadData);
+        }
+        #loadData = (data)=>{
+            this.mom.#setSelectedGraph(this.meta)
+                .#loadGraph(data)
+                .#updateGraphs()
+        }
+
+        #onBtnDeleteClicked = (e)=>{
+            const meta = this.meta;
+            const mom = this.mom;
+            const graphIndex = mom.#graphs.findIndex(Object.isThis, meta);
+            mom.#graphs.splice(graphIndex, 1);
+            const isSelected = (meta === mom.#selectedGraph);
+            if (isSelected) mom.#state.delete('latest-selected');
+            mom.#stored.deleteForMeta(meta).then(mom.#updateGraphs);
+        }
+
+        #onBtnDownloadClicked = (e)=>{
+            this.mom.#stored.dataForMeta(this.meta).then(this.#downloadData)
+        }
+        #downloadData = (data)=>{
+            this.mom.#downloadTitledData(this.meta.title, data)
+        }
+
+        updateForBlob(){
+            this.mom.#stored.blobMetaForGraphId(this.meta.graphId)
+                .then(this.#handleBlobMeta)
+        }
+        #handleBlobMeta = (dictMeta)=>{
+            if (!dictMeta) return;
+
+            this.mom.#blobs[this.meta.graphId] = dictMeta;
+            let counter = 0
+            let size = 0;
+            for (const blobId in dictMeta) {
+                counter += 1;
+                size += dictMeta[blobId].size;
+            }
+            this.div.title += "\nassets: " + counter + "\n"
+                            + "└ size: " + size + " bytes";
+        }
     }
 
     #addDragEvents(){
@@ -173,12 +244,12 @@
         ['dragleave', 'drop']
             .forEach( (eName)=>On[eName](dropArea, this.#unhighlight) );
 
-        On.drop(dropArea, this.#savedGraphsDrop);
+        On.drop(dropArea, this.#onSavedGraphsDrop);
     }
     #highlight(e){ e.currentTarget.classList.add('highlight') }
     #unhighlight(e){ e.currentTarget.classList.remove('highlight') }
 
-    #savedGraphsDrop = (e)=>{
+    #onSavedGraphsDrop = (e)=>{
         const file = e.dataTransfer.files[0];
         if (!file || !file.name.endsWith('.txt')) {
             Logger.info("File must be a .txt file");
@@ -194,16 +265,17 @@
         const title = file.name.replace('.txt', '');
 
         try {
-            this.#saves.push({ title, data: content });
-            this.#setLocalSaves().#updateSavedGraphs();
+            this.#saver.addSave('dropped', title, content)
+                .then(this.#updateGraphs)
         } catch (err) {
             const loadAnyway = await window.confirm(
                 "The file is too large to store. Would you like to load it anyway?"
             );
             if (!loadAnyway) return;
-            this.#setSelectedSave(null, null).#loadNet(content, true);
+            this.#setSelectedGraph(null).#loadGraph(content);
         }
     }
+
     #onBtnClearClicked = (e)=>{
         this.#divClearSure.setAttribute('style', "display:block");
         this.#btnClear.text = "Are you sure?";
@@ -212,218 +284,333 @@
         Elem.hide(this.#divClearSure);
         this.#btnClear.text = "Clear";
     }
-    #onBtnClearSureClicked = (e) => {
-        window.confirm("Create a new save?").then(createNewSave => {
-            this.#setSelectedSave(null, null).#clearNet();
-            App.zetPanes.addPane();
 
-            if (createNewSave) this.#save();
-
-            this.#updateSavedGraphs();
-            Elem.hide(this.#divClearSure);
-            this.#btnClear.text = "Clear";
-        });
+    #onBtnClearSureClicked = (e)=>{
+        window.confirm("Create a new save?")
+            .then(this.#handleConfirmNewSave)
+            .then(this.#afterNewSave)
     }
-    #onBtnClearLocalClicked(e){
+    #handleConfirmNewSave = (createNewSave)=>{
+        this.#setSelectedGraph(null).#clearGraph();
+        App.zetPanes.addPane();
+        if (createNewSave) return this.#saver.save();
+    }
+    #afterNewSave = ()=>{
+        this.#updateGraphs();
+        Elem.hide(this.#divClearSure);
+        this.#btnClear.text = "Clear";
+    }
+
+    #onBtnClearLocalClicked = (e)=>{
         localStorage.clear();
-        alert("Local storage has been cleared.");
+        Stored.drop('Neurite');
+        Stored.drop('state');
+        this.#stored.drop()
+            .then(this.#updateGraphs)
+            .then(alert.bind(null, "Local storage has been cleared."));
     }
 
-    async #handleSaveConfirmation(title, saveData, force = false) {
-        const existingSaves = this.#saves.filter(save => save.title === title);
-        const len = existingSaves.length;
-
-        if (len > 0) {
-            if (!force) {
-                // Use custom async confirm dialog
-                force = await window.confirm(this.#getConfirmMessage(title, len));
-            }
-
-            if (force) {
-                // Overwrite logic
-                this.#saves.forEach(save => {
-                    if (save.title === title) save.data = saveData;
-                });
-                Logger.info("Updated all saves of title:", title);
-            } else {
-                // Create duplicate save
-                this.#saves.push({ title, data: saveData });
-                Logger.info("Created duplicate save:", title);
-            }
-        } else {
-            // Add new save
-            this.#saves.push({ title, data: saveData });
-            Logger.info("Created new save:", title);
+    static CoreSaver = class {
+        #type = '';
+        constructor(mom, title, dataMaker){
+            this.makeData = dataMaker;
+            this.mom = mom;
+            this.title = title;
         }
 
-        try {
-            this.#setLocalSaves().#updateSavedGraphs();
-        } catch (e) {
-            // Use custom async confirm dialog
-            const shouldDownload = await window.confirm(
-                "Local storage is full. Download the data as a .txt file?"
-            );
-            if (shouldDownload) {
-                this.#downloadData(title, JSON.stringify({ data: saveData }));
-            }
+        handleConfirmation(force = false){
+            const len = this.mom.#graphs
+                        .filter(Object.hasTitleThis, this.title).length;
+            return (len < 1) ? this.addSaveAndSelectIt("new")
+                 : (force) ? this.#handleForce(force)
+                 : window.confirm(this.#getMsgConfirmForce(len))
+                    .then(this.#handleForce);
+        }
+        #handleForce = (force)=>{
+            return (force) ? this.#overwrite()
+                 : this.addSaveAndSelectIt("duplicate")
+        }
+
+        #overwrite(){
+            return this.mom.#graphs
+                .reduce(this.#overwriteGraphByProm, Promise.resolve())
+                .then(this.#afterOverwrite)
+        }
+        #overwriteGraphByProm = (prom, meta)=>{
+            if (meta.title !== this.title) return prom;
+
+            Logger.debug("Overwrite graph", meta.graphId);
+            return this.#makeAndStoreDataForMeta(meta);
+        }
+        #afterOverwrite = ()=>{ Logger.info(this.#msgOverwrite, this.title) }
+        #msgOverwrite = "Updated all saves of title:";
+
+        #makeAndStoreDataForMeta(meta){
+            const stored = this.mom.#stored;
+            return this.makeData(meta)
+                .then(stored.saveMetaAndData.bind(stored, meta));
+        }
+
+        addSaveAndSelectIt(type){ return this.addSave(type, 'select') }
+        addSave(type, option){
+            this.#type = type;
+            const meta = this.mom.#makeMetaForTitle(this.title);
+            if (option === 'select') this.mom.#setSelectedGraph(meta);
+            return this.#makeAndStoreDataForMeta(meta)
+                .then(this.#afterAddSave, this.#onSaveError);
+        }
+        #afterAddSave = ()=>{
+            Logger.info("Added", this.#type, "save:", this.title)
+        }
+        #onSaveError = (err)=>{
+            Logger.err("Failed to save in local storage:", err);
+            return window.confirm(this.#msgFull)
+                .then(this.#handleConfirmDownload);
+        }
+        #msgFull = "Local storage is full. Download the data as a .txt file?";
+        #handleConfirmDownload = (shouldDownload)=>{
+            return shouldDownload && this.makeData().then(this.#downloadData)
+        }
+        #downloadData = (data)=>{
+            this.mom.#downloadTitledData(this.title, data)
+        }
+
+        #getMsgConfirmForce(len){
+            return (len > 1 ? len : 'A')
+                + " save" + (len > 1 ? 's' : '')
+                + ' of title "' + this.title + '"'
+                + " already exist" + (len > 1 ? '' : 's')
+                + ". Click 'Yes' to overwrite" + (len > 1 ? " all" : '')
+                + ", or 'No' to create a duplicate."
         }
     }
-    #getConfirmMessage(title, len){
-        return (len > 1 ? len : 'A') + " save" + (len > 1 ? 's' : '') +
-            ' of title "' + title + '" already exist' + (len > 1 ? '' : 's') +
-            ". Click 'OK' to overwrite" + (len > 1 ? " all" : '') +
-            ", or 'Cancel' to create a duplicate."
-    }
 
-    #replaceNewLinesInLLMSaveData(nodeData){
-        const tempDiv = Html.new.div();
-        tempDiv.innerHTML = nodeData;
+    static Saver = class {
+        constructor(mom){ this.mom = mom }
+        addSave(type, title, content){
+            const dataMaker = ()=>Promise.resolve(content) ;
+            return (new View.Graphs.CoreSaver(this.mom, title, dataMaker))
+                .addSave(type);
+        }
 
-        tempDiv.querySelectorAll('[data-node_json]').forEach( (node)=>{
+        #replaceNewLinesInLLMSaveData(nodeData){
+            const div = Html.new.div();
+            div.innerHTML = nodeData;
+            div.querySelectorAll('[data-node_json]')
+                .forEach(this.#handleNodeWithJson, this);
+            return div.innerHTML;
+        }
+        #handleNodeWithJson(node){
             try {
                 if (!JSON.parse(node.dataset.node_json).isLLM) return
             } catch (err) {
                 Logger.warn("Error parsing node JSON:", err);
                 return;
             }
-            node.querySelectorAll('pre').forEach( (pre)=>{
-                pre.innerHTML = pre.innerHTML.replace(/\n/g, App.NEWLINE_PLACEHOLDER)
-            });
-        });
+            node.querySelectorAll('pre').forEach(this.#handlePre);
+        }
+        #handlePre(pre){
+            pre.innerHTML = pre.innerHTML.replace(/\n/g, App.NEWLINE_PLACEHOLDER)
+        }
 
-        return tempDiv.innerHTML;
-    }
+        #collectAdditionalSaveObjects(){
+            // Collecting slider values
+            const inputValues = localStorage.getItem('inputValues') || '{}';
+            const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
 
-    #collectAdditionalSaveObjects(){
-        // Collecting slider values
-        const inputValues = localStorage.getItem('inputValues') || '{}';
-        const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
+            // Collecting saved views
+            const savedViewsString = JSON.stringify(savedViews);
+            const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
 
-        // Collecting saved views
-        const savedViewsString = JSON.stringify(savedViews);
-        const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
+            // Get current Mandelbrot coords in a standard format
+            const mandelbrotParams = Graph.getCoords();
+            const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
 
-        // Get current Mandelbrot coords in a standard format
-        const mandelbrotParams = Graph.getCoords();
-        const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
+            // Get the selected fractal type from localStorage
+            const selectedFractalType = localStorage.getItem('fractal-select');
+            const fractalTypeSaveElement = `<div id="fractal-type" style="display:none;">${encodeURIComponent(JSON.stringify(selectedFractalType))}</div>`;
 
-        // Get the selected fractal type from localStorage
-        const selectedFractalType = localStorage.getItem('fractal-select');
-        const fractalTypeSaveElement = `<div id="fractal-type" style="display:none;">${encodeURIComponent(JSON.stringify(selectedFractalType))}</div>`;
-
-        // Combine both slider values and saved views in one string
-        return savedInputValues + savedViewsElement + mandelbrotSaveElement + fractalTypeSaveElement;
-    }
-    #restoreAdditionalSaveObjects(d){
-        const savedViewsElement = d.querySelector("#saved-views");
-        if (savedViewsElement) {
-            let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
-            savedViews = JSON.parse(savedViewsContent);
-            if (savedViews) {
-                updateSavedViewsCache();
-                displaySavedCoordinates();
+            // Combine both slider values and saved views in one string
+            return savedInputValues + savedViewsElement + mandelbrotSaveElement + fractalTypeSaveElement;
+        }
+        restoreAdditionalSaveObjects(d){
+            const savedViewsElement = d.querySelector("#saved-views");
+            if (savedViewsElement) {
+                let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
+                savedViews = JSON.parse(savedViewsContent);
+                if (savedViews) {
+                    updateSavedViewsCache();
+                    displaySavedCoordinates();
+                }
+                savedViewsElement.remove();
             }
-            savedViewsElement.remove();
-        }
 
-        const sliderValuesElement = d.querySelector("#saved-input-values");
-        if (sliderValuesElement) {
-            const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
-            localStorage.setItem('inputValues', sliderValuesContent);
-            sliderValuesElement.remove();
-        }
-
-        restoreInputValues();
-
-        const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
-        if (mandelbrotSaveElement) {
-            const mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
-            const pan = mandelbrotParams.pan.split('+i');
-            Animation.goToCoords(mandelbrotParams.zoom, pan[0], pan[1]); // Direct function call using parsed params
-            mandelbrotSaveElement.remove();
-        }
-
-        const fractalTypeSaveElement = d.querySelector("#fractal-type");
-        if (fractalTypeSaveElement) {
-            const fractalSelectElement = Elem.byId('fractal-select');
-            const fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
-            if (fractalType) {
-                fractalSelectElement.value = fractalType;
-                Select.updateSelectedOption(fractalSelectElement);
-                Fractal.updateJuliaDisplay(fractalType);
+            const sliderValuesElement = d.querySelector("#saved-input-values");
+            if (sliderValuesElement) {
+                const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
+                localStorage.setItem('inputValues', sliderValuesContent);
+                sliderValuesElement.remove();
             }
-            fractalTypeSaveElement.remove();
-        }
-    }
 
-    #save(existingTitle){
-        //TEMP FIX: To-Do: Ensure processChangedNodes in zettelkasten.js does not cause other node textareas to have their values overwritten.
-        window.zettelkastenProcessors.forEach( (processor)=>{
+            restoreInputValues();
+
+            const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
+            if (mandelbrotSaveElement) {
+                const mandelbrotParams = JSON.parse(decodeURIComponent(mandelbrotSaveElement.textContent));
+                const pan = mandelbrotParams.pan.split('+i');
+                Animation.goToCoords(mandelbrotParams.zoom, pan[0], pan[1]); // Direct function call using parsed params
+                mandelbrotSaveElement.remove();
+            }
+
+            const fractalTypeSaveElement = d.querySelector("#fractal-type");
+            if (fractalTypeSaveElement) {
+                const fractalSelectElement = Elem.byId('fractal-select');
+                const fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
+                if (fractalType) {
+                    fractalSelectElement.value = fractalType;
+                    Select.updateSelectedOption(fractalSelectElement);
+                    Fractal.updateJuliaDisplay(fractalType);
+                }
+                fractalTypeSaveElement.remove();
+            }
+        }
+
+        #makeSaveData = (meta)=>{
+            //TEMP FIX: To-Do: Ensure processChangedNodes in zettelkasten.js does not cause other node textareas to have their values overwritten.
+            window.zettelkastenProcessors.forEach(this.#handleProcessor);
+
+            return Promise.resolve(meta.graphId)
+                .then(this.#saveBlobsForGraphId)
+                .then(this.#updateTheNodes)
+                .then(this.#getSaveData);
+        }
+        #handleProcessor(processor){
             processAll = true;
             processor.processInput();
-        });
-
-        Graph.forEachNode( (node)=>{
+        }
+        #saveBlobsForGraphId = (graphId)=>{
+            return graphId && new View.Graphs.BlobSaver(this.mom, graphId)
+        }
+        #updateTheNodes = ()=>{ Graph.forEachNode(this.#updateNode) }
+        #updateNode(node){
             node.updateEdgeData();
             node.updateNodeData();
-        });
+        }
+        #getSaveData = ()=>{
+            // Clone the currently selected UUIDs before clearing
+            const selectedNodes = App.selectedNodes;
+            const selectedNodesUuids = new Set(selectedNodes.uuids);
+            selectedNodes.clear();
 
-        // Clone the currently selected UUIDs before clearing
-        const selectedNodes = App.selectedNodes;
-        const selectedNodesUuids = new Set(selectedNodes.uuids);
-        selectedNodes.clear();
+            // Save the node data
+            let nodeData = Elem.byId('nodes').innerHTML;
 
-        // Save the node data
-        let nodeData = Elem.byId('nodes').innerHTML;
+            selectedNodesUuids.forEach(selectedNodes.restoreNodeById, selectedNodes);
 
-        selectedNodesUuids.forEach(selectedNodes.restoreNodeById, selectedNodes);
+            nodeData = this.#replaceNewLinesInLLMSaveData(nodeData);
 
-        nodeData = this.#replaceNewLinesInLLMSaveData(nodeData);
+            const zettelkastenPanesSaveElements = [];
+            window.codeMirrorInstances.forEach( (instance, index)=>{
+                const content = instance.getValue();
+                const name = App.zetPanes.getPaneName('zet-pane-' + (index + 1));
+                const paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(name)}" style="display:none;">${encodeURIComponent(content)}</div>`;
+                zettelkastenPanesSaveElements.push(paneSaveElement);
+            });
 
-        const zettelkastenPanesSaveElements = [];
-        window.codeMirrorInstances.forEach( (instance, index)=>{
-            const content = instance.getValue();
-            const name = App.zetPanes.getPaneName('zet-pane-' + (index + 1));
-            const paneSaveElement = `<div id="zettelkasten-pane-${index}" data-pane-name="${encodeURIComponent(name)}" style="display:none;">${encodeURIComponent(content)}</div>`;
-            zettelkastenPanesSaveElements.push(paneSaveElement);
-        });
+            return nodeData + zettelkastenPanesSaveElements.join('') + this.#collectAdditionalSaveObjects();
+        }
 
-        const saveData = nodeData + zettelkastenPanesSaveElements.join('') + this.#collectAdditionalSaveObjects();
+        #handleTitle(title, isExisting){
+            const mom = this.mom;
+            const meta = mom.#graphs.find(Object.hasTitleThis, title);
+            if (meta) mom.#setSelectedGraph(meta);
 
-        const handleSave = (title) => {
-            if (!title) return;  // Exit if no title
-            const saves = this.#saves;
-            const indexToUpdate = saves.findIndex(Object.hasTitleThis, title);
-            const index = (indexToUpdate > -1 ? indexToUpdate : saves.length);
-            this.#setSelectedSave(index, title);
-            this.#handleSaveConfirmation(title, saveData, title === existingTitle);
-            this.#setLocalLatestSelected();
-        };
-
-        if (existingTitle) {
-            handleSave(existingTitle);  // Sync path
-        } else {
-            // Async prompt handling without making #save async
-            prompt("Enter a title for this save:")
-                .then( (input)=>{
-                    const title = (input ?? "").trim();
-                    if (title) handleSave(title);
-                })
-                .catch(Logger.err)
+            return (new View.Graphs.CoreSaver(mom, title, this.#makeSaveData))
+                .handleConfirmation(isExisting)
+                .then(mom.#updateGraphs);
+        }
+        saveWithTitle(title){ return this.#handleTitle(title, true) }
+        save(){
+            return prompt("Enter a title for this save:").then( (input)=>{
+                const title = (input ?? "").trim();
+                if (title) return this.#handleTitle(title);
+            })
         }
     }
 
-    #clearNet(){
+    static BlobSaver = class {
+        #proms = [];
+        #dictMeta = null;
+        constructor(mom, graphId){
+            this.graphId = graphId;
+            this.mom = mom;
+            this.prevBlobs = {...mom.#blobs[graphId]};
+
+            Graph.forEachNode(this.#pushPromSaveBlobForNode, this);
+            return Promise.all(this.#proms).then(this.#cleanStored);
+        }
+        #cleanStored = ()=>{
+            const dictMeta = this.#dictMeta;
+            if (!dictMeta) return;
+
+            const stored = this.mom.#stored;
+
+            const orphans = this.prevBlobs;
+            for (const blobId in orphans) {
+                delete dictMeta[blobId];
+                stored.deleteBlob(blobId);
+                Logger.info("Deleted blob:", orphans[blobId].title);
+            }
+
+            if (Object.keys(dictMeta).length < 1) {
+                stored.deleteBlobMeta(this.graphId)
+            }
+            return stored.saveBlobMeta(this.graphId, dictMeta);
+        }
+        #pushPromSaveBlobForNode(node){
+            if (!node.blob) return;
+
+            if (!this.#dictMeta) {
+                this.#dictMeta = this.mom.#blobs[this.graphId] ||= {}
+            }
+            if (this.#dictMeta[node.blob]) {
+                delete this.prevBlobs[node.blob];
+                return;
+            }
+
+            this.#proms.push(this.#saveBlobForNode(node));
+        }
+        #saveBlobForNode(node){
+            return fetch(node.view.innerContent.firstChild.src)
+                .then( (res)=>res.blob() )
+                .then(this.#handleBlob.bind(this, node))
+                .catch(Logger.err.bind(Logger, "Failed to save blob:"))
+        }
+        #handleBlob(node, blob){
+            const title = node.getTitle();
+            const meta = this.mom.#makeMetaForBlobOfTitle(blob, title);
+
+            const blobId = node.blob = meta.blobId;
+            const blobs = this.#dictMeta;
+            blobs[blobId] = meta;
+
+            const stored = this.mom.#stored;
+            stored.saveBlobMeta(this.graphId, blobs);
+            return stored.saveBlobData(blobId, blob);
+        }
+    }
+
+    #clearGraph(){
         Graph.clear();
 
         AiNode.count = 0;
         App.zetPanes.resetAllPanes();
     }
-    #loadNet(text, clobber){
-        if (clobber) this.#clearNet();
+    #loadGraph(text){
+        this.#clearGraph();
 
         const div = Html.new.div();
-        div.innerHTML = text;
+        div.innerHTML = text.replaceAll(/src=\"blob:[^\"]*\"/g, 'src=""');
 
         // Check for the previous single-tab save object
         const zettelSaveElem = div.querySelector("#zettelkasten-save");
@@ -433,7 +620,7 @@
         const zettelkastenPaneSaveElements = div.querySelectorAll("[id^='zettelkasten-pane-']");
         zettelkastenPaneSaveElements.forEach(Elem.remove);
 
-        this.#restoreAdditionalSaveObjects(div);
+        this.#saver.restoreAdditionalSaveObjects(div);
 
         const newNodes = [];
         for (const child of div.children) {
@@ -477,12 +664,26 @@
         if (node.isLLM) AiNode.init(node, true); // restoreNewLines
         if (node.isLink) (new LinkNode).init(node);
         if (node.isFileTree) FileTreeNode.init(node);
+        if (node.blob) {
+            this.#stored.blobForBlobId(node.blob)
+                .then(this.#applyBlobToNode.bind(this, node))
+        }
+    }
+    #applyBlobToNode(node, blob){
+        if (!blob) {
+            return Logger.warn("Missing", node.blob, "in local storage.")
+        }
+
+        const img = node.view.innerContent.firstChild;
+        URL.revokeObjectURL(img.src);
+        img.src = URL.createObjectURL(blob);
     }
 
     #autosave = ()=>{
-        if (!this.#selectedSaveTitle || !this.#chkboxAutosave.checked) return;
+        const title = this.#selectedGraph?.title;
+        if (!title || !this.#chkboxAutosave.checked) return;
 
-        this.#save(this.#selectedSaveTitle);
+        this.#saver.saveWithTitle(title);
     }
 
     init(){
@@ -492,7 +693,7 @@
         On.click(this.#btnClearSure, this.#onBtnClearSureClicked);
         On.click(this.#btnClearUnsure, this.#onBtnClearUnsureClicked);
         On.click(Elem.byId('clearLocalStorage'), this.#onBtnClearLocalClicked);
-        On.click(Elem.byId('new-save-button'), (e)=>this.#save() );
+        On.click(Elem.byId('new-save-button'), (e)=>this.#saver.save() );
 
         for (const htmlnode of Graph.htmlNodes.children) {
             const node = new Node(htmlnode);
@@ -500,52 +701,95 @@
             node.init();
         }
 
-        this.#saves = this.#getLocalSaves();
+        const stored = this.#stored;
+        return stored.forEachMetaAndGraphId(this.#processMeta)
+            .then(stored.forEachBlobMetaAndGraphId
+                    .bind(stored, this.#processBlobMeta))
+            .then(this.#loadState.bind(this));
+    }
+    #processMeta = (meta, graphId)=>{
+        if (meta.graphId !== graphId){
+            meta.graphId = graphId;
+            this.#stored.saveMeta(meta);
+        }
+        this.#graphs.push(meta);
 
+        const num = parseInt(graphId) || 0;
+        if (num > this.#maxGraphId) this.#maxGraphId = num;
+    }
+    #processBlobMeta = (dictMeta, graphId)=>{
+        const meta = this.#metaByGraphId(graphId);
+        if (!meta) return Logger.warn("Orphan blobs", dictMeta);
+
+        this.#blobs[graphId] = dictMeta;
+        for (const blobId in dictMeta) {
+            const num = parseInt(blobId) || 0;
+            if (num > this.#maxBlobId) this.#maxBlobId = num;
+        }
+    }
+    #loadState(){
         const urlParams = new URLSearchParams(window.location.search);
         const stateFromURL = urlParams.get('state');
 
-        if (stateFromURL) this.#loadStateFromFile(stateFromURL);
-        else this.#loadStateFromLocalStorage();
-        this.#updateSavedGraphs();
+        const classLoader = (stateFromURL) ? View.Graphs.FileStateLoader
+                          : View.Graphs.LocalStorageStateLoader;
+        return (new classLoader(this)).load(stateFromURL)
+            .then(this.#updateGraphs);
     }
 
-    #loadStateFromFile(stateFromURL){ // in the /wiki/pages directory
-        fetch(`/wiki/pages/neurite-wikis/${stateFromURL}.txt`)
-            .then(this.#onResponseFetched)
-            .then(this.#onResponseText)
-            .catch(this.#onResponseError)
-    }
-    #onResponseFetched = (res)=>{
-        if (res.ok) return res.text();
-
-        throw new Error("Network response was not ok " + res.statusText);
-    }
-    #onResponseText = (text)=>{
-        this.#loadNet(text, true).#setSelectedSave(null, null)
-    }
-    #onResponseError = (err)=>{
-        Logger.err("Failed to load state from file:", err);
-        displayErrorMessage("Failed to load the requested graph state.");
-    }
-
-    #loadStateFromLocalStorage(){
-        const selectedSaveIndex = this.#getLocalLatestSelected();
-        if (selectedSaveIndex > -1) {
-            const save = this.#saves[selectedSaveIndex];
-            this.#setSelectedSave((save ? selectedSaveIndex : -1),
-                                  save?.title ?? null);
-            if (save) this.#loadNet(save.data, true);
+    static FileStateLoader = class {
+        constructor(mom){ this.mom = mom }
+        load(stateFromURL){ // in the /wiki/pages directory
+            return fetch(`/wiki/pages/neurite-wikis/${stateFromURL}.txt`)
+                .then(this.#extractTextFromResponse)
+                .then(this.#handleResponseText)
+                .catch(this.#onResponseError)
         }
 
-        const autosaveEnabled = localStorage.getItem("autosave-enabled");
-        this.#chkboxAutosave.checked = (autosaveEnabled === "true");
+        #extractTextFromResponse = (res)=>{
+            if (res.ok) return res.text();
 
-        On.change(this.#chkboxAutosave, this.#onCheckboxToggled);
-
-        setInterval(this.#autosave, 8000);
+            throw new Error("Network response was not ok " + res.statusText);
+        }
+        #handleResponseText = (text)=>{
+            this.mom.#loadGraph(text).#setSelectedGraph(null)
+        }
+        #onResponseError = (err)=>{
+            Logger.err("Failed to load state from file:", err);
+            displayErrorMessage("Failed to load the requested graph state.");
+        }
     }
-    #onCheckboxToggled(e){
-        localStorage.setItem("autosave-enabled", e.target.checked)
+
+    static LocalStorageStateLoader = class {
+        constructor(mom){ this.mom = mom }
+        load(){
+            const stored = this.mom.#state;
+            return stored.load('latest-selected')
+                .then(this.#handleLatestSelected)
+                .then(stored.load.bind(stored, 'autosave-enabled'))
+                .then(this.#handleAutosaveEnabled);
+        }
+
+        #handleLatestSelected = (graphId)=>{
+            const mom = this.mom;
+            const meta = mom.#metaByGraphId(graphId);
+            if (!meta) return;
+
+            mom.#setSelectedGraph(meta);
+            mom.#stored.dataForMeta(meta).then(this.#loadData);
+        }
+        #loadData = (data)=>{
+            this.mom.#loadGraph(data)
+        }
+
+        #handleAutosaveEnabled = (autosaveEnabled)=>{
+            const mom = this.mom;
+            mom.#chkboxAutosave.checked = (autosaveEnabled === "true");
+            On.change(mom.#chkboxAutosave, this.#onCheckboxToggled);
+            setInterval(mom.#autosave, 8000);
+        }
+        #onCheckboxToggled = (e)=>{
+            this.mom.#state.save('autosave-enabled', e.target.checked)
+        }
     }
 }

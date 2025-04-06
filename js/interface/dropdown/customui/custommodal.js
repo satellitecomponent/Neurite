@@ -1,9 +1,9 @@
 const Modals = {
-    aiModal: new Modal('aiModal', "Experimental Ai Controls"),
+    aiModal: new Modal('aiModal', "Experimental Ai Settings"),
     apiConfigModalContent: new Modal('apiConfigModalContent', "Custom Endpoint"),
     "controls-modal": new Modal('controls-modal', "Adjust Controls"),
     fileTreeModal: new Modal('fileTreeModal'),
-    importLinkModalContent: new Modal('importLinkModalContent', "Import"),
+    importLinkModalContent: new Modal('importLinkModalContent', "Import Text"),
     nodeConnectionModal: new Modal('nodeConnectionModal', "Connect Notes"),
     noteModal: new Modal('noteModal', "Zettelkasten Settings", Tag.initializeInputs),
     ollamaManagerModal: new Modal('ollamaManagerModal', "Ollama Library"),

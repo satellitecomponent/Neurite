@@ -136,6 +136,7 @@
         <ul>
             <li>{{controlKey}} + Click to select a node.</li>
             <li>{{controlKey}} + Drag to select multiple nodes.</li>
+            <li>{{controlKey}} + Double Click to create a link node.</li>
         </ul>
     </div>
 
@@ -203,7 +204,7 @@
 
         <!-- Node Count Slider : For Radial-->
         <div class="settingsSlider radial-slider" title="Defines the number of steps or nodes in the path.">
-            <label for="radialPathLengthSlider">Number of Nodes</label>
+            <label for="radialPathLengthSlider"># of Nodes</label>
             <input type="range" id="radialPathLengthSlider" name="radial-path-length-slider" min="1" max="64" step="1">
         </div>
         <!-- Distance Slider: : For Radial-->
@@ -218,13 +219,13 @@
         </div>
         <!-- Radial Branch Depth Slider: For Radial -->
         <div class="settingsSlider radial-slider" title="Sets the starting radius from the center for the first node.">
-            <label for="radialDepthSlider">Number of Radii</label>
+            <label for="radialDepthSlider"> of Radii</label>
             <input type="range" id="radialDepthSlider" name="radial-depth-slider" min="1" max="32" step="1">
         </div>
 
         <!-- Node Count Slider : For Spiral-->
         <div class="settingsSlider spiral-slider" title="Defines the number of steps or nodes in the path.">
-            <label for="spiralPathLengthSlider">Number of Nodes</label>
+            <label for="spiralPathLengthSlider"># of Nodes</label>
             <input type="range" id="spiralPathLengthSlider" name="spiral-path-length-slider" min="1" max="100" step="1">
         </div>
         <!-- Distance Slider: : For Spiral-->
@@ -247,7 +248,7 @@
 
         <!-- Node Count Slider : For Branching-->
         <div class="settingsSlider branching-slider" title="Defines the number of steps or nodes in the path.">
-            <label for="branchingPathLengthSlider">Number of Nodes</label>
+            <label for="branchingPathLengthSlider"># of Nodes</label>
             <input type="range" id="branchingPathLengthSlider" name="branching-path-length-slider" min="1" max="100" value="64" step="1">
         </div>
         <!-- Distance Slider: : For Branching-->
@@ -315,23 +316,20 @@
 
 <div id="importLinkModalContent" style="display: none;">
     <div class="import-modal-content">
+        <br />
         <div>
-            <label for="importLinkTextarea">Text:</label>
-            <br />
-            <textarea id="importLinkTextarea" class="custom-scrollbar importLinkTextarea" rows="10"></textarea>
+            <textarea id="importLinkTextarea" class="custom-scrollbar importLinkTextarea" rows="10" placeholder="Write or paste text to import it as a graph in Neurite."></textarea>
         </div>
-
+        <div>
+            <input type="checkbox" id="connectNotes">
+            <label for="connectNotes">Create Connected Notes</label>
+        </div>
+        <br />
         <div>
             <label for="maxSentencesPerNote">Note Length:</label>
             <input type="range" id="maxSentencesPerNote" value="5" min="1" max="20">
         </div>
-
-        <div>
-            <input type="checkbox" id="connectNotes">
-            <label for="connectNotes">Connect</label>
-        </div>
-
-
+        <br />
         <button class="api-modal-button" onclick="confirmImport()">Confirm Import</button>
     </div>
 </div>

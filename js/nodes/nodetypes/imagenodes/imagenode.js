@@ -14,15 +14,14 @@ NodeView.addForImage = function(elemImage, title){
     const node = new Node();
     NodeView.addAtNaturalScale(node, title, elemImage);
 
-    node.push_extra_cb((node) => {
-        return {
-            f: "textarea",
-            a: {
-                p: [0, 0, 1],
-                v: node.view.titleInput.value
-            }
-        };
-    });
+    node.push_extra_cb( (node)=>({
+        f: "textarea",
+        a: {
+            p: [0, 0, 1],
+            v: node.view.titleInput.value
+        }
+    }) );
+    if (elemImage.src.startsWith('blob:')) node.blob = title;
 
     node.isImageNode = true;
     node.imageData = elemImage.src; // Store the base64Data directly from elemImage.src
