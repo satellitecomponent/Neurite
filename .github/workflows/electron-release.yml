@@ -89,6 +89,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Install GitHub CLI
         run: |
           sudo apt update
@@ -99,11 +102,16 @@ jobs:
 
       - name: Delete old electron-* releases (keep latest)
         run: |
-          gh release list --limit 100 --json tagName,createdAt \
-          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
-          | sort -r \
-          | tail -n +2 \
-          | awk '{print $2}' \
-          | xargs -r -n 1 gh release delete -y
+          # List releases, filter for 'electron-' tag, and delete all except the latest
+          releases=$(gh release list --limit 100 --json tagName,createdAt \
+            | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+            | sort -r)
+
+          # Only delete if there are releases
+          if [ -n "$releases" ]; then
+            echo "$releases" | tail -n +2 | awk '{print $2}' | xargs -r -n 1 gh release delete -y
+          else
+            echo "No releases found to delete."
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
