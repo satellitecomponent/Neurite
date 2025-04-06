@@ -26,10 +26,22 @@ class NodeView {
 
         odiv.dataset.init = 'window';
 
+        const inputWrapper = Html.make.div('title-input-wrapper');
+
         const titleInput = Html.make.input('title-input');
         titleInput.setAttribute('type', 'text');
         titleInput.setAttribute('value', title);
-        headerContainer.appendChild(titleInput);
+        
+        const copyBtn = Html.make.div('copy-button');
+        copyBtn.setAttribute('title', 'Copy title');
+        const copyIcon = Elem.deepClone(Elem.byId('copy-icon-template'));
+        copyIcon.style.display = ''; // unhide
+        copyIcon.setAttribute('class', 'copy-icon'); // ✅ set the class here
+        copyBtn.appendChild(copyIcon);
+        
+        inputWrapper.appendChild(titleInput);
+        inputWrapper.appendChild(copyBtn);
+        headerContainer.appendChild(inputWrapper);
 
         const resizeContainer = Html.make.div('resize-container');
         div.appendChild(resizeContainer);
@@ -43,17 +55,13 @@ class NodeView {
         node.scale = nscale_mult * (Graph.zoom.mag2() ** settings.zoomContentExp);
         node.intrinsicScale = intrinsicScale;
         const view = node.view = new NodeView(node);
-        view.buttons = svg;
-        view.headerContainer = headerContainer;
-        view.innerContent = innerContent;
-        view.resizeHandle = resizeHandle;
-        view.titleInput = titleInput;
         view.div = div;
         view.rewindowify();
         return view;
     }
 
     init(){
+        this.bindDOMRefs();
         this.initCollapsed();
         this.model.dropdown = document.querySelector('.dropdown');
         this.model.wrapperDivs = document.getElementsByClassName('wrapperDiv');
@@ -63,6 +71,18 @@ class NodeView {
         this.setTitleInputListeners();
         this.setResizeEventListeners();
         this.observeContentResize(); // unknown wrappers
+    }
+
+    bindDOMRefs() {
+        const div = this.div;
+    
+        this.headerContainer = div?.querySelector('.header-container') || null;
+        this.titleInputWrapper = this.headerContainer?.querySelector('.title-input-wrapper') || null;
+        this.titleInput = this.titleInputWrapper?.querySelector('.title-input') || null;
+        this.copyBtn = this.titleInputWrapper?.querySelector('.copy-button') || null;
+        this.innerContent = div?.querySelector('.content') || null;
+        this.resizeHandle = div?.querySelector('.resize-handle') || null;
+        this.buttons = this.headerContainer?.querySelector('.button-container') || null;
     }
 
     static onHeaderContainerMouseDown(e){
@@ -87,16 +107,17 @@ class NodeView {
             }
         });
 
-        On.mouseup(windowDiv, (e)=>{
-            if (e.getModifierState(controls.controlKey.value)) {
-                const distanceMoved = Math.sqrt(Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2));
-                // Check if the mouse has moved more than a certain threshold
+        On.mouseup(windowDiv, (e) => {
+            if (e.getModifierState(controls.controlKey.value) && e.button !== 2) {
+                const distanceMoved = Math.sqrt(
+                    Math.pow(e.clientX - clickStartX, 2) + Math.pow(e.clientY - clickStartY, 2)
+                );
                 const dragThreshold = 10; // pixels
                 if (distanceMoved < dragThreshold) App.selectedNodes.toggleNode(node);
             }
-
+        
             if (e.button !== 2) App.menuContext.hide(); // not right mouse button
-        });
+        });        
 
         On.mousedown(windowDiv, (e)=>{
             Autopilot.stop();
@@ -134,6 +155,29 @@ class NodeView {
 
     setTitleInputListeners(){
         const titleInput = this.titleInput;
+        const copyBtn = this.copyBtn;
+        const container = this.headerContainer;
+
+        if (copyBtn && container) {
+            container.addEventListener('mouseenter', () => {
+                copyBtn.style.visibility = 'visible';
+            });
+            container.addEventListener('mouseleave', () => {
+                copyBtn.style.visibility = 'hidden';
+            });
+        
+            On.click(copyBtn, async () => {
+                try {
+                    titleInput.select();
+                    await navigator.clipboard.writeText(titleInput.value);
+                    copyBtn.classList.add('copied');
+                    setTimeout(() => copyBtn.classList.remove('copied'), 600);
+                } catch (err) {
+                    console.error("Clipboard copy failed:", err);
+                }
+            });
+        }
+
         let isDragging = false;
         let isMouseDown = false;
 
@@ -156,53 +200,26 @@ class NodeView {
         On.mouseleave(titleInput, (e)=>{ isDragging = false } );
     }
 
-    rewindowify(){
+    rewindowify() {
         const node = this.model;
         this.init();
-
+    
         node.push_extra("window");
         const buttons = this.buttons || this.headerContainer;
-
+    
         const btnDel = buttons.querySelector('#button-delete');
-        btnDel.classList.add('windowbutton');
-
         const btnFs = buttons.querySelector('#button-fullscreen');
-        btnFs.classList.add('windowbutton');
-
         const btnCol = buttons.querySelector('#button-collapse');
+    
+        btnDel.classList.add('windowbutton');
+        btnFs.classList.add('windowbutton');
         btnCol.classList.add('windowbutton');
-
-        const titleInput = this.titleInput;
-
-        function set(btn, v, s = "fill") {
-            btn.children[0].setAttribute('fill', settings.buttonGraphics[v][0]);
-            btn.children[1].setAttribute(s, settings.buttonGraphics[v][1]);
-        }
-
-        function ui(btn, cb = ()=>{}, s = "fill") {
-            function onMouseLeave(){
-                const state = (titleInput.matches(':focus') ? 'focus' : 'initial');
-                set(btn, state, s);
-                btn.ready = false;
-            }
-
-            On.mouseenter(btn, (e)=>set(btn, "hover", s) );
-            On.mouseleave(btn, onMouseLeave);
-            On.mousedown(btn, (e)=>{
-                set(btn, "click", s);
-                btn.ready = true;
-                e.stopPropagation();
-            });
-            On.mouseup(btn, (e)=>{
-                set(btn, "initial", s);
-                e.stopPropagation();
-                if (btn.ready) cb(e);
-            });
-
-            onMouseLeave();
-        }
-
-        ui(btnDel, () => {
+    
+        // Track buttons with their style mode
+        this.svgButtons = [];
+    
+        this.svgButtons.push([btnDel, "fill"]);
+        this.applySvgButtonUI(btnDel, () => {
             const title = node.getTitle();
             if (Node.prev === node) {
                 Node.prev = null;
@@ -211,13 +228,13 @@ class NodeView {
             }
             node.remove();
             if (node.isTextNode) {
-                const nodeInfo = getZetNodeCMInstance(node)
-                const parser = nodeInfo.parser;
-                parser.deleteNodeByTitle(title);
+                const nodeInfo = getZetNodeCMInstance(node);
+                nodeInfo.parser.deleteNodeByTitle(title);
             }
         });
-
-        ui(btnFs, () => {
+    
+        this.svgButtons.push([btnFs, "fill"]);
+        this.applySvgButtonUI(btnFs, () => {
             Autopilot.zoomToFitFrame(node).targetZoom_scaleBy(1.2).start();
             if (node.isTextNode) {
                 const nodeInfo = getZetNodeCMInstance(node);
@@ -225,32 +242,143 @@ class NodeView {
                 App.zetPanes.switchPane(nodeInfo.paneId);
             }
         });
-
-        ui(btnCol, this.toggleCollapse.bind(this), "stroke");
-
-        On.mouseup(document,
-            (e)=>{ if (node.followingMouse) node.stopFollowingMouse() }
-        );
-
-        function updateSvgStrokeColor(focused) {
-            const fillColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
-            const strokeColor = settings.buttonGraphics[focused ? 'focus' : 'initial'][1];
-
-            btnDel.children[1].setAttribute('fill', fillColor);
-            btnFs.children[1].setAttribute('fill', fillColor);
-            btnCol.children[1].setAttribute('stroke', strokeColor);
-
-            if (node.displayDiv) {
-                node.displayDiv.classList.toggle('focused', focused);
-            }
-            node.view.resizeHandle.classList.toggle('focused', focused);
+    
+        this.svgButtons.push([btnCol, "stroke"]);
+        this.applySvgButtonUI(btnCol, this.toggleCollapse.bind(this), "stroke");
+    
+        On.mouseup(document, (e) => {
+            if (node.followingMouse) node.stopFollowingMouse();
+        });
+    
+        if (this.titleInput) {
+            On.focus(this.titleInput, () => this.updateSvgStrokeColor(true));
+            On.blur(this.titleInput, () => this.updateSvgStrokeColor(false));
         }
+    }    
 
-        if (titleInput) {
-            On.focus(titleInput, updateSvgStrokeColor.bind(null, true));
-            On.blur(titleInput, updateSvgStrokeColor.bind(null, false));
+    updateSvgStrokeColor = (focused) => {
+        const node = this.model;
+        const style = focused ? 'focus' : 'initial';
+    
+        for (const [btn, mode] of this.svgButtons || []) {
+            this.setSvgButtonStyle(btn, style, mode);
         }
+    
+        if (node.displayDiv) node.displayDiv.classList.toggle('focused', focused);
+        this.resizeHandle.classList.toggle('focused', focused);
+    };    
+
+    setSvgButtonStyle(btn, state, mode = "fill") {
+        const [fill, stroke] = settings.buttonGraphics[state];
+    
+        // Background
+        if (btn.children[0]) btn.children[0].setAttribute("fill", fill);
+    
+        // Main shape
+        if (btn.children[1]) {
+            if (mode === "stroke") btn.children[1].setAttribute("stroke", stroke);
+            else btn.children[1].setAttribute("fill", stroke);
+        }
+    
+        // Secondary shape (e.g. refresh arrowhead)
+        if (btn.children[2] && btn.children[2].tagName !== "rect") {
+            if (mode === "stroke") btn.children[2].setAttribute("stroke", stroke);
+            else btn.children[2].setAttribute("fill", stroke);
+        }
+    }    
+
+    applySvgButtonUI(btn, cb = () => {}, mode = "fill") {
+        const input = this.titleInput;
+
+        const onMouseLeave = () => {
+            const focusState = (input?.matches(':focus') ? 'focus' : 'initial');
+            this.setSvgButtonStyle(btn, focusState, mode);
+            btn.ready = false;
+        };
+
+        On.mouseenter(btn, () => this.setSvgButtonStyle(btn, "hover", mode));
+        On.mouseleave(btn, onMouseLeave);
+        On.mousedown(btn, (e) => {
+            this.setSvgButtonStyle(btn, "click", mode);
+            btn.ready = true;
+            e.stopPropagation();
+        });
+        On.mouseup(btn, (e) => {
+            this.setSvgButtonStyle(btn, "initial", mode);
+            e.stopPropagation();
+            if (btn.ready) cb(e);
+        });
+
+        onMouseLeave();
     }
+
+    updateButtonContainerSize() {
+        const svg = this.buttons;
+        if (!svg) return;
+
+        const buttonCount = svg.querySelectorAll('.windowbutton').length;
+        const unitPerButton = 20; // how far each button is translated
+
+        const requiredWidth = (buttonCount * unitPerButton) / 8;
+        svg.setAttribute('viewBox', `0 0 ${requiredWidth} 2.125`);
+    }
+
+    addSvgButton(id, iconId, translateX, clickHandler, mode = "stroke") {
+        const svgNs = "http://www.w3.org/2000/svg";
+        const buttons = this.buttons;
+        if (!buttons) return;
+    
+        // Prevent duplicate creation
+        if (buttons.querySelector(`#${id}`)) {
+            return buttons.querySelector(`#${id}`);
+        }
+    
+        const g = document.createElementNS(svgNs, "g");
+        g.setAttribute("id", id);
+        g.setAttribute("transform", `scale(0.125 0.125) translate(${translateX} 1)`);
+        g.classList.add("windowbutton");
+    
+        // Button background
+        const bg = document.createElementNS(svgNs, "rect");
+        bg.setAttribute("x", "0");
+        bg.setAttribute("y", "0");
+        bg.setAttribute("width", "16");
+        bg.setAttribute("height", "16");
+        bg.setAttribute("fill", "RGB(100,100,100)");
+        bg.setAttribute("stroke", "none");
+        g.appendChild(bg);
+    
+        // Icon from symbol
+        const symbol = document.getElementById(iconId);
+        if (!symbol) return;
+    
+        for (const child of symbol.children) {
+            const clone = child.cloneNode(true);
+            if (clone instanceof SVGGeometryElement || clone instanceof SVGElement) {
+                clone.setAttribute(mode, settings.buttonGraphics.initial[1]);
+                g.appendChild(clone);
+            }
+        }
+    
+        // Transparent click area
+        const overlay = document.createElementNS(svgNs, "rect");
+        overlay.setAttribute("x", "0");
+        overlay.setAttribute("y", "0");
+        overlay.setAttribute("width", "16");
+        overlay.setAttribute("height", "16");
+        overlay.setAttribute("fill", "transparent");
+        overlay.setAttribute("stroke", "none");
+        g.appendChild(overlay);
+    
+        buttons.appendChild(g);
+        this.applySvgButtonUI(g, clickHandler, mode);
+        this.updateButtonContainerSize();
+    
+        if (!this.svgButtons) this.svgButtons = [];
+        this.svgButtons.push([g, mode]);
+    
+        return g;
+    }    
 
     static addAtNaturalScale(node, title, content, window_it = true){
         if (window_it) {
@@ -303,8 +431,15 @@ class NodeView {
         let startHeight;
 
         let isMouseMoving = false;
+        let resizeOverlay = null;
 
+        let lastCall = 0;
+        const throttleMs = 8; // ~125 FPS cap
+        
         const handleMouseMove = (e) => {
+            const now = performance.now();
+            if (now - lastCall < throttleMs) return;
+            lastCall = now;
             if (!e.buttons) {
                 handleMouseUp();
                 return;
@@ -326,30 +461,42 @@ class NodeView {
             windowDiv.style.width = `${newWidth}px`;
             windowDiv.style.height = `${newHeight}px`;
 
-            const style = node.textNodeSyntaxWrapper?.style;
-            if (style) {
-                style.flexGrow = '1';
-                style.minHeight = `0px`;
-                style.maxHeight = `100%`;
-                style.width = `100%`;
+            function setStyles(style, rules) {
+                for (const key in rules) {
+                    if (style[key] !== rules[key]) style[key] = rules[key];
+                }
             }
 
-            const htmlView = node.htmlView;
-            if (htmlView) {
-                htmlView.style.width = '100%';
-                htmlView.style.height = '100%';
-            }
-
-            const aiNodeWrapperDiv = node.ainodewrapperDiv;
-            if (aiNodeWrapperDiv) {
-                aiNodeWrapperDiv.style.flexGrow = '1';
-                aiNodeWrapperDiv.style.width = '100%';
-            }
-
-            const fileTreeContainer = node.fileTreeContainer;
-            if (fileTreeContainer) {
-                fileTreeContainer.style.width = '100%';
-            }
+            if (node.textNodeSyntaxWrapper?.style)
+                setStyles(node.textNodeSyntaxWrapper.style, {
+                    flexGrow: '1',
+                    minHeight: '0px',
+                    maxHeight: '100%',
+                    width: '100%',
+                });
+            
+            if (node.htmlView?.style)
+                setStyles(node.htmlView.style, {
+                    width: '100%',
+                    height: '100%',
+                });
+            
+            if (node.viewerWrapper?.style)
+                setStyles(node.viewerWrapper.style, {
+                    width: '100%',
+                    height: '100%',
+                });
+            
+            if (node.ainodewrapperDiv?.style)
+                setStyles(node.ainodewrapperDiv.style, {
+                    flexGrow: '1',
+                    width: '100%',
+                });
+            
+            if (node.fileTreeContainer?.style)
+                setStyles(node.fileTreeContainer.style, {
+                    width: '100%',
+                });
         };
 
         const handleMouseUp = () => {
@@ -357,11 +504,27 @@ class NodeView {
             Off.mousemove(document, handleMouseMove);
             Off.mouseup(document, handleMouseUp);
             document.body.style.cursor = 'auto';
-            node.enableIframePointerEvents();
+            if (resizeOverlay) {
+                document.body.removeChild(resizeOverlay);
+                resizeOverlay = null;
+            }
         };
         On.mousedown(this.resizeHandle, (e)=>{
             e.preventDefault();
             e.stopPropagation();
+            resizeOverlay = document.createElement('div');
+            resizeOverlay.style.pointerEvents = 'auto';
+            Object.assign(resizeOverlay.style, {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: 9999, // ensure it's above all content but not interactive
+                cursor: 'nwse-resize',
+                background: 'transparent',
+            });
+            document.body.appendChild(resizeOverlay);            
             startX = e.pageX;
             startY = e.pageY;
             startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
@@ -369,7 +532,7 @@ class NodeView {
             isMouseMoving = true; // Flag to indicate that a resize operation is in progress
             On.mousemove(document, handleMouseMove);
             On.mouseup(document, handleMouseUp);
-            node.disableIframePointerEvents();
+            document.body.style.cursor = 'nwse-resize';
         });
     }
 

@@ -172,7 +172,9 @@ var settings = {
     orbitStepRate: 2,
 
     innerOpacity: 1,
-    outerOpacity: 1
+    outerOpacity: 1,
+
+    defaultSearchEngine: 'google' // Brave, Bing, DuckDuckGo, Google
 }
 
 var flashlight_stdev = 0.25; // this is the radius of the flashlight
@@ -474,11 +476,50 @@ String.isJson = function(str){
     } catch(err){}
     return false;
 }
-String.isUrl = function(str){
-    if (!URL.canParse(str)) return false;
+String.urlType = function(str){
+    const trimmed = str.trim();
 
-    const url = new URL(str);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    try {
+        if (URL.canParse(trimmed)) {
+            const url = new URL(trimmed);
+            if (url.protocol === 'file:') return 'file';
+            if (url.protocol === 'http:' || url.protocol === 'https:') return 'http';
+        }
+    } catch (e) {
+    }
+    if (
+        /^localhost(?::\d+)?(?:\/.*)?$/i.test(trimmed) ||
+        /^\[::1\](?::\d+)?(?:\/.*)?$/i.test(trimmed)
+    ) {
+        try {
+            const test = new URL(`http://${trimmed}`);
+            if (test.hostname === 'localhost' || test.hostname === '[::1]') return 'localhost';
+        } catch {}
+    }
+    if (/^(\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:\/.*)?$/i.test(trimmed)) return 'ip';
+    if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?::\d+)?(?:\/.*)?$/i.test(trimmed)) return 'domain';
+
+    return null;
+}
+String.isUrl = function(str){
+    return !!String.urlType(str);
+}
+String.maybeUrl = function(str){
+    const trimmed = str.trim();
+    const type = String.urlType(trimmed);
+
+    switch (type) {
+        case 'http':
+        case 'file':
+            return trimmed;
+        case 'localhost':
+        case 'ip':
+            return `http://${trimmed}`;
+        case 'domain':
+            return `https://${trimmed}`;
+        default:
+            return null;
+    }
 }
 String.isIframe = function(str){
     try {

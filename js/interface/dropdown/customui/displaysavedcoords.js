@@ -208,7 +208,7 @@ function getSavedViews() {
 }
 
 function receiveCurrentView() {
-    return window.prompt("Enter a title for the saved view:")
+    return window.prompt("Enter a title for the current location:")
         .then( (title)=>(title === null ? null : {
                             title,
                             standardCoords: Graph.getCoords(),

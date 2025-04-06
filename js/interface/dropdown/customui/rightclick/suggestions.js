@@ -9,10 +9,15 @@
         return div;
     }
     init() {
-        // Prevent [click (?) and] scroll events from propagating
-        ['wheel'].forEach( (eName)=>{
-            On[eName](this.container, Event.stopPropagation, true)
-        });
+        On.wheel(this.container, e => {
+            e.stopPropagation();
+        }, true);
+    
+        On.contextmenu(this.container, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+    
         document.body.appendChild(this.container);
     }
     position(x, y) {
@@ -229,6 +234,11 @@ Menu.Context.prototype.setupSuggestions = function(pageX, pageY){
 
         menu.scrollToBottom();
     }
+    requestAnimationFrame(() => {
+        const items = [...this.menu.children];
+        const actionItems = items.filter(li => !li.classList.contains('input-item'));
+        if (actionItems.length === 0) displaySuggestions('');
+    });
 }
 
 Menu.Context.prototype.unpinSuggestion = function(id){

@@ -206,10 +206,7 @@ class Interface {
         
         Node.prev = null;
 
-        // Handle focus on background click
-        if (e.target === svg) {
-            svg.focus(); // Assuming the SVG element can be focused
-        }
+        document.activeElement.blur();
 
         // Handle zooming and rotating
         if (

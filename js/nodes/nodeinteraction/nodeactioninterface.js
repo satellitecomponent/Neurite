@@ -213,23 +213,23 @@ NodeActions.link = class LinkNodeActions extends NodeActions.base {
     getActions() {
         return {
             ...super.getActions(),
-            'displayIframe': ["show iframe", "iframe view", "embed", "display frame"],
-            'extractText': ["get text", "copy text", "text extraction", "extract webpage", "scrape webpage"],
-            'toggleProxy': ["webpage text", "proxy"],
-            'importText': ["webpage text", "import", "text"]
+            //'displayIframe': ["show iframe", "iframe view", "embed", "display frame"],
+            'toggleLink': ["show", "iframe", "embed", "web", "website", "webpage"],
+            'extractText': ["text", "copy", "", "webpage", "scrape", "vector", "db", "database"],
+            //'toggleProxy': ["webpage text", "proxy"],
+            'importText': ["webpage", "import", "text", "notes"]
 
         };
     }
-
-    displayIframe() {
-        this.node.typeNode.handleIframe()
+    toggleLink() {
+        this.node.typeNode.toggleViewer();
     }
-    displayWebpage() {
-        this.toggleProxy();
-    }
-    toggleProxy() {
-        this.node.typeNode.handleProxyDisplay()
-    }
+    //displayIframe() {
+    //    this.node.typeNode.handleIframe()
+    //}
+    //toggleProxy() {
+    //    this.node.typeNode.handleProxyDisplay()
+    //}
     extractText() {
         extractAndStoreLinkContent(this.node.linkUrl, this.node.view.titleInput.value);
     }

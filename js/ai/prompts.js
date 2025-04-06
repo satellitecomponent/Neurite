@@ -58,12 +58,14 @@ Users can scroll through a visualization of the Mandelbrot set, create nodes, ta
 ${nodeTag} Essential Controls
 - Drag to move; Scroll to zoom; Alt/Option + Scroll to rotate; Control/Option + Click or Control/Option + Drag to select multiple nodes.
 - Shift + Double Click within Mandelbrot set rendering to create a text node.
+- Ctrl + Double Click to create a link node.
+- Alt + Double Click to create an ai node.
 - Hold shift for 'Node Mode' to freeze nodes in place.
 - Shift + Scroll on a window's edge to resize.
 - Shift + click on two nodes to link; Shift + Double Click on edges to delete.
 - Double Click a node to anchor/unanchor.
 - Alt/Option + Drag on a node textarea to allow the drag to pass through the textarea.
-- Ctrl + Click to open browser right click instead of the custom Neurite one.
+- Ctrl + Right Click to open browser right click instead of the custom Neurite one.
 
 - Drag and drop multimedia files into the fractal to create nodes.
 - Embed iframes by pasting links.
@@ -85,9 +87,6 @@ ${nodeTag} Advanced Controls:
 - Wiki checkbox displays relevant Wikipedia results. Requires Wiki localhost server.
 - Auto checkbox sets the AI into self-prompting mode.
 - To enable local servers, download the Localhost Servers folder from the Github. Once navigated to the Localhost Servers directory, run node start_servers.js
-
--Alt/Option Double Click to create an Ai node.
--Alt/Option + Shift + Double click to create a code editor node.
 
 Make sure to exclusivly reference the above described controls. Avoid divergence from the above how-to.`;
 }

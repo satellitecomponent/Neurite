@@ -1,6 +1,6 @@
 const Pyodide = new (class {
     prom = null;
-    url = "https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.mjs";
+    url = "/* @vite-ignore */ https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.mjs";
     load(){
         return this.prom = import(this.url).then(this.#onImported, this.#onError)
     }

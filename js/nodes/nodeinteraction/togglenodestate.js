@@ -13,35 +13,43 @@ NodeView.prototype.toggleCollapse = function(e){
 Node.toggleCollapse = function(node){ node.view.toggleCollapse() }
 
 NodeView.prototype.centerTitleInput = function(){
-    const style = this.titleInput.style;
+    const style = this.titleInputWrapper.style;
     style.position = 'absolute';
     style.top = '50%';
     style.left = '50%';
-    style.transform = 'translate(-47.5%, -59%)';
-    style.border = 'none';
-    style.textAlign = 'center';
-    style.pointerEvents = 'none';
-    style.fontSize = '25px';
-    style.width = 'fit-content';
+    style.transform = 'translate(-50%, -65%)';
+    style.pointerEvents = 'none'; // Disable interactions during collapse
+    style.zIndex = '5'; // Just in case
+
+    const inputStyle = this.titleInput.style;
+    inputStyle.border = 'none';
+    inputStyle.textAlign = 'center';
+    inputStyle.fontSize = '25px';
+    inputStyle.width = 'fit-content';
+    inputStyle.background = 'transparent'; // optional: cleaner appearance
 }
 NodeView.prototype.resetTitleInput = function(){
-    const style = this.titleInput.style;
-    style.position = '';
-    style.top = '';
-    style.left = '';
-    style.transform = '';
-    style.border = '';
-    style.textAlign = '';
-    style.pointerEvents = '';
-    style.fontSize = '';
-    style.width = '';
+    const wrapperStyle = this.titleInputWrapper.style;
+    wrapperStyle.position = '';
+    wrapperStyle.top = '';
+    wrapperStyle.left = '';
+    wrapperStyle.transform = '';
+    wrapperStyle.pointerEvents = '';
+    wrapperStyle.zIndex = '';
+
+    const inputStyle = this.titleInput.style;
+    inputStyle.border = '';
+    inputStyle.textAlign = '';
+    inputStyle.fontSize = '';
+    inputStyle.width = '';
+    inputStyle.background = '';
 }
 
 NodeView.prototype.hideButHeaderAndTitle = function(child){
-    if (child !== this.headerContainer && child !== this.titleInput) {
-        child.style.display = 'none'
+    if (child !== this.headerContainer && child !== this.titleInput && child !== this.titleInputWrapper) {
+        child.style.display = 'none';
     }
-}
+};
 NodeView.prototype.collapse = function () {
     const div = this.div;
 

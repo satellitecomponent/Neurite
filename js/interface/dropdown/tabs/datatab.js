@@ -4,7 +4,10 @@ VectorDb.openModal = async function(){
     Modal.open('vectorDbModal');
     On.click(Elem.byId('chunkAndStoreButton'), handleFileUploadVDBSelection);
     const buttonSelector = '.linkbuttons[title="Delete Document from Embeddings Database"]';
-    On.click(document.querySelector(buttonSelector), Keys.deleteSelected);
+    On.click(document.querySelector(buttonSelector), async () => {
+        await Keys.deleteSelected();
+        Modal.open('vectorDbModal'); // Reopen after deletion
+    });
     await Keys.fetchAndDisplayAll();
 }
 On.click(Elem.byId('openVectorDbButton'), VectorDb.openModal);

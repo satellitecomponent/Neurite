@@ -64,7 +64,7 @@ class Node {
     }
     toJSON() {
         return JSON.stringify({...this}, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras" ||
+            if (k === "content" || k === "edges" || k === "save_extras" || k === "viewer" ||
                 k === "aiResponseEditor" || k === "aiNodeMessageLoop" || k === "sensor" || k === "responseHandler" ||
                 k === "view" || k === "agent" || k === "typeNode") {
                 return undefined;
@@ -272,7 +272,6 @@ class Node {
         }
         clearTextSelections();
         On.mouseup(window, this.stopFollowingMouse);
-        this.disableIframePointerEvents();
         e.stopPropagation();
     }
 
@@ -281,15 +280,14 @@ class Node {
         Graph.movingNode = undefined;
 
         Off.mouseup(window, this.stopFollowingMouse);
-        this.enableIframePointerEvents();
     }
 
-    disableIframePointerEvents(){ this.setIframePointerEvents('none') }
-    enableIframePointerEvents(){ this.setIframePointerEvents('auto') }
-    setIframePointerEvents(value){
-        this.content.querySelectorAll('iframe').forEach(iframe => {
-            iframe.style.pointerEvents = value
-        })
+    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};   
+    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};   
+    setEmbedPointerEvents(value) {
+        this.content.querySelectorAll('iframe, webview').forEach(embed => {
+            embed.style.pointerEvents = value;
+        });
     }
 
     onMouseUp = (e)=>{
