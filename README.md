@@ -19,8 +19,7 @@
         <li><a href="#synchronized-knowledge-management">Synchronized Knowledge Management</a></li>
         <li><a href="#fractalgpt">FractalGPT</a></li>
         <li><a href="#multi-agent-ui">Multi-Agent UI</a></li>
-        <li><a href="#user-guide">User Guide</a></li>
-        <li><a href="#local-server-setup">Local Server Setup</a></li>
+        <li><a href="#neurite-desktop">Neurite Desktop</a></li>
         <li><a href="#neural-api">Neural API</a></li>
         <li><a href="#join-the-conversation">Join the Conversation</a></li>
         <li><a href="#gallery">Gallery</a></li>
@@ -181,9 +180,17 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   </tr>
   <!-- Node Management -->
   <tr>
-    <td rowspan="6"><strong>Node Essentials</strong></td>
+    <td rowspan="7"><strong>Node Essentials</strong></td>
     <td><code>Shift + double click</code></td>
     <td>Create text node</td>
+  </tr>
+  <tr>
+    <td><code>Alt/Option + double click</code></td>
+    <td>Create Ai node</td>
+  </tr>
+  <tr>
+    <td><code>Control + double click</code></td>
+    <td>Create Link node</td>
   </tr>
   <tr>
     <td><code>Shift</code></td>
@@ -192,10 +199,6 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
   <tr>
     <td><code>Hold Shift + Click</code></td>
     <td>Connect two nodes</td>
-  </tr>
-    <tr>
-    <td><code>Hold Shift + Double Click</code></td>
-    <td>Expand collapsed node.</td>
   </tr>
   <tr>
     <td><code>Double Click</code></td>
@@ -320,7 +323,7 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
       <p>In Neurite, you don't just interact with AI; you grow its contextual memory, thanks to:</p>
       <ul>
         <li><strong>Structured Memory Mapping:</strong> Anchor the AI's thought process as notes within an evolving fractal mind map.</li>
-        <li><strong>Graph your AI Conversations:</strong> Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for the history of your chain of thought to dynamically construct the AI's memory.</li>
+        <li><strong>Graph your AI Conversations:</strong> Segment AI's responses into a cohesive web of thought that both improves AI reasoning and allows for the history of your chain of thought to dynamically construct the AI's long term memory.</li>
         <li><strong>Interactive Fractal Network:</strong> Neurite's fractal interface acts as a personal, emergent, and contextually aware database of knowledge.</li>
         <li><strong>Intuitive Note Navigation:</strong> Effortlessly access and pull your notes into view, no matter where they are within the fractal landscape.</li>
       </ul>
@@ -452,66 +455,58 @@ Build your Zettelkasten through UI interactions in the Mind Map, and reciprocall
 
 All API keys can be input through the AI tab in the menu dropdown.
 
-## `User Guide`
-### To run Neurite locally,
-either:  
-1. Clone the repository  
-2. Navigate to the cloned directory in your terminal (either main or local-ai branch)
-3. Install any necessary global dependencies when running the below, (Vite)
+# `Neurite Desktop`
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/27a2c085-3354-42ef-ae37-cca274d8e641" alt="linknodeselectrondemo" />
+</p>
 
-```
-npm install
-npm run build
-npm start
-```
-*optionally run `npm start:host` to access Neurite from devices connected to the same network.
+## Download the latest version of **Neurite Desktop** ↓
+<table align="center">
+  <tr>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a></td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a></td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0.AppImage" target="_blank">Linux</a></td>
+  </tr>
+</table>
 
-4. Navigate to localhost:8080 in your browser.
-5. Ensure the Localhost Servers are running to leverage Neurite's full capabilities.
+# Unchain from the traditional limitations of a browser
 
-## `Local Server Setup`
+Forget tabs! Neurite is all about graphs. Open as many browser windows as you want and display them side by side in our infinite fractal canvas.
 
-The Localhost Servers are an important component of Neurite that serve as an optional backend and enable complete functionality.
+The desktop release also includes a full web browsing experience inside link nodes — no more restrictions on which links you can open.
 
-### Download Localhost Servers [here](https://github.com/satellitecomponent/Neurite/releases/download/servers-2025.04.01.034058/servers.zip). 
+- Forward and backward navigation built into each link node  
+- Create new link nodes by directly dragging out URLs  `See the above gif`
+- Works with any site, no sandboxing limitations  
+- Automatic updates built-in  
 
-*alternatively clone the entire repo.
+Neurite Desktop can be opened like any other app you've installed.  
 
-### The servers enable the local Vector Database, webpage/pdf text extraction, Wolfram Alpha Results, and Wikipedia Results.
+# `Localhost Servers`
+Neurite's Localhost Servers are an essential component of Neurite.
+
+If you are running Neurite Desktop, do not worry about this at all!
+
+Neurite Desktop entirely handles running and updating the servers for you.
+
+### The Localhost Servers include a local Vector Database, file system access, webpage/pdf text extraction, Wolfram Alpha results, and Wikipedia results.
 - The localhost servers require npm and Node.js
 - Without any servers running, Wolfram, Wiki, the Vector Database, File Tree Nodes, and Webpage extractions will not function.
-- All servers can be run with one command. Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
+- All servers can be run with one command. (not required for Neurite Desktop) Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
 ```
   node start_servers.js
 ```
 This will install and run all of the servers at once. They'll work on our GitHub pages host of Neurite, or any other way you locally access the interface.
 
-As of our recent update, the servers now support an AI proxy that connects Neurite to any inference backend.
+As of our recent update, the servers now support an AI proxy that connects Neurite to any compatible inference backend.
 
 <p align="center">
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
-
-<table>
-  <tr>
-    <!-- Left: Description of the AI Diagram -->
-    <td valign="top" width="40%">
-      <h3>Long Term Memory for Ai</h3>
-      <ul>
-        <li>Neurite incorporates note-taking to retain a non-linear conversation history.</li>
-        <li>We feed both the recent conversation as well as any matched notes that are not already in the recent conversation as part of the context message to the Ai.</li>
-        <li>This means retaining relevant information from any part of the conversation regardless of the AI's context window size.</li>
-        <li>Still, advancements in context window size only further enable Neurite's performance.</li>
-      </ul>
-    </td>
-    <!-- Right: Image -->
-    <td valign="top" width="60%">
-      <p align="center">
-        <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/68310e74-7a2c-49a8-a377-1d245c5e938e" alt="AI Integration Diagram" width="100%">
-      </p>
-    </td>
-  </tr>
-</table>
 
 ## `Neural API`
 <table>
@@ -573,5 +568,3 @@ If you are a developer who is interested in contributing to this project, contac
  </picture>
 
 </a>
-
-Special thanks to [Flowbite](https://flowbite.com/) for the svg icons.
