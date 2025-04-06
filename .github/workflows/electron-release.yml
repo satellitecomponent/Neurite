@@ -69,13 +69,17 @@ jobs:
           echo "Draft? ${{ needs.set-version.outputs.draft }}"
           echo "Prerelease? ${{ needs.set-version.outputs.prerelease }}"
 
+  upload-assets:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          tag_name: ${{ needs.set-version.outputs.tag }}
+          name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
           body: |
-            Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+            Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
           files: |
@@ -86,7 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs: build
+    needs: upload-assets
     runs-on: ubuntu-latest
     steps:
       - name: Install GitHub CLI
