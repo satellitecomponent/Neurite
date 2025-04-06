@@ -499,41 +499,28 @@ class NodeView {
                 });
         };
 
-        const handleMouseUp = () => {
-            isMouseMoving = false;
-            Off.mousemove(document, handleMouseMove);
-            Off.mouseup(document, handleMouseUp);
-            document.body.style.cursor = 'auto';
-            if (resizeOverlay) {
-                document.body.removeChild(resizeOverlay);
-                resizeOverlay = null;
-            }
-        };
-        On.mousedown(this.resizeHandle, (e)=>{
+        On.mousedown(this.resizeHandle, (e) => {
             e.preventDefault();
             e.stopPropagation();
-            resizeOverlay = document.createElement('div');
-            resizeOverlay.style.pointerEvents = 'auto';
-            Object.assign(resizeOverlay.style, {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                zIndex: 9999, // ensure it's above all content but not interactive
-                cursor: 'nwse-resize',
-                background: 'transparent',
-            });
-            document.body.appendChild(resizeOverlay);            
+            // Use the helper to add an overlay
+            OverlayHelper.add('nwse-resize');
+            
             startX = e.pageX;
             startY = e.pageY;
             startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
             startHeight = parseInt(document.defaultView.getComputedStyle(windowDiv).height, 10);
-            isMouseMoving = true; // Flag to indicate that a resize operation is in progress
+            isMouseMoving = true; // Indicate that a resize is in progress
             On.mousemove(document, handleMouseMove);
             On.mouseup(document, handleMouseUp);
-            document.body.style.cursor = 'nwse-resize';
         });
+        
+        const handleMouseUp = () => {
+            isMouseMoving = false;
+            Off.mousemove(document, handleMouseMove);
+            Off.mouseup(document, handleMouseUp);
+            // Remove the overlay via the helper
+            OverlayHelper.remove();
+        };
     }
 
     resetWindowDivSize(){
@@ -568,6 +555,42 @@ class NodeView {
     toggleSelected(value){ this.div.classList.toggle('selected', value) }
     static toggleSelectedToThis(nodeView){ nodeView.toggleSelected(this) }
 }
+
+const OverlayHelper = {
+    overlay: null,
+
+    add(cursor = 'auto') {
+        // If an overlay already exists, remove it first
+        if (this.overlay) this.remove();
+
+        this.overlay = document.createElement('div');
+        Object.assign(this.overlay.style, {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999,
+            background: 'transparent',
+            pointerEvents: 'auto',
+            cursor,
+        });
+        document.body.appendChild(this.overlay);
+        document.body.style.cursor = '';
+    },
+
+    remove() {
+        if (!this.overlay) return;
+    
+        document.body.style.cursor = 'auto';
+    
+        try {
+            this.overlay.remove();
+        } catch (_) {}
+    
+        this.overlay = null;
+    }
+};
 
 function scalingFactorsFromElem(element) {
     const style = window.getComputedStyle(element);

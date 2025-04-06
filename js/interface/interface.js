@@ -243,6 +243,7 @@ class Interface {
     }
 
     onMouseUp = (e)=>{
+        OverlayHelper.remove();
         if (e.button === this.mouseZoomButton) {
             if (this.isMouseZooming || this.isRotating) {
                 this.isMouseZooming = false;
