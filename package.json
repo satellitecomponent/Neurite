@@ -43,11 +43,7 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
-      "target": [
-        {
-          "target": "dmg"
-        }
-      ],
+      "target": "dmg",
       "icon": "build/icons/icon.icns"
     },
     "win": {
