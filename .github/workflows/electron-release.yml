@@ -62,7 +62,12 @@ jobs:
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
       - name: Build Electron app
-        run: npm run build -- --publish=never
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            npm run build -- --mac --universal --publish=never
+          else
+            npm run build -- --publish=never
+          fi
 
       - name: Debug release mode
         run: |
