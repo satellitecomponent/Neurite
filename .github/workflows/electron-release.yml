@@ -74,47 +74,47 @@ jobs:
           echo "Draft? ${{ needs.set-version.outputs.draft }}"
           echo "Prerelease? ${{ needs.set-version.outputs.prerelease }}"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-${{ matrix.os }}
-          path: dist
-
-  release:
-    needs: [build, set-version]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: dist
-
-      - name: Create Release
-        id: create_release
+      - name: Upload macOS asset
+        if: matrix.os == 'macos-latest'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.set-version.outputs.tag }}
-          name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
-          body: |
-            Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
+          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: dist/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload release assets
+      - name: Upload Windows asset
+        if: matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.set-version.outputs.tag }}
-          files: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.AppImage
+          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          draft: ${{ needs.set-version.outputs.draft }}
+          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux asset
+        if: matrix.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.set-version.outputs.tag }}
+          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          draft: ${{ needs.set-version.outputs.draft }}
+          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: dist/*.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs: release
+    needs: [build, set-version]
     if: ${{ needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false' }}
     runs-on: ubuntu-latest
     steps:
@@ -131,7 +131,6 @@ jobs:
 
       - name: Delete old electron-* releases (keep latest)
         run: |
-          # List releases, filter for 'electron-' tag, and delete all except the latest
           releases=$(gh release list --limit 100 --json tagName,createdAt \
             | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
             | sort -r)
