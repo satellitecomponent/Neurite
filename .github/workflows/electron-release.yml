@@ -74,48 +74,24 @@ jobs:
           echo "Draft? ${{ needs.set-version.outputs.draft }}"
           echo "Prerelease? ${{ needs.set-version.outputs.prerelease }}"
 
-      - name: Upload macOS asset
-        if: matrix.os == 'macos-latest'
+      - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.set-version.outputs.tag }}
           name: Neurite Desktop ${{ env.RELEASE_VERSION }}
-          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          body: |
+            Electron desktop release for version ${{ env.RELEASE_VERSION }}.
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: dist/*.dmg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows asset
-        if: matrix.os == 'windows-latest'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.set-version.outputs.tag }}
-          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
-          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
-          draft: ${{ needs.set-version.outputs.draft }}
-          prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: dist/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux asset
-        if: matrix.os == 'ubuntu-latest'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.set-version.outputs.tag }}
-          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
-          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
-          draft: ${{ needs.set-version.outputs.draft }}
-          prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: dist/*.AppImage
+          files: |
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs: [build, set-version]
-    if: ${{ needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false' }}
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -131,10 +107,12 @@ jobs:
 
       - name: Delete old electron-* releases (keep latest)
         run: |
+          # List releases, filter for 'electron-' tag, and delete all except the latest
           releases=$(gh release list --limit 100 --json tagName,createdAt \
             | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
             | sort -r)
 
+          # Only delete if there are releases
           if [ -n "$releases" ]; then
             echo "$releases" | tail -n +2 | awk '{print $2}' | xargs -r -n 1 gh release delete -y
           else
