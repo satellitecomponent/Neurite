@@ -61,12 +61,7 @@ jobs:
       - name: Write embedded version file using dev script
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
-      - name: Build Electron app (mac)
-        if: matrix.os == 'macos-latest'
-        run: npm run build -- --mac --universal --publish=never
-
-      - name: Build Electron app (win/linux)
-        if: matrix.os != 'macos-latest'
+      - name: Build Electron app
         run: npm run build -- --publish=never
 
       - name: Debug release mode
