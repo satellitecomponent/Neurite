@@ -469,13 +469,13 @@ Forget tabs! Neurite is all about graphs. Open as many browser windows as you wa
 ## Download the latest version of **Neurite Desktop** ↓
 <table align="center">
   <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a></td>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.07.104925/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a></td>
   </tr>
   <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a></td>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.07.104925/Neurite-1.0.0.AppImage" target="_blank">Linux</a></td>
   </tr>
-  <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.06.064247/Neurite-1.0.0.AppImage" target="_blank">Linux</a></td>
+    <tr>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.07.104925/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a></td>
   </tr>
 </table>
 
@@ -485,7 +485,12 @@ Forget tabs! Neurite is all about graphs. Open as many browser windows as you wa
 > - Create new link nodes by directly dragging out URLs  `See the above gif`
 > - Works with any site, no sandboxing limitations
 > - Runs and updates the Localhost Servers for you
+
 This is a highly experimental feature in early release.
+
+*macOS does not have code signing and requires workarounds to open.
+
+*Windows requires clicking past the security warning on first open.
 <p align="center">
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
