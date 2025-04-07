@@ -39,12 +39,9 @@
 
 ### ***...the fractal dimension.***
 
->🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
+🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
 For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping technique.
-
-
-> 📢 **Major Update:**  <a href="#neurite-desktop"><strong>Neurite Desktop</strong></a> 
 
 <table>
   <tr>
@@ -463,9 +460,6 @@ All API keys can be input through the AI tab in the menu dropdown.
   <img src="https://github.com/user-attachments/assets/27a2c085-3354-42ef-ae37-cca274d8e641" alt="linknodeselectrondemo" />
 </p>
 
-# Unchain from the traditional limitations of a browser
-
-Forget tabs! Neurite is all about graphs. Open as many browser windows as you want and display them side by side in our infinite fractal canvas.
 ## Download the latest version of **Neurite Desktop** ↓
 <table align="center">
   <tr>
@@ -479,13 +473,37 @@ Forget tabs! Neurite is all about graphs. Open as many browser windows as you wa
   </tr>
 </table>
 
-### The desktop release includes a full web browsing experience within link nodes — no more restrictions on which links you can open.
+# Unchain from the traditional limitations of a browser
 
-> - Forward and backward navigation built into each link node  
-> - Create new link nodes by directly dragging out URLs  `See the above gif`
-> - Works with any site, no sandboxing limitations
-> - Runs and updates the Localhost Servers for you
-This is a highly experimental feature in early release.
+Forget tabs! Neurite is all about graphs. Open as many browser windows as you want and display them side by side in our infinite fractal canvas.
+
+The desktop release also includes a full web browsing experience inside link nodes — no more restrictions on which links you can open.
+
+- Forward and backward navigation built into each link node  
+- Create new link nodes by directly dragging out URLs  `See the above gif`
+- Works with any site, no sandboxing limitations  
+- Automatic updates built-in  
+
+Neurite Desktop can be opened like any other app you've installed.  
+
+# `Localhost Servers`
+Neurite's Localhost Servers are an essential component of Neurite.
+
+If you are running Neurite Desktop, do not worry about this at all!
+
+Neurite Desktop entirely handles running and updating the servers for you.
+
+### The Localhost Servers include a local Vector Database, file system access, webpage/pdf text extraction, Wolfram Alpha results, and Wikipedia results.
+- The localhost servers require npm and Node.js
+- Without any servers running, Wolfram, Wiki, the Vector Database, File Tree Nodes, and Webpage extractions will not function.
+- All servers can be run with one command. (not required for Neurite Desktop) Download the Localhost Servers folder, or find it in your cloned directory. Once navigated to the Localhost Servers folder in your command line, run
+```
+  node start_servers.js
+```
+This will install and run all of the servers at once. They'll work on our GitHub pages host of Neurite, or any other way you locally access the interface.
+
+As of our recent update, the servers now support an AI proxy that connects Neurite to any compatible inference backend.
+
 <p align="center">
 <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f" alt="neuritedemo1" width="60%">
 </p>
