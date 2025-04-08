@@ -345,6 +345,13 @@ View.Graphs = class {
         const file = e.dataTransfer.files[0];
         if (!file) return Logger.info("Missing file");
 
+        this.#saveSelected().then(this.#import.bind(this, file));
+    }
+    #saveSelected = ()=>{
+        const title = this.#selectedGraph?.title;
+        return (title ? this.#saver.saveWithTitle(title) : Promise.resolve());
+    }
+    #import(file){
         const importer = new GraphImporter();
         const afterImport = this.#afterImport.bind(this, importer, file);
         importer.import(file).then(afterImport);
@@ -354,16 +361,24 @@ View.Graphs = class {
         const index = name.lastIndexOf('.');
         const title = (index > -1 ? name.slice(0, index) : name);
 
-        const graphData = importer.data;
-        if (!graphData) {
+        if (!importer.data) {
             const reader = new FileReader();
             On.load(reader, this.#onFileLoaded.bind(this, title));
             return reader.readAsText(file);
         }
 
-        this.#setSelectedGraph(null).#loadGraph(graphData, importer);
-        this.#saver.addSave('dropped', title, graphData, 'select')
+        this.#loadAndSave(importer)
+            .then(this.#setTitle.bind(this, title))
             .then(this.#updateGraphs);
+    }
+    #loadAndSave(importer){
+        this.#setSelectedGraph(null).#loadGraph(importer.data, importer);
+        this.#graphs.push(this.#makeMetaForTitle(''));
+        return this.#saver.saveWithTitle('');
+    }
+    #setTitle(title){
+        this.#selectedGraph.title = title;
+        return this.#stored.saveMeta(this.#selectedGraph);
     }
     async #onFileLoaded(title, e) {
         const content = e.target.result;
