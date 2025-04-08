@@ -243,7 +243,6 @@ class Interface {
     }
 
     onMouseUp = (e)=>{
-        OverlayHelper.remove();
         if (e.button === this.mouseZoomButton) {
             if (this.isMouseZooming || this.isRotating) {
                 this.isMouseZooming = false;
@@ -262,7 +261,7 @@ class Interface {
             e.preventDefault();
         }
 
-        if (Graph.movingNode !== undefined) Graph.movingNode.onMouseUp(e);
+        if (Graph.movingNode !== undefined) Graph.movingNode.stopFollowingMouse(e);
         Mouse.isDragging = false;
     }
 
