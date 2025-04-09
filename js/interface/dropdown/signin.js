@@ -15,7 +15,7 @@ window.addEventListener('message', async function (event) {
 
         if (email) {
             updateSignInState(email);
-            neuritePanel.open();
+            neuritePanel.open(true); // True to fetch the latest user balance
         }
     } else if (event.data.type === 'stripe') {
         const paymentStatus = event.data.status;
@@ -238,7 +238,7 @@ document.getElementById('openNeuriteModalButton').onclick = async function () {
     try {
         const isSignedIn = await checkNeuriteSignIn();
         if (isSignedIn) {
-            neuritePanel.open();
+            neuritePanel.open(true); // True to fetch the latest user balance
         }
     } catch (error) {
         console.error("Error in onclick handler:", error);
