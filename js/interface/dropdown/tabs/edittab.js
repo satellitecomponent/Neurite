@@ -55,27 +55,27 @@ class EditTab {
         const innerOpacityValue = Elem.byId('inner_opacity_value');
         const outerOpacitySlider = Elem.byId('outer_opacity');
         const outerOpacityValue = Elem.byId('outer_opacity_value');
-    
+
         On.input(innerOpacitySlider, (e) => {
             settings.innerOpacity = innerOpacitySlider.value / 100;
             updateSliderValue(innerOpacitySlider, innerOpacityValue);
         });
-    
+
         On.input(innerOpacityValue, (e) => {
             settings.innerOpacity = innerOpacityValue.value / 100;
             updateValueSlider(innerOpacityValue, innerOpacitySlider);
         });
-    
+
         On.input(outerOpacitySlider, (e) => {
             settings.outerOpacity = outerOpacitySlider.value / 100;
             updateSliderValue(outerOpacitySlider, outerOpacityValue);
         });
-    
+
         On.input(outerOpacityValue, (e) => {
             settings.outerOpacity = outerOpacityValue.value / 100;
             updateValueSlider(outerOpacityValue, outerOpacitySlider);
         });
-    
+
         const lengthSlider = Elem.byId('length');
         const lengthValue = Elem.byId('length_value');
         On.input(lengthSlider, (e) => {
@@ -83,13 +83,13 @@ class EditTab {
             this.setRenderLength(v);
             updateSliderValue(lengthSlider, lengthValue);
         });
-    
+
         On.input(lengthValue, (e) => {
             updateValueSlider(lengthValue, lengthSlider);
             const v = this.getLength();
             this.setRenderLength(v);
         });
-    
+
         const regenDebtSlider = Elem.byId('regenDebtSlider');
         const regenDebtValue = Elem.byId('regenDebtValue');
         On.input(regenDebtSlider, (e) => {
@@ -97,13 +97,13 @@ class EditTab {
             settings.regenDebtAdjustmentFactor = v;
             updateSliderValue(regenDebtSlider, regenDebtValue);
         });
-    
+
         On.input(regenDebtValue, (e) => {
             updateValueSlider(regenDebtValue, regenDebtSlider);
             const v = this.getRegenDebtAdjustmentFactor();
             settings.regenDebtAdjustmentFactor = v;
         });
-    
+
         const renderWidthMultSlider = Elem.byId('renderWidthMultSlider');
         const renderWidthMultValue = Elem.byId('renderWidthMultValue');
         On.input(renderWidthMultSlider, (e) => {
@@ -111,7 +111,7 @@ class EditTab {
             this.setRenderWidthMult(adjustedValue);
             updateSliderValue(renderWidthMultSlider, renderWidthMultValue);
         });
-    
+
         On.input(renderWidthMultValue, (e) => {
             updateValueSlider(renderWidthMultValue, renderWidthMultSlider);
             const adjustedValue = this.getRenderWidthMult();
@@ -128,7 +128,7 @@ class EditTab {
             updateValueSlider(renderDelayValue, renderDelaySlider);
             settings.renderDelay = parseInt(renderDelaySlider.value);
         });
-        
+
         const zoomSpeedSlider = Elem.byId('zoomSpeedSlider');
         const zoomSpeedValue = Elem.byId('zoom_speed_value');
         On.input(zoomSpeedSlider, (e) => {
@@ -139,8 +139,7 @@ class EditTab {
             updateValueSlider(zoomSpeedValue, zoomSpeedSlider);
             settings.zoomSpeedMultiplier = parseFloat(zoomSpeedSlider.value);
         });
-        
-    
+
         const maxLinesSlider = Elem.byId('maxLinesSlider');
         const maxLinesValue = Elem.byId('maxLinesValue');
         On.input(maxLinesSlider, (e) => {
@@ -148,7 +147,7 @@ class EditTab {
             settings.maxLines = v;
             updateSliderValue(maxLinesSlider, maxLinesValue);
         });
-    
+
         On.input(maxLinesValue, (e) => {
             updateValueSlider(maxLinesValue, maxLinesSlider);
             const v = this.getMaxLines();
@@ -157,45 +156,45 @@ class EditTab {
 
         const qualitySlider = Elem.byId('quality');
         const qualityValue = Elem.byId('quality_value_number');
-    
+
         On.input(qualitySlider, (e) => {
             const v = this.getQuality(qualitySlider);
             this.setRenderQuality(v);
             updateSliderValue(qualitySlider, qualityValue);
         });
-        
+
         On.input(qualityValue, (e) => {
             updateValueSlider(qualityValue, qualitySlider);
             const v = this.getQuality(qualityValue);
             this.setRenderQuality(v);
         });
-    
+
         On.input(Elem.byId('exponent'), (e) => Fractal.updateStep());
-    
+
         const flashlightStrengthSlider = Elem.byId('flashlightStrength');
         const flashlightStrengthValue = Elem.byId('flashlightStrength_value');
         On.input(flashlightStrengthSlider, (e) => {
             this.updateFlashlightStrength();
             updateSliderValue(flashlightStrengthSlider, flashlightStrengthValue);
         });
-    
+
         On.input(flashlightStrengthValue, (e) => {
             updateValueSlider(flashlightStrengthValue, flashlightStrengthSlider);
             this.updateFlashlightStrength();
         });
-    
+
         const flashlightRadiusSlider = Elem.byId('flashlightRadius');
         const flashlightRadiusValue = Elem.byId('flashlightRadius_value');
         On.input(flashlightRadiusSlider, (e) => {
             this.updateFlashlightRadius();
             updateSliderValue(flashlightRadiusSlider, flashlightRadiusValue);
         });
-    
+
         On.input(flashlightRadiusValue, (e) => {
             updateValueSlider(flashlightRadiusValue, flashlightRadiusSlider);
             this.updateFlashlightRadius();
         });
-    
+
         const colorPicker = Elem.byId('colorPicker');
         On.input(colorPicker, (e) => {
             document.body.style.backgroundColor = colorPicker.value;
@@ -207,7 +206,7 @@ class EditTab {
         On.input(brightnessSlider, (e) => {
             updateSliderValue(brightnessSlider, brightnessValue);
         });
-    
+
         On.input(brightnessValue, (e) => {
             updateValueSlider(brightnessValue, brightnessSlider);
         });
@@ -217,20 +216,19 @@ class EditTab {
         On.input(saturationSlider, (e) => {
             updateSliderValue(saturationSlider, saturationValue);
         });
-    
+
         On.input(saturationValue, (e) => {
             updateValueSlider(saturationValue, saturationSlider);
         });
-    
+
         On.input(Elem.byId('inversion-slider'), (e) => {
             this.skipMidRangeInversion();
             this.updateFilters();
         });
-    
+
         const hueRotationSlider = Elem.byId('hue-rotation-slider');
         On.input(hueRotationSlider, this.updateFilters.bind(this));
     }
-    
 
     getLength() {
         const v = Elem.byId('length').value / 100;
@@ -276,7 +274,7 @@ class EditTab {
     computeQuality(v) {
         return 2 ** ((v / 100) * 4);
     }
-    
+
     getQuality(sourceElem = Elem.byId('quality')) {
         return this.computeQuality(parseFloat(sourceElem.value));
     }

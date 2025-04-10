@@ -45,7 +45,7 @@ class NeuriteBackend {
             },
             ...options
         };
-        
+
         try {
             const response = window.NeuriteEnv.isElectronWithLocalFrontend
                 ? await this.#electronRequest(endpoint, requestOptions, isStreaming)
@@ -375,7 +375,7 @@ class BalanceHandler {
             if (stripePublicKey) {
                 // Create and inject a script to initiate Stripe with the session ID
                 const redirectScript = `
-                const stripe = Stripe('${stripePublicKey}'); 
+                const stripe = Stripe('${stripePublicKey}');
                 stripe.redirectToCheckout({ sessionId: '${sessionId}' }).catch((error) => {
                     document.body.innerHTML = 'Error: ' + error.message;
                 });

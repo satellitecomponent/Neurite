@@ -32,17 +32,17 @@
         const workerUrl = urlParams.get('workerUrl');
         const siteKey = urlParams.get('siteKey');
         const origin = urlParams.get('origin'); // ← NEW
-    
+
         const turnstileContainer = document.getElementById("turnstile-container");
         turnstileContainer.setAttribute('data-sitekey', siteKey);
         turnstileContainer.setAttribute('data-callback', 'onTurnstileSuccess');
         turnstileContainer.setAttribute('data-error-callback', 'onTurnstileError');
-    
+
         function onTurnstileSuccess(token) {
             const redirectUrl = `${workerUrl}/auth?cf-turnstile-response=${encodeURIComponent(token)}&origin=${encodeURIComponent(origin)}`;
             window.location.href = redirectUrl;
         }
-    
+
         function onTurnstileError() {
             alert("Verification failed. Please try again.");
             window.close();

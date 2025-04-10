@@ -266,7 +266,7 @@ class Tag {
         const input = e.currentTarget;
         const tag = input.value.trim();
         Tag[input.dataset.key] = (tag === '' ? ' ' : tag);
-        
+
         ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();

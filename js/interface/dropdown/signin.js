@@ -64,11 +64,11 @@ async function signIn() {
         const redirectPage = window.NeuriteEnv.isTest
             ? 'https://test.neurite.network/resources/verify.html'
             : 'https://neurite.network/resources/verify.html';
-        
+
         const workerUrl = `${backendBase}/api/oauth`;
         const frontendOrigin = window.location.origin;
 
-        const popupUrl = `${redirectPage}?workerUrl=${encodeURIComponent(workerUrl)}&siteKey=${encodeURIComponent(turnstilePublicKey)}&origin=${encodeURIComponent(frontendOrigin)}`;     
+        const popupUrl = `${redirectPage}?workerUrl=${encodeURIComponent(workerUrl)}&siteKey=${encodeURIComponent(turnstilePublicKey)}&origin=${encodeURIComponent(frontendOrigin)}`;
         const popup = window.open(popupUrl, 'Verification', 'width=500,height=600');
 
         if (!popup) {

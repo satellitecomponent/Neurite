@@ -223,7 +223,7 @@ app.get('/get-keys', (req, res) => {
             res.status(500).send('Error fetching keys');
         } else {
             const distinctKeys = new Set();
-    
+
             rows.forEach(row => {
                 if (!row.key) {
                     console.warn('[get-keys] Skipping row with null key:', row);
@@ -232,7 +232,7 @@ app.get('/get-keys', (req, res) => {
                 const overallKey = row.key.split('_chunk_')[0];
                 distinctKeys.add(overallKey);
             });
-    
+
             const keys = Array.from(distinctKeys);
             res.json(keys);
         }

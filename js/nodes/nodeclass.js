@@ -258,37 +258,37 @@ class Node {
         windowDiv.classList.toggle('window-anchored', anchored);
     }
     onDblClick = (e) => {
-    }  
+    }
     onMouseDown = (e) => {
         this.mouseAnchor = Graph.xyToZ(e.clientX, e.clientY).minus(this.pos);
         this.followingMouse = 1;
         Graph.draggedNode = this;
         Graph.movingNode = this;
-    
+
         if (Node.prev) {
             connectNodes(this, Node.prev);
             Node.prev = null;
         } else if (App.nodeMode) {
             Node.prev = this;
         }
-    
+
         clearTextSelections();
-    
+
         this._initialMousePos = { x: e.clientX, y: e.clientY };
         this._hasAddedGrabbing = false;
-    
+
         On.mousemove(window, this._maybeAddGrabbing);
         On.mouseup(window, this.stopFollowingMouse);
-    
+
         e.stopPropagation();
     }
     _maybeAddGrabbing = (e) => {
         if (this._hasAddedGrabbing) return;
-    
+
         const dx = e.clientX - this._initialMousePos.x;
         const dy = e.clientY - this._initialMousePos.y;
         const distanceSq = dx * dx + dy * dy;
-    
+
         if (distanceSq > 4) {
             this._hasAddedGrabbing = true;
             OverlayHelper.add('grabbing');
@@ -298,14 +298,14 @@ class Node {
     stopFollowingMouse = (e) => {
         this.followingMouse = 0;
         Graph.movingNode = undefined;
-    
+
         Off.mousemove(window, this._maybeAddGrabbing);
         Off.mouseup(window, this.stopFollowingMouse);
         OverlayHelper.remove(); // Clean up just in case
-    }    
+    }
 
-    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};   
-    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};   
+    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};
+    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};
     setEmbedPointerEvents(value) {
         this.content.querySelectorAll('iframe, webview').forEach(embed => {
             embed.style.pointerEvents = value;
@@ -358,8 +358,8 @@ class Node {
         }
         e.stopPropagation();
     }
-    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};   
-    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};   
+    disableEmbedPointerEvents(){this.setEmbedPointerEvents('none')};
+    enableEmbedPointerEvents(){ this.setEmbedPointerEvents('auto')};
     setEmbedPointerEvents(value) {
         this.content.querySelectorAll('iframe, webview').forEach(embed => {
             embed.style.pointerEvents = value;

@@ -170,7 +170,7 @@ class App {
         this.signalReady();
     }
     signalReady() {
-        window.appReady = true; 
+        window.appReady = true;
         if (window.startedViaElectron) {
             window.electronAPI?.sendReady?.();
         }
