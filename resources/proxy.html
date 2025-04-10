@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neurite Proxy</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self';
+    connect-src https:;
+    style-src 'self' 'unsafe-inline';
+    frame-ancestors 'none';
+  ">
+
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #999;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  Proxy Active
+<script>
+const isElectronPreload = !!window.electron?.proxyBridge?.sendFetchResponse;
+const isElectronUA = navigator.userAgent.includes('Electron');
+
+if (!isElectronPreload || !isElectronUA) {
+    document.body.innerHTML = 'Access Denied.';
+    throw new Error('[secure-proxy] Not in Electron context. Aborting.');
+}
+
+window.addEventListener('message', async (event) => {
+  const { id, endpoint, options } = event.data;
+  if (!id || !endpoint) return;
+
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      credentials: 'include'
+    });
+
+    if (options?.stream) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let done = false;
+      while (!done) {
+        const { value, done: isDone } = await reader.read();
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          window.electron.proxyBridge.sendFetchResponse({
+            id,
+            chunk,
+            done: false
+          });
+        }
+        done = isDone;
+      }
+
+      window.electron.proxyBridge.sendFetchResponse({
+        id,
+        done: true
+      });
+    } else {
+        const json = await response.json();
+            window.electron.proxyBridge.sendFetchResponse({
+            id,
+            response: json,
+            ok: response.ok,
+            status: response.status
+        });
+    }
+  } catch (err) {
+    console.error('[secure-proxy] Fetch error:', err);
+    window.electron.proxyBridge.sendFetchResponse({
+      id,
+      error: err.message
+    });
+  }
+});
+
+  </script>
+</body>
+</html>
