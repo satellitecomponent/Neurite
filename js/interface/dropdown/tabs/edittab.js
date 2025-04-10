@@ -154,8 +154,14 @@ class EditTab {
             settings.maxLines = v;
         });
 
+        const framesDelayValue = Elem.byId('frames_delay_value_number');
         const qualitySlider = Elem.byId('quality');
         const qualityValue = Elem.byId('quality_value_number');
+
+        On.input(framesDelayValue, (e)=>{
+            const v = parseInt(framesDelayValue.value);
+            settings.framesDelay = Math.min(Math.max(0, v), 9);
+        });
 
         On.input(qualitySlider, (e) => {
             const v = this.getQuality(qualitySlider);

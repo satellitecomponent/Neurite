@@ -142,6 +142,7 @@ var settings = {
     renderWidthMult: 0.3, //1,
     regenDebtAdjustmentFactor: 1,
 
+    framesDelay: 0,
     useDelayedRendering: true,
     renderDelay: 0,
     renderStepSize: 0.1, //0.25,
