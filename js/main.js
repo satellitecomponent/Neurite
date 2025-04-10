@@ -86,6 +86,9 @@ class On {
     static thisEvent(target, cb, options){
         target.addEventListener(this, cb, options)
     }
+    static thisPassiveEvent(target, cb){
+        target.addEventListener(this, cb, {passive: true})
+    }
 }
 [
     'blur', 'change', 'click', 'contextmenu', 'dblclick',
@@ -100,6 +103,9 @@ class On {
 ].forEach( (eName)=>{
     On[eName] = On.thisEvent.bind(eName);
     Off[eName] = Off.thisEvent.bind(eName);
+});
+['touchstart', 'touchmove', 'wheel'].forEach( (eName)=>{
+    On[eName] = On.thisPassiveEvent.bind(eName)
 });
 
 Request.makeJsonOptions = function(method, body){

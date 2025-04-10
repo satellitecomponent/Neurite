@@ -28,23 +28,21 @@
     <div id="turnstile-container" class="cf-turnstile"></div>
 
     <script>
-        // Parse URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const workerUrl = urlParams.get('workerUrl');
         const siteKey = urlParams.get('siteKey');
-
-        // Configure Turnstile widget with the site key and callback functions
+        const origin = urlParams.get('origin'); // ← NEW
+    
         const turnstileContainer = document.getElementById("turnstile-container");
         turnstileContainer.setAttribute('data-sitekey', siteKey);
         turnstileContainer.setAttribute('data-callback', 'onTurnstileSuccess');
         turnstileContainer.setAttribute('data-error-callback', 'onTurnstileError');
-
-        // Callback functions
+    
         function onTurnstileSuccess(token) {
-            // Redirect to OAuth flow with the Turnstile token
-            window.location.href = `${workerUrl}/auth?cf-turnstile-response=${encodeURIComponent(token)}`;
+            const redirectUrl = `${workerUrl}/auth?cf-turnstile-response=${encodeURIComponent(token)}&origin=${encodeURIComponent(origin)}`;
+            window.location.href = redirectUrl;
         }
-
+    
         function onTurnstileError() {
             alert("Verification failed. Please try again.");
             window.close();

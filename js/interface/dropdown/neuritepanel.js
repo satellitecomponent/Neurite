@@ -1,61 +1,67 @@
-// Determine if we are on the test or production origins
-const isTest = window.location.origin === 'https://test.neurite.network';
-const isProd = window.location.origin === 'https://neurite.network';
+window.NeuriteEnv = {
+    isProd: window.location.origin === 'https://neurite.network',
+    isTest: window.location.origin === 'https://test.neurite.network',
+    isElectron: window.startedViaElectron === true,
+    isLocalhostFrontend: window.location.origin === 'http://localhost:8080',
+    isLocalFileFrontend: window.location.origin === 'null',
 
-// Set the base URL or null if not on the test or production origins
-const NEURITE_BASE_URL = isTest
-    ? 'https://test.neurite.network'
-    : isProd
-        ? 'https://neurite.network'
-        : null;
+    get isElectronWithLocalFrontend() {
+        return this.isElectron && (this.isLocalhostFrontend || this.isLocalFileFrontend);
+    },
+
+    // Used for request fallback or redirect logic
+    get baseUrl() {
+        if (this.isProd) return 'https://neurite.network';
+        if (this.isTest) return 'https://test.neurite.network';
+        return null; // Electron-local and dev-hosted must proxy
+    }
+}
+
+function neuriteOriginCheck() {
+    const { isProd, isTest, isElectron } = window.NeuriteEnv;
+
+    const isValidEnvironment = isProd || isTest || isElectron;
+    if (isValidEnvironment) return;
+
+    alert('Please access Neurite via neurite.network or the official app.');
+    throw new Error('Blocked request: invalid origin');
+}
 
 class NeuriteBackend {
     constructor() {
-        this.baseUrl = NEURITE_BASE_URL;
+        this.baseUrl = window.NeuriteEnv.baseUrl;
     }
 
-    // General method for making API calls
     async request(endpoint, options = {}) {
-        neuriteOriginCheck(); // Check origin before making the request
+        const isStreaming = options.stream === true;
+        neuriteOriginCheck();
 
-        const url = `${this.baseUrl}/api${endpoint}`;
-        const defaultOptions = {
-            credentials: 'include', // Include cookies
+        const url = this.baseUrl ? `${this.baseUrl}/api${endpoint}` : `/api${endpoint}`;
+        const requestOptions = {
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
                 ...(options.headers || {})
             },
             ...options
         };
-
+        
         try {
-            const response = await fetch(url, defaultOptions);
+            const response = window.NeuriteEnv.isElectronWithLocalFrontend
+                ? await this.#electronRequest(endpoint, requestOptions, isStreaming)
+                : await fetch(url, requestOptions);
 
-            if (response.status === 401) {
-                if (options.handleUnauthorized) {
-                    // Let the caller handle the unauthorized error
-                    return response;
-                } else {
-                    // Use the global unauthorized handler
-                    handleNeuriteUnauthorized();
-                }
-            }
-
-            // Optionally handle other status codes here
-
-            return response;
-        } catch (error) {
-            console.error(`API request to ${url} failed:`, error);
-            throw error;
+            return this.#handleResponse(response, options.handleUnauthorized);
+        } catch (err) {
+            Logger.err(`API request to ${url} failed:`, err);
+            throw err;
         }
     }
 
-    // Example GET request
     async get(endpoint, options = {}) {
         return this.request(endpoint, { method: 'GET', ...options });
     }
 
-    // Example POST request
     async post(endpoint, body, options = {}) {
         return this.request(endpoint, {
             method: 'POST',
@@ -63,12 +69,57 @@ class NeuriteBackend {
             ...options
         });
     }
+
+    async #handleResponse(response, handleUnauthorized) {
+        if (response.status === 401) {
+            if (handleUnauthorized) return response;
+            return handleNeuriteUnauthorized();
+        }
+
+        return response;
+    }
+
+    async #electronRequest(endpoint, requestOptions, isStreaming) {
+        if (isStreaming) {
+            const id = crypto.randomUUID();
+            const encoder = new TextEncoder();
+
+            const stream = new ReadableStream({
+                start(controller) {
+                    const onChunk = (event, data) => {
+                        if (data.id !== id) return;
+
+                        if (data.chunk) controller.enqueue(encoder.encode(data.chunk));
+                        if (data.done) {
+                            controller.close();
+                            window.electronAPI._removeStreamListener(onChunk);
+                        }
+                        if (data.error) {
+                            controller.error(new Error(data.error));
+                            window.electronAPI._removeStreamListener(onChunk);
+                        }
+                    };
+                    window.electronAPI._addStreamListener(onChunk);
+                }
+            });
+
+            window.electronAPI.sendStreamRequest(id, `/api${endpoint}`, requestOptions);
+
+            return new Response(stream, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        const response = await window.electronAPI.secureFetch(endpoint, requestOptions);
+        return {
+            ok: response.ok,
+            status: response.status,
+            json: async () => response.data
+        };
+    }
 }
 
-
-// Instantiate and make it globally accessible
 window.NeuriteBackend = new NeuriteBackend();
-
 
 
 // neuritePanel.js
@@ -103,7 +154,7 @@ class NeuritePanel {
         if (storedEmail && emailDisplay) {
             emailDisplay.textContent = storedEmail;
         } else if (!emailDisplay) {
-            console.warn('Email display element not found.');
+            Logger.warn('Email display element not found.');
         }
 
         this.setupTabEventListeners();
@@ -111,13 +162,13 @@ class NeuritePanel {
         if (this.addFundsButton) {
             this.addFundsButton.addEventListener('click', () => this.balanceHandler.addFunds());
         } else {
-            console.error('Add funds button not found.');
+            Logger.err('Add funds button not found.');
         }
 
         if (this.signOutButton) {
             this.signOutButton.addEventListener('click', signOut);
         } else {
-            console.error('Sign out button not found.');
+            Logger.err('Sign out button not found.');
         }
 
         // Initialize Delete Account Button
@@ -125,7 +176,7 @@ class NeuritePanel {
         if (this.deleteAccountButton) {
             this.deleteAccountButton.addEventListener('click', () => this.handleDeleteAccount());
         } else {
-            console.error('Delete Account button not found.');
+            Logger.err('Delete Account button not found.');
         }
     }
 
@@ -148,7 +199,7 @@ class NeuritePanel {
                     });
                 });
             } else {
-                console.error(`Label for ${labelId} not found.`);
+                Logger.err(`Label for ${labelId} not found.`);
             }
         });
     }
@@ -173,11 +224,11 @@ class NeuritePanel {
                 // Update local storage
                 localStorage.setItem('userBalance', balance);
             } catch (error) {
-                console.error('Error fetching balance:', error);
+                Logger.err('Error fetching balance:', error);
                 if (this.balanceDisplay) {
                     this.balanceDisplay.textContent = 'error';
                 } else {
-                    console.warn('Balance display element not found. Cannot display error.');
+                    Logger.warn('Balance display element not found. Cannot display error.');
                 }
                 this.updateBalanceBar(0);
                 return;
@@ -209,7 +260,7 @@ class NeuritePanel {
         if (this.balanceDisplay) {
             this.balanceDisplay.textContent = `$${safeBalance.toFixed(2)}`;
         } else {
-            //console.warn('Balance display element not found. Skipping balance display update.');
+            //Logger.warn('Balance display element not found. Skipping balance display update.');
         }
 
         // Update balance bar if element exists
@@ -247,7 +298,7 @@ class NeuritePanel {
                 updateSignInState();
             }
         } catch (error) {
-            console.error('Delete Account Error:', error);
+            Logger.err('Delete Account Error:', error);
             alert(`Error deleting account: ${error.message}`);
             this.deleteAccountButton.disabled = false;
         }
@@ -259,7 +310,7 @@ class NeuritePanel {
         if (this.balanceBar) {
             this.balanceBar.style.width = `${percentage}%`;
         } else {
-            //console.warn('Balance bar element not found. Skipping balance bar update.');
+            //Logger.warn('Balance bar element not found. Skipping balance bar update.');
         }
     }
 
@@ -352,7 +403,7 @@ class BalanceHandler {
             const data = await response.json();
             return data.balance;
         } catch (error) {
-            console.error('Error fetching balance:', error);
+            Logger.err('Error fetching balance:', error);
             throw error;
         }
     }
@@ -370,7 +421,7 @@ class BalanceHandler {
             const data = await response.json();
             return data.sessionId;
         } catch (error) {
-            console.error('Error creating checkout session:', error);
+            Logger.err('Error creating checkout session:', error);
             throw error;
         }
     }

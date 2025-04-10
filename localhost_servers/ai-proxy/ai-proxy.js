@@ -25,28 +25,15 @@ app.post('/api-keys', (req, res) => {
     res.sendStatus(200);
 });
 
-// Function to modify the request body and headers based on the API type
-function modifyRequestByApiType(apiType, requestBody, headers, apiKey) {
-    switch (apiType) {
-        case 'anthropic':
-            headers['x-api-key'] = apiKey;
-            headers['anthropic-version'] = '2023-06-01';
-            // Extract system messages and concatenate the remaining messages
-            if (requestBody.messages && requestBody.messages.length > 0) {
-                const systemMessages = requestBody.messages.filter(msg => msg.role === 'system');
-                if (systemMessages.length > 0) {
-                    requestBody.system = systemMessages.map(msg => msg.content).join('\n');
-                }
-                requestBody.messages = requestBody.messages
-                    .filter(msg => msg.role !== 'system')
-                    .map(msg => ({ role: msg.role, content: msg.content }));
-            }
-            break;
-        default:
-            headers['Authorization'] = `Bearer ${apiKey}`;
-            break;
+function modifyRequestByApiType(apiType, headers, apiKey) {
+    headers['Content-Type'] = 'application/json';
+    headers['Authorization'] = `Bearer ${apiKey}`;
+
+    if (apiType === 'anthropic') {
+        headers['OpenAI-Version'] = '2020-10-01';
     }
 }
+
 
 const activeRequests = new Map();
 
@@ -58,71 +45,20 @@ function modifyResponseByApiType(apiType, response, res, stream, requestId) {
             }
         };
 
-        switch (apiType) {
-            case 'anthropic':
-                if (stream) {
-                    let responseText = '';
-                    response.data.on('data', (chunk) => {
-                        responseText += chunk.toString();
-                        const lines = responseText.split('\n');
-                        responseText = lines.pop();
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const data = line.slice(6);
-                                if (data !== '[DONE]') {
-                                    try {
-                                        const payload = JSON.parse(data);
-                                        if (payload.type === 'content_block_delta') {
-                                            const content = payload.delta.text;
-                                            const transformedResponse = {
-                                                choices: [{ delta: { content } }],
-                                            };
-                                            res.write(`data: ${JSON.stringify(transformedResponse)}\n\n`);
-                                        }
-                                    } catch (error) {
-                                        console.error('Error parsing JSON:', error);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    response.data.on('end', () => {
-                        res.write(`data: [DONE]\n\n`);
-                        res.end();
-                        cleanup();
-                        resolve();
-                    });
-                    response.data.on('error', (error) => {
-                        cleanup();
-                        reject(error);
-                    });
-                } else {
-                    const content = response.data.content.map(block => block.text).join('');
-                    const transformedResponse = {
-                        choices: [{ message: { content: content.trim() } }],
-                    };
-                    res.json(transformedResponse);
-                    cleanup();
-                    resolve();
-                }
-                break;
-            default:
-                if (stream) {
-                    response.data.pipe(res);
-                    response.data.on('end', () => {
-                        cleanup();
-                        resolve();
-                    });
-                    response.data.on('error', (error) => {
-                        cleanup();
-                        reject(error);
-                    });
-                } else {
-                    res.json(response.data);
-                    cleanup();
-                    resolve();
-                }
-                break;
+        if (stream) {
+            response.data.pipe(res);
+            response.data.on('end', () => {
+                cleanup();
+                resolve();
+            });
+            response.data.on('error', (error) => {
+                cleanup();
+                reject(error);
+            });
+        } else {
+            res.json(response.data);
+            cleanup();
+            resolve();
         }
     });
 }
@@ -144,10 +80,9 @@ async function handleApiRequest(req, res, apiEndpoint, apiKey, apiType, addition
     }
 
     try {
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-        modifyRequestByApiType(apiType, requestBody, headers, apiKey);
+        const headers = {};
+        modifyRequestByApiType(apiType, headers, apiKey);
+
         const response = await axios.post(apiEndpoint, requestBody, {
             headers: headers,
             responseType: stream ? 'stream' : 'json',
@@ -194,7 +129,7 @@ app.post('/openai', async (req, res) => {
 });
 
 app.post('/anthropic', async (req, res) => {
-    await handleApiRequest(req, res, 'https://api.anthropic.com/v1/messages', anthropicApiKey, 'anthropic');
+    await handleApiRequest(req, res, 'https://api.anthropic.com/v1/chat/completions', anthropicApiKey, 'anthropic');
 });
 
 app.post('/groq', async (req, res) => {
