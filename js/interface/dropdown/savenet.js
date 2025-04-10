@@ -12,8 +12,8 @@ class GraphsKeeper {
     blobMetaForGraphId(graphId){ return this.#blobMeta.load(graphId) }
     dataForMeta(meta){ return this.#data.load(meta.graphId) }
 
-    deleteBlob(blobId){ this.#blobData.delete(blobId) }
-    deleteBlobMeta(graphId){ this.#blobMeta.delete(graphId) }
+    deleteBlob(blobId){ return this.#blobData.delete(blobId) }
+    deleteBlobMeta(graphId){ return this.#blobMeta.delete(graphId) }
     #deleteBlobs = (dictMeta)=>{ 
         for (const blobId in dictMeta) this.deleteBlob(blobId)
     }
@@ -32,8 +32,10 @@ class GraphsKeeper {
     forEachBlobMetaAndGraphId(cb){ return this.#blobMeta.table.iterate(cb) }
     forEachMetaAndGraphId(cb){ return this.#meta.table.iterate(cb) }
 
-    saveBlobData(blobId, blob){ this.#blobData.save(blobId, blob) }
-    saveBlobMeta(graphId, dictMeta){ this.#blobMeta.save(graphId, dictMeta) }
+    saveBlobData(blobId, blob){ return this.#blobData.save(blobId, blob) }
+    saveBlobMeta(graphId, dictMeta){
+        return this.#blobMeta.save(graphId, dictMeta)
+    }
     saveMetaAndData(meta, data){
         meta.lastUpdated = new Date().toLocaleString();
         meta.revisions += 1;
@@ -91,14 +93,28 @@ class GraphImporter {
     #base = 0;
     #blobMeta = {};
     #buffer = null;
-    data = '';
     #offsets = {};
-    blobForBlobId(blobId){
+
+    data = '';
+    saveNodeItsBlob = null;
+    blobForNode(node){
+        const blobId = node.blob;
         const meta = this.#blobMeta[blobId];
         const options = {type: meta.type};
         const o = this.#base + this.#offsets[blobId];
         const buffer = this.#buffer.slice(o, o + meta.size);
-        return Promise.resolve(new Blob([buffer], options));
+        const blob = new Blob([buffer], options);
+        this.saveNodeItsBlob(node, blob);
+        this.data = this.data.replace(
+            "&quot;blob&quot;:&quot;" + blobId + "&quot;",
+            "&quot;BLOB&quot;:&quot;" + node.blob + "&quot;"
+        );
+        return blob;
+    }
+    get finalData(){
+        return this.data.replaceAll(
+            "&quot;BLOB&quot;:&quot;", "&quot;blob&quot;:&quot;"
+        )
     }
 
     import(file){
@@ -367,18 +383,17 @@ View.Graphs = class {
             return reader.readAsText(file);
         }
 
-        this.#loadAndSave(importer)
-            .then(this.#setTitle.bind(this, title))
-            .then(this.#updateGraphs);
+        this.#loadAndSave(importer, title).then(this.#updateGraphs);
     }
-    #loadAndSave(importer){
-        this.#setSelectedGraph(null).#loadGraph(importer.data, importer);
-        this.#graphs.push(this.#makeMetaForTitle(''));
-        return this.#saver.saveWithTitle('');
-    }
-    #setTitle(title){
-        this.#selectedGraph.title = title;
-        return this.#stored.saveMeta(this.#selectedGraph);
+    #loadAndSave(importer, title){
+        const meta = this.#makeMetaForTitle(title);
+        this.#graphs.push(meta);
+
+        const blobSaver = new View.Graphs.BlobSaver(this, meta.graphId);
+        importer.saveNodeItsBlob = blobSaver.saveNodeItsBlob.bind(blobSaver);
+
+        this.#setSelectedGraph(meta).#loadGraph(importer.data, importer);
+        return this.#stored.saveMetaAndData(meta, importer.finalData);
     }
     async #onFileLoaded(title, e) {
         const content = e.target.result;
@@ -609,7 +624,8 @@ View.Graphs = class {
             processor.processInput();
         }
         #saveBlobsForGraphId = (graphId)=>{
-            return graphId && new View.Graphs.BlobSaver(this.mom, graphId)
+            return graphId
+                && (new View.Graphs.BlobSaver(this.mom, graphId)).save()
         }
         #updateTheNodes = ()=>{ Graph.forEachNode(this.#updateNode) }
         #updateNode(node){
@@ -659,13 +675,16 @@ View.Graphs = class {
     }
 
     static BlobSaver = class {
+        #prevBlobs = {};
         #proms = [];
         #dictMeta = null;
         constructor(mom, graphId){
             this.graphId = graphId;
             this.mom = mom;
-            this.prevBlobs = {...mom.#blobs[graphId]};
+        }
 
+        save(){
+            this.#prevBlobs = {...this.mom.#blobs[this.graphId]};
             Graph.forEachNode(this.#pushPromSaveBlobForNode, this);
             return Promise.all(this.#proms).then(this.#cleanStored);
         }
@@ -675,7 +694,7 @@ View.Graphs = class {
 
             const stored = this.mom.#stored;
 
-            const orphans = this.prevBlobs;
+            const orphans = this.#prevBlobs;
             for (const blobId in orphans) {
                 delete dictMeta[blobId];
                 stored.deleteBlob(blobId);
@@ -690,11 +709,8 @@ View.Graphs = class {
         #pushPromSaveBlobForNode(node){
             if (!node.blob) return;
 
-            if (!this.#dictMeta) {
-                this.#dictMeta = this.mom.#blobs[this.graphId] ||= {}
-            }
-            if (this.#dictMeta[node.blob]) {
-                delete this.prevBlobs[node.blob];
+            if (this.#dictMeta && this.#dictMeta[node.blob]) {
+                delete this.#prevBlobs[node.blob];
                 return;
             }
 
@@ -703,18 +719,22 @@ View.Graphs = class {
         #saveBlobForNode(node){
             return fetch(node.view.innerContent.firstChild.src)
                 .then( (res)=>res.blob() )
-                .then(this.#handleBlob.bind(this, node))
+                .then(this.saveNodeItsBlob.bind(this, node))
                 .catch(Logger.err.bind(Logger, "Failed to save blob:"))
         }
-        #handleBlob(node, blob){
-            const title = node.getTitle();
-            const meta = this.mom.#makeMetaForBlobOfTitle(blob, title);
 
-            const blobId = node.blob = meta.blobId;
+        saveNodeItsBlob(node, blob){
+            const mom = this.mom;
+            const meta = mom.#makeMetaForBlobOfTitle(blob, node.getTitle());
+
+            if (!this.#dictMeta) {
+                this.#dictMeta = mom.#blobs[this.graphId] ||= {}
+            }
             const blobs = this.#dictMeta;
+            const blobId = node.blob = meta.blobId;
             blobs[blobId] = meta;
 
-            const stored = this.mom.#stored;
+            const stored = mom.#stored;
             stored.saveBlobMeta(this.graphId, blobs);
             return stored.saveBlobData(blobId, blob);
         }
@@ -786,8 +806,9 @@ View.Graphs = class {
         if (node.isLink) (new LinkNode).init(node);
         if (node.isFileTree) FileTreeNode.init(node);
         if (node.blob) {
-            (importer || this.#stored).blobForBlobId(node.blob)
-                .then(this.#applyBlobToNode.bind(this, node))
+            const prom = (!importer) ? this.#stored.blobForBlobId(node.blob)
+                       : Promise.resolve(importer.blobForNode(node));
+            prom.then(this.#applyBlobToNode.bind(this, node));
         }
     }
     #applyBlobToNode(node, blob){
