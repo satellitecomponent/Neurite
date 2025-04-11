@@ -75,25 +75,42 @@ class NeuriteBackend {
             if (handleUnauthorized) return response;
             return handleNeuriteUnauthorized();
         }
-
         return response;
     }
 
     async #electronRequest(endpoint, requestOptions, isStreaming) {
+        const fullEndpoint = `/api${endpoint}`;
+        const encoder = new TextEncoder();
+    
         if (isStreaming) {
             const id = crypto.randomUUID();
-            const encoder = new TextEncoder();
-
+    
+            let responseHeaders = {};
+            let status = 200;
+            let statusText = '';
+    
             const stream = new ReadableStream({
                 start(controller) {
                     const onChunk = (event, data) => {
                         if (data.id !== id) return;
-
-                        if (data.chunk) controller.enqueue(encoder.encode(data.chunk));
+    
+                        if (data.streamMeta) {
+                            // Initial headers/status block
+                            responseHeaders = data.streamMeta.headers || {};
+                            status = data.streamMeta.status || 200;
+                            statusText = data.streamMeta.statusText || '';
+                            return;
+                        }
+    
+                        if (data.chunk) {
+                            controller.enqueue(encoder.encode(data.chunk));
+                        }
+    
                         if (data.done) {
                             controller.close();
                             window.electronAPI._removeStreamListener(onChunk);
                         }
+    
                         if (data.error) {
                             controller.error(new Error(data.error));
                             window.electronAPI._removeStreamListener(onChunk);
@@ -102,25 +119,36 @@ class NeuriteBackend {
                     window.electronAPI._addStreamListener(onChunk);
                 }
             });
-
-            window.electronAPI.sendStreamRequest(id, `/api${endpoint}`, requestOptions);
-
+    
+            window.electronAPI.sendStreamRequest(id, fullEndpoint, requestOptions);
+    
             return new Response(stream, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: new Headers(responseHeaders),
+                status,
+                statusText
             });
         }
-
-        const response = await window.electronAPI.secureFetch(endpoint, requestOptions);
-        return {
-            ok: response.ok,
-            status: response.status,
-            json: async () => response.data
-        };
+    
+        // --- Non-streaming ---
+        const raw = await window.electronAPI.secureFetch(fullEndpoint, requestOptions);
+    
+        const headers = new Headers(raw.headers || {});
+        const body = raw.isText
+            ? raw.body
+            : new Uint8Array(raw.body); // proxy.html sends byte array if not text
+    
+        return new Response(
+            raw.isText ? body : body.buffer,
+            {
+                status: raw.status,
+                statusText: raw.statusText || '',
+                headers
+            }
+        );
     }
 }
 
 window.NeuriteBackend = new NeuriteBackend();
-
 
 // neuritePanel.js
 
