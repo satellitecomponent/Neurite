@@ -40,13 +40,12 @@ class NodeMode {
         if (!this.skipCapsLockState(e)) return;
         if (e.key !== this.key || this.trigger !== "down") return;
         if (this.locked) return;
-    
+
         // Do not clear the previous node
         // Node.prev = null;
-    
+
         this.switch(0);
         this.autoToggleAllOverlays();
         e.stopPropagation();
     }
-    
 }

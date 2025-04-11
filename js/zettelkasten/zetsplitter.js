@@ -8,7 +8,7 @@ class ZetSplit {
     splitText(text) {
         let sections = [];
         const paragraphs = text.split(/\n\n+/);
-    
+
         paragraphs.forEach(paragraph => {
             const sentences = paragraph.match(/[^.!?]+[.!?]/g) || [paragraph];
             if (sentences.length > this.maxSentencesPerNote) {
@@ -17,9 +17,9 @@ class ZetSplit {
                 sections.push(paragraph);
             }
         });
-    
+
         return this._formatSections(sections);
-    }    
+    }
 
     _processLongParagraph(sentences, sections) {
         let currentChunk = '';

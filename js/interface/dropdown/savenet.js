@@ -14,7 +14,7 @@ class GraphsKeeper {
 
     deleteBlob(blobId){ return this.#blobData.delete(blobId) }
     deleteBlobMeta(graphId){ return this.#blobMeta.delete(graphId) }
-    #deleteBlobs = (dictMeta)=>{ 
+    #deleteBlobs = (dictMeta)=>{
         for (const blobId in dictMeta) this.deleteBlob(blobId)
     }
     deleteForMeta(meta){

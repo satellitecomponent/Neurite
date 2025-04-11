@@ -142,6 +142,7 @@ var settings = {
     renderWidthMult: 0.3, //1,
     regenDebtAdjustmentFactor: 1,
 
+    framesDelay: 0,
     useDelayedRendering: true,
     renderDelay: 0,
     renderStepSize: 0.1, //0.25,
@@ -266,7 +267,7 @@ class Tag {
         const input = e.currentTarget;
         const tag = input.value.trim();
         Tag[input.dataset.key] = (tag === '' ? ' ' : tag);
-        
+
         ZettelkastenParser.regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
         updateAllZetMirrorModes();
         updateAllZettelkastenProcessors();

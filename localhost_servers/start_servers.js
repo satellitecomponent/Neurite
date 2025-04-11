@@ -73,9 +73,9 @@ async function start() {
     const expectedServices = servers
       .filter(server => !(server.startNeurite && !startNeurite))
       .map(server => server.name);
-  
+
     const missingServices = expectedServices.filter(name => !mountedServices.includes(name));
-  
+
     if (missingServices.length === 0) {
       res.json({
         status: 'ok',

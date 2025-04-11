@@ -38,7 +38,7 @@ class ZettelkastenParser {
 
     removeEmptyPrompts() {
         const promptStart = PROMPT_IDENTIFIER;
-        const promptEnd = PROMPT_END; 
+        const promptEnd = PROMPT_END;
 
         const emptyPromptRegex = new RegExp(
             promptStart + "\\s*" + promptEnd, "g"
@@ -304,7 +304,7 @@ function updateAllCodeMirrorPlaceholders() {
   function generateCmPlaceholder() {
     const nodeTag = tagValues.nodeTag;
     const refTag = tagValues.refTag;
-    
+
     let refExample;
     if (isBracketLinks) {
       const closingBracket = bracketsMap[refTag];
@@ -312,7 +312,7 @@ function updateAllCodeMirrorPlaceholders() {
     } else {
       refExample = `${refTag}Reference`;
     }
-    
+
     return `
   To create notes...
 
@@ -384,7 +384,7 @@ CodeMirror.defineMode("custom", function (config, parserConfig) {
             if (stream.match(node, true)) return "node";
 
             if (bracketsMap[ref]) {
-                if (stream.match(ref, true)) return "ref"; 
+                if (stream.match(ref, true)) return "ref";
                 const closingBracket = bracketsMap[ref];
                 if (stream.match(closingBracket, true)) return "ref";
             } else if (stream.match(ref, true)) {
@@ -614,25 +614,25 @@ class ZettelkastenUI {
 
     highlightNodeTitles() {
         this.cm.getAllMarks().forEach(mark => mark.clear());
-    
+
         this.cm.eachLine((line) => {
             nodeTitles.forEach((title) => {
                 if (title.length < 1) return;
-    
+
                 const escapedTitle = RegExp.escape(title);
                 const regex = new RegExp(escapedTitle, "ig");
                 let match;
-    
+
                 while ((match = regex.exec(line.text))) {
                     const idx = match.index;
                     if (idx !== -1) {
                         const token = this.cm.getTokenAt(CodeMirror.Pos(line.lineNo(), idx));
-    
+
                         // Skip highlighting if the token belongs to a prompt block
                         if (token && token.type === "prompt-block") {
                             continue;
                         }
-    
+
                         this.cm.markText(
                             CodeMirror.Pos(line.lineNo(), idx),
                             CodeMirror.Pos(line.lineNo(), idx + title.length),
@@ -645,7 +645,7 @@ class ZettelkastenUI {
                 }
             });
         });
-    }    
+    }
 
     scrollToLine(cm, lineNumber) {
         const validLineNumber = Math.min(lineNumber, cm.lastLine());

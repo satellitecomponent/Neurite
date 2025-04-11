@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neurite</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self';
+    connect-src https:;
+    style-src 'self' 'unsafe-inline';
+  ">
+
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #999;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  Proxy Active
+  <script src="./proxy-handler.js"></script>
+</body>
+</html>

@@ -170,7 +170,7 @@ class Interface {
             const zc = Graph.vecToZ(this.rotateStartPos).minus(Graph.pan);
             const deltaRotation = Graph.applyRotationDelta(angleDelta);
             Graph.zoom_cmultWith(deltaRotation)
-                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));            
+                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
 
             this.rotatePrevPos = currentPos;
 
@@ -203,7 +203,7 @@ class Interface {
     onMouseDown = (e)=>{
         Graph.mouseDownPos_setXY(e.pageX, e.pageY);
         this.controlDragOccurred = false;
-        
+
         Node.prev = null;
 
         document.activeElement.blur();
@@ -300,13 +300,13 @@ class Interface {
         if (settings.zoomClick === "scroll" && App.nodeMode !== 1 && e.getModifierState(settings.rotateModifier)) {
             Autopilot.stop();
             this.coordsLive = true;
-        
+
             const angle = e.deltaY * settings.rotateModifierSpeed;
             const zc = Graph.vecToZ().minus(Graph.pan);
             const deltaRotation = Graph.applyRotationDelta(angle);
-            
+
             Graph.zoom_cmultWith(deltaRotation)
-                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));    
+                 .pan_incBy(zc.cmult(new vec2(1, 0).minus(deltaRotation)));
             e.stopPropagation();
             return;
         }
