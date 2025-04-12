@@ -6,6 +6,7 @@ const { createMainWindow } = require('./modules/windowmanager');
 const { initializeUpdater } = require('./modules/update');
 const { ensureServersDownloaded } = require('./modules/serverdownloader');
 const { setupSecureFetchHandler, destroySecureProxyWindow } = require('./modules/securefetch');
+const { stopFrontendServer } = require('./modules/frontendserver');
 
 app.whenReady().then(async () => {
     // Run updater and wait for possible restart
@@ -84,11 +85,24 @@ app.on('will-quit', () => {
     unregisterShortcuts();
 });
 
-app.on('before-quit', () => {
-    stopLocalServers();
-    destroySecureProxyWindow();
-});
+let isCleaningUp = false;
 
-app.on('window-all-closed', () => {
-    app.quit();
+app.on('before-quit', async (event) => {
+    if (isCleaningUp) return; // ⛔ prevent double cleanup
+    isCleaningUp = true;
+
+    console.log('[main] Running shutdown cleanup...');
+    event.preventDefault();
+
+    try {
+        await stopFrontendServer();
+        await stopLocalServers();
+        console.log('hello');
+        await destroySecureProxyWindow();
+        console.log('[main] Cleanup complete. Quitting now...');
+        app.exit(); // use exit to avoid loop
+    } catch (err) {
+        console.error('[main] Cleanup error:', err);
+        app.exit(1);
+    }
 });

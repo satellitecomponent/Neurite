@@ -93,10 +93,32 @@ function setupSecureFetchHandler() {
 }
 
 function destroySecureProxyWindow() {
-    if (secureProxyWindow && !secureProxyWindow.isDestroyed()) {
-        secureProxyWindow.close();
+    return new Promise((resolve) => {
+        if (!secureProxyWindow || secureProxyWindow.isDestroyed()) {
+            return resolve();
+        }
+
+        const win = secureProxyWindow;
         secureProxyWindow = null;
-    }
+
+        const handleClosed = () => {
+            console.log('[Secure Fetch] Proxy window closed.');
+            resolve();
+        };
+
+        win.once('closed', handleClosed);
+
+        // If close is ignored (e.g. hidden window), manually resolve after 100ms
+        win.close();
+
+        setTimeout(() => {
+            if (!win.isDestroyed()) {
+                console.warn('[Secure Fetch] Proxy window still not destroyed. Forcing cleanup.');
+                win.destroy(); // ensure we don't leak
+            }
+            resolve();
+        }, 100);
+    });
 }
 
 module.exports = {

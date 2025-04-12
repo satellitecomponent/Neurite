@@ -3,9 +3,12 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
+let server = null;
+let connections = new Set();
+
 function startFrontendServer(distPath, port = 8080) {
     return new Promise((resolve, reject) => {
-        const server = http.createServer((req, res) => {
+        server = http.createServer((req, res) => {
             if (!['GET', 'HEAD'].includes(req.method)) {
                 res.writeHead(405, {
                     'Content-Type': 'text/plain',
@@ -100,6 +103,11 @@ function startFrontendServer(distPath, port = 8080) {
             }
         });
 
+        server.on('connection', (socket) => {
+            connections.add(socket);
+            socket.on('close', () => connections.delete(socket));
+        });
+
         server.listen(port, '127.0.0.1', () => {
             const url = `http://localhost:${server.address().port}`;
             console.log('[frontend] Static server running at', url);
@@ -110,4 +118,25 @@ function startFrontendServer(distPath, port = 8080) {
     });
 }
 
-module.exports = { startFrontendServer };
+function stopFrontendServer() {
+    return new Promise((resolve) => {
+        if (!server) return resolve();
+
+        for (const socket of connections) {
+            socket.destroy(); // force shutdown
+        }
+        connections.clear();
+
+        server.close(() => {
+            console.log('[frontend] Static server stopped.');
+            server = null;
+            resolve();
+        });
+    });
+}
+
+
+module.exports = {
+    startFrontendServer,
+    stopFrontendServer
+};

@@ -97,11 +97,16 @@ async function startLocalServers(serversFolder) {
 }
 
 function stopLocalServers() {
-    if (!childProcess) return;
-    console.log('Stopping servers...');
-    treeKill(childProcess.pid, 'SIGKILL', err => {
-        if (err) console.error('Kill error:', err);
-        childProcess = null;
+    return new Promise((resolve) => {
+        if (!childProcess) return resolve();
+
+        console.log('[serverManager] Stopping servers...');
+        treeKill(childProcess.pid, 'SIGKILL', err => {
+            if (err) console.error('Kill error:', err);
+            else console.log('[serverManager] Local server process killed.');
+            childProcess = null;
+            resolve();
+        });
     });
 }
 
