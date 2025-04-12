@@ -1,17 +1,18 @@
 ﻿window.addEventListener('message', async function (event) {
-    const trustedOrigin = 'https://neurite.network' || 'https://test.neurite.network';
-    if (event.origin !== trustedOrigin) {
-        Logger.warn('Invalid origin from redirect:', event.origin);
+    const data = event.data;
+    const origin = event.origin;
+    console.log('[frontend] Received postMessage:', origin, data);
+
+    if (!window.NeuriteEnv.isTrustedMessageOrigin(origin)) {
+        Logger.warn('Invalid origin from redirect:', origin);
         return;
     }
 
-    const { type, email, status, error } = event.data;
+    const { type, email, status, error } = data;
 
-    if (type === 'auth') {
-        if (email) {
-            updateSignInState(email);
-            neuritePanel.open(true);
-        }
+    if (type === 'auth' && email) {
+        updateSignInState(email);
+        neuritePanel.open(true);
     } else if (type === 'stripe') {
         if (status === 'success') {
             neuritePanel.open(true);
@@ -64,15 +65,19 @@ async function signIn() {
         const redirectPage = window.NeuriteEnv.isTest
             ? 'https://test.neurite.network/resources/verify.html'
             : 'https://neurite.network/resources/verify.html';
-        
+
         const workerUrl = `${backendBase}/api/oauth`;
         const frontendOrigin = window.location.origin;
 
-        const popupUrl = `${redirectPage}?workerUrl=${encodeURIComponent(workerUrl)}&siteKey=${encodeURIComponent(turnstilePublicKey)}&origin=${encodeURIComponent(frontendOrigin)}`;     
-        const popup = window.open(popupUrl, 'Verification', 'width=500,height=600');
+        const popupUrl = `${redirectPage}?workerUrl=${encodeURIComponent(workerUrl)}&siteKey=${encodeURIComponent(turnstilePublicKey)}&origin=${encodeURIComponent(frontendOrigin)}`;
 
-        if (!popup) {
-            alert("Please enable popups for this site to complete the verification.");
+        if (window.NeuriteEnv.isElectronWithLocalFrontend) {
+            window.electronAPI.openPopupViaProxy(popupUrl);
+        } else {
+            const popup = window.open(popupUrl, 'Verification', 'width=500,height=600');
+            if (!popup) {
+                alert("Please enable popups for this site to complete the verification.");
+            }
         }
     } catch (error) {
         Logger.err("Sign-in failed:", error);

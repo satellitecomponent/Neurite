@@ -31,14 +31,14 @@ class NodeView {
         const titleInput = Html.make.input('title-input');
         titleInput.setAttribute('type', 'text');
         titleInput.setAttribute('value', title);
-        
+
         const copyBtn = Html.make.div('copy-button');
         copyBtn.setAttribute('title', 'Copy title');
         const copyIcon = Elem.deepClone(Elem.byId('copy-icon-template'));
         copyIcon.style.display = ''; // unhide
         copyIcon.setAttribute('class', 'copy-icon'); // ✅ set the class here
         copyBtn.appendChild(copyIcon);
-        
+
         inputWrapper.appendChild(titleInput);
         inputWrapper.appendChild(copyBtn);
         headerContainer.appendChild(inputWrapper);
@@ -75,7 +75,7 @@ class NodeView {
 
     bindDOMRefs() {
         const div = this.div;
-    
+
         this.headerContainer = div?.querySelector('.header-container') || null;
         this.titleInputWrapper = this.headerContainer?.querySelector('.title-input-wrapper') || null;
         this.titleInput = this.titleInputWrapper?.querySelector('.title-input') || null;
@@ -115,9 +115,9 @@ class NodeView {
                 const dragThreshold = 10; // pixels
                 if (distanceMoved < dragThreshold) App.selectedNodes.toggleNode(node);
             }
-        
+
             if (e.button !== 2) App.menuContext.hide(); // not right mouse button
-        });        
+        });
 
         On.mousedown(windowDiv, (e)=>{
             Autopilot.stop();
@@ -138,19 +138,19 @@ class NodeView {
         On.dblclick(windowDiv, (e) => {
             const isTextArea = e.target.tagName === 'TEXTAREA';
             const isContentEditable = e.target.closest('[contenteditable="true"]');
-        
+
             const isTextInteraction = isTextArea || isContentEditable;
             const altHeld = e.getModifierState(controls.altKey.value);
-        
+
             if (isTextInteraction && !altHeld) {
                 return; // Don’t toggle anchoring if inside text and Alt is not held
             }
-        
+
             node.anchor = node.pos;
             node.anchorForce = 1 - node.anchorForce;
             node.toggleWindowAnchored(node.anchorForce === 1);
             e.stopPropagation();
-        });        
+        });
     }
 
     setTitleInputListeners(){
@@ -165,7 +165,7 @@ class NodeView {
             container.addEventListener('mouseleave', () => {
                 copyBtn.style.visibility = 'hidden';
             });
-        
+
             On.click(copyBtn, async () => {
                 try {
                     titleInput.select();
@@ -203,21 +203,21 @@ class NodeView {
     rewindowify() {
         const node = this.model;
         this.init();
-    
+
         node.push_extra("window");
         const buttons = this.buttons || this.headerContainer;
-    
+
         const btnDel = buttons.querySelector('#button-delete');
         const btnFs = buttons.querySelector('#button-fullscreen');
         const btnCol = buttons.querySelector('#button-collapse');
-    
+
         btnDel.classList.add('windowbutton');
         btnFs.classList.add('windowbutton');
         btnCol.classList.add('windowbutton');
-    
+
         // Track buttons with their style mode
         this.svgButtons = [];
-    
+
         this.svgButtons.push([btnDel, "fill"]);
         this.applySvgButtonUI(btnDel, () => {
             const title = node.getTitle();
@@ -232,7 +232,7 @@ class NodeView {
                 nodeInfo.parser.deleteNodeByTitle(title);
             }
         });
-    
+
         this.svgButtons.push([btnFs, "fill"]);
         this.applySvgButtonUI(btnFs, () => {
             Autopilot.zoomToFitFrame(node).targetZoom_scaleBy(1.2).start();
@@ -242,50 +242,50 @@ class NodeView {
                 App.zetPanes.switchPane(nodeInfo.paneId);
             }
         });
-    
+
         this.svgButtons.push([btnCol, "stroke"]);
         this.applySvgButtonUI(btnCol, this.toggleCollapse.bind(this), "stroke");
-    
+
         On.mouseup(document, (e) => {
             if (node.followingMouse) node.stopFollowingMouse();
         });
-    
+
         if (this.titleInput) {
             On.focus(this.titleInput, () => this.updateSvgStrokeColor(true));
             On.blur(this.titleInput, () => this.updateSvgStrokeColor(false));
         }
-    }    
+    }
 
     updateSvgStrokeColor = (focused) => {
         const node = this.model;
         const style = focused ? 'focus' : 'initial';
-    
+
         for (const [btn, mode] of this.svgButtons || []) {
             this.setSvgButtonStyle(btn, style, mode);
         }
-    
+
         if (node.displayDiv) node.displayDiv.classList.toggle('focused', focused);
         this.resizeHandle.classList.toggle('focused', focused);
-    };    
+    };
 
     setSvgButtonStyle(btn, state, mode = "fill") {
         const [fill, stroke] = settings.buttonGraphics[state];
-    
+
         // Background
         if (btn.children[0]) btn.children[0].setAttribute("fill", fill);
-    
+
         // Main shape
         if (btn.children[1]) {
             if (mode === "stroke") btn.children[1].setAttribute("stroke", stroke);
             else btn.children[1].setAttribute("fill", stroke);
         }
-    
+
         // Secondary shape (e.g. refresh arrowhead)
         if (btn.children[2] && btn.children[2].tagName !== "rect") {
             if (mode === "stroke") btn.children[2].setAttribute("stroke", stroke);
             else btn.children[2].setAttribute("fill", stroke);
         }
-    }    
+    }
 
     applySvgButtonUI(btn, cb = () => {}, mode = "fill") {
         const input = this.titleInput;
@@ -327,17 +327,17 @@ class NodeView {
         const svgNs = "http://www.w3.org/2000/svg";
         const buttons = this.buttons;
         if (!buttons) return;
-    
+
         // Prevent duplicate creation
         if (buttons.querySelector(`#${id}`)) {
             return buttons.querySelector(`#${id}`);
         }
-    
+
         const g = document.createElementNS(svgNs, "g");
         g.setAttribute("id", id);
         g.setAttribute("transform", `scale(0.125 0.125) translate(${translateX} 1)`);
         g.classList.add("windowbutton");
-    
+
         // Button background
         const bg = document.createElementNS(svgNs, "rect");
         bg.setAttribute("x", "0");
@@ -347,11 +347,11 @@ class NodeView {
         bg.setAttribute("fill", "RGB(100,100,100)");
         bg.setAttribute("stroke", "none");
         g.appendChild(bg);
-    
+
         // Icon from symbol
         const symbol = document.getElementById(iconId);
         if (!symbol) return;
-    
+
         for (const child of symbol.children) {
             const clone = child.cloneNode(true);
             if (clone instanceof SVGGeometryElement || clone instanceof SVGElement) {
@@ -359,7 +359,7 @@ class NodeView {
                 g.appendChild(clone);
             }
         }
-    
+
         // Transparent click area
         const overlay = document.createElementNS(svgNs, "rect");
         overlay.setAttribute("x", "0");
@@ -369,16 +369,16 @@ class NodeView {
         overlay.setAttribute("fill", "transparent");
         overlay.setAttribute("stroke", "none");
         g.appendChild(overlay);
-    
+
         buttons.appendChild(g);
         this.applySvgButtonUI(g, clickHandler, mode);
         this.updateButtonContainerSize();
-    
+
         if (!this.svgButtons) this.svgButtons = [];
         this.svgButtons.push([g, mode]);
-    
+
         return g;
-    }    
+    }
 
     static addAtNaturalScale(node, title, content, window_it = true){
         if (window_it) {
@@ -435,7 +435,7 @@ class NodeView {
 
         let lastCall = 0;
         const throttleMs = 8; // ~125 FPS cap
-        
+
         const handleMouseMove = (e) => {
             const now = performance.now();
             if (now - lastCall < throttleMs) return;
@@ -474,25 +474,25 @@ class NodeView {
                     maxHeight: '100%',
                     width: '100%',
                 });
-            
+
             if (node.htmlView?.style)
                 setStyles(node.htmlView.style, {
                     width: '100%',
                     height: '100%',
                 });
-            
+
             if (node.viewerWrapper?.style)
                 setStyles(node.viewerWrapper.style, {
                     width: '100%',
                     height: '100%',
                 });
-            
+
             if (node.ainodewrapperDiv?.style)
                 setStyles(node.ainodewrapperDiv.style, {
                     flexGrow: '1',
                     width: '100%',
                 });
-            
+
             if (node.fileTreeContainer?.style)
                 setStyles(node.fileTreeContainer.style, {
                     width: '100%',
@@ -504,7 +504,7 @@ class NodeView {
             e.stopPropagation();
             // Use the helper to add an overlay
             OverlayHelper.add('nwse-resize');
-            
+
             startX = e.pageX;
             startY = e.pageY;
             startWidth = parseInt(document.defaultView.getComputedStyle(windowDiv).width, 10);
@@ -513,7 +513,7 @@ class NodeView {
             On.mousemove(document, handleMouseMove);
             On.mouseup(document, handleMouseUp);
         });
-        
+
         const handleMouseUp = () => {
             isMouseMoving = false;
             Off.mousemove(document, handleMouseMove);
@@ -581,13 +581,13 @@ const OverlayHelper = {
 
     remove() {
         if (!this.overlay) return;
-    
+
         document.body.style.cursor = 'auto';
-    
+
         try {
             this.overlay.remove();
         } catch (_) {}
-    
+
         this.overlay = null;
     }
 };

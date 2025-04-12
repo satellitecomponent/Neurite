@@ -50,6 +50,7 @@ Autopilot.update = function(time){
 }
 
 class NodeSimulation {
+    framesLeftToSkip = 0;
     mousePath = [];
     mousePathPos = new vec2(0, 0);
     svg_mousePath = svg.getElementById('mousePath');
@@ -112,8 +113,10 @@ class NodeSimulation {
             const alpha = Math.exp(-1 * dt / 1000);
             avgfps = avgfps * alpha + (1 - alpha) * 1000 / dt;
         }
-        Elem.byId('debug_layer').children[1].textContent = "fps:" + avgfps;
-        Elem.byId('fps').textContent = Math.round(avgfps).toString() + " fps";
+        const rounded = (avgfps > 1) ? Math.round(avgfps)
+                      : Math.round(avgfps * 10) / 10;
+        Elem.byId('debug_layer').children[1].textContent = "fps:" + rounded;
+        Elem.byId('fps').textContent = rounded + " fps";
         return dt;
     }
 
@@ -143,6 +146,14 @@ class NodeSimulation {
     }
 
     nodeStep = (time)=>{
+        this.framesLeftToSkip -= 1;
+        if (this.framesLeftToSkip > 0) {
+            return window.requestAnimationFrame(this.nodeStep)
+        }
+
+        const delay = settings.framesDelay;
+        this.framesLeftToSkip = Math.round((delay + 2) ** 2 / 4);
+
         if (App.selectedNodes.uuids.size > 0) this.processSelectedNodes();
 
         Autopilot.update(time);

@@ -9,7 +9,7 @@ class Path {
             const contentType = res.headers.get('Content-Type');
             Logger.debug("Response Content-Type:", contentType);
             Logger.debug("Response Status:", res.status);
-        
+
             if (!contentType || !contentType.includes('application/json')) {
                 return res.text().then(text => {
                     Logger.err("Unexpected response:", text);
@@ -106,22 +106,22 @@ class FileTree {
     async loadDirectory(path, parentElement) {
         if (!useProxy) {
             const errorElement = Html.new.p();
-        
+
             // Set innerHTML so we can use <br> for line breaks
             errorElement.innerHTML = `
                 The Localhost servers for Neurite are not enabled.<br><br>
             `;
-        
+
             const releaseUrl = 'https://github.com/satellitecomponent/Neurite/releases/latest?tag=electron';
             const linkElement = Html.make.a(releaseUrl);
             linkElement.textContent = 'Download Neurite Desktop';
-        
+
             linkElement.target = '_blank';
             linkElement.rel = 'noopener noreferrer';
-        
+
             errorElement.appendChild(document.createElement('br'));
             errorElement.appendChild(linkElement);
-        
+
             parentElement.appendChild(errorElement);
             return;
         }

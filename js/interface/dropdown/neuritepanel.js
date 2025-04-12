@@ -14,6 +14,14 @@ window.NeuriteEnv = {
         if (this.isProd) return 'https://neurite.network';
         if (this.isTest) return 'https://test.neurite.network';
         return null; // Electron-local and dev-hosted must proxy
+    },
+
+    isTrustedMessageOrigin(origin) {
+        return (
+            origin === 'https://neurite.network' ||
+            origin === 'https://test.neurite.network' ||
+            (this.isElectron && (origin === 'null' || origin.startsWith('http://localhost')))
+        );
     }
 }
 
@@ -45,7 +53,7 @@ class NeuriteBackend {
             },
             ...options
         };
-        
+
         try {
             const response = window.NeuriteEnv.isElectronWithLocalFrontend
                 ? await this.#electronRequest(endpoint, requestOptions, isStreaming)
@@ -75,25 +83,42 @@ class NeuriteBackend {
             if (handleUnauthorized) return response;
             return handleNeuriteUnauthorized();
         }
-
         return response;
     }
 
     async #electronRequest(endpoint, requestOptions, isStreaming) {
+        const fullEndpoint = `/api${endpoint}`;
+        const encoder = new TextEncoder();
+    
         if (isStreaming) {
             const id = crypto.randomUUID();
-            const encoder = new TextEncoder();
-
+    
+            let responseHeaders = {};
+            let status = 200;
+            let statusText = '';
+    
             const stream = new ReadableStream({
                 start(controller) {
                     const onChunk = (event, data) => {
                         if (data.id !== id) return;
-
-                        if (data.chunk) controller.enqueue(encoder.encode(data.chunk));
+    
+                        if (data.streamMeta) {
+                            // Initial headers/status block
+                            responseHeaders = data.streamMeta.headers || {};
+                            status = data.streamMeta.status || 200;
+                            statusText = data.streamMeta.statusText || '';
+                            return;
+                        }
+    
+                        if (data.chunk) {
+                            controller.enqueue(encoder.encode(data.chunk));
+                        }
+    
                         if (data.done) {
                             controller.close();
                             window.electronAPI._removeStreamListener(onChunk);
                         }
+    
                         if (data.error) {
                             controller.error(new Error(data.error));
                             window.electronAPI._removeStreamListener(onChunk);
@@ -102,25 +127,36 @@ class NeuriteBackend {
                     window.electronAPI._addStreamListener(onChunk);
                 }
             });
-
-            window.electronAPI.sendStreamRequest(id, `/api${endpoint}`, requestOptions);
-
+    
+            window.electronAPI.sendStreamRequest(id, fullEndpoint, requestOptions);
+    
             return new Response(stream, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: new Headers(responseHeaders),
+                status,
+                statusText
             });
         }
-
-        const response = await window.electronAPI.secureFetch(endpoint, requestOptions);
-        return {
-            ok: response.ok,
-            status: response.status,
-            json: async () => response.data
-        };
+    
+        // --- Non-streaming ---
+        const raw = await window.electronAPI.secureFetch(fullEndpoint, requestOptions);
+    
+        const headers = new Headers(raw.headers || {});
+        const body = raw.isText
+            ? raw.body
+            : new Uint8Array(raw.body); // proxy.html sends byte array if not text
+    
+        return new Response(
+            raw.isText ? body : body.buffer,
+            {
+                status: raw.status,
+                statusText: raw.statusText || '',
+                headers
+            }
+        );
     }
 }
 
 window.NeuriteBackend = new NeuriteBackend();
-
 
 // neuritePanel.js
 
@@ -347,9 +383,27 @@ class BalanceHandler {
         }
 
         try {
-            const paymentTab = window.open('about:blank', '_blank', 'width=500,height=600');
             const sessionId = await this.createCheckoutSession(roundedAmount);
-            this.initPaymentTab(paymentTab, sessionId);
+            const keys = await updatePublicKeys();
+            const stripePublicKey = keys.stripePublicKey;
+            
+            if (!stripePublicKey) throw new Error('Stripe public key not available');
+            
+            const redirectPage = window.NeuriteEnv.isTest
+                ? 'https://test.neurite.network/resources/striperedirect.html'
+                : 'https://neurite.network/resources/striperedirect.html';
+            
+            const origin = window.location.origin;
+            const stripeRedirectUrl = `${redirectPage}?sessionId=${encodeURIComponent(sessionId)}&pk=${encodeURIComponent(stripePublicKey)}&origin=${encodeURIComponent(origin)}`;
+            
+            if (window.NeuriteEnv.isElectronWithLocalFrontend) {
+                window.electronAPI.openPopupViaProxy(stripeRedirectUrl);
+            } else {
+                const popup = window.open(stripeRedirectUrl, 'StripePayment', 'width=500,height=600');
+                if (!popup) {
+                    alert("Please enable popups for this site to complete the payment.");
+                }
+            }
         } catch (error) {
             // Error handling
             if (error.message.includes('Exceeds maximum balance')) {
@@ -359,35 +413,6 @@ class BalanceHandler {
                 alert('Error initiating add funds: ' + error.message);
             }
         }
-    }
-
-    // Method within your class to initialize the payment tab and load Stripe.js
-    initPaymentTab(paymentTab, sessionId) {
-        paymentTab.document.body.innerHTML = '<p>Redirecting to payment...</p>';
-        const stripeScript = paymentTab.document.createElement('script');
-        stripeScript.src = 'https://js.stripe.com/v3/';
-
-        stripeScript.onload = async () => {
-            // Retrieve the Stripe key
-            const keys = await updatePublicKeys();
-            const stripePublicKey = keys.stripePublicKey;
-
-            if (stripePublicKey) {
-                // Create and inject a script to initiate Stripe with the session ID
-                const redirectScript = `
-                const stripe = Stripe('${stripePublicKey}'); 
-                stripe.redirectToCheckout({ sessionId: '${sessionId}' }).catch((error) => {
-                    document.body.innerHTML = 'Error: ' + error.message;
-                });
-            `;
-                const scriptTag = paymentTab.document.createElement('script');
-                scriptTag.text = redirectScript;
-                paymentTab.document.body.appendChild(scriptTag);
-            }
-        };
-
-        // Append Stripe.js to the payment tab
-        paymentTab.document.head.appendChild(stripeScript);
     }
 
     // Fetch the user's balance directly from the Stripe Worker

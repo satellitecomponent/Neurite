@@ -116,7 +116,7 @@
     let searchQuery = null;
     let filteredKeys = null;
     const allConnectedNodesData = await node.getAllConnectedNodesData(true);
-    
+
     if (
         isGoogleSearchEnabled(nodeIndex) ||
         (filteredKeys = await isEmbedEnabled(node)) ||
@@ -128,7 +128,7 @@
             Logger.err("In constructing search query:", err);
         }
     }
-    
+
     if (isGoogleSearchEnabled(nodeIndex)) {
         const content = handleNaturalLanguageSearch(searchQuery, latestUserMessage);
         aiCall.addSystemPrompt(Prompt.googleSearch(content));

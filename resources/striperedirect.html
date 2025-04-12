@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Stripe Redirect</title>
+</head>
+<body>
+    <p>Redirecting to Stripe...</p>
+    <script>
+        (async () => {
+            try {
+                const params = new URLSearchParams(location.search);
+                const sessionId = params.get('sessionId');
+                const publicKey = params.get('pk');
+
+                if (!sessionId || !publicKey) {
+                    throw new Error('Missing session ID or Stripe public key.');
+                }
+
+                const stripeScript = document.createElement('script');
+                stripeScript.src = 'https://js.stripe.com/v3/';
+                stripeScript.onload = () => {
+                    const stripe = Stripe(publicKey);
+                    stripe.redirectToCheckout({ sessionId }).catch(err => {
+                        document.body.innerHTML = 'Error: ' + err.message;
+                    });
+                };
+                document.head.appendChild(stripeScript);
+            } catch (e) {
+                document.body.innerHTML = 'Error: ' + e.message;
+                console.error(e);
+            }
+        })();
+    </script>
+</body>
+</html>

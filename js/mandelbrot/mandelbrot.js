@@ -201,7 +201,7 @@ Svg.updateViewbox = function() {
     }
 
     // Synchronously recalc if needed (before viewBox computation)
-    if (this.needsRecalc) this.recalc(); 
+    if (this.needsRecalc) this.recalc();
 
     // Recompute values with latest pan/zoom after potential changes
     const updated_zoom_mag = Graph.zoom.mag();
@@ -568,8 +568,8 @@ function gaussianRandom2() {
 }
 
 Fractal.sample_random_point = function(){
-    if (Math.random() <= flashlight_fraction){
-        return gaussianRandom2().scale(flashlight_stdev)
+    if (Math.random() <= settings.flashlight_fraction){
+        return gaussianRandom2().scale(settings.flashlight_stdev)
             .cmult(Graph.zoom).cadd(Graph.vecToZ())
     }
 
@@ -628,7 +628,7 @@ Fractal.generate_path_data = function(pt, num_pts_max) {
         length /= 4;
     } else { //outside the set
         if (Fractal.dist(iters, pt) < settings.maxDist) return null;
-        for (let next_pt of Fractal.trace_circle(iters, pt, 
+        for (let next_pt of Fractal.trace_circle(iters, pt,
             Math.random() > 0.5 ? settings.renderStepSize : -settings.renderStepSize)) {
             if (!next_pt?.isFinite?.()) break;
             originalPoints.push(next_pt);
@@ -659,12 +659,12 @@ Fractal.build_path_d = function(points) {
     const svgPoints = points
         .map(p => p?.toSvg?.())
         .filter(p => p?.isFinite?.());
-    
+
     if (!svgPoints.length) return '';
-    
+
     let path = `M ${svgPoints[0].x} ${svgPoints[0].y}`;
     if (svgPoints.length > 1) {
-        path += ` ${settings.renderDChar} ${svgPoints.slice(1).map(p => 
+        path += ` ${settings.renderDChar} ${svgPoints.slice(1).map(p =>
             `${p.x} ${p.y}`
         ).join(' ')}`;
     }
@@ -731,12 +731,12 @@ Fractal.animate_path_removal = async function(path) {
         let originalPoints = rawPoints
             .filter(p => typeof p?.x === 'number' && typeof p?.y === 'number')
             .map(p => new vec2(p.x, p.y));
-        
+
         const dynamicDelay = Math.max(10, settings.renderDelay / settings.regenDebtAdjustmentFactor);
-        
+
         while (originalPoints.length > 1) {
             await Promise.delay(dynamicDelay);
-            originalPoints.shift(); 
+            originalPoints.shift();
             path.setAttribute('data-original-points', JSON.stringify(originalPoints));
             path.setAttribute('d', Fractal.build_path_d(originalPoints));
         }
@@ -759,7 +759,7 @@ Fractal.cull_extra_lines = function() {
     // Get all non-preserved lines
     const allLines = Array.from(svg_bg.children)
         .filter(path => Fractal.isNotPreserved(path));
-        
+
     // Count only non-animating, non-removing lines against the limit
     const activeCount = allLines.filter(path =>
         !path.hasAttribute('data-animating') &&

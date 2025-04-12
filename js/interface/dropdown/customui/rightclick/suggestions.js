@@ -12,12 +12,12 @@
         On.wheel(this.container, e => {
             e.stopPropagation();
         }, true);
-    
+
         On.contextmenu(this.container, e => {
             e.preventDefault();
             e.stopPropagation();
         }, true);
-    
+
         document.body.appendChild(this.container);
     }
     position(x, y) {

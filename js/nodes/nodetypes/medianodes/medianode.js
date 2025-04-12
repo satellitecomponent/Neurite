@@ -8,7 +8,7 @@ function createMediaNode(type, metadataOrFile, url) {
         On.loadedmetadata(elem, () => {
             const maxHeight = 600;
             if (elem.videoHeight <= maxHeight) return;
-    
+
             const aspectRatio = elem.videoWidth / elem.videoHeight;
             elem.style.height = maxHeight + 'px';
             elem.style.width = (maxHeight * aspectRatio) + 'px';
