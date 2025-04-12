@@ -1,0 +1,77 @@
+name: Frontend Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: 'Create as draft release?'
+        required: false
+        default: 'true'
+      prerelease:
+        description: 'Mark as prerelease?'
+        required: false
+        default: 'false'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies and build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Generate timestamp version
+        id: version
+        run: |
+          timestamp=$(date +'%Y.%m.%d.%H%M%S')
+          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+          echo "tag=frontend-$timestamp" >> $GITHUB_OUTPUT
+
+      - name: Zip dist/ output
+        run: |
+          mkdir release
+          cd dist
+          zip -r ../release/frontend.zip .
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Create GitHub release
+        run: |
+          FLAGS=""
+          if [[ "${{ github.event.inputs.draft }}" == "true" ]]; then
+            FLAGS="$FLAGS --draft"
+          fi
+          if [[ "${{ github.event.inputs.prerelease }}" == "true" ]]; then
+            FLAGS="$FLAGS --prerelease"
+          fi
+          
+          gh release create ${{ steps.version.outputs.tag }} release/frontend.zip \
+            --title "Frontend ${{ steps.version.outputs.timestamp }}" \
+            --notes "Neurite's frontend built using Vite" \
+            $FLAGS
+
+      - name: Delete older frontend-* releases (keep latest)
+        run: |
+          gh release list --limit 100 --json tagName,createdAt \
+          | jq -r '.[] | select(.tagName | startswith("frontend-")) | "\(.createdAt) \(.tagName)"' \
+          | sort -r \
+          | tail -n +2 \
+          | awk '{print $2}' \
+          | xargs -r -n 1 gh release delete -y
