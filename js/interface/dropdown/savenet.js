@@ -435,6 +435,11 @@ View.Graphs = class {
         this.#btnClear.text = "Clear";
     }
 
+    #onBtnResetSettingsClicked(e){
+        settings.clear();
+        settings.init();
+        editTab.init();
+    }
     #onBtnClearLocalClicked = (e)=>{
         localStorage.clear();
         Stored.drop('Neurite');
@@ -834,6 +839,7 @@ View.Graphs = class {
         On.click(this.#btnClear, this.#onBtnClearClicked);
         On.click(this.#btnClearSure, this.#onBtnClearSureClicked);
         On.click(this.#btnClearUnsure, this.#onBtnClearUnsureClicked);
+        On.click(Elem.byId('resetSettings'), this.#onBtnResetSettingsClicked);
         On.click(Elem.byId('clearLocalStorage'), this.#onBtnClearLocalClicked);
         On.click(Elem.byId('new-save-button'), (e)=>this.#saver.save() );
 

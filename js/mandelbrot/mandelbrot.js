@@ -568,8 +568,8 @@ function gaussianRandom2() {
 }
 
 Fractal.sample_random_point = function(){
-    if (Math.random() <= flashlight_fraction){
-        return gaussianRandom2().scale(flashlight_stdev)
+    if (Math.random() <= settings.flashlight_fraction){
+        return gaussianRandom2().scale(settings.flashlight_stdev)
             .cmult(Graph.zoom).cadd(Graph.vecToZ())
     }
 

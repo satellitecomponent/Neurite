@@ -116,7 +116,35 @@ var controls = {
     }
 };
 
-var settings = {
+class Settings {
+    #stored = new Stored('settings');
+    constructor(){
+        const defaults = Settings.default;
+        for (const name in defaults) {
+            Object.defineProperty(this, name, {
+                get: this.get.bind(this, '_' + name),
+                set: this.set.bind(this, name)
+            })
+        }
+
+        this.init();
+        this.#stored.table.iterate(this.#set.bind(this));
+    }
+
+    clear(){ this.#stored.clear() }
+    init(){
+        const defaults = Settings.default;
+        for (const name in defaults) this.#set(defaults[name], name);
+    }
+
+    get(key){ return this[key] }
+    set(name, val){
+        this.#stored.save(name, val);
+        this.#set(val, name);
+    }
+    #set(val, name){ this['_' + name] = val }
+}
+Settings.default = {
     zoomSpeed: 0.001,
     dragZoomSpeed: 0.005,
     panSpeed: 1,
@@ -139,6 +167,8 @@ var settings = {
 
     //slider adjustment
     maxLines: 128,
+    renderLength: 50,
+    renderQuality: 16,
     renderWidthMult: 0.3, //1,
     regenDebtAdjustmentFactor: 1,
 
@@ -175,11 +205,12 @@ var settings = {
     innerOpacity: 1,
     outerOpacity: 1,
 
-    defaultSearchEngine: 'google' // Brave, Bing, DuckDuckGo, Google
-}
+    defaultSearchEngine: 'google', // Brave, Bing, DuckDuckGo, Google
 
-var flashlight_stdev = 0.25; // this is the radius of the flashlight
-var flashlight_fraction = 0.73; // this is what fraction of samples are diverted to the flashlight
+    flashlight_stdev: 0.25, // radius of the flashlight
+    flashlight_fraction: 0.73 // fraction of samples diverted to the flashlight
+}
+const settings = new Settings();
 
 
 
@@ -543,10 +574,6 @@ Event.preventDefault = function(e){ e.preventDefault() }
 Event.stopPropagation = function(e){ e.stopPropagation() }
 Event.stopPropagationByNameForThis = function(eName){
     On[eName](this, Event.stopPropagation)
-}
-
-function triggerInputEvent(elementId) {
-    Elem.byId(elementId).dispatchEvent(new Event('input'))
 }
 
 function clearTextSelections() {
