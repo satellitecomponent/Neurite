@@ -469,13 +469,13 @@ Forget tabs! Neurite is all about graphs. Open as many browser windows as you wa
 ## Download the latest version of **Neurite Desktop** ↓
 <table align="center">
   <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.12.042626/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a></td>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/latest/download/Neurite.Setup.1.0.0.exe" target="_blank">Windows</a></td>
   </tr>
   <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.12.042626/Neurite-1.0.0.AppImage" target="_blank">Linux</a></td>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/latest/download/Neurite-1.0.0.AppImage" target="_blank">Linux</a></td>
   </tr>
-    <tr>
-    <td><a href="https://github.com/satellitecomponent/Neurite/releases/download/electron-2025.04.12.042626/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a></td>
+  <tr>
+    <td><a href="https://github.com/satellitecomponent/Neurite/releases/latest/download/Neurite-1.0.0-arm64.dmg" target="_blank">macOS</a></td>
   </tr>
 </table>
 
