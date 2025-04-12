@@ -5,12 +5,13 @@ const { isLocalServerRunning, startLocalServers, stopLocalServers } = require('.
 const { createMainWindow } = require('./modules/windowmanager');
 const { initializeUpdater } = require('./modules/update');
 const { ensureServersDownloaded } = require('./modules/serverdownloader');
+const { setupSecureFetchHandler, destroySecureProxyWindow } = require('./modules/securefetch');
 
 app.whenReady().then(async () => {
     // Run updater and wait for possible restart
     const shouldContinue = await initializeUpdater();
     if (!shouldContinue) return;
-
+    
     const loadingWindow = createLoadingWindow();
 
     loadingWindow.on('closed', () => {
@@ -22,8 +23,10 @@ app.whenReady().then(async () => {
         }
     });
 
-    // Create the main window in hidden mode so it can load in the background.
-    const mainWindow = createMainWindow();
+    setupSecureFetchHandler();
+
+    // Create the main window
+    const mainWindow = await createMainWindow();
     registerShortcuts();
 
     // Server readiness
@@ -55,7 +58,7 @@ app.whenReady().then(async () => {
     await Promise.all([serversPromise, rendererPromise]);
 
     try {
-        await mainWindow.webContents.executeJavaScript('Host?.checkServer?.()');
+        await mainWindow.webContents.executeJavaScript('Host?.checkServer?.();');
     } catch (err) {
         console.warn('[main] Renderer hook failed:', err);
     }
@@ -71,19 +74,21 @@ app.whenReady().then(async () => {
             createMainWindow().show();
         }
     });
+
+    mainWindow.on('closed', () => {
+        app.quit();
+    });
 });
 
 app.on('will-quit', () => {
     unregisterShortcuts();
 });
 
-// Clean up when quitting the app
 app.on('before-quit', () => {
     stopLocalServers();
+    destroySecureProxyWindow();
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    app.quit();
 });

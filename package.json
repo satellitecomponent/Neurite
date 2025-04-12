@@ -12,7 +12,8 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "axios": "^1.7.9",
-    "tree-kill": "^1.2.2"
+    "tree-kill": "^1.2.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "electron": "^34.0.1",

@@ -1,8 +1,10 @@
 const { BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const { buildContextMenu } = require('./contextmenu');
+const { ensureFrontendDownloaded } = require('./frontendupdater');
+const { startFrontendServer } = require('./frontendserver');
 
-function createMainWindow() {
+async function createMainWindow() {
     Menu.setApplicationMenu(null);
 
     const isMac = process.platform === 'darwin'; // Check if macOS
@@ -30,7 +32,19 @@ function createMainWindow() {
         trafficLightPosition: isMac ? { x: 6, y: 4 } : undefined, // Adjust inset position
     });
 
-    mainWindow.loadURL('https://neurite.network');
+    const frontendPath = await ensureFrontendDownloaded();
+
+    try {
+        if (frontendPath) {
+            const frontendUrl = await startFrontendServer(frontendPath);
+            await mainWindow.loadURL(frontendUrl); // await this!
+        } else {
+            await mainWindow.loadURL('https://neurite.network');
+        }
+    } catch (err) {
+        console.error('[main] Failed to load frontend:', err);
+        mainWindow.loadURL('https://neurite.network'); // fallback to web version
+    }
     
     let pendingContextMenuRequest = null;
 
@@ -63,7 +77,15 @@ function createMainWindow() {
             sender: event.sender
         };
     });
-    
+
+    ipcMain.on('auth-message-from-proxy', (event, data) => {
+        if (mainWindow) {
+            console.log('[Electron Main] Forwarding auth message to frontend:', data);
+            mainWindow.webContents.send('auth-message', data);
+        } else {
+            console.warn('[Electron Main] No frontend window to receive auth message');
+        }
+    });
 
     // mainWindow.webContents.openDevTools();
     return mainWindow;
