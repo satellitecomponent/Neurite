@@ -25,8 +25,13 @@
         <li><a href="#gallery">Gallery</a></li>
       </ol>
     </td>
-    <td style="width: 35%;">
-      <img src="https://github.com/satellitecomponent/Neurite/assets/129367899/87816cad-1151-4f1a-8c66-ba5a5bd0b81e" alt="whyfractals3" width="100%">
+    <td style="width: 35%; text-align: center;">
+      <div>
+        <h2><strong>Welcome to Neurite | Getting Started</strong></h2>
+        <a href="https://www.youtube.com/watch?v=1BiUblUAd7s">
+          <img src="https://img.youtube.com/vi/1BiUblUAd7s/mqdefault.jpg" width="100%" title="Click to watch" alt="Welcome to Neurite"/>
+        </a>
+      </div>
     </td>
   </tr>
 </table>
