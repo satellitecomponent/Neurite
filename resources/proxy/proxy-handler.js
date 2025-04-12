@@ -78,3 +78,14 @@ window.addEventListener('message', async (event) => {
         });
     }
 });
+window.addEventListener('message', (event) => {
+    const trusted = ['https://neurite.network', 'https://test.neurite.network'];
+    if (!trusted.includes(event.origin)) return;
+    if (!event.data?.type) return;
+
+    console.log('[proxy.html] Forwarded message from OAuth redirect:', event.data);
+
+    if (typeof window.electron?.proxyBridge?.sendAuthMessage === 'function') {
+        window.electron.proxyBridge.sendAuthMessage(event.data);
+    }
+});

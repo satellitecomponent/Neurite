@@ -1,4 +1,5 @@
 ﻿window.addEventListener('message', async function (event) {
+    console.log('[frontend] Received postMessage:', event.origin, event.data);
     const trustedOrigin = 'https://neurite.network' || 'https://test.neurite.network';
     if (event.origin !== trustedOrigin) {
         Logger.warn('Invalid origin from redirect:', event.origin);
@@ -69,10 +70,14 @@ async function signIn() {
         const frontendOrigin = window.location.origin;
 
         const popupUrl = `${redirectPage}?workerUrl=${encodeURIComponent(workerUrl)}&siteKey=${encodeURIComponent(turnstilePublicKey)}&origin=${encodeURIComponent(frontendOrigin)}`;
-        const popup = window.open(popupUrl, 'Verification', 'width=500,height=600');
 
-        if (!popup) {
-            alert("Please enable popups for this site to complete the verification.");
+        if (window.NeuriteEnv.isElectronWithLocalFrontend) {
+            window.electronAPI.openPopupViaProxy(popupUrl);
+        } else {
+            const popup = window.open(popupUrl, 'Verification', 'width=500,height=600');
+            if (!popup) {
+                alert("Please enable popups for this site to complete the verification.");
+            }
         }
     } catch (error) {
         Logger.err("Sign-in failed:", error);
