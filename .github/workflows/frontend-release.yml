@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies and build frontend
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Generate timestamp version
