@@ -1,18 +1,18 @@
 ﻿window.addEventListener('message', async function (event) {
-    console.log('[frontend] Received postMessage:', event.origin, event.data);
-    const trustedOrigin = 'https://neurite.network' || 'https://test.neurite.network';
-    if (event.origin !== trustedOrigin) {
-        Logger.warn('Invalid origin from redirect:', event.origin);
+    const data = event.data;
+    const origin = event.origin;
+    console.log('[frontend] Received postMessage:', origin, data);
+
+    if (!window.NeuriteEnv.isTrustedMessageOrigin(origin)) {
+        Logger.warn('Invalid origin from redirect:', origin);
         return;
     }
 
-    const { type, email, status, error } = event.data;
+    const { type, email, status, error } = data;
 
-    if (type === 'auth') {
-        if (email) {
-            updateSignInState(email);
-            neuritePanel.open(true);
-        }
+    if (type === 'auth' && email) {
+        updateSignInState(email);
+        neuritePanel.open(true);
     } else if (type === 'stripe') {
         if (status === 'success') {
             neuritePanel.open(true);
