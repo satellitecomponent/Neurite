@@ -7,6 +7,8 @@
 
 ⚠️ `Warning:` Contains flashing lights and colors which may affect those with photosensitive epilepsy.
 
+> <a href="https://www.youtube.com/watch?v=1BiUblUAd7s&list=PLnwfKwpTq3vDlXDrLParmQ_3waM1g-ehf"><strong>Check out our newly released series of demo videos!</strong></a>
+
 🌱 This is an open-source project in active development.
 <table>
   <tr>
@@ -27,7 +29,8 @@
     </td>
     <td style="width: 35%; text-align: center;">
       <div>
-        <h2><strong>Welcome to Neurite | Getting Started</strong></h2>
+        <a href="https://www.youtube.com/watch?v=1BiUblUAd7s"><strong>Welcome to Neurite | Getting Started</strong></a>
+        <h2><strong></strong></h2>
         <a href="https://www.youtube.com/watch?v=1BiUblUAd7s">
           <img src="https://img.youtube.com/vi/1BiUblUAd7s/mqdefault.jpg" width="100%" title="Click to watch" alt="Welcome to Neurite"/>
         </a>
