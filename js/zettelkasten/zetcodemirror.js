@@ -20,7 +20,7 @@ RegExp.forNodeTitle = function(tag){
 }
 
 class ZettelkastenParser {
-    static regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
+    regexpNodeTitle = RegExp.forNodeTitle(Tag.node);
     constructor(codeMirrorInstance) {
         this.cm = codeMirrorInstance;
         this.nodeTitleToLineMap = new Map();
