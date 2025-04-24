@@ -607,16 +607,20 @@ function clearTextSelections() {
     }
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        function later(){
-            clearTimeout(timeout);
-            func(...args);
-        }
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+function debounce(func, delay){
+    let times = 0;
+    let _args = [];
+    return function exec(...args){
+        const timeout = (args[0] === exec);
+        if (!timeout) _args = args;
+
+        times += (timeout ? -1 : 1);
+        if (times > 1) return times = 2;
+        if (times > 0) return setTimeout(exec, delay, exec);
+
+        func(..._args);
+        _args = [];
+    }
 }
 
 const TextArea = {
