@@ -80,7 +80,7 @@ CustomDropdown.createOptionDiv = function(select, optionsReplacer, selectedDiv, 
         select.value = option.value;
         selectedDiv.innerText = option.innerText;
 
-        // Dispatch a change event to the original select element
+        select.dispatchEvent(new Event('input'));
         select.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
     });
 

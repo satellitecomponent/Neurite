@@ -19,7 +19,6 @@ function stopDragging() {
 
 
 
-Fractal.exponentValue = Elem.byId("exponent").value;
 Fractal.juliaConstant = new vec2(0.256, 0.01);
 
 Fractal.updateJuliaConstant = function(e){
@@ -42,31 +41,31 @@ Fractal.updateJuliaConstant = function(e){
 
 Fractal.mandelbrot = {
     html: "z<sup>${exponentValue}</sup> + c",
-    step(z, c){ return z.ipow(Fractal.exponentValue).cadd(c) }
+    step(z, c){ return z.ipow(settings.exponent).cadd(c) }
 };
 Fractal.burningShip = {
     html: "|z|<sup>${exponentValue}</sup> + c",
     step(z, c){
         const absZ = new vec2(Math.abs(z.x), Math.abs(z.y));
-        return absZ.ipow(Fractal.exponentValue).cadd(c);
+        return absZ.ipow(settings.exponent).cadd(c);
     }
 };
 Fractal.julia = {
     html: "z<sup>${exponentValue}</sup> +",
     step(z, c){
         const juliaConstant = new vec2(0.256, 0.01); // Example constant
-        return z.ipow(Fractal.exponentValue).cadd(juliaConstant);
+        return z.ipow(settings.exponent).cadd(juliaConstant);
     }
 };
 Fractal.tricorn = {
     html: "conj(z)<sup>${exponentValue}</sup> + c",
-    step(z, c){ return z.cconj().ipow(Fractal.exponentValue).cadd(c) }
+    step(z, c){ return z.cconj().ipow(settings.exponent).cadd(c) }
 };
 Fractal.buffalo = {
     html: "|z|<sup>${exponentValue}</sup> * z + c",
     step(z, c){
         const absZ = new vec2(Math.abs(z.x), Math.abs(z.y));
-        return absZ.ipow(Fractal.exponentValue).cmult(z).cadd(c);
+        return absZ.ipow(settings.exponent).cmult(z).cadd(c);
     }
 };
 Fractal.henon = {
@@ -82,17 +81,16 @@ Fractal.ikeda = {
 };
 Fractal.inverseMandelbrot = {
     html: "z<sup>-${exponentValue}</sup> + c",
-    step(z, c){ return z.ipow(-Fractal.exponentValue).cadd(c) }
+    step(z, c){ return z.ipow(-settings.exponent).cadd(c) }
 };
 
 
 
 Fractal.updateStep = function(){
-    const fractal = Fractal[Elem.byId("fractal-select").value];
+    const fractal = Fractal[settings.fractal];
     Fractal.step = fractal.step;
-    const exponentValue = Fractal.exponentValue = Elem.byId("exponent").value;
-    settings.maxDist = getMaxDistForExponent(exponentValue);
-    Elem.byId("equation").innerHTML = fractal.html.replace("${exponentValue}", exponentValue);
+    settings.maxDist = getMaxDistForExponent(settings.exponent);
+    Elem.byId("equation").innerHTML = fractal.html.replace("${exponentValue}", settings.exponent);
 }
 
 Fractal.updateJuliaDisplay = function(fractalType){

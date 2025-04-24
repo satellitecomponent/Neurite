@@ -438,7 +438,7 @@ View.Graphs = class {
     #onBtnResetSettingsClicked(e){
         settings.clear();
         settings.init();
-        editTab.init();
+        App.tabEdit.init();
     }
     #onBtnClearLocalClicked = (e)=>{
         localStorage.clear();
@@ -555,8 +555,9 @@ View.Graphs = class {
 
         #collectAdditionalSaveObjects(){
             // Collecting slider values
-            const inputValues = localStorage.getItem('inputValues') || '{}';
-            const savedInputValues = `<div id="saved-input-values" style="display:none;">${encodeURIComponent(inputValues)}</div>`;
+            const inputValues = App.tabEdit.getDictValues();
+            const strInputValues = encodeURIComponent(JSON.stringify(inputValues));
+            const savedInputValues = `<div id="saved-input-values" style="display:none;">${strInputValues}</div>`;
 
             // Collecting saved views
             const savedViewsString = JSON.stringify(savedViews);
@@ -566,12 +567,8 @@ View.Graphs = class {
             const mandelbrotParams = Graph.getCoords();
             const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
 
-            // Get the selected fractal type from localStorage
-            const selectedFractalType = localStorage.getItem('fractal-select');
-            const fractalTypeSaveElement = `<div id="fractal-type" style="display:none;">${encodeURIComponent(JSON.stringify(selectedFractalType))}</div>`;
-
             // Combine both slider values and saved views in one string
-            return savedInputValues + savedViewsElement + mandelbrotSaveElement + fractalTypeSaveElement;
+            return savedInputValues + savedViewsElement + mandelbrotSaveElement;
         }
         restoreAdditionalSaveObjects(d){
             const savedViewsElement = d.querySelector("#saved-views");
@@ -588,11 +585,29 @@ View.Graphs = class {
             const sliderValuesElement = d.querySelector("#saved-input-values");
             if (sliderValuesElement) {
                 const sliderValuesContent = decodeURIComponent(sliderValuesElement.innerHTML);
-                localStorage.setItem('inputValues', sliderValuesContent);
+                const inputValues = JSON.parse(sliderValuesContent);
+
+                App.tabEdit.forEachModel( (model)=>{
+                    const key = model.key;
+                    const val = inputValues[key] ?? Settings.default[key];
+                    settings.set(key, val);
+                });
+
+                // Only for old versions of saves
+                for (const key in inputValues) {
+                    const input = Elem.byId(key);
+                    if (input) {
+                        input.value = inputValues[key];
+                        // Trigger the input event for both sliders and color pickers
+                        const cb = input.dispatchEvent.bind(input, new Event('input'));
+                        Promise.delay(100).then(cb);
+                    }
+                }
+
                 sliderValuesElement.remove();
             }
 
-            restoreInputValues();
+            App.tabEdit.init();
 
             const mandelbrotSaveElement = d.querySelector("#mandelbrot-coords-params");
             if (mandelbrotSaveElement) {
@@ -602,11 +617,13 @@ View.Graphs = class {
                 mandelbrotSaveElement.remove();
             }
 
+            // Only for old versions of saves
             const fractalTypeSaveElement = d.querySelector("#fractal-type");
             if (fractalTypeSaveElement) {
                 const fractalSelectElement = Elem.byId('fractal-select');
                 const fractalType = JSON.parse(decodeURIComponent(fractalTypeSaveElement.textContent));
                 if (fractalType) {
+                    settings.set('fractal', fractalType);
                     fractalSelectElement.value = fractalType;
                     Select.updateSelectedOption(fractalSelectElement);
                     Fractal.updateJuliaDisplay(fractalType);

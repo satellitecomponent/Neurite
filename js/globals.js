@@ -54,6 +54,7 @@ class Stored {
     delete(key){ return this.table.removeItem(String(key) ?? this.name) }
     load(key){ return this.table.getItem(String(key) ?? this.name) }
     save(key, val){
+        Logger.debug('store', key, '=', val);
         return this.table.setItem(
             (val !== undefined ? String(key) : this.name),
             val ?? key
@@ -117,32 +118,34 @@ var controls = {
 };
 
 class Settings {
+    #save = {};
     #stored = new Stored('settings');
     constructor(){
-        const defaults = Settings.default;
-        for (const name in defaults) {
+        const stored = this.#stored;
+        for (const name in Settings.default) {
+            this.#save[name] = debounce(stored.save.bind(stored, name), 300);
             Object.defineProperty(this, name, {
                 get: this.get.bind(this, '_' + name),
                 set: this.set.bind(this, name)
-            })
+            });
         }
 
         this.init();
-        this.#stored.table.iterate(this.#set.bind(this));
+        this.#stored.table.iterate(this.assign.bind(this));
     }
 
     clear(){ this.#stored.clear() }
     init(){
         const defaults = Settings.default;
-        for (const name in defaults) this.#set(defaults[name], name);
+        for (const name in defaults) this.assign(defaults[name], name);
     }
 
     get(key){ return this[key] }
     set(name, val){
-        this.#stored.save(name, val);
-        this.#set(val, name);
+        this.#save[name](val);
+        this.assign(val, name);
     }
-    #set(val, name){ this['_' + name] = val }
+    assign(val, name){ this['_' + name] = val }
 }
 Settings.default = {
     zoomSpeed: 0.001,
@@ -166,6 +169,8 @@ Settings.default = {
     zoomSpeedMultiplier: 1,
 
     //slider adjustment
+    exponent: 2,
+    fractal: 'julia',
     maxLines: 128,
     renderLength: 50,
     renderQuality: 16,
@@ -202,8 +207,19 @@ Settings.default = {
     maxDist: 4,
     orbitStepRate: 2,
 
-    innerOpacity: 1,
-    outerOpacity: 1,
+    rColor: '#ff0000',
+    gColor: '#00ff00',
+    bColor: '#0000ff',
+    backColor: '#000000',
+
+    brightness: 128,
+    saturation: 127,
+
+    outerOpacity: 100,
+    innerOpacity: 100,
+
+    inversion: 0,
+    hue: 0,
 
     defaultSearchEngine: 'google', // Brave, Bing, DuckDuckGo, Google
 
