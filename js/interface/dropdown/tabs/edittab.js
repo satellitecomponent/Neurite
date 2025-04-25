@@ -38,9 +38,9 @@ class Value {
         return this.bound(mayMin, mayVal, mayMax);
     }
 
-    init(){
+    init(prom){
         const val = this.val = (settings[this.key] ?? this.val);
-        if (this.onUpdated) queueMicrotask(this.onUpdated.bind(this, val)); // delay because it modifies other init settings
+        if (this.onUpdated) prom.then(this.onUpdated.bind(this, val)); // delay because it modifies other init settings
         return val;
     }
     set(val){
@@ -71,9 +71,9 @@ View.Value = class {
         this.model = (!model.parse) ? model
                    : model.boundByStr(elem.min, elem.value, elem.max);
     }
-    init(){
+    init(prom){
         On.input(this.elem, this.#onInput);
-        this.elem.value = this.model.init();
+        this.elem.value = this.model.init(prom);
     }
     initWithCb(cb, ct){
         On.input(this.elem, this.#onInputWithCb.bind(this, cb, ct))
@@ -88,10 +88,10 @@ View.ValueDouble = class {
         this.view1 = new View.Value(id1, model);
         this.view2 = new View.Value(id2, model);
     }
-    init(){
+    init(prom){
         this.view1.initWithCb(this.onValue, this);
         this.view2.initWithCb(this.onValue, this);
-        this.onValue(this.model.init());
+        this.onValue(this.model.init(prom));
     }
 }
 
@@ -206,9 +206,14 @@ class EditTab {
         return dictValues;
     }
     init(){
-        this.delay.init();
+        let release = null;
+        const prom = new Promise( (resolve)=>{ release = resolve } );
+
+        this.delay.init(prom);
         const controls = this.controls;
-        for (const name in controls) controls[name].init();
+        for (const name in controls) controls[name].init(prom);
+
+        release();
     }
 
     setInnerOpacity(val){ settings._innerOpacity = val / 100 }
