@@ -497,6 +497,13 @@ class NodeView {
                 setStyles(node.fileTreeContainer.style, {
                     width: '100%',
                 });
+
+            if (node.queryNodeWrapper?.style) {
+                setStyles(node.queryNodeWrapper.style, {
+                    width: '100%',
+                    height: '100%',
+                });
+            }
         };
 
         On.mousedown(this.resizeHandle, (e) => {

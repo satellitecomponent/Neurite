@@ -236,6 +236,7 @@ class PageLoad {
         'js/nodes/nodetypes/filetreenodes/filetreenode.js',
         'js/nodes/nodetypes/textnodes/contenteditable.js',
         'js/nodes/nodetypes/textnodes/textnode.js',
+        'js/nodes/nodetypes/querynodes/querynode.js',
         'js/nodes/nodetypes/linknodes/linknode.js',
         'js/nodes/nodetypes/linknodes/importlink.js',
         'js/nodes/nodetypes/imagenodes/imagenode.js:MODULE',

@@ -30,6 +30,29 @@ function createSelectWithWrapper(name, wrapperName, nodeIndex) {
     return wrapper;
 }
 
+function makeSelectWithLabel(label, values, selectName, wrapperName, nodeIndex) {
+    const wrapper = Html.make.div(`select-wrapper ${wrapperName || ''}`);
+
+    if (label) {
+        const labelElem = Html.make.div('select-label');
+        labelElem.textContent = label;
+        wrapper.appendChild(labelElem);
+    }
+
+    const selectWrapper = createSelectWithWrapper(selectName, wrapperName, nodeIndex);
+    const select = selectWrapper.querySelector('select');
+
+    values.forEach(value => {
+        const option = new Option(value[0].toUpperCase() + value.slice(1), value);
+        select.appendChild(option);
+    });
+
+    CustomDropdown.setup(select, /* delayListeners = */ false);
+    wrapper.appendChild(selectWrapper);
+
+    return wrapper;
+}
+
 const CustomDropdown = {
     model: {selectId: 'custom-model-select', storageId: 'customModelDropdown'}
 };

@@ -624,8 +624,9 @@ const allOptions = [
 ];
 
 // Function to create a checkbox array with a subset of options
-function createCheckboxArray(nodeIndex, subsetOptions) {
+function createCheckboxArray(nodeIndex, subsetOptions, className) {
     const checkboxArrayDiv = Html.make.div('checkboxarray');
+    if (className) checkboxArrayDiv.classList.add(className);
 
     for (const option of subsetOptions) {
         const checkboxDiv = Html.new.div();
@@ -634,6 +635,7 @@ function createCheckboxArray(nodeIndex, subsetOptions) {
         checkbox.type = 'checkbox';
         checkbox.id = option.id + '-checkbox-' + nodeIndex;
         checkbox.name = option.id + '-checkbox-' + nodeIndex;
+        checkbox.dataset.sourceId = option.id;
 
         const label = Html.new.label();
         label.setAttribute('for', checkbox.id);

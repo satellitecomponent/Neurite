@@ -1,21 +1,29 @@
 ﻿On.dblclick(document, (e) => {
     e.stopPropagation();
 
-    // Ensure the click target is the background SVG
-    const isSvgBackground = e.target.id === 'svg_bg';
-    if (!isSvgBackground) return;
+    const svgRoot = document.getElementById('svg_bg');
+    const isInSvgBackground = e.target.closest('#svg_bg') === svgRoot;
+    if (!isInSvgBackground) return;
 
-    if (e.getModifierState(controls.altKey.value)) {
-        // Alt + double click => Create LLM node
+    const alt = e.getModifierState(controls.altKey.value);
+    const ctrl = e.getModifierState(controls.controlKey.value);
+    const shift = App.nodeMode && !Node.prev;
+
+    if (alt && ctrl) {
+        // Alt + Ctrl + double click => Create Query Node
+        e.preventDefault();
+        QueryNode.create('', undefined, undefined, e.clientX, e.clientY).draw();
+    } else if (alt) {
+        // Alt + double click => Create LLM Node
         e.preventDefault();
         createLlmNode('', undefined, undefined, e.clientX, e.clientY).draw();
-    } else if (e.getModifierState(controls.controlKey.value)) {
-        // Control + double click => Create Link node
+    } else if (ctrl) {
+        // Ctrl + double click => Create Link Node
         e.preventDefault();
         const node = returnLinkNodes();
         node.followingMouse = 0;
-    } else if (App.nodeMode && !Node.prev) {
-        // Shift + double click => Create regular node
+    } else if (shift) {
+        // Shift + double click => Create Regular Node
         createNodeFromWindow();
     }
 });
