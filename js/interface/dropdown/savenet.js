@@ -554,30 +554,50 @@ View.Graphs = class {
         }
 
         #collectAdditionalSaveObjects(){
-            // Collecting slider values
             const inputValues = App.tabEdit.getDictValues();
-            const strInputValues = encodeURIComponent(JSON.stringify(inputValues));
-            const savedInputValues = `<div id="saved-input-values" style="display:none;">${strInputValues}</div>`;
-
-            // Collecting saved views
-            const savedViewsString = JSON.stringify(savedViews);
-            const savedViewsElement = `<div id="saved-views" style="display:none;">${encodeURIComponent(savedViewsString)}</div>`;
-
-            // Get current Mandelbrot coords in a standard format
-            const mandelbrotParams = Graph.getCoords();
-            const mandelbrotSaveElement = `<div id="mandelbrot-coords-params" style="display:none;">${encodeURIComponent(JSON.stringify(mandelbrotParams))}</div>`;
-
-            // Combine both slider values and saved views in one string
-            return savedInputValues + savedViewsElement + mandelbrotSaveElement;
+            const locations = App.viewLocations.model.get('');
+            const coords = Graph.getCoords();
+            const obj = { inputValues, locations, coords } ;
+            const str = encodeURIComponent(JSON.stringify(obj));
+            return `<div id="additional-save-objs" style="display:none">${str}</div>` ;
         }
         restoreAdditionalSaveObjects(d){
+            const elem = d.querySelector("#additional-save-objs");
+            if (!elem) return this.#restoreAdditionalSaveObjectsOld(d);
+
+            const obj = JSON.parse(decodeURIComponent(elem.innerHTML));
+            App.viewLocations.setDict(obj.locations);
+
+            const inputValues = obj.inputValues;
+            App.tabEdit.forEachModel( (model)=>{
+                const key = model.key;
+                const val = inputValues[key] ?? Settings.default[key];
+                settings.set(key, val);
+            });
+            App.tabEdit.init();
+
+            Animation.goToLocation(obj.coords);
+
+            elem.remove();
+        }
+        #restoreAdditionalSaveObjectsOld(d){ // DEPRECATED
             const savedViewsElement = d.querySelector("#saved-views");
             if (savedViewsElement) {
-                let savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
-                savedViews = JSON.parse(savedViewsContent);
+                const savedViewsContent = decodeURIComponent(savedViewsElement.innerHTML);
+                const savedViews = JSON.parse(savedViewsContent);
                 if (savedViews) {
-                    updateSavedViewsCache();
-                    displaySavedCoordinates();
+                    for (const key in savedViews) {
+                        savedViews[key] = savedViews[key].map( (location)=>{
+                            if (!location.standardCoords) return location;
+
+                            const title = location.title;
+                            const newTitle = (title.startsWith('// ') ? title.slice(3) : title);
+                            const scs = location.standardCoords;
+                            return Location.byPan(newTitle, scs.zoom, scs.pan);
+                        })
+                    }
+
+                    App.viewLocations.setDict(savedViews);
                 }
                 savedViewsElement.remove();
             }
@@ -593,7 +613,6 @@ View.Graphs = class {
                     settings.set(key, val);
                 });
 
-                // Only for old versions of saves
                 for (const key in inputValues) {
                     const input = Elem.byId(key);
                     if (input) {
@@ -617,7 +636,6 @@ View.Graphs = class {
                 mandelbrotSaveElement.remove();
             }
 
-            // Only for old versions of saves
             const fractalTypeSaveElement = d.querySelector("#fractal-type");
             if (fractalTypeSaveElement) {
                 const fractalSelectElement = Elem.byId('fractal-select');

@@ -1,413 +1,277 @@
-// https://www.mrob.com/pub/muency/colloquialnames.html
+globalThis.Location = class {
+    constructor(title, zoom, panReal, panImagin){
+        this.panImaginary = (isNaN(panImagin) ? 0 : parseFloat(panImagin));
+        this.panReal = (isNaN(panReal) ? 0 : parseFloat(panReal));
+        this.title = String(title);
+        this.zoom = (isNaN(zoom) ? 1 : parseFloat(zoom));
+    }
+    get pan(){ return this.panReal + "+i" + this.panImaginary }
+    static byPan(title, zoom, pan){
+        const panParts = pan.split('+i');
+        return new Location('// ' + title, zoom, panParts[0], panParts[1]);
+    }
+}
 
-const defaultSavedViews = {
+// https://www.mrob.com/pub/muency/colloquialnames.html
+const dfltLocations = {
     "mandelbrot": [
-        {
-            "title": "// Seahorse Valley West",
-            "standardCoords": {
-                "zoom": "0.0000017699931315047657",
-                "pan": "-0.7677840466850392+i-0.10807751495298584"
-            },
-            "functionCall": "setMandelbrotCoords(0.0000017699931315047657, -0.7677840466850392, -0.10807751495298584, 0.1);"
-        },
-        {
-            "title": "// Double Scepter Valley",
-            "standardCoords": {
-                "zoom": "0.000017687394673278873",
-                "pan": "-0.13115417841259247+i-0.8429048341831951"
-            },
-            "functionCall": "setMandelbrotCoords(0.000017687394673278873, -0.13115417841259247, -0.8429048341831951, 0.1);"
-        },
-        {
-            "title": "// Quad Spiral Valley",
-            "standardCoords": {
-                "zoom": "6.622764227402511e-7",
-                "pan": "0.35871212237104466+i0.614868924400545"
-            },
-            "functionCall": "setMandelbrotCoords(6.622764227402511e-7, 0.35871212237104466, 0.614868924400545, 0.1);"
-        },
-        {
-            "title": "// North Radical",
-            "standardCoords": {
-                "zoom": "0.01666349480736333",
-                "pan": "-0.17757277666659035+i-1.0860005295937438"
-            },
-            "functionCall": "setMandelbrotCoords(0.01666349480736333, -0.17757277666659035, -1.0860005295937438, 0.1);"
-        },
-        {
-            "title": "// Shepherds Crook",
-            "standardCoords": {
-                "zoom": "0.000029460494639545112",
-                "pan": "-0.7450088997859019+i-0.11300333384642439"
-            },
-            "functionCall": "setMandelbrotCoords(0.000029460494639545112, -0.7450088997859019, -0.11300333384642439, 0.1);"
-        },
-        {
-            "title": "// South Radical",
-            "standardCoords": {
-                "zoom": "0.022493365230716315",
-                "pan": "-0.17709676066268798+i1.0856909324960642"
-            },
-            "functionCall": "setMandelbrotCoords(0.022493365230716315, -0.17709676066268798, 1.0856909324960642, 0.1);"
-        },
-        {
-            "title": "// Triple Spiral Valley",
-            "standardCoords": {
-                "zoom": "0.0002361832763705042",
-                "pan": "-0.15629012673807463+i0.6534879139112698"
-            },
-            "functionCall": "setMandelbrotCoords(0.0002361832763705042, -0.15629012673807463, 0.6534879139112698, 0.1);"
-        },
+        Location.byPan("Seahorse Valley West", 0.0000017699931315047657,
+                            "-0.7677840466850392+i-0.10807751495298584"),
+        Location.byPan("Double Scepter Valley", 0.000017687394673278873,
+                            "-0.13115417841259247+i-0.8429048341831951"),
+        Location.byPan("Quad Spiral Valley", 6.622764227402511e-7,
+                            "0.35871212237104466+i0.614868924400545"),
+        Location.byPan("North Radical", 0.01666349480736333,
+                            "-0.17757277666659035+i-1.0860005295937438"),
+        Location.byPan("Shepherds Crook", 0.000029460494639545112,
+                            "-0.7450088997859019+i-0.11300333384642439"),
+        Location.byPan("South Radical", 0.022493365230716315,
+                            "-0.17709676066268798+i1.0856909324960642"),
+        Location.byPan("Triple Spiral Valley", 0.0002361832763705042,
+                            "-0.15629012673807463+i0.6534879139112698")
     ],
     "burningShip": [
-        {
-            "title": "// East Spoke",
-            "standardCoords": {
-                "zoom": "8.420214425120169e-2",
-                "pan": "9.169164222633116e-1+i-1.6310643190278835e+0"
-            },
-            "functionCall": "setMandelbrotCoords(8.420214425120169e-2, 9.169164222633116e-1, -1.6310643190278835e+0, 0.1);"
-        },
-        {
-            "title": "// West Spoke",
-            "standardCoords": {
-                "zoom": "1.8788037931611875e-2",
-                "pan": "-1.9711042552803943e+0+i-4.334808282086102e-3"
-            },
-            "functionCall": "setMandelbrotCoords(1.8788037931611875e-2, -1.9711042552803943e+0, -4.334808282086102e-3, 0.1);"
-        },
-        {
-            "title": "// Kansas",
-            "standardCoords": {
-                "zoom": "1.546207997245595e-4",
-                "pan": "-2.9164166060085045e-1+i1.306446844207734e-1"
-            },
-            "functionCall": "setMandelbrotCoords(1.546207997245595e-4, -2.9164166060085045e-1, 1.306446844207734e-1, 0.1);"
-        },
-        {
-            "title": "// Cathedral Valley",
-            "standardCoords": {
-                "zoom": "1.434728547873302e-6",
-                "pan": "-1.7964026403617497e+0+i-6.890731439710235e-7"
-            },
-            "functionCall": "setMandelbrotCoords(1.434728547873302e-6, -1.7964026403617497e+0, -6.890731439710235e-7, 0.1);"
-        },
-        {
-            "title": "// Dumpster-Fire",
-            "standardCoords": {
-                "zoom": "5.920320423831963e-5",
-                "pan": "-1.5078232909808023e+0+i-3.55694616402374e-5"
-            },
-            "functionCall": "setMandelbrotCoords(5.920320423831963e-5, -1.5078232909808023e+0, -3.55694616402374e-5, 0.1);"
-        },
-        {
-            "title": "// Iris Chasm",
-            "standardCoords": {
-                "zoom": "7.698116326980893e-6",
-                "pan": "-1.5075332685770135e+0+i4.3338695907954664e-4"
-            },
-            "functionCall": "setMandelbrotCoords(7.698116326980893e-6, -1.5075332685770135e+0, 4.3338695907954664e-4, 0.1);"
-        },
-        {
-            "title": "// Archipelago",
-            "standardCoords": {
-                "zoom": "9.354013289992328e-4",
-                "pan": "-7.008855604508728e-1+i-1.0783378699218966e+0"
-            },
-            "functionCall": "setMandelbrotCoords(9.354013289992328e-4, -7.008855604508728e-1, -1.0783378699218966e+0, 0.1);"
-        }
+        Location.byPan("East Spoke", 8.420214425120169e-2,
+                            "9.169164222633116e-1+i-1.6310643190278835e+0"),
+        Location.byPan("West Spoke", 1.8788037931611875e-2,
+                            "-1.9711042552803943e+0+i-4.334808282086102e-3"),
+        Location.byPan("Kansas", 1.546207997245595e-4,
+                            "-2.9164166060085045e-1+i1.306446844207734e-1"),
+        Location.byPan("Cathedral Valley", 1.434728547873302e-6,
+                            "-1.7964026403617497e+0+i-6.890731439710235e-7"),
+        Location.byPan("Dumpster-Fire", 5.920320423831963e-5,
+                            "-1.5078232909808023e+0+i-3.55694616402374e-5"),
+        Location.byPan("Iris Chasm", 7.698116326980893e-6,
+                            "-1.5075332685770135e+0+i4.3338695907954664e-4"),
+        Location.byPan("Archipelago", 9.354013289992328e-4,
+                            "-7.008855604508728e-1+i-1.0783378699218966e+0")
     ],
     "julia": [
-        {
-            "title": "// South Spiral",
-            "standardCoords": {
-                "zoom": "7.638646189048822e-3",
-                "pan": "4.7332900084640715e-2+i8.993463379974346e-1"
-            },
-            "functionCall": "setMandelbrotCoords(7.638646189048822e-3, 4.7332900084640715e-2, 8.993463379974346e-1, 0.1);"
-        },
-        {
-            "title": "// North Spiral",
-            "standardCoords": {
-                "zoom": "1.3918520830597225e-2",
-                "pan": "-3.6849331744016355e-2+i-9.029969059101963e-1"
-            },
-            "functionCall": "setMandelbrotCoords(1.3918520830597225e-2, -3.6849331744016355e-2, -9.029969059101963e-1, 0.1);"
-        },
-        {
-            "title": "// East Spiral",
-            "standardCoords": {
-                "zoom": "3.859876908954036e-2",
-                "pan": "5.589693781322422e-1+i-8.304609304546705e-2"
-            },
-            "functionCall": "setMandelbrotCoords(3.859876908954036e-2, 5.589693781322422e-1, -8.304609304546705e-2, 0.1);"
-        },
-        {
-            "title": "// West Spiral",
-            "standardCoords": {
-                "zoom": "9.71062247743426e-3",
-                "pan": "-5.546948889347452e-1+i9.444801375262804e-2"
-            },
-            "functionCall": "setMandelbrotCoords(9.71062247743426e-3, -5.546948889347452e-1, 9.444801375262804e-2, 0.1);"
-        }
+        Location.byPan("South Spiral", 7.638646189048822e-3,
+                            "4.7332900084640715e-2+i8.993463379974346e-1"),
+        Location.byPan("North Spiral", 1.3918520830597225e-2,
+                            "-3.6849331744016355e-2+i-9.029969059101963e-1"),
+        Location.byPan("East Spiral", 3.859876908954036e-2,
+                            "5.589693781322422e-1+i-8.304609304546705e-2"),
+        Location.byPan("West Spiral", 9.71062247743426e-3,
+                            "-5.546948889347452e-1+i9.444801375262804e-2")
     ],
     "tricorn": [
-        // Add default Tricorn views here
+        // Add default Tricorn locations
     ],
     "buffalo": [
-        // Add default Buffalo views here
+        // Add default Buffalo locations
     ],
     "henon": [
-        // Add default Henon Map views here
+        // Add default Henon locations
     ],
     "ikeda": [
-        // Add default Ikeda Map views here
+        // Add default Ikeda locations
     ],
-    "all": [
-        {
-            "title": "// Reset View",
-            "standardCoords": {
-                "zoom": "1",
-                "pan": "0+i0"
-            },
-            "functionCall": "resetView();"
-        }
-    ]
+    "all": [ Location.byPan("Reset Coords", 1, "0+i0") ]
 };
 
-function getSavedView(query) {
-    const viewsList = listSavedViews();
-    let foundView = viewsList.find(view => view.title.toLowerCase() === query.toLowerCase());
+Manager.Locations = class {
+    #dict = {};
+    #stored = new Stored('locations');
 
-    // If no exact match, try a more sophisticated search approach
-    if (!foundView) {
-        foundView = viewsList.find(view => view.title.toLowerCase().includes(query.toLowerCase()));
-        // Further search strategies can be implemented here if necessary
+    add(location, fractal = settings.fractal){
+        (this.#dict[fractal] ||= []).push(location);
+        Logger.info("Location saved:", location);
+        return this.save();
     }
 
-    // If a view is found, return an object with coordinates and function call format
-    if (foundView) {
-        return {
-            coordinates: foundView.coordinates,
-            functionCall: foundView.functionCall // Assuming this is available in your data structure
-        };
-    } else {
-        Logger.warn(`No saved view found for query: "${query}"`);
-        return null;
+    deleteAtIndex(index, fractal = settings.fractal){
+        const items = this.#dict[fractal];
+        const location = items[index];
+        items.splice(index, 1);
+        Logger.info("Location deleted:", location);
+        return this.save();
     }
-}
-
-function getSavedViews() {
-    // Check if the savedViews is defined and has elements
-    if (savedViews && savedViews.length > 0) {
-        return savedViews;
-    } else {
-        Logger.warn("No saved views are currently available.");
-        return [];  // Or return null, depending on how you want to handle this case.
+    get(fractal = settings.fractal){
+        return (fractal ? this.#dict[fractal] || [] : this.#dict)
     }
+    getByIndex(index, fractal = settings.fractal){
+        return this.#dict[fractal][index]
+    }
+
+    load(){ return this.#stored.load().then(this.#handleDict) }
+    #handleDict = (dict)=>{ this.#dict = dict ?? { ...dfltLocations } }
+
+    save(){ return this.#stored.save(this.#dict) }
+    setDict(dict){ this.#dict = dict }
 }
 
-function receiveCurrentView() {
-    return window.prompt("Enter a title for the current location:")
-        .then( (title)=>(title === null ? null : {
-                            title,
-                            standardCoords: Graph.getCoords(),
-                            functionCall: Graph.getCoords(true)
-                        })
-        )
-        .catch(Logger.err.bind(Logger, "Failed to get prompt input:"))
-}
+View.Locations = class {
+    #btnDelete = new View.Locations.DeleteButton(this.#deleteSelected, this);
+    #btnSave = new View.Locations.SaveButton(this.#saveLocation, this);
+    model = new Manager.Locations();
+    #selected = new View.Locations.Selected(this.#updateBtnDelete, this);
+    #viewList = new View.Locations.ListView(this);
 
-function generateCopyPasteSavedViews() {
-    return JSON.stringify(savedViews, null, 2);
-}
+    init(){ this.model.load().then(this.#initChildren.bind(this)) }
+    #initChildren(){
+        this.#btnSave.init();
+        this.#viewList.init();
+    }
 
-let savedViews;
+    deselect(){ this.#selected.set(null) }
+    setDict(dict){
+        this.model.setDict(dict);
+        this.model.save();
+        this.#viewList.update();
+    }
 
-function updateSavedViewsCache() {
-    localStorage.setItem('savedViews', JSON.stringify(savedViews));
-}
+    static DeleteButton = class {
+        #btn = Elem.byId('btnDeleteLocation');
+        constructor(cb, ct){ this.cb = cb; this.ct = ct }
+        update(location){
+            (location ? On : Off).click(this.#btn, this.#onClicked);
+            this.#btn.style.opacity = (location ? '' : '0.25');
+        }
 
-function getSavedViewsFromCache() {
-    const cachedViews = localStorage.getItem('savedViews');
-    if (cachedViews) {
-        const parsedViews = JSON.parse(cachedViews);
-        // Check if the cached views have fractal types
-        if (typeof parsedViews === 'object' && !Array.isArray(parsedViews)) {
-            return parsedViews;
+        #onClicked = (e)=>{
+            window.confirm("Surely delete this location from the list?")
+            .then(this.#handleConfirmDeletetion)
+        }
+        #handleConfirmDeletetion = (confirmed)=>{
+            if (!confirmed) return;
+
+            this.cb.call(this.ct);
+            this.#btn.textContent = "Deleted!";
+            Promise.delay(1000).then(this.#restore);
+        }
+        #restore = ()=>{ this.#btn.textContent = "Delete Location" } ;
+    }
+    #deleteSelected(){
+        this.model.deleteAtIndex(this.#selected.key);
+        this.deselect();
+        this.#viewList.update();
+    }
+
+    static SaveButton = class {
+        #btn = Elem.byId('btnSaveLocation');
+        constructor(cb, ct){ this.cb = cb; this.ct = ct }
+        init(){ On.click(this.#btn, this.#onClicked) }
+
+        #onClicked = (e)=>{
+            window.prompt("Enter a title for the current location:")
+            .then(this.#onTitle, this.#onError)
+            .then(this.#handleLocation)
+        }
+        #onTitle = (title)=>(title && Graph.getCoords(title)) ;
+        #onError = Logger.err.bind(Logger, "Failed to get prompt input:");
+        #handleLocation = (location)=>{
+            if (!location) {
+                return Logger.info("Location save cancelled by user.")
+            }
+
+            this.cb.call(this.ct, location);
+            this.#btn.textContent = "Saved!";
+            Promise.delay(1000).then(this.#restore);
+        }
+        #restore = ()=>{ this.#btn.textContent = "Save Location" } ;
+    }
+    #saveLocation(location){
+        this.model.add(location);
+        this.#selected.set(null, location);
+        this.#viewList.update();
+    }
+
+    static Selected = class {
+        #elem = null;
+        #model = null;
+        constructor(cb, ct){ this.cb = cb; this.ct = ct }
+
+        get key(){ return this.#elem.dataset.key }
+        maySet(elem, model){ if (model === this.#model) this.set(elem, model) }
+        set(elem, model){
+            if (this.#elem) {
+                this.#elem.classList.remove('selected-coordinate');
+                this.#elem.style.transform = '';
+            }
+            if (elem) {
+                elem.classList.add('selected-coordinate');
+                elem.style.transform = 'scale(0.95)'; // Scale down for selected
+            }
+            this.#elem = elem;
+            this.#model = model;
+            this.cb.call(this.ct, model);
         }
     }
+    #updateBtnDelete(location){ this.#btnDelete.update(location) }
 
-    return { ...defaultSavedViews };
-}
+    static ListView = class ListView {
+        #containerBottom = Elem.byId('savedCoordinatesContainerBottom');
+        #containerMain = Elem.byId('savedCoordinatesContainer');
+        #containerTop = Elem.byId('savedCoordinatesContainerTop');
+        constructor(mom){
+            this.divMaker = new ListView.DivMaker(mom);
+            this.mom = mom;
+        }
+        init(){
+            settings.onChange('fractal', this.update, this);
+            this.update();
+        }
 
-function initializeSavedViews() {
-    const cachedViews = getSavedViewsFromCache();
-    savedViews = cachedViews ? cachedViews : { ...defaultSavedViews };
-}
+        #distributeItems(items){
+            const mainCount = Math.round(items.length * 0.50); // 50% for main
+            const topCount = Math.round(items.length * 0.32); // 32% for top
+            // For the bottom, we use the remaining items
+            const bottomCount = items.length - mainCount - topCount; // 15% for bottom
 
-initializeSavedViews();
+            return {
+                main: items.slice(0, mainCount),
+                top: items.slice(mainCount, mainCount + topCount),
+                bottom: items.slice(mainCount + topCount)
+            };
+        }
 
-async function saveCurrentView() {
-    const view = await receiveCurrentView();
-    if (view === null) {
-        Logger.info("View save cancelled by user.");
-        return;
-    }
-
-    // Get the current fractal type from the dropdown
-    const currentFractalType = Elem.byId('fractal-select').value;
-    if (!savedViews[currentFractalType]) {
-        savedViews[currentFractalType] = [];
-    }
-    savedViews[currentFractalType].push(view);
-    Logger.info("View saved:", view.title);
-
-    updateSavedViewsCache();
-    displaySavedCoordinates();
-
-    // Update button text temporarily
-    const saveButton = Elem.byId('saveCoordinatesBtn');
-    saveButton.textContent = "Saved!";
-    const cb = ()=>{ saveButton.textContent = "Save Coordinates" } ;
-    Promise.delay(500).then(cb);
-}
-
-On.change(Elem.byId('fractal-select'), displaySavedCoordinates);
-On.click(Elem.byId('saveCoordinatesBtn'), saveCurrentView);
-
-On.click(Elem.byId('deleteCoordinatesBtn'), (e) => {
-    if (Coordinate.selectedIndex !== null) {
-        deleteSavedView(Coordinate.selectedIndex);
-    } else {
-        alert('No coordinate selected for deletion.');
-    }
-});
-
-function deleteSavedView(index) {
-    const currentFractalType = Elem.byId('fractal-select').value;
-    const fractalViews = savedViews[currentFractalType];
-
-    if (index === null || !fractalViews || index >= fractalViews.length) {
-        Logger.err("No coordinate at index for deletion:", index);
-        return;
-    }
-
-    // Remove the selected view from the array
-    fractalViews.splice(index, 1);
-
-    updateSavedViewsCache();
-    displaySavedCoordinates();
-
-    Logger.info("View deleted at index:", index);
-
-    Coordinate.resetSelected();
-}
-
-function returnToSavedView(savedView, animate = true, speed = 0.0001) {
-    const standardCoords = savedView?.standardCoords;
-    if (!standardCoords) {
-        Logger.info("Missing or invalid saved view:", savedView);
-        return;
-    }
-
-    // Extract real and imaginary parts from pan
-    const panParts = standardCoords.pan.split('+i');
-    const panReal = parseFloat(panParts[0]);
-    const panImaginary = panParts.length > 1 ? parseFloat(panParts[1]) : 0;
-
-    Animation.goToCoords(
-        parseFloat(standardCoords.zoom),
-        panReal,
-        panImaginary,
-        animate,
-        speed
-    );
-}
-
-function listSavedViews() {
-    return savedViews.map(view => {
-        return {
-            title: view.title,
-            coordinates: view.standardCoords
-        };
-    });
-}
-
-
-
-const Coordinate = {
-    selectedDiv: null,
-    selectedIndex: null
-}
-Coordinate.deselect = function () {
-    if (!this.selectedDiv) return;
-
-    this.selectedDiv.classList.remove('selected-coordinate');
-    this.resetSelected();
-}
-Coordinate.resetSelected = function () {
-    this.selectedDiv = null;
-    this.selectedIndex = null;
-}
-
-function distributeCoordinates(savedViews) {
-    const mainCount = Math.round(savedViews.length * 0.50); // 50% for main
-    const topCount = Math.round(savedViews.length * 0.32); // 32% for top
-    // For the bottom, we use the remaining views
-    const bottomCount = savedViews.length - mainCount - topCount; // 15% for bottom
-
-    return {
-        mainViews: savedViews.slice(0, mainCount),
-        topViews: savedViews.slice(mainCount, mainCount + topCount),
-        bottomViews: savedViews.slice(mainCount + topCount)
-    };
-}
-
-function appendViewsToContainer(views, containerId, startIndex) {
-    const container = Elem.byId(containerId);
-    container.innerHTML = '';
-
-    views.forEach((view, index) => {
-        const globalIndex = startIndex + index;
-        const coordElement = Html.make.div('saved-coordinate-item');
-        coordElement.textContent = view.title;
-
-        On.click(coordElement, (e) => {
-            returnToSavedView(view);
-
-            // Update selected state
-            document.querySelectorAll('.saved-coordinate-item').forEach(div => {
-                div.classList.remove('selected-coordinate');
-                div.style.transform = '';
-            });
-
-            coordElement.classList.add('selected-coordinate');
-            coordElement.style.transform = 'scale(0.95)'; // Scale down for selected
-            Coordinate.selectedDiv = coordElement;
-            Coordinate.selectedIndex = globalIndex;
-        });
-
-        // Reset the scale when mouse leaves the selected item
-        On.mouseleave(coordElement, (e) => {
-            if (coordElement.classList.contains('selected-coordinate')) {
-                coordElement.style.transform = 'scale(1)';
+        static DivMaker = class {
+            fractal = 'all';
+            constructor(grandma){ this.grandma = grandma }
+            makeDivs(locations, fractal){
+                this.fractal = fractal;
+                return locations.map(this.makeDiv, this);
             }
-        });
 
-        container.appendChild(coordElement);
-    });
-}
+            makeDiv(location, index){
+                const div = Html.make.div('saved-coordinate-item');
+                div.textContent = location.title;
+                div.dataset.fractal = this.fractal;
+                div.dataset.key = index;
 
-function displaySavedCoordinates() {
-    const savedViews = getSavedViewsFromCache();
-    const currentFractalType = Elem.byId('fractal-select').value;
-    const currentFractalViews = savedViews[currentFractalType] || [];
-    const allViews = savedViews.all || [];
-    const combinedViews = [...currentFractalViews, ...allViews];
+                On.click(div, this.#onClicked);
+                this.grandma.#selected.maySet(div, location);
+                return div;
+            }
+            #onClicked = (e)=>{
+                const div = e.currentTarget;
+                const fractal = div.dataset.fractal;
+                const key = div.dataset.key;
+                const location = this.grandma.model.getByIndex(key, fractal);
+                Animation.goToLocation(location);
 
-    const { mainViews, topViews, bottomViews } = distributeCoordinates(combinedViews);
-    appendViewsToContainer(mainViews, 'savedCoordinatesContainer', 0);
-    appendViewsToContainer(topViews, 'savedCoordinatesContainerTop', mainViews.length);
-    appendViewsToContainer(bottomViews, 'savedCoordinatesContainerBottom', mainViews.length + topViews.length);
+                this.grandma.#selected.set(div, location);
+                On.mouseleave(div, this.#resetTransform);
+            }
+            #resetTransform(e){ e.currentTarget.style.transform = '' }
+        }
+
+        update(){
+            const model = this.mom.model;
+            const divMaker = this.divMaker;
+            const curDivs = divMaker.makeDivs(model.get(), settings.fractal);
+            const allDivs = divMaker.makeDivs(model.get('all'), 'all');
+            const combinedDivs = [...curDivs, ...allDivs];
+            const distribution = this.#distributeItems(combinedDivs);
+
+            this.#containerBottom.innerHTML = '';
+            this.#containerMain.innerHTML = '';
+            this.#containerTop.innerHTML = '';
+            this.#containerBottom.append(...distribution.bottom);
+            this.#containerMain.append(...distribution.main);
+            this.#containerTop.append(...distribution.top);
+        }
+    }
 }

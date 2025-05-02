@@ -314,7 +314,7 @@ class Interface {
         if (settings.zoomClick === "scroll") {
             // Zooming via scroll wheel
             Autopilot.stop();
-            Coordinate.deselect();
+            App.viewLocations.deselect();
             App.menuContext.hide();
             this.coordsLive = true;
             const dest = Graph.vecToZ();

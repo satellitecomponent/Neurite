@@ -203,6 +203,11 @@ zoomTo = zoom.unscale(gz ** 0.5);
 autopilotReferenceFrame = this;
 panToI = new vec2(0, 0); */
 
+Animation.goToLocation = function(location, speed){
+    const panReal = location.panReal;
+    const panImagin = location.panImaginary;
+    return Animation.goToCoords(location.zoom, panReal, panImagin, speed);
+}
 Animation.goToCoords = function(zoomMagnitude, panReal, panImaginary, speed = 0.1){
     let animate = true;
 
@@ -367,23 +372,11 @@ Animation.resetView = function(animate = true, duration = 2000){
     });
 }
 
-Graph.prototype.getCoords = function(forFunctionCall = false){
-    // Extract and format zoom and pan values
+Graph.prototype.getCoords = function(title = ''){
     const zoomValue = this.zoom.x.toExponential();
     const panReal = this.pan.x.toExponential();
     const panImaginary = this.pan.y.toExponential();
-
-    if (forFunctionCall) {
-        // Format for setMandelbrotCoords function call
-        const functionCall = `setMandelbrotCoords(${zoomValue}, ${panReal}, ${panImaginary}, 0.1);`;
-        return functionCall;
-    } else {
-        // Standard format
-        return {
-            zoom: zoomValue,
-            pan: panReal + "+i" + panImaginary // Format: "real+iimaginary"
-        };
-    }
+    return new Location(title, zoomValue, panReal, panImaginary);
 }
 
 async function exploreBoundaryPoints({
@@ -403,7 +396,7 @@ async function exploreBoundaryPoints({
         const panX = randomizePan ? (point.x + (Math.random() - 0.5) * 0.002) : point.x;
         const panY = randomizePan ? (point.y + (Math.random() - 0.5) * 0.002) : point.y;
 
-        await setMandelbrotCoords(effectiveZoom, panX, panY, 0.1, true);
+        await Animation.goToCoords(effectiveZoom, panX, panY, 0.1, true);
 
         if (promptForSave) await promptToSaveView();
     }

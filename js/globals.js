@@ -118,6 +118,24 @@ var controls = {
 };
 
 class Settings {
+    static Listeners = class {
+        #cbs = [];
+        #cts = [];
+        add(cb, ct){
+            this.#cbs.push(cb);
+            this.#cts.push(ct);
+        }
+        callForVals(newVal, oldVal){
+            const cbs = this.#cbs;
+            const cts = this.#cts;
+            const len = cbs.length;
+            for (let i = 0; i < len; i += 1) {
+                cbs[i].call(cts[i], newVal, oldVal)
+            }
+        }
+    }
+
+    #listeners = {};
     #save = {};
     #stored = new Stored('settings');
     constructor(){
@@ -142,10 +160,20 @@ class Settings {
 
     get(key){ return this[key] }
     set(name, val){
+        const oldVal = this[name];
+        if (val === oldVal) return;
+
         this.#save[name](val);
         this.assign(val, name);
+
+        const listeners = this.#listeners[name];
+        if (listeners) listeners.callForVals(val, oldVal);
     }
     assign(val, name){ this['_' + name] = val }
+
+    onChange(name, cb, ct){
+        (this.#listeners[name] ||= new Settings.Listeners()).add(cb, ct)
+    }
 }
 Settings.default = {
     zoomSpeed: 0.001,

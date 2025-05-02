@@ -252,7 +252,7 @@ const Body = {
 }
 Body.startPanning = function(e){
     Body.isPanning = true;
-    Coordinate.deselect();
+    App.viewLocations.deselect();
     this.style.userSelect = 'none'; // Disable text selection
 }
 Body.onMousemove = function(e){

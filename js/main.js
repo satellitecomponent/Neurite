@@ -146,6 +146,7 @@ class App {
     telemetry = new NeuralTelemetry();
     viewCode = new View.Code();
     viewGraphs = new View.Graphs();
+    viewLocations = new View.Locations();
     zetPanes = new ZetPanes(Elem.byId('zetPaneContainer'));
 
     init(){
@@ -161,12 +162,11 @@ class App {
         this.tabEdit.init(settings);
         this.viewCode.init();
         this.viewGraphs.init();
+        this.viewLocations.init();
         this.zetPanes.init();
         ZetPath.init();
         loadControls();
         updateSettingsFromControls();
-        updateSavedViewsCache();
-        displaySavedCoordinates();
         this.signalReady();
     }
     signalReady() {
@@ -199,7 +199,7 @@ class PageLoad {
         'js/interface/dropdown/customui/customcontrols.js',
         'js/interface/dropdown/customui/togglepanel.js',
         'js/interface/dropdown/customui/custommodal.js',
-        'js/interface/dropdown/customui/displaysavedcoords.js',
+        'js/interface/dropdown/customui/displaysavedcoords.js:MODULE',
         'js/interface/dropdown/customui/customsliders.js',
         'js/interface/dropdown/customui/customtooltip.js',
         'js/interface/dropdown/customui/customdialog.js',
