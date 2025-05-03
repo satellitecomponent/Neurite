@@ -1,4 +1,7 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
+
+// Force 100% zoom to prevent DPI-based scaling issues
+webFrame.setZoomFactor(1.0);
 
 contextBridge.exposeInMainWorld('electronAPI', {
     startedViaElectron: true,

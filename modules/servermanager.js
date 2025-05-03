@@ -23,7 +23,7 @@ async function runNpmInstall(folder, logStream) {
     console.log(`[serverManager] Installing localhost_servers`);
     return new Promise((resolve, reject) => {
         const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        const install = spawn(npmCmd, ['install'], {
+        const install = spawn(npmCmd, ['install', '--prefer-offline', '--no-audit'], {
             cwd: folder,
             env: { ...process.env },
             shell: true,
@@ -46,18 +46,33 @@ async function runNpmInstall(folder, logStream) {
     });
 }
 
+function installNeeded(folder) {
+    const modulesPath = path.join(folder, 'node_modules');
+    const lockPath = path.join(folder, 'package-lock.json');
+    const expectedModule = path.join(modulesPath, 'express');
+
+    return !fs.existsSync(modulesPath) ||
+        !fs.existsSync(expectedModule) ||
+        !fs.existsSync(lockPath);
+}
+
+
 async function startLocalServers(serversFolder) {
     return new Promise(async (resolve, reject) => {
         const scriptFullPath = path.join(serversFolder, 'start_servers.js');
         const logPath = path.join(app.getPath('userData'), 'server-install.log');
         const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-        try {
-            await runNpmInstall(serversFolder, logStream);
-        } catch (err) {
-            logStream.write(`[serverManager] npm install error: ${err.message}\n`);
-            logStream.end();
-            return reject(new Error(`[serverManager] Failed to install root dependencies: ${err.message}`));
+        if (installNeeded(serversFolder)) {
+            try {
+                await runNpmInstall(serversFolder, logStream);
+            } catch (err) {
+                logStream.write(`[serverManager] npm install error: ${err.message}\n`);
+                logStream.end();
+                return reject(new Error(`[serverManager] Failed to install root dependencies: ${err.message}`));
+            }
+        } else {
+            logStream.write(`[serverManager] Skipping npm install\n`);
         }
 
         logStream.write(`[serverManager] Launching server: ${scriptFullPath}\n`);

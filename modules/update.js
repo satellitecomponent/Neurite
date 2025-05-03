@@ -88,7 +88,17 @@ async function initializeUpdater() {
     });
 
     if (response.response === 0) {
-        await downloadAndInstall(asset.browser_download_url, platform, ext);
+        const { createLoadingWindow, closeLoadingWindow } = require('./loadingwindow');
+        globalThis.isUpdating = true;
+        const loadingWindow = createLoadingWindow();
+
+        try {
+            await downloadAndInstall(asset.browser_download_url, platform, ext);
+        } finally {
+            globalThis.isUpdating = false;
+            closeLoadingWindow(); // always attempt to close it, even if error
+        }
+
         return false;
     }
 

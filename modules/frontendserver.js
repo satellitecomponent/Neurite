@@ -2,17 +2,68 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+const net = require('net');
 
 let server = null;
 let connections = new Set();
 
-function startFrontendServer(distPath, port = 8080) {
+async function findNextFreePort(startPort, host = '127.0.0.1') {
+    let port = startPort;
+    while (await isPortInUse(port, host)) {
+        port++;
+        if (port > 65535) throw new Error('No free port found');
+    }
+    return port;
+}
+
+function isPortInUse(port, host = '127.0.0.1') {
+    return new Promise((resolve) => {
+        const req = http.get({ host, port, path: '/index.html', timeout: 1500 }, (res) => {
+            let data = '';
+            res.on('data', chunk => (data += chunk));
+            res.on('end', () => {
+                const isValid = /<title>\s*Neurite\s*<\/title>/i.test(data);
+                resolve(isValid);
+            });
+        });
+
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+        });
+    });
+}
+
+async function startFrontendServer(distPath, port = 8080) {
+    const alreadyRunning = await isPortInUse(port);
+    if (alreadyRunning) {
+        const url = `http://localhost:${port}`;
+        console.log('[frontend] Using existing server at', url);
+        return url;
+    }
+
+    // If port is in use but not valid, find another
+    const portFree = await new Promise((resolve) => {
+        const tester = net.createConnection({ port, host: '127.0.0.1' }, () => {
+            tester.end();
+            resolve(false); // something else is using it
+        });
+        tester.on('error', () => resolve(true));
+    });
+
+    if (!portFree) {
+        const fallbackPort = await findNextFreePort(port + 1);
+        console.warn(`[frontend] Port ${port} was occupied by non-Neurite process. Using port ${fallbackPort} instead.`);
+        port = fallbackPort;
+    }
+
     return new Promise((resolve, reject) => {
         server = http.createServer((req, res) => {
             if (!['GET', 'HEAD'].includes(req.method)) {
                 res.writeHead(405, {
                     'Content-Type': 'text/plain',
-                    'Access-Control-Allow-Origin': 'http://localhost:8080'
+                    'Access-Control-Allow-Origin': `http://localhost:${port}`
                 });
                 return res.end('Method Not Allowed');
             }
@@ -62,10 +113,9 @@ function startFrontendServer(distPath, port = 8080) {
                     if (!err) {
                         res.writeHead(200, {
                             'Content-Type': contentType,
-                            'Access-Control-Allow-Origin': 'http://localhost:8080'
+                            'Access-Control-Allow-Origin': `http://localhost:${port}`
                         });
-                        res.end(data);
-                        return;
+                        return res.end(data);
                     }
 
                     const acceptsHTML = req.headers.accept?.includes('text/html');
@@ -75,21 +125,20 @@ function startFrontendServer(distPath, port = 8080) {
                             if (errFallback) {
                                 res.writeHead(500, {
                                     'Content-Type': 'text/plain',
-                                    'Access-Control-Allow-Origin': 'http://localhost:8080'
+                                    'Access-Control-Allow-Origin': `http://localhost:${port}`
                                 });
-                                res.end('Failed to load fallback');
-                            } else {
-                                res.writeHead(200, {
-                                    'Content-Type': 'text/html',
-                                    'Access-Control-Allow-Origin': 'http://localhost:8080'
-                                });
-                                res.end(html);
+                                return res.end('Failed to load fallback');
                             }
+                            res.writeHead(200, {
+                                'Content-Type': 'text/html',
+                                'Access-Control-Allow-Origin': `http://localhost:${port}`
+                            });
+                            res.end(html);
                         });
                     } else {
                         res.writeHead(404, {
                             'Content-Type': 'text/plain',
-                            'Access-Control-Allow-Origin': 'http://localhost:8080'
+                            'Access-Control-Allow-Origin': `http://localhost:${port}`
                         });
                         res.end('Not Found');
                     }
@@ -97,7 +146,7 @@ function startFrontendServer(distPath, port = 8080) {
             } catch {
                 res.writeHead(500, {
                     'Content-Type': 'text/plain',
-                    'Access-Control-Allow-Origin': 'http://localhost:8080'
+                    'Access-Control-Allow-Origin': `http://localhost:${port}`
                 });
                 res.end('Internal Server Error');
             }
@@ -109,14 +158,15 @@ function startFrontendServer(distPath, port = 8080) {
         });
 
         server.listen(port, '127.0.0.1', () => {
-            const url = `http://localhost:${server.address().port}`;
-            console.log('[frontend] Static server running at', url);
+            const url = `http://localhost:${port}`;
+            console.log('[frontend] Static server started at', url);
             resolve(url);
         });
 
         server.on('error', reject);
     });
 }
+
 
 function stopFrontendServer() {
     return new Promise((resolve) => {

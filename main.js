@@ -16,11 +16,10 @@ app.whenReady().then(async () => {
     const loadingWindow = createLoadingWindow();
 
     loadingWindow.on('closed', () => {
-        // If the main window hasn't been shown yet, assume the user quit early
         const anyVisible = BrowserWindow.getAllWindows().some(win => win.isVisible());
-        if (!anyVisible) {
+        if (!anyVisible && !globalThis.isUpdating) {
             console.log('[main] Loading window closed before main window was shown. Quitting app...');
-            app.quit(); // Triggers before-quit and will clean up servers
+            app.quit();
         }
     });
 
@@ -32,26 +31,19 @@ app.whenReady().then(async () => {
 
     // Server readiness
     const serversPromise = (async () => {
-        const running = await isLocalServerRunning();
-        if (!running) {
-            console.log('[main] Starting localhost_servers...');
-            try {
-                const serverPath = await ensureServersDownloaded();
-                await startLocalServers(serverPath);
-                console.log('[main] localhost_servers started.');
-            } catch (err) {
-                console.error('[main] Failed to start localhost_servers:', err);
-            }
-        } else {
-            console.log('[main] localhost_servers already running.');
+        try {
+            const path = await ensureServersDownloaded();
+            await startLocalServers(path);
+            console.log('[main] Servers signaled ready');
+        } catch (err) {
+            console.error('[main] Failed to start localhost_servers:', err);
         }
-        return true;
     })();
 
     // Renderer readiness
     const rendererPromise = new Promise((resolve) => {
         ipcMain.once('renderer-ready', () => {
-            console.log('Renderer signaled ready');
+            console.log('[main] Renderer signaled ready');
             resolve(true);
         });
     });
@@ -97,7 +89,6 @@ app.on('before-quit', async (event) => {
     try {
         await stopFrontendServer();
         await stopLocalServers();
-        console.log('hello');
         await destroySecureProxyWindow();
         console.log('[main] Cleanup complete. Quitting now...');
         app.exit(); // use exit to avoid loop
