@@ -10,7 +10,7 @@ on:
       prerelease:
         description: 'Mark as prerelease?'
         required: false
-        default: 'false'
+        default: 'true'
 
 jobs:
   release:
@@ -58,16 +58,17 @@ jobs:
           if [[ "${{ github.event.inputs.draft }}" == "true" ]]; then
             FLAGS="$FLAGS --draft"
           fi
-          if [[ "${{ github.event.inputs.prerelease }}" == "true" ]]; then
+          if [[ "${{ github.event.inputs.prerelease }}" != "false" ]]; then
             FLAGS="$FLAGS --prerelease"
           fi
-          
+
           gh release create ${{ steps.version.outputs.tag }} release/frontend.zip \
             --title "Frontend ${{ steps.version.outputs.timestamp }}" \
             --notes "Neurite's frontend built using Vite" \
             $FLAGS
 
       - name: Delete older frontend-* releases (keep latest)
+        if: ${{ github.event.inputs.draft != 'true' }}
         run: |
           gh release list --limit 100 --json tagName,createdAt \
           | jq -r '.[] | select(.tagName | startswith("frontend-")) | "\(.createdAt) \(.tagName)"' \
