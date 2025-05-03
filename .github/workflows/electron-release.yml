@@ -24,16 +24,20 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
           echo "tag=electron-$timestamp" >> $GITHUB_OUTPUT
 
-          if [[ "${{ github.event.inputs.release_type }}" == "draft" ]]; then
-            echo "draft=true" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event.inputs.release_type }}" == "prerelease" ]]; then
-            echo "draft=false" >> $GITHUB_OUTPUT
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "draft=false" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
+          case "${{ github.event.inputs.release_type }}" in
+            draft)
+              echo "draft=true" >> $GITHUB_OUTPUT
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+              ;;
+            prerelease)
+              echo "draft=false" >> $GITHUB_OUTPUT
+              echo "prerelease=true" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "draft=false" >> $GITHUB_OUTPUT
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+              ;;
+          esac
 
   build:
     needs: set-version
@@ -43,24 +47,31 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
+      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
     steps:
-      - name: Checkout electron branch
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: electron
 
-      - name: Set up Node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
+      - name: Install AppImage dependencies (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
       - name: Install dependencies
         run: npm install
 
-      - name: Set embedded version
+      - name: Embed version into build
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
-      - name: Build Electron app
+      - name: Build Electron app for target platform
         run: |
           case "${{ matrix.os }}" in
             macos-latest)   npm run build -- --mac --publish=never ;;
@@ -68,42 +79,26 @@ jobs:
             ubuntu-latest)  npm run build -- --linux --publish=never ;;
           esac
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        if: matrix.os == 'ubuntu-latest'  # Only Ubuntu job creates the release
         with:
-          name: ${{ matrix.os }}
-          path: |
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
+          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          draft: ${{ needs.set-version.outputs.draft }}
+          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: |
             dist/**/*.dmg
             dist/**/*.exe
             dist/**/*.AppImage
-
-  publish-release:
-    needs: [build, set-version]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: release
-
-      - name: List downloaded files
-        run: find release
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.set-version.outputs.tag }}
-          name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
-          body: |
-            Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
-          draft: ${{ needs.set-version.outputs.draft }}
-          prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: release/**/*  # safe for all platforms
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs: [publish-release, set-version]
+    needs:
+      - build
+      - set-version
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
@@ -112,14 +107,16 @@ jobs:
           sudo apt update
           sudo apt install -y gh jq
 
-      - name: Authenticate GH CLI
+      - name: Authenticate GitHub CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       - name: Delete old electron-* releases (keep latest)
         run: |
           gh release list --limit 100 --json tagName,createdAt \
-          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
-          | sort -r \
-          | tail -n +2 \
-          | awk '{print $2}' \
-          | xargs -r -n 1 gh release delete -y
+            | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+            | sort -r \
+            | tail -n +2 \
+            | awk '{print $2}' \
+            | xargs -r -n 1 gh release delete -y
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
