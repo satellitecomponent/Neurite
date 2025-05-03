@@ -1,3 +1,4 @@
+# Neurite Electron App Release Workflow (GitHub Actions) with Artifact v4 Migration
 name: Neurite Desktop Release
 
 on:
@@ -23,7 +24,7 @@ jobs:
           timestamp=$(date +'%Y.%m.%d.%H%M%S')
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
           echo "tag=electron-$timestamp" >> $GITHUB_OUTPUT
-
+          
           case "${{ github.event.inputs.release_type }}" in
             draft)
               echo "draft=true" >> $GITHUB_OUTPUT
@@ -47,6 +48,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
+      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,88 +60,79 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install AppImage dependencies (Ubuntu only)
+      - name: Install AppImage deps (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libfuse2
+        run: sudo apt-get update && sudo apt-get install -y libfuse2
 
       - name: Install dependencies
         run: npm install
 
-      - name: Embed version into build
+      - name: Embed version
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
       - name: Build Electron app
         run: |
           case "${{ matrix.os }}" in
-            ubuntu-latest)  npm run build -- --linux --publish=never ;;
-            macos-latest)   npm run build -- --mac --publish=never ;;
+            ubuntu-latest) npm run build -- --linux --publish=never ;;
+            macos-latest)  npm run build -- --mac --publish=never ;;
             windows-latest) npm run build -- --win --publish=never ;;
           esac
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3.1.3
+      - name: Upload artifact for release
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-build
+          name: release-artifacts-${{ matrix.os }}
           path: |
             dist/**/*.dmg
             dist/**/*.exe
             dist/**/*.AppImage
 
   release:
-    needs:
-      - build
-      - set-version
+    needs: [set-version, build]
     runs-on: ubuntu-latest
-    env:
-      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
-      RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3.0.2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: dist
+          pattern: release-artifacts-*
+          merge-multiple: true
 
-      - name: Flatten dist structure
-        run: |
-          mkdir flat
-          find dist -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.AppImage' \) -exec cp {} flat/ \;
-
-      - name: Upload release assets
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
-          body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
+          tag_name: ${{ needs.set-version.outputs.tag }}
+          name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
+          body: Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: flat/*
+          files: |
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs:
-      - release
-      - set-version
+    needs: [release, set-version]
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Install GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install -y gh jq
+        run: sudo apt update && sudo apt install -y gh jq
 
-      - name: Authenticate with GitHub CLI
+      - name: Authenticate GH CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-      - name: Delete old electron-* releases (keep latest)
+      - name: Delete older electron-* releases
         run: |
           gh release list --limit 100 --json tagName,createdAt \
-            | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
-            | sort -r \
-            | tail -n +2 \
-            | awk '{print $2}' \
-            | xargs -r -n 1 gh release delete -y
+          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+          | sort -r \
+          | tail -n +2 \
+          | awk '{print $2}' \
+          | xargs -r -n 1 gh release delete -y
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
