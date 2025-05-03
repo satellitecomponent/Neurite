@@ -73,9 +73,9 @@ jobs:
           draft: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.draft || 'false' }}
           prerelease: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.prerelease || 'false' }}
           files: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.AppImage
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
