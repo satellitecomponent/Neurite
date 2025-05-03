@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "build": "electron-builder --publish=never",
     "set-version": "node scripts/set-version.js"
   },
   "dependencies": {
@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "electron": "^36.1.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^25.1.8"
   },
   "overrides": {
     "glob": "^11.0.1"
@@ -35,7 +35,6 @@
     "directories": {
       "output": "dist"
     },
-    "publish": [],
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
