@@ -1,12 +1,15 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { registerShortcuts, unregisterShortcuts } = require('./modules/shortcuts');
 const { createLoadingWindow, closeLoadingWindow } = require('./modules/loadingwindow');
-const { isLocalServerRunning, startLocalServers, stopLocalServers } = require('./modules/servermanager');
+const { startLocalServers, stopLocalServers } = require('./modules/servermanager');
 const { createMainWindow } = require('./modules/windowmanager');
 const { initializeUpdater } = require('./modules/update');
 const { ensureServersDownloaded } = require('./modules/serverdownloader');
 const { setupSecureFetchHandler, destroySecureProxyWindow } = require('./modules/securefetch');
 const { stopFrontendServer } = require('./modules/frontendserver');
+
+const { configureLogging, closeLogStream } = require('./modules/logging');
+configureLogging(app);
 
 app.whenReady().then(async () => {
     // Run updater and wait for possible restart
@@ -95,5 +98,7 @@ app.on('before-quit', async (event) => {
     } catch (err) {
         console.error('[main] Cleanup error:', err);
         app.exit(1);
+    } finally {
+        closeLogStream();
     }
 });

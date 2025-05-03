@@ -58,6 +58,10 @@ function installNeeded(folder) {
 
 
 async function startLocalServers(serversFolder) {
+    if (await isLocalServerRunning()) {
+        console.log('[serverManager] localhost_servers already running.');
+        return;
+    }
     return new Promise(async (resolve, reject) => {
         const scriptFullPath = path.join(serversFolder, 'start_servers.js');
         const logPath = path.join(app.getPath('userData'), 'server-install.log');
@@ -126,7 +130,6 @@ function stopLocalServers() {
 }
 
 module.exports = {
-    isLocalServerRunning,
     startLocalServers,
     stopLocalServers
 };
