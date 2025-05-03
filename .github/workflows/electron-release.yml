@@ -47,7 +47,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
-      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -71,33 +70,57 @@ jobs:
       - name: Embed version into build
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
-      - name: Build Electron app for target platform
+      - name: Build Electron app
         run: |
           case "${{ matrix.os }}" in
+            ubuntu-latest)  npm run build -- --linux --publish=never ;;
             macos-latest)   npm run build -- --mac --publish=never ;;
             windows-latest) npm run build -- --win --publish=never ;;
-            ubuntu-latest)  npm run build -- --linux --publish=never ;;
           esac
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3.1.3
+        with:
+          name: ${{ matrix.os }}-build
+          path: |
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
+
+  release:
+    needs:
+      - build
+      - set-version
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3.0.2
+        with:
+          path: dist
+
+      - name: Flatten dist structure
+        run: |
+          mkdir flat
+          find dist -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.AppImage' \) -exec cp {} flat/ \;
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
-        if: matrix.os == 'ubuntu-latest'  # Only Ubuntu job creates the release
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: Neurite Desktop ${{ env.RELEASE_VERSION }}
           body: Electron desktop release for version ${{ env.RELEASE_VERSION }}.
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
-          files: |
-            dist/**/*.dmg
-            dist/**/*.exe
-            dist/**/*.AppImage
+          files: flat/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
     needs:
-      - build
+      - release
       - set-version
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
@@ -107,7 +130,7 @@ jobs:
           sudo apt update
           sudo apt install -y gh jq
 
-      - name: Authenticate GitHub CLI
+      - name: Authenticate with GitHub CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       - name: Delete old electron-* releases (keep latest)
