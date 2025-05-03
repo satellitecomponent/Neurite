@@ -72,10 +72,7 @@ jobs:
           body: ${{ matrix.os == 'ubuntu-latest' && format('Electron desktop release for version {0}.', env.RELEASE_VERSION) || '' }}
           draft: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.draft || 'false' }}
           prerelease: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.prerelease || 'false' }}
-          files: |
-            dist/**/*.dmg
-            dist/**/*.exe
-            dist/**/*.AppImage
+          files: dist/**/*.@(dmg|exe|AppImage)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
