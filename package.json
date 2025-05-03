@@ -1,7 +1,7 @@
 {
   "name": "neurite-electron",
   "version": "1.0.0",
-  "description": "Neurite for desktop.",
+  "description": "Neurite Desktop",
   "author": "satellitecomponent",
   "main": "main.js",
   "scripts": {
@@ -35,13 +35,7 @@
     "directories": {
       "output": "dist"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "satellitecomponent",
-        "repo": "neurite"
-      }
-    ],
+    "publish": [],
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
