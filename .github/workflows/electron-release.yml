@@ -43,7 +43,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
-      RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
     steps:
       - name: Checkout electron branch
         uses: actions/checkout@v3
@@ -58,28 +57,53 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Write embedded version file
+      - name: Set embedded version
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
       - name: Build Electron app
-        run: npm run build -- --publish=never
+        run: |
+          case "${{ matrix.os }}" in
+            macos-latest)   npm run build -- --mac --publish=never ;;
+            windows-latest) npm run build -- --win --publish=never ;;
+            ubuntu-latest)  npm run build -- --linux --publish=never ;;
+          esac
 
-      - name: Upload release assets
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}
+          path: |
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
+
+  publish-release:
+    needs: [build, set-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release
+
+      - name: List downloaded files
+        run: find release
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ matrix.os == 'ubuntu-latest' && format('Neurite Desktop {0}', env.RELEASE_VERSION) || '' }}
-          body: ${{ matrix.os == 'ubuntu-latest' && format('Electron desktop release for version {0}.', env.RELEASE_VERSION) || '' }}
-          draft: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.draft || 'false' }}
-          prerelease: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.prerelease || 'false' }}
-          files: dist/**/*.@(dmg|exe|AppImage)
+          tag_name: ${{ needs.set-version.outputs.tag }}
+          name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
+          body: |
+            Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
+          draft: ${{ needs.set-version.outputs.draft }}
+          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          files: release/**/*  # safe for all platforms
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cleanup:
-    needs:
-      - build
-      - set-version
+    needs: [publish-release, set-version]
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
@@ -88,19 +112,14 @@ jobs:
           sudo apt update
           sudo apt install -y gh jq
 
-      - name: Authenticate with GitHub CLI
+      - name: Authenticate GH CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       - name: Delete old electron-* releases (keep latest)
         run: |
-          releases=$(gh release list --limit 100 --json tagName,createdAt \
-            | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
-            | sort -r)
-
-          if [ -n "$releases" ]; then
-            echo "$releases" | tail -n +2 | awk '{print $2}' | xargs -r -n 1 gh release delete -y
-          else
-            echo "No releases found to delete."
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gh release list --limit 100 --json tagName,createdAt \
+          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+          | sort -r \
+          | tail -n +2 \
+          | awk '{print $2}' \
+          | xargs -r -n 1 gh release delete -y
