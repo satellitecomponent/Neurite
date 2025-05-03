@@ -62,8 +62,10 @@ jobs:
       RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (electron branch)
         uses: actions/checkout@v4
+        with:
+          ref: electron # Checkout the electron branch
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -81,6 +83,7 @@ jobs:
 
       - name: Embed version into build
         run: npm run set-version "$RELEASE_VERSION"
+        shell: bash # Ensure bash is used for variable expansion
 
       - name: Build Electron app
         run: |
@@ -96,13 +99,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
-          # Use recursive path search to find artifacts if they are in subdirectories like dist/mac, dist/win etc.
-          # This addresses the "No files were found" warning you encountered.
           path: |
             dist/**/*.dmg
             dist/**/*.exe
             dist/**/*.AppImage
-          # Optional: retention-days: 7
 
   release:
     needs: [build, set-version]
