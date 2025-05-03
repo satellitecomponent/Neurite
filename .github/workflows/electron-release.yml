@@ -1,4 +1,3 @@
-# Neurite Electron App Release Workflow (GitHub Actions) with Artifact v4 Migration
 name: Neurite Desktop Release
 
 on:
@@ -9,6 +8,11 @@ on:
         required: false
         default: 'draft'
 
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+
 jobs:
   set-version:
     runs-on: ubuntu-latest
@@ -18,13 +22,15 @@ jobs:
       draft: ${{ steps.version.outputs.draft }}
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
-      - name: Generate timestamped version
+      - name: Generate timestamped version and tag
         id: version
         run: |
           timestamp=$(date +'%Y.%m.%d.%H%M%S')
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
-          echo "tag=electron-$timestamp" >> $GITHUB_OUTPUT
-          
+
+          tag="electron-$timestamp"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
           case "${{ github.event.inputs.release_type }}" in
             draft)
               echo "draft=true" >> $GITHUB_OUTPUT
@@ -34,11 +40,16 @@ jobs:
               echo "draft=false" >> $GITHUB_OUTPUT
               echo "prerelease=true" >> $GITHUB_OUTPUT
               ;;
-            *)
+            final)
               echo "draft=false" >> $GITHUB_OUTPUT
               echo "prerelease=false" >> $GITHUB_OUTPUT
               ;;
+            *)
+              echo "draft=true" >> $GITHUB_OUTPUT
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+              ;;
           esac
+        shell: bash
 
   build:
     needs: set-version
@@ -49,55 +60,59 @@ jobs:
     env:
       RELEASE_VERSION: ${{ needs.set-version.outputs.timestamp }}
       RELEASE_TAG: ${{ needs.set-version.outputs.tag }}
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: electron
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install AppImage deps (Ubuntu only)
+      - name: Install AppImage dependencies (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libfuse2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
 
       - name: Install dependencies
         run: npm install
 
-      - name: Embed version
-        run: npm run set-version "${{ env.RELEASE_VERSION }}"
+      - name: Embed version into build
+        run: npm run set-version "$RELEASE_VERSION"
 
       - name: Build Electron app
         run: |
           case "${{ matrix.os }}" in
-            ubuntu-latest) npm run build -- --linux --publish=never ;;
-            macos-latest)  npm run build -- --mac --publish=never ;;
+            macos-latest) npm run build -- --mac --publish=never ;;
             windows-latest) npm run build -- --win --publish=never ;;
+            ubuntu-latest) npm run build -- --linux --publish=never ;;
+            *) echo "Unsupported OS: ${{ matrix.os }}" && exit 1 ;;
           esac
+        shell: bash
 
-      - name: Upload artifact for release
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts-${{ matrix.os }}
+          name: build-${{ matrix.os }}
+          # Use recursive path search to find artifacts if they are in subdirectories like dist/mac, dist/win etc.
+          # This addresses the "No files were found" warning you encountered.
           path: |
             dist/**/*.dmg
             dist/**/*.exe
             dist/**/*.AppImage
+          # Optional: retention-days: 7
 
   release:
-    needs: [set-version, build]
+    needs: [build, set-version]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Download all build artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: release-artifacts-*
+          path: dist
+          pattern: build-*
           merge-multiple: true
 
       - name: Create GitHub release
@@ -105,13 +120,19 @@ jobs:
         with:
           tag_name: ${{ needs.set-version.outputs.tag }}
           name: Neurite Desktop ${{ needs.set-version.outputs.timestamp }}
-          body: Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
+          body: |
+            Electron desktop release for version ${{ needs.set-version.outputs.timestamp }}.
+
+            ## Assets
+            Download the appropriate installer for your operating system below.
+
           draft: ${{ needs.set-version.outputs.draft }}
           prerelease: ${{ needs.set-version.outputs.prerelease }}
           files: |
-            dist/**/*.dmg
-            dist/**/*.exe
-            dist/**/*.AppImage
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -120,19 +141,27 @@ jobs:
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
-      - name: Install GitHub CLI
-        run: sudo apt update && sudo apt install -y gh jq
-
-      - name: Authenticate GH CLI
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-
-      - name: Delete older electron-* releases
+      - name: Install GitHub CLI and jq
         run: |
+          sudo apt update
+          sudo apt install -y gh jq
+
+      - name: Authenticate with GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old electron-* releases (keep latest final)
+        run: |
+          echo "Checking for old 'electron-*' releases to delete..."
           gh release list --limit 100 --json tagName,createdAt \
-          | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
-          | sort -r \
-          | tail -n +2 \
-          | awk '{print $2}' \
-          | xargs -r -n 1 gh release delete -y
+            | jq -r '.[] | select(.tagName | startswith("electron-")) | "\(.createdAt) \(.tagName)"' \
+            | sort -r \
+            | tail -n +2 \
+            | awk '{print $2}' \
+            | xargs -r -n 1 sh -c 'echo "Deleting old release tag: $0" && gh release delete "$0" -y' \
+            || echo "No old releases found to delete or an error occurred (checked limit 100)."
+
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
