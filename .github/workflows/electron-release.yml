@@ -58,26 +58,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Write embedded version file using dev script
+      - name: Write embedded version file
         run: npm run set-version "${{ env.RELEASE_VERSION }}"
 
       - name: Build Electron app
         run: npm run build -- --publish=never
 
-      - name: Debug release mode
-        run: |
-          echo "Draft? ${{ needs.set-version.outputs.draft }}"
-          echo "Prerelease? ${{ needs.set-version.outputs.prerelease }}"
-
-      - name: Upload release asset
+      - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.set-version.outputs.tag }}
-          name: Neurite Desktop ${{ env.RELEASE_VERSION }}
-          body: |
-            Electron desktop release for version ${{ env.RELEASE_VERSION }}.
-          draft: ${{ needs.set-version.outputs.draft }}
-          prerelease: ${{ needs.set-version.outputs.prerelease }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ matrix.os == 'ubuntu-latest' && format('Neurite Desktop {0}', env.RELEASE_VERSION) || '' }}
+          body: ${{ matrix.os == 'ubuntu-latest' && format('Electron desktop release for version {0}.', env.RELEASE_VERSION) || '' }}
+          draft: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.draft || 'false' }}
+          prerelease: ${{ matrix.os == 'ubuntu-latest' && needs.set-version.outputs.prerelease || 'false' }}
           files: |
             dist/*.dmg
             dist/*.exe
@@ -92,9 +86,6 @@ jobs:
     if: needs.set-version.outputs.draft == 'false' && needs.set-version.outputs.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
       - name: Install GitHub CLI
         run: |
           sudo apt update
