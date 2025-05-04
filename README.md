@@ -172,6 +172,8 @@ Movements through the fractal are no longer interrupted at each step. Instead, t
 
  `Drag and drop` or `Paste` local files and web content straight into the fractal.
 
+ You can also `right click` on an empty space to quickly create a new empty node
+
 ### ⚙️`Controls`⚙️
 <table>
   <tr>
