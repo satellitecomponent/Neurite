@@ -1,0 +1,339 @@
+/* base.css – reset + typography */
+:root {
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Courier New', monospace;
+    --bg: #111;
+    --fg: #bbb;
+    --accent: #71f4df;
+    --max-width: 720px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    padding: 2rem;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+img {
+    width:100%;
+}
+
+code {
+    background-color: #333;
+    padding: 2px 6px;
+    margin: 2px;
+    border-radius: 12px;
+}
+
+/* Shared heading base */
+h1,
+h2,
+h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 500;
+    text-align: center;
+    position: relative;
+}
+
+h1 code,
+h2 code,
+h3 code {
+    background-color: transparent;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: none;
+    border-bottom: none;
+    padding: 1px 50px;
+    font-size: 0.95em;
+    color: inherit;
+}
+
+/* Distinct sizes */
+h1 {
+    font-size: 1.8rem;
+    color: white;
+    font-weight: 600;
+}
+
+h2 {
+    font-size: 1.25rem;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+}
+
+/* Shared line decoration */
+h1::before,
+h1::after,
+h2::before,
+h2::after {
+    content: '';
+    height: 1px;
+    background: #333;
+    position: absolute;
+    top: 50%;
+}
+
+/* H1 lines: shorter + positioned absolutely */
+h1::before {
+    width: 30px;
+    left: -40px;
+}
+
+h1::after {
+    width: 30px;
+    right: -40px;
+}
+
+/* H2 lines: flex-driven */
+h2::before,
+h2::after {
+    position: static;
+    flex: 1;
+}
+
+h4 {
+    padding: 1em;
+    background: var(--bg);
+    border-radius: 4px;
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+hr {
+    color: var(--fg);
+}
+
+p {
+    margin: 1em 0;
+    line-height: 1.7;
+    font-size: 1rem;
+    max-width: 60ch;
+    word-wrap: break-word;
+}
+
+blockquote {
+    margin: 1.5em 0;
+    padding: 1em 1.5em;
+    border-left: 4px solid var(--accent, #71f4df);
+    background: #1a1a1a;
+    color: #ccc;
+    border-radius: 4px;
+}
+
+blockquote p {
+    margin: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2em 0;
+    font-size: 0.95rem;
+    color: #ddd;
+}
+
+thead {
+    background: #1f1f1f;
+    border-bottom: 2px solid #444;
+}
+
+thead th {
+    text-align: left;
+    padding: 0.75em 1em;
+    font-weight: 600;
+    color: #fff;
+    border-right: 1px solid #333;
+}
+
+tbody tr:nth-child(odd) {
+    background: #181818;
+}
+
+tbody tr:nth-child(even) {
+    background: #141414;
+}
+
+td {
+    padding: 0.75em 1em;
+    border-top: 1px solid #333;
+    border-right: 1px solid #222;
+}
+
+tr:last-child td {
+    border-bottom: 1px solid #333;
+}
+
+th:last-child,
+td:last-child {
+    border-right: none;
+}
+
+ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 2em 0;
+    border-left: 1px solid #333;
+}
+
+ul li {
+    position: relative;
+    padding-left: 2em;
+    margin: 1em 0;
+    color: #ccc;
+}
+
+/* horizontal bar connector (like h1/h2 style) */
+ul li::before {
+    content: '';
+    position: absolute;
+    top: 0.9em;
+    left: 0;
+    width: 1.2em;
+    height: 1px;
+    background: #333;
+}
+
+ol {
+    counter-reset: list;
+    list-style: none;
+    margin: 2em 0;
+    padding-left: 0;
+    border-left: 1px solid #333;
+}
+
+ol li {
+    counter-increment: list;
+    position: relative;
+    padding-left: 2em;
+    margin: 1em 0;
+    color: #ccc;
+}
+
+/* Tree branch bar (same as ul) */
+ol li::before {
+    content: '';
+    position: absolute;
+    top: 0.9em;
+    left: 0;
+    width: 1.2em;
+    height: 1px;
+    background: #333;
+}
+
+/* Custom numbering style */
+ol li::after {
+    content: counter(list) '.';
+    position: absolute;
+    left: 1.4em;
+    top: 0;
+    color: var(--accent, #71f4df);
+    font-weight: bold;
+}
+
+/* layout.css */
+body {
+    max-width: var(--max-width);
+    margin: auto;
+}
+
+nav {
+    margin-bottom: 2rem;
+}
+
+/* template.css */
+
+header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1rem;
+    z-index: 1;
+}
+
+.logo-container {
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
+    z-index: 2;
+    pointer-events: auto;
+    /* enable link interaction */
+}
+
+.logo {
+    height: 80px;
+    width: auto;
+    opacity: 0.9;
+    transition: transform 0.2s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+.wiki-search {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+#wiki-search-input {
+    width: 100%;
+    padding: 0.5em 1em;
+    font-size: 1rem;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+    border-radius: 4px;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    /* limit the height */
+    overflow-y: auto;
+    /* enable scrolling */
+    background: #1a1a1a;
+    border: 1px solid #444;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 10;
+    display: none;
+    border-radius: 4px;
+}
+
+.suggestions li {
+    padding: 0.5em 1em;
+    cursor: pointer;
+}
+
+.suggestions li:hover {
+    background: #333;
+}

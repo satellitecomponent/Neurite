@@ -6,7 +6,9 @@
   "scripts": {
     "start": "vite",
     "start:host": "vite --host",
-    "build": "vite build",
+    "build": "vite build && npm run wiki:build",
+    "wiki:build": "node ./wiki/generator/build.js",
+    "wiki:watch": "node ./wiki/generator/watch.js",
     "postbuild": "shx cp -r js dist/js && shx cp -r resources dist/resources && shx cp -r wiki dist/wiki"
   },
   "keywords": [],
@@ -14,10 +16,11 @@
   "license": "ISC",
   "devDependencies": {
     "vite": "^6.1.1",
-    "shx": "^0.3.3"
+    "shx": "^0.3.3",
+    "chokidar": "^4.0.3",
+    "marked": "^15.0.11"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "overrides": {
     "glob": "^11.0.1",
     "vite": {

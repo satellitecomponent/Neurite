@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>%%TITLE%%</title>
+    <meta name="description" content="%%DESCRIPTION%%" />
+    <link rel="stylesheet" href="/wiki/generator/styles.css" />
+    <script type="module" src="/wiki/generator/client.js" defer></script>
+</head>
+
+<body>
+<header>
+<div class="wiki-search">
+    <input type="text" placeholder="Search wiki…" id="wiki-search-input" autocomplete="off" />
+    <ul id="wiki-suggestions" class="suggestions"></ul>
+</div>
+<div class="logo-container">
+    <a href="/wiki/">
+        <img src="/wiki/generator/logo.svg" alt="Neurite" class="logo" />
+    </a>
+</div>
+</header>
+    <main id="main-content">
+        %%CONTENT%%
+    </main>
+    <footer>
+        <a href="/wiki/">← Neurite Wiki</a>
+    </footer>
+</body>
+
+</html>
