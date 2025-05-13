@@ -23,6 +23,24 @@ class Graph {
         this.addEdgeView(edge.view);
         this.edges[edge.edgeKey] = edge;
     }
+    addEdgeFromData(edgeData){
+        const nodes = this.nodes;
+        const pts = edgeData.p.map( (k)=>nodes[k] );
+        if (pts.includes(undefined)) {
+            Logger.warn("missing keys", edgeData, nodes)
+        }
+
+        // Check if edge already exists
+        const edgeKey = edgeData.edgeKey;
+        if (this.findEdge( (edge)=>(edge.edgeKey === edgeKey) )) return;
+
+        this.edgeDirectionalities[edgeData.edgeKey] ||=
+            Edge.directionalityFromData(edgeData.directionality);
+
+        const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
+        pts.forEach(Node.addEdgeThis, edge);
+        this.addEdge(edge);
+    }
     addEdgeView(edgeView){
         this.edgeViews[edgeView.id] = edgeView;
         this.htmlEdges.append(edgeView.svgArrow, edgeView.svgBorder, edgeView.svgLink);
@@ -133,10 +151,6 @@ class Graph {
         return this;
     }
 
-    setEdgeDirectionalityFromData(edgeData){
-        this.edgeDirectionalities[edgeData.edgeKey] ||=
-            Edge.directionalityFromData(edgeData.directionality)
-    }
     updateRotationByAngle(angle){
 //        const delta = new vec2(Math.cos(angle), Math.sin(angle));
 //        this.rotation = this.rotation.cmult(delta);
@@ -284,21 +298,6 @@ function updateNodeEdgesLength(node) {
         const currentLength = edge.currentLength;
         if (currentLength) edge.length = currentLength;
     })
-}
-
-function edgeFromJSON(edgeData) {
-    const nodes = Graph.nodes;
-    const pts = edgeData.p.map((k) => nodes[k]);
-    if (pts.includes(undefined)) Logger.warn("missing keys", edgeData, nodes);
-
-    // Check if edge already exists
-    const edgeKey = edgeData.edgeKey;
-    if (Graph.findEdge( (edge)=>(edge.edgeKey === edgeKey) )) return;
-
-    const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
-    pts.forEach(Node.addEdgeThis, edge);
-    Graph.addEdge(edge);
-    return edge;
 }
 
 Node.byTitle = function(title){

@@ -10,30 +10,35 @@ class Node {
     save_extras = [];
     view = null;
 
-    constructor(thing, createEdges = true){
+    #processData = (nodeData, extraData, edgesData)=>{
+        const vecProps = ['anchor', 'mouseAnchor', 'vel', 'pos', 'force'];
+        for (const k in nodeData) {
+            const val = nodeData[k];
+            this[k] = (vecProps.includes(k) ? new vec2(val) : val);
+        }
+
+        if (extraData) {
+            for (const e of extraData) Node.Extensions[e.f](this, e.a)
+        }
+
+        if (edgesData) {
+            this.init = ()=>{
+                for (const edgeData of edgesData) Graph.addEdgeFromData(edgeData)
+            }
+        }
+    }
+    constructor(thing, data){
         if (thing) {
             this.content = thing;
-            const dataset = thing.dataset;
-
-            const nodeData = JSON.parse(dataset.node_json)
-            const vecProps = ['anchor', 'mouseAnchor', 'vel', 'pos', 'force'];
-            for (const k in nodeData) {
-                const val = nodeData[k];
-                this[k] = (vecProps.includes(k) ? new vec2(val) : val);
-            }
-
-            if (dataset.node_extras) {
-                const extraData = JSON.parse(dataset.node_extras);
-                for (const e of extraData) Node.Extensions[e.f](this, e.a);
-            }
-
-            if (dataset.edges !== undefined && createEdges) {
-                const edgesData = JSON.parse(dataset.edges);
-                this.init = ()=>{
-                    for (const edgeData of edgesData) {
-                        edgeFromJSON(edgeData)
-                    }
-                };
+            if (data) {
+                this.#processData(data.node, data.extras, data.edges)
+            } else { // DEPRECATED
+                const dataset = thing.dataset;
+                this.#processData(
+                    JSON.parse(dataset.node_json),
+                    dataset.node_extras && JSON.parse(dataset.node_extras),
+                    dataset.edges && JSON.parse(dataset.edges)
+                );
             }
         } else {
             this.content = Html.new.div();
@@ -62,24 +67,38 @@ class Node {
         On.mouseup(document, this.onMouseUp);
         On.wheel(div, this.onWheel);
     }
-    toJSON() {
-        return JSON.stringify({...this}, (k, v) => {
-            if (k === "content" || k === "edges" || k === "save_extras" || k === "viewer" ||
-                k === "aiResponseEditor" || k === "aiNodeMessageLoop" || k === "sensor" || k === "responseHandler" ||
-                k === "view" || k === "agent" || k === "typeNode") {
-                return undefined;
-            }
-            return v;
-        });
-    }
-    updateNodeData() {
-        const saveExtras = [];
-        for (const extra of this.save_extras) {
-            saveExtras.push(typeof extra === "function" ? extra(this) : extra);
+
+    #invalidKeys = {
+        aiResponseEditor: true, aiNodeMessageLoop: true,
+        controller: true, edges: true, save_extras: true,
+        sensor: true, view: true, typeNode: true, viewer: true
+    };
+    toJSON(){
+        const dict = {};
+        for (const k in {...this}) {
+            if (this.#invalidKeys[k]) continue;
+
+            const name = this[k]?.constructor?.name || '';
+            if (name === 'Function' || name.startsWith('HTML')) continue;
+
+            dict[k] = this[k];
         }
-        this.content.dataset.node_extras = JSON.stringify(saveExtras);
-        this.content.dataset.node_json = this.toJSON();
+        return dict;
     }
+    dataObj(){
+        // DEPRECATED
+        delete this.content.dataset.edges;
+        delete this.content.dataset.node_extras;
+        delete this.content.dataset.node_json;
+
+        const extras = [];
+        for (const extra of this.save_extras) {
+            extras.push(typeof extra === "function" ? extra(this) : extra);
+        }
+        const edges = this.edges.map(Edge.dataForEdge);
+        return { edges, extras, node: this.toJSON() };
+    }
+
     push_extra_cb(f) {
         this.save_extras.push(f);
         return this;
