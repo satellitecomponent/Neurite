@@ -8,8 +8,8 @@ class GraphsKeeper {
     #data = new Stored('graphs', 'graph-data');
     #meta = new Stored('graphs', 'graph-meta');
 
-    blobForBlobId(blobId){ return this.#blobData.load(blobId) }
-    blobMetaForGraphId(graphId){ return this.#blobMeta.load(graphId) }
+    blobByBlobId(blobId){ return this.#blobData.load(blobId) }
+    blobMetaByGraphId(graphId){ return this.#blobMeta.load(graphId) }
     dataForMeta(meta){ return this.#data.load(meta.graphId) }
 
     deleteBlob(blobId){ return this.#blobData.delete(blobId) }
@@ -71,13 +71,13 @@ class GraphExporter {
         this.#nodesHtml = data.nodesHtml || '';
         delete data.nodesHtml;
         this.#out.data = data;
-        return this.stored.blobMetaForGraphId(this.meta.graphId);
+        return this.stored.blobMetaByGraphId(this.meta.graphId);
     }
     #gatherBlobs = (dictMeta)=>{
         this.#out.blobMeta = dictMeta;
         const proms = [];
         for (const blobId in dictMeta) {
-            proms.push(this.stored.blobForBlobId(blobId))
+            proms.push(this.stored.blobByBlobId(blobId))
         }
         return Promise.all(proms);
     }
@@ -336,7 +336,7 @@ View.Graphs = class {
         }
 
         updateForBlob(){
-            this.mom.#stored.blobMetaForGraphId(this.meta.graphId)
+            this.mom.#stored.blobMetaByGraphId(this.meta.graphId)
                 .then(this.#handleBlobMeta)
         }
         #handleBlobMeta = (dictMeta)=>{
@@ -409,8 +409,9 @@ View.Graphs = class {
 
         const blobSaver = new View.Graphs.BlobSaver(this, meta.graphId);
         importer.saveNodeItsBlob = blobSaver.saveNodeItsBlob.bind(blobSaver);
-
         this.#setSelectedGraph(meta).#loadGraph(importer.data, importer);
+        blobSaver.cleanStored();
+
         const data = (typeof importer.data === 'string') && importer.finalData;
         return this.#stored.saveMetaAndData(meta, data || importer.data);
     }
@@ -732,68 +733,68 @@ View.Graphs = class {
     }
 
     static BlobSaver = class {
-        #prevBlobs = {};
+        #dictMetaOld = {};
+        hasModified = false;
         #proms = [];
-        #dictMeta = null;
         constructor(mom, graphId){
+            this.dictMeta = mom.#blobs[graphId];
             this.graphId = graphId;
             this.mom = mom;
         }
 
-        save(){
-            this.#prevBlobs = {...this.mom.#blobs[this.graphId]};
-            Graph.forEachNode(this.#pushPromSaveBlobForNode, this);
-            return Promise.all(this.#proms).then(this.#cleanStored);
+        cleanStored(){
+            return Promise.all(this.#proms).then(this.#cleanStored)
         }
         #cleanStored = ()=>{
-            const dictMeta = this.#dictMeta;
-            if (!dictMeta) return;
-
+            const dictMeta = this.dictMeta;
             const stored = this.mom.#stored;
 
-            const orphans = this.#prevBlobs;
+            const orphans = this.#dictMetaOld;
             for (const blobId in orphans) {
+                this.hasModified = true;
                 delete dictMeta[blobId];
                 stored.deleteBlob(blobId);
                 Logger.info("Deleted blob:", orphans[blobId].title);
             }
+            if (!this.hasModified) return;
 
-            if (Object.keys(dictMeta).length < 1) {
-                stored.deleteBlobMeta(this.graphId)
-            }
-            return stored.saveBlobMeta(this.graphId, dictMeta);
+            return (Object.keys(dictMeta).length < 1)
+                 ? stored.deleteBlobMeta(this.graphId)
+                 : stored.saveBlobMeta(this.graphId, dictMeta);
         }
-        #pushPromSaveBlobForNode(node){
-            if (!node.blob) return;
 
-            if (this.#dictMeta && this.#dictMeta[node.blob]) {
-                delete this.#prevBlobs[node.blob];
-                return;
-            }
+        save(){
+            this.#dictMetaOld = {...this.dictMeta};
+            Graph.forEachNode(this.saveBlobForNode, this);
+            return this.cleanStored();
+        }
+        saveBlobForNode(node){
+            const blobId = node.blob;
+            if (!blobId) return;
 
-            this.#proms.push(this.#saveBlobForNode(node));
+            if (this.#dictMetaOld[blobId]) delete this.#dictMetaOld[blobId];
+            else this.#proms.push(this.#saveBlobForNode(node));
         }
         #saveBlobForNode(node){
             return fetch(node.view.innerContent.firstChild.src)
                 .then( (res)=>res.blob() )
-                .then(this.saveNodeItsBlob.bind(this, node))
+                .then(this.#saveNodeItsBlob.bind(this, node))
                 .catch(Logger.err.bind(Logger, "Failed to save blob:"))
         }
 
         saveNodeItsBlob(node, blob){
+            this.#proms.push(this.#saveNodeItsBlob(node, blob))
+        }
+        #saveNodeItsBlob(node, blob){
+            this.hasModified = true;
             const mom = this.mom;
             const meta = mom.#makeMetaForBlobOfTitle(blob, node.getTitle());
-
-            if (!this.#dictMeta) {
-                this.#dictMeta = mom.#blobs[this.graphId] ||= {}
-            }
-            const blobs = this.#dictMeta;
             const blobId = node.blob = meta.blobId;
-            blobs[blobId] = meta;
 
-            const stored = mom.#stored;
-            stored.saveBlobMeta(this.graphId, blobs);
-            return stored.saveBlobData(blobId, blob);
+            this.dictMeta ||= (mom.#blobs[this.graphId] = {});
+            this.dictMeta[blobId] = meta;
+
+            return mom.#stored.saveBlobData(blobId, blob);
         }
     }
 
@@ -863,7 +864,7 @@ View.Graphs = class {
         if (node.isLink) (new LinkNode).init(node);
         if (node.isFileTree) FileTreeNode.init(node);
         if (node.blob) {
-            const prom = (!importer) ? this.#stored.blobForBlobId(node.blob)
+            const prom = (!importer) ? this.#stored.blobByBlobId(node.blob)
                        : Promise.resolve(importer.blobForNode(node));
             prom.then(this.#applyBlobToNode.bind(this, node));
         }
