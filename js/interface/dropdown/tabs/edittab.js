@@ -66,20 +66,23 @@ class Value {
 }
 
 View.Value = class {
+    #handler = null;
     constructor(id, model){
         const elem = this.elem = Elem.byId(id);
+        elem.dataset.key = model.key;
+
         this.model = (!model.parse) ? model
                    : model.boundByStr(elem.min, elem.value, elem.max);
     }
-    init(prom){
-        On.input(this.elem, this.#onInput);
+
+    init(onInput, prom){
         this.elem.value = this.model.init(prom);
+        this.initView(onInput);
     }
-    initWithCb(cb, ct){
-        On.input(this.elem, this.#onInputWithCb.bind(this, cb, ct))
+    initView(onInput){
+        if (!this.#handler) On.input(this.elem, this.#handler = onInput)
     }
-    #onInput = (e)=>this.model.setByStr(this.elem.value) ;
-    #onInputWithCb(cb, ct, e){ cb.call(ct, this.#onInput(e)) }
+    onInput(e){ return this.model.setByStr(this.elem.value) }
 }
 View.ValueDouble = class {
     constructor(id1, id2, model, onValue){
@@ -88,11 +91,13 @@ View.ValueDouble = class {
         this.view1 = new View.Value(id1, model);
         this.view2 = new View.Value(id2, model);
     }
-    init(prom){
-        this.view1.initWithCb(this.onValue, this);
-        this.view2.initWithCb(this.onValue, this);
+    init(onInput, prom){
+        this.view1.initView(this.#onView1Input);
+        this.view2.initView(this.#onView2Input);
         this.onValue(this.model.init(prom));
     }
+    #onView1Input = (e)=>this.onValue(this.view1.onInput(e))
+    #onView2Input = (e)=>this.onValue(this.view2.onInput(e))
 }
 
 function NumberSlider(idSlider, idNumber, model){
@@ -209,11 +214,16 @@ class EditTab {
         let release = null;
         const prom = new Promise( (resolve)=>{ release = resolve } );
 
-        this.delay.init(prom);
+        const delay = this.delay;
+        delay.init(delay.onInput.bind(delay), prom);
+        const onInput = this.#onControlInput;
         const controls = this.controls;
-        for (const name in controls) controls[name].init(prom);
+        for (const name in controls) controls[name].init(onInput, prom);
 
         release();
+    }
+    #onControlInput = (e)=>{
+        this.controls[e.currentTarget.dataset.key].onInput(e)
     }
 
     setInnerOpacity(val){ settings._innerOpacity = val / 100 }
