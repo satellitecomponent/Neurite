@@ -390,24 +390,14 @@ class Node {
     }
     getTitle(){ return this.view.titleInput.value }
 
-    getEdgeDirectionalities() {
-        return this.edges.map( (edge)=>({
-            edge,
-            directionality: edge.getDirectionRelativeTo(this)
-        }) );
+    forEachEdge(cb, ct){
+        this.edges.forEach( (edge)=>cb.call(ct, edge) )
     }
 
     addEdge(edge) {
         this.edges.push(edge);
-        this.updateEdgeData();
     }
     static addEdgeThis(node){ node.addEdge(this) }
-
-    updateEdgeData() {
-        const es = JSON.stringify(this.edges.map(Edge.dataForEdge));
-        Logger.debug("Saving edge data:", es);
-        this.content.dataset.edges = es;
-    }
 
     removeEdgeByIndex(index){
         this.edges[index].remove();
@@ -458,7 +448,6 @@ class Node {
         if (index < 0) return;
 
         node.edges.splice(index, 1);
-        node.updateEdgeData();
     }
 }
 

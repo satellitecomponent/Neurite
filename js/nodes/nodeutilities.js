@@ -1,7 +1,6 @@
 class Graph {
     draggedNode = null;
     edges = {};
-    edgeDirectionalities = {};
     edgeViews = {};
     funcPopulate = 'populateForBackground';
     htmlEdges = Elem.byId('edges');
@@ -34,10 +33,8 @@ class Graph {
         const edgeKey = edgeData.edgeKey;
         if (this.findEdge( (edge)=>(edge.edgeKey === edgeKey) )) return;
 
-        this.edgeDirectionalities[edgeData.edgeKey] ||=
-            Edge.directionalityFromData(edgeData.directionality);
-
-        const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g);
+        const direction = Edge.directionalityFromData(edgeData.directionality);
+        const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g, direction);
         pts.forEach(Node.addEdgeThis, edge);
         this.addEdge(edge);
     }
@@ -61,12 +58,9 @@ class Graph {
     clear(){
         App.selectedNodes.clear();
         this.forEachEdge(this.deleteEdge, this);
-        this.edgeDirectionalities = {};
         this.forEachNode(this.deleteNode, this);
     }
     deleteEdge(edge){
-        this.edgeDirectionalities[edge.edgeKey] = edge.directionality;
-
         // Remove this edge from both connected nodes' edges arrays
         edge.pts.forEach(Node.removeThisEdge, edge);
 
