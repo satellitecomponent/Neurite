@@ -4,7 +4,7 @@ class Node {
     anchor = new vec2(0, 0);
     anchorForce = 0;
     createdAt = new Date().toISOString();
-    edges = [];
+    edges = {};
     init = Function.nop;
     mouseAnchor = new vec2(0, 0);
     save_extras = [];
@@ -21,6 +21,7 @@ class Node {
             for (const e of extraData) Node.Extensions[e.f](this, e.a)
         }
 
+        // DEPRECATED
         if (edgesData) {
             this.init = ()=>{
                 for (const edgeData of edgesData) Graph.addEdgeFromData(edgeData)
@@ -95,8 +96,7 @@ class Node {
         for (const extra of this.save_extras) {
             extras.push(typeof extra === "function" ? extra(this) : extra);
         }
-        const edges = this.edges.map(Edge.dataForEdge);
-        return { edges, extras, node: this.toJSON() };
+        return { extras, node: this.toJSON() };
     }
 
     push_extra_cb(f) {
@@ -205,7 +205,7 @@ class Node {
         this.pos = p;
         this.anchor = this.pos;
 
-        if (App.nodeMode === 1) updateNodeEdgesLength(this);
+        if (App.nodeMode === 1) this.forEachEdge(Edge.updateLength);
 
         if (!App.selectedNodes.uuids.has(this.uuid)) return;
 
@@ -213,7 +213,7 @@ class Node {
             if (node.uuid === this.uuid || node.anchorForce === 1) return;
 
             node.vel = velocity;
-            if (App.nodeMode === 1) updateNodeEdgesLength(node);
+            if (App.nodeMode === 1) node.forEachEdge(Edge.updateLength);
         });
     }
 
@@ -364,7 +364,7 @@ class Node {
                         node.pos = node.pos.lerpto(Graph.vecToZ(), 1 - amount);
                     }
 
-                    updateNodeEdgesLength(node);
+                    node.forEachEdge(Edge.updateLength);
                 });
             } else {
                 this.scale *= amount;
@@ -390,52 +390,29 @@ class Node {
     }
     getTitle(){ return this.view.titleInput.value }
 
-    forEachEdge(cb, ct){
-        this.edges.forEach( (edge)=>cb.call(ct, edge) )
-    }
+    forEachEdge(cb, ct){ Object.forEach(this.edges, cb, ct) }
 
-    addEdge(edge) {
-        this.edges.push(edge);
-    }
-    static addEdgeThis(node){ node.addEdge(this) }
+    removeEdgeByTitle(title){
+        for (const uuid in this.edges) {
+            if (!Node.byUuid(uuid).getTitle() === title) continue;
 
-    removeEdgeByIndex(index){
-        this.edges[index].remove();
-        this.edges.splice(index, 1);
-    }
-    removeEdgeByTitle(targetTitle) {
-        const edges = this.node.edges;
-        let removed = false;
-
-        for (let i = edges.length - 1; i >= 0; i--) {
-            if (edges[i].pts.some(pt => pt.getTitle() === targetTitle)) {
-                Logger.debug(`Disconnecting edge to node: ${targetTitle}`);
-                edges[i].remove(); // Directly remove the edge
-                removed = true;
-            }
+            Logger.debug("Disconnecting edge to node:", title);
+            this.edges[uuid].remove(); // Directly remove the edge
+            return;
         }
 
-        if (!removed) {
-            Logger.warn(`No edge found connecting to node: ${targetTitle}`);
-        }
+        Logger.warn("No edge found connecting to node:", title);
     }
-    removeConnectedNodes(nodes) {
-        const nodeUUIDs = new Set(nodes.map(node => String.uuidOf(node)));
-
-        for (let i = this.edges.length - 1; i >= 0; i--) {
-            const edge = this.edges[i];
-            if (edge.pts.some(pt => nodeUUIDs.has(pt.uuid))) {
-                edge.remove();
-            }
+    disconnectNodes(nodes){
+        const nodeUuids = new Set(nodes.map(String.uuidOf));
+        for (const uuid in this.edges) {
+            if (nodeUuids.has(uuid)) this.edges[uuid].remove()
         }
     }
 
     remove(){ Graph.deleteNode(this) }
 
     static byUuid(uuid){ return Graph.nodes[uuid] }
-    static filterEdgesToThis(node){
-        node.edges = node.edges.filter( (edge)=>!edge.pts.includes(this) )
-    }
     static getType(node){
         if (node.isTextNode) return 'text';
         if (node.isLLM) return 'llm';
@@ -443,12 +420,6 @@ class Node {
         return 'base';
     }
     static remove(node){ node.remove() }
-    static removeThisEdge(node){
-        const index = node.edges.indexOf(this);
-        if (index < 0) return;
-
-        node.edges.splice(index, 1);
-    }
 }
 
 Node.Extensions = {

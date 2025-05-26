@@ -814,9 +814,7 @@ AiNode.getLastPromptsAndResponses = function (node, count = 1, type = "both", ma
 
 AiNode.exitConversation = function (node) {
     const connectedNodes = AiNode.calculateDirectionalityLogic(node);
-    if (connectedNodes) {
-        node.removeConnectedNodes(connectedNodes);
-    }
+    if (connectedNodes) node.disconnectNodes(connectedNodes);
     Logger.debug("AI has exited the conversation.");
 };
 

@@ -44,7 +44,6 @@ function renameNode(from, to) {
 }
 
 class NodeWrap {
-    edges = new Map();
     live = true;
     plainText = '';
     ref = '';
@@ -305,16 +304,12 @@ class ZettelkastenProcessor {
         if (currentCm) cmInstancesToUpdate.add(currentCm);
 
         // Process the nodes connected by edges
-        for (const edge of wrap.node.edges) {
-            // Find the connected node that is not the current node
-            const connectedNode = edge.pts.find(pt => pt !== wrap.node);
+        wrap.node.forEachConnectedNode( (node)=>{
+            if (!node.isTextNode) return;
 
-            if (connectedNode?.isTextNode) {
-                const connectedTitle = connectedNode.getTitle();
-                const connectedCm = getZetNodeCMInstance(connectedTitle)?.cm;
-                if (connectedCm) cmInstancesToUpdate.add(connectedCm);
-            }
-        }
+            const cm = getZetNodeCMInstance(node.getTitle())?.cm;
+            if (cm) cmInstancesToUpdate.add(cm);
+        });
 
         // Update the collected CodeMirror instances
         const renameNodeInInstance = renameNode(name, newName);
@@ -435,19 +430,11 @@ class ZettelkastenProcessor {
             if (isRef) allReferenceUUIDs.add(node.uuid);
         });
 
-        // Process edges
-        function hasUuidThis(pt){ return pt.uuid === this.valueOf() }
-        function hasUuidNotThis(pt){ return pt.uuid !== this.valueOf() }
-        const currentEdges = new Map(thisNode.edges.map(edge => {
-            const otherNode = edge.pts.find(hasUuidNotThis, thisNode.uuid);
-            return otherNode ? [otherNode.uuid, edge] : [null, edge];
-        }));
-
         // Remove edges not found in reference UUIDs and ensure both nodes are text nodes
-        currentEdges.forEach((edge, uuid) => {
+        for (const uuid in thisNode.edges) {
             if (allReferenceUUIDs.has(uuid)) return;
 
-            const otherNode = edge.pts.find(hasUuidThis, uuid);
+            const otherNode = Node.byUuid(uuid);
             if (!thisNode.isTextNode || !otherNode?.isTextNode) return;
 
             // Check if there is a reference to the other node in any CodeMirror instance
@@ -460,21 +447,16 @@ class ZettelkastenProcessor {
             const isRef = this.forEachReferenceInRange(startLineNo + 1, endLineNo, lines, currentNodeIsRef);
             if (isRef) return;
 
-            edge.remove();
-            currentEdges.delete(uuid);
-        });
-
-        thisNode.edges = Array.from(currentEdges.values());
+            Graph.deleteEdge(thisNode.edges[uuid]);
+        }
 
         // Add new edges for references
         references.forEach(reference => {
-            const refUUID = wrapPerTitle[reference]?.node?.uuid;
-            if (!refUUID || currentEdges.has(refUUID)) return;
+            const otherNode = wrapPerTitle[reference]?.node;
+            const refUuid = otherNode?.uuid;
+            if (!refUuid || thisNode.edges[refUuid]) return;
 
-            const otherNode = wrapPerTitle[reference].node;
-            const newEdge = connectDistance(thisNode, otherNode);
-            thisNode.edges.push(newEdge);
-            currentEdges.set(refUUID, newEdge);
+            connectDistance(thisNode, otherNode);
         });
     }
 

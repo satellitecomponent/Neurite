@@ -113,8 +113,7 @@ function spawnZettelkastenNode(spawningNode, offsetDistance = 0.6, theta = null,
 
 Math.PHI = 5 ** .5 * .5 + .5;
 function thetaForNodes(n1, n2){
-    const lastEdge = n1.edges[n1.edges.length - 1];
-    if (lastEdge) n2 = lastEdge.getPointBarUuid(n1.uuid);
+    n1.forEachConnectedNode( (node)=>{ n2 = node } );
     return thetaForPos(n1.pos, n2.pos);
 }
 function thetaForPos(pos1, pos2){

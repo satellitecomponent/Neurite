@@ -28,7 +28,7 @@ Modal.Connect = class {
         if (node === originNode) return;
 
         const textContent = node.getTitle().trim() || 'Untitled';
-        const className = (findExistingEdge(node, originNode))
+        const className = (node.edges[originNode.uuid])
                         ? 'connected' : 'disconnected';
         const li = Html.make.li(textContent, className, this.onItemClicked);
         li.dataset.nodeId = node.uuid;
@@ -38,7 +38,7 @@ Modal.Connect = class {
         const li = e.target;
         const node = Node.byUuid(li.dataset.nodeId);
         const originNode = this.originNode;
-        const existingEdge = findExistingEdge(node, originNode);
+        const existingEdge = node.edges[originNode.uuid];
         if (!existingEdge) {
             connectNodes(node, originNode);
             li.setAttribute('class', 'connected');

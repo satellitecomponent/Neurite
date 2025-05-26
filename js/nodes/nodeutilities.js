@@ -29,13 +29,13 @@ class Graph {
             Logger.warn("missing keys", edgeData, nodes)
         }
 
+        // DEPRECATED
         // Check if edge already exists
-        const edgeKey = edgeData.edgeKey;
-        if (this.findEdge( (edge)=>(edge.edgeKey === edgeKey) )) return;
+        if (this.edges[edgeData.edgeKey]) return;
 
         const direction = Edge.directionalityFromData(edgeData.directionality);
         const edge = new Edge(pts, edgeData.l, edgeData.s, edgeData.g, direction);
-        pts.forEach(Node.addEdgeThis, edge);
+        pts[0].edges[pts[1].uuid] = pts[1].edges[pts[0].uuid] = edge;
         this.addEdge(edge);
     }
     addEdgeView(edgeView){
@@ -61,8 +61,9 @@ class Graph {
         this.forEachNode(this.deleteNode, this);
     }
     deleteEdge(edge){
-        // Remove this edge from both connected nodes' edges arrays
-        edge.pts.forEach(Node.removeThisEdge, edge);
+        const pts = edge.pts;
+        delete pts[0].edges[pts[1].uuid];
+        delete pts[1].edges[pts[0].uuid];
 
         this.deleteEdgeView(edge.view);
         delete this.edges[edge.edgeKey];
@@ -73,25 +74,16 @@ class Graph {
         edgeView.svgLink.remove();
         delete this.edgeViews[edgeView.id];
     }
-    deleteNode(target){
-        const dels = [];
-        this.forEachNode( (node)=>{
-            for (const edge of node.edges) {
-                if (edge.pts.includes(target)) dels.push(edge);
-            }
-        });
-        for (const edge of dels) edge.remove();
+    deleteNode(node){
+        Object.values(node.edges).forEach(this.deleteEdge, this);
 
-        // Remove target node from the edges array of any nodes it was connected to
-        this.forEachNode(Node.filterEdgesToThis, target);
-
-        const uuid = target.uuid;
+        const uuid = node.uuid;
         App.selectedNodes.uuids.delete(uuid);
         delete this.nodeViews[uuid];
         delete this.nodes[uuid];
 
-        target.removed = true;
-        target.content.remove();
+        node.removed = true;
+        node.content.remove();
     }
 
     filterNodes(cb, ct){
@@ -102,13 +94,6 @@ class Graph {
             if (cb.call(ct, node)) arr.push(node);
         }
         return arr;
-    }
-    findEdge(cb, ct){
-        const edges = this.edges;
-        for (const edgeKey in edges) {
-            const edge = edges[edgeKey];
-            if (cb.call(ct, edge)) return edge;
-        }
     }
     forEachEdge(cb, ct){ Object.forEach(this.edges, cb, ct) }
     forEachEdgeView(cb, ct){ Object.forEach(this.edgeViews, cb, ct) }
@@ -259,9 +244,9 @@ class SelectedNodes {
 
     getUniqueEdges(){
         return this.reduce( (set, node)=>{
-            node.edges.forEach( (edge)=>{
-                if (edge.pts.every(this.hasNode, this)) set.add(edge)
-            });
+            for (const uuid in node.edges) {
+                if (this.uuids.has(uuid)) set.add(node.edges[uuid])
+            }
             return set;
         }, new Set())
     }
@@ -276,7 +261,7 @@ class SelectedNodes {
                 node.pos = centralPoint.plus(directionToCentroid.scale(scaleFactor));
             }
 
-            updateNodeEdgesLength(node);
+            node.forEachEdge(Edge.updateLength);
         });
 
         // If needed, scale the user screen (global zoom)
@@ -287,11 +272,9 @@ class SelectedNodes {
 
 
 
-function updateNodeEdgesLength(node) {
-    node.edges.forEach(edge => {
-        const currentLength = edge.currentLength;
-        if (currentLength) edge.length = currentLength;
-    })
+Edge.updateLength = function(edge){
+    const currentLength = edge.currentLength;
+    if (currentLength) edge.length = currentLength;
 }
 
 Node.byTitle = function(title){

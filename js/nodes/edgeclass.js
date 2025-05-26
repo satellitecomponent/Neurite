@@ -1,7 +1,3 @@
-function findExistingEdge(node1, node2) {
-    return node1.edges.find(node2.edges.includes, node2.edges);
-}
-
 class Edge {
     constructor(pts, length = 0.6, strength = 0.1, style, direction){
         this.pts = pts;
@@ -35,8 +31,7 @@ class Edge {
             directionality: { // Simplified data using UUIDs
                 start: this.directionality.start?.uuid ?? null,
                 end: this.directionality.end?.uuid ?? null
-            },
-            edgeKey: this.edgeKey
+            }
         }
     }
 

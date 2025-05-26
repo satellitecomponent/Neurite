@@ -53,15 +53,12 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
 }) {
     Logger.debug("Connecting:", na.uuid, "to", nb.uuid);
 
-    const existingEdge = na.edges.find(edge =>
-        edge.pts.some(pt => pt.uuid === nb.uuid) &&
-        nb.edges.some(edge => edge.pts.some(pt => pt.uuid === na.uuid))
-    );
-
+    const existingEdge = na.edges[nb.uuid] && nb.edges[na.uuid];
     if (existingEdge) {
         Logger.debug("Existing edge found between", na.uuid, "and", nb.uuid);
         return existingEdge;
     }
+
     // Log positions for debugging
     Logger.debug(`Node A Position: ${na.pos.x}, ${na.pos.y}`);
     Logger.debug(`Node B Position: ${nb.pos.x}, ${nb.pos.y}`);
@@ -75,31 +72,13 @@ function connectDistance(na, nb, linkStrength = 0.1, linkStyle = {
     const adjustedDistance = distance * 0.5;
 
     const edge = new Edge([na, nb], adjustedDistance, linkStrength, linkStyle);
-
-    na.edges.push(edge);
-    nb.edges.push(edge);
-
+    na.edges[nb.uuid] = nb.edges[na.uuid] = edge;
     Graph.addEdge(edge);
     return edge;
 }
 
-Edge.prototype.getPointBarUuid = function(uuid){
-    const pts = this.pts;
-    if (pts?.length !== 2) return;
-
-    return Node.getBarUuid(pts[0], uuid)
-        || Node.getBarUuid(pts[1], uuid);
-}
-Node.getBarUuid = function(node, uuid){
-    const id = node?.uuid;
-    return id && id !== uuid && node;
-}
-Node.callNodeOnEdgePerThis = function(edge){
-    const pt = edge.getPointBarUuid(this.uuid);
-    if (pt) this.cb.call(this.ct, pt);
-}
 Node.prototype.forEachConnectedNode = function(cb, ct){
-    this.edges.forEach(Node.callNodeOnEdgePerThis, {cb, ct, uuid: this.uuid})
+    for (const uuid in this.edges) cb.call(ct, Node.byUuid(uuid))
 }
 
 Node.prototype.getData = async function(){

@@ -52,7 +52,7 @@ class GraphExporter {
         data: {},
         blobMeta: {},
         offsets: {},
-        format: '19.50'
+        format: '19.51'
     };
     constructor(meta, stored){
         this.meta = meta;
@@ -706,12 +706,17 @@ View.Graphs = class {
                 zetPanes.push({ name, content: instance.getValue() });
             });
 
+            const edges = {};
+            for (const edgeKey in Graph.edges) {
+                edges[edgeKey] = Edge.dataForEdge(Graph.edges[edgeKey])
+            }
+
             const coords = Graph.getCoords();
             const inputValues = App.tabEdit.getDictValues();
             const locations = App.viewLocations.model.get('');
             const nodes = this.#nodesData;
             this.#nodesData = {};
-            return { coords, inputValues, locations, nodes, nodesHtml, zetPanes };
+            return { coords, edges, inputValues, locations, nodes, nodesHtml, zetPanes };
         }
 
         #handleTitle(title, isExisting){
@@ -830,9 +835,15 @@ View.Graphs = class {
             Graph.addNode(node);
         }
 
+        const edgesData = data.edges;
+        if (edgesData) {
+            for (const edgeKey in edgesData) {
+                Graph.addEdgeFromData(edgesData[edgeKey])
+            }
+        }
         for (const node of newNodes) {
             Graph.appendNode(node);
-            node.init();
+            node.init(); // DEPRECATED
             this.#reconstructSavedNode(node, importer);
             node.sensor = new NodeSensor(node, 3);
         }
