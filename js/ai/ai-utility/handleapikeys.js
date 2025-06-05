@@ -346,6 +346,7 @@ function getAPIParams(messages, stream, customTemperature, inferenceOverride) {
 
     if (providerId === 'ollama' || providerId === 'custom') {
         body.requestId = Date.now().toString();
+		headers.append("Authorization", `Bearer ${API_KEY}`);
     }
 
     if (apiEndpoint) {
