@@ -3,6 +3,7 @@ const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const treeKill = require('tree-kill');
+const { pathToFileURL } = require('url');
 const { app } = require('electron');
 
 let childProcess = null;
@@ -62,56 +63,44 @@ async function startLocalServers(serversFolder) {
         console.log('[serverManager] localhost_servers already running.');
         return;
     }
-    return new Promise(async (resolve, reject) => {
-        const scriptFullPath = path.join(serversFolder, 'start_servers.js');
-        const logPath = path.join(app.getPath('userData'), 'server-install.log');
-        const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-        if (installNeeded(serversFolder)) {
-            try {
-                await runNpmInstall(serversFolder, logStream);
-            } catch (err) {
-                logStream.write(`[serverManager] npm install error: ${err.message}\n`);
-                logStream.end();
-                return reject(new Error(`[serverManager] Failed to install root dependencies: ${err.message}`));
-            }
-        } else {
-            logStream.write(`[serverManager] Skipping npm install\n`);
+    const logPath = path.join(app.getPath('userData'), 'server-install.log');
+    const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    const scriptFullPath = path.join(serversFolder, 'start_servers.js');
+
+    if (installNeeded(serversFolder)) {
+        try {
+            await runNpmInstall(serversFolder, logStream);
+        } catch (err) {
+            logStream.write(`[serverManager] npm install error: ${err.message}\n`);
+            logStream.end();
+            throw new Error(`[serverManager] Failed to install root dependencies: ${err.message}`);
         }
+    } else {
+        logStream.write(`[serverManager] Skipping npm install\n`);
+    }
 
-        logStream.write(`[serverManager] Launching server: ${scriptFullPath}\n`);
-        logStream.write(`[serverManager] Logs streaming to this file...\n`);
+    logStream.write(`[serverManager] Importing and running: ${scriptFullPath}\n`);
 
-        const nodeBinary = process.execPath;
+    try {
+        const moduleUrl = pathToFileURL(scriptFullPath).href;
+        await import(moduleUrl);
+    } catch (err) {
+        logStream.write(`[serverManager] Failed to import start_servers.js: ${err.message}\n`);
+        logStream.end();
+        throw err;
+    }
 
-        childProcess = spawn(nodeBinary, [scriptFullPath], {
-            cwd: serversFolder,
-            env: { ...process.env },
-            stdio: ['ignore', 'pipe', 'pipe'],
-            windowsHide: true
-        });
+    const checkServer = async () => {
+        if (await isLocalServerRunning()) {
+            logStream.write(`[serverManager] localhost_servers running\n`);
+            logStream.end();
+            return;
+        }
+        setTimeout(checkServer, 500);
+    };
 
-        childProcess.stdout.pipe(logStream);
-        childProcess.stderr.pipe(logStream);
-
-        childProcess.on('exit', (code) => {
-            if (code !== 0) {
-                logStream.write(`[serverManager] Server process exited with code ${code}\n`);
-                childProcess = null;
-            }
-            logStream.end(); // finalize log
-        });
-
-        const checkServer = async () => {
-            if (await isLocalServerRunning()) {
-                logStream.write(`[serverManager] localhost_servers running\n`);
-                return resolve();
-            }
-            setTimeout(checkServer, 1000);
-        };
-
-        checkServer();
-    });
+    checkServer();
 }
 
 function stopLocalServers() {
