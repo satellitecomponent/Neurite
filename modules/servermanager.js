@@ -82,12 +82,11 @@ async function startLocalServers(serversFolder) {
         logStream.write(`[serverManager] Launching server: ${scriptFullPath}\n`);
         logStream.write(`[serverManager] Logs streaming to this file...\n`);
 
-        const nodeBinary = process.platform === 'win32' ? 'node.exe' : 'node';
+        const nodeBinary = process.execPath;
 
         childProcess = spawn(nodeBinary, [scriptFullPath], {
             cwd: serversFolder,
             env: { ...process.env },
-            shell: true,
             stdio: ['ignore', 'pipe', 'pipe'],
             windowsHide: true
         });
