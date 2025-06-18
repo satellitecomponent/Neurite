@@ -16,8 +16,8 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "electron": "^36.1.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^36.5.0",
+    "electron-builder": "^26.0.12"
   },
   "overrides": {
     "glob": "^11.0.1"
