@@ -91,16 +91,23 @@ async function startLocalServers(serversFolder) {
         throw err;
     }
 
-    const checkServer = async () => {
+    // Wait for the server to report healthy (with timeout)
+    const timeoutMs = 30000; // 30 seconds
+    const intervalMs = 500;
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
         if (await isLocalServerRunning()) {
             logStream.write(`[serverManager] localhost_servers running\n`);
             logStream.end();
             return;
         }
-        setTimeout(checkServer, 500);
-    };
+        await new Promise(r => setTimeout(r, intervalMs));
+    }
 
-    checkServer();
+    logStream.write(`[serverManager] Timeout waiting for localhost_servers to start\n`);
+    logStream.end();
+    throw new Error('Timeout: localhost_servers did not start within expected time.');
 }
 
 function stopLocalServers() {
