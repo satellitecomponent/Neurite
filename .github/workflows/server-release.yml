@@ -8,79 +8,88 @@ on:
         required: false
         default: 'draft'
 
+permissions:
+  contents: write
+
 jobs:
-  release:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.setver.outputs.timestamp }}
+      tag: ${{ steps.setver.outputs.tag }}
+      draft: ${{ steps.setver.outputs.draft }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Generate timestamp version
-        id: version
+      - name: Set timestamped version
+        id: setver
         run: |
           timestamp=$(date +'%Y.%m.%d.%H%M%S')
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
           echo "tag=servers-$timestamp" >> $GITHUB_OUTPUT
 
+          if [[ "${{ github.event.inputs.release_type }}" == "final" ]]; then
+            echo "draft=false" >> $GITHUB_OUTPUT
+          else
+            echo "draft=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install root dependencies
         run: npm install
-        working-directory: localhost_servers
+        working-directory: ./localhost_servers
 
-      - name: Install dependencies per server
+      - name: Read servers.json and install per server
         run: |
-          node -e "
-            const fs = require('fs');
-            const path = require('path');
-            const servers = JSON.parse(fs.readFileSync('localhost_servers/servers.json', 'utf8'));
-            for (const server of servers) {
-              if (server.startNeurite) continue;
-              const dir = path.join('localhost_servers', server.dir);
-              console.log('Installing in', dir);
-              require('child_process').execSync('npm install', {
-                cwd: dir,
-                stdio: 'inherit'
-              });
-            }
-          "
+          jq -c '.[]' localhost_servers/servers.json | while read -r server; do
+            dir=$(echo "$server" | jq -r '.dir')
+            skip=$(echo "$server" | jq -r '.startNeurite')
+            if [[ "$skip" != "true" ]]; then
+              echo "Installing $dir"
+              npm install --prefix "localhost_servers/$dir"
+            else
+              echo "Skipping $dir (startNeurite=true)"
+            fi
+          done
 
-      - name: Create servers.zip (tracked files only)
+      - name: Create servers.zip
         run: |
           mkdir release
-          git ls-files localhost_servers | zip -@ release/servers.zip
+          zip -r release/servers.zip localhost_servers -x '*.DS_Store'
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install -y gh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: localhost-servers
+          path: release/servers.zip
 
-      - name: Authenticate GH CLI
-        run: echo "${GH_TOKEN}" | gh auth login --with-token
+  release:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: localhost-servers
+          path: dist
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Localhost Servers ${{ needs.prepare.outputs.timestamp }}
+          body: |
+            Pre-built localhost servers for Neurite (${{
+              needs.prepare.outputs.timestamp }}).
+
+            All dependencies installed (including root).
+          draft: ${{ needs.prepare.outputs.draft }}
+          files: dist/servers.zip
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create new dated release
-        run: |
-          gh release create ${{ steps.version.outputs.tag }} release/servers.zip \
-            --title "Localhost Servers ${{ steps.version.outputs.timestamp }}" \
-            --notes "Current release of Neurite's localhost servers" \
-            ${{ github.event.inputs.release_type == 'draft' && '--draft' || '' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete older servers-* releases (keep latest)
-        if: github.event.inputs.release_type != 'draft'
-        run: |
-          gh release list --limit 100 --json tagName,createdAt \
-          | jq -r '.[] | select(.tagName | startswith("servers-")) | "\(.createdAt) \(.tagName)"' \
-          | sort -r \
-          | tail -n +2 \
-          | awk '{print $2}' \
-          | xargs -r -n 1 gh release delete -y
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
