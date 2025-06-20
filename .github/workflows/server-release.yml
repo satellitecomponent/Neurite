@@ -20,6 +20,7 @@ jobs:
         node-version: 20
         cache: npm
 
+
     - name: Generate version & tag
       id: version
       run: |
@@ -27,12 +28,12 @@ jobs:
         echo "timestamp=$timestamp"   >> "$GITHUB_OUTPUT"
         echo "tag=servers-$timestamp" >> "$GITHUB_OUTPUT"
 
-    - name: npm ci (root localhost_servers)
+    - name: npm install (root localhost_servers)
       run: |
-        echo "→ npm ci --omit=dev in localhost_servers/"
-        npm ci --omit=dev --prefix localhost_servers
+        echo "→ npm install --omit=dev in localhost_servers/"
+        npm install --omit=dev --prefix localhost_servers
 
-    - name: npm ci in each service dir
+    - name: npm install in each service dir
       run: |
         set -e
         srv_json="localhost_servers/servers.json"
@@ -42,8 +43,8 @@ jobs:
         )
 
         for dir in "${DIRS[@]}"; do
-          echo "→ npm ci --omit=dev in localhost_servers/$dir"
-          npm ci --omit=dev --prefix "localhost_servers/$dir"
+          echo "→ npm install --omit=dev in localhost_servers/$dir"
+          npm install --omit=dev --prefix "localhost_servers/$dir"
         done
 
     - name: Archive localhost_servers
@@ -71,7 +72,6 @@ jobs:
             --title "Localhost Servers ${{ steps.version.outputs.timestamp }}" \
             --notes "Production bundle of Neurite localhost servers (pre-installed node_modules)."
         fi
-
     - name: Delete old servers-* releases
       if: ${{ github.event.inputs.release_type != 'draft' }}
       env:
