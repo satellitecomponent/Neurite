@@ -1,53 +1,85 @@
 name: Localhost Servers Release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'localhost_servers/**'
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: "'draft' (default) or 'final'"
+        required: false
+        default: draft
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Generate timestamp version
-        id: version
-        run: |
-          timestamp=$(date +'%Y.%m.%d.%H%M%S')
-          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
-          echo "tag=servers-$timestamp" >> $GITHUB_OUTPUT
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
 
-      - name: Create servers.zip (tracked files only)
-        run: |
-          mkdir release
-          git ls-files localhost_servers | zip -@ release/servers.zip
+    - name: Generate version & tag
+      id: version
+      run: |
+        timestamp=$(date +'%Y.%m.%d.%H%M%S')
+        echo "timestamp=$timestamp"   >> "$GITHUB_OUTPUT"
+        echo "tag=servers-$timestamp" >> "$GITHUB_OUTPUT"
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install -y gh
+    - name: npm ci (root localhost_servers)
+      run: |
+        echo "→ npm ci --omit=dev in localhost_servers/"
+        npm ci --omit=dev --prefix localhost_servers
 
-      - name: Authenticate GH CLI
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+    - name: npm ci in each service dir
+      run: |
+        set -e
+        srv_json="localhost_servers/servers.json"
 
-      - name: Create new dated release
-        run: |
-          gh release create ${{ steps.version.outputs.tag }} release/servers.zip \
+        mapfile -t DIRS < <(
+          jq -r '.[] | select(.startNeurite|not) | .dir' "$srv_json"
+        )
+
+        for dir in "${DIRS[@]}"; do
+          echo "→ npm ci --omit=dev in localhost_servers/$dir"
+          npm ci --omit=dev --prefix "localhost_servers/$dir"
+        done
+
+    - name: Archive localhost_servers
+      run: |
+        mkdir -p release
+        zip -r release/servers.zip localhost_servers \
+          -x "*.git*" ".gitignore"
+
+    - name: Auth GH CLI
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: gh auth login --with-token <<<"${GH_TOKEN}"
+
+    - name: Create GitHub release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if [ "${{ github.event.inputs.release_type }}" = "draft" ]; then
+          gh release create "${{ steps.version.outputs.tag }}" release/servers.zip \
+            --draft \
             --title "Localhost Servers ${{ steps.version.outputs.timestamp }}" \
-            --notes "Current release of Neurite's localhost servers"
+            --notes "Draft bundle of Neurite localhost servers (pre-installed node_modules)."
+        else
+          gh release create "${{ steps.version.outputs.tag }}" release/servers.zip \
+            --title "Localhost Servers ${{ steps.version.outputs.timestamp }}" \
+            --notes "Production bundle of Neurite localhost servers (pre-installed node_modules)."
+        fi
 
-      - name: Delete older servers-* releases (keep latest)
-        run: |
-          gh release list --limit 100 --json tagName,createdAt \
-          | jq -r '.[] | select(.tagName | startswith("servers-")) | "\(.createdAt) \(.tagName)"' \
-          | sort -r \
-          | tail -n +2 \
-          | awk '{print $2}' \
-          | xargs -r -n 1 gh release delete -y
+    - name: Delete old servers-* releases
+      if: ${{ github.event.inputs.release_type != 'draft' }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release list --limit 100 --json tagName,createdAt \
+        | jq -r '.[] | select(.tagName | startswith("servers-")) | "\(.createdAt) \(.tagName)"' \
+        | sort -r \
+        | tail -n +2 \
+        | awk '{print $2}' \
+        | xargs -r -n 1 gh release delete -y
