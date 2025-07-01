@@ -247,6 +247,7 @@ class DropHandler {
         const node = new LinkNode(url, name);
         node.fileName = name;
         this.afterNodeCreation(node);
+        node.typeNode.toggleViewer?.(); // Ensure the PDF viewer is initialized and content loaded
     }
 
     createLinkNode(link) {
