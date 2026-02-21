@@ -17,6 +17,7 @@ class vec2 {
     }
     isFinite(){ return isFinite(this.x) && isFinite(this.y) }
     isInvalid(){ return isNaN(this.x) || isNaN(this.y) }
+    equals(o){ return this.x === o.x && this.y === o.y }
 
     plus(o){  return new vec2(this.x + o.x, this.y + o.y) }
     minus(o){ return new vec2(this.x - o.x, this.y - o.y) }

@@ -7,6 +7,9 @@ let avgfps = 0;
 
 //let manualConnectionOverride = false;
 
+const spatialIndex = new SpatialIndex(0.5);
+const viewportCulling = new ViewportCulling(spatialIndex, 2.0);
+
 Autopilot.update = function(time){
     const oldPan = Graph.pan;
     let newPan;
@@ -55,6 +58,11 @@ class NodeSimulation {
     mousePathPos = new vec2(0, 0);
     svg_mousePath = svg.getElementById('mousePath');
     current_time = undefined;
+
+    rebuildSpatialIndex() {
+        spatialIndex.rebuild(Graph.nodes);
+        viewportCulling.update();
+    }
 
     processSelectedNodes() {
         processScalingKeys();
@@ -122,7 +130,9 @@ class NodeSimulation {
 
     updateNodes(dt) {
         dt *= (1 - nodeMode_v) ** 5;
-        Graph.forEachNode(this.updateForThisDt, dt);
+        viewportCulling.forEachVisibleNode((node) => {
+            node.step(dt);
+        });
         return this;
     }
     updateForThisDt(item){
@@ -130,7 +140,9 @@ class NodeSimulation {
         //let d = Graph.vecToZ().minus(n.pos);
     }
     updateEdges(dt) {
-        Graph.forEachEdge(this.updateForThisDt, dt);
+        viewportCulling.forEachVisibleEdge((edge) => {
+            edge.step(dt);
+        });
         return this;
     }
 
@@ -161,6 +173,8 @@ class NodeSimulation {
         this.updateMousePath();
         this.updateMousePathWidth();
         const dt = this.updateFPS(time);
+        
+        viewportCulling.update();
         this.updateNodes(dt).updateEdges(dt).updateRegen();
 
         window.requestAnimationFrame(this.nodeStep);
@@ -168,5 +182,9 @@ class NodeSimulation {
 
     start() {
         window.requestAnimationFrame(this.nodeStep);
+    }
+
+    getCullingStats() {
+        return viewportCulling.getStats();
     }
 }

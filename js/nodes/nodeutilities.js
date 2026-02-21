@@ -37,6 +37,9 @@ class Graph {
         if (node.view) this.nodeViews[node.view.id] = node.view;
         this.nodes[node.uuid] = node;
         this.lastPos = node.pos;
+        if (typeof spatialIndex !== 'undefined') {
+            spatialIndex.insert(node);
+        }
     }
     appendNode(node){ this.htmlNodes.append(node.content) }
 
@@ -45,6 +48,9 @@ class Graph {
         this.forEachEdge(this.deleteEdge, this);
         this.edgeDirectionalities = {};
         this.forEachNode(this.deleteNode, this);
+        if (typeof spatialIndex !== 'undefined') {
+            spatialIndex.clear();
+        }
     }
     deleteEdge(edge){
         this.edgeDirectionalities[edge.edgeKey] = edge.directionality;
@@ -77,6 +83,10 @@ class Graph {
         App.selectedNodes.uuids.delete(uuid);
         delete this.nodeViews[uuid];
         delete this.nodes[uuid];
+
+        if (typeof spatialIndex !== 'undefined') {
+            spatialIndex.remove(target);
+        }
 
         target.removed = true;
         target.content.remove();
