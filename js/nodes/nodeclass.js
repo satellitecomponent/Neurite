@@ -131,11 +131,16 @@ class Node {
 
     step(dt) {
         dt = this.clampDt(dt);
+        const oldPos = this.pos;
         this.updatePosition(dt);
         this.applyMandelbrotForce();
         this.applyAnchorForce();
         this.handleMouseInteraction(dt);
         this.draw();
+        
+        if (typeof spatialIndex !== 'undefined' && !oldPos.equals(this.pos)) {
+            spatialIndex.update(this);
+        }
     }
 
     clampDt(dt) {

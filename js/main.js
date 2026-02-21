@@ -232,6 +232,7 @@ class PageLoad {
         'js/nodes/nodeinteraction/bundlecode.js:MODULE',
         'js/nodes/nodeinteraction/modalconnect.js',
         'js/nodes/nodeinteraction/nodesensor.js',
+        'js/nodes/spatialindex.js',
         'js/nodes/nodeinteraction/nodestep.js',
         'js/nodes/nodetypes/filetreenodes/filetreenode.js',
         'js/nodes/nodetypes/textnodes/contenteditable.js',
