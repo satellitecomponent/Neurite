@@ -17,7 +17,9 @@ class Graph {
     own = {self: this};
     pan = new vec2(0, 0);
     rotation = new vec2(1, 0);
-    zoom = new vec2(1, 0); // bigger is farther out
+    zoom = new vec2(1, 0);
+    spatialIndex = new SpatialGrid(0.5);
+    _useSpatialCulling = true;
 
     addEdge(edge){
         this.addEdgeView(edge.view);
@@ -37,6 +39,7 @@ class Graph {
         if (node.view) this.nodeViews[node.view.id] = node.view;
         this.nodes[node.uuid] = node;
         this.lastPos = node.pos;
+        this.spatialIndex.insert(node);
     }
     appendNode(node){ this.htmlNodes.append(node.content) }
 
@@ -45,6 +48,7 @@ class Graph {
         this.forEachEdge(this.deleteEdge, this);
         this.edgeDirectionalities = {};
         this.forEachNode(this.deleteNode, this);
+        this.spatialIndex.clear();
     }
     deleteEdge(edge){
         this.edgeDirectionalities[edge.edgeKey] = edge.directionality;
@@ -77,9 +81,34 @@ class Graph {
         App.selectedNodes.uuids.delete(uuid);
         delete this.nodeViews[uuid];
         delete this.nodes[uuid];
+        this.spatialIndex.remove(target);
 
         target.removed = true;
         target.content.remove();
+    }
+
+    getVisibleNodes() {
+        if (!this._useSpatialCulling) {
+            return Object.values(this.nodes);
+        }
+        return Array.from(this.spatialIndex.getVisibleNodes());
+    }
+
+    updateSpatialIndex(node) {
+        this.spatialIndex.update(node);
+    }
+
+    rebuildSpatialIndex() {
+        this.spatialIndex.clear();
+        this.forEachNode((node) => this.spatialIndex.insert(node));
+    }
+
+    enableSpatialCulling(enabled = true) {
+        this._useSpatialCulling = enabled;
+    }
+
+    getSpatialStats() {
+        return this.spatialIndex.stats;
     }
 
     filterNodes(cb, ct){
