@@ -1,3 +1,123 @@
+class SpatialGrid {
+    static DEFAULT_CELL_SIZE = 0.5;
+    static EXTENDED_MARGIN = 2.0;
+
+    constructor(cellSize = SpatialGrid.DEFAULT_CELL_SIZE) {
+        this.cellSize = cellSize;
+        this.grid = new Map();
+        this.nodeCells = new Map();
+    }
+
+    _getCellKey(x, y) {
+        const cx = Math.floor(x / this.cellSize);
+        const cy = Math.floor(y / this.cellSize);
+        return `${cx},${cy}`;
+    }
+
+    _getNodeBounds(node) {
+        const pos = node.pos;
+        const scale = node.scale || 1;
+        const halfExtent = scale * SpatialGrid.EXTENDED_MARGIN;
+        return {
+            minX: pos.x - halfExtent,
+            maxX: pos.x + halfExtent,
+            minY: pos.y - halfExtent,
+            maxY: pos.y + halfExtent
+        };
+    }
+
+    insert(node) {
+        if (!node || !node.pos) return;
+        const bounds = this._getNodeBounds(node);
+        const minCX = Math.floor(bounds.minX / this.cellSize);
+        const maxCX = Math.floor(bounds.maxX / this.cellSize);
+        const minCY = Math.floor(bounds.minY / this.cellSize);
+        const maxCY = Math.floor(bounds.maxY / this.cellSize);
+
+        const cells = [];
+        for (let cx = minCX; cx <= maxCX; cx++) {
+            for (let cy = minCY; cy <= maxCY; cy++) {
+                const key = `${cx},${cy}`;
+                if (!this.grid.has(key)) {
+                    this.grid.set(key, new Set());
+                }
+                this.grid.get(key).add(node);
+                cells.push(key);
+            }
+        }
+        this.nodeCells.set(node, cells);
+    }
+
+    remove(node) {
+        const cells = this.nodeCells.get(node);
+        if (!cells) return;
+        for (const key of cells) {
+            const cell = this.grid.get(key);
+            if (cell) {
+                cell.delete(node);
+                if (cell.size === 0) {
+                    this.grid.delete(key);
+                }
+            }
+        }
+        this.nodeCells.delete(node);
+    }
+
+    update(node) {
+        this.remove(node);
+        this.insert(node);
+    }
+
+    getNodesInBounds(minX, maxX, minY, maxY) {
+        const minCX = Math.floor(minX / this.cellSize);
+        const maxCX = Math.floor(maxX / this.cellSize);
+        const minCY = Math.floor(minY / this.cellSize);
+        const maxCY = Math.floor(maxY / this.cellSize);
+
+        const result = new Set();
+        for (let cx = minCX; cx <= maxCX; cx++) {
+            for (let cy = minCY; cy <= maxCY; cy++) {
+                const key = `${cx},${cy}`;
+                const cell = this.grid.get(key);
+                if (cell) {
+                    for (const node of cell) {
+                        result.add(node);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    getVisibleNodes() {
+        const zoomMag = Graph.zoom.mag();
+        const pan = Graph.pan;
+        const margin = zoomMag * 0.5;
+
+        const minX = pan.x - zoomMag - margin;
+        const maxX = pan.x + zoomMag + margin;
+        const minY = pan.y - zoomMag - margin;
+        const maxY = pan.y + zoomMag + margin;
+
+        return this.getNodesInBounds(minX, maxX, minY, maxY);
+    }
+
+    clear() {
+        this.grid.clear();
+        this.nodeCells.clear();
+    }
+
+    get stats() {
+        return {
+            totalCells: this.grid.size,
+            totalNodes: this.nodeCells.size,
+            avgNodesPerCell: this.grid.size > 0 
+                ? Math.round(this.nodeCells.size / this.grid.size * 100) / 100 
+                : 0
+        };
+    }
+}
+
 class Node {
     static prev = null;
 
@@ -9,6 +129,7 @@ class Node {
     mouseAnchor = new vec2(0, 0);
     save_extras = [];
     view = null;
+    _spatialDirty = true;
 
     constructor(thing, createEdges = true){
         if (thing) {
@@ -102,6 +223,12 @@ class Node {
         return bb && bb.width > 0 && bb.height > 0;
     }
 
+    isInViewport() {
+        const uv = fromZtoUV(this.pos);
+        const dist2 = uv.minus(new vec2(0.5, 0.5)).mag2();
+        return dist2 <= 16;
+    }
+
     draw() {
         const e = this.content;
         const s = this.intrinsicScale * this.scale * (Graph.zoom.mag2() ** -settings.zoomContentExp);
@@ -129,13 +256,15 @@ class Node {
         //e.style['text-align']= 'center';
     }
 
-    step(dt) {
+    step(dt, skipDraw = false) {
         dt = this.clampDt(dt);
         this.updatePosition(dt);
         this.applyMandelbrotForce();
         this.applyAnchorForce();
         this.handleMouseInteraction(dt);
-        this.draw();
+        if (!skipDraw) {
+            this.draw();
+        }
     }
 
     clampDt(dt) {
@@ -148,6 +277,9 @@ class Node {
             this.vel = this.vel.plus(this.force.scale(dt));
             this.pos = this.pos.plus(this.vel.scale(dt / 2));
             this.force = this.vel.scale(-Math.min(this.vel.mag() + this.frictionConstant + this.anchorForce, 1 / (dt + 1e-300)));
+            if (this.vel.mag() > 0.001) {
+                this._spatialDirty = true;
+            }
         } else {
             this.vel = new vec2(0, 0);
             this.force = new vec2(0, 0);
@@ -185,6 +317,7 @@ class Node {
         this.vel = velocity;
         this.pos = p;
         this.anchor = this.pos;
+        this._spatialDirty = true;
 
         if (App.nodeMode === 1) updateNodeEdgesLength(this);
 
@@ -194,6 +327,7 @@ class Node {
             if (node.uuid === this.uuid || node.anchorForce === 1) return;
 
             node.vel = velocity;
+            node._spatialDirty = true;
             if (App.nodeMode === 1) updateNodeEdgesLength(node);
         });
     }

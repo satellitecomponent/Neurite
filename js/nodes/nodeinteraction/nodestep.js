@@ -55,6 +55,10 @@ class NodeSimulation {
     mousePathPos = new vec2(0, 0);
     svg_mousePath = svg.getElementById('mousePath');
     current_time = undefined;
+    _lastSpatialUpdate = 0;
+    _spatialUpdateInterval = 10;
+    _frameCount = 0;
+    _cullingStats = { visible: 0, total: 0, culled: 0 };
 
     processSelectedNodes() {
         processScalingKeys();
@@ -120,15 +124,50 @@ class NodeSimulation {
         return dt;
     }
 
+    updateSpatialIndexPeriodically() {
+        this._frameCount++;
+        if (this._frameCount - this._lastSpatialUpdate >= this._spatialUpdateInterval) {
+            this._lastSpatialUpdate = this._frameCount;
+            Graph.forEachNode((node) => {
+                if (node._spatialDirty || node.followingMouse) {
+                    Graph.spatialIndex.update(node);
+                    node._spatialDirty = false;
+                }
+            });
+        }
+    }
+
     updateNodes(dt) {
         dt *= (1 - nodeMode_v) ** 5;
-        Graph.forEachNode(this.updateForThisDt, dt);
+        const totalNodes = Object.keys(Graph.nodes).length;
+        
+        if (totalNodes > 100 && Graph._useSpatialCulling) {
+            const visibleNodes = Graph.getVisibleNodes();
+            this._cullingStats.visible = visibleNodes.length;
+            this._cullingStats.total = totalNodes;
+            this._cullingStats.culled = totalNodes - visibleNodes.length;
+            
+            for (const node of visibleNodes) {
+                node.step(dt);
+                node._spatialDirty = true;
+            }
+            
+            const invisibleNodes = Object.values(Graph.nodes).filter(n => !visibleNodes.includes(n));
+            for (const node of invisibleNodes) {
+                node.step(dt, true);
+                node._spatialDirty = true;
+            }
+        } else {
+            Graph.forEachNode(this.updateForThisDt, dt);
+        }
+        
+        this.updateSpatialIndexPeriodically();
         return this;
     }
-    updateForThisDt(item){
-        item.step(this);
-        //let d = Graph.vecToZ().minus(n.pos);
+    updateForThisDt(item, dt){
+        item.step(dt);
     }
+
     updateEdges(dt) {
         Graph.forEachEdge(this.updateForThisDt, dt);
         return this;
