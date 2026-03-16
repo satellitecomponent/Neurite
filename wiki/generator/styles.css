@@ -1,4 +1,4 @@
-/* base.css – reset + typography */
+﻿/* base.css – reset + typography */
 :root {
     --font-body: 'Inter', sans-serif;
     --font-mono: 'Courier New', monospace;
@@ -127,11 +127,19 @@ hr {
 }
 
 p {
-    margin: 1em 0;
+    margin: 1em auto;
     line-height: 1.7;
     font-size: 1rem;
     max-width: 60ch;
     word-wrap: break-word;
+    text-align: left;
+}
+
+em {
+    font-style: italic;
+    background-color: #333;
+    border-radius: 10px;
+    padding: 3px;
 }
 
 blockquote {
@@ -178,17 +186,11 @@ tbody tr:nth-child(even) {
 
 td {
     padding: 0.75em 1em;
-    border-top: 1px solid #333;
-    border-right: 1px solid #222;
+    border: 1px solid #333;
 }
 
 tr:last-child td {
     border-bottom: 1px solid #333;
-}
-
-th:last-child,
-td:last-child {
-    border-right: none;
 }
 
 ul {
@@ -227,7 +229,7 @@ ol {
 ol li {
     counter-increment: list;
     position: relative;
-    padding-left: 2em;
+    padding-left: 50px;
     margin: 1em 0;
     color: #ccc;
 }
@@ -315,7 +317,7 @@ header {
     top: 100%;
     left: 0;
     right: 0;
-    max-height: 200px;
+    max-height: fit-content;
     /* limit the height */
     overflow-y: auto;
     /* enable scrolling */
@@ -330,7 +332,8 @@ header {
 }
 
 .suggestions li {
-    padding: 0.5em 1em;
+    margin: 0;
+    padding: 1em 0.75em;
     cursor: pointer;
 }
 

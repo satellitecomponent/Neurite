@@ -1,6 +1,10 @@
 [
   "about",
+  "agents",
   "controls",
   "faq",
-  "neurite-desktop"
+  "home",
+  "neural-api",
+  "neurite-desktop",
+  "zettelkasten"
 ]

@@ -1,14 +1,14 @@
 # Neurite Desktop
 
-![demo](https://github.com/user-attachments/assets/27a2c085-3354-42ef-ae37-cca274d8e641)
-
 ---
 
 ## Unchain from the traditional browser
 
-Forget tabs! Neurite is all about graphs. Open as many windows as you want inside our infinite fractal canvas.
+### Forget tabs! Neurite is all about graphs. Open as many windows as you want within an infinite fractal canvas.
 
 ---
+
+![demo](https://github.com/user-attachments/assets/27a2c085-3354-42ef-ae37-cca274d8e641)
 
 ## Download Neurite Desktop ↓
 
@@ -22,11 +22,9 @@ Forget tabs! Neurite is all about graphs. Open as many windows as you want insid
 
 ## Features
 
-- 🧭 Built-in forward/backward navigation in link nodes
-- 🧩 Drag out new link nodes from URLs
-- 🧠 Full browsing experience within Neurite's canvas
-- 🔧 Localhost servers auto-managed and auto-updated
+- Full browser experience within every link node
+- Localhost servers auto-managed and auto-updated
 
-> Note: macOS requires manual override to open unsigned apps and Windows shows a security prompt.
+> Note: macOS requires manual override to open unsigned apps. Windows shows a security prompt.
 
 ![demo2](https://github.com/satellitecomponent/Neurite/assets/129367899/609781ec-7440-479a-859c-9248fd60644f)

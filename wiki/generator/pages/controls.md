@@ -1,8 +1,8 @@
 # `How to Use Neurite`
 
-### 📚 Neurite lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
+### Neurite lets you embed anything - text, photos, audio, video, PDFs, AI, and webpages - directly within the Mandelbrot set. 
 
-## ⚙️ `Controls` ⚙️
+## `Controls`
 <table>
   <tr>
     <th>Category</th>

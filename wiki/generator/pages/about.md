@@ -1,17 +1,23 @@
 
-> [Check out our newly released series of demo videos!](https://www.youtube.com/watch?v=1BiUblUAd7s&list=PLnwfKwpTq3vDlXDrLParmQ_3waM1g-ehf)
+<div style="display: flex; justify-content: center;">
+  <iframe width="560" height="315"
+      src="https://www.youtube.com/embed/videoseries?list=PLnwfKwpTq3vDlXDrLParmQ_3waM1g-ehf"
+      title="Neurite Demo Series"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen>
+  </iframe>
+</div>
 
 ## Bridging Fractals and Thought
 
-### 💡 [neurite.network](https://neurite.network/) unleashes a new dimension of digital interface...
+### [neurite.network](https://neurite.network/) unleashes a new dimension of digital interface...
 
 ### _...the fractal dimension._
 
-> 🧩 **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
+> **Drawing from chaos theory and graph theory, Neurite unveils the hidden patterns and intricate connections that shape creative thinking.**
 
 For over two years we've been iterating out a virtually limitless workspace that blends the mesmerizing complexity of fractals with contemporary mind-mapping technique.
-
-📢 **Major Update:** See [Neurite Desktop](#neurite-desktop)
 
 ---
 
@@ -24,15 +30,19 @@ The Mandelbrot Set is not just an aesthetic choice — fractal logic is ingraine
 - [music](https://www.mpg.de/9379548/fractals-set-the-tone)
 - [cosmic web](https://cosmicweb.kimalbrecht.com/)
 
-🌀 Fractals act as the cross-disciplinary framework for non-integer dimensional thought — where conventional notions of 4D spacetime are put into question.
+Fractals act as the cross-disciplinary framework for non-integer dimensional thought — where conventional notions of 4D spacetime are put into question.
+
+Unlike most fractal renderers, movements through the fractal are not interrupted at each step. Instead, the fractal regenerates as you interact.
 
 > The goal of this project is to grow agentic graphs of fractal creativity & collaboration.
+
+<em>See our [FAQ](/wiki/faq/)</em>
 
 ---
 
 ## `Why Nodes?`
 
-Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations. 🔭
+Nodes represent text, images, videos, code, and AI agents. Together, they thread a personalized microcosm of your thoughts and inspirations.
 
 [neurite.network](https://neurite.network/) connects physics simulation of graphs with an underlying fractal topology to kinematically define interactive, iterative, and modular graphs of ideation.
 
@@ -43,7 +53,5 @@ Nodes represent text, images, videos, code, and AI agents. Together, they thread
 Whether you're a researcher, writer, artist, developer, educator, or simply a curious thinker, Neurite offers a departure from the conventional interface.
 
 It's an interactive landscape tracing your ever-branching pathways of thought.
-
-Movements through the fractal are no longer interrupted at each step. Instead, the rendering persists and regenerates as you interact.
 
 ---
