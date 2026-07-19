@@ -69,9 +69,19 @@ function getMimeType(extension) {
     return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
 }
 
+const BASE_DIR = process.env.DIRECTACCESS_ROOT || process.cwd();
+
+function isWithinBase(resolved) {
+    return resolved === BASE_DIR || resolved.startsWith(BASE_DIR + path.sep);
+}
+
 // API to navigate directories and get file structure
 app.get('/navigate', (req, res) => {
-    const dirPath = req.query.path ? path.resolve(req.query.path) : path.resolve('/'); // Root directory by default
+    const dirPath = req.query.path ? path.resolve(BASE_DIR, req.query.path) : BASE_DIR;
+
+    if (!isWithinBase(dirPath)) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
 
     fs.stat(dirPath, (err, stats) => {
         if (err || !stats.isDirectory()) {
@@ -95,10 +105,14 @@ app.get('/navigate', (req, res) => {
 
 // API to stream file content (supports both text and binary files)
 app.get('/read-file', (req, res) => {
-    const filePath = req.query.path ? path.resolve(req.query.path) : null;
+    const filePath = req.query.path ? path.resolve(BASE_DIR, req.query.path) : null;
 
     if (!filePath) {
         return res.status(400).json({ error: 'File path is required' });
+    }
+
+    if (!isWithinBase(filePath)) {
+        return res.status(403).json({ error: 'Access denied' });
     }
 
     // Check if file exists and is indeed a file
